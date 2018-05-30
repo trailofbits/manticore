@@ -1362,7 +1362,7 @@ class EVM(Eventful):
             if not current.is_branch:
                 #advance pc pointer
                 self.pc += self.instruction.size
-            self._publish('did_evm_execute_instruction', current, arguments, result)
+            self._publish('did_evm_execute_instruction', current, arguments, [result])
             self._publish('did_execute_instruction', last_pc, self.pc, current)
             raise
         except Emulated as e:
@@ -1371,12 +1371,15 @@ class EVM(Eventful):
                 self.pc += self.instruction.size
             result = e.result
 
-        self._push_results(current, result)
         if not current.is_branch:
             #advance pc pointer
             self.pc += self.instruction.size
-        self._publish('did_evm_execute_instruction', current, arguments, result)
+        result_ref = [result]
+        self._publish('did_evm_execute_instruction', current, arguments, result_ref)
+        result = result_ref[0]
         self._publish('did_execute_instruction', last_pc, self.pc, current)
+
+        self._push_results(current, result)
 
     def read_buffer(self, offset, size):
         if issymbolic(size):

@@ -92,15 +92,10 @@ def parse_arguments():
 
 
 def ethereum_cli(args):
-    from ethereum import ManticoreEVM, IntegerOverflow, UninitializedStorage, UninitializedMemory
+    from ethereum import ManticoreEVM
     log.init_logging()
 
     m = ManticoreEVM(procs=args.procs)
-
-    ################ Default? Detectors #######################
-    m.register_detector(IntegerOverflow())
-    m.register_detector(UninitializedStorage())
-    m.register_detector(UninitializedMemory())
 
     logger.info("Beginning analysis")
 

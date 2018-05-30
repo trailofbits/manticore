@@ -1,3 +1,4 @@
+import hashlib
 import binascii
 import string
 import re
@@ -6,7 +7,6 @@ from . import Manticore
 from .manticore import ManticoreError
 from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, istainted, Array, Expression, Constant, operators
 from .core.smtlib.visitors import simplify
-from .core.plugin import FilterFunctions
 from .platforms import evm
 from .core.state import State
 import tempfile
@@ -54,14 +54,28 @@ class Detector(Plugin):
     def get_findings(self, state):
         return state.context.setdefault('seth.findings.%s' % self.name, set())
 
-    def add_finding(self, state, finding):
+    def add_finding(self, state, address, pc, finding):
+        self.get_findings(state).add((address, pc, finding))
+        logger.warning(finding)
+
+    def add_finding_here(self, state, finding):
         address = state.platform.current_vm.address
         pc = state.platform.current_vm.pc
         self.get_findings(state).add((address, pc, finding))
 
-        with self.manticore.locked_context('seth.global_findings', set) as global_findings:
-            global_findings.add((address, pc, finding))
         logger.warning(finding)
+
+    def _save_current_location(self, state, finding):
+        address = state.platform.current_vm.address
+        pc = state.platform.current_vm.pc
+        location = (address, pc, finding)
+        hash_id = hashlib.sha1(str(location)).hexdigest()
+        state.context.setdefault('%s.locations' % self.name, {})[hash_id] = location
+        return hash_id
+
+    def _get_location(self, state, hash_id):
+        return state.context.setdefault('%s.locations' % self.name, {})[hash_id]
+
 
     def _get_src(self, address, pc):
         return self.manticore.get_metadata(address).get_source_for(pc)
@@ -77,6 +91,107 @@ class Detector(Plugin):
             output += '\n'
         return output
 
+class FilterFunctions(Plugin):
+    def __init__(self, regexp=r'.*', mutability='both', depth='both', fallback=False, include=True, **kwargs):
+        """
+            Constrain input based on function metadata. Include or avoid functions selected by the specified criteria.
+
+            Examples:
+            #Do not explore any human transactions that end up calling a constant function
+            no_human_constant = FilterFunctions(depth='human', mutability='constant', include=False)
+
+            #At human tx depth only accept synthetic check functions
+            only_tests = FilterFunctions(regexp=r'mcore_.*', depth='human', include=False)
+
+            :param regexp: a regular expresion over the name of the function '.*' will match all functions
+            :param mutability: mutable, constant or both will match functions declared in the abi to be of such class
+            :param depth: match functions in internal transactions, in human initiated transactions or in both types
+            :param fallback: if True include the fallback function. Hash will be 00000000 for it
+            :param include: if False exclude the selected functions, if True include them
+        """
+        super(FilterFunctions, self).__init__(**kwargs)
+        depth = depth.lower()
+        if depth not in ('human', 'internal', 'both'):
+            raise ValueError
+        mutability = mutability.lower()
+        if mutability not in ('mutable', 'constant', 'both'):
+            raise ValueError
+
+        #fixme better names for member variables
+        self._regexp = regexp
+        self._mutability = mutability
+        self._depth = depth
+        self._fallback = fallback
+        self._include = include
+
+    def will_open_transaction_callback(self, state, tx):
+        world = state.platform
+        tx_cnt = len(world.all_transactions)
+        # Constrain input only once per tx, per plugin
+        if state.context.get('constrained%d' % id(self), 0) != tx_cnt:
+            state.context['constrained%d' % id(self)] = tx_cnt
+
+            if self._depth == 'human' and not tx.is_human:
+                return
+            if self._depth == 'internal' and tx.is_human:
+                return
+
+            #Get metadata if any for the targe addreess of current tx
+            md = self.manticore.get_metadata(tx.address)
+            if md is None:
+                return
+            #Lets compile  the list of interesting hashes
+            selected_functions = []
+
+            for func_hsh in md.hashes:
+                if func_hsh == '00000000':
+                    continue
+                abi = md.get_abi(func_hsh)
+                func_name = md.get_func_name(func_hsh)
+                if self._mutability == 'constant' and not abi.get('constant', False):
+                    continue
+                if self._mutability == 'mutable' and abi.get('constant', False):
+                    continue
+                if not re.match(self._regexp, func_name):
+                    continue
+                selected_functions.append(func_hsh)
+
+            if self._fallback:
+                selected_functions.append('00000000')
+
+            if self._include:
+                # constraint the input so it can take only the interesting values
+                constraint = reduce(Operators.OR, map(lambda x: tx.data[:4] == x.decode('hex'), selected_functions))
+                state.constrain(constraint)
+            else:
+                #Avoid all not seleted hashes
+                for func_hsh in md.hashes:
+                    if func_hsh in selected_functions:
+                        constraint = Operators.NOT(tx.data[:4] == func_hsh.decode('hex'))
+                        state.constrain(constraint)
+
+
+class DetectInvalid(Detector):
+    def __init__(self, only_human=True, **kwargs):
+        """
+        Detects INVALID instructions.
+
+        INVALID instructions are originally designated to signal exceptional code.
+        As in practice the INVALID instruction is used in different ways this 
+        detector may Generate a great deal of false positives.
+
+        :param only_human: if True report only INVALID at depth 0 transactions
+        """
+        super(DetectInvalid, self).__init__(**kwargs)
+        self._only_human = only_human
+
+    def did_evm_execute_instruction_callback(self, state, instruction, arguments, result_ref):
+        mnemonic = instruction.semantics
+        result = result_ref[0]
+
+        if mnemonic == 'INVALID':
+            if not self._only_human or state.platform.current_transaction.depth == 0:
+                self.add_finding_here(state, "INVALID intruction")
 
 class IntegerOverflow(Detector):
     '''
@@ -119,6 +234,7 @@ class IntegerOverflow(Detector):
                     self.add_finding(state, "Result of integuer overflowed intruction is written to the storage")
 
 
+
 class UninitializedMemory(Detector):
     '''
         Detects uses of uninitialized memory
@@ -132,7 +248,29 @@ class UninitializedMemory(Detector):
             if current_contract == known_contract:
                 cbu = Operators.AND(cbu, offset != known_offset)
         if state.can_be_true(cbu):
-            self.add_finding(state, "Potentially reading uninitialized memory at instruction (address: %r, offset %r)" % (current_contract, offset))
+            self.add_finding_here(state, "Potentially reading uninitialized memory at instruction (address: %r, offset %r)" % (current_contract, offset))
+
+    def did_evm_write_memory_callback(self, state, offset, value):
+        current_contract = state.platform.current_vm.address
+
+        # concrete or symbolic write
+        state.context.setdefault('seth.detectors.initialized_memory', set()).add((current_contract, offset))
+
+
+class UninitializedMemory(Detector):
+    '''
+        Detects uses of uninitialized memory
+    '''
+
+    def did_evm_read_memory_callback(self, state, offset, value):
+        initialized_memory = state.context.get('seth.detectors.initialized_memory', set())
+        cbu = True  # Can be unknown
+        current_contract = state.platform.current_vm.address
+        for known_contract, known_offset in initialized_memory:
+            if current_contract == known_contract:
+                cbu = Operators.AND(cbu, offset != known_offset)
+        if state.can_be_true(cbu):
+            self.add_finding_here(state, "Potentially reading uninitialized memory at instruction (address: %r, offset %r)" % (current_contract, offset))
 
     def did_evm_write_memory_callback(self, state, offset, value):
         current_contract = state.platform.current_vm.address
@@ -156,7 +294,7 @@ class UninitializedStorage(Detector):
             cbu = Operators.AND(cbu, Operators.OR(address != known_address, offset != known_offset))
 
         if state.can_be_true(cbu):
-            self.add_finding(state, "Potentially reading uninitialized storage")
+            self.add_finding_here(state, "Potentially reading uninitialized storage")
 
     def did_evm_write_storage_callback(self, state, address, offset, value):
         # concrete or symbolic write
@@ -1203,6 +1341,13 @@ class ManticoreEVM(Manticore):
         #avoid all human level tx that has no effect on the storage
         filter_nohuman_constants = FilterFunctions(regexp=r".*", depth='human', mutability='constant', include=False)
         self.register_plugin(filter_nohuman_constants)
+
+        self.register_detector(IntegerOverflow())
+        self.register_detector(UninitializedStorage())
+        self.register_detector(UninitializedMemory())
+
+
+        self.register_detector(DetectInvalid())
         while (current_coverage < 100 or not tx_use_coverage) and not self.is_shutdown():
             try:
                 run_symbolic_tx()
@@ -1411,21 +1556,23 @@ class ManticoreEVM(Manticore):
     def register_detector(self, d):
         if not isinstance(d, Detector):
             raise Exception("Not a Detector")
+        if d.name in self.detectors:
+            raise Exception("Detector already registered")
         self.detectors[d.name] = d
         self.register_plugin(d)
+        return d.name
 
     def unregister_detector(self, d):
-        if not isinstance(d, Detector):
+        if not isinstance(d, (Detector, str)):
             raise Exception("Not a Detector")
-        if d.name not in self.detectors:
+        name = d
+        if isinstance(d, Detector):
+            name = d.name
+        if name not in self.detectors:
             raise Exception("Detector not registered")
-        del self.detectors[d.name]
+        d = self.detectors[name]
+        del self.detectors[name]
         self.unregister_plugin(d)
-
-    @property
-    def global_findings(self):
-        with self.locked_context('seth.global_findings', set) as global_findings:
-            return global_findings
 
     @property
     def workspace(self):
@@ -1455,6 +1602,24 @@ class ManticoreEVM(Manticore):
         with testcase.open_stream('summary') as summary:
             summary.write("Message: %s\n" % message)
             summary.write("Last exception: %s\n" % state.context['last_exception'])
+            local_findings = set()
+            for detector in self.detectors.values():
+                for address, pc, finding in detector.get_findings(state):
+                    if (address, pc, finding) not in local_findings:
+                        local_findings.add((address, pc, finding))
+
+            if len(local_findings):
+                summary.write("Findings:\n")
+                for address, pc, finding in local_findings:
+                    summary.write('%s\n' % finding)
+                    summary.write('\tContract: 0x%x\n' % address)
+                    summary.write('\tEVM Program counter: %s\n' % pc)
+                    md = self.get_metadata(address)
+                    if md is not None:
+                        src = md.get_source_for(pc)
+                        summary.write('\tSnippet:\n')
+                        summary.write('\n'.join(('\t\t' + x for x in src.split('\n'))))
+                        summary.write('\n\n')
 
             at_runtime = blockchain.last_transaction.sort != 'CREATE'
             address, offset, at_init = state.context['evm.trace'][-1]
@@ -1485,7 +1650,7 @@ class ManticoreEVM(Manticore):
                 from .core.smtlib.visitors import translate_to_smtlib
 
                 storage = blockchain.get_storage(account_address)
-                summary.write("Storage: %s" % translate_to_smtlib(storage, use_bindings=True))
+                summary.write("Storage: %s\n" % translate_to_smtlib(storage, use_bindings=True))
 
                 all_used_indexes = []
                 with state.constraints as temp_cs:
@@ -1669,13 +1834,17 @@ class ManticoreEVM(Manticore):
             for address in self.contract_accounts:
                 global_summary.write("%x: %d%%\n" % (address, self.global_coverage(address)))  # coverage % for address in this state
 
-            if len(self.global_findings):
+            global_findings = set()
+            for detector in self.detectors.values():
+                for address, pc, finding in global_findings:
+                    if (address, pc, finding) not in global_findings:
+                        global_findings.add(address, pc, finding)
+            if len(global_findings):
                 global_summary.write("Global Findings:\n")
-
-                for address, pc, finding in self.global_findings:
-                    global_summary.write('- %s -\n' % finding)
+                for address, pc, finding in global_findings:
+                    global_summary.write('%s - %s -\n' % (detector_name, finding))
                     global_summary.write('\t Contract: %s\n' % address)
-                    global_summary.write('\t Program counter: %s\n' % pc)
+                    global_summary.write('\t EVM Program counter: %s\n' % pc)
                     md = self.get_metadata(address)
                     if md is not None:
                         src = md.get_source_for(pc)
@@ -1777,17 +1946,6 @@ class ManticoreEVM(Manticore):
 
         logger.info("Results in %s", self.workspace)
 
-        #delete actual streams from storage
-        for state_id in self._all_state_ids:
-            #state_id -1 is always only on memory
-            if state_id != -1:
-                self._executor._workspace.rm_state(state_id)
-
-        # clean up lists
-        with self.locked_context('seth') as seth_context:
-            seth_context['_saved_states'] = []
-        with self.locked_context('seth') as seth_context:
-            seth_context['_final_states'] = []
 
     def global_coverage(self, account_address):
         ''' Returns code coverage for the contract on `account_address`.
