@@ -43,7 +43,7 @@ class EVMTest_SLOAD(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'T'
-            storage = {115792089237316195423570985008687907853269984665640564039457584007913129639935L: 0}
+            storage = {115792089237316195423570985008687907853269984665640564039457584007913129639935: 0}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -61,7 +61,7 @@ class EVMTest_SLOAD(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -76,7 +76,7 @@ class EVMTest_SLOAD(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'T'
-            storage = {0: 15589350798196297794172638215640352209663280458410L}
+            storage = {0: 15589350798196297794172638215640352209663280458410}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -98,7 +98,7 @@ class EVMTest_SLOAD(unittest.TestCase):
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [15589350798196297794172638215640352209663280458410L])
+            self.assertEqual(new_vm.stack, [15589350798196297794172638215640352209663280458410])
 
     def test_SLOAD_3(self):
             #Make the constraint store
@@ -109,7 +109,7 @@ class EVMTest_SLOAD(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'T'
-            storage = {1: 17148285878015927573589902037204387430629608504251L}
+            storage = {1: 17148285878015927573589902037204387430629608504251}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -131,7 +131,7 @@ class EVMTest_SLOAD(unittest.TestCase):
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [17148285878015927573589902037204387430629608504251L])
+            self.assertEqual(new_vm.stack, [17148285878015927573589902037204387430629608504251])
 
     def test_SLOAD_4(self):
             #Make the constraint store
@@ -142,7 +142,7 @@ class EVMTest_SLOAD(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'T'
-            storage = {57896044618658097711785492504343953926634992332820282019728792003956564819952L: 0}
+            storage = {57896044618658097711785492504343953926634992332820282019728792003956564819952: 0}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -160,7 +160,7 @@ class EVMTest_SLOAD(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -175,7 +175,7 @@ class EVMTest_SLOAD(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'T'
-            storage = {3618502788666131106986593281521497120414687020801267626233049500247285301263L: 0}
+            storage = {3618502788666131106986593281521497120414687020801267626233049500247285301263: 0}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -193,7 +193,7 @@ class EVMTest_SLOAD(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -307,7 +307,7 @@ class EVMTest_SLOAD(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'T'
-            storage = {6089590155545428825848686802984512581899718912L: 0}
+            storage = {6089590155545428825848686802984512581899718912: 0}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -325,7 +325,7 @@ class EVMTest_SLOAD(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
