@@ -1,3 +1,4 @@
+from __future__ import print_function
 from pprint import pformat
 from cStringIO import StringIO
 
@@ -70,7 +71,7 @@ def gen_test(testcase, testname, skip):
         try:
             header[_key] = i(env[key])
         except:
-            print "XXXXXX" , key, env[key]
+            print("XXXXXX" , key, env[key])
     output += '        header =' + pprint (header, indent=18) +'\n'
 
     pre = testcase['pre']
@@ -189,7 +190,7 @@ if __name__ == '__main__':
 
     assert filename.endswith('.json')
 
-    print '''
+    print('''
 import struct
 import unittest
 import json
@@ -202,7 +203,7 @@ import os
 class EVMTest_%s(unittest.TestCase):
     _multiprocess_can_split_ = True
     maxDiff=None 
-'''%  os.path.split(sys.argv[1][:-5])[1] 
+'''%  os.path.split(sys.argv[1][:-5])[1]) 
 
     js = file(filename).read()
     tests = dict(json.loads(js))
@@ -241,8 +242,8 @@ class EVMTest_%s(unittest.TestCase):
         #print filename, test_name, tests[test_name]    
         name = 'test_%s_%s'%(filename[:-5],test_name)
         name = str(name.replace('.', '_'))
-        print gen_test(testcase, test_name, skip)
+        print(gen_test(testcase, test_name, skip))
 
-    print '''
+    print('''
 if __name__ == '__main__':
-    unittest.main()'''
+    unittest.main()''')

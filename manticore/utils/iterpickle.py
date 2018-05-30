@@ -639,7 +639,7 @@ class Pickler:
             tmp = []
             for i in r:
                 try:
-                    x = items.next()
+                    x = next(items)
                     tmp.append(x)
                 except StopIteration:
                     items = None
@@ -687,7 +687,7 @@ class Pickler:
             tmp = []
             for i in r:
                 try:
-                    tmp.append(items.next())
+                    tmp.append(next(items))
                 except StopIteration:
                     items = None
                     break
@@ -904,7 +904,7 @@ class Unpickler:
     def load_proto(self):
         proto = ord(self.read(1))
         if not 0 <= proto <= 2:
-            raise ValueError, "unsupported pickle protocol: %d" % proto
+            raise ValueError("unsupported pickle protocol: %d" % proto)
     dispatch[PROTO] = load_proto
 
     def load_persid(self):
@@ -984,11 +984,11 @@ class Unpickler:
         for q in "\"'":  # double or single quote
             if rep.startswith(q):
                 if len(rep) < 2 or not rep.endswith(q):
-                    raise ValueError, "insecure string pickle"
+                    raise ValueError("insecure string pickle")
                 rep = rep[len(q):-len(q)]
                 break
         else:
-            raise ValueError, "insecure string pickle"
+            raise ValueError("insecure string pickle")
         self.append(rep.decode("string-escape"))
     dispatch[STRING] = load_string
 
@@ -1245,7 +1245,7 @@ class Unpickler:
                 d = inst.__dict__
                 try:
                     for k, v in state.iteritems():
-                        d[intern(k)] = v
+                        d[sys.intern(k)] = v
                 # keys in state don't have to be strings
                 # don't blow up, but don't go out of our way
                 except TypeError:

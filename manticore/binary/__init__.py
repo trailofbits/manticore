@@ -14,6 +14,7 @@ But there are difference between format that makes it difficult to find a simple
 and common API.  interpreters? linkers? linked DLLs?
 
 '''
+from __future__ import print_function
 
 
 class Binary(object):
@@ -138,5 +139,5 @@ Binary.magics = {'\x7fCGC': CGCElf,
 
 if __name__ == '__main__':
     import sys
-    print list(Binary(sys.argv[1]).threads())
-    print list(Binary(sys.argv[1]).maps())
+    print(list(Binary(sys.argv[1]).threads()))
+    print(list(Binary(sys.argv[1]).maps()))
