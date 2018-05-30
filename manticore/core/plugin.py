@@ -268,7 +268,6 @@ class ConcreteTraceFollower(Plugin):
             state.cpu.RFLAGS = self.saved_flags
 
 
-
 # TODO document all callbacks
 class ExamplePlugin(Plugin):
     def will_decode_instruction_callback(self, state, pc):

@@ -33,6 +33,7 @@ def istainted(arg, taint=None):
             return True
     return False
 
+
 class memoized(object):
     '''Decorator. Caches a function's return value each time it is called.
     If called later with the same arguments, the cached value is returned
