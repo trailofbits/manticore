@@ -68,7 +68,7 @@ class Gdb(subprocess.Popen):
     def getM(self, m):
         try:
             return long(self.correspond('x/xg %s\n'%m).split("\t")[-1].split("0x")[-1].split("\n")[0],16)
-        except Exception,e:
+        except Exception as e:
             raise e
             return 0
     def get_pid(self):
@@ -408,7 +408,7 @@ while True:
             if "The program has no registers now." in gdb.correspond("info registers \n"):
                 print "done" 
                 break
-    except Exception,e:
+    except Exception as e:
         if "The program has no registers now." in gdb.correspond("info registers\n"):
             break
         #print '-'*60

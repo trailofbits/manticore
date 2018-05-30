@@ -20,7 +20,7 @@ for test in tests:
             continue
         op_count[test['mnemonic']] = cnt+1
         test_dic["%s_%d"%(test['mnemonic'], op_count[test['mnemonic']])] = test
-    except Exception,e:
+    except Exception as e:
         print "EX", e, test
         pass
 
@@ -40,7 +40,7 @@ def skipIfNotImplemented(f):
     def test_inner(*args, **kwargs):
         try:
             return f(*args, **kwargs)
-        except NotImplementedError, e:
+        except NotImplementedError as e:
             raise unittest.SkipTest(e.message)
 
     return test_inner
@@ -225,7 +225,7 @@ for test_name in sorted(test_dic.keys()):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -234,7 +234,7 @@ for test_name in sorted(test_dic.keys()):
                         PC=pc_reg,
                         PC_VAL=hex(test['pre']['registers'][pc_reg]))
     print """
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, '{FRAME_BASE}')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)

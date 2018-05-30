@@ -89,7 +89,7 @@ def stepi():
 def getM(m):
     try:
         return long(correspond('x/xg %s\n'%m).strip().split('\t')[-1], 0)
-    except Exception,e:
+    except Exception as e:
         raise e
         return 0
 def getPid():

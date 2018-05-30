@@ -22,7 +22,7 @@ class EVMTest_CALLCODE(unittest.TestCase):
                 pass
             new_vm.execute()
 
-        except evm.Stop, e:
+        except evm.Stop as e:
             last_exception = "STOP"
         except evm.NotEnoughGas:
             last_exception = "OOG"
