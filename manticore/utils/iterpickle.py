@@ -33,6 +33,7 @@ import marshal
 import sys
 import struct
 import re
+import binascii as _binascii
 
 __all__ = ["PickleError", "PicklingError", "UnpicklingError", "Pickler",
            "Unpickler", "dump", "dumps", "load", "loads"]
@@ -1284,9 +1285,6 @@ class _EmptyClass:
     pass
 
 # Encode/decode longs in linear time.
-
-
-import binascii as _binascii
 
 
 def encode_long(x):

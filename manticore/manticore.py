@@ -382,10 +382,6 @@ class Manticore(Eventful):
 
     @property
     def running(self):
-        return self._executor._running.value
-
-    @property
-    def running(self):
         return self._executor.running
 
     def enqueue(self, state):
@@ -502,7 +498,6 @@ class Manticore(Eventful):
 
         # Imported straight from __main__.py; this will be re-written once the new
         # event code is in place.
-        from .core import cpu
         import importlib
         from . import platforms
 
@@ -708,8 +703,6 @@ class Manticore(Eventful):
         self._coverage_file = path
 
     def _did_finish_run_callback(self):
-        _shared_context = self.context
-
         with self._output.save_stream('command.sh') as f:
             f.write(' '.join(sys.argv))
 
