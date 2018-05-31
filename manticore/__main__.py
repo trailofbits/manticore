@@ -95,7 +95,6 @@ def parse_arguments():
     parser.add_argument('--detect-all',  action='store_true',
                         help='Enable all detector heuristics (Ethereum only)')
 
-
     parsed = parser.parse_args(sys.argv[1:])
     if parsed.procs <= 0:
         parsed.procs = 1
