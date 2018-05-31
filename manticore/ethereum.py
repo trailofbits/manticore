@@ -21,11 +21,7 @@ import cPickle as pickle
 from .core.plugin import Plugin
 from functools import reduce
 from contextlib import contextmanager
-
 logger = logging.getLogger(__name__)
-
-################ Detectors ####################
-
 
 class EthereumError(ManticoreError):
     pass
@@ -47,6 +43,7 @@ class NoAliveStates(EthereumError):
     pass
 
 
+################ Detectors ####################
 class Detector(Plugin):
     @property
     def name(self):
@@ -69,7 +66,8 @@ class Detector(Plugin):
         self.get_findings(state).add((address, pc, finding, init))
         with self.locked_global_findings() as gf:
             gf.add((address, pc, finding, init))
-        logger.warning(finding)
+        #Fixme for ever broken logger 
+        #logger.warning(finding)
 
     def add_finding_here(self, state, finding):
         address = state.platform.current_vm.address
@@ -351,10 +349,10 @@ class SolidityMetadata(object):
         asm_offset = 0
         asm_pos = 0
         md = dict(enumerate(srcmap[asm_pos].split(':')))
-        s = int(md.get(0, 0))
-        l = int(md.get(1, 0))
-        f = int(md.get(2, 0))
-        j = md.get(3, None)
+        byte_offset = int(md.get(0, 0))  # is the byte-offset to the start of the range in the source file
+        source_len = int(md.get(1, 0))  # is the length of the source range in bytes 
+        file_index = int(md.get(2, 0))  # is the source index over sourceList
+        jump_type = md.get(3, None)  # this can be either i, o or - signifying whether a jump instruction goes into a function, returns from a function or is a regular jump as part of e.g. a loop
 
         pos_to_offset = {}
         for i in evm.EVMAsm.disassemble_all(bytecode):
@@ -364,17 +362,14 @@ class SolidityMetadata(object):
 
         for asm_pos, md in enumerate(srcmap):
             if len(md):
-                d = {}
-                for p, k in enumerate(md.split(':')):
-                    if len(k):
-                        d[p] = k
+                d = dict((p, k) for p, k in enumerate(md.split(':')) if k)
 
-                s = int(d.get(0, s))
-                l = int(d.get(1, l))
-                f = int(d.get(2, f))
-                j = d.get(3, j)
+                byte_offset = int(d.get(0, byte_offset))
+                source_len = int(d.get(1, source_len))
+                file_index = int(d.get(2, file_index))
+                jump_type = d.get(3, jump_type)
 
-            new_srcmap[pos_to_offset[asm_pos]] = (s, l, f, j)
+            new_srcmap[pos_to_offset[asm_pos]] = (byte_offset, source_len, file_index, jump_type)
 
         return new_srcmap
 
@@ -1581,27 +1576,30 @@ class ManticoreEVM(Manticore):
             return '(*)' if flag else ''
         testcase = self._output.testcase(name.replace(' ', '_'))
         logger.info("Generated testcase No. {} - {}".format(testcase.num, message + blockchain.last_transaction.result))
-        with testcase.open_stream('summary') as summary:
-            summary.write("Message: %s\n" % message)
-            summary.write("Last exception: %s\n" % state.context['last_exception'])
-            local_findings = set()
-            for detector in self.detectors.values():
-                for address, pc, finding, at_init in detector.get_findings(state):
-                    if (address, pc, finding, at_init) not in local_findings:
-                        local_findings.add((address, pc, finding, at_init))
 
-            if len(local_findings):
-                summary.write("Findings:\n")
+        local_findings = set()
+        for detector in self.detectors.values():
+            for address, pc, finding, at_init in detector.get_findings(state):
+                if (address, pc, finding, at_init) not in local_findings:
+                    local_findings.add((address, pc, finding, at_init))
+
+        if len(local_findings):
+            with testcase.open_stream('findings') as findings:
                 for address, pc, finding, at_init in local_findings:
-                    summary.write('%s\n' % finding)
-                    summary.write('\tContract: 0x%x\n' % address)
-                    summary.write('\tEVM Program counter: %s%s\n' % (pc, at_init and " (at constructor)" or ""))
+                    findings.write('Finding: %s\n' % finding)
+                    findings.write('Contract: 0x%x\n' % address)
+                    findings.write('EVM Program counter: %s%s\n' % (pc, at_init and " (at constructor)" or ""))
                     md = self.get_metadata(address)
                     if md is not None:
                         src = md.get_source_for(pc, runtime=not at_init)
-                        summary.write('\tSnippet:\n')
-                        summary.write('\n'.join(('\t\t' + x for x in src.split('\n'))))
-                        summary.write('\n\n')
+                        findings.write('Snippet:\n')
+                        findings.write('\n'.join((' ' + x for x in src.split('\n'))))
+                        findings.write('\n\n')
+
+
+        with testcase.open_stream('summary') as summary:
+            summary.write("Message: %s\n" % message)
+            summary.write("Last exception: %s\n" % state.context['last_exception'])
 
             at_runtime = blockchain.last_transaction.sort != 'CREATE'
             address, offset, at_init = state.context['evm.trace'][-1]
@@ -1821,7 +1819,6 @@ class ManticoreEVM(Manticore):
         #global summary
         if len(self.global_findings):
             with self._output.save_stream('global.findings') as global_findings:
-                global_findings.write("Global Findings:\n")
                 for address, pc, finding, at_init in self.global_findings:
                     global_findings.write('- %s -\n' % finding)
                     global_findings.write('\tContract: %s\n' % address)
