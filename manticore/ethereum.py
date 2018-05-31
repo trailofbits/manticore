@@ -20,6 +20,7 @@ import StringIO
 import cPickle as pickle
 from .core.plugin import Plugin
 from functools import reduce
+from contextlib import contextmanager
 
 logger = logging.getLogger(__name__)
 
@@ -52,18 +53,28 @@ class Detector(Plugin):
         return self.__class__.__name__.split('.')[-1]
 
     def get_findings(self, state):
-        return state.context.setdefault('seth.findings.%s' % self.name, set())
+        return state.context.setdefault('%s.findings' % self.name, set())
+
+    @contextmanager
+    def locked_global_findings(self):
+        with self.manticore.locked_context('%s.global_findings' % self.name, set) as global_findings:
+            yield global_findings
+
+    @property
+    def global_findings(self):
+        with self.locked_global_findings() as global_findings:
+            return global_findings
 
     def add_finding(self, state, address, pc, finding):
         self.get_findings(state).add((address, pc, finding))
+        with self.locked_global_findings() as gf:
+            gf.add((address, pc, finding))
         logger.warning(finding)
 
     def add_finding_here(self, state, finding):
         address = state.platform.current_vm.address
         pc = state.platform.current_vm.pc
-        self.get_findings(state).add((address, pc, finding))
-
-        logger.warning(finding)
+        self.add_finding(state, address, pc, finding)
 
     def _save_current_location(self, state, finding):
         address = state.platform.current_vm.address
@@ -211,29 +222,31 @@ class DetectIntegerOverflow(Detector):
     def _can_sub_underflow(state, a, b):
         return state.can_be_true(b > a)
 
-    def did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
+    def did_evm_execute_instruction_callback(self, state, instruction, arguments, result_ref):
+        result = result_ref[0]
         mnemonic = instruction.semantics
 
         if mnemonic == 'ADD':
             if self._can_add_overflow(state, result, *arguments):
-                self.add_finding(state, "Integer overflow at {} instruction".format(mnemonic))
+                self.add_finding_here(state, "Integer overflow at {} instruction".format(mnemonic))
                 if issymbolic(result):
                     result._taint = result.taint | frozenset(("IOA",))
         elif mnemonic == 'MUL':
             if self._can_mul_overflow(state, result, *arguments):
-                self.add_finding(state, "Integer overflow at {} instruction".format(mnemonic))
+                self.add_finding_here(state, "Integer overflow at {} instruction".format(mnemonic))
                 if issymbolic(result):
                     result._taint = result.taint | frozenset(("IOM",))
         elif mnemonic == 'SUB':
             if self._can_sub_underflow(state, *arguments):
-                self.add_finding(state, "Integer underflow at {} instruction".format(mnemonic))
+                self.add_finding_here(state, "Integer underflow at {} instruction".format(mnemonic))
                 if issymbolic(result):
                     result._taint = result.taint | frozenset(("IU",))
         if mnemonic == 'SSTORE':
             for arg in arguments:
                 if istainted(arg, 'IOA') or istainted(arg, 'IOM') or istainted(arg, 'IU'):
-                    self.add_finding(state, "Result of integuer overflowed intruction is written to the storage")
-
+                    self.add_finding_here(state, "Result of integuer overflowed intruction is written to the storage")
+        result_ref[0] = result
+ 
 
 class DetectUninitializedMemory(Detector):
     '''
@@ -1769,6 +1782,15 @@ class ManticoreEVM(Manticore):
             ln = '0x{:x}:0x{:x} {}\n'.format(contract, pc, '*' if at_init else '')
             filestream.write(ln)
 
+    @property
+    def global_findings(self):
+        global_findings = set()
+        for detector in self.detectors.values():
+            for address, pc, finding in detector.global_findings:
+                if (address, pc, finding) not in global_findings:
+                    global_findings.add((address, pc, finding))
+        return global_findings
+
     def finalize(self):
         """
         Terminate and generate testcases for all currently alive states (contract states that cleanly executed
@@ -1799,30 +1821,27 @@ class ManticoreEVM(Manticore):
         for p in ps:
             p.join()
 
+
         #global summary
+        if len(self.global_findings):
+            with self._output.save_stream('global.findings') as global_findings:
+                global_findings.write("Global Findings:\n")
+                for address, pc, finding in self.global_findings:
+                    global_findings.write('- %s -\n' % finding)
+                    global_findings.write('\t Contract: %s\n' % address)
+                    global_findings.write('\t EVM Program counter: %s\n' % pc)
+                    md = self.get_metadata(address)
+                    if md is not None:
+                        src = md.get_source_for(pc)
+                        global_findings.write('\t Solidity snippet:\n')
+                        global_findings.write('\n'.join(('\t\t' + x for x in src.split('\n'))))
+                        global_findings.write('\n\n')
+
         with self._output.save_stream('global.summary') as global_summary:
             # (accounts created by contract code are not in this list )
             global_summary.write("Global runtime coverage:\n")
             for address in self.contract_accounts:
-                global_summary.write("%x: %d%%\n" % (address, self.global_coverage(address)))  # coverage % for address in this state
-
-            global_findings = set()
-            for detector in self.detectors.values():
-                for address, pc, finding in global_findings:
-                    if (address, pc, finding) not in global_findings:
-                        global_findings.add(address, pc, finding)
-            if len(global_findings):
-                global_summary.write("Global Findings:\n")
-                for address, pc, finding in global_findings:
-                    global_summary.write('%s - %s -\n' % (detector_name, finding))
-                    global_summary.write('\t Contract: %s\n' % address)
-                    global_summary.write('\t EVM Program counter: %s\n' % pc)
-                    md = self.get_metadata(address)
-                    if md is not None:
-                        src = md.get_source_for(pc)
-                        global_summary.write('\t Snippet:\n')
-                        global_summary.write('\n'.join(('\t\t' + x for x in src.split('\n'))))
-                        global_summary.write('\n\n')
+                global_summary.write("%x: %d%%\n" % (address, self.global_coverage(address)))
 
             md = self.get_metadata(address)
             if md is not None and len(md.warnings) > 0:
