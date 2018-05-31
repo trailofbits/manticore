@@ -31,7 +31,6 @@ from .core.plugin import Plugin, InstructionCounter, RecordSymbolicBranches, Vis
 import logging
 from .utils import log
 
-
 logger = logging.getLogger(__name__)
 log.init_logging()
 
@@ -78,7 +77,7 @@ def make_decree(program, concrete_start='', **kwargs):
     return initial_state
 
 
-def make_linux(program, argv=None, env=None, symbolic_files=None, concrete_start=''):
+def make_linux(program, argv=None, env=None, entry_symbol=None, symbolic_files=None, concrete_start=''):
     env = {} if env is None else env
     argv = [] if argv is None else argv
     env = ['{!s}={!s}'.format(k, v) for k, v in env.items()]
@@ -88,6 +87,15 @@ def make_linux(program, argv=None, env=None, symbolic_files=None, concrete_start
     constraints = ConstraintSet()
     platform = linux.SLinux(program, argv=argv, envp=env,
                             symbolic_files=symbolic_files)
+    if entry_symbol is not None:
+        entry_pc = platform._find_symbol(entry_symbol)
+        if entry_pc is None:
+            logger.error("No symbol for '%s' in %s", entry_symbol, program)
+            raise Exception("Symbol not found")
+        else:
+            logger.info("Found symbol '%s' (%x)", entry_symbol, entry_pc)
+            #TODO: use argv as arguments for function
+            platform.set_entry(entry_pc)
 
     initial_state = State(constraints, platform)
 
@@ -253,7 +261,7 @@ class Manticore(Eventful):
         plugin.manticore = None
 
     @classmethod
-    def linux(cls, path, argv=None, envp=None, symbolic_files=None, concrete_start='', **kwargs):
+    def linux(cls, path, argv=None, envp=None, entry_symbol=None, symbolic_files=None, concrete_start='', **kwargs):
         """
         Constructor for Linux binary analysis.
 
@@ -262,6 +270,8 @@ class Manticore(Eventful):
         :type argv: list[str]
         :param envp: Environment to provide to the binary
         :type envp: dict[str, str]
+        :param entry_symbol: Entry symbol to resolve to start execution
+        :type envp: str
         :param symbolic_files: Filenames to mark as having symbolic input
         :type symbolic_files: list[str]
         :param str concrete_start: Concrete stdin to use before symbolic inputt
@@ -270,7 +280,7 @@ class Manticore(Eventful):
         :rtype: Manticore
         """
         try:
-            return cls(make_linux(path, argv, envp, symbolic_files, concrete_start), **kwargs)
+            return cls(make_linux(path, argv, envp, entry_symbol, symbolic_files, concrete_start), **kwargs)
         except elftools.common.exceptions.ELFError:
             raise Exception('Invalid binary: {}'.format(path))
 
@@ -496,9 +506,9 @@ class Manticore(Eventful):
 
         # Imported straight from __main__.py; this will be re-written once the new
         # event code is in place.
-        import core.cpu
+        from .core import cpu
         import importlib
-        import platforms
+        from . import platforms
 
         with open(path, 'r') as fnames:
             for line in fnames.readlines():
@@ -600,9 +610,9 @@ class Manticore(Eventful):
 
     def _start_run(self):
         assert not self.running
-        if self._initial_state is not None:
-            self._publish('will_start_run', self._initial_state)
+        self._publish('will_start_run', self._initial_state)
 
+        if self._initial_state is not None:
             self.enqueue(self._initial_state)
             self._initial_state = None
 
@@ -642,12 +652,24 @@ class Manticore(Eventful):
                 t.cancel()
         self._finish_run(profiling=should_profile)
 
+    #Fixme remove. terminate is used to TerminateState. May be confusing
     def terminate(self):
         '''
         Gracefully terminate the currently-executing run. Typically called from within
         a :func:`~hook`.
         '''
         self._executor.shutdown()
+
+    def shutdown(self):
+        '''
+        Gracefully terminate the currently-executing run. Typically called from within
+        a :func:`~hook`.
+        '''
+        self._executor.shutdown()
+
+    def is_shutdown(self):
+        ''' Returns True if shutdown was requested '''
+        return self._executor.is_shutdown()
 
     #############################################################################
     #############################################################################

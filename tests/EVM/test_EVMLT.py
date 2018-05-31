@@ -1,4 +1,3 @@
-from builtins import *
 
 import struct
 import unittest
@@ -45,7 +44,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -55,7 +54,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             last_exception, last_returned = self._execute(new_vm)
@@ -73,7 +72,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -83,7 +82,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             new_vm._push(0)
             last_exception, last_returned = self._execute(new_vm)
@@ -101,7 +100,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -111,7 +110,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             new_vm._push(1)
             last_exception, last_returned = self._execute(new_vm)
@@ -129,7 +128,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -139,7 +138,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             last_exception, last_returned = self._execute(new_vm)
@@ -157,7 +156,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -167,7 +166,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             last_exception, last_returned = self._execute(new_vm)
@@ -185,7 +184,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -195,7 +194,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             new_vm._push(16)
             last_exception, last_returned = self._execute(new_vm)
@@ -213,7 +212,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -223,7 +222,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             new_vm._push(32)
             last_exception, last_returned = self._execute(new_vm)
@@ -241,7 +240,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -251,7 +250,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             new_vm._push(48)
             last_exception, last_returned = self._execute(new_vm)
@@ -269,7 +268,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -279,7 +278,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             new_vm._push(6089590155545428825848686802984512581899718912)
             last_exception, last_returned = self._execute(new_vm)
@@ -297,7 +296,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -307,7 +306,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(0)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             last_exception, last_returned = self._execute(new_vm)
@@ -325,7 +324,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -335,7 +334,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(0)
             new_vm._push(0)
             last_exception, last_returned = self._execute(new_vm)
@@ -353,7 +352,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -363,7 +362,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(0)
             new_vm._push(1)
             last_exception, last_returned = self._execute(new_vm)
@@ -381,7 +380,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -391,7 +390,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(0)
             new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             last_exception, last_returned = self._execute(new_vm)
@@ -409,7 +408,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -419,7 +418,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(0)
             new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             last_exception, last_returned = self._execute(new_vm)
@@ -437,7 +436,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -447,7 +446,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(0)
             new_vm._push(16)
             last_exception, last_returned = self._execute(new_vm)
@@ -465,7 +464,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -475,7 +474,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(0)
             new_vm._push(32)
             last_exception, last_returned = self._execute(new_vm)
@@ -493,7 +492,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -503,7 +502,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(0)
             new_vm._push(48)
             last_exception, last_returned = self._execute(new_vm)
@@ -521,7 +520,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -531,7 +530,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(0)
             new_vm._push(6089590155545428825848686802984512581899718912)
             last_exception, last_returned = self._execute(new_vm)
@@ -549,7 +548,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -559,7 +558,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(1)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             last_exception, last_returned = self._execute(new_vm)
@@ -577,7 +576,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -587,7 +586,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(1)
             new_vm._push(0)
             last_exception, last_returned = self._execute(new_vm)
@@ -605,7 +604,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -615,7 +614,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(1)
             new_vm._push(1)
             last_exception, last_returned = self._execute(new_vm)
@@ -633,7 +632,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -643,7 +642,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(1)
             new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             last_exception, last_returned = self._execute(new_vm)
@@ -661,7 +660,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -671,7 +670,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(1)
             new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             last_exception, last_returned = self._execute(new_vm)
@@ -689,7 +688,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -699,7 +698,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(1)
             new_vm._push(16)
             last_exception, last_returned = self._execute(new_vm)
@@ -717,7 +716,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -727,7 +726,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(1)
             new_vm._push(32)
             last_exception, last_returned = self._execute(new_vm)
@@ -745,7 +744,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -755,7 +754,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(1)
             new_vm._push(48)
             last_exception, last_returned = self._execute(new_vm)
@@ -773,7 +772,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -783,7 +782,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(1)
             new_vm._push(6089590155545428825848686802984512581899718912)
             last_exception, last_returned = self._execute(new_vm)
@@ -801,7 +800,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -811,7 +810,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             last_exception, last_returned = self._execute(new_vm)
@@ -829,7 +828,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -839,7 +838,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             new_vm._push(0)
             last_exception, last_returned = self._execute(new_vm)
@@ -857,7 +856,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -867,7 +866,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             new_vm._push(1)
             last_exception, last_returned = self._execute(new_vm)
@@ -885,7 +884,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -895,7 +894,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             last_exception, last_returned = self._execute(new_vm)
@@ -913,7 +912,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -923,7 +922,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             last_exception, last_returned = self._execute(new_vm)
@@ -941,7 +940,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -951,7 +950,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             new_vm._push(16)
             last_exception, last_returned = self._execute(new_vm)
@@ -969,7 +968,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -979,7 +978,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             new_vm._push(32)
             last_exception, last_returned = self._execute(new_vm)
@@ -997,7 +996,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -1007,7 +1006,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             new_vm._push(48)
             last_exception, last_returned = self._execute(new_vm)
@@ -1025,7 +1024,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -1035,7 +1034,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             new_vm._push(6089590155545428825848686802984512581899718912)
             last_exception, last_returned = self._execute(new_vm)
@@ -1053,7 +1052,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -1063,7 +1062,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             last_exception, last_returned = self._execute(new_vm)
@@ -1081,7 +1080,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -1091,7 +1090,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             new_vm._push(0)
             last_exception, last_returned = self._execute(new_vm)
@@ -1109,7 +1108,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -1119,7 +1118,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             new_vm._push(1)
             last_exception, last_returned = self._execute(new_vm)
@@ -1137,7 +1136,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -1147,7 +1146,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             last_exception, last_returned = self._execute(new_vm)
@@ -1165,7 +1164,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -1175,7 +1174,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             last_exception, last_returned = self._execute(new_vm)
@@ -1193,7 +1192,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -1203,7 +1202,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             new_vm._push(16)
             last_exception, last_returned = self._execute(new_vm)
@@ -1221,7 +1220,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -1231,7 +1230,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             new_vm._push(32)
             last_exception, last_returned = self._execute(new_vm)
@@ -1249,7 +1248,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -1259,7 +1258,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             new_vm._push(48)
             last_exception, last_returned = self._execute(new_vm)
@@ -1277,7 +1276,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -1287,7 +1286,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             new_vm._push(6089590155545428825848686802984512581899718912)
             last_exception, last_returned = self._execute(new_vm)
@@ -1305,7 +1304,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -1315,7 +1314,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(16)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             last_exception, last_returned = self._execute(new_vm)
@@ -1333,7 +1332,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -1343,7 +1342,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(16)
             new_vm._push(0)
             last_exception, last_returned = self._execute(new_vm)
@@ -1361,7 +1360,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -1371,7 +1370,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(16)
             new_vm._push(1)
             last_exception, last_returned = self._execute(new_vm)
@@ -1389,7 +1388,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -1399,7 +1398,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(16)
             new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             last_exception, last_returned = self._execute(new_vm)
@@ -1417,7 +1416,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -1427,7 +1426,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(16)
             new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             last_exception, last_returned = self._execute(new_vm)
@@ -1445,7 +1444,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -1455,7 +1454,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(16)
             new_vm._push(16)
             last_exception, last_returned = self._execute(new_vm)
@@ -1473,7 +1472,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -1483,7 +1482,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(16)
             new_vm._push(32)
             last_exception, last_returned = self._execute(new_vm)
@@ -1501,7 +1500,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -1511,7 +1510,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(16)
             new_vm._push(48)
             last_exception, last_returned = self._execute(new_vm)
@@ -1529,7 +1528,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -1539,7 +1538,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(16)
             new_vm._push(6089590155545428825848686802984512581899718912)
             last_exception, last_returned = self._execute(new_vm)
@@ -1557,7 +1556,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -1567,7 +1566,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(32)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             last_exception, last_returned = self._execute(new_vm)
@@ -1585,7 +1584,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -1595,7 +1594,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(32)
             new_vm._push(0)
             last_exception, last_returned = self._execute(new_vm)
@@ -1613,7 +1612,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -1623,7 +1622,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(32)
             new_vm._push(1)
             last_exception, last_returned = self._execute(new_vm)
@@ -1641,7 +1640,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -1651,7 +1650,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(32)
             new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             last_exception, last_returned = self._execute(new_vm)
@@ -1669,7 +1668,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -1679,7 +1678,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(32)
             new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             last_exception, last_returned = self._execute(new_vm)
@@ -1697,7 +1696,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -1707,7 +1706,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(32)
             new_vm._push(16)
             last_exception, last_returned = self._execute(new_vm)
@@ -1725,7 +1724,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -1735,7 +1734,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(32)
             new_vm._push(32)
             last_exception, last_returned = self._execute(new_vm)
@@ -1753,7 +1752,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -1763,7 +1762,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(32)
             new_vm._push(48)
             last_exception, last_returned = self._execute(new_vm)
@@ -1781,7 +1780,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -1791,7 +1790,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(32)
             new_vm._push(6089590155545428825848686802984512581899718912)
             last_exception, last_returned = self._execute(new_vm)
@@ -1809,7 +1808,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -1819,7 +1818,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(48)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             last_exception, last_returned = self._execute(new_vm)
@@ -1837,7 +1836,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -1847,7 +1846,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(48)
             new_vm._push(0)
             last_exception, last_returned = self._execute(new_vm)
@@ -1865,7 +1864,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -1875,7 +1874,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(48)
             new_vm._push(1)
             last_exception, last_returned = self._execute(new_vm)
@@ -1893,7 +1892,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -1903,7 +1902,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(48)
             new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             last_exception, last_returned = self._execute(new_vm)
@@ -1921,7 +1920,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -1931,7 +1930,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(48)
             new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             last_exception, last_returned = self._execute(new_vm)
@@ -1949,7 +1948,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -1959,7 +1958,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(48)
             new_vm._push(16)
             last_exception, last_returned = self._execute(new_vm)
@@ -1977,7 +1976,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -1987,7 +1986,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(48)
             new_vm._push(32)
             last_exception, last_returned = self._execute(new_vm)
@@ -2005,7 +2004,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -2015,7 +2014,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(48)
             new_vm._push(48)
             last_exception, last_returned = self._execute(new_vm)
@@ -2033,7 +2032,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -2043,7 +2042,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(48)
             new_vm._push(6089590155545428825848686802984512581899718912)
             last_exception, last_returned = self._execute(new_vm)
@@ -2061,7 +2060,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -2071,7 +2070,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(6089590155545428825848686802984512581899718912)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             last_exception, last_returned = self._execute(new_vm)
@@ -2089,7 +2088,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -2099,7 +2098,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(6089590155545428825848686802984512581899718912)
             new_vm._push(0)
             last_exception, last_returned = self._execute(new_vm)
@@ -2117,7 +2116,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -2127,7 +2126,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(6089590155545428825848686802984512581899718912)
             new_vm._push(1)
             last_exception, last_returned = self._execute(new_vm)
@@ -2145,7 +2144,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -2155,7 +2154,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(6089590155545428825848686802984512581899718912)
             new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             last_exception, last_returned = self._execute(new_vm)
@@ -2173,7 +2172,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -2183,7 +2182,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(6089590155545428825848686802984512581899718912)
             new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             last_exception, last_returned = self._execute(new_vm)
@@ -2201,7 +2200,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -2211,7 +2210,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(6089590155545428825848686802984512581899718912)
             new_vm._push(16)
             last_exception, last_returned = self._execute(new_vm)
@@ -2229,7 +2228,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -2239,7 +2238,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(6089590155545428825848686802984512581899718912)
             new_vm._push(32)
             last_exception, last_returned = self._execute(new_vm)
@@ -2257,7 +2256,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -2267,7 +2266,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(6089590155545428825848686802984512581899718912)
             new_vm._push(48)
             last_exception, last_returned = self._execute(new_vm)
@@ -2285,7 +2284,7 @@ class EVMTest_LT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode=bytes(b'\x10')
+            bytecode='\x10'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -2295,7 +2294,7 @@ class EVMTest_LT(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(6089590155545428825848686802984512581899718912)
             new_vm._push(6089590155545428825848686802984512581899718912)
             last_exception, last_returned = self._execute(new_vm)

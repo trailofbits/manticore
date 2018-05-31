@@ -79,7 +79,7 @@ class StrcmpTest(ModelTest):
         strs = self._push2(s1, s2)
 
         ret = strcmp(self.state, *strs)
-        self.assertFalse(solver.can_be_true(self.state.constraints, ret >= 0))
+        self.assertTrue(self.state.must_be_true(ret < 0))
 
     def test_effective_null(self):
         s1 = self.state.symbolicate_buffer('a+')
@@ -90,7 +90,7 @@ class StrcmpTest(ModelTest):
         self.state.constrain(s2[0] == ord('z'))
 
         ret = strcmp(self.state, *strs)
-        self.assertFalse(solver.can_be_true(self.state.constraints, ret >= 0))
+        self.assertTrue(self.state.must_be_true(ret < 0))
 
     def test_symbolic_concrete(self):
         s1 = 'hi\0'
@@ -103,22 +103,22 @@ class StrcmpTest(ModelTest):
 
         self.state.constrain(s2[0] == ord('a'))
         ret = strcmp(self.state, *strs)
-        self.assertFalse(solver.can_be_true(self.state.constraints, ret <= 0))
+        self.assertTrue(self.state.must_be_true(ret > 0))
         self._clear_constraints()
 
         self.state.constrain(s2[0] == ord('z'))
         ret = strcmp(self.state, *strs)
-        self.assertFalse(solver.can_be_true(self.state.constraints, ret >= 0))
+        self.assertTrue(self.state.must_be_true(ret < 0))
         self._clear_constraints()
 
         self.state.constrain(s2[0] == ord('h'))
         self.state.constrain(s2[1] == ord('i'))
         ret = strcmp(self.state, *strs)
-        self.assertFalse(solver.can_be_true(self.state.constraints, ret > 0))
+        self.assertTrue(self.state.must_be_true(ret <= 0))
 
         self.state.constrain(s2[2] == ord('\0'))
         ret = strcmp(self.state, *strs)
-        self.assertFalse(solver.can_be_true(self.state.constraints, ret != 0))
+        self.assertTrue(self.state.must_be_true(ret == 0))
 
 
 class StrlenTest(ModelTest):
@@ -148,27 +148,27 @@ class StrlenTest(ModelTest):
 
         self.state.constrain(sy[0] == 0)
         ret = strlen(self.state, s)
-        self.assertFalse(solver.can_be_true(self.state.constraints, ret != 0))
+        self.assertTrue(self.state.must_be_true(ret == 0))
         self._clear_constraints()
 
         self.state.constrain(sy[0] != 0)
         self.state.constrain(sy[1] == 0)
         ret = strlen(self.state, s)
-        self.assertFalse(solver.can_be_true(self.state.constraints, ret != 1))
+        self.assertTrue(self.state.must_be_true(ret == 1))
         self._clear_constraints()
 
         self.state.constrain(sy[0] != 0)
         self.state.constrain(sy[1] != 0)
         self.state.constrain(sy[2] == 0)
         ret = strlen(self.state, s)
-        self.assertFalse(solver.can_be_true(self.state.constraints, ret != 2))
+        self.assertTrue(self.state.must_be_true(ret == 2))
         self._clear_constraints()
 
         self.state.constrain(sy[0] != 0)
         self.state.constrain(sy[1] != 0)
         self.state.constrain(sy[2] != 0)
         ret = strlen(self.state, s)
-        self.assertFalse(solver.can_be_true(self.state.constraints, ret != 3))
+        self.assertTrue(self.state.must_be_true(ret == 3))
 
     def test_symbolic_mixed(self):
         sy = self.state.symbolicate_buffer('a+b+\0')
@@ -176,16 +176,16 @@ class StrlenTest(ModelTest):
 
         self.state.constrain(sy[1] == 0)
         ret = strlen(self.state, s)
-        self.assertFalse(solver.can_be_true(self.state.constraints, ret != 1))
+        self.assertTrue(self.state.must_be_true(ret == 1))
         self._clear_constraints()
 
         self.state.constrain(sy[1] != 0)
         self.state.constrain(sy[3] == 0)
         ret = strlen(self.state, s)
-        self.assertFalse(solver.can_be_true(self.state.constraints, ret != 3))
+        self.assertTrue(self.state.must_be_true(ret == 3))
         self._clear_constraints()
 
         self.state.constrain(sy[1] != 0)
         self.state.constrain(sy[3] != 0)
         ret = strlen(self.state, s)
-        self.assertFalse(solver.can_be_true(self.state.constraints, ret != 4))
+        self.assertTrue(self.state.must_be_true(ret == 4))

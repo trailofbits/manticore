@@ -42,7 +42,7 @@ def skipIfNotImplemented(f):
     def test_inner(*args, **kwargs):
         try:
             return f(*args, **kwargs)
-        except NotImplementedError, e:
+        except NotImplementedError as e:
             raise unittest.SkipTest(e.message)
 
     return test_inner
@@ -227,7 +227,7 @@ for test_name in sorted(test_dic.keys()):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)

@@ -8,17 +8,14 @@ def rtd_dependent_deps():
     if on_rtd:
         return []
     else:
-        return ['z3-solver']
+        return []
 
 setup(
     name='manticore',
     description='Manticore is a symbolic execution tool for analysis of binaries and smart contracts.',
     url='https://github.com/trailofbits/manticore',
     author='Trail of Bits',
-    version='0.1.8',
-    classifiers=[
-            "Programming Language :: Python :: 2.7",
-    ],
+    version='0.1.9',
     packages=find_packages(),
     install_requires=[
         'capstone>=3.0.5rc2',
@@ -26,7 +23,11 @@ setup(
         'unicorn',
         'ply',
         'pysha3',
+        'functools32',
     ] + rtd_dependent_deps(),
+    dependency_links=[
+        'https://github.com/aquynh/capstone/archive/next.zip#egg=capstone-4&subdirectory=bindings/python',
+    ],
     extras_require={
         'dev': [
             'keystone-engine',

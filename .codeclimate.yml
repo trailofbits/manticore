@@ -3,7 +3,7 @@ checks:
   argument-count:
     enabled: true
     config:
-      threshold: 7
+      threshold: 12
   complex-logic:
     enabled: true
     config:
@@ -15,11 +15,11 @@ checks:
   method-complexity:
     enabled: true
     config:
-      threshold: 25
+      threshold: 40
   method-count:
     enabled: true
     config:
-      threshold: 30
+      threshold: 35
   method-lines:
     enabled: true
     config:
@@ -43,6 +43,9 @@ checks:
 plugins:
   pep8:
     enabled: true
+    checks:
+      E712:
+        enabled: false
   sonar-python:
     enabled: false
     config:

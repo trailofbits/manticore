@@ -892,7 +892,13 @@ class X86Cpu(Cpu):
         :param dest: destination operand.
         :param src: source operand.
         '''
-        res = dest.write(dest.read() & src.read())
+        # XXX bypass a capstone bug that incorrectly extends and computes operands sizes
+        # the bug has been fixed since capstone 4.0.alpha2 (commit de8dd26)
+        if src.size == 64 and src.type == 'immediate' and dest.size == 64:
+            arg1 = Operators.SEXTEND(src.read(), 32, 64)
+        else:
+            arg1 = src.read()
+        res = dest.write(dest.read() & arg1)
         # Defined Flags: szp
         cpu._calculate_logic_flags(dest.size, res)
 

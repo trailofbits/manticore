@@ -269,12 +269,11 @@ class State(Eventful):
                     assert b != 0
         return data
 
-    def concretize(self, symbolic, policy, maxcount=1000):
+    def concretize(self, symbolic, policy, maxcount=5):
         ''' This finds a set of solutions for symbolic using policy.
             This raises TooManySolutions if more solutions than maxcount
         '''
         assert self.constraints == self.platform.constraints
-
         vals = []
         if policy == 'MINMAX':
             vals = self._solver.minmax(self._constraints, symbolic)
@@ -294,7 +293,7 @@ class State(Eventful):
             vals = solver.get_all_values(self._constraints, symbolic, maxcnt=maxcount,
                                          silent=False)
 
-        return list(set(vals))
+        return tuple(set(vals))
 
     @property
     def _solver(self):
@@ -303,6 +302,9 @@ class State(Eventful):
 
     def can_be_true(self, expr):
         return self._solver.can_be_true(self._constraints, expr)
+
+    def must_be_true(self, expr):
+        return not self._solver.can_be_true(self._constraints, expr == False)
 
     def solve_one(self, expr):
         '''
@@ -313,7 +315,18 @@ class State(Eventful):
         :return: Concrete value
         :rtype: int
         '''
-        return self._solver.get_value(self._constraints, expr)
+        value = self._solver.get_value(self._constraints, expr)
+        #Include forgiveness here
+        if isinstance(value, tuple):
+            try:
+                return ''.join(map(chr, value))
+            except:
+                pass
+            try:
+                return ''.join(value)
+            except:
+                pass
+        return value
 
     def solve_n(self, expr, nsolves):
         '''
@@ -325,6 +338,32 @@ class State(Eventful):
         :rtype: list[int]
         '''
         return self._solver.get_all_values(self._constraints, expr, nsolves, silent=True)
+
+    def solve_max(self, expr):
+        '''
+        Solves a symbolic :class:`~manticore.core.smtlib.expression.Expression` into
+        its maximun solution
+
+        :param manticore.core.smtlib.Expression expr: Symbolic value to solve
+        :return: Concrete value
+        :rtype: list[int]
+        '''
+        if isinstance(expr, (int, long)):
+            return expr
+        return self._solver.max(self._constraints, expr)
+
+    def solve_min(self, expr):
+        '''
+        Solves a symbolic :class:`~manticore.core.smtlib.expression.Expression` into
+        its minimun solution
+
+        :param manticore.core.smtlib.Expression expr: Symbolic value to solve
+        :return: Concrete value
+        :rtype: list[int]
+        '''
+        if isinstance(expr, (int, long)):
+            return expr
+        return self._solver.min(self._constraints, expr)
 
     def solve_buffer(self, addr, nbytes):
         '''

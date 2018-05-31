@@ -22,6 +22,14 @@ class ExpressionTest(unittest.TestCase):
     def tearDown(self):
         del self.solver
 
+    def test_no_variable_expression_can_be_true(self):
+        """
+        Tests if solver.can_be_true is correct when the expression has no nodes that subclass
+        from Variable (e.g. BitVecConstant)
+        """
+        x = BitVecConstant(32, 10)
+        cs = ConstraintSet()
+        self.assertFalse(self.solver.can_be_true(cs, x == False))
 
     def testBasicAST_001(self):
         ''' Can't build abstract classes '''
@@ -185,6 +193,38 @@ class ExpressionTest(unittest.TestCase):
             temp_cs.add(key != 1002)
             self.assertTrue(self.solver.check(temp_cs))
 
+
+
+    def testBasicArraySymbIdx(self):
+        cs =  ConstraintSet()
+        array = cs.new_array(index_bits=32, value_bits=32, name='array')
+        key = cs.new_bitvec(32, name='key')
+        index = cs.new_bitvec(32, name='index')
+
+        array[key] = 1 # Write 1 to a single location
+
+        cs.add(array.get(index) != 0) # Constrain index so it selects that location
+
+        cs.add(index != key)
+        # key and index are the same there is only one slot in 1
+        self.assertFalse(self.solver.check(cs))
+
+
+    def testBasicArraySymbIdx2(self):
+        cs =  ConstraintSet()
+        array = cs.new_array(index_bits=32, value_bits=32, name='array')
+        key = cs.new_bitvec(32, name='key')
+        index = cs.new_bitvec(32, name='index')
+
+        array[key] = 1 # Write 1 to a single location
+        cs.add(array.get(index) != 0) # Constrain index so it selects that location
+        a_index = self.solver.get_value(cs, index)  # get a concrete solution for index
+        cs.add(array.get(a_index) != 0)             # now storage must have something at that location
+        cs.add(a_index != index)                    # remove it from the solutions
+
+        # It should not be another solution for index
+        self.assertFalse(self.solver.check(cs))
+
     def testBasicPickle(self):
         import pickle
         cs =  ConstraintSet()
@@ -291,7 +331,7 @@ class ExpressionTest(unittest.TestCase):
         self.assertItemsEqual(z.taint, ('important', 'stuff'))
         self.assertEqual(z.value, 300)
 
-    def test_arithmetic_simplifier(self):
+    def test_arithmetic_simplify(self):
         cs = ConstraintSet()
         arr = cs.new_array(name='MEM')
         a = cs.new_bitvec(32, name='VARA')
@@ -301,10 +341,10 @@ class ExpressionTest(unittest.TestCase):
         self.assertEqual( translate_to_smtlib((c+4)-4), '(bvsub (bvadd (bvadd (bvmul VARA_2 #x00000002) VARB_3) #x00000004) #x00000004)')
 
         d = c+4
-        s = arithmetic_simplifier(d-c)
+        s = arithmetic_simplify(d-c)
         self.assertIsInstance(s, Constant)
         self.assertEqual(s.value, 4)
-        #size = arithmetic_simplifier(size
+        #size = arithmetic_simplify(size
 
         cs2 = ConstraintSet()
         exp = cs2.new_bitvec(32)
@@ -313,7 +353,7 @@ class ExpressionTest(unittest.TestCase):
         exp |= 0
         self.assertEqual(get_depth(exp), 4)
         self.assertEqual(translate_to_smtlib(exp), '(bvor (bvand (bvor V_1 #x00000000) #x00000001) #x00000000)')
-        exp = arithmetic_simplifier(exp)
+        exp = arithmetic_simplify(exp)
         self.assertTrue(get_depth(exp) < 4)
         self.assertEqual(translate_to_smtlib(exp), '(bvand V_1 #x00000001)')
 

@@ -16,6 +16,8 @@ import binascii
 
 # Remove in favor of binary.py
 from elftools.elf.elffile import ELFFile
+from elftools.elf.sections import SymbolTableSection
+from elftools.elf.descriptions import describe_symbol_type
 
 from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeArgument
 from ..core.cpu.cpufactory import CpuFactory
@@ -399,6 +401,8 @@ class Linux(Platform):
         # Many programs to support SLinux
         self.programs = program
         self.disasm = disasm
+        self.envp = envp
+        self.argv = argv
 
         # dict of [int -> (int, int)] where tuple is (soft, hard) limits
         self._rlimits = {
@@ -446,9 +450,11 @@ class Linux(Platform):
         self.input.peer = stdin
         # A receive on stdout or stderr will return no data (rx_bytes: 0)
 
-        assert self._open(stdin) == 0
-        assert self._open(stdout) == 1
-        assert self._open(stderr) == 2
+        in_fd = self._open(stdin)
+        out_fd = self._open(stdout)
+        err_fd = self._open(stderr)
+
+        assert (in_fd, out_fd, err_fd) == (0, 1, 2)
 
     def _init_cpu(self, arch):
         # create memory and CPU
@@ -457,6 +463,21 @@ class Linux(Platform):
         self._current = 0
         self._function_abi = CpuFactory.get_function_abi(cpu, 'linux', arch)
         self._syscall_abi = CpuFactory.get_syscall_abi(cpu, 'linux', arch)
+
+    def _find_symbol(self, name):
+        symbol_tables = (s for s in self.elf.iter_sections()
+                         if isinstance(s, SymbolTableSection))
+
+        for section in symbol_tables:
+            if section['sh_entsize'] == 0:
+                continue
+
+            for symbol in section.iter_symbols():
+                if describe_symbol_type(symbol['st_info']['type']) == 'FUNC':
+                    if symbol.name == name:
+                        return symbol['st_value']
+
+        return None
 
     def _execve(self, program, argv, envp):
         '''
@@ -471,7 +492,7 @@ class Linux(Platform):
 
         logger.debug("Loading %s as a %s elf", program, self.arch)
 
-        self.load(program)
+        self.load(program, envp)
         self._arch_specific_init()
 
         self._stack_top = self.current.STACK
@@ -524,11 +545,14 @@ class Linux(Platform):
         state['twait'] = self.twait
         state['timers'] = self.timers
         state['syscall_trace'] = self.syscall_trace
+        state['argv'] = self.argv
+        state['envp'] = self.envp
         state['base'] = self.base
         state['elf_bss'] = self.elf_bss
         state['end_code'] = self.end_code
         state['end_data'] = self.end_data
         state['elf_brk'] = self.elf_brk
+        state['brk'] = self.brk
         state['auxv'] = self.auxv
         state['program'] = self.program
         state['functionabi'] = self._function_abi
@@ -576,11 +600,14 @@ class Linux(Platform):
         self.clocks = state['clocks']
 
         self.syscall_trace = state['syscall_trace']
+        self.argv = state['argv']
+        self.envp = state['envp']
         self.base = state['base']
         self.elf_bss = state['elf_bss']
         self.end_code = state['end_code']
         self.end_data = state['end_data']
         self.elf_brk = state['elf_brk']
+        self.brk = state['brk']
         self.auxv = state['auxv']
         self.program = state['program']
         self._function_abi = state['functionabi']
@@ -809,12 +836,20 @@ class Linux(Platform):
         # ARGC
         cpu.push_int(len(argvlst))
 
-    def load(self, filename):
+    def set_entry(self, entryPC):
+        elf_entry = entryPC
+        if self.elf.header.e_type == 'ET_DYN':
+            elf_entry += self.load_addr
+        self.current.PC = elf_entry
+        logger.debug("Entry point updated: %016x", elf_entry)
+
+    def load(self, filename, env):
         '''
         Loads and an ELF program in memory and prepares the initial CPU state.
         Creates the stack and loads the environment variables and the arguments in it.
 
         :param filename: pathname of the file to be executed. (used for auxv)
+        :param list env: A list of env variables. (used for extracting vars that control ld behavior)
         :raises error:
             - 'Not matching cpu': if the program is compiled for a different architecture
             - 'Not matching memory': if the program is compiled for a different address size
@@ -825,6 +860,7 @@ class Linux(Platform):
         cpu = self.current
         elf = self.elf
         arch = self.arch
+        env = dict(var.split('=') for var in env if '=' in var)
         addressbitsize = {'x86': 32, 'x64': 64, 'ARM': 32}[elf.get_machine_arch()]
         logger.debug("Loading %s as a %s elf", filename, arch)
 
@@ -837,8 +873,15 @@ class Linux(Platform):
                 continue
             interpreter_filename = elf_segment.data()[:-1]
             logger.info('Interpreter filename: %s', interpreter_filename)
-            if os.path.exists(interpreter_filename.decode()):
+            if os.path.exists(interpreter_filename.decode('utf-8')):
                 interpreter = ELFFile(open(interpreter_filename, 'rb'))
+            elif 'LD_LIBRARY_PATH' in env:
+                for mpath in env['LD_LIBRARY_PATH'].split(":"):
+                    interpreter_path_filename = os.path.join(mpath, os.path.basename(interpreter_filename))
+                    logger.info("looking for interpreter %s", interpreter_path_filename)
+                    if os.path.exists(interpreter_path_filename):
+                        interpreter = ELFFile(open(interpreter_path_filename))
+                        break
             break
         if interpreter is not None:
             assert interpreter.get_machine_arch() == elf.get_machine_arch()
@@ -860,7 +903,7 @@ class Linux(Platform):
         end_code = 0
         end_data = 0
         elf_brk = 0
-        load_addr = 0
+        self.load_addr = 0
 
         for elf_segment in elf.iter_segments():
             if elf_segment.header.p_type != 'PT_LOAD':
@@ -891,8 +934,8 @@ class Linux(Platform):
             logger.debug("Loading elf offset: %08x addr:%08x %08x %s" % (offset, base + vaddr, base + vaddr + memsz, perms))
             base = cpu.memory.mmapFile(hint, memsz, perms, elf_segment.stream.name, offset) - vaddr
 
-            if load_addr == 0:
-                load_addr = base + vaddr
+            if self.load_addr == 0:
+                self.load_addr = base + vaddr
 
             k = base + vaddr + filesz
             if k > elf_bss:
@@ -907,7 +950,7 @@ class Linux(Platform):
 
         elf_entry = elf.header.e_entry
         if elf.header.e_type == 'ET_DYN':
-            elf_entry += load_addr
+            elf_entry += self.load_addr
         entry = elf_entry
         real_elf_brk = elf_brk
 
@@ -1021,12 +1064,13 @@ class Linux(Platform):
         self.end_code = end_code
         self.end_data = end_data
         self.elf_brk = real_elf_brk
+        self.brk = real_elf_brk
 
         at_random = cpu.push_bytes('A' * 16)
         at_execfn = cpu.push_bytes(filename + '\x00')
 
         self.auxv = {
-            'AT_PHDR': load_addr + elf.header.e_phoff,  # Program headers for program
+            'AT_PHDR': self.load_addr + elf.header.e_phoff,  # Program headers for program
             'AT_PHENT': elf.header.e_phentsize,       # Size of program header entry
             'AT_PHNUM': elf.header.e_phnum,           # Number of program headers
             'AT_PAGESZ': cpu.memory.page_size,         # System page size
@@ -1265,6 +1309,12 @@ class Linux(Platform):
 
         return len(data)
 
+    def sys_fork(self):
+        '''
+        We don't support forking, but do return a valid error code to client binary.
+        '''
+        return -errno.ENOSYS
+
     def sys_access(self, buf, mode):
         '''
         Checks real user's permissions for a file
@@ -1314,23 +1364,22 @@ class Linux(Platform):
 
     def sys_brk(self, brk):
         '''
-        Changes data segment size (moves the C{elf_brk} to the new address)
+        Changes data segment size (moves the C{brk} to the new address)
         :rtype: int
-        :param brk: the new address for C{elf_brk}.
-        :return: the value of the new C{elf_brk}.
+        :param brk: the new address for C{brk}.
+        :return: the value of the new C{brk}.
         :raises error:
                     - "Error in brk!" if there is any error allocating the memory
         '''
-        if brk != 0 and brk != self.elf_brk:
-            assert brk > self.elf_brk
+        if brk != 0 and brk > self.elf_brk:
             mem = self.current.memory
-            size = brk - self.elf_brk
-            perms = mem.perms(self.elf_brk - 1)
-            if brk > mem._ceil(self.elf_brk):
-                addr = mem.mmap(mem._ceil(self.elf_brk), size, perms)
-                assert mem._ceil(self.elf_brk) == addr, "Error in brk!"
-            self.elf_brk += size
-        return self.elf_brk
+            size = brk - self.brk
+            if brk > mem._ceil(self.brk):
+                perms = mem.perms(self.brk - 1)
+                addr = mem.mmap(mem._ceil(self.brk), size, perms)
+                assert mem._ceil(self.brk) == addr, "Error in brk!"
+            self.brk += size
+        return self.brk
 
     def sys_arch_prctl(self, code, addr):
         '''
@@ -1542,6 +1591,25 @@ class Linux(Platform):
         self.files[newfd] = self.files[fd]
 
         return newfd
+
+    def sys_chroot(self, path):
+        '''
+        An implementation of chroot that does perform some basic error checking,
+        but does not actually chroot.
+
+        :param path: Path to chroot
+        '''
+        if path not in self.current.memory:
+            return -errno.EFAULT
+
+        path_s = self.current.read_string(path)
+        if not os.path.exists(path_s):
+            return -errno.ENOENT
+
+        if not os.path.isdir(path_s):
+            return -errno.ENOTDIR
+
+        return -errno.EPERM
 
     def sys_close(self, fd):
         '''
@@ -2624,10 +2692,12 @@ class SLinux(Linux):
             except SolverException:
                 fd.write('{SolverException}')
 
-        out = io.BytesIO()
-        inn = io.BytesIO()
-        err = io.BytesIO()
-        net = io.BytesIO()
+        out = StringIO.StringIO()
+        inn = StringIO.StringIO()
+        err = StringIO.StringIO()
+        net = StringIO.StringIO()
+        argIO = StringIO.StringIO()
+        envIO = StringIO.StringIO()
 
         for name, fd, data in self.syscall_trace:
             if name in ('_transmit', '_write'):
@@ -2640,8 +2710,18 @@ class SLinux(Linux):
             if name in ('_receive', '_read') and fd == 0:
                 solve_to_fd(data, inn)
 
+        for a in self.argv:
+            solve_to_fd(a, argIO)
+            argIO.write("\n")
+
+        for e in self.envp:
+            solve_to_fd(e, envIO)
+            envIO.write("\n")
+
         ret = {
             'syscalls': repr(self.syscall_trace),
+            'argv': argIO.getvalue(),
+            'env': envIO.getvalue(),
             'stdout': out.getvalue(),
             'stdin': inn.getvalue(),
             'stderr': err.getvalue(),

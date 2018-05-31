@@ -733,6 +733,42 @@ class SymCPUTest(unittest.TestCase):
 
         self.assertTrue(solver.check(cs))
 
+    # regression test for issue #560
+    def test_AND_1(self):
+        ''' Instruction AND
+            Groups:
+            0x7ffff7de390a:	and rax, 0xfc000000
+        '''
+        mem = Memory64()
+        cpu = AMD64Cpu(mem)
+        mem.mmap(0x7ffff7de3000, 0x1000, 'rwx')
+        mem[0x7ffff7de390a] = '\x48'
+        mem[0x7ffff7de390b] = '\x25'
+        mem[0x7ffff7de390c] = '\x00'
+        mem[0x7ffff7de390d] = '\x00'
+        mem[0x7ffff7de390e] = '\x00'
+        mem[0x7ffff7de390f] = '\xfc'
+        cpu.PF = True
+        cpu.RAX = 0x7ffff7ff7658
+        cpu.OF = False
+        cpu.ZF = False
+        cpu.CF = False
+        cpu.RIP = 0x7ffff7de390a
+        cpu.SF = False
+        cpu.execute()
+        self.assertEqual(mem[0x7ffff7de390a], '\x48')
+        self.assertEqual(mem[0x7ffff7de390b], '\x25')
+        self.assertEqual(mem[0x7ffff7de390c], '\x00')
+        self.assertEqual(mem[0x7ffff7de390d], '\x00')
+        self.assertEqual(mem[0x7ffff7de390e], '\x00')
+        self.assertEqual(mem[0x7ffff7de390f], '\xfc')
+        self.assertEqual(cpu.PF, True)
+        self.assertEqual(cpu.RAX, 0x7ffff4000000)
+        self.assertEqual(cpu.OF, False)
+        self.assertEqual(cpu.ZF, False)
+        self.assertEqual(cpu.CF, False)
+        self.assertEqual(cpu.RIP, 0x7ffff7de3910)
+        self.assertEqual(cpu.SF, False)
 
     def test_CMPXCHG8B_symbolic(self):
         '''CMPXCHG8B'''

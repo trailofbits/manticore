@@ -3,17 +3,18 @@ from future import standard_library
 standard_library.install_aliases()
 from builtins import *
 import string
-
+import re
+import os
 from . import Manticore
 from .manticore import ManticoreError
-from .core.smtlib import ConstraintSet, Operators, issymbolic, Constant, operators
-from .core.smtlib.visitors import arithmetic_simplifier
-from .core.state import State, TerminateState
+from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, Array, Expression, Constant, operators
+from .core.smtlib.visitors import simplify
+from .core.plugin import FilterFunctions
 from .platforms import evm
-from .utils.helpers import hex_encode
+from .utils.helpers import hex_encode, istainted
 
 import tempfile
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, check_output
 from multiprocessing import Process, Queue
 from queue import Empty as EmptyQueue
 import sha3
@@ -35,6 +36,18 @@ class EthereumError(ManticoreError):
    pass
 
 
+class DependencyError(EthereumError):
+    def __init__(self, lib_names):
+        super(DependencyError, self).__init__("You must pre-load and provide libraries addresses{ libname:address, ...} for %r" % lib_names)
+        self.lib_names = lib_names
+
+
+class DependencyError(EthereumError):
+    def __init__(self, lib_names):
+        super(DependencyError, self).__init__("You must pre-load and provide libraries addresses{ libname:address, ...} for %r" % lib_names)
+        self.lib_names = lib_names
+
+
 class NoAliveStates(EthereumError):
    pass
 
@@ -48,8 +61,8 @@ class Detector(Plugin):
         return state.context.setdefault('seth.findings.{!s}'.format(self.name), set())
 
     def add_finding(self, state, finding):
-        address = state.platform.current.address
-        pc = state.platform.current.pc
+        address = state.platform.current_vm.address
+        pc = state.platform.current_vm.pc
         self.get_findings(state).add((address, pc, finding))
 
         with self.manticore.locked_context('seth.global_findings', set) as global_findings:
@@ -79,7 +92,7 @@ class IntegerOverflow(Detector):
     @staticmethod
     def _can_add_overflow(state, result, a, b):
         # TODO FIXME (mark) this is using a signed LT. need to check if this is correct
-        return state.can_be_true(result < a) or state.can_be_true(result < b)
+        return state.can_be_true(operators.ULT(result, a) | operators.ULT(result, b))
 
     @staticmethod
     def _can_mul_overflow(state, result, a, b):
@@ -95,12 +108,22 @@ class IntegerOverflow(Detector):
         if mnemonic == 'ADD':
             if self._can_add_overflow(state, result, *arguments):
                 self.add_finding(state, "Integer overflow at {} instruction".format(mnemonic))
+                if issymbolic(result):
+                    result._taint = result.taint | frozenset(("IOA",))
         elif mnemonic == 'MUL':
             if self._can_mul_overflow(state, result, *arguments):
                 self.add_finding(state, "Integer overflow at {} instruction".format(mnemonic))
+                if issymbolic(result):
+                    result._taint = result.taint | frozenset(("IOM",))
         elif mnemonic == 'SUB':
             if self._can_sub_underflow(state, *arguments):
                 self.add_finding(state, "Integer underflow at {} instruction".format(mnemonic))
+                if issymbolic(result):
+                    result._taint = result.taint | frozenset(("IU",))
+        if mnemonic == 'SSTORE':
+            for arg in arguments:
+                if istainted(arg, 'IOA') or istainted(arg, 'IOM') or istainted(arg, 'IU'):
+                    self.add_finding(state, "Result of integuer overflowed intruction is written to the storage")
 
 
 class UninitializedMemory(Detector):
@@ -109,20 +132,20 @@ class UninitializedMemory(Detector):
     '''
 
     def did_evm_read_memory_callback(self, state, offset, value):
-        if not state.can_be_true(value != 0):
-            # Not initialized memory should be zero
-            return
-        # check if offset is known
+        initialized_memory = state.context.get('seth.detectors.initialized_memory', set())
         cbu = True  # Can be unknown
-        for known_address in state.context['seth.detectors.initialized_memory']:
-            cbu = Operators.AND(cbu, offset != known_address)
-
+        current_contract = state.platform.current_vm.address
+        for known_contract, known_offset in initialized_memory:
+            if current_contract == known_contract:
+                cbu = Operators.AND(cbu, offset != known_offset)
         if state.can_be_true(cbu):
-            self.add_finding(state, "Potentially reading uninitialized memory at instruction")
+            self.add_finding(state, "Potentially reading uninitialized memory at instruction (address: %r, offset %r)" % (current_contract, offset))
 
     def did_evm_write_memory_callback(self, state, offset, value):
+        current_contract = state.platform.current_vm.address
+
         # concrete or symbolic write
-        state.context.setdefault('seth.detectors.initialized_memory', set()).add(offset)
+        state.context.setdefault('seth.detectors.initialized_memory', set()).add((current_contract, offset))
 
 
 class UninitializedStorage(Detector):
@@ -130,46 +153,35 @@ class UninitializedStorage(Detector):
         Detects uses of uninitialized storage
     '''
 
-    def did_evm_read_storage_callback(self, state, offset, value):
+    def did_evm_read_storage_callback(self, state, address, offset, value):
         if not state.can_be_true(value != 0):
             # Not initialized memory should be zero
             return
         # check if offset is known
         cbu = True  # Can be unknown
-        for known_address in state.context['seth.detectors.initialized_storage']:
-            cbu = Operators.AND(cbu, offset != known_address)
+        for known_address, known_offset in state.context['seth.detectors.initialized_storage']:
+            cbu = Operators.AND(cbu, Operators.OR(address != known_address, offset != known_offset))
 
         if state.can_be_true(cbu):
             self.add_finding(state, "Potentially reading uninitialized storage")
 
-    def did_evm_write_storage_callback(self, state, offset, value):
+    def did_evm_write_storage_callback(self, state, address, offset, value):
         # concrete or symbolic write
-        state.context.setdefault('seth.detectors.initialized_storage', set()).add(offset)
+        state.context.setdefault('seth.detectors.initialized_storage', set()).add((address, offset))
 
 
-def remove_metadata(code):
-    """
-    Return provided bytecode without the metadata
-
-    :param bytes code: bytecode
-    :rtype bytes:
-    """
-    end = None
-    if code[-44:-34] == bytes(b'\x00\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20') and code[-2:] == bytes(b'\x00\x29'):
-        end = -9 - 33 - 2
-    return code[:end]
-
-
-def calculate_coverage(code, seen):
-    ''' Calculates what percentage of code has been seen '''
-    runtime_bytecode = remove_metadata(code)
-
+def calculate_coverage(runtime_bytecode, seen):
+    ''' Calculates what percentage of runtime_bytecode has been seen '''
     count, total = 0, 0
-    for i in evm.EVMAsm.disassemble_all(runtime_bytecode):
+    bytecode = SolidityMetadata._without_metadata(runtime_bytecode)
+    for i in evm.EVMAsm.disassemble_all(bytecode):
         if i.offset in seen:
             count += 1
         total += 1
 
+    if total == 0:
+        #No runtime_bytecode
+        return 0
     return count * 100.0 / total
 
 
@@ -183,16 +195,38 @@ class SolidityMetadata(object):
         self.source_code = source_code.decode()
         self._init_bytecode = init_bytecode
         self._runtime_bytecode = runtime_bytecode
-        self.hashes = hashes
+        self._hashes = hashes
         self.abi = {item.get(u'name', '{fallback}'): item for item in abi}
         self.warnings = warnings
         self.srcmap_runtime = self.__build_source_map(self.runtime_bytecode, srcmap_runtime)
         self.srcmap = self.__build_source_map(self.init_bytecode, srcmap)
 
+    def add_function(self, method_name_and_signature):
+        #TODO: use re, and check it's sane
+        if name in self.abi:
+            raise Exception("Function already defined")
+        hsh = ABI.make_function_id(method_name_and_signature)
+        name = method_name_and_signature.split('(')[0]
+        self._hashes.append(method_name_and_signature, hsh)
+
+        input_types = method_name_and_signature.split('(')[1].split(')')[0].split(',')
+        output_types = method_name_and_signature.split(')')[1].split(',')
+        self.abi[name] = {'inputs': [{'type': ty} for ty in input_types],
+                          'name': name,
+                          'outputs': [{'type': ty} for ty in output_types]}
+
+    @staticmethod
+    def _without_metadata(bytecode):
+        end = None
+        if bytecode[-43: -34] == '\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
+                and bytecode[-2:] == '\x00\x29':
+            end = -9 - 32 - 2  # Size of metadata at the end of most contracts
+        return bytecode[:end]
+
     def __build_source_map(self, bytecode, srcmap):
         # https://solidity.readthedocs.io/en/develop/miscellaneous.html#source-mappings
         new_srcmap = {}
-        bytecode = remove_metadata(bytecode)
+        bytecode = self._without_metadata(bytecode)
 
         asm_offset = 0
         asm_pos = 0
@@ -224,11 +258,13 @@ class SolidityMetadata(object):
 
     @property
     def runtime_bytecode(self):
-        return remove_metadata(self._runtime_bytecode)
+        # Removes metadata from the tail of bytecode
+        return self._without_metadata(self._runtime_bytecode)
 
     @property
     def init_bytecode(self):
-        return remove_metadata(self._init_bytecode)
+        # Removes metadata from the tail of bytecode
+        return self._without_metadata(self._init_bytecode)
 
     def get_source_for(self, asm_offset, runtime=True):
         ''' Solidity source code snippet related to `asm_pos` evm bytecode offset.
@@ -254,19 +290,20 @@ class SolidityMetadata(object):
 
     @property
     def signatures(self):
-        return {b: a for (a, b) in self.hashes.items()}
+        return {b: a for (a, b) in self._hashes.items()}
 
     def get_abi(self, hsh):
         func_name = self.get_func_name(hsh)
-        return self.abi[func_name]
+        default_fallback_abi = {u'stateMutability': u'nonpayable', u'payable': False, u'type': u'fallback'}
+        return self.abi.get(func_name, default_fallback_abi)
 
     def get_func_argument_types(self, hsh):
         abi = self.get_abi(hsh)
-        return '(' + ','.join(x['type'] for x in abi['inputs']) + ')'
+        return '(' + ','.join(x['type'] for x in abi.get('inputs', [])) + ')'
 
     def get_func_return_types(self, hsh):
         abi = self.get_abi(hsh)
-        return '(' + ','.join(x['type'] for x in abi['outputs']) + ')'
+        return '(' + ','.join(x['type'] for x in abi.get('outputs', [])) + ')'
 
     def get_func_name(self, hsh):
         signature = self.signatures.get(hsh, '{fallback}()')
@@ -274,6 +311,18 @@ class SolidityMetadata(object):
 
     def get_func_signature(self, hsh):
         return self.signatures.get(hsh, '{fallback}()')
+
+    def get_hash(self, method_name_and_signature):
+        #helper
+        return ABI.make_function_id(method_name_and_signature)
+
+    @property
+    def functions(self):
+        return tuple(self.signatures.values()) + ('{fallback}()',)
+
+    @property
+    def hashes(self):
+        return tuple(self.signatures.keys()) + ('00000000',)
 
 
 class ABI(object):
@@ -284,9 +333,8 @@ class ABI(object):
         and for contract-to-contract interaction.
 
     '''
-
-    class SByte(object):
-        ''' Unconstrained symbolic byte, not associated with any ConstraintSet '''
+    class SByte():
+        ''' Unconstrained symbolic byte string, not associated with any ConstraintSet '''
 
         def __init__(self, size=1):
             self.size = size
@@ -383,74 +431,143 @@ class ABI(object):
     @staticmethod
     def make_function_call(method_name, *args):
         function_id = ABI.make_function_id(method_name)
-
-        def check_bitsize(value, size):
-            if isinstance(value, BitVec):
-                return value.size == size
-            return (value & ~((1 << size) - 1)) == 0
         assert len(function_id) == 4
         result = [tuple(function_id)]
         result.append(ABI.make_function_arguments(*args))
         return reduce(lambda x, y: x + y, result)
 
     @staticmethod
-    def _consume_type(ty, data, offset):
-        ''' INTERNAL parses a value of type from data '''
-        def get_uint(size, offset):
-            def simplify(x):
-                value = arithmetic_simplifier(x)
-                if isinstance(value, Constant) and not value.taint:
-                    return value.value
-                else:
-                    return value
+    def _parse_size(num):
+        """
+        Parses the size part of a uint or int Solidity declaration.
+        If empty string, returns 256
 
-            size = simplify(size)
-            offset = simplify(offset)
-            byte_size = size // 8
-            padding = 32 - byte_size  # for 160
-            value = arithmetic_simplifier(Operators.CONCAT(size, *map(Operators.ORD, data[offset + padding:offset + padding + byte_size])))
-            return simplify(value)
+        :param str num: text following uint/int in a Solidity type declaration
+        :return: uint or int size
+        :rtype: int
+        :raises EthereumError: if invalid size
+        """
+        if not num:
+            return 256
 
-        if ty == u'uint256':
-            return get_uint(256, offset), offset + 32
-        elif ty in (u'bool', u'uint8'):
-            return get_uint(8, offset), offset + 32
-        elif ty == u'address':
-            return get_uint(160, offset), offset + 32
-        elif ty == u'int256':
-            value = get_uint(256, offset)
-            mask = 2**(256 - 1)
-            value = -(value & mask) + (value & ~mask)
-            return value, offset + 32
-        elif ty == u'':
-            return None, offset
-        elif ty in (u'bytes', u'string'):
-            dyn_offset = 4 + get_uint(256, offset)
-            size = get_uint(256, dyn_offset)
-            return data[dyn_offset + 32:dyn_offset + 32 + size], offset + 4
-        elif ty.startswith('bytes') and 0 <= int(ty[5:]) <= 32:
-            size = int(ty[5:])
-            return data[offset:offset + size], offset + 32
-        else:
-            raise NotImplementedError(ty)
+        malformed = False
+        try:
+            size = int(num)
+        except ValueError:
+            malformed = True
+
+        if malformed or size < 8 or size > 256 or size % 8 != 0:
+            raise EthereumError('Invalid type size: {}'.format(num))
+
+        return size
 
     @staticmethod
-    def parse(signature, data):
-        ''' Deserialize function ID and arguments specified in `signature` from `data` '''
+    def get_uint(data, nbytes, offset):
+        """
+        Read a `nbytes` bytes long big endian unsigned integer from `data` starting at `offset` 
 
-        is_multiple = '(' in signature
-        if is_multiple:
-            func_name = signature.split('(')[0]
-            types = signature.split('(')[1][:-1].split(',')
-            if len(func_name) > 0:
-                off = 4
+        :param data: sliceable buffer; symbolic buffer of Eth ABI encoded data
+        :param offset: byte offset
+        :param nbytes: number of bytes to read starting from least significant byte
+        :rtype: int or Expression
+        """
+        def _simplify(x):
+            value = simplify(x)
+            if isinstance(value, Constant) and not value.taint:
+                return value.value
             else:
+                return value
+
+        nbytes = _simplify(nbytes)
+        offset = _simplify(offset)
+        padding = 32 - nbytes
+        start = offset + padding
+        value = Operators.CONCAT(nbytes * 8, *[Operators.ORD(x) for x in data[start:start + nbytes]])
+        return _simplify(value)
+
+    @staticmethod
+    def _consume_type(ty, data, offset):
+        """
+        Parses a value of type from data
+
+        Further info: http://solidity.readthedocs.io/en/develop/abi-spec.html#use-of-dynamic-types
+
+        :param data: transaction data WITHOUT the function hash first 4 bytes
+        :param offset: offset into data of the first byte of the "head part" of the ABI element
+        :return: tuple where the first element is the extracted ABI element, and the second is the offset of
+            the next ABI element
+        :rtype: tuple
+        """
+        # TODO(mark) refactor so we don't return this tuple thing. the offset+32 thing
+        # should be something the caller keeps track of.
+
+        new_offset = offset + 32
+
+        if ty == u'':
+            new_offset = offset
+            result = None
+        elif ty.startswith(u'uint'):
+            size = ABI._parse_size(ty[4:]) // 8
+            result = ABI.get_uint(data, size, offset)
+        elif ty.startswith(u'int'):
+            size = ABI._parse_size(ty[3:])
+            value = ABI.get_uint(data, size // 8, offset)
+            mask = 2**(size - 1)
+            value = -(value & mask) + (value & ~mask)
+            result = value
+        elif ty == u'bool':
+            result = ABI.get_uint(data, 1, offset)
+        elif ty == u'address':
+            result = ABI.get_uint(data, 20, offset)
+        elif ty in (u'bytes', u'string'):
+            dyn_offset = ABI.get_uint(data, 32, offset)
+            size = ABI.get_uint(data, 32, dyn_offset)
+            result = data[dyn_offset + 32:dyn_offset + 32 + size]
+        elif ty.startswith('bytes') and 0 <= int(ty[5:]) <= 32:
+            size = int(ty[5:])
+            result = data[offset:offset + size]
+        elif ty == u'function':
+            # `function` is a special case of `bytes24`
+            size = 24
+            result = data[offset:offset + size]
+        elif ty == u'address[]':
+            dyn_offset = simplify(ABI.get_uint(data, 32, offset))
+            size = simplify(ABI.get_uint(data, 32, dyn_offset))
+            result = [ABI.get_uint(data, 20, dyn_offset + 32 + 32 * i) for i in range(size)]
+        else:
+            raise NotImplementedError(repr(ty))
+
+        return result, new_offset
+
+    @staticmethod
+    def parse_type_spec(type_spec):
+        is_multiple = '(' in type_spec
+        if is_multiple:
+            func_name = type_spec.split('(')[0]
+            types = type_spec.split('(')[1][:-1].split(',')
+            if not func_name:
                 func_name = None
-                off = 0
         else:
             func_name = None
-            types = (signature,)
-            off = 0
+            types = (type_spec,)
+        return is_multiple, func_name, types
+
+    @staticmethod
+    def parse(type_spec, data):
+        ''' Deserialize function ID and arguments specified in `type_spec` from `data`
+
+        :param str type_spec: EVM ABI function specification. function name is optional
+        :param data: ethereum transaction data
+        :type data: str or Array
+        :return:
+        '''
+        is_multiple, func_name, types = ABI.parse_type_spec(type_spec)
+
+        off = 0
+
+        #If it parsed the function name from the spec, skip 4 bytes from the data
+        if func_name:
+            data = data[4:]
 
         arguments = []
         for ty in types:
@@ -472,7 +589,7 @@ class ABI(object):
 class EVMAccount(object):
     ''' An EVM account '''
 
-    def __init__(self, address, seth=None, default_caller=None):
+    def __init__(self, address, m=None, default_caller=None):
         ''' Encapsulates an account.
 
             :param address: the address of this account
@@ -482,10 +599,14 @@ class EVMAccount(object):
 
         '''
         self._default_caller = default_caller
-        self._seth = seth
+        self._m = m
         self._address = address
         self._hashes = None
-        self._init_hashes()
+
+    def add_function(self, signature):
+        func_id = ABI.make_function_id(signature)
+        func_name = str(signature.split('(')[0])
+        self._hashes[func_name] = signature, func_id
 
     def __int__(self):
         return self._address
@@ -501,12 +622,12 @@ class EVMAccount(object):
         pass
 
     def _init_hashes(self):
-        # initializes self._hashes lazy
-        if self._hashes is None and self._seth is not None:
+        #initializes self._hashes lazy
+        if self._hashes is None and self._m is not None:
             self._hashes = {}
-            md = self._seth.get_metadata(self._address)
+            md = self._m.get_metadata(self._address)
             if md is not None:
-                for signature, func_id in md.hashes.items():
+                for signature, func_id in md._hashes.items():
                     func_name = str(signature.split('(')[0])
                     self._hashes[func_name] = signature, func_id
             # It was successful, no need to re-run. _init_hashes disabled
@@ -533,13 +654,10 @@ class EVMAccount(object):
                         caller = int(caller)
                     else:
                         caller = self._default_caller
-                    self._seth.transaction(caller=caller,
-                                           address=self._address,
-                                           value=value,
-                                           data=tx_data
-                                           )
-                    self._caller = None
-                    self._value = 0
+                    self._m.transaction(caller=caller,
+                                        address=self._address,
+                                        value=value,
+                                        data=tx_data)
                 return f
 
         return object.__getattribute__(self, name)
@@ -551,7 +669,7 @@ class ManticoreEVM(Manticore):
         Usage Ex::
 
             from manticore.ethereum import ManticoreEVM, ABI
-            seth = ManticoreEVM()
+            m = ManticoreEVM()
             #And now make the contract account to analyze
             source_code = """
                 pragma solidity ^0.4.15;
@@ -563,9 +681,9 @@ class ManticoreEVM(Manticore):
                 }
             """
             #Initialize user and contracts
-            user_account = seth.create_account(balance=1000)
-            contract_account = seth.solidity_create_contract(source_code, owner=user_account, balance=0)
-            contract_account.set(12345, value=100)
+            user_account = m.create_account(balance=1000)
+            contract_account = m.solidity_create_contract(source_code, owner=user_account, balance=0)
+            contract_account.set(12345, value=100) 
 
             seth.report()
             print seth.coverage(contract_account)
@@ -607,63 +725,144 @@ class ManticoreEVM(Manticore):
         return ABI.SValue
 
     @staticmethod
-    def compile(source_code, contract_name=None):
+    def compile(source_code, contract_name=None, libraries=None, runtime=False):
         ''' Get initialization bytecode from a Solidity source code '''
-        name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings = ManticoreEVM._compile(source_code, contract_name)
-        return bytecode
+        name, source_code, init_bytecode, runtime_bytecode, srcmap, srcmap_runtime, hashes, abi, warnings = ManticoreEVM._compile(source_code, contract_name, libraries)
+        if runtime:
+            return runtime_bytecode
+        return init_bytecode
 
     @staticmethod
-    def _compile(source_code, contract_name):
+    def _link(bytecode, libraries=None):
+        has_dependencies = '_' in bytecode
+        hex_contract = bytecode
+        if has_dependencies:
+            deps = {}
+            pos = 0
+            while pos < len(hex_contract):
+                if hex_contract[pos] == '_':
+                    # __/tmp/tmp_9k7_l:Manticore______________
+                    lib_placeholder = hex_contract[pos:pos + 40]
+                    lib_name = lib_placeholder.split(':')[1].split('_')[0]
+                    deps.setdefault(lib_name, []).append(pos)
+                    pos += 40
+                else:
+                    pos += 2
+
+            if libraries is None:
+                raise DependencyError(deps.keys())
+            libraries = dict(libraries)
+            hex_contract_lst = list(hex_contract)
+            for lib_name, pos_lst in deps.items():
+                try:
+                    lib_address = libraries[lib_name]
+                except KeyError:
+                    raise DependencyError([lib_name])
+                for pos in pos_lst:
+                    hex_contract_lst[pos:pos + 40] = '%040x' % lib_address
+            hex_contract = ''.join(hex_contract_lst)
+        return binascii.unhexlify(hex_contract)
+
+    @staticmethod
+    def _run_solc(source_file):
+        ''' Compile a source file with the Solidity compiler
+
+            :param source_file: a file object for the source file
+            :return: output, warnings
+        '''
+        solc = "solc"
+
+        #check solc version
+        supported_versions = ('0.4.18', '0.4.21')
+
+        try:
+            installed_version_output = check_output([solc, "--version"])
+        except OSError:
+            raise Exception("Solidity compiler not installed.")
+
+        m = re.match(r".*Version: (?P<version>(?P<major>\d+)\.(?P<minor>\d+)\.(?P<build>\d+))\+(?P<commit>[^\s]+).*", installed_version_output, re.DOTALL | re.IGNORECASE)
+
+        if not m or m.groupdict()['version'] not in supported_versions:
+            #Fixme https://github.com/trailofbits/manticore/issues/847
+            #logger.warning("Unsupported solc version %s", installed_version)
+            pass
+
+        #shorten the path size so library placeholders wont fail.
+        #solc path search is a mess #fixme
+        #https://solidity.readthedocs.io/en/latest/layout-of-source-files.html
+        current_folder = os.getcwd()
+        abs_filename = os.path.abspath(source_file.name)
+        working_folder, filename = os.path.split(abs_filename)
+
+        solc_invocation = [
+            solc,
+            '--combined-json', 'abi,srcmap,srcmap-runtime,bin,hashes,bin-runtime',
+            '--allow-paths', '.',
+            filename
+        ]
+        p = Popen(solc_invocation, stdout=PIPE, stderr=PIPE, cwd=working_folder)
+        with p.stdout as stdout, p.stderr as stderr:
+            try:
+                return json.loads(stdout.read()), stderr.read()
+            except ValueError:
+                raise Exception('Solidity compilation error:\n\n{}'.format(stderr.read()))
+
+    @staticmethod
+    def _compile(source_code, contract_name, libraries=None):
         """ Compile a Solidity contract, used internally
 
-            :param source_code: a solidity source code
+            :param source_code: solidity source as either a string or a file handle
             :param contract_name: a string with the name of the contract to analyze
+            :param libraries: an itemizable of pairs (library_name, address) 
             :return: name, source_code, bytecode, srcmap, srcmap_runtime, hashes
+            :return: name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
         """
 
-        if isunicode(source_code):
-            source_code = source_code.encode()
+        try:
+            file_type = file  # Python 2
+        except NameError:
+            from io import IOBase
+            file_type = IOBase  # Python 3
 
-        solc = "solc"
-        with tempfile.NamedTemporaryFile() as temp:
-            temp.write(source_code)
-            temp.flush()
-            p = Popen([solc, '--combined-json', 'abi,srcmap,srcmap-runtime,bin,hashes,bin-runtime', '--allow-paths', '.', temp.name], stdout=PIPE, stderr=PIPE)
+        if isinstance(source_code, str):
+            with tempfile.NamedTemporaryFile() as temp:
+                temp.write(source_code)
+                temp.flush()
+                output, warnings = ManticoreEVM._run_solc(temp)
+        elif isinstance(source_code, file_type):
+            output, warnings = ManticoreEVM._run_solc(source_code)
+            source_code = source_code.read()
+        else:
+            raise TypeError
 
-            try:
-                output = json.loads(p.stdout.read().decode())
-            except ValueError:
-                raise Exception('Solidity compilation error:\n\n{}'.format(p.stderr.read()))
+        contracts = output.get('contracts', [])
+        if len(contracts) != 1 and contract_name is None:
+            raise Exception('Solidity file must contain exactly one contract or you must use contract parameter to specify which one.')
 
-            contracts = output.get('contracts', [])
-            if len(contracts) != 1 and contract_name is None:
-                raise Exception('Solidity file must contain exactly one contract or you must use contract parameter to specify which one.')
+        name, contract = None, None
+        if contract_name is None:
+            name, contract = next(iter(contracts.items()))
+        else:
+            for n, c in contracts.items():
+                if n.split(":")[1] == contract_name:
+                    name, contract = n, c
+                    break
 
-            name, contract = None, None
-            if contract_name is None:
-                name, contract = next(iter(contracts.items()))
-            else:
-                for n, c in contracts.items():
-                    if n.split(":")[1] == contract_name:
-                        name, contract = n, c
-                        break
+        assert(name is not None)
+        name = name.split(':')[1]
 
-            assert name is not None
-            name = name.split(':')[1]
+        if contract['bin'] == '':
+            raise Exception('Solidity failed to compile your contract.')
 
-            if contract['bin'] == '':
-                raise Exception('Solidity failed to compile your contract.')
+        bytecode = ManticoreEVM._link(contract['bin'], libraries)
+        srcmap = contract['srcmap'].split(';')
+        srcmap_runtime = contract['srcmap-runtime'].split(';')
+        hashes = contract['hashes']
+        abi = json.loads(contract['abi'])
+        runtime = ManticoreEVM._link(contract['bin-runtime'], libraries)
+        return name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
 
-            bytecode = bytes.fromhex(contract['bin'])
-            runtime = bytes.fromhex(contract['bin-runtime'])
-            srcmap = contract['srcmap'].split(';')
-            srcmap_runtime = contract['srcmap-runtime'].split(';')
-            hashes = contract['hashes']
-            abi = json.loads(contract['abi'])
-            warnings = p.stderr.read()
-            return name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
-
-    def __init__(self, procs=1, **kwargs):
+    def __init__(self, procs=10, **kwargs):
         ''' A Manticore EVM manager
             :param int procs: number of workers to use in the exploration
         '''
@@ -675,7 +874,6 @@ class ManticoreEVM(Manticore):
         # make the ethereum world state
         world = evm.EVMWorld(constraints)
         initial_state = State(constraints, world)
-        initial_state.context['tx'] = []
         super(ManticoreEVM, self).__init__(initial_state, **kwargs)
 
         self.detectors = {}
@@ -690,7 +888,7 @@ class ManticoreEVM(Manticore):
 
         self._executor.subscribe('did_load_state', self._load_state_callback)
         self._executor.subscribe('will_terminate_state', self._terminate_state_callback)
-        self._executor.subscribe('will_execute_instruction', self._will_execute_instruction_callback)
+        self._executor.subscribe('did_evm_execute_instruction', self._did_evm_execute_instruction_callback)
         self._executor.subscribe('did_read_code', self._did_evm_read_code)
         self._executor.subscribe('on_symbolic_sha3', self._symbolic_sha3)
         self._executor.subscribe('on_concrete_sha3', self._concrete_sha3)
@@ -706,7 +904,7 @@ class ManticoreEVM(Manticore):
             return context['_completed_transactions']
 
     @property
-    def running_state_ids(self):
+    def _running_state_ids(self):
         ''' IDs of the running states'''
         with self.locked_context('seth') as context:
             if self.initial_state is not None:
@@ -715,77 +913,95 @@ class ManticoreEVM(Manticore):
                 return context['_saved_states']
 
     @property
-    def all_state_ids(self):
-        ''' IDs of the all states
-
-            Note: state with id -1 is already in memory and it is not backed on the storage
-        '''
-        return self.running_state_ids + self.terminated_state_ids
-
-    @property
-    def terminated_state_ids(self):
+    def _terminated_state_ids(self):
         ''' IDs of the terminated states '''
         with self.locked_context('seth') as context:
             return context['_final_states']
 
     @property
+    def _all_state_ids(self):
+        ''' IDs of the all states
+
+            Note: state with id -1 is already in memory and it is not backed on the storage
+        '''
+        return self._running_state_ids + self._terminated_state_ids
+
+    @property
     def running_states(self):
         ''' Iterates over the running states'''
-        for state_id in self.running_state_ids:
+        for state_id in self._running_state_ids:
             state = self.load(state_id)
             yield state
+            #FIXME re save state in case it was modified by the user
 
     @property
     def terminated_states(self):
         ''' Iterates over the terminated states'''
-        for state_id in self.terminated_state_ids:
+        for state_id in self._terminated_state_ids:
             state = self.load(state_id)
             yield state
+            #FIXME re save state in case it was modified by the user
 
     @property
     def all_states(self):
         ''' Iterates over the all states (terminated and alive)'''
-        for state_id in self.terminated_state_ids + self.running_state_ids:
+        for state_id in self._all_state_ids:
             state = self.load(state_id)
             yield state
+            #FIXME re save state in case it was modified by the user
 
     def count_states(self):
         ''' Total states count '''
-        return len(self.terminated_state_ids + self.running_state_ids)
+        return len(self._all_state_ids)
 
     def count_running_states(self):
         ''' Running states count '''
-        return len(self.running_state_ids)
+        return len(self._running_state_ids)
 
     def count_terminated_states(self):
         ''' Terminated states count '''
-        return len(self.terminated_state_ids)
+        return len(self._terminated_state_ids)
 
-    def terminate_state_id(self, state_id):
-        ''' Manually  terminates a states by state_id.
-            Moves the state from the running list into the terminated list and
-            generates a testcase for it
+    def _terminate_state_id(self, state_id):
+        ''' Manually terminates a states by state_id.
+            Moves the state from the running list into the terminated list
         '''
+
+        # Move state from running to final
         if state_id != -1:
             with self.locked_context('seth') as seth_context:
-                lst = seth_context['_saved_states']
-                lst.remove(state_id)
-                seth_context['_saved_states'] = lst
-
-        state = self.load(state_id)
-        last_exc = state.context['last_exception']
-        self._generate_testcase_callback(state, 'test', last_exc.message)
-
-        if state_id == -1:
-            state_id = self.save(state, final=True)
-            self._initial_state = None
+                saved_states = seth_context['_saved_states']
+                final_states = seth_context['_final_states']
+                if state_id in saved_states:
+                    saved_states.remove(state_id)
+                    final_states.append(state_id)
+                seth_context['_saved_states'] = saved_states
+                seth_context['_final_states'] = final_states
         else:
+            assert state_id == -1
+            state_id = self.save(self._initial_state, final=True)
+            self._initial_state = None
+        return state_id
+
+    def _revive_state_id(self, state_id):
+        ''' Manually revice a states by state_id.
+            Moves the state from the final list into the running list
+        '''
+
+        # Move state from final to running
+        if state_id != -1:
             with self.locked_context('seth') as seth_context:
-                lst = seth_context['_final_states']
-                lst.append(state_id)
-                seth_context['_final_states'] = lst
+                saved_states = seth_context['_saved_states']
+                final_states = seth_context['_final_states']
+                if state_id in final_states:
+                    final_states.remove(state_id)
+                    saved_states.append(state_id)
+                seth_context['_saved_states'] = saved_states
+                seth_context['_final_states'] = final_states
+        return state_id
 
     # deprecate this 5 in favor of for sta in seth.all_states: do stuff?
+
     def get_world(self, state_id=None):
         ''' Returns the evm world of `state_id` state. '''
         state = self.load(state_id)
@@ -798,32 +1014,32 @@ class ManticoreEVM(Manticore):
         ''' Balance for account `address` on state `state_id` '''
         if isinstance(address, EVMAccount):
             address = int(address)
-        return self.get_world(state_id).storage[address]['balance']
+        return self.get_world(state_id).get_balance(address)
 
-    def get_storage(self, address, offset, state_id=None):
+    def get_storage_data(self, address, offset, state_id=None):
         ''' Storage data for `offset` on account `address` on state `state_id` '''
         if isinstance(address, EVMAccount):
             address = int(address)
-        return self.get_world(state_id).storage[address]['storage'].get(offset)
+        return self.get_world(state_id).get_storage_data(address, offset)
 
     def get_code(self, address, state_id=None):
         ''' Storage data for `offset` on account `address` on state `state_id` '''
         if isinstance(address, EVMAccount):
             address = int(address)
-        return self.get_world(state_id).storage[address]['code']
+        return self.get_world(state_id).get_code(address)
 
     def last_return(self, state_id=None):
         ''' Last returned buffer for state `state_id` '''
         state = self.load(state_id)
-        return state.platform.last_return
+        return state.platform.last_return_data
 
     def transactions(self, state_id=None):
         ''' Transactions list for state `state_id` '''
         state = self.load(state_id)
         return state.platform.transactions
 
-    def solidity_create_contract(self, source_code, owner, contract_name=None, balance=0, address=None, args=()):
-        ''' Creates a solidity contract
+    def solidity_create_contract(self, source_code, owner, contract_name=None, libraries=None, balance=0, address=None, args=()):
+        ''' Creates a solidity contract and library dependencies
 
             :param str source_code: solidity source code
             :param owner: owner account (will be default caller in any transactions)
@@ -837,22 +1053,43 @@ class ManticoreEVM(Manticore):
             :param tuple args: constructor arguments
             :rtype: EVMAccount
         '''
-        compile_results = self._compile(source_code, contract_name)
-        init_bytecode = compile_results[2]
-
+        if libraries is None:
+            deps = {}
+        else:
+            deps = dict(libraries)
+        # If not selected get a new one for the main contract
         if address is None:
             address = self.world.new_address()
 
-        # FIXME different states "could"(VERY UNLIKELY) have different contracts
-        # asociated with the same address
-        self.metadata[address] = SolidityMetadata(*compile_results)
+        contract_names = [contract_name]
+        while contract_names:
+            contract_name_i = contract_names.pop()
+            try:
+                compile_results = self._compile(source_code, contract_name_i, libraries=deps)
+                init_bytecode = compile_results[2]
 
-        account = self.create_contract(owner=owner,
-                                       balance=balance,
-                                       address=address,
-                                       init=tuple(init_bytecode) + tuple(ABI.make_function_arguments(*args)))
+                if contract_name_i == contract_name:
+                    contract_account = self.create_contract(owner=owner,
+                                                            balance=balance,
+                                                            address=address,
+                                                            init=tuple(init_bytecode) + tuple(ABI.make_function_arguments(*args)))
+                else:
+                    contract_account = self.create_contract(owner=owner, init=tuple(init_bytecode))
 
-        return account
+                if contract_account is None:
+                    raise Exception("Failed to build contract %s" % contract_name_i)
+                self.metadata[int(contract_account)] = SolidityMetadata(*compile_results)
+
+                deps[contract_name_i] = contract_account
+            except DependencyError as e:
+                contract_names.append(contract_name_i)
+                for lib_name in e.lib_names:
+                    if lib_name not in deps:
+                        contract_names.append(lib_name)
+
+        if not self.count_running_states() or self.get_code(contract_account) == '':
+            return None
+        return contract_account
 
     def create_contract(self, owner, balance=0, address=None, init=None):
         ''' Creates a contract
@@ -865,19 +1102,23 @@ class ManticoreEVM(Manticore):
             :param str init: initializing evm bytecode and arguments
             :rtype: EVMAccount
         '''
-        assert len(self.running_state_ids) == 1, "No forking yet"
-        with self.locked_context('seth') as context:
-            assert context['_pending_transaction'] is None
+        assert self.count_running_states() == 1, "No forking yet"
         assert init is not None
+        #FIxme?
+        #We force the same address/accounts on all the states
         if address is None:
             address = self.world.new_address()
+
         with self.locked_context('seth') as context:
-            context['_pending_transaction'] = ('CREATE_CONTRACT', owner, address, balance, init)
+            assert context['_pending_transaction'] is None
+            context['_pending_transaction'] = ('CREATE_CONTRACT', owner, address, balance, init, 10)
 
         self.run(procs=self._config_procs)
 
+        #FIxme?
+        #We assume the constructor run in all states effectivelly and add the
+        #address to the accounts list
         self.contract_accounts.add(address)
-
         return EVMAccount(address, self, default_caller=owner)
 
     def create_account(self, balance=0, address=None, code=''):
@@ -889,15 +1130,23 @@ class ManticoreEVM(Manticore):
             :type address: int
             :return: an EVMAccount
         '''
-        assert len(self.running_state_ids) == 1, "No forking yet"
+        if self.count_running_states() != 1:
+            raise Exception("This works only when there is a single state")
         with self.locked_context('seth') as context:
-            assert context['_pending_transaction'] is None
-        address = self.world.create_account(address, balance, code=code, storage=None)
+            if context['_pending_transaction'] is not None:
+                raise Exception("It should be no other pending transaction")
+
+        #self.world refers to the evm world of the single state in existance
+        address = self.world.new_address()
+        self.world.create_account(address, balance, code=code, storage=None)
+
+        #keep a list just in case.
+        #Caveat: After some execution the account list on different states may differ
         self.normal_accounts.add(address)
         return address
 
     def transaction(self, caller, address, value, data):
-        ''' Issue a symbolic transaction
+        ''' Issue a symbolic transaction in all running states
 
             :param caller: the address of the account sending the transaction
             :type caller: int or EVMAccount
@@ -914,35 +1163,30 @@ class ManticoreEVM(Manticore):
         if isinstance(caller, EVMAccount):
             caller = int(caller)
 
-        with self.locked_context('seth') as context:
-            has_alive_states = context['_saved_states'] or self.initial_state is not None
-            if not has_alive_states:
-                raise NoAliveStates
+        if not self.count_running_states():
+            raise NoAliveStates
 
+        #Fixme
         if isinstance(data, self.SByte):
             data = (None,) * data.size
+
         with self.locked_context('seth') as context:
-            context['_pending_transaction'] = ('CALL', caller, address, value, data)
+            context['_pending_transaction'] = ('CALL', caller, address, value, data, 10)
 
         logger.info("Starting symbolic transaction: %d", self.completed_transactions + 1)
-
         status = self.run(procs=self._config_procs)
-
         with self.locked_context('seth') as context:
             context['_completed_transactions'] = context['_completed_transactions'] + 1
 
-        logger.info("Finished symbolic transaction: %d | Code Coverage: %d%% | Terminated States: %d | Alive States: %d",
-                    self.completed_transactions, self.global_coverage(address), len(self.terminated_state_ids), len(self.running_state_ids))
+        logger.info("Finished symbolic transaction: %d | Code Coverage: %d%% | Terminated States: %d | Alive States: %d", self.completed_transactions, self.global_coverage(address), self.count_terminated_states(), self.count_running_states())
 
         return status
 
-    def multi_tx_analysis(self, solidity_filename, contract_name=None, tx_limit=None, tx_account="attacker"):
-        with open(solidity_filename) as f:
-            source_code = f.read()
-
+    def multi_tx_analysis(self, solidity_filename, contract_name=None, tx_limit=None, tx_use_coverage=True, tx_account="attacker"):
         owner_account = self.create_account(balance=1000)
-        contract_account = self.solidity_create_contract(source_code, contract_name=contract_name, owner=owner_account)
         attacker_account = self.create_account(balance=1000)
+        with open(solidity_filename) as f:
+            contract_account = self.solidity_create_contract(f, contract_name=contract_name, owner=owner_account, args=(None, None, None, None))
 
         if tx_account == "attacker":
             tx_account = attacker_account
@@ -959,10 +1203,17 @@ class ManticoreEVM(Manticore):
                              data=symbolic_data,
                              value=symbolic_value)
 
+        if contract_account is None:
+            logger.info("Failed to create contract. Exception in constructor")
+            return
+
         prev_coverage = 0
         current_coverage = 0
 
-        while current_coverage < 100:
+        #avoid all human level tx that has no effect on the storage
+        filter_nohuman_constants = FilterFunctions(regexp=r".*", depth='human', mutability='constant', include=False)
+        self.register_plugin(filter_nohuman_constants)
+        while (current_coverage < 100 or not tx_use_coverage) and not self.is_shutdown():
             try:
                 run_symbolic_tx()
             except NoAliveStates:
@@ -972,14 +1223,15 @@ class ManticoreEVM(Manticore):
                 tx_limit -= 1
                 if tx_limit == 0:
                     break
+            if tx_use_coverage:
+                prev_coverage = current_coverage
+                current_coverage = self.global_coverage(contract_account)
+                found_new_coverage = prev_coverage < current_coverage
 
-            prev_coverage = current_coverage
-            current_coverage = self.global_coverage(contract_account)
-            found_new_coverage = prev_coverage < current_coverage
-
-            if not found_new_coverage:
-                break
-
+                if not found_new_coverage:
+                    break
+        #Remove the filter
+        self.unregister_plugin(filter_nohuman_constants)
         self.finalize()
 
     def run(self, **kwargs):
@@ -1004,7 +1256,7 @@ class ManticoreEVM(Manticore):
             if len(context['_saved_states']) == 1:
                 self._initial_state = self._executor._workspace.load_state(context['_saved_states'][0], delete=True)
                 context['_saved_states'] = []
-                assert self.running_state_ids == [-1]
+                assert self._running_state_ids == [-1]
 
             # clear pending transcations. We are done.
             context['_pending_transaction'] = None
@@ -1019,7 +1271,6 @@ class ManticoreEVM(Manticore):
         '''
         # save the state to secondary storage
         state_id = self._executor._workspace.save_state(state)
-
         with self.locked_context('seth') as context:
             if final:
                 # Keep it on a private list
@@ -1037,10 +1288,10 @@ class ManticoreEVM(Manticore):
         '''
         state = None
         if state_id is None:
-            # a single state was assumed
-            if len(self.running_state_ids) == 1:
-                # Get the ID of the single running state
-                state_id = self.running_state_ids[0]
+            #a single state was assumed
+            if self.count_running_states() == 1:
+                #Get the ID of the single running state
+                state_id = self._running_state_ids[0]
             else:
                 raise Exception("More than one state running.")
 
@@ -1048,6 +1299,8 @@ class ManticoreEVM(Manticore):
             state = self.initial_state
         else:
             state = self._executor._workspace.load_state(state_id, delete=False)
+            #froward events from newly loaded object
+            self._executor.forward_events_from(state, True)
         return state
 
     # Callbacks
@@ -1060,32 +1313,50 @@ class ManticoreEVM(Manticore):
     def _concrete_sha3(self, state, buf, value):
         ''' INTERNAL USE '''
         with self.locked_context('known_sha3', set) as known_sha3:
-            known_sha3.add((buf, value))
+            known_sha3.add((str(buf), value))
 
     def _terminate_state_callback(self, state, state_id, e):
         ''' INTERNAL USE
             Every time a state finishes executing last transaction we save it in
             our private list
         '''
+        if str(e) == 'Abandoned state':
+            #do nothing
+            return
+        world = state.platform
         state.context['last_exception'] = e
-        # TODO(mark): This will break if we ever change the message text. Use a less
-        # brittle check.
-        if isinstance(e, TerminateState) and e.message not in {'REVERT', 'THROW', 'TXERROR'}:
-            # if not a revert we save the state for further transactioning
-            state.context['processed'] = False
-            if e.message == 'RETURN':
-                with self.locked_context('seth') as context:
-                    ty, caller, address, value, data = context['_pending_transaction']
-                    if ty == 'CREATE_CONTRACT':
-                        world = state.platform
-                        world.storage[address]['code'] = world.last_return_data
+        e.testcase = False  # Do not generate a testcase file
 
-            self.save(state)
-            e.testcase = False  # Do not generate a testcase file
-        else:
+        if not world.all_transactions:
+            logger.debug("Something was wrong. Search terminated in the middle of an ongoing tx")
             self.save(state, final=True)
+            return
 
-    # Callbacks
+        tx = world.all_transactions[-1]
+
+        #is we initiated the Tx we need process the outcome for now.
+        #Fixme incomplete.
+        if tx.is_human():
+            if tx.sort == 'CREATE':
+                if tx.result == 'RETURN':
+                    world.set_code(tx.address, tx.return_data)
+                else:
+                    world.delete_account(tx.address)
+        else:
+            logger.info("Manticore exception. State should be terminated only at the end of the human transaction")
+
+        #Human tx that ends in this wont modify the storage so finalize and
+        # generate a testcase. FIXME This should be configurable as REVERT and
+        # THROWit actually changes the balance and nonce? of some accounts
+        if tx.result in {'REVERT', 'THROW', 'TXERROR'}:
+            self.save(state, final=True)
+        else:
+            assert tx.result in {'SELFDESTRUCT', 'RETURN', 'STOP'}
+            # if not a revert we save the state for further transactioning
+            del state.context['processed']
+            self.save(state)  # Add tu running states
+
+    #Callbacks
     def _load_state_callback(self, state, state_id):
         ''' INTERNAL USE
             When a state was just loaded from stoage we do the pending transaction
@@ -1096,61 +1367,70 @@ class ManticoreEVM(Manticore):
         state.context['processed'] = True
         with self.locked_context('seth') as context:
             # take current global transaction we need to apply to all running states
-            ty, caller, address, value, data = context['_pending_transaction']
-            txnum = len(state.context['tx'])
+            ty, caller, address, value, data, price = context['_pending_transaction']
 
-        # Replace any none by symbolic values
+        txnum = len(world.human_transactions)
+
+        # Replace any None by symbolic values
         if value is None:
             value = state.new_symbolic_value(256, label='tx{:d}_value'.format(txnum))
         if isinstance(data, tuple):
             if any(x is None for x in data):
-                symbolic_data = state.new_symbolic_buffer(label='tx{:d}_data'.format(txnum), nbytes=len(data))
+                symbolic_data = state.constraints.new_array(index_bits=256, name='tx{:d}_data'.format(txnum), index_max=len(data))
                 for i in range(len(data)):
                     if data[i] is not None:
                         symbolic_data[i] = data[i]
                 data = symbolic_data
+            else:
+                data = bytearray(data)
+
         if ty == 'CALL':
-            world.transaction(address=address, caller=caller, data=data, value=value)
+            world.transaction(address=address, caller=caller, data=data, value=value, price=price)
         else:
             assert ty == 'CREATE_CONTRACT'
-            world.create_contract(caller=caller, address=address, balance=value, init=data)
-        state.context['tx'].append((ty, caller, address, value, data))
+            world.create_contract(caller=caller, address=address, balance=value, init=data, price=price)
 
-    def _will_execute_instruction_callback(self, state, pc, instruction):
+    def _did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
         ''' INTERNAL USE '''
-        assert state.constraints == state.platform.constraints
-        assert state.platform.constraints == state.platform.current.constraints
-        logger.debug("%s", state.platform.current)
-
-        if isinstance(state.platform.current.last_exception, evm.Create):
+        logger.debug("%s", state.platform.current_vm)
+        #TODO move to a plugin
+        at_init = state.platform.current_transaction.sort == 'CREATE'
+        pc = instruction.offset
+        if at_init:
             coverage_context_name = 'init_coverage'
-            trace_context_name = 'seth.init.trace'
         else:
             coverage_context_name = 'runtime_coverage'
-            trace_context_name = 'seth.rt.trace'
 
         with self.locked_context(coverage_context_name, set) as coverage:
-            coverage.add((state.platform.current.address, state.platform.current.pc))
+            coverage.add((state.platform.current_vm.address, pc))
 
-        state.context.setdefault(trace_context_name, []).append((state.platform.current.address, pc))
+        state.context.setdefault('evm.trace', []).append((state.platform.current_vm.address, pc, at_init))
 
     def _did_evm_read_code(self, state, offset, size):
         ''' INTERNAL USE '''
         with self.locked_context('code_data', set) as code_data:
             for i in range(offset, offset + size):
-                code_data.add((state.platform.current.address, i))
+                code_data.add((state.platform.current_vm.address, i))
 
     def get_metadata(self, address):
         ''' Gets the solidity metadata for address.
             This is available only if address is a contract created from solidity
         '''
-        return self.metadata.get(address)
+        return self.metadata.get(int(address))
 
     def register_detector(self, d):
         if not isinstance(d, Detector):
             raise Exception("Not a Detector")
         self.detectors[d.name] = d
         self.register_plugin(d)
+
+    def unregister_detector(self, d):
+        if not isinstance(d, Detector):
+            raise Exception("Not a Detector")
+        if d.name not in self.detectors:
+            raise Exception("Detector not registered")
+        del self.detectors[d.name]
+        self.unregister_plugin(d)
 
     @property
     def global_findings(self):
@@ -1163,8 +1443,8 @@ class ManticoreEVM(Manticore):
 
     def generate_testcase(self, state, name, message=''):
         self._generate_testcase_callback(state, name, message)
-    
-    def _generate_testcase_callback(self, state, name, message):
+
+    def _generate_testcase_callback(self, state, name, message=''):
         '''
         Create a serialized description of a given state.
         :param state: The state to generate information about
@@ -1176,53 +1456,86 @@ class ManticoreEVM(Manticore):
         #super(ManticoreEVM, self)._generate_testcase_callback(state, name, message)
         # TODO(mark): Refactor ManticoreOutput to let the platform be more in control
         #  so this function can be fully ported to EVMWorld.generate_workspace_files.
+        blockchain = state.platform
 
         def flagged(flag):
             return '(*)' if flag else ''
-
-        testcase = self._output.testcase(name)
-        logger.info("Generated testcase No. {} - {}".format(testcase.num, message))
-        blockchain = state.platform
+        testcase = self._output.testcase(name.replace(' ', '_'))
+        logger.info("Generated testcase No. {} - {}".format(testcase.num, message + blockchain.last_transaction.result))
         with testcase.open_stream('summary') as summary:
-            summary.write(u"Last exception: {!s}\n".format(state.context['last_exception']))
+            summary.write(u"Message: {!s}\n".format(message))
+            summary.write(u"Last exception: {!s\n".format(state.context['last_exception']))
 
-            address, offset = state.context['seth.rt.trace'][-1]
+            at_runtime = blockchain.last_transaction.sort != 'CREATE'
+            address, offset, at_init = state.context['evm.trace'][-1]
+            assert at_runtime != at_init
 
-            # Last instruction
-            metadata = self.get_metadata(blockchain.transactions[-1].address)
-            if metadata is not None:
-                summary.write(u'Last instruction at contract {:x} offset {:x}\n'.format(address, offset))
-                at_runtime = blockchain.transactions[-1].sort != 'Create'
-                summary.write(metadata.get_source_for(offset, at_runtime))
-                summary.write(u'\n')
+            #Last instruction if last tx vas valid
+            if state.context['last_exception'].message != 'TXERROR':
+                metadata = self.get_metadata(blockchain.last_transaction.address)
+                if metadata is not None:
+                    summary.write(u'Last instruction at contract {:x} offset {:x}\n'.format(address, offset))
+                    source_code_snippet = metadata.get_source_for(offset, at_runtime)
+                    if source_code_snippet:
+                        summary.write(source_code_snippet)
+                    summary.write(u'\n')
 
             # Accounts summary
             is_something_symbolic = False
             summary.write(u"{:d} accounts.\n".format(len(blockchain.accounts)))
             for account_address in blockchain.accounts:
-                summary.write(u"Address: 0x{:x}\n".format(account_address))
+                is_account_address_symbolic = issymbolic(account_address)
+                account_address = state.solve_one(account_address)
+                summary.write(u"Address: 0x{:x} {!s}\n".format(account_address, flagged(is_account_address_symbolic)))
                 balance = blockchain.get_balance(account_address)
                 is_balance_symbolic = issymbolic(balance)
                 is_something_symbolic = is_something_symbolic or is_balance_symbolic
                 balance = state.solve_one(balance)
                 summary.write(u"Balance: {:d} {!s}\n".format(balance, flagged(is_balance_symbolic)))
+                from .core.smtlib.visitors import translate_to_smtlib
 
-                if blockchain.has_storage(account_address):
+                storage = blockchain.get_storage(account_address)
+                summary.write(u"Storage: {!s}".format(translate_to_smtlib(storage, use_bindings=True)))
+
+                all_used_indexes = []
+                with state.constraints as temp_cs:
+                    index = temp_cs.new_bitvec(256)
+                    storage = blockchain.get_storage(account_address)
+                    temp_cs.add(storage.get(index) != 0)
+
+                    try:
+                        while True:
+                            a_index = solver.get_value(temp_cs, index)
+                            all_used_indexes.append(a_index)
+
+                            temp_cs.add(storage.get(a_index) != 0)
+                            temp_cs.add(index != a_index)
+                    except:
+                        pass
+
+                if all_used_indexes:
                     summary.write(u"Storage:\n")
+                    for i in all_used_indexes:
+                        value = storage.get(i)
+                        is_storage_symbolic = issymbolic(value)
+                        summary.write(u"storage[{:x}] = {:x} {!s}\n".format(state.solve_one(i), state.solve_one(value), flagged(is_storage_symbolic)))
+                '''if blockchain.has_storage(account_address):
+                    summary.write("Storage:\n")
                     for offset, value in blockchain.get_storage_items(account_address):
                         is_storage_symbolic = issymbolic(offset) or issymbolic(value)
                         offset = state.solve_one(offset)
                         value = state.solve_one(value)
                         summary.write(u"\t{:032x} -> {:032x} {!s}\n".format(offset, value, flagged(is_storage_symbolic)))
                         is_something_symbolic = is_something_symbolic or is_storage_symbolic
+                '''
 
-                runtime_code = blockchain.get_code(account_address)
+                runtime_code = state.solve_one(blockchain.get_code(account_address))
                 if runtime_code:
                     summary.write(u"Code:\n")
                     fcode = io.BytesIO(runtime_code)
                     for chunk in iter(lambda: fcode.read(32), b''):
                         summary.write(u'\t{}\n'.format(binascii.hexlify(chunk)))
-                    runtime_trace = set((pc for contract, pc in state.context['seth.rt.trace'] if address == contract))
+                    runtime_trace = set((pc for contract, pc, at_init in state.context['evm.trace'] if address == contract and not at_init))
                     summary.write(u"Coverage {:0.3f}% (on this state)\n".format(calculate_coverage(runtime_code, runtime_trace)))  # coverage % for address in this account/state
                 summary.write(u"\n")
 
@@ -1245,7 +1558,8 @@ class ManticoreEVM(Manticore):
                 tx_summary.write(u"From: 0x{:x}\n".format(state.solve_one(tx.caller), flagged(issymbolic(tx.caller))))
                 tx_summary.write(u"To: 0x{:x} {!s}\n".format(state.solve_one(tx.address), flagged(issymbolic(tx.address))))
                 tx_summary.write(u"Value: {:d} {!s}\n".format(state.solve_one(tx.value), flagged(issymbolic(tx.value))))
-                tx_summary.write(u"Data: {!s} {!s}\n".format(hex_encode(state.solve_one(tx.data)), flagged(issymbolic(tx.data))))
+                tx_data = state.solve_one(tx.data)
+                tx_summary.write(u"Data: {!s} {!s}\n".format(binascii.hexlify(tx_data), flagged(issymbolic(tx.data))))
 
 
                 if tx.return_data is not None:
@@ -1253,10 +1567,10 @@ class ManticoreEVM(Manticore):
                     tx_summary.write(u"Return_data: {!s} {!s}\n".format(hex_encode(return_data), flagged(issymbolic(tx.return_data))))
 
                 metadata = self.get_metadata(tx.address)
-                if tx.sort == 'Call':
+                if tx.sort == 'CALL':
                     if metadata is not None:
-                        function_id = tx.data[:4]  #hope there is enough data
-                        function_id = hex_encode(state.solve_one(function_id))
+                        function_id = tx.data[:4]  # hope there is enough data
+                        function_id = binascii.hexlify(state.solve_one(function_id))
                         signature = metadata.get_func_signature(function_id)
                         function_name, arguments = ABI.parse(signature, tx.data)
                         if tx.result == 'RETURN':
@@ -1312,11 +1626,9 @@ class ManticoreEVM(Manticore):
                 logger.debug("Using iterpickle to dump state")
                 statef.write(iterpickle.dumps(state, 2))
 
-        with testcase.open_stream('rt.trace') as f:
-            self._emit_trace_file(f, state.context['seth.rt.trace'])
-
-        with testcase.open_stream('init.trace') as f:
-            self._emit_trace_file(f, state.context['seth.init.trace'])
+        with testcase.open_stream('trace') as f:
+            self._emit_trace_file(f, state.context['evm.trace'])
+        return testcase
 
     @staticmethod
     def _emit_trace_file(filestream, trace):
@@ -1325,11 +1637,10 @@ class ManticoreEVM(Manticore):
         :param trace: list of (contract address, pc) tuples
         :type trace: list[tuple(int, int)]
         """
-
-        for contract, pc in trace:
+        for contract, pc, at_init in trace:
             if pc == 0:
-                filestream.write(u'---\n')
-            ln = u'0x{:x}:0x{:x}\n'.format(contract, pc)
+                filestream.write('---\n')
+            ln = u'0x{:x}:0x{:x} {}\n'.format(contract, pc, '*' if at_init else '')
             filestream.write(ln)
 
     def finalize(self):
@@ -1337,9 +1648,7 @@ class ManticoreEVM(Manticore):
         Terminate and generate testcases for all currently alive states (contract states that cleanly executed
         to a STOP or RETURN in the last symbolic transaction).
         """
-
-        # move runnign states to final states list
-        # and generate a testcase for each
+        logger.debug("Finalizing %d states.", self.count_states())
         q = Queue()
         for running_state_id in self.running_state_ids:
             q.put(running_state_id)
@@ -1348,7 +1657,10 @@ class ManticoreEVM(Manticore):
             try:
                 while True:
                     state_id = q.get_nowait()
-                    self.terminate_state_id(state_id)
+                    state_id = self._terminate_state_id(state_id)
+                    st = self.load(state_id)
+                    logger.debug("Generating testcase for state_id %d", state_id)
+                    self._generate_testcase_callback(st, 'test', '')
             except EmptyQueue:
                 pass
 
@@ -1362,22 +1674,10 @@ class ManticoreEVM(Manticore):
         for p in ps:
             p.join()
 
-        # delete actual streams from storage
-        for state_id in self.all_state_ids:
-            # state_id -1 is always only on memory
-            if state_id != -1:
-                self._executor._workspace.rm_state(state_id)
-
-        # clean up lists
-        with self.locked_context('seth') as seth_context:
-            seth_context['_saved_states'] = []
-        with self.locked_context('seth') as seth_context:
-            seth_context['_final_states'] = []
-
         #global summary
         with self._output.save_stream('global.summary') as global_summary:
             # (accounts created by contract code are not in this list )
-            global_summary.write(u"Global coverage:\n")
+            global_summary.write(u"Global runtime coverage:\n")
             for address in self.contract_accounts:
                 global_summary.write(u"{:x}: {:0.3f}%\n".format(address, self.global_coverage(address)))  # coverage % for address in this state
 
@@ -1452,7 +1752,54 @@ class ManticoreEVM(Manticore):
                     for o in sorted(visited):
                         f.write(u'0x{:x}\n'.format(o))
 
+        # move running states to final states list
+        # and generate a testcase for each
+        q = Queue()
+        map(q.put, self._running_state_ids)
+
+        def f(q):
+            try:
+                while True:
+                    state_id = q.get_nowait()
+                    self._terminate_state_id(state_id)
+            except EmptyQueue:
+                pass
+
+        ps = []
+
+        for _ in range(self._config_procs):
+            p = Process(target=f, args=(q,))
+            p.start()
+            ps.append(p)
+
+        for p in ps:
+            p.join()
+
+        # delete actual streams from storage
+        for state_id in self._all_state_ids:
+            # state_id -1 is always only on memory
+            if state_id != -1:
+                self._executor._workspace.rm_state(state_id)
+
+        # clean up lists
+        with self.locked_context('seth') as seth_context:
+            seth_context['_saved_states'] = []
+        with self.locked_context('seth') as seth_context:
+            seth_context['_final_states'] = []
+
         logger.info(u"Results in %s", self.workspace)
+
+        #delete actual streams from storage
+        for state_id in self._all_state_ids:
+            #state_id -1 is always only on memory
+            if state_id != -1:
+                self._executor._workspace.rm_state(state_id)
+
+        # clean up lists
+        with self.locked_context('seth') as seth_context:
+            seth_context['_saved_states'] = []
+        with self.locked_context('seth') as seth_context:
+            seth_context['_final_states'] = []
 
     def global_coverage(self, account_address):
         ''' Returns code coverage for the contract on `account_address`.
@@ -1460,26 +1807,18 @@ class ManticoreEVM(Manticore):
             states.
         '''
         account_address = int(account_address)
-
-        # Search one state in which the account_address exists
-        world = None
-        for state_id in self.all_state_ids:
-            world = self.get_world(state_id)
-            if account_address in world.storage:
+        runtime_bytecode = None
+        #Search one state in which the account_address exists
+        for state in self.all_states:
+            world = state.platform
+            if account_address in world:
+                code = world.get_code(account_address)
+                runtime_bytecode = state.solve_one(code)
                 break
 
         with self.locked_context('runtime_coverage') as coverage:
-            seen = coverage
-        #runtime_bytecode = world.storage[account_address]['code']
-        runtime_bytecode = self.get_metadata(account_address).runtime_bytecode
-
-        count, total = 0, 0
-        for i in evm.EVMAsm.disassemble_all(runtime_bytecode):
-            if (account_address, i.offset) in seen:
-                count += 1
-            total += 1
-
-        return count * 100.0 / total
+            seen = {off for addr, off in coverage if addr == account_address}
+        return calculate_coverage(runtime_bytecode, seen)
 
     # TODO: Find a better way to suppress execution of Manticore._did_finish_run_callback
     # We suppress because otherwise we log it many times and it looks weird.

@@ -1,6 +1,8 @@
 from __future__ import print_function
 from builtins import *
 import os
+import errno
+import shutil
 import tempfile
 import unittest
 
@@ -89,8 +91,14 @@ class LinuxTest(unittest.TestCase):
 
 
     def test_linux_workspace_files(self):
-        files = self.symbolic_linux.generate_workspace_files()
+        platform = self.symbolic_linux
+        platform.argv = ["arg1", "arg2"]
+
+        files = platform.generate_workspace_files()
         self.assertIn('syscalls', files)
+        self.assertIn('argv', files)
+        self.assertEquals(files['argv'], "arg1\narg2\n")
+        self.assertIn('env', files)
         self.assertIn('stdout', files)
         self.assertIn('stdin', files)
         self.assertIn('stderr', files)
@@ -185,3 +193,21 @@ class LinuxTest(unittest.TestCase):
         self.assertLess(_min, len(platform.files))
         self.assertGreater(_max, len(platform.files)-1)
 
+
+    def test_chroot(self):
+        # Create a minimal state
+        platform = self.symbolic_linux
+        platform.current.memory.mmap(0x1000, 0x1000, 'rw ')
+        platform.current.SP = 0x2000-4
+
+        # should error with ENOENT
+        this_file = os.path.realpath(__file__)
+        path = platform.current.push_bytes('{}\x00'.format(this_file))
+        fd = platform.sys_chroot(path)
+        self.assertEqual(fd, -errno.ENOTDIR)
+
+        # valid dir, but should always fail with EPERM
+        this_dir = os.path.dirname(this_file)
+        path = platform.current.push_bytes('{}\x00'.format(this_dir))
+        fd = platform.sys_chroot(path)
+        self.assertEqual(fd, -errno.EPERM)

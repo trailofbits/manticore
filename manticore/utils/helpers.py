@@ -107,6 +107,20 @@ def as_unicode(s):
         return s
     raise ValueError('expected string-like value, got {}'.format(type(s).__name__))
 
+def istainted(arg, taint=None):
+    '''
+    Helper to determine whether an object if tainted.
+    :param arg: a value or Expression
+    :param taint: a sepecific taint value (eg. 'IMPORTANT'). If None this fucntions check for any taint value.
+    '''
+
+    if not issymbolic(arg):
+        return False
+    if taint is None:
+        return len(arg.taint) != 0
+    return taint in arg.taint
+
+
 import functools
 
 

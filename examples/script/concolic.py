@@ -31,7 +31,6 @@ import copy
 from manticore.core.smtlib.expression import *
 
 prog = '../linux/simpleassert'
-main_end = 0x400ae9
 VERBOSITY = 0
 
 def _partition(pred, iterable):
@@ -52,7 +51,7 @@ class TraceReceiver(Plugin):
         return self._trace
 
     def will_generate_testcase_callback(self, state, test_id, msg):
-        self._trace = state.context[self._tracer.context_key]
+        self._trace = state.context.get(self._tracer.context_key, [])
 
         instructions, writes = _partition(lambda x: x['type'] == 'regs', self._trace)
         total = len(self._trace)
@@ -136,12 +135,17 @@ def constraints_to_constraintset(constupl):
 
 def input_from_cons(constupl, datas):
     ' solve bytes in |datas| based on '
+    def make_chr(c):
+        try:
+            return chr(c)
+        except:
+            return c
     newset = constraints_to_constraintset(constupl)
 
     ret = ''
     for data in datas:
         for c in data:
-            ret += chr(solver.get_value(newset, c))
+            ret += make_chr(solver.get_value(newset, c))
     return ret
 
 # Run a concrete run with |inp| as stdin
@@ -167,15 +171,16 @@ def symbolic_run_get_cons(trace):
     m2.verbosity(VERBOSITY)
     m2.register_plugin(f)
 
-    @m2.hook(main_end)
-    def x(s):
+    def on_term_testcase(mcore, state, stateid, err):
         with m2.locked_context() as ctx:
             readdata = []
-            for name, fd, data in s.platform.syscall_trace:
+            for name, fd, data in state.platform.syscall_trace:
                 if name in ('_receive', '_read') and fd == 0:
                     readdata.append(data)
             ctx['readdata'] = readdata
-            ctx['constraints'] = list(s.constraints.constraints)
+            ctx['constraints'] = list(state.constraints.constraints)
+
+    m2.subscribe('will_terminate_state', on_term_testcase)
 
     m2.run()
 
@@ -259,12 +264,6 @@ def concrete_input_to_constraints(ci, prev=None):
 
 
 def main():
-    global main_end
-
-    # Read the address of main's `ret` from cmdline if we're passed it. Used for testing.
-    if len(sys.argv) > 1:
-        main_end = int(sys.argv[1], 0)
-        log("Got end of main: {:x}".format(main_end))
 
     q = queue.Queue()
 

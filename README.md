@@ -81,6 +81,8 @@ Once installed, the `manticore` CLI tool and Python API will be available.
 
 For installing a development version of Manticore, see our [wiki](https://github.com/trailofbits/manticore/wiki/Hacking-on-Manticore).
 
+> Note: If you are experiencing unanticipated errors when running Manticore on native binaries, you can try using the `--process-dependency-links` pip flag. This will install the development branch of our disassembler dependency, which may contain useful bug fixes.
+
 ## Usage
 
 ### CLI
