@@ -4,11 +4,12 @@ import re
 import os
 from . import Manticore
 from .manticore import ManticoreError
-from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, istainted, Constant, operators
+from .core.smtlib import ConstraintSet, Operators, solver, Constant, operators
 from .core.smtlib.visitors import simplify
 from .core.plugin import FilterFunctions
 from .platforms import evm
 from .core.state import State
+from .utils.helpers import istainted, issymbolic
 import tempfile
 from subprocess import Popen, PIPE, check_output
 from multiprocessing import Process, Queue

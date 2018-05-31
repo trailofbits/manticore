@@ -44,7 +44,7 @@ def make_binja(program, disasm, argv, env, symbolic_files, concrete_start=''):
     def _check_disassembler_present(disasm):
         if is_binja_disassembler(disasm):
             try:
-                import binaryninja # noqa
+                import binaryninja  # noqa
             except ImportError:
                 err = ("BinaryNinja not found! You MUST own a BinaryNinja version"
                        " that supports GUI-less processing for this option"
