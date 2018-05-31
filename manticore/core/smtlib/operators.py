@@ -1,5 +1,7 @@
 from __future__ import absolute_import
-from .expression import *
+from .expression import (
+    BitVec, BitVecExtract, BitVecSignExtend, BitVecZeroExtend, BitVecConstant, BitVecConcat, Bool, BitVecITE, BoolConstant, BoolITE
+)
 from ...utils.helpers import issymbolic, istainted
 import math
 
