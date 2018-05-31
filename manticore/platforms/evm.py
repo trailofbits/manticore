@@ -2480,7 +2480,6 @@ class EVMWorld(Platform):
         self._process_pending_transaction()
         if self.current_vm is None:
             raise TerminateState("Trying to execute an empty transaction", testcase=False)
-
         try:
             self.current_vm.execute()
         except StartTx:

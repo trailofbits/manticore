@@ -65,16 +65,17 @@ class Detector(Plugin):
         with self.locked_global_findings() as global_findings:
             return global_findings
 
-    def add_finding(self, state, address, pc, finding):
-        self.get_findings(state).add((address, pc, finding))
+    def add_finding(self, state, address, pc, finding, init):
+        self.get_findings(state).add((address, pc, finding, init))
         with self.locked_global_findings() as gf:
-            gf.add((address, pc, finding))
+            gf.add((address, pc, finding, init))
         logger.warning(finding)
 
     def add_finding_here(self, state, finding):
         address = state.platform.current_vm.address
         pc = state.platform.current_vm.pc
-        self.add_finding(state, address, pc, finding)
+        at_init = state.platform.current_transaction.sort == 'CREATE'
+        self.add_finding(state, address, pc, finding, at_init)
 
     def _save_current_location(self, state, finding):
         address = state.platform.current_vm.address
@@ -1324,14 +1325,11 @@ class ManticoreEVM(Manticore):
 
         if contract_account is None:
             logger.info("Failed to create contract. Exception in constructor")
+            self.finalize()
             return
 
         prev_coverage = 0
         current_coverage = 0
-
-        #avoid all human level tx that has no effect on the storage
-        filter_nohuman_constants = FilterFunctions(regexp=r".*", depth='human', mutability='constant', include=False)
-        self.register_plugin(filter_nohuman_constants)
 
         while (current_coverage < 100 or not tx_use_coverage) and not self.is_shutdown():
             try:
@@ -1350,9 +1348,7 @@ class ManticoreEVM(Manticore):
 
                 if not found_new_coverage:
                     break
-        #Remove the filter
-        self.unregister_plugin(filter_nohuman_constants)
-        self.finalize()
+
 
     def run(self, **kwargs):
         ''' Run any pending transaction on any running state '''
@@ -1589,19 +1585,19 @@ class ManticoreEVM(Manticore):
             summary.write("Last exception: %s\n" % state.context['last_exception'])
             local_findings = set()
             for detector in self.detectors.values():
-                for address, pc, finding in detector.get_findings(state):
-                    if (address, pc, finding) not in local_findings:
-                        local_findings.add((address, pc, finding))
+                for address, pc, finding, at_init in detector.get_findings(state):
+                    if (address, pc, finding, at_init) not in local_findings:
+                        local_findings.add((address, pc, finding, at_init))
 
             if len(local_findings):
                 summary.write("Findings:\n")
-                for address, pc, finding in local_findings:
+                for address, pc, finding, at_init in local_findings:
                     summary.write('%s\n' % finding)
                     summary.write('\tContract: 0x%x\n' % address)
-                    summary.write('\tEVM Program counter: %s\n' % pc)
+                    summary.write('\tEVM Program counter: %s%s\n' % (pc, at_init and " (at constructor)" or ""))
                     md = self.get_metadata(address)
                     if md is not None:
-                        src = md.get_source_for(pc)
+                        src = md.get_source_for(pc, runtime=not at_init)
                         summary.write('\tSnippet:\n')
                         summary.write('\n'.join(('\t\t' + x for x in src.split('\n'))))
                         summary.write('\n\n')
@@ -1786,9 +1782,9 @@ class ManticoreEVM(Manticore):
     def global_findings(self):
         global_findings = set()
         for detector in self.detectors.values():
-            for address, pc, finding in detector.global_findings:
-                if (address, pc, finding) not in global_findings:
-                    global_findings.add((address, pc, finding))
+            for address, pc, finding, at_init in detector.global_findings:
+                if (address, pc, finding, at_init) not in global_findings:
+                    global_findings.add((address, pc, finding, at_init))
         return global_findings
 
     def finalize(self):
@@ -1825,14 +1821,15 @@ class ManticoreEVM(Manticore):
         if len(self.global_findings):
             with self._output.save_stream('global.findings') as global_findings:
                 global_findings.write("Global Findings:\n")
-                for address, pc, finding in self.global_findings:
+                for address, pc, finding, at_init in self.global_findings:
                     global_findings.write('- %s -\n' % finding)
-                    global_findings.write('\t Contract: %s\n' % address)
-                    global_findings.write('\t EVM Program counter: %s\n' % pc)
+                    global_findings.write('\tContract: %s\n' % address)
+                    global_findings.write('\tEVM Program counter: %s%s\n' % (pc, at_init and " (at constructor)" or ""))
+
                     md = self.get_metadata(address)
                     if md is not None:
-                        src = md.get_source_for(pc)
-                        global_findings.write('\t Solidity snippet:\n')
+                        src = md.get_source_for(pc, runtime= not at_init)
+                        global_findings.write('\tSolidity snippet:\n')
                         global_findings.write('\n'.join(('\t\t' + x for x in src.split('\n'))))
                         global_findings.write('\n\n')
 
@@ -1950,7 +1947,8 @@ class ManticoreEVM(Manticore):
                 code = world.get_code(account_address)
                 runtime_bytecode = state.solve_one(code)
                 break
-
+        else:
+            return 0.0
         with self.locked_context('runtime_coverage') as coverage:
             seen = {off for addr, off in coverage if addr == account_address}
         return calculate_coverage(runtime_bytecode, seen)

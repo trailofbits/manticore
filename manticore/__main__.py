@@ -95,6 +95,9 @@ def parse_arguments():
     parser.add_argument('--detect-all',  action='store_true',
                         help='Enable all detector heuristics (Ethereum only)')
 
+    parser.add_argument('--avoid-constant',  action='store_true',
+                        help='Also explore constant functions (Ethereum only)')
+
     parsed = parser.parse_args(sys.argv[1:])
     if parsed.procs <= 0:
         parsed.procs = 1
@@ -108,7 +111,7 @@ def parse_arguments():
 
 
 def ethereum_cli(args):
-    from .ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, DetectUninitializedStorage, DetectUninitializedMemory
+    from .ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, DetectUninitializedStorage, DetectUninitializedMemory, FilterFunctions
     log.init_logging()
 
     m = ManticoreEVM(procs=args.procs)
@@ -128,10 +131,19 @@ def ethereum_cli(args):
     if args.detect_uninitialized_memory:
         m.register_detector(DetectUninitializedMemory())
 
+    if args.avoid_constant:
+        #avoid all human level tx that has no effect on the storage
+        print "avoiding contants"
+        filter_nohuman_constants = FilterFunctions(regexp=r".*", depth='human', mutability='constant', include=False)
+        self.register_plugin(filter_nohuman_constants)
+
     logger.info("Beginning analysis")
 
     m.multi_tx_analysis(args.argv[0], args.contract, args.txlimit, not args.txnocoverage, args.txaccount)
 
+    #TODO unregister all plugins
+
+    m.finalize()
 
 def main():
     log.init_logging()
