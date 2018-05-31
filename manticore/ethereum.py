@@ -23,6 +23,7 @@ from functools import reduce
 from contextlib import contextmanager
 logger = logging.getLogger(__name__)
 
+
 class EthereumError(ManticoreError):
     pass
 
@@ -1595,7 +1596,6 @@ class ManticoreEVM(Manticore):
                         findings.write('Snippet:\n')
                         findings.write('\n'.join((' ' + x for x in src.split('\n'))))
                         findings.write('\n\n')
-
 
         with testcase.open_stream('summary') as summary:
             summary.write("Message: %s\n" % message)

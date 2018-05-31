@@ -3,6 +3,7 @@ import sys
 import types
 from logging import DEBUG, WARNING, ERROR, INFO
 
+
 class ContextFilter(logging.Filter):
     '''
     This is a filter which injects contextual information into the log.

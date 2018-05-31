@@ -206,7 +206,7 @@ class Manticore(Eventful):
         self.subscribe('will_generate_testcase', self._generate_testcase_callback)
         self.subscribe('did_finish_run', self._did_finish_run_callback)
 
-        # Default plugins for now.. FIXME?
+        # Default plugins for now.. FIXME REMOVE!
         self.register_plugin(InstructionCounter())
         self.register_plugin(Visited())
         self.register_plugin(Tracer())
