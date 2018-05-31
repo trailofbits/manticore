@@ -270,14 +270,20 @@ class ConcreteTraceFollower(Plugin):
 
 # TODO document all callbacks
 class ExamplePlugin(Plugin):
+    def will_open_transaction_callback(self, state, tx):
+        logger.info('will open a transaction %r %r', state, tx)
+
+    def will_close_transaction_callback(self, state, tx):
+        logger.info('will close a transaction %r %r', state, tx)
+
     def will_decode_instruction_callback(self, state, pc):
-        logger.info('will_decode_instruction', state, pc)
+        logger.info('will_decode_instruction %r %r', state, pc)
 
     def will_execute_instruction_callback(self, state, pc, instruction):
-        logger.info('will_execute_instruction', state, pc, instruction)
+        logger.info('will_execute_instruction %r %r %r', state, pc, instruction)
 
     def did_execute_instruction_callback(self, state, pc, target_pc, instruction):
-        logger.info('did_execute_instruction', state, pc, target_pc, instruction)
+        logger.info('did_execute_instruction %r %r %r %r', state, pc, target_pc, instruction)
 
     def will_start_run_callback(self, state):
         ''' Called once at the begining of the run.

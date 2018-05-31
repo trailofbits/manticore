@@ -1218,10 +1218,16 @@ class EVM(Eventful):
             value = value.value
         self.stack.append(value)
 
+    def _top(self, n=0):
+        ''' Read a value from the top of the stack without removing it '''
+        if len(self.stack) - n <0:
+            raise StackUnderflow()
+        return self.stack[n-1]
+
     def _pop(self):
+        ''' Pop a value from the stack '''
         if len(self.stack) == 0:
             raise StackUnderflow()
-
         return self.stack.pop()
 
     def _consume(self, fee):
