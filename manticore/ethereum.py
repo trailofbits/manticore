@@ -1349,7 +1349,6 @@ class ManticoreEVM(Manticore):
                 if not found_new_coverage:
                     break
 
-
     def run(self, **kwargs):
         ''' Run any pending transaction on any running state '''
 
@@ -1828,7 +1827,7 @@ class ManticoreEVM(Manticore):
 
                     md = self.get_metadata(address)
                     if md is not None:
-                        src = md.get_source_for(pc, runtime= not at_init)
+                        src = md.get_source_for(pc, runtime=not at_init)
                         global_findings.write('\tSolidity snippet:\n')
                         global_findings.write('\n'.join(('\t\t' + x for x in src.split('\n'))))
                         global_findings.write('\n\n')

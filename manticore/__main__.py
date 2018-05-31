@@ -145,6 +145,7 @@ def ethereum_cli(args):
 
     m.finalize()
 
+
 def main():
     log.init_logging()
     args = parse_arguments()
