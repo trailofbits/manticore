@@ -199,7 +199,7 @@ class DetectInvalid(Detector):
 
     def did_evm_execute_instruction_callback(self, state, instruction, arguments, result_ref):
         mnemonic = instruction.semantics
-        result = result_ref[0]
+        result = result_ref.value
 
         if mnemonic == 'INVALID':
             if not self._only_human or state.platform.current_transaction.depth == 0:
@@ -224,7 +224,7 @@ class DetectIntegerOverflow(Detector):
         return state.can_be_true(b > a)
 
     def did_evm_execute_instruction_callback(self, state, instruction, arguments, result_ref):
-        result = result_ref[0]
+        result = result_ref.value
         mnemonic = instruction.semantics
 
         if mnemonic == 'ADD':
@@ -1505,7 +1505,7 @@ class ManticoreEVM(Manticore):
             assert ty == 'CREATE_CONTRACT'
             world.create_contract(caller=caller, address=address, balance=value, init=data, price=price)
 
-    def _did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
+    def _did_evm_execute_instruction_callback(self, state, instruction, arguments, result_ref):
         ''' INTERNAL USE '''
         logger.debug("%s", state.platform.current_vm)
         #TODO move to a plugin

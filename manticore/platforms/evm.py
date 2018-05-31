@@ -11,6 +11,7 @@ from ..core.state import ForkState, TerminateState
 from ..utils.event import Eventful
 from ..core.smtlib.visitors import pretty_print, translate_to_smtlib, simplify
 from ..core.state import Concretize, TerminateState
+from ..core.plugin import Ref
 import logging
 import sys
 from collections import namedtuple
@@ -1368,7 +1369,7 @@ class EVM(Eventful):
             if not current.is_branch:
                 #advance pc pointer
                 self.pc += self.instruction.size
-            self._publish('did_evm_execute_instruction', current, arguments, [result])
+            self._publish('did_evm_execute_instruction', current, arguments, Ref(result))
             self._publish('did_execute_instruction', last_pc, self.pc, current)
             raise
         except Emulated as e:
@@ -1380,12 +1381,11 @@ class EVM(Eventful):
         if not current.is_branch:
             #advance pc pointer
             self.pc += self.instruction.size
-        result_ref = [result]
+        result_ref = Ref(result)
         self._publish('did_evm_execute_instruction', current, arguments, result_ref)
-        result = result_ref[0]
         self._publish('did_execute_instruction', last_pc, self.pc, current)
 
-        self._push_results(current, result)
+        self._push_results(current, result_ref.value)
 
     def read_buffer(self, offset, size):
         if issymbolic(size):

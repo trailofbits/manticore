@@ -296,6 +296,7 @@ class EthTests(unittest.TestCase):
         filename = os.path.join(THIS_DIR, 'binaries/int_overflow.sol')
 
         mevm.multi_tx_analysis(filename, tx_limit=1)
+        mevm.finalize()
 
         worksp = mevm.workspace
         listdir = os.listdir(worksp)
