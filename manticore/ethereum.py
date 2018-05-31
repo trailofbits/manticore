@@ -246,7 +246,7 @@ class DetectIntegerOverflow(Detector):
                 if istainted(arg, 'IOA') or istainted(arg, 'IOM') or istainted(arg, 'IU'):
                     self.add_finding_here(state, "Result of integuer overflowed intruction is written to the storage")
         result_ref[0] = result
- 
+
 
 class DetectUninitializedMemory(Detector):
     '''
@@ -1820,7 +1820,6 @@ class ManticoreEVM(Manticore):
 
         for p in ps:
             p.join()
-
 
         #global summary
         if len(self.global_findings):
