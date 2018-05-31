@@ -98,7 +98,7 @@ class Detector(Plugin):
             output += '\t Contract: %s\n' % address
             output += '\t Program counter: %s\n' % pc
             output += '\t Snippet:\n'
-            output += '\n'.join(('\t\t' + x for x in self._get_src(address, pc).split('\n')))
+            output += '\n'.join(('\t ' + x for x in self._get_src(address, pc).split('\n')))
             output += '\n'
         return output
 
@@ -246,7 +246,7 @@ class DetectIntegerOverflow(Detector):
             for arg in arguments:
                 if istainted(arg, 'IOA') or istainted(arg, 'IOM') or istainted(arg, 'IU'):
                     self.add_finding_here(state, "Result of integuer overflowed intruction is written to the storage")
-        result_ref[0] = result
+        result_ref.value = result
 
 
 class DetectUninitializedMemory(Detector):
@@ -356,23 +356,25 @@ class SolidityMetadata(object):
         f = int(md.get(2, 0))
         j = md.get(3, None)
 
+        pos_to_offset = {}
         for i in evm.EVMAsm.disassemble_all(bytecode):
-            if asm_pos in srcmap and len(srcmap[asm_pos]):
-                md = srcmap[asm_pos]
-                if len(md):
-                    d = {}
-                    for p, k in enumerate(md.split(':')):
-                        if len(k):
-                            d[p] = k
-
-                    s = int(d.get(0, s))
-                    l = int(d.get(1, l))
-                    f = int(d.get(2, f))
-                    j = d.get(3, j)
-
-            new_srcmap[asm_offset] = (s, l, f, j)
+            pos_to_offset[asm_pos] = asm_offset
             asm_pos += 1
             asm_offset += i.size
+
+        for asm_pos, md in enumerate(srcmap):
+            if len(md):
+                d = {}
+                for p, k in enumerate(md.split(':')):
+                    if len(k):
+                        d[p] = k
+
+                s = int(d.get(0, s))
+                l = int(d.get(1, l))
+                f = int(d.get(2, f))
+                j = d.get(3, j)
+
+            new_srcmap[pos_to_offset[asm_pos]] = (s, l, f, j)
 
         return new_srcmap
 
@@ -396,6 +398,7 @@ class SolidityMetadata(object):
             srcmap = self.srcmap
 
         try:
+            #print asm_offset, srcmap[asm_offset]
             beg, size, _, _ = srcmap[asm_offset]
         except KeyError:
             #asm_offset pointing outside the known bytecode
@@ -1351,7 +1354,6 @@ class ManticoreEVM(Manticore):
 
     def run(self, **kwargs):
         ''' Run any pending transaction on any running state '''
-
         # Check if there is a pending transaction
         with self.locked_context('seth') as context:
             assert context['_pending_transaction'] is not None
@@ -1829,7 +1831,7 @@ class ManticoreEVM(Manticore):
                     if md is not None:
                         src = md.get_source_for(pc, runtime=not at_init)
                         global_findings.write('\tSolidity snippet:\n')
-                        global_findings.write('\n'.join(('\t\t' + x for x in src.split('\n'))))
+                        global_findings.write('\n'.join(('\t ' + x for x in src.split('\n'))))
                         global_findings.write('\n\n')
 
         with self._output.save_stream('global.summary') as global_summary:
