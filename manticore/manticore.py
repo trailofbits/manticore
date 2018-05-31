@@ -44,7 +44,7 @@ def make_binja(program, disasm, argv, env, symbolic_files, concrete_start=''):
     def _check_disassembler_present(disasm):
         if is_binja_disassembler(disasm):
             try:
-                import binaryninja
+                import binaryninja # noqa
             except ImportError:
                 err = ("BinaryNinja not found! You MUST own a BinaryNinja version"
                        " that supports GUI-less processing for this option"
@@ -72,7 +72,7 @@ def make_decree(program, concrete_start='', **kwargs):
     if concrete_start != '':
         logger.info('Starting with concrete input: {}'.format(concrete_start))
     platform.input.transmit(concrete_start)
-    platform.input.transmit(initial_state.symbolicate_buffer('+'*14, label='RECEIVE'))
+    platform.input.transmit(initial_state.symbolicate_buffer('+' * 14, label='RECEIVE'))
     return initial_state
 
 
