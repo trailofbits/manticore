@@ -72,6 +72,7 @@ class InvalidSymbolicMemoryAccess(InvalidMemoryAccess):
         self.constraint = constraint
         self.size = size
 
+
 def _normalize(c):
     """
     Convert a byte-like value into a canonical byte (a value of type 'bytes' of len 1)
@@ -167,9 +168,9 @@ class Map(with_metaclass(ABCMeta, object)):
 
     def __eq__(self, other):
         return self.start == other.start and \
-               self.end == other.end and \
-               self.perms == other.perms and \
-               self.name == other.name
+            self.end == other.end and \
+            self.perms == other.perms and \
+            self.name == other.name
 
     def __lt__(self, other):
         if self.start != other.start:
@@ -439,6 +440,7 @@ class COWMap(Map):
         head = COWMap(self, size=address - self.start)
         tail = COWMap(self, offset=address - self.start)
         return head, tail
+
 
 class Memory(with_metaclass(ABCMeta, object)):
     '''
@@ -1017,7 +1019,6 @@ class SMemory(Memory):
                         else:
                             result[offset] = Operators.ITEBV(8, condition, Operators.ORD(value), result[offset])
             return list(map(Operators.CHR, result))
-
 
     def write(self, address, value, force=False):
         '''

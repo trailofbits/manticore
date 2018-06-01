@@ -30,6 +30,7 @@ register_logger = logging.getLogger('{}.registers'.format(__name__))
 class CpuException(Exception):
     ''' Base cpu exception '''
 
+
 class DecodeException(CpuException):
     '''
     Raised when trying to decode an unknown or invalid instruction '''
@@ -897,8 +898,8 @@ class Cpu(Eventful):
         try:
             insn = self.instruction
             return "INSTRUCTION: 0x{:016x}:\t{!s}\t{!s}".format(insn.address,
-                                                      insn.mnemonic,
-                                                      insn.op_str)
+                                                                insn.mnemonic,
+                                                                insn.op_str)
         except Exception as e:
             return "{can't decode instruction}"
 
@@ -922,7 +923,7 @@ class Cpu(Eventful):
         # will disabled_signals(self):
         #    return map(self.render_register, self._regfile.canonical_registers)
         return list(map(self.render_register,
-                   sorted(self._regfile.canonical_registers)))
+                        sorted(self._regfile.canonical_registers)))
 
     # Generic string representation
     def __str__(self):

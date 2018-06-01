@@ -2,6 +2,7 @@ from builtins import *
 from ..smtlib import Operators, BitVec, Bool
 from ...utils.helpers import isint
 
+
 class Register(object):
     '''
     Generic variable width register. For 1 bit registers, allows writes of types

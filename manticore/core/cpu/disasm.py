@@ -259,10 +259,10 @@ class BinjaILDisasm(Disasm):
 
         def __repr__(self):
             return "{:d} {:x}\t{!s} {!s} {:x}".format(self.llil.instr_index,
-                                          self.llil.address,
-                                          self.llil,
-                                          self.llil.operation.name,
-                                          self.llil.address)
+                                                      self.llil.address,
+                                                      self.llil,
+                                                      self.llil.operation.name,
+                                                      self.llil.address)
 
 
 def init_disassembler(disassembler, arch, mode, view=None):

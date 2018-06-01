@@ -71,7 +71,6 @@ class File(object):
         mode = mode_from_flags(flags)
         self.file = open(path, mode)
 
-
     def __getstate__(self):
         state = {}
         state['name'] = self.name
@@ -83,7 +82,6 @@ class File(object):
             state['pos'] = None
         return state
 
-
     def __setstate__(self, state):
         name = state['name']
         mode = state['mode']
@@ -92,7 +90,6 @@ class File(object):
 
         if pos is not None:
             self.seek(pos)
-
 
     @property
     def name(self):

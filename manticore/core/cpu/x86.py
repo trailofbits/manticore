@@ -611,6 +611,8 @@ class AMD64RegFile(RegisterFile):
         return self._table[reg].size
 
 # Operand Wrapper
+
+
 class AMD64Operand(Operand):
     ''' This class deals with capstone X86 operands '''
 
@@ -1376,14 +1378,14 @@ class X86Cpu(Cpu):
         cpu.ZF = arg_dest == cmp0
 
         dest.write(Operators.ITEBV(size, cpu.ZF,
-                                    Operators.CONCAT(size, srch, srcl),
-                                    arg_dest )
-                  )
+                                   Operators.CONCAT(size, srch, srcl),
+                                   arg_dest)
+                   )
 
         cpu.write_register(cmp_reg_name_l, Operators.ITEBV(size // 2, cpu.ZF, cmpl,
-                                                              Operators.EXTRACT(arg_dest, 0, size // 2)))
+                                                           Operators.EXTRACT(arg_dest, 0, size // 2)))
         cpu.write_register(cmp_reg_name_h, Operators.ITEBV(size // 2, cpu.ZF, cmph,
-                                                              Operators.EXTRACT(arg_dest, size // 2, size // 2)))
+                                                           Operators.EXTRACT(arg_dest, size // 2, size // 2)))
 
     @instruction
     def DAA(cpu):
@@ -2069,6 +2071,8 @@ class X86Cpu(Cpu):
 #       SETL, SETLE, SETNB, SETNBE, SETNL, SETNLE, SETNO, SETNP, SETNS, SETNZ,
 #       SETO, SETP, SETS, SETZ, XADD, XCHG, XLAT
 ########################################################################################
+
+
     @instruction
     def BSWAP(cpu, dest):
         '''
@@ -4006,7 +4010,7 @@ class X86Cpu(Cpu):
         res = 0
         for pos in range(1, src.size):
             res = Operators.ITEBV(dest.size, flag, res, pos)
-            flag = Operators.OR(flag, Operators.EXTRACT(value, pos, 1) == 1 )
+            flag = Operators.OR(flag, Operators.EXTRACT(value, pos, 1) == 1)
 
         cpu.ZF = value == 0
         dest.write(Operators.ITEBV(dest.size, cpu.ZF, dest.read(), res))
@@ -4471,6 +4475,8 @@ class X86Cpu(Cpu):
 # State Management: EMMS
 #
 ########################################################################################
+
+
     @instruction
     def EMMS(cpu):
         '''
@@ -5128,6 +5134,7 @@ class X86Cpu(Cpu):
         for i in reversed(range(7, op1.size, 8)):
             res = (res << 1) | ((arg1 >> i) & 1)
         op0.write(Operators.EXTRACT(res, 0, op0.size))
+
     @instruction
     def PSRLDQ(cpu, dest, src):
         '''
@@ -5855,7 +5862,6 @@ class X86Cpu(Cpu):
         for pos in range(1, src.size):
             res = Operators.ITEBV(dest.size, flag, res, pos)
             flag = Operators.OR(flag, Operators.EXTRACT(value, pos, 1) == 1)
-
 
         cpu.CF = res == src.size
         cpu.ZF = res == 0

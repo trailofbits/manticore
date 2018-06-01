@@ -220,6 +220,7 @@ def UDIV(dividend, divisor):
     assert dividend >= 0 or divisor > 0  # unsigned-es
     return dividend // divisor
 
+
 def UREM(a, b):
     if isinstance(a, BitVec):
         return a.urem(b)

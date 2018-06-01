@@ -1170,7 +1170,7 @@ class EVM(Eventful):
         '''
         assert address < len(self.bytecode)
         value = self.bytecode[address:address + size]
-        return value.ljust(size, 0) # pad with null (spec)
+        return value.ljust(size, 0)  # pad with null (spec)
 
     def disassemble(self):
         return EVMAsm.disassemble(self.bytecode)
@@ -1205,7 +1205,7 @@ class EVM(Eventful):
                     yield val
                 else:
                     yield val.value
- 
+
             while True:
                 yield 0
         instruction = EVMAsm.disassemble_one(getcode(), offset=self.pc)
@@ -2054,6 +2054,7 @@ class EVM(Eventful):
             lines = []
             for c in range(0, len(src), length):
                 chars = src[c:c + length]
+
                 def p(x):
                     if issymbolic(x):
                         return '??'
@@ -2068,7 +2069,7 @@ class EVM(Eventful):
                         return str((x <= 127 and FILTER[x]) or '.')
 
                 printable = ''.join(p1(x) for x in chars)
-                lines.append("{0:04x}  {1:<{width}} {2}".format(c, hex, printable, width=length*3))
+                lines.append("{0:04x}  {1:<{width}} {2}".format(c, hex, printable, width=length * 3))
             return lines
 
         m = []

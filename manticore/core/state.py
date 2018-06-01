@@ -132,6 +132,7 @@ class State(Eventful):
         # We are forcing State to have abstractcpu
         except ConcretizeRegister as e:
             expression = self.cpu.read_register(e.reg_name)
+
             def setstate(state, value):
                 state.cpu.write_register(setstate.e.reg_name, value)
             setstate.e = e

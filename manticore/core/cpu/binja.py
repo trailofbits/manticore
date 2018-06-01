@@ -51,13 +51,13 @@ class BinjaRegisterFile(RegisterFile):
                                                              platform_regs)
 
         new_aliases = [x for x in self.pl2b_map.items() if (x[0] not in self.reg_aliases and
-                                        x[1] is not None and
-                                        not isinstance(x[1], tuple))]
+                                                            x[1] is not None and
+                                                            not isinstance(x[1], tuple))]
         self.reg_aliases.update(new_aliases)
 
         # all regs are: architecture, aliases and flags
         all_regs = arch_regs + list(self.reg_aliases.values()) + f_regs
-        self.registers = {reg : 0 for reg in all_regs}
+        self.registers = {reg: 0 for reg in all_regs}
 
         # FIXME get these from the platform!! they are already part of registers
         self.segment_registers = (['cs', 'ds', 'es', 'ss'] +
@@ -479,8 +479,8 @@ class BinjaCpu(Cpu):
                     not isinstance(insn, BinjaILDisasm.BinjaILInstruction)):
                 insn = self.instruction
                 return "INSTRUCTION: 0x{:016x}:\t{!s}\t{!s}".format(insn.address,
-                                                          insn.mnemonic,
-                                                          insn.op_str)
+                                                                    insn.mnemonic,
+                                                                    insn.op_str)
             else:
                 return str(insn)
         except Exception as e:

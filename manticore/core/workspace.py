@@ -25,6 +25,8 @@ else:
 logger = logging.getLogger(__name__)
 
 _manager = None
+
+
 def manager():
     global _manager
     if _manager is None:
@@ -564,8 +566,8 @@ class ManticoreOutput(object):
                 if hasattr(cpu, "instruction") and cpu.instruction is not None:
                     i = cpu.instruction
                     summary.write(u'Instruction: 0x{:x}\t({!s} {!s})\n'.format(i.address,
-                                                                    i.mnemonic.encode('utf-16be'),
-                                                                    i.op_str.encode('utf-16be')))
+                                                                               i.mnemonic.encode('utf-16be'),
+                                                                               i.op_str.encode('utf-16be')))
                 else:
                     summary.write(u"  Instruction: {symbolic}\n")
 

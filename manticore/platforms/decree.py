@@ -4,7 +4,9 @@ standard_library.install_aliases()
 from builtins import *
 from . import cgcrandom
 import weakref
-import sys, os, struct
+import sys
+import os
+import struct
 # TODO use cpu factory
 from ..core.cpu.x86 import I386Cpu
 from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeRegister

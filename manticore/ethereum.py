@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 ################ Detectors ####################
 class EthereumError(ManticoreError):
-   pass
+    pass
 
 
 class DependencyError(EthereumError):
@@ -49,7 +49,7 @@ class DependencyError(EthereumError):
 
 
 class NoAliveStates(EthereumError):
-   pass
+    pass
 
 
 class Detector(Plugin):
@@ -381,7 +381,7 @@ class ABI(object):
         '''
         if not isstring(value) or isinstance(value, tuple):
             raise ValueError('serialize_string expected string or tuple, received {}'.format(type(value).__name__))
-        return ABI.serialize_uint(len(value)) + tuple(value) + tuple('\x00'  * (32 - len(value) % 32))
+        return ABI.serialize_uint(len(value)) + tuple(value) + tuple('\x00' * (32 - len(value) % 32))
 
     @staticmethod
     def serialize_array(value):
@@ -1560,7 +1560,6 @@ class ManticoreEVM(Manticore):
                 tx_summary.write(u"Value: {:d} {!s}\n".format(state.solve_one(tx.value), flagged(issymbolic(tx.value))))
                 tx_data = state.solve_one(tx.data)
                 tx_summary.write(u"Data: {!s} {!s}\n".format(binascii.hexlify(tx_data), flagged(issymbolic(tx.data))))
-
 
                 if tx.return_data is not None:
                     return_data = state.solve_one(tx.return_data)

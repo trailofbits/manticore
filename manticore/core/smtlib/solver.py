@@ -508,12 +508,13 @@ class Z3Solver(Solver):
 class LazyZ3Solver(Solver):
     """
     Wrap Z3Solver and only initialize it if it's used.
-    
+
     Not all instances need a solver, such as the majority of unit tests
     """
+
     def __init__(self, z3cls=Z3Solver):
         super(LazyZ3Solver, self).__init__()
-        self.cls=z3cls
+        self.cls = z3cls
         self.obj = None
 
     def ensure_initialized(self):
@@ -570,10 +571,11 @@ class LazyZ3Solver(Solver):
 
     def optimize(self, constraints, x, goal, M=10000):
         self.ensure_initialized()
-        return self.obj.optimize(constraints, x,goal,M)
+        return self.obj.optimize(constraints, x, goal, M)
 
     def get_value(self, constraints, expression):
         self.ensure_initialized()
         return self.obj.get_value(constraints, expression)
+
 
 solver = LazyZ3Solver()

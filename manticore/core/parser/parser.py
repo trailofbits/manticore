@@ -341,11 +341,11 @@ def parse(expression, read_memory=None, read_register=None, get_descriptor=None,
 
 if __name__ == '__main__':
     while True:
-       try:
-           s = input('calc > ')
-       except EOFError:
-           break
-       if not s:
-           continue
-       result = parse(s)
-       print(result)
+        try:
+            s = input('calc > ')
+        except EOFError:
+            break
+        if not s:
+            continue
+        result = parse(s)
+        print(result)

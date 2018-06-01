@@ -3,6 +3,7 @@ from builtins import *
 from functools import reduce
 from ...utils.helpers import isstring, isint
 
+
 class Expression(object):
     ''' Abstract taintable Expression. '''
 

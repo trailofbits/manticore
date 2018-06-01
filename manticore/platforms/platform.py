@@ -1,6 +1,7 @@
 from builtins import *
 from manticore.utils.event import Eventful
 
+
 class OSException(Exception):
     pass
 
