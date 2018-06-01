@@ -197,13 +197,14 @@ class Z3Solver(Solver):
         ''' Auxiliary method to stop the external solver process'''
         if self._proc is not None and self._proc.returncode is None:
             try:
-                self._send("(exit)")
+                self._proc.stdin.write("(exit)\n")
             except SolverException:
                 #z3 was too fast to close
                 pass
-            self._proc.stdin.close()
-            self._proc.stdout.close()
-            self._proc.wait()
+            finally:
+                self._proc.stdin.close()
+                self._proc.stdout.close()
+                self._proc.wait()
         try:
             self._proc.kill()
         except BaseException:

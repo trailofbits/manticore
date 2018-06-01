@@ -909,7 +909,7 @@ class Cpu(Eventful):
         value = self.read_register(reg_name)
 
         if issymbolic(value):
-            aux = "{:>3s}: {:>16s}".format(reg_name, value)
+            aux = "{:>3s}: {:>16s}".format(reg_name, repr(value))
             result += aux
         elif isint(value):
             result += "{:>3s}: 0x{:016x}".format(reg_name, value)
