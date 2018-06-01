@@ -97,7 +97,7 @@ class LinuxTest(unittest.TestCase):
         files = platform.generate_workspace_files()
         self.assertIn('syscalls', files)
         self.assertIn('argv', files)
-        self.assertEquals(files['argv'], "arg1\narg2\n")
+        self.assertEquals(files['argv'], b"arg1\narg2\n")
         self.assertIn('env', files)
         self.assertIn('stdout', files)
         self.assertIn('stdin', files)

@@ -84,7 +84,7 @@ class EthAbiTests(unittest.TestCase):
 
     @staticmethod
     def _pack_int_to_32(x):
-        return '\x00' * 28 + struct.pack('>I', x)
+        return b'\x00' * 28 + struct.pack('>I', x)
 
     def test_dyn_address(self):
         d = [
@@ -361,7 +361,7 @@ class EthTests(unittest.TestCase):
             def will_decode_instruction_callback(self, state, pc):
                 TRUE = bytearray((0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1))
                 FALSE = bytearray((0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
-                #print pc, state.platform.current_vm.instruction
+                #print(pc, state.platform.current_vm.instruction)
                 #Once this address is reached the challenge is won
                 if pc == 0x4141414141414141414141414141414141414141:
                     func_id = to_constant(state.platform.current_transaction.data[:4])
@@ -387,12 +387,12 @@ class EthTests(unittest.TestCase):
                         func_name, args = ABI.parse("is_symbolic(uint256)", state.platform.current_transaction.data)
                         try:
                             arg = to_constant(args[0])
-                        except Exception,e:
+                        except Exception as e:
                             raise Return(TRUE)
                         raise Return(FALSE)
                     elif func_id == ABI.make_function_id("shutdown(string)"):
                         func_name, args = ABI.parse("shutdown(string)", state.platform.current_transaction.data)
-                        print "Shutdown", to_constant(args[0])
+                        print("Shutdown", to_constant(args[0]))
                         self.manticore.shutdown()
                     elif func_id == ABI.make_function_id("can_be_true(bool)"):
                         func_name, args = ABI.parse("can_be_true(bool)", state.platform.current_transaction.data)

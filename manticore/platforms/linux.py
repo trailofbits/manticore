@@ -2709,11 +2709,11 @@ class SLinux(Linux):
 
         for a in self.argv:
             solve_to_fd(a, argIO)
-            argIO.write("\n")
+            argIO.write(b"\n")
 
         for e in self.envp:
             solve_to_fd(e, envIO)
-            envIO.write("\n")
+            envIO.write(b"\n")
 
         ret = {
             'syscalls': repr(self.syscall_trace),

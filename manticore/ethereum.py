@@ -9,6 +9,7 @@ from . import Manticore
 from .manticore import ManticoreError
 from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, Array, Expression, Constant, operators
 from .core.smtlib.visitors import simplify
+from .core.state import State
 from .core.plugin import FilterFunctions
 from .platforms import evm
 from .utils.helpers import hex_encode, istainted
@@ -192,7 +193,9 @@ class SolidityMetadata(object):
             :param bytes source_code:
         '''
         self.name = name
-        self.source_code = source_code.decode()
+        if not isstring(source_code):
+            source_code = source_code.decode()
+        self.source_code = source_code
         self._init_bytecode = init_bytecode
         self._runtime_bytecode = runtime_bytecode
         self._hashes = hashes
@@ -780,7 +783,7 @@ class ManticoreEVM(Manticore):
         except OSError:
             raise Exception("Solidity compiler not installed.")
 
-        m = re.match(r".*Version: (?P<version>(?P<major>\d+)\.(?P<minor>\d+)\.(?P<build>\d+))\+(?P<commit>[^\s]+).*", installed_version_output, re.DOTALL | re.IGNORECASE)
+        m = re.match(br".*Version: (?P<version>(?P<major>\d+)\.(?P<minor>\d+)\.(?P<build>\d+))\+(?P<commit>[^\s]+).*", installed_version_output, re.DOTALL | re.IGNORECASE)
 
         if not m or m.groupdict()['version'] not in supported_versions:
             #Fixme https://github.com/trailofbits/manticore/issues/847
