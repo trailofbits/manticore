@@ -62,7 +62,7 @@ class Detector(Plugin):
         self.get_findings(state).add((address, pc, finding, init))
         with self.locked_global_findings() as gf:
             gf.add((address, pc, finding, init))
-        #Fixme for ever broken logger 
+        #Fixme for ever broken logger
         #logger.warning(finding)
 
     def add_finding_here(self, state, finding):
@@ -183,7 +183,7 @@ class DetectInvalid(Detector):
         Detects INVALID instructions.
 
         INVALID instructions are originally designated to signal exceptional code.
-        As in practice the INVALID instruction is used in different ways this 
+        As in practice the INVALID instruction is used in different ways this
         detector may Generate a great deal of false positives.
 
         :param only_human: if True report only INVALID at depth 0 transactions
@@ -346,7 +346,7 @@ class SolidityMetadata(object):
         asm_pos = 0
         md = dict(enumerate(srcmap[asm_pos].split(':')))
         byte_offset = int(md.get(0, 0))  # is the byte-offset to the start of the range in the source file
-        source_len = int(md.get(1, 0))  # is the length of the source range in bytes 
+        source_len = int(md.get(1, 0))  # is the length of the source range in bytes
         file_index = int(md.get(2, 0))  # is the source index over sourceList
         jump_type = md.get(3, None)  # this can be either i, o or - signifying whether a jump instruction goes into a function, returns from a function or is a regular jump as part of e.g. a loop
 
