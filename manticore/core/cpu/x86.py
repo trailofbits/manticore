@@ -7,13 +7,12 @@ import capstone as cs
 
 from .abstractcpu import (
     Abi, SyscallAbi, Cpu, RegisterFile, Operand, instruction,
-    ConcretizeRegister, ConcretizeRegister, ConcretizeArgument, Interruption,
-    Syscall, DivideByZeroError
+    ConcretizeRegister, Interruption, Syscall, DivideByZeroError
 )
 
 
 from ..smtlib import Operators, BitVec, Bool, BitVecConstant, operator, visitors
-from ..memory import MemoryException, ConcretizeMemory
+from ..memory import ConcretizeMemory
 from ...utils.helpers import issymbolic
 from functools import reduce
 
@@ -606,6 +605,7 @@ class AMD64RegFile(RegisterFile):
 
     def sizeof(self, reg):
         return self._table[reg].size
+
 
 # Operand Wrapper
 class AMD64Operand(Operand):

@@ -1,17 +1,15 @@
 ''' Symbolic EVM implementation based on the yellow paper: http://gavwood.com/paper.pdf '''
-import time
 import random
 import copy
 import inspect
 from functools import wraps
 from ..utils.helpers import issymbolic, memoized
 from ..platforms.platform import *
-from ..core.smtlib import solver, TooManySolutions, Expression, Bool, BitVec, Array, Operators, Constant, BitVecConstant, ConstraintSet, SolverException
-from ..core.state import ForkState, TerminateState
-from ..utils.event import Eventful
-from ..core.smtlib.visitors import pretty_print, translate_to_smtlib, simplify
+from ..core.smtlib import solver, BitVec, Array, Operators, Constant
 from ..core.state import Concretize, TerminateState
 from ..core.plugin import Ref
+from ..utils.event import Eventful
+from ..core.smtlib.visitors import simplify
 import logging
 import sys
 from collections import namedtuple
@@ -356,11 +354,6 @@ class EVMAsm(object):
         def writes_to_stack(self):
             ''' True if the instruction writes to the stack '''
             return self.pushes > 0
-
-        @property
-        def reads_from_memory(self):
-            ''' True if the instruction reads from memory '''
-            return self.semantics in ('MLOAD', 'CREATE', 'CALL', 'CALLCODE', 'RETURN', 'DELEGATECALL', 'REVERT')
 
         @property
         def writes_to_memory(self):
@@ -2214,10 +2207,6 @@ class EVMWorld(Platform):
     @property
     def logs(self):
         return self._logs
-
-    @property
-    def deleted_accounts(self):
-        return self._deleted_accounts
 
     @property
     def constraints(self):

@@ -5,10 +5,11 @@ import re
 import os
 from . import Manticore
 from .manticore import ManticoreError
-from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, istainted, Array, Expression, Constant, operators
+from .core.smtlib import ConstraintSet, Operators, solver, Constant, operators
 from .core.smtlib.visitors import simplify
 from .platforms import evm
 from .core.state import State
+from .utils.helpers import istainted, issymbolic
 import tempfile
 from subprocess import Popen, PIPE, check_output
 from multiprocessing import Process, Queue
@@ -26,12 +27,6 @@ logger = logging.getLogger(__name__)
 
 class EthereumError(ManticoreError):
     pass
-
-
-class DependencyError(EthereumError):
-    def __init__(self, lib_names):
-        super(DependencyError, self).__init__("You must pre-load and provide libraries addresses{ libname:address, ...} for %r" % lib_names)
-        self.lib_names = lib_names
 
 
 class DependencyError(EthereumError):
@@ -583,7 +578,7 @@ class ABI(object):
     @staticmethod
     def get_uint(data, nbytes, offset):
         """
-        Read a `nbytes` bytes long big endian unsigned integer from `data` starting at `offset` 
+        Read a `nbytes` bytes long big endian unsigned integer from `data` starting at `offset`
 
         :param data: sliceable buffer; symbolic buffer of Eth ABI encoded data
         :param offset: byte offset
@@ -802,7 +797,7 @@ class ManticoreEVM(Manticore):
             #Initialize user and contracts
             user_account = m.create_account(balance=1000)
             contract_account = m.solidity_create_contract(source_code, owner=user_account, balance=0)
-            contract_account.set(12345, value=100) 
+            contract_account.set(12345, value=100)
 
             seth.report()
             print seth.coverage(contract_account)
@@ -932,7 +927,7 @@ class ManticoreEVM(Manticore):
 
             :param source_code: solidity source as either a string or a file handle
             :param contract_name: a string with the name of the contract to analyze
-            :param libraries: an itemizable of pairs (library_name, address) 
+            :param libraries: an itemizable of pairs (library_name, address)
             :return: name, source_code, bytecode, srcmap, srcmap_runtime, hashes
             :return: name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
         """

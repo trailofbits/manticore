@@ -6,14 +6,11 @@ import string
 from functools import wraps
 from itertools import islice, imap
 
-import capstone as cs
 import unicorn
 
 from .disasm import init_disassembler
-from ..smtlib import Expression, Bool, BitVec, Array, Operators, Constant
-from ..memory import (
-    ConcretizeMemory, InvalidMemoryAccess, MemoryException, FileMap, AnonMap
-)
+from ..smtlib import BitVec, Operators, Constant
+from ..memory import ConcretizeMemory, InvalidMemoryAccess
 from ...utils.helpers import issymbolic
 from ...utils.emulate import UnicornEmulator
 from ...utils.event import Eventful
@@ -27,6 +24,7 @@ register_logger = logging.getLogger('{}.registers'.format(__name__))
 
 class CpuException(Exception):
     ''' Base cpu exception '''
+
 
 class DecodeException(CpuException):
     '''
