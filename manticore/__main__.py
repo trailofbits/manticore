@@ -89,13 +89,13 @@ def parse_arguments():
     parser.add_argument('--detect-uninitialized-memory', action='store_true',
                         help='Enable detection of uninitialized memory usage (Ethereum only)')
 
-    parser.add_argument('--detect-uninitialized-storage',  action='store_true',
+    parser.add_argument('--detect-uninitialized-storage', action='store_true',
                         help='Enable detection of uninitialized storage usage (Ethereum only)')
 
-    parser.add_argument('--detect-all',  action='store_true',
+    parser.add_argument('--detect-all', action='store_true',
                         help='Enable all detector heuristics (Ethereum only)')
 
-    parser.add_argument('--avoid-constant',  action='store_true',
+    parser.add_argument('--avoid-constant', action='store_true',
                         help='Also explore constant functions (Ethereum only)')
 
     parsed = parser.parse_args(sys.argv[1:])
