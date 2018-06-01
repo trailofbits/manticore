@@ -2692,12 +2692,12 @@ class SLinux(Linux):
             except SolverException:
                 fd.write('{SolverException}')
 
-        out = StringIO.StringIO()
-        inn = StringIO.StringIO()
-        err = StringIO.StringIO()
-        net = StringIO.StringIO()
-        argIO = StringIO.StringIO()
-        envIO = StringIO.StringIO()
+        out = io.BytesIO()
+        inn = io.BytesIO()
+        err = io.BytesIO()
+        net = io.BytesIO()
+        argIO = io.BytesIO()
+        envIO = io.BytesIO()
 
         for name, fd, data in self.syscall_trace:
             if name in ('_transmit', '_write'):

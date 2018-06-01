@@ -415,11 +415,11 @@ class SyscallAbi(Abi):
                 arg_s = "0x{:x}".format(arg)
                 if self._cpu.memory.access_ok(arg, 'r'):
                     s = self._cpu.read_string(arg, max_arg_expansion)
-                    if all(chr(c) in string.printable for c in s):
+                    if all((chr(c) if isint(c) else c) in string.printable for c in s):
                         if len(s) == max_arg_expansion:
                             s = s + b'..'
                         if len(s) > 2:
-                            arg_s = arg_s + ' ({})'.format(s.decode().translate(None, '\n'))
+                            arg_s = arg_s + ' ({})'.format(s.decode().replace('\n', ''))
                 args.append(arg_s)
 
             args_s = ', '.join(args)

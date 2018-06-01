@@ -408,7 +408,7 @@ class BitVecConstant(BitVec, Constant):
         return self.value == other
 
     def __hash__(self):
-        return hash(self.value)
+        return object.__hash__(self)
 
 
 class BitVecOperation(BitVec, Operation):
@@ -634,7 +634,7 @@ class Array(Expression):
         return compare_buffers(self, other)
 
     def __hash__(self):
-        return hash([x for x in self])
+        return object.__hash__(self)
 
     @property
     def underlying_variable(self):
