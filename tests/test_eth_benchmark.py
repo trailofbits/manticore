@@ -1,3 +1,4 @@
+import inspect
 import shutil
 import struct
 import tempfile
@@ -112,4 +113,26 @@ class EthBenchmark(unittest.TestCase):
     @unittest.skip("Unsupported")
     def test_integer_overflow_bytes_param(self):
         self._test('integer_overflow_bytes_param', set())
+
+    def test_integer_overflow_staticarray(self):
+        self._test('integer_overflow_staticarray', set())
+
+    def test_integer_overflow_mapping_word(self):
+        self._test('integer_overflow_mapping_word', set())
+
+    def test_integer_overflow_mapping_struct(self):
+        name = inspect.currentframe().f_code.co_name[5:]
+        self._test(name, set())
+
+    def test_integer_overflow_mapping_mapping(self):
+        name = inspect.currentframe().f_code.co_name[5:]
+        self._test(name, set())
+
+    def test_integer_overflow_mapping_staticarray(self):
+        name = inspect.currentframe().f_code.co_name[5:]
+        self._test(name, set())
+
+    def test_integer_overflow_dynarray(self):
+        name = inspect.currentframe().f_code.co_name[5:]
+        self._test(name, set())
 

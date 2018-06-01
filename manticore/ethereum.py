@@ -247,11 +247,12 @@ class DetectIntegerOverflow(Detector):
                     self.add_finding_here(state, "Result of integer overflowed intruction is written to the storage")
         result_ref.value = result
 
+
 class DetectIntegerOverflow(Detector):
     '''
         Detects potential overflow and underflow conditions on ADD and SUB instructions.
     '''
-        
+
     def _save_current_location(self, state, finding, condition):
         address = state.platform.current_vm.address
         pc = state.platform.current_vm.pc
@@ -279,7 +280,7 @@ class DetectIntegerOverflow(Detector):
         +7fffffff     True     True     True    False    False    False    False
         '''
         sub = Operators.SEXTEND(a, 256, 512) - Operators.SEXTEND(b, 256, 512)
-        cond = Operators.OR( sub < -(1<<256), sub >= (1<<255))
+        cond = Operators.OR(sub < -(1 << 256), sub >= (1 << 255))
         return cond
 
     @staticmethod
@@ -298,7 +299,7 @@ class DetectIntegerOverflow(Detector):
         +7fffffff    False    False    False    False     True     True     True
         '''
         add = Operators.SEXTEND(a, 256, 512) + Operators.SEXTEND(b, 256, 512)
-        cond = Operators.OR( add < -(1<<256), add >= (1<<255))
+        cond = Operators.OR(add < -(1 << 256), add >= (1 << 255))
         return cond
 
     @staticmethod
@@ -335,7 +336,7 @@ class DetectIntegerOverflow(Detector):
         7fffffff     True     True     True    False    False     True    False
         '''
         add = Operators.ZEXTEND(a, 512) + Operators.ZEXTEND(b, 512)
-        cond = Operators.UGE(add, 1<<256)
+        cond = Operators.UGE(add, 1 << 256)
         return cond
 
     @staticmethod
@@ -355,7 +356,7 @@ class DetectIntegerOverflow(Detector):
 
         '''
         mul = Operators.SEXTEND(a, 256, 512) * Operators.SEXTEND(b, 256, 512)
-        cond = Operators.OR( mul < -(1<<255), mul >= (1<<255))
+        cond = Operators.OR(mul < -(1 << 255), mul >= (1 << 255))
         return cond
 
     @staticmethod
@@ -377,17 +378,6 @@ class DetectIntegerOverflow(Detector):
         mul = Operators.SEXTEND(a, 256, 512) * Operators.SEXTEND(b, 256, 512)
         cond = Operators.UGE(mul, 1<<256)
         return cond
-
-    def will_terminate_state_callback(self, state, *args):
-        world = state.platform
-        findings_ids = set()
-        for tx in world.transactions:
-            if tx.return_value:
-                storage = world.world_state[tx.address]['storage']
-                if istainted(storage, "IO.*"):
-                    pass #print dir(storage)
-                
-                #self.add_finding(state, *self._get_location(state, taint[4:] ))
 
     def did_evm_execute_instruction_callback(self, state, instruction, arguments, result_ref):
         mnemonic = instruction.semantics
@@ -418,14 +408,14 @@ class DetectIntegerOverflow(Detector):
                         self.add_finding(state, *loc[:-1])
 
         if mnemonic in ('SLT', 'SGT', 'SDIV', 'SMOD'):
-            result = taint_with(result, "SIGNED"%id_val)
+            result = taint_with(result, "SIGNED" % id_val)
 
         if state.can_be_true(ios):
             id_val = self._save_current_location(state, "Signed integer overflow at %s instruction" % mnemonic, ios)
-            result = taint_with(result, "IOS_%s"%id_val)
+            result = taint_with(result, "IOS_%s" % id_val)
         if state.can_be_true(iou):
             id_val = self._save_current_location(state, "Unsigned integer overflow at %s instruction" % mnemonic, iou)
-            result = taint_with(result, "IOU_%s"%id_val)
+            result = taint_with(result, "IOU_%s" % id_val)
         #if ios and iou:
         #    self.add_finding_here(state, "Integer overflow at %s" % mnemonic)
 
@@ -2086,7 +2076,6 @@ class ManticoreEVM(Manticore):
                             visited.add(o)
                     for o in sorted(visited):
                         f.write('0x%x\n' % o)
-
 
         # delete actual streams from storage
         for state_id in self._all_state_ids:

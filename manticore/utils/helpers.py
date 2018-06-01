@@ -33,6 +33,7 @@ def istainted(arg, taint=None):
             return True
     return False
 
+
 def get_taints(arg, taint=None):
     '''
     Helper to list an object taints.
@@ -50,7 +51,6 @@ def get_taints(arg, taint=None):
         else:
             yield arg_taint
     raise StopIteration
-
 
 
 def taint_with(arg, taint, value_bits=256, index_bits=256):

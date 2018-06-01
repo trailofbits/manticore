@@ -22,7 +22,7 @@ import logging
 import re
 import time
 from .visitors import *
-from ...utils.helpers import issymbolic, istainted, taint_with, get_taints,  memoized
+from ...utils.helpers import issymbolic, istainted, taint_with, get_taints, memoized
 import collections
 
 logger = logging.getLogger(__name__)
