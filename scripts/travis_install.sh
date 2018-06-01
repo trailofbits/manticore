@@ -9,5 +9,6 @@ install_solc
 : ${PIP:="pip3"}
 
 $PIP install -U pip
+$PIP install -U z3-solver
 $PIP uninstall -y Manticore || echo "Manticore not cached"  # uninstall any old, cached Manticore
 $PIP install --no-binary keystone-engine -e .[dev]  # ks can have pip install issues
