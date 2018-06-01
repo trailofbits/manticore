@@ -2,7 +2,7 @@ from __future__ import print_function
 # Minimal INTEL assembler expression calculator
 import ply.yacc as yacc
 import copy
-from ..smtlib import Operators, Bool
+from ..smtlib import Operators
 # Lexer
 # ------------------------------------------------------------
 # calclex.py

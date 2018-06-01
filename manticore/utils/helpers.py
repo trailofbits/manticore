@@ -1,4 +1,5 @@
 import collections
+import functools
 from ..core.smtlib import Expression
 
 
@@ -26,9 +27,6 @@ def istainted(arg, taint=None):
     if taint is None:
         return len(arg.taint) != 0
     return taint in arg.taint
-
-
-import functools
 
 
 class memoized(object):

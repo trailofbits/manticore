@@ -15,6 +15,8 @@ and common API.  interpreters? linkers? linked DLLs?
 
 '''
 from __future__ import print_function
+from elftools.elf.elffile import ELFFile
+import StringIO
 
 
 class Binary(object):
@@ -39,10 +41,6 @@ class Binary(object):
 
     def threads(self):
         pass
-
-
-from elftools.elf.elffile import ELFFile
-import StringIO
 
 
 class CGCElf(Binary):
