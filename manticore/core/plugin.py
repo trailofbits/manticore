@@ -307,10 +307,6 @@ class ExamplePlugin(Plugin):
     def did_finish_run_callback(self):
         logger.info('did_finish_run')
 
-    def did_enqueue_state_callback(self, state_id, state):
-        ''' state was just got enqueued in the executor procesing list'''
-        logger.info('did_enqueue_state %r %r', state_id, state)
-
     def will_fork_state_callback(self, parent_state, expression, solutions, policy):
         logger.info('will_fork_state %r %r %r %r', parent_state, expression, solutions, policy)
 
