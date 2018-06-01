@@ -371,7 +371,7 @@ class DetectIntegerOverflow(Detector):
 
         '''
         mul = Operators.SEXTEND(a, 256, 512) * Operators.SEXTEND(b, 256, 512)
-        cond = Operators.UGE(mul, 1<<256)
+        cond = Operators.UGE(mul, 1 << 256)
         return cond
 
     def did_evm_execute_instruction_callback(self, state, instruction, arguments, result_ref):
@@ -398,7 +398,7 @@ class DetectIntegerOverflow(Detector):
                         self.add_finding(state, *loc[:-1])
             else:
                 for taint in get_taints(what, "IOU_.*"):
-                    loc = self._get_location(state, taint[4:]) 
+                    loc = self._get_location(state, taint[4:])
                     if state.can_be_true(loc[-1]):
                         self.add_finding(state, *loc[:-1])
 
