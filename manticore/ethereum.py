@@ -821,22 +821,16 @@ class ManticoreEVM(Manticore):
             :return: name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
         """
 
-        try:
-            file_type = file  # Python 2
-        except NameError:
-            from io import IOBase
-            file_type = IOBase  # Python 3
-
-        if isinstance(source_code, str):
+        if isstring(source_code):
             with tempfile.NamedTemporaryFile() as temp:
                 temp.write(source_code)
                 temp.flush()
                 output, warnings = ManticoreEVM._run_solc(temp)
-        elif isinstance(source_code, file_type):
+        elif isinstance(source_code, io.IOBase):
             output, warnings = ManticoreEVM._run_solc(source_code)
             source_code = source_code.read()
         else:
-            raise TypeError
+            raise TypeError("Type of source_code is {}".format(type(source_code)))
 
         contracts = output.get('contracts', [])
         if len(contracts) != 1 and contract_name is None:
