@@ -507,14 +507,18 @@ class ArithmeticSimplifier(Visitor):
         if isinstance(arr, ArrayVariable):
             return
 
-        while isinstance(arr, ArrayStore) and isinstance(index, BitVecConstant) and isinstance(arr.index, BitVecConstant) and arr.index.value != index.value:
-            arr = arr.array
+        # This skips over all writes to constant indexes different from our current selection
+        if isinstance(index, BitVecConstant):
+            index_constant = index.value
+            while isinstance(arr, ArrayStore) and isinstance(arr.index, BitVecConstant):
+                if arr.index.value == index.value:
+                    return arr.value
+                arr = arr.array
 
-        if isinstance(index, BitVecConstant) and isinstance(arr, ArrayStore) and isinstance(arr.index, BitVecConstant) and arr.index.value == index.value:
-            return arr.value
-        else:
-            if arr != expression.array:
-                return arr.select(index)
+        #If we have advanced through the expression tree discarding not matching 
+        # constant indexes, let's select from the resultant array
+        if arr is not expression.array:
+            return arr.select(index)
 
     def visit_Expression(self, expression, *operands):
         assert len(operands) == 0

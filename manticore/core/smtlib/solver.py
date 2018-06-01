@@ -219,7 +219,7 @@ class Z3Solver(Solver):
 
     def __del__(self):
         if self._proc is not None:
-            self._proc.stdin.writelines(('(exit)\n',))
+            self._stop_proc()
 
     def _reset(self, constraints=None):
         ''' Auxiliary method to reset the smtlib external solver to initial defaults'''
