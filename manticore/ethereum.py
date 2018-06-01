@@ -780,12 +780,20 @@ class ABI(object):
                 return value.value
             else:
                 return value
-
         nbytes = _simplify(nbytes)
         offset = _simplify(offset)
         padding = 32 - nbytes
         start = offset + padding
-        value = Operators.CONCAT(nbytes * 8, *[Operators.ORD(x) for x in data[start:start + nbytes]])
+        values = []
+        pos = start
+        while pos < start + nbytes:
+            if pos > len(data):
+                values.append('\x00')
+            else:
+                values.append(data[pos])
+            pos = pos + 1
+        #value = Operators.CONCAT(nbytes * 8, *[Operators.ORD(x) for x in data[start:start + nbytes]])
+        value = Operators.CONCAT(nbytes * 8, *[Operators.ORD(x) for x in values])
         return _simplify(value)
 
     @staticmethod
@@ -1888,6 +1896,7 @@ class ManticoreEVM(Manticore):
                         function_id = tx.data[:4]  # hope there is enough data
                         function_id = binascii.hexlify(state.solve_one(function_id))
                         signature = metadata.get_func_signature(function_id)
+                        # FIXME Can this fail when absurd encoding? \/
                         function_name, arguments = ABI.parse(signature, tx.data)
 
                         return_data = None
@@ -2078,28 +2087,6 @@ class ManticoreEVM(Manticore):
                     for o in sorted(visited):
                         f.write('0x%x\n' % o)
 
-        # move running states to final states list
-        # and generate a testcase for each
-        q = Queue()
-        map(q.put, self._running_state_ids)
-
-        def f(q):
-            try:
-                while True:
-                    state_id = q.get_nowait()
-                    self._terminate_state_id(state_id)
-            except EmptyQueue:
-                pass
-
-        ps = []
-
-        for _ in range(self._config_procs):
-            p = Process(target=f, args=(q,))
-            p.start()
-            ps.append(p)
-
-        for p in ps:
-            p.join()
 
         # delete actual streams from storage
         for state_id in self._all_state_ids:

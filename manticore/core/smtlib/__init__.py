@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from .expression import Expression, Bool, BitVec, Array
+from .expression import Expression, Bool, BitVec, Array, BitVecConstant
 from .constraints import ConstraintSet
 from .solver import *
 from . import operators as Operators

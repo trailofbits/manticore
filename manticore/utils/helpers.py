@@ -1,7 +1,7 @@
 import functools
 import collections
 import re
-from ..core.smtlib import Expression
+from ..core.smtlib import Expression, BitVecConstant
 
 
 def issymbolic(value):

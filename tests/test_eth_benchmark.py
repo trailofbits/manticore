@@ -98,10 +98,18 @@ class EthBenchmark(unittest.TestCase):
     def test_integer_overflow_mapping_sym_2(self):
         self._test('integer_overflow_mapping_sym_2', set())
 
-    #def test_attribute_store(self):
-    #    self._test('attribute_store', set())
+    @unittest.skip("Unsupported")
+    def test_attribute_store(self):
+        self._test('attribute_store', set())
 
-    #def test_integer_overflow_mapping_strkey(self):
-    #    self._test('integer_overflow_mapping_strkey', set())
+    @unittest.skip("Unsupported")
+    def test_integer_overflow_mapping_strkey(self):
+        self._test('integer_overflow_mapping_strkey', set())
 
+    def test_integer_overflow_storagepacking(self):
+        self._test('integer_overflow_storagepacking', set())
+
+    @unittest.skip("Unsupported")
+    def test_integer_overflow_bytes_param(self):
+        self._test('integer_overflow_bytes_param', set())
 
