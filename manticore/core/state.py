@@ -1,7 +1,7 @@
 import copy
 import logging
 
-from .smtlib import solver, Bool, ArrayProxy, Array
+from .smtlib import solver, Bool
 from ..utils.helpers import issymbolic
 from ..utils.event import Eventful
 
