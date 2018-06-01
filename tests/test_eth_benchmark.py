@@ -33,33 +33,75 @@ class EthBenchmark(unittest.TestCase):
         self.mevm=None
         shutil.rmtree(self.worksp)
 
-    def _test_assert(self, name, should_find):
+    def _test(self, name, should_find):
         """
         Tests DetectInvalid over the consensys benchmark suit
         """
         mevm = self.mevm
 
-        d = DetectInvalid()
-        mevm.register_detector(d)
+        mevm.register_detector(DetectInvalid())
+        mevm.register_detector(DetectIntegerOverflow())
 
         filename = os.path.join(THIS_DIR, 'binaries', 'benchmark', '{}.sol'.format(name))
 
         mevm.multi_tx_analysis(filename, tx_limit=3)
 
-        actual_findings = set(( (b, c, d) for a, b, c, d in d.global_findings))
+        
+        actual_findings = set(( (b, c, d) for a, b, c, d in mevm.global_findings))
         self.assertEqual(should_find, actual_findings)
 
     def test_assert_minimal(self):
-        self._test_assert('assert_minimal', set([(95, 'INVALID intruction', False)]))
+        self._test('assert_minimal', set([(95, 'INVALID intruction', False)]))
 
     def test_assert_constructor(self):
-        self._test_assert('assert_constructor', set([(23L, 'INVALID intruction', True)]))
+        self._test('assert_constructor', set([(23L, 'INVALID intruction', True)]))
 
     def test_assert_multitx_1(self):
-        self._test_assert('assert_multitx_1', set())
+        self._test('assert_multitx_1', set())
 
     def test_assert_multitx_2(self):
-        self._test_assert('assert_multitx_2', set([(150, 'INVALID intruction', False)]))
+        self._test('assert_multitx_2', set([(150, 'INVALID intruction', False)]))
 
+    def test_integer_overflow_minimal(self):
+        self._test('integer_overflow_minimal', set([(163L, 'Unsigned integer overflow at SUB instruction', False)]))
+
+    def test_integer_overflow_add(self):
+        self._test('integer_overflow_add', set([(163L, 'Unsigned integer overflow at ADD instruction', False)]))
+
+    def test_integer_overflow_mul(self):
+        self._test('integer_overflow_mul', set([(163L, 'Unsigned integer overflow at MUL instruction', False)]))
+
+    def test_integer_overflow_path_1(self):
+        self._test('integer_overflow_path_1', set())
+
+    def test_integer_overflow_benign_1(self):
+        self._test('integer_overflow_benign_1', set())
+
+    def test_integer_overflow_benign_2(self):
+        self._test('integer_overflow_benign_2', set())
+
+    def test_integer_overflow_multitx_onefunc_feasible(self):
+        self._test('integer_overflow_multitx_onefunc_feasible', set([(185L, 'Unsigned integer overflow at SUB instruction', False)]))
+
+    def test_integer_overflow_multitx_onefunc_infeasible(self):
+        self._test('integer_overflow_multitx_onefunc_infeasible', set())
+
+    def test_integer_overflow_multitx_multifunc_feasible(self):
+        self._test('integer_overflow_multitx_multifunc_feasible', set([(205L, 'Unsigned integer overflow at SUB instruction', False)]))
+
+    def test_integer_overflow_storageinvariant(self):
+        self._test('integer_overflow_storageinvariant', set())
+
+    def test_integer_overflow_mapping_sym_1(self):
+        self._test('integer_overflow_mapping_sym_1', set([(135L, 'Unsigned integer overflow at SUB instruction', False)]))
+
+    def test_integer_overflow_mapping_sym_2(self):
+        self._test('integer_overflow_mapping_sym_2', set())
+
+    #def test_attribute_store(self):
+    #    self._test('attribute_store', set())
+
+    #def test_integer_overflow_mapping_strkey(self):
+    #    self._test('integer_overflow_mapping_strkey', set())
 
 

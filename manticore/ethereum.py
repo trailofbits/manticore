@@ -5,7 +5,7 @@ import re
 import os
 from . import Manticore
 from .manticore import ManticoreError
-from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, istainted, Array, Expression, Constant, operators
+from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, istainted, taint_with, get_taints, Array, Expression, Constant, operators
 from .core.smtlib.visitors import simplify
 from .platforms import evm
 from .core.state import State
@@ -244,7 +244,191 @@ class DetectIntegerOverflow(Detector):
         if mnemonic == 'SSTORE':
             for arg in arguments:
                 if istainted(arg, 'IOA') or istainted(arg, 'IOM') or istainted(arg, 'IU'):
-                    self.add_finding_here(state, "Result of integuer overflowed intruction is written to the storage")
+                    self.add_finding_here(state, "Result of integer overflowed intruction is written to the storage")
+        result_ref.value = result
+
+class DetectIntegerOverflow(Detector):
+    '''
+        Detects potential overflow and underflow conditions on ADD and SUB instructions.
+    '''
+        
+    def _save_current_location(self, state, finding, condition):
+        address = state.platform.current_vm.address
+        pc = state.platform.current_vm.pc
+        at_init = state.platform.current_transaction.sort == 'CREATE'
+        location = (address, pc, finding, at_init, condition)
+        hash_id = hashlib.sha1(str(location)).hexdigest()
+        state.context.setdefault('%s.locations' % self.name, {})[hash_id] = location
+        return hash_id
+
+    def _get_location(self, state, hash_id):
+        return state.context.setdefault('%s.locations' % self.name, {})[hash_id]
+
+    @staticmethod
+    def _can_signed_sub_overflow(state, a, b):
+        '''
+        Sign extend the value to 512 bits and check the result can be represented
+         in 256. Following there is a 32 bit excerpt of this condition:
+        a  -  b   -80000000 -3fffffff -00000001 +00000000 +00000001 +3fffffff +7fffffff
+        +80000000    False    False    False    False     True     True     True
+        +c0000001    False    False    False    False    False    False     True
+        +ffffffff    False    False    False    False    False    False    False
+        +00000000     True    False    False    False    False    False    False
+        +00000001     True    False    False    False    False    False    False
+        +3fffffff     True    False    False    False    False    False    False
+        +7fffffff     True     True     True    False    False    False    False
+        '''
+        sub = Operators.SEXTEND(a, 256, 512) - Operators.SEXTEND(b, 256, 512)
+        cond = Operators.OR( sub < -(1<<256), sub >= (1<<255))
+        return cond
+
+    @staticmethod
+    def _can_signed_add_overflow(state, a, b):
+        '''
+        Sign extend the value to 512 bits and check the result can be represented
+         in 256. Following there is a 32 bit excerpt of this condition:
+
+        a  +  b   -80000000 -3fffffff -00000001 +00000000 +00000001 +3fffffff +7fffffff
+        +80000000     True     True     True    False    False    False    False
+        +c0000001     True    False    False    False    False    False    False
+        +ffffffff     True    False    False    False    False    False    False
+        +00000000    False    False    False    False    False    False    False
+        +00000001    False    False    False    False    False    False     True
+        +3fffffff    False    False    False    False    False    False     True
+        +7fffffff    False    False    False    False     True     True     True
+        '''
+        add = Operators.SEXTEND(a, 256, 512) + Operators.SEXTEND(b, 256, 512)
+        cond = Operators.OR( add < -(1<<256), add >= (1<<255))
+        return cond
+
+    @staticmethod
+    def _can_unsigned_sub_overflow(state, a, b):
+        '''
+        Sign extend the value to 512 bits and check the result can be represented
+         in 256. Following there is a 32 bit excerpt of this condition:
+
+        a  -  b   ffffffff bfffffff 80000001 00000000 00000001 3ffffffff 7fffffff
+        ffffffff     True     True     True    False     True     True     True
+        bfffffff     True     True     True    False    False     True     True
+        80000001     True     True     True    False    False     True     True
+        00000000    False    False    False    False    False     True    False
+        00000001     True    False    False    False    False     True    False
+        ffffffff     True     True     True     True     True     True     True
+        7fffffff     True     True     True    False    False     True    False
+        '''
+        cond = Operators.UGT(b, a)
+        return cond
+
+    @staticmethod
+    def _can_unsigned_add_overflow(state, a, b):
+        '''
+        Sign extend the value to 512 bits and check the result can be represented
+         in 256. Following there is a 32 bit excerpt of this condition:
+
+        a  +  b   ffffffff bfffffff 80000001 00000000 00000001 3ffffffff 7fffffff
+        ffffffff     True     True     True    False     True     True     True
+        bfffffff     True     True     True    False    False     True     True
+        80000001     True     True     True    False    False     True     True
+        00000000    False    False    False    False    False     True    False
+        00000001     True    False    False    False    False     True    False
+        ffffffff     True     True     True     True     True     True     True
+        7fffffff     True     True     True    False    False     True    False
+        '''
+        add = Operators.ZEXTEND(a, 512) + Operators.ZEXTEND(b, 512)
+        cond = Operators.UGE(add, 1<<256)
+        return cond
+
+    @staticmethod
+    def _can_signed_mul_overflow(state, a, b):
+        '''
+        Sign extend the value to 512 bits and check the result can be represented
+         in 256. Following there is a 32 bit excerpt of this condition:
+
+        a  *  b           +00000000000000000 +00000000000000001 +0000000003fffffff +0000000007fffffff +00000000080000001 +000000000bfffffff +000000000ffffffff
+        +0000000000000000  +0000000000000000  +0000000000000000  +0000000000000000  +0000000000000000  +0000000000000000  +0000000000000000  +0000000000000000
+        +0000000000000001  +0000000000000000  +0000000000000001  +000000003fffffff  +000000007fffffff  +0000000080000001  +00000000bfffffff  +00000000ffffffff
+        +000000003fffffff  +0000000000000000  +000000003fffffff *+0fffffff80000001 *+1fffffff40000001 *+1fffffffbfffffff *+2fffffff00000001 *+3ffffffec0000001
+        +000000007fffffff  +0000000000000000  +000000007fffffff *+1fffffff40000001 *+3fffffff00000001 *+3fffffffffffffff *+5ffffffec0000001 *+7ffffffe80000001
+        +0000000080000001  +0000000000000000  +0000000080000001 *+1fffffffbfffffff *+3fffffffffffffff *+4000000100000001 *+600000003fffffff *+800000007fffffff
+        +00000000bfffffff  +0000000000000000  +00000000bfffffff *+2fffffff00000001 *+5ffffffec0000001 *+600000003fffffff *+8ffffffe80000001 *+bffffffe40000001
+        +00000000ffffffff  +0000000000000000  +00000000ffffffff *+3ffffffec0000001 *+7ffffffe80000001 *+800000007fffffff *+bffffffe40000001 *+fffffffe00000001
+
+        '''
+        mul = Operators.SEXTEND(a, 256, 512) * Operators.SEXTEND(b, 256, 512)
+        cond = Operators.OR( mul < -(1<<255), mul >= (1<<255))
+        return cond
+
+    @staticmethod
+    def _can_unsigned_mul_overflow(state, a, b):
+        '''
+        Sign extend the value to 512 bits and check the result can be represented
+         in 256. Following there is a 32 bit excerpt of this condition:
+
+        a  *  b           +00000000000000000 +00000000000000001 +0000000003fffffff +0000000007fffffff +00000000080000001 +000000000bfffffff +000000000ffffffff
+        +0000000000000000  +0000000000000000  +0000000000000000  +0000000000000000  +0000000000000000  +0000000000000000  +0000000000000000  +0000000000000000
+        +0000000000000001  +0000000000000000  +0000000000000001  +000000003fffffff  +000000007fffffff  +0000000080000001  +00000000bfffffff  +00000000ffffffff
+        +000000003fffffff  +0000000000000000  +000000003fffffff *+0fffffff80000001 *+1fffffff40000001 *+1fffffffbfffffff *+2fffffff00000001 *+3ffffffec0000001
+        +000000007fffffff  +0000000000000000  +000000007fffffff *+1fffffff40000001 *+3fffffff00000001 *+3fffffffffffffff *+5ffffffec0000001 *+7ffffffe80000001
+        +0000000080000001  +0000000000000000  +0000000080000001 *+1fffffffbfffffff *+3fffffffffffffff *+4000000100000001 *+600000003fffffff *+800000007fffffff
+        +00000000bfffffff  +0000000000000000  +00000000bfffffff *+2fffffff00000001 *+5ffffffec0000001 *+600000003fffffff *+8ffffffe80000001 *+bffffffe40000001
+        +00000000ffffffff  +0000000000000000  +00000000ffffffff *+3ffffffec0000001 *+7ffffffe80000001 *+800000007fffffff *+bffffffe40000001 *+fffffffe00000001
+
+        '''
+        mul = Operators.SEXTEND(a, 256, 512) * Operators.SEXTEND(b, 256, 512)
+        cond = Operators.UGE(mul, 1<<256)
+        return cond
+
+    def will_terminate_state_callback(self, state, *args):
+        world = state.platform
+        findings_ids = set()
+        for tx in world.transactions:
+            if tx.return_value:
+                storage = world.world_state[tx.address]['storage']
+                if istainted(storage, "IO.*"):
+                    pass #print dir(storage)
+                
+                #self.add_finding(state, *self._get_location(state, taint[4:] ))
+
+    def did_evm_execute_instruction_callback(self, state, instruction, arguments, result_ref):
+        mnemonic = instruction.semantics
+        result = result_ref.value
+        ios = False
+        iou = False
+
+        if mnemonic == 'ADD':
+            ios = self._can_signed_add_overflow(state, *arguments)
+            iou = self._can_unsigned_add_overflow(state, *arguments)
+        elif mnemonic == 'MUL':
+            ios = self._can_signed_mul_overflow(state, *arguments)
+            iou = self._can_unsigned_mul_overflow(state, *arguments)
+        elif mnemonic == 'SUB':
+            ios = self._can_signed_sub_overflow(state, *arguments)
+            iou = self._can_unsigned_sub_overflow(state, *arguments)
+        elif mnemonic == 'SSTORE':
+            where, what = arguments
+            if istainted(what, "SIGNED"):
+                for taint in get_taints(what, "IOS_.*"):
+                    loc = self._get_location(state, taint[4:])
+                    if state.can_be_true(loc[-1]):
+                        self.add_finding(state, *loc[:-1])
+            else:
+                for taint in get_taints(what, "IOU_.*"):
+                    loc = self._get_location(state, taint[4:]) 
+                    if state.can_be_true(loc[-1]):
+                        self.add_finding(state, *loc[:-1])
+
+        if mnemonic in ('SLT', 'SGT', 'SDIV', 'SMOD'):
+            result = taint_with(result, "SIGNED"%id_val)
+
+        if state.can_be_true(ios):
+            id_val = self._save_current_location(state, "Signed integer overflow at %s instruction" % mnemonic, ios)
+            result = taint_with(result, "IOS_%s"%id_val)
+        if state.can_be_true(iou):
+            id_val = self._save_current_location(state, "Unsigned integer overflow at %s instruction" % mnemonic, iou)
+            result = taint_with(result, "IOU_%s"%id_val)
+        #if ios and iou:
+        #    self.add_finding_here(state, "Integer overflow at %s" % mnemonic)
+
         result_ref.value = result
 
 
