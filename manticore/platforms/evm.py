@@ -57,9 +57,8 @@ class Transaction(object):
         self.caller = caller
         self.value = value
         self.depth = depth
-        self.return_data = return_data
-        self.result = result
         self.gas = gas
+        self.set_result(result, return_data)
 
     @property
     def sort(self):
@@ -75,24 +74,12 @@ class Transaction(object):
     def result(self):
         return self._result
 
-    @result.setter
-    def result(self, result):
-        if result not in {None, 'TXERROR', 'REVERT', 'RETURN', 'THROW', 'STOP', 'SELFDESTRUCT'}:
-            raise EVMException('Invalid transaction result')
-        self._result = result
-
     def is_human(self):
         return self.depth == 0
 
     @property
     def return_data(self):
         return self._return_data
-
-    @return_data.setter
-    def return_data(self, return_data):
-        if not isinstance(return_data, (type(None), bytearray, Array)):
-            raise EVMException('Invalid transaction return_data')
-        self._return_data = return_data
 
     @property
     def return_value(self):
@@ -102,13 +89,19 @@ class Transaction(object):
             assert self.result in {'TXERROR', 'REVERT', 'THROW', 'SELFDESTRUCT'}
             return 0
 
-    def set_result(self, result, data=None):
-        if self.result is not None:
+    def set_result(self, result, return_data=None):
+        if getattr(self, 'result', None) is not None:
             raise EVMException('Transaction result already set')
-        if not isinstance(data, (type(None), bytearray, Array)):
-            raise EVMException('Transaction result data wrong type')
-        self.result = result
-        self.return_data = data
+        if result not in {None, 'TXERROR', 'REVERT', 'RETURN', 'THROW', 'STOP', 'SELFDESTRUCT'}:
+            raise EVMException('Invalid transaction result')
+        if result in {'RETURN', 'REVERT'}:
+            if not isinstance(return_data, (bytearray, Array)):
+                raise EVMException('Invalid transaction return_data')
+        else:
+            if return_data is not None:
+                raise EVMException('Invalid transaction return_data')
+        self._result = result
+        self._return_data = return_data
 
     def __reduce__(self):
         ''' Implements serialization/pickle '''
@@ -1675,13 +1668,13 @@ class EVM(Eventful):
         self._consume(self.safe_mul(GCOPY, self.safe_add(size, 31) / 32))
         self._allocate(self.safe_add(mem_offset, size))
 
-        # slow debug check
+        # slow debug check 
         #if issymbolic(size):
         #    assert not solver.can_be_true(self.constraints, Operators.UGT(self.gas, old_gas))
 
-        self.constraints.add(size % 32 == 0)
-        self.constraints.add(Operators.ULT(size, 32 * 10))
         if issymbolic(size):
+            #self.constraints.add(size % 32 == 0)
+            #self.constraints.add(Operators.ULT(size, 32 * 10))
             raise ConcretizeStack(3, policy='SAMPLED')
 
         for i in range(size):
@@ -1755,8 +1748,8 @@ class EVM(Eventful):
 
         self._allocate(mem_offset + size)
         for i in range(size):
-            if offset + i < len(return_data):
-                self._store(mem_offset + i, return_data[offset + i])
+            if return_offset + i < len(return_data):
+                self._store(mem_offset + i, return_data[return_offset + i])
             else:
                 self._store(mem_offset + i, 0)
 

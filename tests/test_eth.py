@@ -36,9 +36,9 @@ class EthDetectorsIntegrationTest(unittest.TestCase):
         mevm.multi_tx_analysis(filename, tx_limit=1)
         self.assertEqual(len(mevm.global_findings), 3)
         all_findings = ''.join(map(lambda x: x[2], mevm.global_findings))
-        self.assertIn('underflow at SUB', all_findings)
-        self.assertIn('overflow at ADD', all_findings)
-        self.assertIn('overflow at MUL', all_findings)
+        self.assertIn('Unsigned integer overflow at SUB instruction', all_findings)
+        self.assertIn('Unsigned integer overflow at ADD instruction', all_findings)
+        self.assertIn('Unsigned integer overflow at MUL instruction', all_findings)
 
 
 class EthDetectorsTest(unittest.TestCase):
@@ -50,31 +50,26 @@ class EthDetectorsTest(unittest.TestCase):
         """
         Regression test added for issue 714, where we were using the ADD ovf check for MUL
         """
-        arguments = [1 << (8 * 31), self.state.new_symbolic_value(256)]
+        arguments = [1 << 248, self.state.new_symbolic_value(256)]
         self.state.constrain(operators.ULT(arguments[1], 256))
-
-        # TODO(mark) We should actually call into the EVM cpu here, and below, rather than
-        # effectively copy pasting what the MUL does
-        result = arguments[0] * arguments[1]
-
-        check = self.io._can_mul_overflow(self.state, result, *arguments)
+        
+        cond = self.io._unsigned_mul_overflow(self.state, *arguments)
+        check = self.state.can_be_true(cond)
         self.assertFalse(check)
 
     def test_mul_overflow0(self):
-        arguments = [2 << (8 * 31), self.state.new_symbolic_value(256)]
+        arguments = [1 << 249, self.state.new_symbolic_value(256)]
         self.state.constrain(operators.ULT(arguments[1], 256))
 
-        result = arguments[0] * arguments[1]
-
-        check = self.io._can_mul_overflow(self.state, result, *arguments)
+        cond = self.io._unsigned_mul_overflow(self.state, *arguments)
+        check = self.state.can_be_true(cond)
         self.assertTrue(check)
 
     def test_mul_overflow1(self):
         arguments = [1 << 255, self.state.new_symbolic_value(256)]
 
-        result = arguments[0] * arguments[1]
-
-        check = self.io._can_mul_overflow(self.state, result, *arguments)
+        cond = self.io._unsigned_mul_overflow(self.state, *arguments)
+        check = self.state.can_be_true(cond)
         self.assertTrue(check)
 
 

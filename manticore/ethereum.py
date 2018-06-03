@@ -204,49 +204,6 @@ class DetectIntegerOverflow(Detector):
     '''
         Detects potential overflow and underflow conditions on ADD and SUB instructions.
     '''
-    @staticmethod
-    def _can_add_overflow(state, result, a, b):
-        # TODO FIXME (mark) this is using a signed LT. need to check if this is correct
-        return state.can_be_true(operators.ULT(result, a) | operators.ULT(result, b))
-
-    @staticmethod
-    def _can_mul_overflow(state, result, a, b):
-        return state.can_be_true(operators.ULT(result, a) & operators.ULT(result, b))
-
-    @staticmethod
-    def _can_sub_underflow(state, a, b):
-        return state.can_be_true(b > a)
-
-    def did_evm_execute_instruction_callback(self, state, instruction, arguments, result_ref):
-        result = result_ref.value
-        mnemonic = instruction.semantics
-
-        if mnemonic == 'ADD':
-            if self._can_add_overflow(state, result, *arguments):
-                self.add_finding_here(state, "Integer overflow at {} instruction".format(mnemonic))
-                if issymbolic(result):
-                    result._taint = result.taint | frozenset(("IOA",))
-        elif mnemonic == 'MUL':
-            if self._can_mul_overflow(state, result, *arguments):
-                self.add_finding_here(state, "Integer overflow at {} instruction".format(mnemonic))
-                if issymbolic(result):
-                    result._taint = result.taint | frozenset(("IOM",))
-        elif mnemonic == 'SUB':
-            if self._can_sub_underflow(state, *arguments):
-                self.add_finding_here(state, "Integer underflow at {} instruction".format(mnemonic))
-                if issymbolic(result):
-                    result._taint = result.taint | frozenset(("IU",))
-        if mnemonic == 'SSTORE':
-            for arg in arguments:
-                if istainted(arg, 'IOA') or istainted(arg, 'IOM') or istainted(arg, 'IU'):
-                    self.add_finding_here(state, "Result of integer overflowed intruction is written to the storage")
-        result_ref.value = result
-
-
-class DetectIntegerOverflow(Detector):
-    '''
-        Detects potential overflow and underflow conditions on ADD and SUB instructions.
-    '''
 
     def _save_current_location(self, state, finding, condition):
         address = state.platform.current_vm.address
@@ -261,7 +218,7 @@ class DetectIntegerOverflow(Detector):
         return state.context.setdefault('%s.locations' % self.name, {})[hash_id]
 
     @staticmethod
-    def _can_signed_sub_overflow(state, a, b):
+    def _signed_sub_overflow(state, a, b):
         '''
         Sign extend the value to 512 bits and check the result can be represented
          in 256. Following there is a 32 bit excerpt of this condition:
@@ -279,7 +236,7 @@ class DetectIntegerOverflow(Detector):
         return cond
 
     @staticmethod
-    def _can_signed_add_overflow(state, a, b):
+    def _signed_add_overflow(state, a, b):
         '''
         Sign extend the value to 512 bits and check the result can be represented
          in 256. Following there is a 32 bit excerpt of this condition:
@@ -298,7 +255,7 @@ class DetectIntegerOverflow(Detector):
         return cond
 
     @staticmethod
-    def _can_unsigned_sub_overflow(state, a, b):
+    def _unsigned_sub_overflow(state, a, b):
         '''
         Sign extend the value to 512 bits and check the result can be represented
          in 256. Following there is a 32 bit excerpt of this condition:
@@ -316,7 +273,7 @@ class DetectIntegerOverflow(Detector):
         return cond
 
     @staticmethod
-    def _can_unsigned_add_overflow(state, a, b):
+    def _unsigned_add_overflow(state, a, b):
         '''
         Sign extend the value to 512 bits and check the result can be represented
          in 256. Following there is a 32 bit excerpt of this condition:
@@ -335,7 +292,7 @@ class DetectIntegerOverflow(Detector):
         return cond
 
     @staticmethod
-    def _can_signed_mul_overflow(state, a, b):
+    def _signed_mul_overflow(state, a, b):
         '''
         Sign extend the value to 512 bits and check the result can be represented
          in 256. Following there is a 32 bit excerpt of this condition:
@@ -355,7 +312,7 @@ class DetectIntegerOverflow(Detector):
         return cond
 
     @staticmethod
-    def _can_unsigned_mul_overflow(state, a, b):
+    def _unsigned_mul_overflow(state, a, b):
         '''
         Sign extend the value to 512 bits and check the result can be represented
          in 256. Following there is a 32 bit excerpt of this condition:
@@ -381,14 +338,14 @@ class DetectIntegerOverflow(Detector):
         iou = False
 
         if mnemonic == 'ADD':
-            ios = self._can_signed_add_overflow(state, *arguments)
-            iou = self._can_unsigned_add_overflow(state, *arguments)
+            ios = self._signed_add_overflow(state, *arguments)
+            iou = self._unsigned_add_overflow(state, *arguments)
         elif mnemonic == 'MUL':
-            ios = self._can_signed_mul_overflow(state, *arguments)
-            iou = self._can_unsigned_mul_overflow(state, *arguments)
+            ios = self._signed_mul_overflow(state, *arguments)
+            iou = self._unsigned_mul_overflow(state, *arguments)
         elif mnemonic == 'SUB':
-            ios = self._can_signed_sub_overflow(state, *arguments)
-            iou = self._can_unsigned_sub_overflow(state, *arguments)
+            ios = self._signed_sub_overflow(state, *arguments)
+            iou = self._unsigned_sub_overflow(state, *arguments)
         elif mnemonic == 'SSTORE':
             where, what = arguments
             if istainted(what, "SIGNED"):
