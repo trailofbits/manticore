@@ -1,6 +1,7 @@
 from builtins import *
 import logging
 import re
+import binascii
 from capstone import CS_GRP_JUMP
 from ..utils.symbolic_helpers import issymbolic
 from contextlib import contextmanager
@@ -335,16 +336,16 @@ class FilterFunctions(Plugin):
             if self._fallback:
                 selected_functions.append('00000000')
 
+            from manticore.core.smtlib import Operators
             if self._include:
                 # constraint the input so it can take only the interesting values
-                from manticore.core.smtlib import Operators
-                constraint = reduce(Operators.OR, map(lambda x: tx.data[:4] == x.decode('hex'), selected_functions))
+                constraint = reduce(Operators.OR, map(lambda x: tx.data[:4] == binascii.unhexlify(x), selected_functions))
                 state.constrain(constraint)
             else:
                 #Avoid all not seleted hashes
                 for func_hsh in md.hashes:
                     if func_hsh in selected_functions:
-                        constraint = tx.data[:4] != func_hsh.decode('hex')
+                        constraint = Operators.NOT(tx.data[:4] == binascii.unhexlify(func_hsh))
                         state.constrain(constraint)
 
 
