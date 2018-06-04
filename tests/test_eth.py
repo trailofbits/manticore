@@ -160,7 +160,7 @@ class EthAbiTests(unittest.TestCase):
 
     def test_self_make_and_parse_multi_dyn(self):
         d = ABI.make_function_call('func', 'h'*50, [1, 1, 2, 2, 3, 3] )
-        d = ''.join(d)
+        d = b''.join(d)
         funcname, dynargs = ABI.parse(type_spec='func(bytes,address[])', data=d)
         self.assertEqual(funcname, 'func')
         self.assertEqual(dynargs, ('h'*50, [1, 1, 2, 2, 3, 3]))
@@ -459,14 +459,14 @@ class EthHelpersTest(unittest.TestCase):
 
 class EthSolidityCompilerTest(unittest.TestCase):
     def test_run_solc(self):
-        source_a = '''
+        source_a = u'''
         import "./B.sol";
         contract A {
             function callB(B _b) public { _b.fromA(); }
             function fromB() public { revert(); }
         }
         '''
-        source_b = '''
+        source_b = u'''
         import "./A.sol";
         contract B {
             function callA(A _a) public { _a.fromB(); }

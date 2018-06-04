@@ -109,7 +109,8 @@ class IntegrationTest(unittest.TestCase):
         filename = filename[len(os.getcwd())+1:]
         workspace = os.path.join(self.test_dir, 'workspace')
         assertions = os.path.join(self.test_dir, 'assertions.txt')
-        file(assertions,'w').write('0x0000000000401003 ZF == 1')
+        with  open(assertions, 'w') as f:
+            f.write(u'0x0000000000401003 ZF == 1')
         with open(os.path.join(os.pardir, self.test_dir, 'output.log'), "w") as output:
             subprocess.check_call(['python', '-m', 'manticore',
                                    '--workspace', workspace,

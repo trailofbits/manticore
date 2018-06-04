@@ -12,7 +12,7 @@ from .core.smtlib.visitors import simplify
 from .core.state import State
 from .core.plugin import FilterFunctions
 from .platforms import evm
-from .utils.helpers import hex_encode, istainted
+from .utils.symbolic_helpers import istainted
 
 import tempfile
 from subprocess import Popen, PIPE, check_output
@@ -25,7 +25,7 @@ import io
 import pickle
 from .core.plugin import Plugin
 from functools import reduce
-from .utils.helpers import isunicode, isint, isstring
+from .utils.helpers import hex_encode, isint, isstring
 
 import binascii
 
@@ -221,8 +221,8 @@ class SolidityMetadata(object):
     @staticmethod
     def _without_metadata(bytecode):
         end = None
-        if bytecode[-43: -34] == '\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
-                and bytecode[-2:] == '\x00\x29':
+        if bytecode[-43: -34] == b'\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
+                and bytecode[-2:] == b'\x00\x29':
             end = -9 - 32 - 2  # Size of metadata at the end of most contracts
         return bytecode[:end]
 
@@ -433,11 +433,9 @@ class ABI(object):
 
     @staticmethod
     def make_function_call(method_name, *args):
-        function_id = ABI.make_function_id(method_name)
-        assert len(function_id) == 4
-        result = [tuple(function_id)]
-        result.append(ABI.make_function_arguments(*args))
-        return reduce(lambda x, y: x + y, result)
+        method = tuple(bytes([i]) for i in ABI.make_function_id(method_name))
+        args = ABI.make_function_arguments(*args)
+        return method + args
 
     @staticmethod
     def _parse_size(num):
@@ -689,7 +687,7 @@ class ManticoreEVM(Manticore):
             contract_account.set(12345, value=100) 
 
             seth.report()
-            print seth.coverage(contract_account)
+            print(seth.coverage(contract_account))
     '''
     SByte = ABI.SByte
     SValue = ABI.SValue
@@ -806,7 +804,7 @@ class ManticoreEVM(Manticore):
         p = Popen(solc_invocation, stdout=PIPE, stderr=PIPE, cwd=working_folder)
         with p.stdout as stdout, p.stderr as stderr:
             try:
-                return json.loads(stdout.read()), stderr.read()
+                return json.load(stdout), stderr.read()
             except ValueError:
                 raise Exception('Solidity compilation error:\n\n{}'.format(stderr.read()))
 
@@ -1461,7 +1459,7 @@ class ManticoreEVM(Manticore):
         logger.info("Generated testcase No. {} - {}".format(testcase.num, message + blockchain.last_transaction.result))
         with testcase.open_stream('summary') as summary:
             summary.write(u"Message: {!s}\n".format(message))
-            summary.write(u"Last exception: {!s\n".format(state.context['last_exception']))
+            summary.write(u"Last exception: {!s}\n".format(state.context['last_exception']))
 
             at_runtime = blockchain.last_transaction.sort != 'CREATE'
             address, offset, at_init = state.context['evm.trace'][-1]
@@ -1635,7 +1633,7 @@ class ManticoreEVM(Manticore):
         """
         for contract, pc, at_init in trace:
             if pc == 0:
-                filestream.write('---\n')
+                filestream.write(u'---\n')
             ln = u'0x{:x}:0x{:x} {}\n'.format(contract, pc, '*' if at_init else '')
             filestream.write(ln)
 
@@ -1646,7 +1644,7 @@ class ManticoreEVM(Manticore):
         """
         logger.debug("Finalizing %d states.", self.count_states())
         q = Queue()
-        for running_state_id in self.running_state_ids:
+        for running_state_id in self._running_state_ids:
             q.put(running_state_id)
 
         def f(q):

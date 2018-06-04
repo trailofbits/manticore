@@ -3,9 +3,28 @@ from builtins import *
 import collections
 import sys
 import binascii
+import functools
 
 if sys.version_info[0] == 2:
     from types import IntType, StringType
+
+def isstring(value):
+    '''
+    Helper to determine whether an object is string-y, which is nontrivial when targeting Python 2 and 3 at the same
+    time.
+
+    :param object value: object to check
+    :return: whether `value` can be treated as string
+    :rtype: bool
+    '''
+
+    # in python3, string types are 'str', 'bytes'
+    # in python2, strings are type 'unicode', 'str'
+    if sys.version_info[0] == 2:
+        # we want to refer to the str type imported by futurize as well as the builtin
+        return isinstance(value, (unicode, str, StringType))
+    elif sys.version_info[0] == 3:
+        return isinstance(value, (str, bytes))
 
 def all_ints(ns):
     '''
@@ -32,24 +51,6 @@ def hex_encode(s):
     if isinstance(s, tuple):
         s = bytes(list(all_ints(s)))
     return binascii.hexlify(s).decode()
-
-def isstring(value):
-    '''
-    Helper to determine whether an object is string-y, which is nontrivial when targeting Python 2 and 3 at the same
-    time.
-
-    :param object value: object to check
-    :return: whether `value` can be treated as string
-    :rtype: bool
-    '''
-
-    # in python3, string types are 'str', 'bytes'
-    # in python2, strings are type 'unicode', 'str'
-    if sys.version_info[0] == 2:
-        # we want to refer to the str type imported by futurize as well as the builtin
-        return isinstance(value, (unicode, str, StringType))
-    elif sys.version_info[0] == 3:
-        return isinstance(value, (str, bytes))
 
 def isunicode(value):
     '''
@@ -106,23 +107,6 @@ def as_unicode(s):
     elif isstring(s):
         return s
     raise ValueError('expected string-like value, got {}'.format(type(s).__name__))
-
-def istainted(arg, taint=None):
-    '''
-    Helper to determine whether an object if tainted.
-    :param arg: a value or Expression
-    :param taint: a sepecific taint value (eg. 'IMPORTANT'). If None this fucntions check for any taint value.
-    '''
-
-    if not issymbolic(arg):
-        return False
-    if taint is None:
-        return len(arg.taint) != 0
-    return taint in arg.taint
-
-
-import functools
-
 
 class memoized(object):
     '''Decorator. Caches a function's return value each time it is called.
