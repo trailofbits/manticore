@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 ###############################################################################
 # Solver
 # A solver maintains a companion smtlib capable process connected via stdio.
@@ -171,7 +171,7 @@ class Z3Solver(Solver):
         try:
             self._proc = Popen(self._command.split(' '), stdin=PIPE, stdout=PIPE)
         except OSError as e:
-            print e, "Probably too  much cached expressions? visitors._cache..."
+            print(e, "Probably too  much cached expressions? visitors._cache...")
             # Z3 was removed from the system in the middle of operation
             raise Z3NotFoundError  # TODO(mark) don't catch this exception in two places
 

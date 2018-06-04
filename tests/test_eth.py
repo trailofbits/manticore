@@ -1,3 +1,4 @@
+from __future__ import print_function
 import shutil
 import struct
 import tempfile
@@ -384,12 +385,12 @@ class EthTests(unittest.TestCase):
                         func_name, args = ABI.parse("is_symbolic(uint256)", state.platform.current_transaction.data)
                         try:
                             arg = to_constant(args[0])
-                        except Exception,e:
+                        except Exception as e:
                             raise Return(TRUE)
                         raise Return(FALSE)
                     elif func_id == ABI.make_function_id("shutdown(string)"):
                         func_name, args = ABI.parse("shutdown(string)", state.platform.current_transaction.data)
-                        print "Shutdown", to_constant(args[0])
+                        print("Shutdown", to_constant(args[0]))
                         self.manticore.shutdown()
                     elif func_id == ABI.make_function_id("can_be_true(bool)"):
                         func_name, args = ABI.parse("can_be_true(bool)", state.platform.current_transaction.data)
