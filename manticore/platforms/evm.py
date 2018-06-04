@@ -2248,7 +2248,7 @@ class EVMWorld(Platform):
             for address, account in self._deleted_accounts:
                 self.world_state[address] = account
 
-            self.set_storage(vm.address, account_storage)
+            self._set_storage(vm.address, account_storage)
             self._deleted_accounts = self._deleted_accounts
             self._logs = logs
 
@@ -2361,13 +2361,30 @@ class EVMWorld(Platform):
             self._deleted_accounts.append(deleted_account)
 
     def get_storage_data(self, storage_address, offset):
+        """
+        Read a value from a storage slot on the specified account
+         :param storage_address: an account address
+         :param offset: the storage slot to use.
+         :type offset: int or BitVec
+         :return: the value
+         :rtype: int or BitVec
+        """
         value = self.world_state[storage_address]['storage'].get(offset, 0)
         return simplify(value)
 
     def set_storage_data(self, storage_address, offset, value):
+        """
+        Writes a value to a storage slot in specified account 
+         :param storage_address: an account address
+         :param offset: the storage slot to use.
+         :type offset: int or BitVec
+         :param value: the value to write
+         :type value: int or BitVec
+        """
         self.world_state[storage_address]['storage'][offset] = value
 
     def get_storage_items(self, address):
+        ''' Returns a list of where what (potentially symbolic)'''
         storage = self.world_state[address]['storage']
         items = []
         array = storage.array
@@ -2377,13 +2394,23 @@ class EVMWorld(Platform):
         return items
 
     def has_storage(self, address):
-        #FIXME keep a variable that records if something(!=0) has been written
-        return True  # len(self.world_state[address]['storage'].items()) != 0
+        ''' True if something has been written to the storage 
+        Note that if a slot has been erased from the storage this function may 
+        loss any meaning'''
+        storage = self.world_state[address]['storage']
+        array = storage.array
+        while not isinstance(array, ArrayVariable):
+            if isinstance(array, ArrayStore):
+                return True
+            array = array.array
+        return False
 
     def get_storage(self, address):
+        """ Returns the storage (bytearray or Array) """
         return self.world_state[address]['storage']
 
-    def set_storage(self, address, storage):
+    def _set_storage(self, address, storage):
+        """ Private auxiliar function to replace the storage """
         self.world_state[address]['storage'] = storage
 
     def set_balance(self, address, value):
