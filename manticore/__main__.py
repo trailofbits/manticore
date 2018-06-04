@@ -116,24 +116,17 @@ def ethereum_cli(args):
 
     m = ManticoreEVM(procs=args.procs)
 
-    if args.detect_all:
-        args.detect_invalid = True
-        args.detect_io = True
-        args.detect_uninitialized_storage = True
-        args.detect_uninitialized_memory = True
-
-    if args.detect_invalid:
+    if args.detect_all or args.detect_invalid:
         m.register_detector(DetectInvalid())
-    if args.detect_io:
+    if args.detect_all or args.detect_io:
         m.register_detector(DetectIntegerOverflow())
-    if args.detect_uninitialized_storage:
+    if args.detect_all or args.detect_uninitialized_storage:
         m.register_detector(DetectUninitializedStorage())
-    if args.detect_uninitialized_memory:
+    if args.detect_all or args.detect_uninitialized_memory:
         m.register_detector(DetectUninitializedMemory())
 
     if args.avoid_constant:
         #avoid all human level tx that has no effect on the storage
-        print "avoiding contants"
         filter_nohuman_constants = FilterFunctions(regexp=r".*", depth='human', mutability='constant', include=False)
         self.register_plugin(filter_nohuman_constants)
 

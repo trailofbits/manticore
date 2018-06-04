@@ -46,11 +46,11 @@ class Detector(Plugin):
         return self.__class__.__name__.split('.')[-1]
 
     def get_findings(self, state):
-        return state.context.setdefault('%s.findings' % self.name, set())
+        return state.context.setdefault('{:s}.findings'.format(self.name), set())
 
     @contextmanager
     def locked_global_findings(self):
-        with self.manticore.locked_context('%s.global_findings' % self.name, set) as global_findings:
+        with self.manticore.locked_context('{:s}.global_findings'.format(self.name), set) as global_findings:
             yield global_findings
 
     @property
@@ -167,13 +167,13 @@ class FilterFunctions(Plugin):
 
             if self._include:
                 # constraint the input so it can take only the interesting values
-                constraint = reduce(Operators.OR, map(lambda x: tx.data[:4] == x.decode('hex'), selected_functions))
+                constraint = reduce(Operators.OR, map(lambda x: tx.data[:4] == binascii.unhexlify(x), selected_functions))
                 state.constrain(constraint)
             else:
                 #Avoid all not seleted hashes
                 for func_hsh in md.hashes:
                     if func_hsh in selected_functions:
-                        constraint = Operators.NOT(tx.data[:4] == func_hsh.decode('hex'))
+                        constraint = Operators.NOT(tx.data[:4] == binascii.unhexlify(func_hsh))
                         state.constrain(constraint)
 
 
@@ -1582,15 +1582,15 @@ class ManticoreEVM(Manticore):
         if len(local_findings):
             with testcase.open_stream('findings') as findings:
                 for address, pc, finding, at_init in local_findings:
-                    findings.write('Finding: %s\n' % finding)
-                    findings.write('Contract: 0x%x\n' % address)
-                    findings.write('EVM Program counter: %s%s\n' % (pc, at_init and " (at constructor)" or ""))
+                    findings.write('- %s -\n' % finding)
+                    findings.write('  Contract: 0x%x\n' % address)
+                    findings.write('  EVM Program counter: %s%s\n' % (pc, at_init and " (at constructor)" or ""))
                     md = self.get_metadata(address)
                     if md is not None:
                         src = md.get_source_for(pc, runtime=not at_init)
-                        findings.write('Snippet:\n')
-                        findings.write('\n'.join((' ' + x for x in src.split('\n'))))
-                        findings.write('\n\n')
+                        findings.write('  Snippet:\n')
+                        findings.write(src.replace('\n', '\n    ').strip())
+                        findings.write('\n')
 
         with testcase.open_stream('summary') as summary:
             summary.write("Message: %s\n" % message)
@@ -1816,15 +1816,15 @@ class ManticoreEVM(Manticore):
             with self._output.save_stream('global.findings') as global_findings:
                 for address, pc, finding, at_init in self.global_findings:
                     global_findings.write('- %s -\n' % finding)
-                    global_findings.write('\tContract: %s\n' % address)
-                    global_findings.write('\tEVM Program counter: %s%s\n' % (pc, at_init and " (at constructor)" or ""))
+                    global_findings.write('  Contract: %s\n' % address)
+                    global_findings.write('  EVM Program counter: %s%s\n' % (pc, at_init and " (at constructor)" or ""))
 
                     md = self.get_metadata(address)
                     if md is not None:
                         src = md.get_source_for(pc, runtime=not at_init)
-                        global_findings.write('\tSolidity snippet:\n')
-                        global_findings.write('\n'.join(('\t ' + x for x in src.split('\n'))))
-                        global_findings.write('\n\n')
+                        global_findings.write('  Solidity snippet:\n')
+                        global_findings.write(src.replace('\n', '\n    ').strip())
+                        global_findings.write('\n')
 
         with self._output.save_stream('global.summary') as global_summary:
             # (accounts created by contract code are not in this list )
