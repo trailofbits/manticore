@@ -5,7 +5,7 @@ import inspect
 from functools import wraps
 from ..utils.helpers import issymbolic, memoized
 from ..platforms.platform import *
-from ..core.smtlib import solver, BitVec, Array, Operators, Constant
+from ..core.smtlib import solver, BitVec, Array, Operators, Constant, ArrayVariable
 from ..core.state import Concretize, TerminateState
 from ..utils.event import Eventful
 from ..core.smtlib.visitors import simplify
