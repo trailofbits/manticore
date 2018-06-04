@@ -10,7 +10,7 @@ from manticore.core.smtlib import ConstraintSet, operators
 from manticore.core.smtlib.expression import BitVec
 from manticore.core.smtlib import solver
 from manticore.core.state import State
-from manticore.ethereum import ManticoreEVM, IntegerOverflow, Detector, NoAliveStates, ABI, EthereumError
+from manticore.ethereum import ManticoreEVM, DetectIntegerOverflow, Detector, NoAliveStates, ABI, EthereumError
 from manticore.platforms.evm import EVMWorld, ConcretizeStack, concretized_args, Return, Stop
 from manticore.core.smtlib.visitors import pretty_print, translate_to_smtlib, simplify, to_constant
 
@@ -32,7 +32,7 @@ def make_mock_evm_state():
 class EthDetectorsIntegrationTest(unittest.TestCase):
     def test_int_ovf(self):
         mevm = ManticoreEVM()
-        mevm.register_detector(IntegerOverflow())
+        mevm.register_detector(DetectIntegerOverflow())
         filename = os.path.join(THIS_DIR, 'binaries/int_overflow.sol')
         mevm.multi_tx_analysis(filename, tx_limit=1)
         self.assertEqual(len(mevm.global_findings), 3)
@@ -44,7 +44,7 @@ class EthDetectorsIntegrationTest(unittest.TestCase):
 
 class EthDetectorsTest(unittest.TestCase):
     def setUp(self):
-        self.io = IntegerOverflow()
+        self.io = DetectIntegerOverflow()
         self.state = make_mock_evm_state()
 
     def test_mul_no_overflow(self):
@@ -297,6 +297,7 @@ class EthTests(unittest.TestCase):
         filename = os.path.join(THIS_DIR, 'binaries/int_overflow.sol')
 
         mevm.multi_tx_analysis(filename, tx_limit=1)
+        mevm.finalize()
 
         worksp = mevm.workspace
         listdir = os.listdir(worksp)

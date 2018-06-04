@@ -7,6 +7,7 @@ from ..utils.helpers import issymbolic, memoized
 from ..platforms.platform import *
 from ..core.smtlib import solver, BitVec, Array, Operators, Constant
 from ..core.state import Concretize, TerminateState
+from ..core.plugin import Ref
 from ..utils.event import Eventful
 from ..core.smtlib.visitors import simplify
 import logging
@@ -1211,10 +1212,16 @@ class EVM(Eventful):
             value = value.value
         self.stack.append(value)
 
+    def _top(self, n=0):
+        ''' Read a value from the top of the stack without removing it '''
+        if len(self.stack) - n < 0:
+            raise StackUnderflow()
+        return self.stack[n - 1]
+
     def _pop(self):
+        ''' Pop a value from the stack '''
         if len(self.stack) == 0:
             raise StackUnderflow()
-
         return self.stack.pop()
 
     def _consume(self, fee):
@@ -1355,7 +1362,7 @@ class EVM(Eventful):
             if not current.is_branch:
                 #advance pc pointer
                 self.pc += self.instruction.size
-            self._publish('did_evm_execute_instruction', current, arguments, result)
+            self._publish('did_evm_execute_instruction', current, arguments, Ref(result))
             self._publish('did_execute_instruction', last_pc, self.pc, current)
             raise
         except Emulated as e:
@@ -1364,12 +1371,14 @@ class EVM(Eventful):
                 self.pc += self.instruction.size
             result = e.result
 
-        self._push_results(current, result)
         if not current.is_branch:
             #advance pc pointer
             self.pc += self.instruction.size
-        self._publish('did_evm_execute_instruction', current, arguments, result)
+        result_ref = Ref(result)
+        self._publish('did_evm_execute_instruction', current, arguments, result_ref)
         self._publish('did_execute_instruction', last_pc, self.pc, current)
+
+        self._push_results(current, result_ref.value)
 
     def read_buffer(self, offset, size):
         if issymbolic(size):
@@ -2466,7 +2475,6 @@ class EVMWorld(Platform):
         self._process_pending_transaction()
         if self.current_vm is None:
             raise TerminateState("Trying to execute an empty transaction", testcase=False)
-
         try:
             self.current_vm.execute()
         except StartTx:
