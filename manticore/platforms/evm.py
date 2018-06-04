@@ -2180,13 +2180,9 @@ class EVMWorld(Platform):
             assert self._sha3[buf] == value
         self._sha3[buf] = value
 
-    @property
-    def world_state(self):
-        return self._world_state
-
     def __getitem__(self, index):
         assert isinstance(index, (int, long))
-        return self.world_state[index]
+        return self._world_state[index]
 
     def __contains__(self, key):
         assert not issymbolic(key), "Symbolic address not supported"
@@ -2246,7 +2242,7 @@ class EVMWorld(Platform):
 
         if rollback:
             for address, account in self._deleted_accounts:
-                self.world_state[address] = account
+                self._world_state[address] = account
 
             self._set_storage(vm.address, account_storage)
             self._deleted_accounts = self._deleted_accounts
@@ -2332,7 +2328,7 @@ class EVMWorld(Platform):
 
     @property
     def accounts(self):
-        return self.world_state.keys()
+        return self._world_state.keys()
 
     @property
     def normal_accounts(self):
@@ -2355,9 +2351,9 @@ class EVMWorld(Platform):
         return self._deleted_accounts
 
     def delete_account(self, address):
-        if address in self.world_state:
-            deleted_account = (address, self.world_state[address])
-            del self.world_state[address]
+        if address in self._world_state:
+            deleted_account = (address, self._world_state[address])
+            del self._world_state[address]
             self._deleted_accounts.append(deleted_account)
 
     def get_storage_data(self, storage_address, offset):
@@ -2369,7 +2365,7 @@ class EVMWorld(Platform):
          :return: the value
          :rtype: int or BitVec
         """
-        value = self.world_state[storage_address]['storage'].get(offset, 0)
+        value = self._world_state[storage_address]['storage'].get(offset, 0)
         return simplify(value)
 
     def set_storage_data(self, storage_address, offset, value):
@@ -2381,11 +2377,11 @@ class EVMWorld(Platform):
          :param value: the value to write
          :type value: int or BitVec
         """
-        self.world_state[storage_address]['storage'][offset] = value
+        self._world_state[storage_address]['storage'][offset] = value
 
     def get_storage_items(self, address):
         ''' Returns a list of where what (potentially symbolic) '''
-        storage = self.world_state[address]['storage']
+        storage = self._world_state[address]['storage']
         items = []
         array = storage.array
         while not isinstance(array, ArrayVariable):
@@ -2399,7 +2395,7 @@ class EVMWorld(Platform):
         Note that if a slot has been erased from the storage this function may
         loss any meaning
         """
-        storage = self.world_state[address]['storage']
+        storage = self._world_state[address]['storage']
         array = storage.array
         while not isinstance(array, ArrayVariable):
             if isinstance(array, ArrayStore):
@@ -2409,40 +2405,40 @@ class EVMWorld(Platform):
 
     def get_storage(self, address):
         """ Returns the storage (bytearray or Array) """
-        return self.world_state[address]['storage']
+        return self._world_state[address]['storage']
 
     def _set_storage(self, address, storage):
         """ Private auxiliar function to replace the storage """
-        self.world_state[address]['storage'] = storage
+        self._world_state[address]['storage'] = storage
 
     def set_balance(self, address, value):
-        self.world_state[int(address)]['balance'] = value
+        self._world_state[int(address)]['balance'] = value
 
     def get_balance(self, address):
-        if address not in self.world_state:
+        if address not in self._world_state:
             return 0
-        return self.world_state[address]['balance']
+        return self._world_state[address]['balance']
 
     def add_to_balance(self, address, value):
-        assert address in self.world_state
-        self.world_state[address]['balance'] += value
+        assert address in self._world_state
+        self._world_state[address]['balance'] += value
 
     def send_funds(self, sender, recipient, value):
-        self.world_state[sender]['balance'] -= value
-        self.world_state[recipient]['balance'] += value
+        self._world_state[sender]['balance'] -= value
+        self._world_state[recipient]['balance'] += value
 
     def get_code(self, address):
-        if address not in self.world_state:
+        if address not in self._world_state:
             return ''
-        return self.world_state[address]['code']
+        return self._world_state[address]['code']
 
     def set_code(self, address, data):
-        if self.world_state[address]['code']:
+        if self._world_state[address]['code']:
             raise EVMException("Code already set")
-        self.world_state[address]['code'] = data
+        self._world_state[address]['code'] = data
 
     def has_code(self, address):
-        return len(self.world_state[address]['code']) > 0
+        return len(self._world_state[address]['code']) > 0
 
     def log(self, address, topics, data):
         self._logs.append(EVMLog(address, data, topics))
