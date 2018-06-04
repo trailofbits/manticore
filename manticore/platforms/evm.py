@@ -9,7 +9,7 @@ import logging
 import binascii
 import sha3
 from collections import namedtuple
-from itertools import chain
+from itertools import chain, islice
 from functools import wraps
 
 from ..utils.helpers import memoized, isstring, isint, isbytestr, all_ints
@@ -18,7 +18,7 @@ from ..platforms.platform import *
 from ..core.smtlib import solver, TooManySolutions, Expression, Bool, BitVec, Array, Operators, Constant, BitVecConstant, ConstraintSet, SolverException
 from ..core.state import ForkState, TerminateState
 from ..utils.event import Eventful
-from ..core.smtlib.visitors import pretty_print, translate_to_smtlib, simplify
+from ..core.smtlib.visitors import pretty_print, translate_to_smtlib, simplify, to_constant
 from ..core.state import Concretize, TerminateState
 
 logger = logging.getLogger(__name__)
@@ -261,9 +261,8 @@ class EVMAsm(object):
             ''' Parses an operand from buf
 
                 :param buf: a buffer
-                :type buf: iterator/generator/string
+                :type buf: iterator/generator
             '''
-            buf = iter(buf)
             try:
                 operand = 0
                 for _ in range(self.operand_size):
@@ -664,9 +663,7 @@ class EVMAsm(object):
                 >>> print EVMAsm.disassemble_one('\x60\x10')
 
         '''
-        if isinstance(bytecode, str):
-            bytecode = bytearray(bytecode)
-        bytecode = iter(bytecode)
+        bytecode = iter(ord(c) if isstring(c) else c for c in bytecode)
         opcode = next(bytecode)
         assert isint(opcode)
 
@@ -677,6 +674,34 @@ class EVMAsm(object):
             instruction.parse_operand(bytecode)
 
         return instruction
+
+    @staticmethod
+    def bytecode_iter(bytecode, start=0, stop=None, zero_pad=False):
+        '''
+        Convert a bytecode instance, whether it's a str, unicode, or bytes object, or a view
+        into an array and produce a generator of int values.
+
+        :param bytecode:
+        :param int start:
+        :param stop:
+        :type stop: int or None
+        :param bool zero_pad: Whether
+        '''
+
+        if stop is None:
+            stop = len(bytecode)
+        if isinstance(bytecode, Array):
+            for val in islice(bytecode, start, stop):
+                yield to_constant(val)
+        elif isstring(bytecode) or isinstance(bytecode, bytes):
+            ints = bytearray(bytecode)
+            for val in islice(ints, start, stop):
+                yield val
+        else:
+            raise TypeError("Invalid bytecode")
+
+        while zero_pad:
+            yield 0
 
     @staticmethod
     def disassemble_all(bytecode, offset=0):
@@ -707,9 +732,7 @@ class EVMAsm(object):
 
         '''
 
-        if isinstance(bytecode, str):
-            bytecode = bytearray(bytecode)
-        bytecode = iter(bytecode)
+        bytecode = EVMAsm.bytecode_iter(bytecode)  # iter(bytecode)
         while True:
             try:
                 instr = EVMAsm.disassemble_one(bytecode, offset=offset)
@@ -1080,6 +1103,7 @@ class EVM(Eventful):
         self._world = world
         self._allocated = 0
         self._on_transaction = False  # for @transact
+        self._decoding_cache = {}
 
     @property
     def bytecode(self):
@@ -1118,6 +1142,7 @@ class EVM(Eventful):
         return state
 
     def __setstate__(self, state):
+        self._decoding_cache = {} # We can rebuild decoding cache when loaded
         self._on_transaction = state['_on_transaction']
         self._gas = state['gas']
         self.memory = state['memory']
@@ -1189,27 +1214,13 @@ class EVM(Eventful):
         #    return InvalidOpcode('Code out of range')
         # if self.pc in self.invalid:
         #    raise InvalidOpcode('Opcode inside a PUSH immediate')
-        try:
-            _decoding_cache = getattr(self, '_decoding_cache')
-        except:
-            _decoding_cache = self._decoding_cache = {}
 
-        if self.pc in _decoding_cache:
-            return _decoding_cache[self.pc]
+        if self.pc in self._decoding_cache:
+            return self._decoding_cache[self.pc]
 
-        def getcode():
-            bytecode = self.bytecode
-            for pc in range(self.pc, len(bytecode)):
-                val = simplify(bytecode[pc])
-                if isint(val):
-                    yield val
-                else:
-                    yield val.value
-
-            while True:
-                yield 0
-        instruction = EVMAsm.disassemble_one(getcode(), offset=self.pc)
-        _decoding_cache[self.pc] = instruction
+        bytecode = EVMAsm.bytecode_iter(self.bytecode, start=self.pc, zero_pad=True)
+        instruction = EVMAsm.disassemble_one(bytecode, offset=self.pc)
+        self._decoding_cache[self.pc] = instruction
         return instruction
 
     # auxiliar funcs
