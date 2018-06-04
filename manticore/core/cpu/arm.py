@@ -1258,3 +1258,15 @@ class Armv7Cpu(Cpu):
     @instruction
     def LDCL(cpu, *operands):
         """Occasionally used in glibc (longjmp in ld.so). Nop under our execution model."""
+
+    @instruction
+    def UQSUB8(cpu, dest, op1, op2):
+        src1 = op1.read()
+        src2 = op2.read()
+        result = 0
+        for i in (range(op1.size/8)):
+            byteResult = ((src1 & (0xFF << 8*i)) - (src2 & (0xFF << 8*i)))
+            if byteResult < 0:
+                byteResult = 0
+            result = result | byteResult
+        dest.write(result)
