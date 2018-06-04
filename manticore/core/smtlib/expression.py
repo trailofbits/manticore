@@ -634,6 +634,9 @@ class Array(Expression):
             return cond
         return compare_buffers(self, other)
 
+    def __ne__(self, other):
+        return BoolNot(self.__eq__(other))
+
     def __hash__(self):
         return super(Array, self).__hash__()
 
@@ -908,6 +911,9 @@ class ArrayProxy(Array):
 
     def __copy__(self):
         return ArrayProxy(self)
+
+    def __nonzero__(self):
+        return len(self._array) > 0
 
     @property
     def written(self):

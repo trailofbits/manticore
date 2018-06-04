@@ -198,8 +198,8 @@ class Z3Solver(Solver):
         if self._proc is not None and self._proc.returncode is None:
             try:
                 self._proc.stdin.write("(exit)\n")
-            except SolverException:
-                #z3 was too fast to close
+            except (SolverException, IOError):
+                # z3 was too fast to close
                 pass
             finally:
                 self._proc.stdin.close()
@@ -219,8 +219,11 @@ class Z3Solver(Solver):
         raise Exception()
 
     def __del__(self):
-        if self._proc is not None:
-            self._stop_proc()
+        try:
+            if self._proc is not None:
+                self._stop_proc()
+        except: # If we raise here, it's probably okay since the solver is exiting 
+            pass
 
     def _reset(self, constraints=None):
         ''' Auxiliary method to reset the smtlib external solver to initial defaults'''
