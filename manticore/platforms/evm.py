@@ -2374,7 +2374,7 @@ class EVMWorld(Platform):
 
     def set_storage_data(self, storage_address, offset, value):
         """
-        Writes a value to a storage slot in specified account 
+        Writes a value to a storage slot in specified account
          :param storage_address: an account address
          :param offset: the storage slot to use.
          :type offset: int or BitVec
@@ -2384,7 +2384,7 @@ class EVMWorld(Platform):
         self.world_state[storage_address]['storage'][offset] = value
 
     def get_storage_items(self, address):
-        ''' Returns a list of where what (potentially symbolic)'''
+        ''' Returns a list of where what (potentially symbolic) '''
         storage = self.world_state[address]['storage']
         items = []
         array = storage.array
@@ -2394,9 +2394,11 @@ class EVMWorld(Platform):
         return items
 
     def has_storage(self, address):
-        ''' True if something has been written to the storage 
-        Note that if a slot has been erased from the storage this function may 
-        loss any meaning'''
+        """
+        True if something has been written to the storage
+        Note that if a slot has been erased from the storage this function may
+        loss any meaning
+        """
         storage = self.world_state[address]['storage']
         array = storage.array
         while not isinstance(array, ArrayVariable):
