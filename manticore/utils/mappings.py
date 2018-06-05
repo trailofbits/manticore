@@ -19,6 +19,7 @@ def get_libc():
 
     return ctypes.cdll.LoadLibrary(filename)
 
+
 libc = get_libc()
 
 # void* mmap(void* addr, size_t len, int prot, int flags, int fd, off_t offset)
@@ -27,10 +28,12 @@ mmap_function.restype = ctypes.c_void_p
 mmap_function.argtype = [ctypes.c_void_p, ctypes.c_size_t,
                          ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_size_t]
 
+
 # int munmap(void* addr, size_t len)
 munmap_function = libc.munmap
 munmap_function.restype = ctypes.c_int
 munmap_function.argtype = [ctypes.c_void_p, ctypes.c_size_t]
+
 
 def mmap(fd, offset, size):
     prot = MMAP.PROT_READ | MMAP.PROT_WRITE
@@ -44,7 +47,7 @@ def mmap(fd, offset, size):
     result = mmap_function(0, size, prot, flags, fd, offset)
     return ctypes.cast(result, ctypes.POINTER(ctypes.c_char))
 
+
 def munmap(address, size):
     result = munmap_function(address, size)
     assert result == 0
-
