@@ -6,6 +6,8 @@ mmap_function = None
 munmap_function = None
 
 # initialize global functions depending on platform
+
+
 def get_libc():
     osname = sys.platform.lower()
     if osname.startswith("darwin"):
