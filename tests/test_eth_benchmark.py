@@ -135,14 +135,4 @@ class EthBenchmark(unittest.TestCase):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, set())
 
-    def test_assert_minimal(self):
-        self._test_assert('assert_minimal', set([(95, 'INVALID intruction', False)]))
 
-    def test_assert_constructor(self):
-        self._test_assert('assert_constructor', set([(23L, 'INVALID intruction', True)]))
-
-    def test_assert_multitx_1(self):
-        self._test_assert('assert_multitx_1', set())
-
-    def test_assert_multitx_2(self):
-        self._test_assert('assert_multitx_2', set([(150, 'INVALID intruction', False)]))
