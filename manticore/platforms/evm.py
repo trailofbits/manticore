@@ -1668,7 +1668,7 @@ class EVM(Eventful):
         self._consume(self.safe_mul(GCOPY, self.safe_add(size, 31) / 32))
         self._allocate(self.safe_add(mem_offset, size))
 
-        # slow debug check 
+        # slow debug check
         #if issymbolic(size):
         #    assert not solver.can_be_true(self.constraints, Operators.UGT(self.gas, old_gas))
 

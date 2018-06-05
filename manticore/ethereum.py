@@ -1218,7 +1218,7 @@ class ManticoreEVM(Manticore):
                     final_states.append(state_id)
             else:
                 assert state_id == -1
-                state_id = self.save(self._initial_state, final=True) 
+                state_id = self.save(self._initial_state, final=True)
                 self._initial_state = None
             seth_context['_saved_states'] = saved_states
             seth_context['_final_states'] = final_states
