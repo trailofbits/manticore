@@ -4,6 +4,7 @@
 A simple trace following execution driver script. Only supports passing symbolic arguments via argv.
 
 '''
+from __future__ import print_function
 
 import sys
 import time
@@ -33,8 +34,8 @@ class TraceReceiver(Plugin):
 
         instructions, writes = _partition(lambda x: x['type'] == 'regs', self._trace)
         total = len(self._trace)
-        print 'Recorded concrete trace: {}/{} instructions, {}/{} writes'.format(
-            len(instructions), total, len(writes), total)
+        print('Recorded concrete trace: {}/{} instructions, {}/{} writes'.format(
+            len(instructions), total, len(writes), total))
 
 
 class Follower(Plugin):
@@ -82,7 +83,7 @@ class Follower(Plugin):
 def main():
     parser = argparse.ArgumentParser(description='Follow a concrete trace')
     parser.add_argument('-f', '--explore_from', help='Value of PC from which to explore symbolically', type=str)
-    parser.add_argument('-t', '--explore_to', type=str, default=sys.maxint,
+    parser.add_argument('-t', '--explore_to', type=str, default=sys.maxsize,
                         help="Value of PC until which to explore symbolically. (Probably don't want this set)")
     parser.add_argument('--verbose', '-v', action='count', help='Increase verbosity')
     parser.add_argument('cmd', type=str, nargs='+',
