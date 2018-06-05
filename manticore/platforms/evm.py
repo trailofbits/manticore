@@ -1932,7 +1932,6 @@ class EVM(Eventful):
 
         return self.world.last_transaction.return_value
 
-
     @transact
     @concretized_args(in_offset='SAMPLED', in_size='SAMPLED')
     def CALLCODE(self, gas, _ignored_, value, in_offset, in_size, out_offset, out_size):
@@ -1981,8 +1980,6 @@ class EVM(Eventful):
             self.write_buffer(out_offset, data[:size])
 
         return self.world.last_transaction.return_value
-
-
 
     @transact
     @concretized_args(in_offset='SAMPLED', in_size='SAMPLED')
