@@ -667,11 +667,9 @@ class TranslatorSmtlib(Visitor):
         s = StringIO()
         s.write(u'(')
         s.write(operation)
-        s.write(u' ')
         for ops in zip(expression.operands, operands):
-            binding = self._add_binding(*ops)
-            s.write(binding)
             s.write(u' ')
+            s.write(self._add_binding(*ops))
         s.write(u')')
 
         #operands = [self._add_binding(*x) for x in zip(expression.operands, operands)]
