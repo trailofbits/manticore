@@ -1567,6 +1567,8 @@ class ManticoreEVM(Manticore):
                         function_id = binascii.hexlify(state.solve_one(function_id))
                         signature = metadata.get_func_signature(function_id)
                         function_name, arguments = ABI.parse(signature, tx.data)
+
+                        return_data = None
                         if tx.result == 'RETURN':
                             ret_types = metadata.get_func_return_types(function_id)
                             return_data = ABI.parse(ret_types, tx.return_data)  # function return

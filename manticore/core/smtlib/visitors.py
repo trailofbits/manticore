@@ -584,7 +584,7 @@ class TranslatorSmtlib(Visitor):
             return self._bindings_cache[smtlib]
 
         TranslatorSmtlib.unique += 1
-        name = 'aux{:d}'.format(TranslatorSmtlib.unique)
+        name = 'a_{:d}'.format(TranslatorSmtlib.unique)
 
         self._bindings.append((name, expression, smtlib))
 
