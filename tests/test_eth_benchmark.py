@@ -47,8 +47,10 @@ class EthBenchmark(unittest.TestCase):
 
         mevm.multi_tx_analysis(filename, tx_limit=3)
 
-        actual_findings = set(( (b, c, d) for a, b, c, d in mevm.global_findings))
-        self.assertEqual(should_find, actual_findings)
+
+        expected_findings = set(( (c, d) for b, c, d in should_find))
+        actual_findings = set(( (c, d) for a, b, c, d in mevm.global_findings))
+        self.assertEqual(expected_findings, actual_findings)
 
     def test_assert_minimal(self):
         self._test('assert_minimal', set([(95, 'INVALID intruction', False)]))

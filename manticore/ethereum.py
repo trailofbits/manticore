@@ -1929,10 +1929,12 @@ class ManticoreEVM(Manticore):
             except EmptyQueue:
                 pass
 
-        finalizer(-1)
+        #we need to remove -1 state before forking because it may be in memory
+        if -1 in self._all_state_ids:
+            finalizer(-1)
 
         q = Queue()
-        map(q.put, (x for x in self._all_state_ids if x != -1))
+        map(q.put, self._all_state_ids)
 
         ps = []
 
