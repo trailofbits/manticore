@@ -139,19 +139,19 @@ class ConstraintSet(object):
 
         for name, exp, smtlib in translator.bindings:
             if isinstance(exp, BitVec):
-                result += '(declare-fun {!s} () (_ BitVec {:d}))'.format(name, exp.size)
+                result += u'(declare-fun {!s} () (_ BitVec {:d}))'.format(name, exp.size)
             elif isinstance(exp, Bool):
-                result += '(declare-fun {!s} () Bool)'.format(name)
+                result += u'(declare-fun {!s} () Bool)'.format(name)
             elif isinstance(exp, Array):
-                result += '(declare-fun {!s} () (Array (_ BitVec {:d}) (_ BitVec {:d})))'.format(name, exp.index_bits, exp.value_bits)
+                result += u'(declare-fun {!s} () (Array (_ BitVec {:d}) (_ BitVec {:d})))'.format(name, exp.index_bits, exp.value_bits)
             else:
                 raise Exception("Type not supported {!r}".format(exp))
-            result += '(assert (= {!s} {!s}))\n'.format(name, smtlib)
+            result += u'(assert (= {!s} {!s}))\n'.format(name, smtlib)
 
         constraint_str = translator.pop()
         while constraint_str is not None:
             if constraint_str != 'true':
-                result += '(assert {!s})\n'.format(constraint_str)
+                result += u'(assert {!s})\n'.format(constraint_str)
             constraint_str = translator.pop()
         return result
 
@@ -199,26 +199,26 @@ class ConstraintSet(object):
 
         for name, exp, smtlib in translator.bindings:
             if isinstance(exp, BitVec):
-                result += '(declare-fun {!s} () (_ BitVec {:d}))'.format(name, exp.size)
+                result += u'(declare-fun {!s} () (_ BitVec {:d}))'.format(name, exp.size)
             elif isinstance(exp, Bool):
-                result += '(declare-fun {!s} () Bool)'.format(name)
+                result += u'(declare-fun {!s} () Bool)'.format(name)
             elif isinstance(exp, Array):
-                result += '(declare-fun {!s} () (Array (_ BitVec {:d}) (_ BitVec {:d})))'.format(name, exp.index_bits, exp.value_bits)
+                result += u'(declare-fun {!s} () (Array (_ BitVec {:d}) (_ BitVec {:d})))'.format(name, exp.index_bits, exp.value_bits)
             else:
                 raise Exception("Type not supported {!r}".format(exp))
-            result += '(assert (= {!s} {!s}))\n'.format(name, smtlib)
+            result += u'(assert (= {!s} {!s}))\n'.format(name, smtlib)
 
         constraint_str = translator.pop()
         while constraint_str is not None:
             if constraint_str != 'true':
-                result += '(assert {!s})\n'.format(constraint_str)
+                result += u'(assert {!s})\n'.format(constraint_str)
             constraint_str = translator.pop()
 
         return self.to_string()
 
     def _get_new_name(self, name='VAR'):
         ''' Makes an uniq variable name'''
-        return '{!s}_{:d}'.format(name, self._get_sid())
+        return u'{!s}_{:d}'.format(name, self._get_sid())
 
     def new_bool(self, name='B', taint=frozenset()):
         ''' Declares a free symbolic boolean in the constraint store

@@ -584,7 +584,7 @@ class TranslatorSmtlib(Visitor):
             return self._bindings_cache[smtlib]
 
         TranslatorSmtlib.unique += 1
-        name = 'a_{:d}'.format(TranslatorSmtlib.unique)
+        name = u'a_{:d}'.format(TranslatorSmtlib.unique)
 
         self._bindings.append((name, expression, smtlib))
 
@@ -596,56 +596,56 @@ class TranslatorSmtlib(Visitor):
         return self._bindings
 
     translation_table = {
-        BoolNot: 'not',
-        BoolEq: '=',
-        BoolAnd: 'and',
-        BoolOr: 'or',
-        BoolXor: 'xor',
-        BoolITE: 'ite',
-        BitVecAdd: 'bvadd',
-        BitVecSub: 'bvsub',
-        BitVecMul: 'bvmul',
-        BitVecDiv: 'bvsdiv',
-        BitVecUnsignedDiv: 'bvudiv',
-        BitVecMod: 'bvsmod',
-        BitVecRem: 'bvsrem',
-        BitVecUnsignedRem: 'bvurem',
-        BitVecShiftLeft: 'bvshl',
-        BitVecShiftRight: 'bvlshr',
-        BitVecArithmeticShiftLeft: 'bvashl',
-        BitVecArithmeticShiftRight: 'bvashr',
-        BitVecAnd: 'bvand',
-        BitVecOr: 'bvor',
-        BitVecXor: 'bvxor',
-        BitVecNot: 'bvnot',
-        BitVecNeg: 'bvneg',
-        LessThan: 'bvslt',
-        LessOrEqual: 'bvsle',
-        Equal: '=',
-        GreaterThan: 'bvsgt',
-        GreaterOrEqual: 'bvsge',
-        UnsignedLessThan: 'bvult',
-        UnsignedLessOrEqual: 'bvule',
-        UnsignedGreaterThan: 'bvugt',
-        UnsignedGreaterOrEqual: 'bvuge',
-        BitVecSignExtend: '(_ sign_extend {:d})',
-        BitVecZeroExtend: '(_ zero_extend {:d})',
-        BitVecExtract: '(_ extract {:d} {:d})',
-        BitVecConcat: 'concat',
-        BitVecITE: 'ite',
-        ArrayStore: 'store',
-        ArraySelect: 'select',
+        BoolNot: u'not',
+        BoolEq: u'=',
+        BoolAnd: u'and',
+        BoolOr: u'or',
+        BoolXor: u'xor',
+        BoolITE: u'ite',
+        BitVecAdd: u'bvadd',
+        BitVecSub: u'bvsub',
+        BitVecMul: u'bvmul',
+        BitVecDiv: u'bvsdiv',
+        BitVecUnsignedDiv: u'bvudiv',
+        BitVecMod: u'bvsmod',
+        BitVecRem: u'bvsrem',
+        BitVecUnsignedRem: u'bvurem',
+        BitVecShiftLeft: u'bvshl',
+        BitVecShiftRight: u'bvlshr',
+        BitVecArithmeticShiftLeft: u'bvashl',
+        BitVecArithmeticShiftRight: u'bvashr',
+        BitVecAnd: u'bvand',
+        BitVecOr: u'bvor',
+        BitVecXor: u'bvxor',
+        BitVecNot: u'bvnot',
+        BitVecNeg: u'bvneg',
+        LessThan: u'bvslt',
+        LessOrEqual: u'bvsle',
+        Equal: u'=',
+        GreaterThan: u'bvsgt',
+        GreaterOrEqual: u'bvsge',
+        UnsignedLessThan: u'bvult',
+        UnsignedLessOrEqual: u'bvule',
+        UnsignedGreaterThan: u'bvugt',
+        UnsignedGreaterOrEqual: u'bvuge',
+        BitVecSignExtend: u'(_ sign_extend {:d})',
+        BitVecZeroExtend: u'(_ zero_extend {:d})',
+        BitVecExtract: u'(_ extract {:d} {:d})',
+        BitVecConcat: u'concat',
+        BitVecITE: u'ite',
+        ArrayStore: u'store',
+        ArraySelect: u'select',
     }
 
     def visit_BitVecConstant(self, expression):
         assert isinstance(expression, BitVecConstant)
         if expression.size == 1:
-            return '#' + bin(expression.value & expression.mask)[1:]
+            return u'#' + bin(expression.value & expression.mask)[1:]
         else:
-            return '#x{:0{width}x}'.format(expression.value & expression.mask, width=expression.size // 4)
+            return u'#x{:0{width}x}'.format(expression.value & expression.mask, width=expression.size // 4)
 
     def visit_BoolConstant(self, expression):
-        return expression.value and 'true' or 'false'
+        return expression.value and u'true' or u'false'
 
     def visit_Variable(self, expression):
         return expression.name
@@ -654,7 +654,7 @@ class TranslatorSmtlib(Visitor):
         array_smt, index_smt = operands
         if isinstance(expression.array, ArrayStore):
             array_smt = self._add_binding(expression.array, array_smt)
-        return '(select %s %s)' % (array_smt, index_smt)
+        return u'(select {} {})'.format(array_smt, index_smt)
 
     def visit_Operation(self, expression, *operands):
         operation = self.translation_table[type(expression)]
