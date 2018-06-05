@@ -5,6 +5,7 @@ try:
     from functools import lru_cache
 except:
     from functools32 import lru_cache
+from io import StringIO
 
 import logging
 import operator
@@ -663,9 +664,19 @@ class TranslatorSmtlib(Visitor):
         elif isinstance(expression, BitVecExtract):
             operation = operation.format(expression.end, expression.begining)
 
-        operands = [self._add_binding(*x) for x in zip(expression.operands, operands)]
-        smtlib = '({!s} {!s})'.format(operation, ' '.join(operands))
-        return smtlib
+        s = StringIO()
+        s.write(u'(')
+        s.write(operation)
+        s.write(u' ')
+        for ops in zip(expression.operands, operands):
+            binding = self._add_binding(*ops)
+            s.write(binding)
+            s.write(u' ')
+        s.write(u')')
+
+        #operands = [self._add_binding(*x) for x in zip(expression.operands, operands)]
+        #smtlib = '({!s} {!s})'.format(operation, ' '.join(operands))
+        return s.getvalue()
 
     @property
     def results(self):
