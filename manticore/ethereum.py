@@ -200,11 +200,11 @@ class DetectIntegerOverflow(Detector):
         at_init = state.platform.current_transaction.sort == 'CREATE'
         location = (address, pc, finding, at_init, condition)
         hash_id = hashlib.sha1(str(location)).hexdigest()
-        state.context.setdefault('%s.locations' % self.name, {})[hash_id] = location
+        state.context.setdefault('{:s}.locations'.format(self.name), {})[hash_id] = location
         return hash_id
 
     def _get_location(self, state, hash_id):
-        return state.context.setdefault('%s.locations' % self.name, {})[hash_id]
+        return state.context.setdefault('{:s}.locations'.format(self.name), {})[hash_id]
 
     @staticmethod
     def _signed_sub_overflow(state, a, b):
@@ -350,14 +350,14 @@ class DetectIntegerOverflow(Detector):
                         self.add_finding(state, *loc[:-1])
 
         if mnemonic in ('SLT', 'SGT', 'SDIV', 'SMOD'):
-            result = taint_with(result, "SIGNED" % id_val)
+            result = taint_with(result, "SIGNED")
 
         if state.can_be_true(ios):
             id_val = self._save_current_location(state, "Signed integer overflow at %s instruction" % mnemonic, ios)
-            result = taint_with(result, "IOS_%s" % id_val)
+            result = taint_with(result, "IOS_{:s}".format(id_val))
         if state.can_be_true(iou):
             id_val = self._save_current_location(state, "Unsigned integer overflow at %s instruction" % mnemonic, iou)
-            result = taint_with(result, "IOU_%s" % id_val)
+            result = taint_with(result, "IOU_{:s}".format(id_val))
 
         result_ref.value = result
 
@@ -1929,22 +1929,23 @@ class ManticoreEVM(Manticore):
             except EmptyQueue:
                 pass
 
-        #we need to remove -1 state before forking because it may be in memory
-        if -1 in self._all_state_ids:
-            finalizer(-1)
-
         q = Queue()
-        map(q.put, self._all_state_ids)
+        for state_id in self._all_state_ids:
+            #we need to remove -1 state before forking because it may be in memory
+            if state_id == -1:
+                finalizer(-1)
+            else:
+                q.put(state_id)
 
-        ps = []
+        report_workers = []
 
         for _ in range(self._config_procs):
-            p = Process(target=worker_finalize, args=(q,))
-            p.start()
-            ps.append(p)
+            proc = Process(target=worker_finalize, args=(q,))
+            proc.start()
+            report_workers.append(proc)
 
-        for p in ps:
-            p.join()
+        for proc in report_workers:
+            proc.join()
 
         #global summary
         if len(self.global_findings):

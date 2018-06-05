@@ -1332,12 +1332,6 @@ class EVM(Eventful):
             if self._on_transaction is False:
                 self._publish('will_evm_execute_instruction', current, arguments)
             result = self._handler(*arguments)
-            #print current.semantics,
-            #if len(arguments): print '(', ', '.join(map(str, arguments)), ')',
-            #if result is not None:
-            #    print '->', simplify(result)
-            #else:
-            #    print
         except ConcretizeStack as ex:
             #Revert the stack and gas so it looks like before executing the instruction
             self._push_arguments(arguments)
