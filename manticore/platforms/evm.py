@@ -977,7 +977,10 @@ def concretized_args(**policies):
     def concretizer(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
-            spec = inspect.getargspec(func)
+            try:
+                spec = inspect.getfullargspec(func)
+            except AttributeError:
+                spec = inspect.getargspec(func)
             for arg, policy in policies.items():
                 assert arg in spec.args, "Concretizer argument not found in wrapped function."
                 # index is 0-indexed, but ConcretizeStack is 1-indexed. However, this is correct

@@ -1377,7 +1377,8 @@ class ManticoreEVM(Manticore):
                         symbolic_data[i] = data[i]
                 data = symbolic_data
             else:
-                data = bytearray(data)
+                # data = bytearray(data)
+                pass
 
         if ty == 'CALL':
             world.transaction(address=address, caller=caller, data=data, value=value, price=price)
