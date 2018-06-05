@@ -756,12 +756,12 @@ class SymCPUTest(unittest.TestCase):
         cpu.RIP = 0x7ffff7de390a
         cpu.SF = False
         cpu.execute()
-        self.assertEqual(mem[0x7ffff7de390a], '\x48')
-        self.assertEqual(mem[0x7ffff7de390b], '\x25')
-        self.assertEqual(mem[0x7ffff7de390c], '\x00')
-        self.assertEqual(mem[0x7ffff7de390d], '\x00')
-        self.assertEqual(mem[0x7ffff7de390e], '\x00')
-        self.assertEqual(mem[0x7ffff7de390f], '\xfc')
+        self.assertEqual(mem[0x7ffff7de390a], b'\x48')
+        self.assertEqual(mem[0x7ffff7de390b], b'\x25')
+        self.assertEqual(mem[0x7ffff7de390c], b'\x00')
+        self.assertEqual(mem[0x7ffff7de390d], b'\x00')
+        self.assertEqual(mem[0x7ffff7de390e], b'\x00')
+        self.assertEqual(mem[0x7ffff7de390f], b'\xfc')
         self.assertEqual(cpu.PF, True)
         self.assertEqual(cpu.RAX, 0x7ffff4000000)
         self.assertEqual(cpu.OF, False)
