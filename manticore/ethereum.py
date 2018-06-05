@@ -2027,7 +2027,6 @@ class ManticoreEVM(Manticore):
         # delete actual streams from storage
         for state_id in self._all_state_ids:
             # state_id -1 is always only on memory
-            print "Remove", state_id
             if state_id != -1:
                 self._executor._workspace.rm_state(state_id)
 
