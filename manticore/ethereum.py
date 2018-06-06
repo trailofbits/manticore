@@ -915,11 +915,11 @@ class ManticoreEVM(Manticore):
             filename
         ]
         p = Popen(solc_invocation, stdout=PIPE, stderr=PIPE, cwd=working_folder)
-        with p.stdout as stdout, p.stderr as stderr:
-            try:
-                return json.loads(stdout.read()), stderr.read()
-            except ValueError:
-                raise Exception('Solidity compilation error:\n\n{}'.format(stderr.read()))
+        stdout, stderr = p.communicate()
+        try:
+            return json.loads(stdout), stderr
+        except ValueError:
+            raise Exception('Solidity compilation error:\n\n{}'.format(stderr))
 
     @staticmethod
     def _compile(source_code, contract_name, libraries=None):
