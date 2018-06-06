@@ -89,7 +89,6 @@ class LinuxTest(unittest.TestCase):
 
         platform.syscall()
 
-
     def test_linux_workspace_files(self):
         platform = self.symbolic_linux
         platform.argv = ["arg1", "arg2"]

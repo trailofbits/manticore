@@ -236,7 +236,7 @@ for test_name in sorted(test_dic.keys()):
                         PC=pc_reg,
                         PC_VAL=hex(test['pre']['registers'][pc_reg])))
     print("""
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, '{FRAME_BASE}')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)

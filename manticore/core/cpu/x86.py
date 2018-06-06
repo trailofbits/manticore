@@ -9,8 +9,7 @@ import capstone as cs
 
 from .abstractcpu import (
     Abi, SyscallAbi, Cpu, RegisterFile, Operand, instruction,
-    ConcretizeRegister, Interruption,
-    Syscall, DivideByZeroError
+    ConcretizeRegister, Interruption, Syscall, DivideByZeroError
 )
 
 
@@ -609,6 +608,7 @@ class AMD64RegFile(RegisterFile):
 
     def sizeof(self, reg):
         return self._table[reg].size
+
 
 # Operand Wrapper
 

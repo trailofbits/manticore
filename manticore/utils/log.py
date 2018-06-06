@@ -32,7 +32,7 @@ manticore_verbosity = 0
 all_loggers = []
 
 
-def init_logging():
+def init_logging(default_level=logging.WARNING):
     global all_loggers
     loggers = logging.getLogger().manager.loggerDict.keys()
     ctxfilter = ContextFilter()
@@ -49,7 +49,7 @@ def init_logging():
             continue
         logger.addHandler(handler)
         logger.propagate = False
-        logger.setLevel(logging.WARNING)
+        logger.setLevel(default_level)
         logger.addFilter(ctxfilter)
         logger.setState = types.MethodType(loggerSetState, logger)
         all_loggers.append(name)

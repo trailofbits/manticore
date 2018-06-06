@@ -5,6 +5,7 @@ import logging
 
 from .smtlib import solver, Bool
 from ..utils.symbolic_helpers import issymbolic
+from ..utils.event import Eventful
 
 #import exceptions
 from .cpu.abstractcpu import ConcretizeRegister

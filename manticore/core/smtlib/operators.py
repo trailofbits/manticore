@@ -1,6 +1,8 @@
 from __future__ import division, absolute_import
 from builtins import *
-from .expression import *
+from .expression import (
+    BitVec, BitVecExtract, BitVecSignExtend, BitVecZeroExtend, BitVecConstant, BitVecConcat, Bool, BitVecITE, BoolConstant, BoolITE
+)
 from ...utils.helpers import isint
 from ...utils.symbolic_helpers import issymbolic
 import math
@@ -219,16 +221,6 @@ def UDIV(dividend, divisor):
         return divisor.rudiv(dividend)
     assert dividend >= 0 or divisor > 0  # unsigned-es
     return dividend // divisor
-
-
-def UREM(a, b):
-    if isinstance(a, BitVec):
-        return a.urem(b)
-    if isinstance(b, BitVec):
-        return b.rurem(a)
-    if a < 0 or b < 0:
-        raise "azaraza"
-    return a % b
 
 
 def SDIV(a, b):

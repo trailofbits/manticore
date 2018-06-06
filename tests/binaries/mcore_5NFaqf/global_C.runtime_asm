@@ -1,0 +1,7 @@
+*   0: PUSH1 0x80
+*   2: PUSH1 0x40
+*   4: MSTORE
+*   5: PUSH1 0x0
+*   7: DUP1
+*   8: REVERT
+    9: STOP

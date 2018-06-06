@@ -4,6 +4,7 @@ import collections
 import sys
 import binascii
 import functools
+import re
 
 if sys.version_info[0] == 2:
     from types import IntType, StringType

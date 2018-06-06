@@ -414,5 +414,3 @@ while True:
             gdb.stepi()
 
 print("# Processed {:d} instructions.".format(count))
-
-

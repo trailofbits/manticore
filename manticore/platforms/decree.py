@@ -9,7 +9,7 @@ import os
 import struct
 # TODO use cpu factory
 from ..core.cpu.x86 import I386Cpu
-from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeRegister
+from ..core.cpu.abstractcpu import Interruption, ConcretizeRegister
 from ..core.memory import SMemory32
 from ..core.smtlib import *
 from ..core.executor import TerminateState

@@ -8,10 +8,11 @@ from abc import abstractproperty
 from weakref import WeakValueDictionary
 from .smtlib import *
 import logging
-from ..utils.mappings import _mmap, _munmap
+from ..utils.mappings import mmap, munmap
 from ..utils.helpers import isstring, isint
 from ..utils.symbolic_helpers import issymbolic
 from future.utils import with_metaclass
+
 logger = logging.getLogger(__name__)
 
 
@@ -326,7 +327,7 @@ class FileMap(Map):
             fileobject.seek(0, 2)
             file_size = fileobject.tell()
             self._mapped_size = min(size, file_size - offset)
-            self._data = _mmap(fileobject.fileno(), offset, self._mapped_size)
+            self._data = mmap(fileobject.fileno(), offset, self._mapped_size)
         if overlay is not None:
             self._overlay = dict(overlay)
         else:
@@ -336,7 +337,7 @@ class FileMap(Map):
         return (self.__class__, (self.start, len(self), self.perms, self._filename, self._offset, self._overlay))
 
     def __del__(self):
-        _munmap(self._data, self._mapped_size)
+        munmap(self._data, self._mapped_size)
 
     def __repr__(self):
         return '<{!s} [{!s}+{:x}] 0x{:016x}-0x{:016x} {!s}>'.format(self.__class__.__name__, self._filename, self._offset, self.start, self.end, self.perms)

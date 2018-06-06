@@ -1,11 +1,12 @@
 from __future__ import absolute_import, division
 from builtins import *
-import struct
-import unittest
-from manticore.core.cpu.x86 import *
-from manticore.core.memory import *
 from functools import reduce
 from tests import mockmem
+from manticore.core.cpu.x86 import *
+from manticore.core.memory import *
+
+import struct
+import unittest
 
 class ROOperand(object):
     ''' Mocking class for operand ronly '''

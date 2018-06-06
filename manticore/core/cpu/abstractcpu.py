@@ -13,7 +13,7 @@ from itertools import islice
 import unicorn
 
 from .disasm import init_disassembler
-from ..smtlib import Expression, BitVec, Operators, Constant
+from ..smtlib import BitVec, Operators, Constant
 from ..memory import ConcretizeMemory, InvalidMemoryAccess
 from ...utils.helpers import isstring, isint
 from ...utils.symbolic_helpers import issymbolic

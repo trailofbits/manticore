@@ -1,25 +1,30 @@
 ''' Symbolic EVM implementation based on the yellow paper: http://gavwood.com/paper.pdf '''
-
 from builtins import *
 
-import random
+import binascii
 import copy
 import inspect
 import logging
-import binascii
+import logging
+import random
 import sha3
-from collections import namedtuple
-from itertools import chain, islice
-from functools import wraps
+import sys
 
+from collections import namedtuple
+from functools import wraps
+from itertools import chain, islice
+
+from ..core.plugin import Ref
+from ..core.smtlib import solver, BitVec, Array, Operators, Constant
+from ..core.smtlib.visitors import simplify, to_constant
+from ..core.state import Concretize, TerminateState
+from ..platforms.platform import *
+from ..utils.event import Eventful
 from ..utils.helpers import memoized, isstring, isint, isbytestr, all_ints
 from ..utils.symbolic_helpers import issymbolic
-from ..platforms.platform import *
-from ..core.smtlib import solver, TooManySolutions, Expression, Bool, BitVec, Array, Operators, Constant, BitVecConstant, ConstraintSet, SolverException
-from ..core.state import ForkState, TerminateState
-from ..utils.event import Eventful
-from ..core.smtlib.visitors import pretty_print, translate_to_smtlib, simplify, to_constant
-from ..core.state import Concretize, TerminateState
+
+if sys.version_info < (3, 6):
+    import sha3
 
 logger = logging.getLogger(__name__)
 
@@ -365,11 +370,6 @@ class EVMAsm(object):
         def writes_to_stack(self):
             ''' True if the instruction writes to the stack '''
             return self.pushes > 0
-
-        @property
-        def reads_from_memory(self):
-            ''' True if the instruction reads from memory '''
-            return self.semantics in ('MLOAD', 'CREATE', 'CALL', 'CALLCODE', 'RETURN', 'DELEGATECALL', 'REVERT')
 
         @property
         def writes_to_memory(self):
@@ -1247,10 +1247,16 @@ class EVM(Eventful):
             value = value.value
         self.stack.append(value)
 
+    def _top(self, n=0):
+        ''' Read a value from the top of the stack without removing it '''
+        if len(self.stack) - n < 0:
+            raise StackUnderflow()
+        return self.stack[n - 1]
+
     def _pop(self):
+        ''' Pop a value from the stack '''
         if len(self.stack) == 0:
             raise StackUnderflow()
-
         return self.stack.pop()
 
     def _consume(self, fee):
@@ -1391,7 +1397,7 @@ class EVM(Eventful):
             if not current.is_branch:
                 #advance pc pointer
                 self.pc += self.instruction.size
-            self._publish('did_evm_execute_instruction', current, arguments, result)
+            self._publish('did_evm_execute_instruction', current, arguments, Ref(result))
             self._publish('did_execute_instruction', last_pc, self.pc, current)
             raise
         except Emulated as e:
@@ -1400,12 +1406,14 @@ class EVM(Eventful):
                 self.pc += self.instruction.size
             result = e.result
 
-        self._push_results(current, result)
         if not current.is_branch:
             #advance pc pointer
             self.pc += self.instruction.size
-        self._publish('did_evm_execute_instruction', current, arguments, result)
+        result_ref = Ref(result)
+        self._publish('did_evm_execute_instruction', current, arguments, result_ref)
         self._publish('did_execute_instruction', last_pc, self.pc, current)
+
+        self._push_results(current, result_ref.value)
 
     def read_buffer(self, offset, size):
         if issymbolic(size):
@@ -1951,12 +1959,11 @@ class EVM(Eventful):
 
     @CALL.pos
     def CALL(self, gas, address, value, in_offset, in_size, out_offset, out_size):
-        data = self.world.current_transaction.return_data
-
+        data = self.world.last_transaction.return_data
         if data is not None:
             data_size = len(data)
             size = Operators.ITEBV(256, Operators.ULT(out_size, data_size), out_size, data_size)
-            self.current_vm.write_buffer(out_offset, data[:size])
+            self.write_buffer(out_offset, data[:size])
 
         return self.world.last_transaction.return_value
 
@@ -1972,14 +1979,13 @@ class EVM(Eventful):
                                      gas=self.gas)
         raise StartTx()
 
-    @CALL.pos
-    def CALLCODE(self, gas, _ignored_, value, in_offset, in_size, out_offset, out_size):
-        data = self.world.current_transaction.return_data
-
+    @CALLCODE.pos
+    def CALLCODE(self, gas, address, value, in_offset, in_size, out_offset, out_size):
+        data = self.world.last_transaction.return_data
         if data is not None:
             data_size = len(data)
             size = Operators.ITEBV(256, Operators.ULT(out_size, data_size), out_size, data_size)
-            self.current_vm.write_buffer(out_offset, data[:size])
+            self.write_buffer(out_offset, data[:size])
 
         return self.world.last_transaction.return_value
 
@@ -2002,12 +2008,11 @@ class EVM(Eventful):
 
     @DELEGATECALL.pos
     def DELEGATECALL(self, gas, address, in_offset, in_size, out_offset, out_size):
-        data = self.world.current_transaction.return_data
-
+        data = self.world.last_transaction.return_data
         if data is not None:
             data_size = len(data)
             size = Operators.ITEBV(256, Operators.ULT(out_size, data_size), out_size, data_size)
-            self.current_vm.write_buffer(out_offset, data[:size])
+            self.write_buffer(out_offset, data[:size])
 
         return self.world.last_transaction.return_value
 
@@ -2015,7 +2020,7 @@ class EVM(Eventful):
     @concretized_args(in_offset='SAMPLED', in_size='SAMPLED')
     def STATICCALL(self, gas, address, in_offset, in_size, out_offset, out_size):
         '''Message-call into an account'''
-        self.world.start_transaction('DELEGATECALL',
+        self.world.start_transaction('STATICCALL',
                                      address,
                                      data=self.read_buffer(in_offset, in_size),
                                      caller=self.address,
@@ -2025,12 +2030,11 @@ class EVM(Eventful):
 
     @STATICCALL.pos
     def STATICCALL(self, gas, address, in_offset, in_size, out_offset, out_size):
-        data = self.world.current_transaction.return_data
-
+        data = self.world.last_transaction.return_data
         if data is not None:
             data_size = len(data)
             size = Operators.ITEBV(256, Operators.ULT(out_size, data_size), out_size, data_size)
-            self.current_vm.write_buffer(out_offset, data[:size])
+            self.write_buffer(out_offset, data[:size])
 
         return self.world.last_transaction.return_value
 
@@ -2236,10 +2240,6 @@ class EVMWorld(Platform):
     @property
     def logs(self):
         return self._logs
-
-    @property
-    def deleted_accounts(self):
-        return self._deleted_accounts
 
     @property
     def constraints(self):
@@ -2508,7 +2508,6 @@ class EVMWorld(Platform):
         self._process_pending_transaction()
         if self.current_vm is None:
             raise TerminateState("Trying to execute an empty transaction", testcase=False)
-
         try:
             self.current_vm.execute()
         except StartTx:

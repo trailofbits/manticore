@@ -1,3 +1,4 @@
+from __future__ import print_function
 import copy
 import traceback
 import os
@@ -123,6 +124,6 @@ def get_arch():
     elif 'elf32-littlearm' in infotarget:
         _arch = 'armv7'
     else:
-        print infotarget
+        print(infotarget)
         raise NotImplemented
     return _arch

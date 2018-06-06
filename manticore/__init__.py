@@ -1,3 +1,3 @@
-from .manticore import Manticore
-from .models import variadic
-from .utils.symbolic_helpers import issymbolic
+from .manticore import Manticore  # noqa
+from .models import variadic  # noqa
+from .utils.symbolic_helpers import issymbolic  # noqa

@@ -1,0 +1,28 @@
+*   0: PUSH1 0x80
+*   2: PUSH1 0x40
+*   4: MSTORE
+*   5: CALLVALUE
+*   6: DUP1
+*   7: ISZERO
+*   8: PUSH1 0xf
+*   a: JUMPI
+    b: PUSH1 0x0
+    d: DUP1
+    e: REVERT
+*   f: JUMPDEST
+*  10: POP
+*  11: PUSH1 0x35
+*  13: DUP1
+*  14: PUSH1 0x1d
+*  16: PUSH1 0x0
+*  18: CODECOPY
+*  19: PUSH1 0x0
+*  1b: RETURN
+   1c: STOP
+   1d: PUSH1 0x80
+   1f: PUSH1 0x40
+   21: MSTORE
+   22: PUSH1 0x0
+   24: DUP1
+   25: REVERT
+   26: STOP

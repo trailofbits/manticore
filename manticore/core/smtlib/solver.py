@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
 ###############################################################################
 # Solver
@@ -185,7 +185,8 @@ class Z3Solver(Solver):
         assert '_proc' not in dir(self) or self._proc is None
         try:
             self._proc = Popen(self._command.split(' '), stdin=PIPE, stdout=PIPE, bufsize=LINEBUF, universal_newlines=True)
-        except OSError:
+        except OSError as e:
+            print(e, "Probably too  much cached expressions? visitors._cache...")
             # Z3 was removed from the system in the middle of operation
             raise Z3NotFoundError  # TODO(mark) don't catch this exception in two places
 

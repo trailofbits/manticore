@@ -10,7 +10,7 @@ import signal
 
 from ..utils.nointerrupt import WithKeyboardInterruptAs
 from ..utils.event import Eventful
-from .smtlib import solver, Z3Solver, Expression, SolverException
+from .smtlib import Z3Solver, Expression, SolverException
 from .state import Concretize, TerminateState
 from .workspace import Workspace
 from multiprocessing.managers import SyncManager

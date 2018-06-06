@@ -1,10 +1,10 @@
+from __future__ import print_function, division
 # Minimal INTEL assembler expression calculator
 
-from __future__ import division, print_function
 from builtins import *
 import ply.yacc as yacc
 import copy
-from ..smtlib import Operators, Bool
+from ..smtlib import Operators
 # Lexer
 # ------------------------------------------------------------
 # calclex.py
