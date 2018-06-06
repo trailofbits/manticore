@@ -240,7 +240,47 @@ class EthTests(unittest.TestCase):
 
     def tearDown(self):
         self.mevm=None
-        #shutil.rmtree(self.worksp)
+        shutil.rmtree(self.worksp)
+
+    def test_regression_internal_tx(self):
+        m = self.mevm
+        owner_account = m.create_account(balance=1000)
+        c = '''
+        contract C1 {
+          function g() returns (uint) {
+            return 1;
+          }
+        }
+
+        contract C2 {
+          address c;
+          function C2(address x) {
+            c = x;
+          }
+          function f() returns (uint) {
+            return C1(c).g();
+          }
+        }
+        '''
+
+        c1 = m.solidity_create_contract(c, owner=owner_account, contract_name='C1')
+        self.assertEquals(m.count_states(), 1)
+        c2 = m.solidity_create_contract(c, owner=owner_account, contract_name='C2', args=[c1.address])
+        self.assertEquals(m.count_states(), 1)
+        c2.f();
+        self.assertEquals(m.count_states(), 1)
+        c2.f();
+        self.assertEquals(m.count_states(), 1)
+
+        for state in m.all_states:
+            world = state.platform
+            self.assertEquals(len(world.transactions), 6)
+            self.assertEquals(len(world.all_transactions), 6)
+            self.assertEquals(len(world.human_transactions), 4)
+            self.assertListEqual(['CREATE', 'CREATE', 'CALL', 'CALL', 'CALL', 'CALL'], [x.sort for x in world.all_transactions])
+            for tx in world.all_transactions[-4:]:
+                self.assertEquals(x.result, 'RETURN')
+                self.assertEquals(state.solve_one(x.return_data), b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01')
 
     def test_emit_did_execute_end_instructions(self):
         """
