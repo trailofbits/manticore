@@ -1264,7 +1264,7 @@ class Armv7Cpu(Cpu):
         src1 = op1.read()
         src2 = op2.read()
         result = 0
-        for i in (range(op1.size / 8)):
+        for i in (range(op1.size // 8)):
             byteResult = ((src1 & (0xFF << (8 * i))) - (src2 & (0xFF << (8 * i))))
             if byteResult < 0:
                 byteResult = 0
