@@ -5,7 +5,10 @@ try:
     from functools import lru_cache
 except:
     from functools32 import lru_cache
-from io import StringIO
+try:
+    from StringIO import StringIO
+except:
+    from io import StringIO
 
 import logging
 import operator

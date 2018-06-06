@@ -31,8 +31,6 @@ class Variable(Expression):
         if self.__class__ is Variable:
             raise TypeError
         assert isstring(name) and ' ' not in name
-        if isinstance(name, str):
-            name = name.decode()
         super(Variable, self).__init__(*args, **kwargs)
         self._name = name
 
