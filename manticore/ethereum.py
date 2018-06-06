@@ -930,16 +930,24 @@ class ManticoreEVM(Manticore):
             filename
         ]
         p = Popen(solc_invocation, stdout=PIPE, stderr=PIPE, cwd=working_folder, universal_newlines=True)
-        with p.stdout as stdout, p.stderr as stderr:
-            try:
-                err = stderr.read()
-                # TODO(yan): Extremely hacky, but Popen's stderr behaves differently under 2 and 3.
-                # This returns `str` on py2, where as we need `unicode`.
-                if hasattr(err, 'decode'):
-                    err = err.decode()
-                return json.load(stdout), err
-            except ValueError:
-                raise Exception('Solidity compilation error:\n\n{}'.format(stderr.read()))
+        stdout, stderr = p.communicate()
+        if hasattr(stderr, 'decode'):
+            stderr = stderr.decode()
+        try:
+            return json.loads(stdout), stderr
+        except ValueError:
+            raise Exception('Solidity compilation error:\n\n{}'.format(stderr))
+
+        #with p.stdout as stdout, p.stderr as stderr:
+        #    try:
+        #        err = stderr.read()
+        #        # TODO(yan): Extremely hacky, but Popen's stderr behaves differently under 2 and 3.
+        #        # This returns `str` on py2, where as we need `unicode`.
+        #        if hasattr(err, 'decode'):
+        #            err = err.decode()
+        #        return json.load(stdout), err
+        #    except ValueError:
+        #        raise Exception('Solidity compilation error:\n\n{}'.format(stderr.read()))
 
     @staticmethod
     def _compile(source_code, contract_name, libraries=None):
@@ -1435,7 +1443,7 @@ class ManticoreEVM(Manticore):
     def _concrete_sha3(self, state, buf, value):
         ''' INTERNAL USE '''
         with self.locked_context('known_sha3', set) as known_sha3:
-            known_sha3.add((str(buf), value))
+            known_sha3.add((buf, value))
 
     def _terminate_state_callback(self, state, state_id, e):
         ''' INTERNAL USE

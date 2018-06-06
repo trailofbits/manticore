@@ -1631,8 +1631,8 @@ class EVM(Eventful):
         if any(issymbolic(c) for c in data):
             return self.world.HASH(data)
         else:
-            buf = ''.join(data)
-            value = sha3.keccak_256(buf.encode()).hexdigest()
+            buf = ''.join(data).encode()
+            value = sha3.keccak_256(buf).hexdigest()
             value = int('0x' + value, 0)
             self._publish('on_concrete_sha3', buf, value)
             logger.info("Found a concrete SHA3 example %r -> %x", buf, value)
@@ -2217,7 +2217,6 @@ class EVMWorld(Platform):
             self.subscribe('on_concrete_sha3', self._concrete_sha3_callback)
 
     def _concrete_sha3_callback(self, buf, value):
-        buf = str(buf)
         if buf in self._sha3:
             assert self._sha3[buf] == value
         self._sha3[buf] = value
