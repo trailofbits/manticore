@@ -1389,7 +1389,10 @@ def decode_long(data):
 try:
     from cStringIO import StringIO
 except ImportError:
-    from StringIO import StringIO
+    try:
+        from StringIO import StringIO
+    except:
+        from io import StringIO
 
 
 def dump(obj, file, protocol=None):

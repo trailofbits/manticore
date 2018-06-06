@@ -30,6 +30,11 @@ from .visitors import *
 from ...utils.helpers import memoized, as_unicode
 from ...utils.symbolic_helpers import issymbolic
 
+try:
+    from StringIO import StringIO
+except:
+    from io import StringIO
+
 import collections
 from future.utils import with_metaclass
 
@@ -261,7 +266,7 @@ class Z3Solver(Solver):
             # stdout.readline() returns internal 'str' value, which is bytestring in py2 and unicode-ish in py3
             buf = as_unicode(self._proc.stdout.readline())
             return buf, buf.count('('), buf.count(')')
-        received = io.StringIO()
+        received = StringIO()
         buf, left, right = readline()
         if '(error' in buf:
             raise Exception("Error in smtlib: {}".format(buf))

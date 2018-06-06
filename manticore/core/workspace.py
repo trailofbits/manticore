@@ -22,6 +22,11 @@ if sys.version_info[0] == 2:
 else:
     import pickle
 
+try:
+    from StringIO import StringIO
+except:
+    from io import StringIO
+
 logger = logging.getLogger(__name__)
 
 _manager = None
@@ -144,10 +149,7 @@ class Store(object):
         :param binary bool: whether stream should be saved using a binary format
         :return: A managed stream-like object
         """
-        if binary:
-            s = io.BytesIO()
-        else:
-            s = io.StringIO()
+        s = io.BytesIO() if binary else StringIO()
         yield s
         self.save_value(key, s.getvalue())
 
@@ -161,7 +163,7 @@ class Store(object):
         :return: A managed stream-like object
         """
         value = self.load_value(key, binary=binary)
-        yield io.BytesIO(value) if binary else io.StringIO(value)
+        yield io.BytesIO(value) if binary else StringIO(value)
 
     def save_state(self, state, key):
         """

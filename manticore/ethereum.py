@@ -931,7 +931,12 @@ class ManticoreEVM(Manticore):
         p = Popen(solc_invocation, stdout=PIPE, stderr=PIPE, cwd=working_folder, universal_newlines=True)
         with p.stdout as stdout, p.stderr as stderr:
             try:
-                return json.load(stdout), stderr.read()
+                err = stderr.read()
+                # TODO(yan): Extremely hacky, but Popen's stderr behaves differently under 2 and 3.
+                # This returns `str` on py2, where as we need `unicode`.
+                if hasattr(err, 'decode'):
+                    err = err.decode()
+                return json.load(stdout), err
             except ValueError:
                 raise Exception('Solidity compilation error:\n\n{}'.format(stderr.read()))
 
@@ -1610,7 +1615,7 @@ class ManticoreEVM(Manticore):
             assert at_runtime != at_init
 
             #Last instruction if last tx vas valid
-            if state.context['last_exception'].message != 'TXERROR':
+            if str(state.context['last_exception']) != 'TXERROR':
                 metadata = self.get_metadata(blockchain.last_transaction.address)
                 if metadata is not None:
                     summary.write(u'Last instruction at contract {:x} offset {:x}\n'.format(address, offset))
@@ -1847,7 +1852,7 @@ class ManticoreEVM(Manticore):
             md = self.get_metadata(address)
             if md is not None and len(md.warnings) > 0:
                 global_summary.write(u'\n\nCompiler warnings for {!s}:\n'.format(md.name))
-                global_summary.write(md.warnings.decode())
+                global_summary.write(md.warnings)
 
         for address, md in self.metadata.items():
             with self._output.save_stream('global_{!s}.sol'.format(md.name)) as global_src:
