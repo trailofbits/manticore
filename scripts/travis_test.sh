@@ -76,7 +76,7 @@ popd
 coverage erase
 
 # Disable resource warnings 
-PYTHONWARNINGS="ignore:ResourceWarning" coverage run -m unittest discover tests/ 2>&1 >/dev/null | tee travis_tests.log
+PYTHONWARNINGS="ignore:ResourceWarning" coverage run -m unittest discover -v tests/ 2>&1 >/dev/null | tee travis_tests.log
 
 DID_OK=$(tail -n1 travis_tests.log)
 if [[ "${DID_OK}" == OK* ]]
