@@ -7,7 +7,7 @@ matrix:
   include:
   - python: "2.7"
     env: PIP=pip
-  - python: "3.5"
+  - python: "3.6"
     env: PIP=pip3
 
 env:
@@ -24,8 +24,8 @@ cache:
   directories:
   - $HOME/virtualenv/python2.7.14/lib/python2.7/site-packages
   - $HOME/virtualenv/python2.7/bin/
-  - $HOME/virtualenv/python3.5.5/lib/python3.5/site-packages
-  - $HOME/virtualenv/python3.5/bin/
+  - $HOME/virtualenv/python3.6.3/lib/python3.6/site-packages
+  - $HOME/virtualenv/python3.6/bin/
 
 install:
   - scripts/travis_install.sh
