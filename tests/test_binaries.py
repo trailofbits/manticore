@@ -42,7 +42,7 @@ class IntegrationTest(unittest.TestCase):
         """
         dirname = os.path.dirname(__file__)
         filename = os.path.join(dirname, 'binaries', filename)
-        command = ['python', '-m', 'manticore']
+        command = [sys.executable, '-m', 'manticore']
         if contract:
             command.append('--contract')
             command.append(contract)
@@ -74,7 +74,7 @@ class IntegrationTest(unittest.TestCase):
         workspace = os.path.join(self.test_dir, 'workspace')
         t = time.time()
         with open(os.path.join(os.pardir, self.test_dir, 'output.log'), "w") as output:
-            subprocess.check_call(['python', '-m', 'manticore',
+            subprocess.check_call([sys.executable, '-m', 'manticore',
                                 '--workspace', workspace,
                                 '--timeout', '1',
                                 '--procs', '4',
@@ -90,7 +90,7 @@ class IntegrationTest(unittest.TestCase):
 
         dirname = os.path.dirname(__file__)
         filename = os.path.join(dirname, 'binaries', 'basic_linux_amd64')
-        output = subprocess.check_output(['python', '-m', 'manticore', filename])
+        output = subprocess.check_output([sys.executable, '-m', 'manticore', filename])
         output_lines = output.splitlines()
         start_info = output_lines[:2]
         testcase_info = output_lines[2:-5]
@@ -112,7 +112,7 @@ class IntegrationTest(unittest.TestCase):
         with  open(assertions, 'w') as f:
             f.write(u'0x0000000000401003 ZF == 1')
         with open(os.path.join(os.pardir, self.test_dir, 'output.log'), "w") as output:
-            subprocess.check_call(['python', '-m', 'manticore',
+            subprocess.check_call([sys.executable, '-m', 'manticore',
                                    '--workspace', workspace,
                                    '--proc', '4',
                                    '--assertions', assertions,
@@ -128,7 +128,7 @@ class IntegrationTest(unittest.TestCase):
         self.assertTrue(filename.startswith(os.getcwd()))
         filename = filename[len(os.getcwd())+1:]
         workspace = os.path.join(self.test_dir, 'workspace')
-        self._runWithTimeout(['python', '-m', 'manticore',
+        self._runWithTimeout([sys.executable, '-m', 'manticore',
                     '--workspace', workspace,
                     '--timeout', '20',
                     '--proc', '4',
@@ -171,7 +171,7 @@ class IntegrationTest(unittest.TestCase):
         dirname = os.path.dirname(__file__)
         filename = os.path.abspath(os.path.join(dirname, 'binaries', 'basic_linux_armv7'))
         workspace = os.path.join(self.test_dir,'workspace') 
-        output = subprocess.check_output(['python', '-m', 'manticore', '--workspace', workspace, filename])
+        output = subprocess.check_output([sys.executable, '-m', 'manticore', '--workspace', workspace, filename])
 
         with open(os.path.join(workspace, "test_00000000.stdout")) as f:
             self.assertIn("Message", f.read())
@@ -209,7 +209,7 @@ class IntegrationTest(unittest.TestCase):
         dirname = os.path.dirname(__file__)
         filename = os.path.abspath(os.path.join(dirname, 'binaries/brk_static_amd64'))
         workspace = '%s/workspace' % self.test_dir
-        output = subprocess.check_output(['python', '-m', 'manticore', '--workspace', workspace, filename])
+        output = subprocess.check_output([sys.executable, '-m', 'manticore', '--workspace', workspace, filename])
 
         with open(os.path.join(workspace, "test_00000000.messages")) as f:
             self.assertIn("finished with exit status: 0", f.read())

@@ -265,7 +265,7 @@ class Z3Solver(Solver):
         def readline():
             # stdout.readline() returns internal 'str' value, which is bytestring in py2 and unicode-ish in py3
             buf = as_unicode(self._proc.stdout.readline())
-            return buf, buf.count('('), buf.count(')')
+            return buf, buf.count(u'('), buf.count(u')')
         received = StringIO()
         buf, left, right = readline()
         if '(error' in buf:

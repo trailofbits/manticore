@@ -41,7 +41,7 @@ class EthereumError(ManticoreError):
 
 class DependencyError(EthereumError):
     def __init__(self, lib_names):
-        super(DependencyError, self).__init__("You must pre-load and provide libraries addresses{ libname:address, ...} for %r" % lib_names)
+        super(DependencyError, self).__init__("You must pre-load and provide libraries addresses {{ libname:address, ... }} for {!r}".format(lib_names))
         self.lib_names = lib_names
 
 
@@ -86,11 +86,11 @@ class Detector(Plugin):
         pc = state.platform.current_vm.pc
         location = (address, pc, finding)
         hash_id = hashlib.sha1(str(location)).hexdigest()
-        state.context.setdefault('%s.locations' % self.name, {})[hash_id] = location
+        state.context.setdefault('{!s}.locations'.format(self.name), {})[hash_id] = location
         return hash_id
 
     def _get_location(self, state, hash_id):
-        return state.context.setdefault('%s.locations' % self.name, {})[hash_id]
+        return state.context.setdefault('{!s}.locations'.format(self.name), {})[hash_id]
 
     def _get_src(self, address, pc):
         return self.manticore.get_metadata(address).get_source_for(pc)
@@ -144,8 +144,8 @@ class FilterFunctions(Plugin):
         world = state.platform
         tx_cnt = len(world.all_transactions)
         # Constrain input only once per tx, per plugin
-        if state.context.get('constrained%d' % id(self), 0) != tx_cnt:
-            state.context['constrained%d' % id(self)] = tx_cnt
+        if state.context.get('constrained{:d}'.format(id(self)), 0) != tx_cnt:
+            state.context['constrained{:d}'.format(id(self))] = tx_cnt
 
             if self._depth == 'human' and not tx.is_human:
                 return
@@ -267,7 +267,7 @@ class DetectUninitializedMemory(Detector):
             if current_contract == known_contract:
                 cbu = Operators.AND(cbu, offset != known_offset)
         if state.can_be_true(cbu):
-            self.add_finding_here(state, "Potentially reading uninitialized memory at instruction (address: %r, offset %r)" % (current_contract, offset))
+            self.add_finding_here(state, "Potentially reading uninitialized memory at instruction (address: {!r}, offset {!r})".format(current_contract, offset))
 
     def did_evm_write_memory_callback(self, state, offset, value):
         current_contract = state.platform.current_vm.address
@@ -826,6 +826,7 @@ class ManticoreEVM(Manticore):
 
             Example use::
 
+
                 symbolic_data = seth.make_symbolic_buffer(320)
                 seth.transaction(caller=attacker_account,
                                 address=contract_account,
@@ -887,7 +888,7 @@ class ManticoreEVM(Manticore):
                 except KeyError:
                     raise DependencyError([lib_name])
                 for pos in pos_lst:
-                    hex_contract_lst[pos:pos + 40] = '%040x' % lib_address
+                    hex_contract_lst[pos:pos + 40] = '{:040x}'.format(int(lib_address))
             hex_contract = ''.join(hex_contract_lst)
         return binascii.unhexlify(hex_contract)
 
@@ -1204,7 +1205,7 @@ class ManticoreEVM(Manticore):
                     contract_account = self.create_contract(owner=owner, init=tuple(init_bytecode))
 
                 if contract_account is None:
-                    raise Exception("Failed to build contract %s" % contract_name_i)
+                    raise Exception("Failed to build contract {!s}".format(contract_name_i))
                 self.metadata[int(contract_account)] = SolidityMetadata(*compile_results)
 
                 deps[contract_name_i] = contract_account
@@ -1596,9 +1597,9 @@ class ManticoreEVM(Manticore):
         if len(local_findings):
             with testcase.open_stream('findings') as findings:
                 for address, pc, finding, at_init in local_findings:
-                    findings.write(u'- %s -\n' % finding)
-                    findings.write(u'  Contract: 0x%x\n' % address)
-                    findings.write(u'  EVM Program counter: %s%s\n' % (pc, at_init and " (at constructor)" or ""))
+                    findings.write(u'- {!s} -\n'.format(finding))
+                    findings.write(u'  Contract: 0x{:x}\n'.format(address))
+                    findings.write(u'  EVM Program counter: {!s}{!s}\n'.format(pc, at_init and " (at constructor)" or ""))
                     md = self.get_metadata(address)
                     if md is not None:
                         src = md.get_source_for(pc, runtime=not at_init)
