@@ -46,20 +46,20 @@ class EthBenchmark(unittest.TestCase):
 
         mevm.multi_tx_analysis(filename, tx_limit=3)
 
-        actual_findings = set(( (b, c, d) for a, b, c, d in d.global_findings))
+        actual_findings = set(( (c, d) for a, b, c, d in d.global_findings))
         self.assertEqual(should_find, actual_findings)
 
     def test_assert_minimal(self):
-        self._test_assert('assert_minimal', set([(95, 'INVALID intruction', False)]))
+        self._test_assert('assert_minimal', set([('INVALID intruction', False)]))
 
     def test_assert_constructor(self):
-        self._test_assert('assert_constructor', set([(23, 'INVALID intruction', True)]))
+        self._test_assert('assert_constructor', set([('INVALID intruction', True)]))
 
     def test_assert_multitx_1(self):
         self._test_assert('assert_multitx_1', set())
 
     def test_assert_multitx_2(self):
-        self._test_assert('assert_multitx_2', set([(150, 'INVALID intruction', False)]))
+        self._test_assert('assert_multitx_2', set([('INVALID intruction', False)]))
 
 
 

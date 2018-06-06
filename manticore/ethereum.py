@@ -928,10 +928,10 @@ class ManticoreEVM(Manticore):
             '--allow-paths', '.',
             filename
         ]
-        p = Popen(solc_invocation, stdout=PIPE, stderr=PIPE, cwd=working_folder)
+        p = Popen(solc_invocation, stdout=PIPE, stderr=PIPE, cwd=working_folder, universal_newlines=True)
         with p.stdout as stdout, p.stderr as stderr:
             try:
-                return json.loads(stdout.read()), stderr.read()
+                return json.load(stdout), stderr.read()
             except ValueError:
                 raise Exception('Solidity compilation error:\n\n{}'.format(stderr.read()))
 
