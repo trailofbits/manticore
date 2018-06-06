@@ -189,7 +189,7 @@ class Z3Solver(Solver):
         ''' Auxiliary method to spawn the external solver process'''
         assert '_proc' not in dir(self) or self._proc is None
         try:
-            self._proc = Popen(self._command.split(' '), stdin=PIPE, stdout=PIPE, bufsize=LINEBUF, universal_newlines=True)
+            self._proc = Popen(self._command.split(' '), stdin=PIPE, stdout=PIPE, bufsize=-1)
         except OSError as e:
             print(e, "Probably too  much cached expressions? visitors._cache...")
             # Z3 was removed from the system in the middle of operation
@@ -207,10 +207,9 @@ class Z3Solver(Solver):
             except (SolverException, IOError):
                 # z3 was too fast to close
                 pass
-            finally:
-                self._proc.stdin.close()
-                self._proc.stdout.close()
-                self._proc.wait()
+            self._proc.stdin.close()
+            self._proc.stdout.close()
+            self._proc.wait()
         try:
             self._proc.kill()
         except BaseException:
@@ -255,29 +254,35 @@ class Z3Solver(Solver):
         if self.debug:
             self._send_log.append(str(cmd))
         try:
-            self._proc.stdin.write('{}\n'.format(cmd))
+            self._proc.stdin.write('{}\n'.format(cmd).encode())
+            self._proc.stdin.flush()
         except IOError as e:
             raise SolverException(e)
 
     def _recv(self):
         ''' Reads the response from the solver '''
 
-        def readline():
-            # stdout.readline() returns internal 'str' value, which is bytestring in py2 and unicode-ish in py3
-            buf = as_unicode(self._proc.stdout.readline())
-            return buf, buf.count(u'('), buf.count(u')')
-        received = StringIO()
-        buf, left, right = readline()
+        received = io.BytesIO()
+        opens, closes = 0, 0
+
+        while True:
+            c = self._proc.stdout.read(1)
+            received.write(c)
+            if c == b'(':
+                opens += 1
+            elif c == b')':
+                closes += 1
+            if c != b'\n':
+                continue
+            if opens == closes:
+                break
+
+        buf = received.getvalue().decode().strip()
+
         if '(error' in buf:
-            raise Exception("Error in smtlib: {}".format(buf))
-        received.write(buf)
-        while left != right:
-            buf, l, r = readline()
-            received.write(buf)
-            left += l
-            right += r
-        buf = received.getvalue().strip()
-        logger.debug('<%s', buf)
+            raise SolverException("Error in smtlib: {}".format(data))
+
+        logger.debug("<%s", buf)
         return buf
 
     # UTILS: check-sat get-value
