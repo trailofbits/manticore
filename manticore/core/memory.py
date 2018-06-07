@@ -258,6 +258,47 @@ class AnonMap(Map):
         return chr(self._data[index])
 
 
+class ArrayMap(Map):
+    def __init__(self, address, size, perms, index_bits, backing_array=None, name=None, **kwargs):
+        super(ArrayMap, self).__init__(address, size, perms)
+        if name is None:
+            name = 'ArrayMap_{:x}'.format(address)
+        print 'index bits is ', index_bits
+        if backing_array is not None:
+            self._array = backing_array
+        else:
+            self._array = expression.ArrayProxy(expression.ArrayVariable(index_bits, index_max=size, value_bits=8, name=name))
+
+    def __reduce__(self):
+        return self.__class__, (self.start, len(self), self._perms, self._array.index_bits, self._array, self._array.name)
+
+    def __setitem__(self, key, value):
+        self._array[key] = value
+
+    def __getitem__(self, key):
+        return self._array[key]
+
+    def split(self, address):
+        if address <= self.start:
+            return None, self
+        if address >= self.end:
+            return self, None
+
+        assert self.start < address < self.end
+        index_bits, value_bits = self._array.index_bits, self._array.value_bits
+
+        left_size, right_size = address - self.start, self.end - address
+        left_name, right_name = ['{}_{:d}'.format(self._array.name, i) for i in range(2)]
+
+        head_arr = expression.ArrayProxy(expression.ArrayVariable(index_bits, left_size, value_bits, name=left_name))
+        tail_arr = expression.ArrayProxy(expression.ArrayVariable(index_bits, right_size, value_bits, name=right_name))
+
+        head = ArrayMap(self.start, left_size, self.perms, index_bits, head_arr, left_name)
+        tail = ArrayMap(address, right_size, self.perms, index_bits, tail_arr, right_name)
+
+        return head, tail
+
+
 class FileMap(Map):
     '''
     A file map.
@@ -1045,6 +1086,75 @@ class SMemory(Memory):
         return solutions
 
 
+class LazySMemory(SMemory):
+    '''
+    A fully symbolic memory.
+
+    Currently does not support cross-page reads/writes.
+    '''
+    def __init__(self, constraints, *args, **kwargs):
+        super(LazySMemory, self).__init__(constraints, *args, **kwargs)
+        logger.debug("[EXPERIMENTAL] Using purely symbolic memory")
+
+    def mmap(self, addr, size, perms, name=None, **kwargs):
+        assert addr is None or isinstance(addr, (int, long)), 'Address must be concrete'
+        assert addr < self.memory_size, 'Address too big'
+        assert size > 0
+
+        if addr is not None:
+            addr = self._floor(addr)
+
+        size = self._ceil(size)
+
+        addr = self._search(size, addr)
+
+        # It should not be allocated
+        for i in xrange(self._page(addr), self._page(addr + size)):
+            assert i not in self._page2map, 'Map already used'
+
+        m = ArrayMap(addr, size, perms, self.memory_bit_size, name=name)
+
+        self._add(m)
+
+        logger.debug('New symbolic memory map @{:x} size:{:x}'.format(addr, size))
+
+        return addr
+
+    def _deref_can_succeed(self, map, address, size):
+        if not issymbolic(address):
+            return address >= map.start and address + size < map.end
+        else:
+            constraint = Operators.AND(address >= map.start, address + size < map.end)
+            return solver.can_be_true(self.constraints, constraint)
+
+    def map_containing(self, address):
+        if not issymbolic(address):
+            return super(LazySMemory, self).map_containing(address)
+        else:
+            found = None
+            for m in self._maps:
+                if self._deref_can_succeed(m, address, 1):
+                    if found:
+                        raise InvalidMemoryAccess(address, 'r')
+                    found = m
+            return found
+
+    def read(self, address, size, force=False):
+        m = self.map_containing(address)
+        if isinstance(m, ArrayMap):
+            page_offset = address - m.start
+            return m[page_offset:page_offset+size]
+        else:
+            return super(SMemory, self).read(address, size, force)
+
+    def write(self, address, value, force=False):
+        m = self.map_containing(address)
+        if isinstance(m, ArrayMap):
+            page_offset = address - m.start
+            m[page_offset:page_offset+len(value)] = value
+        else:
+            return super(SMemory, self).write(address, value, force)
+
 class Memory32(Memory):
     memory_bit_size = 32
     page_bit_size = 12
@@ -1066,5 +1176,15 @@ class SMemory32L(SMemory):
 
 
 class SMemory64(SMemory):
+    memory_bit_size = 64
+    page_bit_size = 12
+
+
+class LazySMemory32(LazySMemory):
+    memory_bit_size = 32
+    page_bit_size = 12
+
+
+class LazySMemory64(LazySMemory):
     memory_bit_size = 64
     page_bit_size = 12
