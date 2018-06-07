@@ -1134,6 +1134,8 @@ class LazySMemory(SMemory):
             found = None
             for m in self._maps:
                 if self._deref_can_succeed(m, address, 1):
+                    if not isinstance(m, ArrayMap):
+                        continue
                     if found:
                         raise InvalidMemoryAccess(address, 'r')
                     found = m
