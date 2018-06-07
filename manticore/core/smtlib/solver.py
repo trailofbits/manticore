@@ -204,12 +204,13 @@ class Z3Solver(Solver):
         if self._proc is not None and self._proc.returncode is None:
             try:
                 self._proc.stdin.write("(exit)\n")
+
+                self._proc.stdin.close()
+                self._proc.stdout.close()
+                self._proc.wait()
             except (SolverException, IOError):
                 # z3 was too fast to close
                 pass
-            self._proc.stdin.close()
-            self._proc.stdout.close()
-            self._proc.wait()
         try:
             self._proc.kill()
         except BaseException:
@@ -254,27 +255,33 @@ class Z3Solver(Solver):
         if self.debug:
             self._send_log.append(str(cmd))
         try:
+            self._proc.stdout.flush()
             self._proc.stdin.write('{}\n'.format(cmd).encode())
             self._proc.stdin.flush()
         except IOError as e:
-            raise SolverException(e)
+            raise SolverException(str(e))
 
-    def _recv(self):
+    def _recv(self, expect_response=True):
         ''' Reads the response from the solver '''
 
         received = io.BytesIO()
-        opens, closes = 0, 0
+        opens, closes, n = 0, 0, 0
 
         while True:
             c = self._proc.stdout.read(1)
             received.write(c)
+            n += len(c)
+
             if c == b'(':
                 opens += 1
             elif c == b')':
                 closes += 1
             if c != b'\n':
                 continue
+
             if opens == closes:
+                if expect_response and n == 0:
+                    continue
                 break
 
         buf = received.getvalue().decode().strip()
@@ -294,7 +301,7 @@ class Z3Solver(Solver):
         _status = self._recv()
         logger.debug("Check took %s seconds (%s)", time.time() - start, _status)
         if _status not in ('sat', 'unsat', 'unknown'):
-            raise SolverException(_status)
+            raise SolverException("Status: {!s}".format(_status))
         if consider_unknown_as_unsat:
             if _status == 'unknown':
                 logger.warning('Found an unknown core, probably a solver timeout')
