@@ -1091,6 +1091,7 @@ class LazySMemory(SMemory):
 
     Currently does not support cross-page reads/writes.
     '''
+
     def __init__(self, constraints, *args, **kwargs):
         super(LazySMemory, self).__init__(constraints, *args, **kwargs)
 
@@ -1108,7 +1109,8 @@ class LazySMemory(SMemory):
 
         # It should not be allocated
         for i in xrange(self._page(addr), self._page(addr + size)):
-            assert i not in self._page2map, 'Map already used'
+            if i in self._page2map:
+                raise MemoryException("Can't mmap; map already used", addr)
 
         m = ArrayMap(addr, size, perms, self.memory_bit_size, name=name)
 
@@ -1141,7 +1143,7 @@ class LazySMemory(SMemory):
         m = self.map_containing(address)
         if isinstance(m, ArrayMap):
             page_offset = address - m.start
-            return m[page_offset:page_offset+size]
+            return m[page_offset:page_offset + size]
         else:
             return super(SMemory, self).read(address, size, force)
 
@@ -1149,9 +1151,10 @@ class LazySMemory(SMemory):
         m = self.map_containing(address)
         if isinstance(m, ArrayMap):
             page_offset = address - m.start
-            m[page_offset:page_offset+len(value)] = value
+            m[page_offset:page_offset + len(value)] = value
         else:
             return super(SMemory, self).write(address, value, force)
+
 
 class Memory32(Memory):
     memory_bit_size = 32
