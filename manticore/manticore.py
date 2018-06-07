@@ -102,6 +102,9 @@ def make_linux(program, argv=None, env=None, entry_symbol=None, symbolic_files=N
     if concrete_start != '':
         logger.info('Starting with concrete input: %s', concrete_start)
 
+    if pure_symbolic:
+        logger.debug("[EXPERIMENTAL] Using purely symbolic memory")
+
     for i, arg in enumerate(argv):
         argv[i] = initial_state.symbolicate_buffer(arg, label='ARGV%d' % (i + 1))
 
@@ -259,7 +262,7 @@ class Manticore(Eventful):
         plugin.manticore = None
 
     @classmethod
-    def linux(cls, path, argv=None, envp=None, entry_symbol=None, symbolic_files=None, concrete_start='', **kwargs):
+    def linux(cls, path, argv=None, envp=None, entry_symbol=None, symbolic_files=None, concrete_start='', pure_symbolic=False, **kwargs):
         """
         Constructor for Linux binary analysis.
 
@@ -273,12 +276,13 @@ class Manticore(Eventful):
         :param symbolic_files: Filenames to mark as having symbolic input
         :type symbolic_files: list[str]
         :param str concrete_start: Concrete stdin to use before symbolic inputt
+        :param bool pure_symbolic: Use a pure symbolic memory implementation
         :param kwargs: Forwarded to the Manticore constructor
         :return: Manticore instance, initialized with a Linux State
         :rtype: Manticore
         """
         try:
-            return cls(make_linux(path, argv, envp, entry_symbol, symbolic_files, concrete_start, **kwargs), **kwargs)
+            return cls(make_linux(path, argv, envp, entry_symbol, symbolic_files, concrete_start, pure_symbolic), **kwargs)
         except elftools.common.exceptions.ELFError:
             raise Exception('Invalid binary: {}'.format(path))
 

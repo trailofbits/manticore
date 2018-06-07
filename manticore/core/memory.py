@@ -263,7 +263,6 @@ class ArrayMap(Map):
         super(ArrayMap, self).__init__(address, size, perms)
         if name is None:
             name = 'ArrayMap_{:x}'.format(address)
-        print 'index bits is ', index_bits
         if backing_array is not None:
             self._array = backing_array
         else:
@@ -1094,7 +1093,6 @@ class LazySMemory(SMemory):
     '''
     def __init__(self, constraints, *args, **kwargs):
         super(LazySMemory, self).__init__(constraints, *args, **kwargs)
-        logger.debug("[EXPERIMENTAL] Using purely symbolic memory")
 
     def mmap(self, addr, size, perms, name=None, **kwargs):
         assert addr is None or isinstance(addr, (int, long)), 'Address must be concrete'
