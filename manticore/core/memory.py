@@ -1084,6 +1084,8 @@ class SMemory(Memory):
 
         return solutions
 
+class InvalidAccess(expression.BitVecConstant):
+    pass
 
 class LazySMemory(SMemory):
     '''
@@ -1094,6 +1096,7 @@ class LazySMemory(SMemory):
 
     def __init__(self, constraints, *args, **kwargs):
         super(LazySMemory, self).__init__(constraints, *args, **kwargs)
+        self._inverted = {}
 
     def mmap(self, addr, size, perms, name=None, **kwargs):
         assert addr is None or isinstance(addr, (int, long)), 'Address must be concrete'
@@ -1120,18 +1123,39 @@ class LazySMemory(SMemory):
 
         return addr
 
+    def _map_deref_expr(self, map, address, size):
+        return Operators.AND(
+            Operators.UGE(address, map.start),
+            Operators.ULT(address + size, map.end))
+
     def _deref_can_succeed(self, map, address, size):
-        if not issymbolic(address):
-            return address >= map.start and address + size < map.end
+        deref_possible = self._map_deref_expr(map, address, size)
+        if issymbolic(deref_possible):
+            return solver.can_be_true(self.constraints, deref_possible)
         else:
-            constraint = Operators.AND(address >= map.start, address + size < map.end)
-            return solver.can_be_true(self.constraints, constraint)
+            return deref_possible
+
+    def _aggregate_read(self, address, size):
+        '''
+        :param Expression address:
+        :param size:
+        :return:
+        '''
+        assert isinstance(address, expression.Expression)
+
+        deref_expression = InvalidAccess(self.memory_bit_size, 0xffffffff)
+
+        for m in self._maps:
+            within_map = self._map_deref_expr(m, address, size)
+            deref_expression = Operators.ITE(within_map, m[address:address+size], deref_expression)
+
+        return deref_expression
+
 
     def map_containing(self, address):
         if not issymbolic(address):
             return super(LazySMemory, self).map_containing(address)
         else:
-            found = None
             for m in self._maps:
                 if self._deref_can_succeed(m, address, 1):
                     if not isinstance(m, ArrayMap):
@@ -1142,10 +1166,8 @@ class LazySMemory(SMemory):
             return found
 
     def read(self, address, size, force=False):
-        m = self.map_containing(address)
-        if isinstance(m, ArrayMap):
-            page_offset = address - m.start
-            return m[page_offset:page_offset + size]
+        if issymbolic(address):
+            return self._aggregate_read(address, size)
         else:
             return super(SMemory, self).read(address, size, force)
 
