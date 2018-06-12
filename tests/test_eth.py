@@ -274,8 +274,8 @@ class EthTests(unittest.TestCase):
             self.assertEquals(len(world.human_transactions), 4)
             self.assertListEqual(['CREATE', 'CREATE', 'CALL', 'CALL', 'CALL', 'CALL'], [x.sort for x in world.all_transactions])
             for tx in world.all_transactions[-4:]:
-                self.assertEquals(x.result, 'RETURN')
-                self.assertEquals(state.solve_one(x.return_data), b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01')
+                self.assertEquals(tx.result, 'RETURN')
+                self.assertEquals(state.solve_one(tx.return_data), b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01')
 
     def test_emit_did_execute_end_instructions(self):
         """
