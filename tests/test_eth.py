@@ -90,9 +90,11 @@ class EthAbiTests(unittest.TestCase):
         ]
         d = ''.join(d)
 
-        funcname, dynargs = ABI.parse(type_spec='func(address[])', data=d)
 
-        self.assertEqual(funcname, 'func')
+        func_id, dynargs = ABI.parse(type_spec='func(address[])', data=d)
+
+
+        self.assertEqual(func_id, 'AAAA')
         self.assertEqual(dynargs, ([42, 43],))
 
     def test_dyn_bytes(self):
@@ -106,7 +108,7 @@ class EthAbiTests(unittest.TestCase):
 
         funcname, dynargs = ABI.parse(type_spec='func(bytes)', data=d)
 
-        self.assertEqual(funcname, 'func')
+        self.assertEqual(funcname, 'AAAA')
         self.assertEqual(dynargs, ('Z'*30,))
 
     def test_simple_types(self):
@@ -125,7 +127,7 @@ class EthAbiTests(unittest.TestCase):
 
         funcname, dynargs = ABI.parse(type_spec='func(uint256,uint256,bool,address,int256,int256)', data=d)
 
-        self.assertEqual(funcname, 'func')
+        self.assertEqual(funcname, 'AAAA')
         self.assertEqual(dynargs, (32, 2**256 - 1, 0xff, 0x424242, 2**255 - 1,-(2**255) ))
 
     def test_address0(self):
@@ -149,15 +151,21 @@ class EthAbiTests(unittest.TestCase):
 
         funcname, dynargs = ABI.parse(type_spec='func(bytes,address[])', data=d)
 
-        self.assertEqual(funcname, 'func')
+        self.assertEqual(funcname, 'AAAA')
         self.assertEqual(dynargs, ('helloworld', [3, 4, 5]))
 
     def test_self_make_and_parse_multi_dyn(self):
-        d = ABI.make_function_call('func', 'h'*50, [1, 1, 2, 2, 3, 3] )
+        d = ABI.function_call('func(bytes,address[])', 'h'*50, [1, 1, 2, 2, 3, 3] )
         d = ''.join(d)
         funcname, dynargs = ABI.parse(type_spec='func(bytes,address[])', data=d)
-        self.assertEqual(funcname, 'func')
+        self.assertEqual(funcname, 'AAAA')
         self.assertEqual(dynargs, ('h'*50, [1, 1, 2, 2, 3, 3]))
+
+
+    def test_serialize_simple_int(self):
+        self.assertEqual(ABI.serialize('int256', 0x10), '\0'*31+'\x10')
+        self.assertEqual(ABI.serialize('(int256,int256)', 0x10, 0x20), '\0'*31+'\x10'+'\0'*31+'\x20')
+
 
     def test_parse_invalid_int(self):
         with self.assertRaises(EthereumError):
@@ -198,33 +206,29 @@ class EthAbiTests(unittest.TestCase):
         self.assertEqual(parsed, 2**256 - 1)
 
         for i in range(8, 257, 8):
+            print "X:", 'uint{}'.format(i)
             parsed = ABI.parse('uint{}'.format(i), data)
             self.assertEqual(parsed, 2**i - 1)
 
     def test_empty_types(self):
         name, args = ABI.parse('func()', '\0'*32)
-        self.assertEqual(name, 'func')
+        self.assertEqual(name, '\x00\x00\x00\x00')
         self.assertEqual(args, tuple())
 
     def test_function_type(self):
         # setup ABI for function with one function param
-        func_name = 'func'
-        spec = func_name+'(function)'
-        func_id = ABI.make_function_id(spec)
+        spec = 'func(function)'
+        func_id = ABI.function_selector(spec)
         # build bytes24 data for function value (address+selector)
         # calls member id lookup on 'Ethereum Foundation Tip Box' (see https://www.ethereum.org/donate)
-        address = ''.join(ABI.serialize_uint(0xfB6916095ca1df60bB79Ce92cE3Ea74c37c5d359, 20))
-        selector = ABI.make_function_id('memberId(address)')
-        function_ref_data = address + selector
+        address = ABI.serialize_uint(0xfB6916095ca1df60bB79Ce92cE3Ea74c37c5d359, 20, padding=0)
+        selector = ABI.function_selector('memberId(address)')
+        function_ref_data = address + selector + '\0'*8
         # build tx call data
-        call_data = ''.join([
-            func_id,
-            function_ref_data,
-            '\0'*8
-        ])
-        name, args = ABI.parse(spec, call_data)
-        self.assertEqual(name, func_name)
-        self.assertEqual(args, (function_ref_data,))
+        call_data = func_id + function_ref_data 
+        parsed_func_id, args = ABI.parse(spec, call_data)
+        self.assertEqual(parsed_func_id, func_id)
+        self.assertEqual(((0xfB6916095ca1df60bB79Ce92cE3Ea74c37c5d359, selector),), args)
 
 
 class EthTests(unittest.TestCase):
@@ -234,7 +238,27 @@ class EthTests(unittest.TestCase):
 
     def tearDown(self):
         self.mevm=None
-        #shutil.rmtree(self.worksp)
+        shutil.rmtree(self.worksp)
+
+
+    def test_account_names(self):
+        m = self.mevm
+        user_account = m.create_account(name='user_account')
+        self.assertEqual(m.accounts['user_account'], user_account)
+        self.assertEqual(len(m.accounts), 1)
+
+        user_account1 = m.create_account(name='user_account1')
+        self.assertEqual(m.accounts['user_account1'], user_account1)
+        self.assertEqual(len(m.accounts), 2)
+        user_accounts = []
+        for i in range(10):
+            user_accounts.append(m.create_account())
+        self.assertEqual(len(m.accounts), 12)
+        for i in range(10):
+            self.assertEqual(m.accounts['normal{:d}'.format(i)], user_accounts[i])
+
+
+        contract_account1 = m.create_account(code='aaaaa')
 
     def test_emit_did_execute_end_instructions(self):
         """
@@ -346,7 +370,7 @@ class EthTests(unittest.TestCase):
         contract_account.f(1)  # it works
         contract_account.f(65)  # it works
         with self.assertRaises(NoAliveStates):
-            contract_account.f(m.SValue)  # no alive states, but try to run a tx anyway
+            contract_account.f(1)  # no alive states, but try to run a tx anyway
 
     @unittest.skip("reason")
     def test_reachability(self):

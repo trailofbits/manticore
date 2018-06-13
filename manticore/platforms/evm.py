@@ -5,7 +5,7 @@ import inspect
 from functools import wraps
 from ..utils.helpers import issymbolic, memoized
 from ..platforms.platform import *
-from ..core.smtlib import solver, BitVec, Array, Operators, Constant
+from ..core.smtlib import solver, BitVec, Array, Operators, Constant, ArrayVariable
 from ..core.state import Concretize, TerminateState
 from ..core.plugin import Ref
 from ..utils.event import Eventful
@@ -1766,10 +1766,11 @@ class EVM(Eventful):
         value = sha3.keccak_256(repr(a) + 'NONCE').hexdigest()
         value = int('0x' + value, 0)
 
-        # 0 is left on the stack if the looked for block number is greater than the current block number
-        # or more than 256 blocks behind the current block.
+        # 0 is left on the stack if the looked for block number is greater or equal
+        # than the current block number or more than 256 blocks behind the current 
+        # block. (Current block hash is unknown from inside the tx)
         bnmax = Operators.ITEBV(256, self.world.block_number() > 256, 256, self.world.block_number())
-        value = Operators.ITEBV(256, Operators.OR(a > self.world.block_number(), a < bnmax), 0, value)
+        value = Operators.ITEBV(256, Operators.OR(a >= self.world.block_number(), a < bnmax), 0, value)
         return value
 
     def COINBASE(self):
@@ -2289,7 +2290,8 @@ class EVMWorld(Platform):
     @property
     def last_transaction(self):
         ''' Last completed transaction '''
-        return self.transactions[-1]
+        if len(self.transactions):
+            return self.transactions[-1]
 
     @property
     def last_human_transaction(self):
@@ -2416,7 +2418,7 @@ class EVMWorld(Platform):
         return self.world_state[address]['code']
 
     def set_code(self, address, data):
-        if self.world_state[address]['code']:
+        if self.has_code(address):
             raise EVMException("Code already set")
         self.world_state[address]['code'] = data
 
@@ -2464,7 +2466,8 @@ class EVMWorld(Platform):
         return len(self._callstack)
 
     def new_address(self):
-        ''' create a fresh 160bit address '''
+        ''' Create a fresh 160bit address '''
+        # Fix use more yellow solution
         new_address = random.randint(100, pow(2, 160))
         if new_address in self:
             return self.new_address()
@@ -2494,7 +2497,6 @@ class EVMWorld(Platform):
         self._world_state[address]['balance'] = balance
         self._world_state[address]['storage'] = storage
         self._world_state[address]['code'] = code
-
         return address
 
     def create_contract(self, price=0, address=None, caller=None, balance=0, init=None):
@@ -2545,6 +2547,7 @@ class EVMWorld(Platform):
             raise EVMException("Symbolic origin address not supported yet.")
         if issymbolic(caller):
             raise EVMException("Symbolic caller address not supported yet.")
+
 
         if address not in self.accounts or\
            caller not in self.accounts or \
