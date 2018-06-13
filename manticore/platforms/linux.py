@@ -62,11 +62,13 @@ class File(object):
         # read/write to the state
         mode = mode_from_flags(flags)
         self.file = file(path, mode)
+        self.path = path
 
     def __getstate__(self):
         state = {}
         state['name'] = self.name
         state['mode'] = self.mode
+        state['path'] = self.path
         try:
             state['pos'] = self.tell()
         except IOError:
@@ -79,6 +81,7 @@ class File(object):
         mode = state['mode']
         pos = state['pos']
         self.file = file(name, mode)
+        self.path = state['path']
         if pos is not None:
             self.seek(pos)
 
@@ -219,7 +222,7 @@ class SymbolicFile(File):
                          self.name)
 
     def __getstate__(self):
-        state = {}
+        state = super(SymbolicFile, self).__getstate__()
         state['array'] = self.array
         state['pos'] = self.pos
         state['max_size'] = self.max_size
@@ -229,6 +232,7 @@ class SymbolicFile(File):
         self.pos = state['pos']
         self.max_size = state['max_size']
         self.array = state['array']
+        super(SymbolicFile, self).__setstate__(state)
 
     def tell(self):
         '''
@@ -2708,4 +2712,12 @@ class SLinux(Linux):
             'stderr': err.getvalue(),
             'net': net.getvalue()
         }
+
+        for f in self.files:
+            if not isinstance(f, SymbolicFile):
+                continue
+            fdata = StringIO.StringIO()
+            solve_to_fd(f.array, fdata)
+            ret[f.path] = fdata.getvalue()
+
         return ret
