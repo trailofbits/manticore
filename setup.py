@@ -9,7 +9,7 @@ def rtd_dependent_deps():
     if on_rtd:
         return []
     else:
-        return []
+        return ['z3-solver']
 
 
 setup(

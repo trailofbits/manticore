@@ -1,12 +1,13 @@
+from __future__ import print_function
 from manticore import Manticore
 from sys import argv, exit
 
 def display(results):
     for line in str(results).split('\n'):
-        print "  " + line
+        print("  " + line)
 
 def benchmark(program):
-    print "[*] Benchmarking program \"{}\"".format(program)
+    print("[*] Benchmarking program \"{}\"".format(program))
 
     m = Manticore(program)
     m.should_profile = True
@@ -14,7 +15,7 @@ def benchmark(program):
 
     results = m._executor.dump_stats()
     if results is None:
-        print "[*] Failed to collect stats for program {}".format(program)
+        print("[*] Failed to collect stats for program {}".format(program))
         return
 
     display(results)
@@ -24,7 +25,7 @@ if __name__ == "__main__":
     args = argv[1:]
 
     if len(args) == 0:
-        print "usage: python {} PROGRAM1 PROGRAM2...".format(argv[0])
+        print("usage: python {} PROGRAM1 PROGRAM2...".format(argv[0]))
         exit()
 
     first_program = args[0]
@@ -40,5 +41,5 @@ if __name__ == "__main__":
             overall_results.loading_time += results.loading_time
             overall_results.saving_time += results.saving_time
             
-        print "Overall:"
+        print("Overall:")
         display(overall_results)

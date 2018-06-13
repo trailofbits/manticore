@@ -23,6 +23,7 @@ Misc variables:
     compatible_formats
 
 """
+from __future__ import print_function
 
 __version__ = "$Revision: 72223 $"       # Code version
 
@@ -640,7 +641,7 @@ class Pickler:
             tmp = []
             for i in r:
                 try:
-                    x = items.next()
+                    x = next(items)
                     tmp.append(x)
                 except StopIteration:
                     items = None
@@ -688,7 +689,7 @@ class Pickler:
             tmp = []
             for i in r:
                 try:
-                    tmp.append(items.next())
+                    tmp.append(next(items))
                 except StopIteration:
                     items = None
                     break
@@ -905,7 +906,7 @@ class Unpickler:
     def load_proto(self):
         proto = ord(self.read(1))
         if not 0 <= proto <= 2:
-            raise ValueError, "unsupported pickle protocol: %d" % proto
+            raise ValueError("unsupported pickle protocol: %d" % proto)
     dispatch[PROTO] = load_proto
 
     def load_persid(self):
@@ -985,11 +986,11 @@ class Unpickler:
         for q in "\"'":  # double or single quote
             if rep.startswith(q):
                 if len(rep) < 2 or not rep.endswith(q):
-                    raise ValueError, "insecure string pickle"
+                    raise ValueError("insecure string pickle")
                 rep = rep[len(q):-len(q)]
                 break
         else:
-            raise ValueError, "insecure string pickle"
+            raise ValueError("insecure string pickle")
         self.append(rep.decode("string-escape"))
     dispatch[STRING] = load_string
 
@@ -1081,8 +1082,8 @@ class Unpickler:
             try:
                 value = klass(*args)
             except TypeError as err:
-                raise TypeError, "in constructor for %s: %s" % (
-                    klass.__name__, str(err)), sys.exc_info()[2]
+                raise TypeError("in constructor for %s: %s" % (
+                    klass.__name__, str(err)), sys.exc_info()[2])
         self.append(value)
 
     def load_inst(self):
@@ -1246,7 +1247,7 @@ class Unpickler:
                 d = inst.__dict__
                 try:
                     for k, v in state.iteritems():
-                        d[intern(k)] = v
+                        d[sys.intern(k)] = v
                 # keys in state don't have to be strings
                 # don't blow up, but don't go out of our way
                 except TypeError:

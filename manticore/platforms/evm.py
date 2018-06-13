@@ -1924,12 +1924,11 @@ class EVM(Eventful):
 
     @CALL.pos
     def CALL(self, gas, address, value, in_offset, in_size, out_offset, out_size):
-        data = self.world.current_transaction.return_data
-
+        data = self.world.last_transaction.return_data
         if data is not None:
             data_size = len(data)
             size = Operators.ITEBV(256, Operators.ULT(out_size, data_size), out_size, data_size)
-            self.current_vm.write_buffer(out_offset, data[:size])
+            self.write_buffer(out_offset, data[:size])
 
         return self.world.last_transaction.return_value
 
@@ -1945,14 +1944,13 @@ class EVM(Eventful):
                                      gas=self.gas)
         raise StartTx()
 
-    @CALL.pos
-    def CALLCODE(self, gas, _ignored_, value, in_offset, in_size, out_offset, out_size):
-        data = self.world.current_transaction.return_data
-
+    @CALLCODE.pos
+    def CALLCODE(self, gas, address, value, in_offset, in_size, out_offset, out_size):
+        data = self.world.last_transaction.return_data
         if data is not None:
             data_size = len(data)
             size = Operators.ITEBV(256, Operators.ULT(out_size, data_size), out_size, data_size)
-            self.current_vm.write_buffer(out_offset, data[:size])
+            self.write_buffer(out_offset, data[:size])
 
         return self.world.last_transaction.return_value
 
@@ -1975,12 +1973,11 @@ class EVM(Eventful):
 
     @DELEGATECALL.pos
     def DELEGATECALL(self, gas, address, in_offset, in_size, out_offset, out_size):
-        data = self.world.current_transaction.return_data
-
+        data = self.world.last_transaction.return_data
         if data is not None:
             data_size = len(data)
             size = Operators.ITEBV(256, Operators.ULT(out_size, data_size), out_size, data_size)
-            self.current_vm.write_buffer(out_offset, data[:size])
+            self.write_buffer(out_offset, data[:size])
 
         return self.world.last_transaction.return_value
 
@@ -1988,7 +1985,7 @@ class EVM(Eventful):
     @concretized_args(in_offset='SAMPLED', in_size='SAMPLED')
     def STATICCALL(self, gas, address, in_offset, in_size, out_offset, out_size):
         '''Message-call into an account'''
-        self.world.start_transaction('DELEGATECALL',
+        self.world.start_transaction('STATICCALL',
                                      address,
                                      data=self.read_buffer(in_offset, in_size),
                                      caller=self.address,
@@ -1998,12 +1995,11 @@ class EVM(Eventful):
 
     @STATICCALL.pos
     def STATICCALL(self, gas, address, in_offset, in_size, out_offset, out_size):
-        data = self.world.current_transaction.return_data
-
+        data = self.world.last_transaction.return_data
         if data is not None:
             data_size = len(data)
             size = Operators.ITEBV(256, Operators.ULT(out_size, data_size), out_size, data_size)
-            self.current_vm.write_buffer(out_offset, data[:size])
+            self.write_buffer(out_offset, data[:size])
 
         return self.world.last_transaction.return_value
 

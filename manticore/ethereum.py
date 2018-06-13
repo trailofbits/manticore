@@ -49,11 +49,11 @@ class Detector(Plugin):
         return self.__class__.__name__.split('.')[-1]
 
     def get_findings(self, state):
-        return state.context.setdefault('%s.findings' % self.name, set())
+        return state.context.setdefault('{:s}.findings'.format(self.name), set())
 
     @contextmanager
     def locked_global_findings(self):
-        with self.manticore.locked_context('%s.global_findings' % self.name, set) as global_findings:
+        with self.manticore.locked_context('{:s}.global_findings'.format(self.name), set) as global_findings:
             yield global_findings
 
     @property
@@ -79,25 +79,14 @@ class Detector(Plugin):
         pc = state.platform.current_vm.pc
         location = (address, pc, finding)
         hash_id = hashlib.sha1(str(location)).hexdigest()
-        state.context.setdefault('%s.locations' % self.name, {})[hash_id] = location
+        state.context.setdefault('{:s}.locations'.format(self.name), {})[hash_id] = location
         return hash_id
 
     def _get_location(self, state, hash_id):
-        return state.context.setdefault('%s.locations' % self.name, {})[hash_id]
+        return state.context.setdefault('{:s}.locations'.format(self.name), {})[hash_id]
 
     def _get_src(self, address, pc):
         return self.manticore.get_metadata(address).get_source_for(pc)
-
-    def report(self, state):
-        output = ''
-        for address, pc, finding in self.get_findings(state):
-            output += 'Finding %s\n' % finding
-            output += '\t Contract: %s\n' % address
-            output += '\t Program counter: %s\n' % pc
-            output += '\t Snippet:\n'
-            output += '\n'.join(('\t ' + x for x in self._get_src(address, pc).split('\n')))
-            output += '\n'
-        return output
 
 
 class FilterFunctions(Plugin):
@@ -170,13 +159,13 @@ class FilterFunctions(Plugin):
 
             if self._include:
                 # constraint the input so it can take only the interesting values
-                constraint = reduce(Operators.OR, map(lambda x: tx.data[:4] == x.decode('hex'), selected_functions))
+                constraint = reduce(Operators.OR, map(lambda x: tx.data[:4] == binascii.unhexlify(x), selected_functions))
                 state.constrain(constraint)
             else:
                 #Avoid all not seleted hashes
                 for func_hsh in md.hashes:
                     if func_hsh in selected_functions:
-                        constraint = Operators.NOT(tx.data[:4] == func_hsh.decode('hex'))
+                        constraint = Operators.NOT(tx.data[:4] == binascii.unhexlify(func_hsh))
                         state.constrain(constraint)
 
 
@@ -214,11 +203,11 @@ class DetectIntegerOverflow(Detector):
         at_init = state.platform.current_transaction.sort == 'CREATE'
         location = (address, pc, finding, at_init, condition)
         hash_id = hashlib.sha1(str(location)).hexdigest()
-        state.context.setdefault('%s.locations' % self.name, {})[hash_id] = location
+        state.context.setdefault('{:s}.locations'.format(self.name), {})[hash_id] = location
         return hash_id
 
     def _get_location(self, state, hash_id):
-        return state.context.setdefault('%s.locations' % self.name, {})[hash_id]
+        return state.context.setdefault('{:s}.locations'.format(self.name), {})[hash_id]
 
     @staticmethod
     def _signed_sub_overflow(state, a, b):
@@ -335,6 +324,7 @@ class DetectIntegerOverflow(Detector):
         return cond
 
     def did_evm_execute_instruction_callback(self, state, instruction, arguments, result_ref):
+        result = result_ref.value
         mnemonic = instruction.semantics
         result = result_ref.value
         ios = False
@@ -363,16 +353,14 @@ class DetectIntegerOverflow(Detector):
                         self.add_finding(state, *loc[:-1])
 
         if mnemonic in ('SLT', 'SGT', 'SDIV', 'SMOD'):
-            result = taint_with(result, "SIGNED" % id_val)
+            result = taint_with(result, "SIGNED")
 
         if state.can_be_true(ios):
             id_val = self._save_current_location(state, "Signed integer overflow at %s instruction" % mnemonic, ios)
-            result = taint_with(result, "IOS_%s" % id_val)
+            result = taint_with(result, "IOS_{:s}".format(id_val))
         if state.can_be_true(iou):
             id_val = self._save_current_location(state, "Unsigned integer overflow at %s instruction" % mnemonic, iou)
-            result = taint_with(result, "IOU_%s" % id_val)
-        #if ios and iou:
-        #    self.add_finding_here(state, "Integer overflow at %s" % mnemonic)
+            result = taint_with(result, "IOU_{:s}".format(id_val))
 
         result_ref.value = result
 
@@ -1057,11 +1045,11 @@ class ManticoreEVM(Manticore):
             filename
         ]
         p = Popen(solc_invocation, stdout=PIPE, stderr=PIPE, cwd=working_folder)
-        with p.stdout as stdout, p.stderr as stderr:
-            try:
-                return json.loads(stdout.read()), stderr.read()
-            except ValueError:
-                raise Exception('Solidity compilation error:\n\n{}'.format(stderr.read()))
+        stdout, stderr = p.communicate()
+        try:
+            return json.loads(stdout), stderr
+        except ValueError:
+            raise Exception('Solidity compilation error:\n\n{}'.format(stderr))
 
     @staticmethod
     def _compile(source_code, contract_name, libraries=None):
@@ -1248,10 +1236,10 @@ class ManticoreEVM(Manticore):
         '''
 
         # Move state from running to final
-        if state_id != -1:
-            with self.locked_context('seth') as seth_context:
-                saved_states = seth_context['_saved_states']
-                final_states = seth_context['_final_states']
+        with self.locked_context('seth') as seth_context:
+            saved_states = seth_context['_saved_states']
+            final_states = seth_context['_final_states']
+            if state_id != -1:
                 if state_id in saved_states:
                     saved_states.remove(state_id)
                     final_states.add(state_id)
@@ -1641,7 +1629,6 @@ class ManticoreEVM(Manticore):
 
     def run(self, **kwargs):
         ''' Run any pending transaction on any running state '''
-
         # Check if there is a pending transaction
         with self.locked_context('seth') as context:
             # there is no states added to the executor queue
@@ -1764,7 +1751,7 @@ class ManticoreEVM(Manticore):
         else:
             assert tx.result in {'SELFDESTRUCT', 'RETURN', 'STOP'}
             # if not a revert we save the state for further transactioning
-            self.save(state)  # Add tu running states
+            self.save(state)  # Add to running states
 
     #Callbacks
     def _load_state_callback(self, state, state_id):
@@ -1870,15 +1857,15 @@ class ManticoreEVM(Manticore):
         if len(local_findings):
             with testcase.open_stream('findings') as findings:
                 for address, pc, finding, at_init in local_findings:
-                    findings.write('Finding: %s\n' % finding)
-                    findings.write('Contract: 0x%x\n' % address)
-                    findings.write('EVM Program counter: %s%s\n' % (pc, at_init and " (at constructor)" or ""))
+                    findings.write('- %s -\n' % finding)
+                    findings.write('  Contract: 0x%x\n' % address)
+                    findings.write('  EVM Program counter: %s%s\n' % (pc, at_init and " (at constructor)" or ""))
                     md = self.get_metadata(address)
                     if md is not None:
                         src = md.get_source_for(pc, runtime=not at_init)
-                        findings.write('Snippet:\n')
-                        findings.write('\n'.join((' ' + x for x in src.split('\n'))))
-                        findings.write('\n\n')
+                        findings.write('  Snippet:\n')
+                        findings.write(src.replace('\n', '\n    ').strip())
+                        findings.write('\n')
 
         with testcase.open_stream('summary') as summary:
             summary.write("Message: %s\n" % message)
@@ -1973,7 +1960,7 @@ class ManticoreEVM(Manticore):
                 tx_summary.write("Transactions Nr. %d\n" % blockchain.transactions.index(tx))
 
                 # The result if any RETURN or REVERT
-                tx_summary.write("Type: %s\n" % tx.sort)
+                tx_summary.write("Type: %s (%d)\n" % (tx.sort, tx.depth))
                 tx_summary.write("From: 0x%x %s\n" % (state.solve_one(tx.caller), flagged(issymbolic(tx.caller))))
                 tx_summary.write("To: 0x%x %s\n" % (state.solve_one(tx.address), flagged(issymbolic(tx.address))))
                 tx_summary.write("Value: %d %s\n" % (state.solve_one(tx.value), flagged(issymbolic(tx.value))))
@@ -2081,49 +2068,56 @@ class ManticoreEVM(Manticore):
         to a STOP or RETURN in the last symbolic transaction).
         """
         logger.debug("Finalizing %d states.", self.count_states())
-        q = Queue()
-        map(q.put, self._all_state_ids)
 
-        def f(q):
+        def finalizer(state_id):
+            state_id = self._terminate_state_id(state_id)
+            st = self.load(state_id)
+            logger.debug("Generating testcase for state_id %d", state_id)
+            self._generate_testcase_callback(st, 'test', '')
+
+        def worker_finalize(q):
             try:
                 while True:
-                    state_id = q.get_nowait()
-                    state_id = self._terminate_state_id(state_id)
-                    st = self.load(state_id)
-                    logger.debug("Generating testcase for state_id %d", state_id)
-                    self._generate_testcase_callback(st, 'test', '')
+                    finalizer(q.get_nowait())
             except EmptyQueue:
                 pass
 
-        ps = []
+        q = Queue()
+        for state_id in self._all_state_ids:
+            #we need to remove -1 state before forking because it may be in memory
+            if state_id == -1:
+                finalizer(-1)
+            else:
+                q.put(state_id)
+
+        report_workers = []
 
         for _ in range(self._config_procs):
-            p = Process(target=f, args=(q,))
-            p.start()
-            ps.append(p)
+            proc = Process(target=worker_finalize, args=(q,))
+            proc.start()
+            report_workers.append(proc)
 
-        for p in ps:
-            p.join()
+        for proc in report_workers:
+            proc.join()
 
         #global summary
         if len(self.global_findings):
             with self._output.save_stream('global.findings') as global_findings:
                 for address, pc, finding, at_init in self.global_findings:
                     global_findings.write('- %s -\n' % finding)
-                    global_findings.write('\tContract: %s\n' % address)
-                    global_findings.write('\tEVM Program counter: %s%s\n' % (pc, at_init and " (at constructor)" or ""))
+                    global_findings.write('  Contract: %s\n' % address)
+                    global_findings.write('  EVM Program counter: %s%s\n' % (pc, at_init and " (at constructor)" or ""))
 
                     md = self.get_metadata(address)
                     if md is not None:
                         src = md.get_source_for(pc, runtime=not at_init)
-                        global_findings.write('\tSolidity snippet:\n')
-                        global_findings.write('\n'.join(('\t ' + x for x in src.split('\n'))))
-                        global_findings.write('\n\n')
+                        global_findings.write('  Solidity snippet:\n')
+                        global_findings.write(src.replace('\n', '\n    ').strip())
+                        global_findings.write('\n')
 
         with self._output.save_stream('global.summary') as global_summary:
             # (accounts created by contract code are not in this list )
             global_summary.write("Global runtime coverage:\n")
-
             for address in self.contract_accounts:
                 global_summary.write("%x: %d%%\n" % (address, self.global_coverage(address)))
 
@@ -2193,7 +2187,6 @@ class ManticoreEVM(Manticore):
         # clean up lists
         with self.locked_context('seth') as seth_context:
             seth_context['_saved_states'] = set()
-        with self.locked_context('seth') as seth_context:
             seth_context['_final_states'] = set()
 
         logger.info("Results in %s", self.workspace)
