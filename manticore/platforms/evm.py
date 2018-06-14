@@ -2359,11 +2359,12 @@ class EVMWorld(Platform):
     def get_storage_data(self, storage_address, offset):
         """
         Read a value from a storage slot on the specified account
-         :param storage_address: an account address
-         :param offset: the storage slot to use.
-         :type offset: int or BitVec
-         :return: the value
-         :rtype: int or BitVec
+
+        :param storage_address: an account address
+        :param offset: the storage slot to use.
+        :type offset: int or BitVec
+        :return: the value
+        :rtype: int or BitVec
         """
         value = self._world_state[storage_address]['storage'].get(offset, 0)
         return simplify(value)
@@ -2371,16 +2372,23 @@ class EVMWorld(Platform):
     def set_storage_data(self, storage_address, offset, value):
         """
         Writes a value to a storage slot in specified account
-         :param storage_address: an account address
-         :param offset: the storage slot to use.
-         :type offset: int or BitVec
-         :param value: the value to write
-         :type value: int or BitVec
+
+        :param storage_address: an account address
+        :param offset: the storage slot to use.
+        :type offset: int or BitVec
+        :param value: the value to write
+        :type value: int or BitVec
         """
         self._world_state[storage_address]['storage'][offset] = value
 
     def get_storage_items(self, address):
-        ''' Returns a list of where what (potentially symbolic) '''
+        """
+
+
+        :param address: account address
+        :return: all items in account storage. items are tuple of (index, value). value can be symbolic
+        :rtype: list[(storage_index, storage_value)]
+        """
         storage = self._world_state[address]['storage']
         items = []
         array = storage.array
@@ -2391,9 +2399,9 @@ class EVMWorld(Platform):
 
     def has_storage(self, address):
         """
-        True if something has been written to the storage
+        True if something has been written to the storage.
         Note that if a slot has been erased from the storage this function may
-        loss any meaning
+        lose any meaning.
         """
         storage = self._world_state[address]['storage']
         array = storage.array
@@ -2404,7 +2412,12 @@ class EVMWorld(Platform):
         return False
 
     def get_storage(self, address):
-        """ Returns the storage (bytearray or Array) """
+        """
+
+        :param address: account address
+        :return: account storage
+        :rtype: bytearray or ArrayProxy
+        """
         return self._world_state[address]['storage']
 
     def _set_storage(self, address, storage):
