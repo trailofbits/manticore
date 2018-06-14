@@ -207,7 +207,6 @@ class EthAbiTests(unittest.TestCase):
         self.assertEqual(parsed, 2**256 - 1)
 
         for i in range(8, 257, 8):
-            print "X:", 'uint{}'.format(i)
             parsed = ABI.parse('uint{}'.format(i), data)
             self.assertEqual(parsed, 2**i - 1)
 

@@ -1235,16 +1235,16 @@ class ManticoreEVM(Manticore):
             Moves the state from the running list into the terminated list
         '''
 
-        # Move state from running to final
-        with self.locked_context('seth') as seth_context:
-            saved_states = seth_context['_saved_states']
-            final_states = seth_context['_final_states']
-            if state_id != -1:
+        if state_id != -1:
+            # Move state from running to final
+            with self.locked_context('seth') as seth_context:
                 if state_id in saved_states:
+                    saved_states = seth_context['_saved_states']
+                    final_states = seth_context['_final_states']
                     saved_states.remove(state_id)
                     final_states.add(state_id)
-                seth_context['_saved_states'] = saved_states
-                seth_context['_final_states'] = final_states
+                    seth_context['_saved_states'] = saved_states # This may be not needed uin py3
+                    seth_context['_final_states'] = final_states # This may be not needed uin py3
         else:
             assert state_id == -1
             state_id = self.save(self._initial_state, final=True)
