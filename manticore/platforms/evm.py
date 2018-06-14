@@ -2602,6 +2602,10 @@ class EVMWorld(Platform):
         if failed:
             self._close_transaction('TXERROR', rollback=True)
 
+        #Transaction to normal acocunt
+        if bytecode is None:
+            self._close_transaction('STOP')
+
     def HASH(self, data):
         def compare_buffers(a, b):
             if len(a) != len(b):

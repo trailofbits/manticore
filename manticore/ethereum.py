@@ -1238,9 +1238,9 @@ class ManticoreEVM(Manticore):
         if state_id != -1:
             # Move state from running to final
             with self.locked_context('seth') as seth_context:
+                saved_states = seth_context['_saved_states']
+                final_states = seth_context['_final_states']
                 if state_id in saved_states:
-                    saved_states = seth_context['_saved_states']
-                    final_states = seth_context['_final_states']
                     saved_states.remove(state_id)
                     final_states.add(state_id)
                     seth_context['_saved_states'] = saved_states # This may be not needed uin py3
