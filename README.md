@@ -37,8 +37,10 @@ sudo apt-get update && sudo apt-get install python-pip -y
 # Install manticore and its dependencies
 sudo pip2 install manticore
 
-# Download and build the examples
+# Download the examples
 git clone https://github.com/trailofbits/manticore.git && cd manticore/examples/linux
+
+# Build the examples
 make
 
 # Use the Manticore CLI
@@ -50,6 +52,26 @@ cat mcore_*/*1.stdin | ./basic
 cd ../script
 python count_instructions.py ../linux/helloworld
 ```
+
+### Docker
+
+Alternatively, you can use Docker to install Manticore:
+
+```
+# Download manticore image
+docker pull trailofbits/manticore
+
+# Download the examples
+git clone https://github.com/trailofbits/manticore.git && cd manticore
+
+# Run container with a shared examples/ directory
+docker run -it -v $PWD/examples:/home/manticore/examples trailofbits/manticore
+
+# Change to examples directory
+manticore@80d441275ebf:~$ cd examples/linux
+```
+
+Then follow from the `make` command above.
 
 ## Installation
 
@@ -75,6 +97,12 @@ Option 3: Perform a system install.
 
 ```
 sudo pip install manticore
+```
+
+Option 4: Install via Docker.
+
+```
+docker pull trailofbits/manticore
 ```
 
 Once installed, the `manticore` CLI tool and Python API will be available.
@@ -117,33 +145,6 @@ def hook(state):
   m.terminate()  # tell Manticore to stop
 
 m.run()
-```
-
-### Docker
-
-To run manticore in a container, the `Dockerfile` in the root can be built with
-
-`docker build -t manticore .`
-
-From there it can be run interactively with examples mounted with the following
-
-``docker run -it -v `pwd`/examples:/root/examples manticore``
-
-This drops you into a shell in the container. The following is a run of the Getting Started example.
-
-```
-$ docker run -it -v `pwd`/examples:/root/examples manticore
-root@8acf0c2a8df0:~# which manticore
-/usr/local/bin/manticore
-root@8acf0c2a8df0:~# cd examples/linux/
-root@8acf0c2a8df0:~/examples/linux# make
-make: Nothing to be done for 'all'.
-root@8acf0c2a8df0:~/examples/linux# manticore basic
-2018-04-24 18:49:03,528: [18] m.manticore:INFO: Loading program basic
-2018-04-24 18:49:09,781: [18] m.manticore:INFO: Generated testcase No. 0 - Program finished with exit status: 0
-2018-04-24 18:49:11,024: [18] m.manticore:INFO: Generated testcase No. 1 - Program finished with exit status: 0
-2018-04-24 18:49:11,030: [18] m.manticore:INFO: Results in /root/examples/linux/mcore_IIhtEW
-2018-04-24 18:49:11,030: [18] m.manticore:INFO: Total time: 6.42126202583
 ```
 
 Further documentation is available in several places:
