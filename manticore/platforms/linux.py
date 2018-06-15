@@ -62,13 +62,11 @@ class File(object):
         # read/write to the state
         mode = mode_from_flags(flags)
         self.file = file(path, mode)
-        self.path = path
 
     def __getstate__(self):
         state = {}
         state['name'] = self.name
         state['mode'] = self.mode
-        state['path'] = self.path
         try:
             state['pos'] = self.tell()
         except IOError:
@@ -81,7 +79,6 @@ class File(object):
         mode = state['mode']
         pos = state['pos']
         self.file = file(name, mode)
-        self.path = state['path']
         if pos is not None:
             self.seek(pos)
 
@@ -2718,6 +2715,6 @@ class SLinux(Linux):
                 continue
             fdata = StringIO.StringIO()
             solve_to_fd(f.array, fdata)
-            ret[f.path] = fdata.getvalue()
+            ret[f.name] = fdata.getvalue()
 
         return ret
