@@ -1426,7 +1426,7 @@ class Linux(Platform):
             logger.debug("Opening file %s for real fd %d",
                          filename, f.fileno())
         except IOError as e:
-            logger.info("Could not open file %s. Reason: %s", filename, str(e))
+            logger.warning("Could not open file %s. Reason: %s", filename, str(e))
             return -e.errno if e.errno is not None else -errno.EINVAL
 
         return self._open(f)
