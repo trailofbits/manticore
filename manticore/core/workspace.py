@@ -390,7 +390,7 @@ class Workspace(object):
         Save a state to storage, return identifier.
 
         :param state: The state to save
-        :param int id_: If not None force the state id potentially overwritting old states
+        :param int state_id: If not None force the state id potentially overwritting old states
         :return: New state id
         :rtype: int
         """
