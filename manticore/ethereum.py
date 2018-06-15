@@ -830,6 +830,10 @@ class EVMAccount(object):
         self._name = name
 
     @property
+    def name(self):
+        return self._name
+
+    @property
     def address(self):
         return self._address
 
@@ -1111,6 +1115,12 @@ class ManticoreEVM(Manticore):
     def accounts(self):
         return dict(self._accounts)
 
+    def account_name(self, address):
+        for name, account in self._accounts.iteritems():
+            if account.address == address:
+                return name
+        return '0x{:x}'.format(address)
+
     @property
     def normal_accounts(self):
         normal_accounts = {}
@@ -1306,7 +1316,7 @@ class ManticoreEVM(Manticore):
         state = self.load(state_id)
         return state.platform.transactions
 
-    def solidity_create_contract(self, source_code, owner, contract_name=None, libraries=None, balance=0, address=None, args=()):
+    def solidity_create_contract(self, source_code, owner, name=None, contract_name=None, libraries=None, balance=0, address=None, args=()):
         ''' Creates a solidity contract and library dependencies
 
             :param str source_code: solidity source code
@@ -1337,7 +1347,8 @@ class ManticoreEVM(Manticore):
                     contract_account = self.create_contract(owner=owner,
                                                             balance=balance,
                                                             address=address,
-                                                            init=md._init_bytecode + ABI.serialize(constructor_types, args))
+                                                            init=md._init_bytecode + ABI.serialize(constructor_types, args),
+                                                            name=name)
                 else:
                     contract_account = self.create_contract(owner=owner, init=init_bytecode)
 
@@ -1381,7 +1392,8 @@ class ManticoreEVM(Manticore):
         self._transaction('CREATE', owner, balance, address, data=init)
         # TODO detect failure in the constructor
 
-        return EVMContract(address=address, m=self, default_caller=owner, name=name)
+        self._accounts[name] = EVMContract(address=address, m=self, default_caller=owner, name=name)
+        return self.accounts[name]
 
     def _get_uniq_name(self, stem):
         count = 0
@@ -1480,9 +1492,8 @@ class ManticoreEVM(Manticore):
                 raise Exception("This is bad. Same address used for different contracts in different states")
             world.create_account(address, balance, code=code, storage=None)
 
-        acc = EVMAccount(address, self, name=name)
-        self._accounts[name] = acc
-        return acc
+        self._accounts[name] = EVMAccount(address, self, name=name)
+        return self.accounts[name]
 
 
     def _transaction(self, sort, caller, value=0, address=None, data=None, price=1):
@@ -1903,9 +1914,12 @@ class ManticoreEVM(Manticore):
             # Accounts summary
             is_something_symbolic = False
             summary.write("%d accounts.\n" % len(blockchain.accounts))
+
             for account_address in blockchain.accounts:
                 is_account_address_symbolic = issymbolic(account_address)
                 account_address = state.solve_one(account_address)
+
+                summary.write("%s::\n" % self.account_name(account_address))
                 summary.write("Address: 0x%x %s\n" % (account_address, flagged(is_account_address_symbolic)))
                 balance = blockchain.get_balance(account_address)
                 is_balance_symbolic = issymbolic(balance)
@@ -2132,8 +2146,8 @@ class ManticoreEVM(Manticore):
         with self._output.save_stream('global.summary') as global_summary:
             # (accounts created by contract code are not in this list )
             global_summary.write("Global runtime coverage:\n")
-            for address in self.contract_accounts:
-                global_summary.write("%x: %d%%\n" % (address, self.global_coverage(address)))
+            for address in self.contract_accounts.values():
+                global_summary.write("{}: {:2.2f}%\n".format(address, self.global_coverage(address)))
 
                 md = self.get_metadata(address)
                 if md is not None and len(md.warnings) > 0:
@@ -2210,7 +2224,7 @@ class ManticoreEVM(Manticore):
             This sums up all the visited code lines from any of the explored
             states.
         '''
-        account_address = int(account_address)
+        account_address = account_address
         runtime_bytecode = None
         #Search one state in which the account_address exists
         for state in self.all_states:
