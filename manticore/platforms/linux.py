@@ -386,6 +386,7 @@ class Linux(Platform):
         self.program = program
         self.clocks = 0
         self.files = []
+        self._closed_files = []
         self.syscall_trace = []
         # Many programs to support SLinux
         self.programs = program
@@ -519,12 +520,13 @@ class Linux(Platform):
 
         # Store the type of file descriptor and the respective contents
         state_files = []
-        for fd in self.files:
-            if isinstance(fd, Socket):
-                state_files.append(('Socket', fd.buffer))
+        for file_ in self.files:
+            if isinstance(file_, Socket):
+                state_files.append(('Socket', file_.buffer))
             else:
-                state_files.append(('File', fd))
+                state_files.append(('File', file_))
         state['files'] = state_files
+        state['closed_files'] = self._closed_files
         state['rlimits'] = self._rlimits
 
         state['procs'] = self.procs
@@ -566,17 +568,18 @@ class Linux(Platform):
 
         # fetch each file descriptor (Socket or File())
         self.files = []
-        for ty, buf in state['files']:
+        for ty, file_or_buffer in state['files']:
             if ty == 'Socket':
                 f = Socket()
-                f.buffer = buf
+                f.buffer = file_or_buffer
                 self.files.append(f)
             else:
-                self.files.append(buf)
+                self.files.append(file_or_buffer)
 
         self.files[0].peer = self.output
         self.files[1].peer = self.output
         self.files[2].peer = self.output
+        self._closed_files = state['closed_files']
         self.input.peer = self.files[0]
         self._rlimits = state['rlimits']
 
@@ -1111,6 +1114,7 @@ class Linux(Platform):
         '''
         try:
             self.files[fd].close()
+            self._closed_files.append(self.files[fd])  # Keep track for SymbolicFile testcase generation
             self.files[fd] = None
         except IndexError:
             raise FdError("Bad file descriptor ({})".format(fd))
@@ -2710,7 +2714,7 @@ class SLinux(Linux):
             'net': net.getvalue()
         }
 
-        for f in self.files:
+        for f in self.files + self._closed_files:
             if not isinstance(f, SymbolicFile):
                 continue
             fdata = StringIO.StringIO()

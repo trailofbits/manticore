@@ -105,8 +105,9 @@ class LinuxTest(unittest.TestCase):
         platform.current.SP = 0x2000-4
         fname_ptr = platform.current.push_bytes(fname + '\x00')
 
-        # open file
-        platform.sys_open(fname_ptr, os.O_RDWR, 0o600)
+        # open and close file
+        fd = platform.sys_open(fname_ptr, os.O_RDWR, 0o600)
+        platform.sys_close(fd)
 
         # trigger testcase generation
         files = platform.generate_workspace_files()
