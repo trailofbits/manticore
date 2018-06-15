@@ -1264,8 +1264,8 @@ class ManticoreEVM(Manticore):
                 if state_id in final_states:
                     final_states.remove(state_id)
                     saved_states.add(state_id)
-                seth_context['_saved_states'] = saved_states
-                seth_context['_final_states'] = final_states
+                    seth_context['_saved_states'] = saved_states
+                    seth_context['_final_states'] = final_states
         return state_id
 
     # deprecate this 5 in favor of for sta in seth.all_states: do stuff?
@@ -1444,6 +1444,15 @@ class ManticoreEVM(Manticore):
             # Account name already used 
             raise Exception("Name already used")
 
+        #Balance check
+        if not isinstance(balance, numbers.Integral):
+            raise Exception("Balance invalid type")
+
+        if isinstance(code, str):
+            code = bytearray(code)
+        if not code is None and not isinstance(code, (bytearray, Array)):
+            raise Exception("code bad type")
+
         # Address check
         # Let just choose the address ourself. This is not yellow paper material
         if address is None:
@@ -1496,6 +1505,11 @@ class ManticoreEVM(Manticore):
         #Defaults, call data is empty
         if data is None:
             data = bytearray(b"")
+        if isinstance(data, str):
+            data = bytearray(data)
+        if not data is None and not isinstance(data, (bytearray, Array)):
+            raise Exception("code bad type")
+
 
         #Check types
         if not isinstance(caller, numbers.Integral):

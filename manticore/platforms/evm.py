@@ -2219,10 +2219,10 @@ class EVMWorld(Platform):
         tx = Transaction(sort, address, price, data, caller, value, depth=self.depth)
         if sort == 'CREATE':
             bytecode = data
-            data = None
+            data = bytearray()
         else:
-            data = data
             bytecode = self.get_code(address)
+            data = data
 
         address = tx.address
         if tx.sort == 'DELEGATECALL':
@@ -2256,7 +2256,6 @@ class EVMWorld(Platform):
             self.set_storage(vm.address, account_storage)
             self._deleted_accounts = self._deleted_accounts
             self._logs = logs
-
             self.send_funds(tx.address, tx.caller, tx.value)
 
         tx.set_result(result, data)
@@ -2597,6 +2596,7 @@ class EVMWorld(Platform):
 
         if ty == 'CREATE':
             data = bytecode
+
         self._open_transaction(ty, address, price, data, caller, value)
 
         if failed:
