@@ -89,6 +89,36 @@ class LinuxTest(unittest.TestCase):
 
         print(''.join(platform.current.read_bytes(stat, 100)).encode('hex'))
 
+    def test_linux_symbolic_files_workspace_files(self):
+        fname = 'symfile'
+        platform = self.symbolic_linux
+
+        # create symbolic file
+        with open(fname, 'w') as f:
+            f.write('+')
+
+        # tell manticore it's symbolic
+        platform.add_symbolic_file(fname)
+
+        # create filename in memory
+        platform.current.memory.mmap(0x1000, 0x1000, 'rw ')
+        platform.current.SP = 0x2000-4
+        fname_ptr = platform.current.push_bytes(fname + '\x00')
+
+        # open file
+        platform.sys_open(fname_ptr, os.O_RDWR, 0o600)
+
+        # trigger testcase generation
+        files = platform.generate_workspace_files()
+
+        # clean up that file we made
+        os.remove(fname)
+
+        # make sure we generate a workspace file for that symbolic file
+        self.assertIn(fname, files)
+        self.assertEqual(len(files[fname]), 1)
+
+
     def test_linux_workspace_files(self):
         platform = self.symbolic_linux
         platform.argv = ["arg1", "arg2"]

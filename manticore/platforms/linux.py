@@ -219,7 +219,7 @@ class SymbolicFile(File):
                          self.name)
 
     def __getstate__(self):
-        state = {}
+        state = super(SymbolicFile, self).__getstate__()
         state['array'] = self.array
         state['pos'] = self.pos
         state['max_size'] = self.max_size
@@ -229,6 +229,7 @@ class SymbolicFile(File):
         self.pos = state['pos']
         self.max_size = state['max_size']
         self.array = state['array']
+        super(SymbolicFile, self).__setstate__(state)
 
     def tell(self):
         '''
@@ -1422,7 +1423,7 @@ class Linux(Platform):
             logger.debug("Opening file %s for real fd %d",
                          filename, f.fileno())
         except IOError as e:
-            logger.info("Could not open file %s. Reason: %s", filename, str(e))
+            logger.warning("Could not open file %s. Reason: %s", filename, str(e))
             return -e.errno if e.errno is not None else -errno.EINVAL
 
         return self._open(f)
@@ -2708,4 +2709,12 @@ class SLinux(Linux):
             'stderr': err.getvalue(),
             'net': net.getvalue()
         }
+
+        for f in self.files:
+            if not isinstance(f, SymbolicFile):
+                continue
+            fdata = StringIO.StringIO()
+            solve_to_fd(f.array, fdata)
+            ret[f.name] = fdata.getvalue()
+
         return ret
