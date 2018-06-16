@@ -950,10 +950,12 @@ def concretized_args(**policies):
         return wrapper
     return concretizer
 
+
 def _abs(x):
     bits = 256
-    y = x>>(bits - 1)
+    y = x >> (bits - 1)
     return (x ^ y) - y
+
 
 class EVM(Eventful):
     '''Machine State. The machine state is defined as
