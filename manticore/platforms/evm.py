@@ -951,6 +951,12 @@ def concretized_args(**policies):
     return concretizer
 
 
+def _abs(x):
+    bits = 256
+    y = x >> (bits - 1)
+    return (x ^ y) - y
+
+
 class EVM(Eventful):
     '''Machine State. The machine state is defined as
         the tuple (g, pc, m, i, s) which are the gas available, the
@@ -1442,8 +1448,9 @@ class EVM(Eventful):
     def SDIV(self, a, b):
         '''Signed integer division operation (truncated)'''
         s0, s1 = to_signed(a), to_signed(b)
+        sign = Operators.ITEBV(256, s0 * s1 < 0, -1, 1)
         try:
-            result = (abs(s0) // abs(s1) * (-1 if s0 * s1 < 0 else 1))
+            result = (_abs(s0) // _abs(s1) * sign)
         except ZeroDivisionError:
             result = 0
         return Operators.ITEBV(256, b == 0, 0, result)
@@ -1461,7 +1468,7 @@ class EVM(Eventful):
         s0, s1 = to_signed(a), to_signed(b)
         sign = Operators.ITEBV(256, s0 < 0, -1, 1)
         try:
-            result = abs(s0) % abs(s1) * sign
+            result = _abs(s0) % _abs(s1) * sign
         except ZeroDivisionError:
             result = 0
 
