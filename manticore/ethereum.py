@@ -667,7 +667,7 @@ class ABI(object):
         elif ty[0] in ('array'):
             result += ABI.serialize_uint(dyn_offset)
             rep = ty[2]
-            if rep is not None andlen(values) != rep:
+            if rep is not None and len(values) != rep:
                 raise ValueError("More reps than values")
             else:
                 result += ABI.serialize_uint(len(values))

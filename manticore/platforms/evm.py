@@ -2527,6 +2527,29 @@ class EVMWorld(Platform):
         assert self._pending_transaction is None, "Already started tx"
         self._pending_transaction = PendingTransaction(sort, address, price, data, caller, value, gas)
 
+
+    def _pending_transaction_concretize_address(self):
+        sort, address, price, data, caller, value, gas = self._pending_transaction
+        if issymbolic(address):
+            def set_address(state, solution):
+                world = state.platform
+                world._pending_transaction = sort, solution, price, data, caller, value, gas
+            raise Concretize('Concretizing address on transaction',
+                             expression=address,
+                             setstate=set_address,
+                             policy='ALL')
+    def _pending_transaction_concretize_caller(self):
+        sort, address, price, data, caller, value, gas = self._pending_transaction
+        if issymbolic(address):
+            def set_caller(state, solution):
+                world = state.platform
+                world._pending_transaction = sort, address, price, data, solution, value, gas
+            raise Concretize('Concretizing address on transaction',
+                             expression=caller,
+                             setstate=set_caller,
+                             policy='ALL')
+
+
     def _process_pending_transaction(self):
         # Nothing to do here if no pending transactions
         if self._pending_transaction is None:
@@ -2534,7 +2557,6 @@ class EVMWorld(Platform):
         sort, address, price, data, caller, value, gas = self._pending_transaction
 
         if sort in ('CALL', 'DELEGATECALL'):
-            #FIXME should len(bytecode)>0 ?
             bytecode = self.get_code(address)
         else:
             bytecode = data
@@ -2545,48 +2567,32 @@ class EVMWorld(Platform):
 
         if self.depth > 0:
             price = self.tx_gasprice()
-
         if price is None:
             raise EVMException("Need to set a gas price on human tx")
 
-        if issymbolic(address):
-            def set_address(state, solution):
-                world = state.platform
-                sort, address, price, data, caller, value, gas = world._pending_transaction
-                world._pending_transaction = sort, solution, price, data, caller, value, gas
-            raise Concretize('Concretizing address on transaction',
-                             expression=address,
-                             setstate=set_address,
-                             policy='ALL')
-
-        if issymbolic(caller):
-            raise EVMException("Symbolic caller address not supported yet.")
+        self._pending_transaction_concretize_address()
+        self._pending_transaction_concretize_caller()
 
         if address not in self.accounts or caller not in self.accounts:
             raise EVMException('Account does not exist')
 
-        failed = False
-        if self.depth > 1024:
-            failed = True
+        # Check depth
+        failed = self.depth > 1024
 
+        # Fork on enough funds
         if not failed:
             src_balance = self.get_balance(caller)
             enough_balance = src_balance >= value
             if issymbolic(enough_balance):
                 self.constraints.add(src_balance + value >= src_balance)
-                enough_balance_solutions = solver.get_all_values(self._constraints, enough_balance)
+            enough_balance_solutions = solver.get_all_values(self._constraints, enough_balance)
 
-                if set(enough_balance_solutions) == set([True, False]):
-                    raise Concretize('Forking on available funds',
-                                     expression=src_balance < value,
-                                     setstate=lambda a, b: None,
-                                     policy='ALL')
-
-                if set(enough_balance_solutions) == set([False]):
-                    failed = True
-            else:
-                if not enough_balance:
-                    failed = True
+            if set(enough_balance_solutions) == set([True, False]):
+                raise Concretize('Forking on available funds',
+                                 expression=src_balance < value,
+                                 setstate=lambda a, b: None,
+                                 policy='ALL')
+            failed = set(enough_balance_solutions) == set([False])
 
         #processed
         self._pending_transaction = None
