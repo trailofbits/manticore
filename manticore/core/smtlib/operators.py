@@ -276,3 +276,9 @@ def SAR(size, a, b):
             tempDest = (tempDest >> 1) | sign
             tempCount = tempCount - 1
         return tempDest
+
+def ABS(a):
+    if issymbolic(a):
+        return ITEBV(a.size, a < 0, -1, a)
+    else:
+        return abs(a)

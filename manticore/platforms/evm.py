@@ -5,7 +5,7 @@ import inspect
 from functools import wraps
 from ..utils.helpers import issymbolic, memoized
 from ..platforms.platform import *
-from ..core.smtlib import solver, BitVec, Array, Operators, Constant, ArrayVariable
+from ..core.smtlib import solver, BitVec, Array, Operators, Constant, ArrayVariable, translate_to_smtlib
 from ..core.state import Concretize, TerminateState
 from ..core.plugin import Ref
 from ..utils.event import Eventful
@@ -31,7 +31,7 @@ TT255 = 2 ** 255
 TOOHIGHMEM = 0x1000
 
 #FIXME. We should just use a Transaction() for this
-PendingTransaction = namedtuple("PendingTransaction", ['type', 'address', 'origin', 'price', 'data', 'caller', 'value', 'bytecode', 'gas'])
+PendingTransaction = namedtuple("PendingTransaction", ['type', 'address', 'price', 'data', 'caller', 'value', 'gas'])
 EVMLog = namedtuple("EVMLog", ['address', 'memlog', 'topics'])
 
 
@@ -1311,7 +1311,6 @@ class EVM(Eventful):
                              expression=expression,
                              setstate=setstate,
                              policy='ALL')
-
         #Fixme[felipe] add a with self.disabled_events context mangr to Eventful
         if self._on_transaction is False:
             self._publish('will_decode_instruction', self.pc)
@@ -1449,7 +1448,7 @@ class EVM(Eventful):
         '''Signed integer division operation (truncated)'''
         s0, s1 = to_signed(a), to_signed(b)
         try:
-            result = (abs(s0) // abs(s1) * (-1 if s0 * s1 < 0 else 1))
+            result = (Operators.ABS(s0) // Operators.ABS(s1) * Operators.ITEBV(256, s0 * s1 <0, -1, 1))
         except ZeroDivisionError:
             result = 0
         return Operators.ITEBV(256, b == 0, 0, result)
@@ -1668,7 +1667,7 @@ class EVM(Eventful):
         self._consume(self.safe_mul(GCOPY, self.safe_add(size, 31) / 32))
         self._allocate(self.safe_add(mem_offset, size))
 
-        # slow debug check 
+        # slow debug check
         #if issymbolic(size):
         #    assert not solver.can_be_true(self.constraints, Operators.UGT(self.gas, old_gas))
 
@@ -1767,7 +1766,7 @@ class EVM(Eventful):
         value = int('0x' + value, 0)
 
         # 0 is left on the stack if the looked for block number is greater or equal
-        # than the current block number or more than 256 blocks behind the current 
+        # than the current block number or more than 256 blocks behind the current
         # block. (Current block hash is unknown from inside the tx)
         bnmax = Operators.ITEBV(256, self.world.block_number() > 256, 256, self.world.block_number())
         value = Operators.ITEBV(256, Operators.OR(a >= self.world.block_number(), a < bnmax), 0, value)
@@ -2526,28 +2525,13 @@ class EVMWorld(Platform):
 
         '''
         assert self._pending_transaction is None, "Already started tx"
-        if self.depth > 0:
-            origin = self.tx_origin()
-            price = self.tx_gasprice()
-        else:
-            origin = caller
-        if price is None:
-            raise EVMException("Need to set a gas price on human tx")
+        self._pending_transaction = PendingTransaction(sort, address, price, data, caller, value, gas)
 
-        if sort not in {'CALL', 'CREATE', 'DELEGATECALL'}:
-            raise EVMException('Type of transaction not supported')
-        if issymbolic(address):
-            raise EVMException("Symbolic target address not supported yet. (need to fork on all available addresses)")
-        if issymbolic(origin):
-            raise EVMException("Symbolic origin address not supported yet.")
-        if issymbolic(caller):
-            raise EVMException("Symbolic caller address not supported yet.")
-
-
-        if address not in self.accounts or\
-           caller not in self.accounts or \
-           origin not in self.accounts:
-            raise EVMException('Account does not exist')
+    def _process_pending_transaction(self):
+        # Nothing to do here if no pending transactions
+        if self._pending_transaction is None:
+            return
+        sort, address, price, data, caller, value, gas = self._pending_transaction
 
         if sort in ('CALL', 'DELEGATECALL'):
             #FIXME should len(bytecode)>0 ?
@@ -2556,13 +2540,34 @@ class EVMWorld(Platform):
             bytecode = data
             data = None
 
-        self._pending_transaction = PendingTransaction(sort, address, origin, price, data, caller, value, bytecode, gas)
+        if sort not in {'CALL', 'CREATE', 'DELEGATECALL'}:
+            raise EVMException('Type of transaction not supported')
 
-    def _process_pending_transaction(self):
+        if self.depth > 0:
+            price = self.tx_gasprice()
 
-        if self._pending_transaction is None:
-            return
-        ty, address, origin, price, data, caller, value, bytecode, gas = self._pending_transaction
+        if price is None:
+            raise EVMException("Need to set a gas price on human tx")
+
+        if issymbolic(address):
+            def set_address(state, solution):
+                world = state.platform
+                sort, address, price, data, caller, value, gas = world._pending_transaction
+                world._pending_transaction = sort, solution, price, data, caller, value, gas
+            raise Concretize('Concretizing address on transaction',
+                                     expression=address,
+                                     setstate=set_address,
+                                     policy='ALL')
+
+
+            raise EVMException("Symbolic target address not supported yet. (need to fork on all available addresses)")
+
+        if issymbolic(caller):
+            raise EVMException("Symbolic caller address not supported yet.")
+
+        if address not in self.accounts or caller not in self.accounts:
+            raise EVMException('Account does not exist')
+
 
         failed = False
 
@@ -2594,10 +2599,10 @@ class EVMWorld(Platform):
         #Here we have enough funds and room in the callstack
         self.send_funds(caller, address, value)
 
-        if ty == 'CREATE':
+        if sort == 'CREATE':
             data = bytecode
 
-        self._open_transaction(ty, address, price, data, caller, value)
+        self._open_transaction(sort, address, price, data, caller, value)
 
         if failed:
             self._close_transaction('TXERROR', rollback=True)

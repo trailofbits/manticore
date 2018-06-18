@@ -453,9 +453,8 @@ class SolidityMetadata(object):
                 return '({}){:s}'.format(','.join(types), spec['type'][5:])
             else:
                 return spec['type']
-        inputs = {'components':constructor_inputs, 'type': 'tuple'}
+        inputs = {'components': constructor_inputs, 'type': 'tuple'}
         return process(inputs)
-
 
     def add_function(self, method_name_and_signature):
         #TODO: use re, and check it's sane
@@ -581,6 +580,7 @@ class SolidityMetadata(object):
     def hashes(self):
         return tuple(self.signatures.keys()) + ('00000000',)
 
+
 class ABI(object):
     '''
         This class contains methods to handle the ABI.
@@ -601,10 +601,10 @@ class ABI(object):
             return result
         elif ty[0] in ('array'):
             rep = ty[1]
-            result = 32 #offset link 
+            result = 32  # offset link
             return result
         elif ty[0] in ('bytes', 'string'):
-            result = 32 #offset link 
+            result = 32  # offset link
             return result
         raise ValueError
 
@@ -618,7 +618,7 @@ class ABI(object):
         if not m:
             raise EthereumError("Function signature expected")
 
-        result = ABI.function_selector(type_spec) # Funcid
+        result = ABI.function_selector(type_spec)  # Funcid
         result += ABI.serialize(m.group('type'), args)
         return result
 
@@ -639,12 +639,12 @@ class ABI(object):
         return result + dyn_result
 
     @staticmethod
-    def _serialize(ty, value, dyn_offset = None):
+    def _serialize(ty, value, dyn_offset=None):
         if dyn_offset is None:
             dyn_offset = ABI.type_size(ty)
         result = bytearray()
         dyn_result = bytearray()
- 
+
         if ty[0] in ('int', 'uint'):
             result += ABI.serialize_uint(value)
         elif ty[0] in ('bytes', 'string'):
@@ -657,29 +657,27 @@ class ABI(object):
             result += value[1]
             if len(result) != 24:
                 raise ValueError
-            return result + bytearray('\0'*8)
+            return result + bytearray('\0' * 8)
 
         elif ty[0] in ('tuple'):
             for ty_i, value_i in zip(ty[1], value):
-                result_i, dyn_result_i = ABI._serialize(ty_i, value_i, dyn_offset+len(dyn_result))
+                result_i, dyn_result_i = ABI._serialize(ty_i, value_i, dyn_offset + len(dyn_result))
                 result += result_i
                 dyn_result += dyn_result_i
         elif ty[0] in ('array'):
             result += ABI.serialize_uint(dyn_offset)
             rep = ty[2]
-            if rep is not None:
-                if len(values) != rep:
-                    raise ValueError("More reps than values")
+            if rep is not None andlen(values) != rep:
+                raise ValueError("More reps than values")
             else:
                 result += ABI.serialize_uint(len(values))
             for value_i in values:
-                result_i, dyn_result_i = ABI._serialize(ty, value_i, dyn_offset+len(dyn_result))
+                result_i, dyn_result_i = ABI._serialize(ty, value_i, dyn_offset + len(dyn_result))
                 result += result_i
                 dyn_result += dyn_result_i
 
         assert len(result) == ABI.type_size(ty)
         return result, dyn_result
-
 
     @staticmethod
     def function_selector(method_name_and_signature):
@@ -716,40 +714,42 @@ class ABI(object):
     @staticmethod
     def _deserialize(ty, buf, offset=0):
         assert isinstance(buf, (bytearray, Array))
+        result = None
         if ty[0] == 'int':
-            return ABI.deserialize_int(buf[offset:offset+32], nbytes=ty[1]/8)
+            result = ABI.deserialize_int(buf[offset:offset + 32], nbytes=ty[1] / 8)
         elif ty[0] == 'uint':
-            return ABI.deserialize_uint(buf[offset:offset+32], nbytes=ty[1]/8)
+            result = ABI.deserialize_uint(buf[offset:offset + 32], nbytes=ty[1] / 8)
         elif ty[0] == 'bytesM':
-            return buf[offset:offset+ty[1]]
+            result = buf[offset:offset + ty[1]]
         elif ty[0] == 'function':
-            address = Operators.ZEXTEND(ABI._readBE(buf[offset:offset+20], 20, padding=False), 256)
-            func_id = buf[offset+20:offset+20+4]
-            return (address, func_id)
+            address = Operators.ZEXTEND(ABI._readBE(buf[offset:offset + 20], 20, padding=False), 256)
+            func_id = buf[offset + 20:offset + 24]
+            result = (address, func_id)
         elif ty[0] in ('bytes', 'string'):
-            dyn_offset = ABI.deserialize_int(buf[offset:offset+32])
-            size = ABI.deserialize_int(buf[dyn_offset:dyn_offset+32])
-            return buf[dyn_offset+32:dyn_offset+32+size]
+            dyn_offset = ABI.deserialize_int(buf[offset:offset + 32])
+            size = ABI.deserialize_int(buf[dyn_offset:dyn_offset + 32])
+            result = buf[dyn_offset + 32:dyn_offset + 32 + size]
         elif ty[0] in ('tuple'):
             result = ()
             current_off = 0
             for ty_i in ty[1]:
                 result += (ABI._deserialize(ty_i, buf, offset), )
                 offset += ABI.type_size(ty_i)
-            return result
         elif ty[0] in ('array'):
             result = []
-            dyn_offset = ABI.deserialize_int(buf[offset:offset+32])
+            dyn_offset = ABI.deserialize_int(buf[offset:offset + 32])
             rep = ty[1]
             ty_size = ABI.type_size(ty[2])
             if rep is None:
-                rep = ABI.deserialize_int(buf[dyn_offset:dyn_offset+32])
+                rep = ABI.deserialize_int(buf[dyn_offset:dyn_offset + 32])
                 dyn_offset += 32
             for _ in range(rep):
                 result.append(ABI._deserialize(ty[2], buf, dyn_offset))
                 dyn_offset += ty_size
-            return result
-        raise NotImplemented
+        else:
+            raise NotImplemented
+
+        return result
 
     @staticmethod
     def serialize_uint(value, size=32, padding=0):
@@ -766,7 +766,7 @@ class ABI(object):
             for _ in range(padding):
                 bytes.append(0)
             for position in reversed(range(size)):
-                bytes.append(Operators.EXTRACT(value, position * 8, 8))        
+                bytes.append(Operators.EXTRACT(value, position * 8, 8))
         return bytes
 
     @staticmethod
@@ -798,7 +798,7 @@ class ABI(object):
         """
         assert isinstance(data, (bytearray, Array))
         value = ABI._readBE(data, nbytes)
-        value = Operators.ZEXTEND(value, (nbytes+padding)*8)
+        value = Operators.ZEXTEND(value, (nbytes + padding) * 8)
         return value
 
     @staticmethod
@@ -812,7 +812,7 @@ class ABI(object):
         """
         assert isinstance(data, (bytearray, Array))
         value = ABI._readBE(data, nbytes)
-        value = Operators.SEXTEND(value, nbytes*8, (nbytes+padding)*8)
+        value = Operators.SEXTEND(value, nbytes * 8, (nbytes + padding) * 8)
         return value
 
 
@@ -828,6 +828,13 @@ class EVMAccount(object):
         self._m = m
         self._address = address
         self._name = name
+
+    def __eq__(self, other):
+        if isinstance(other, numbers.Integral):
+            return self._address == other
+        if isinstance(self, EVMAccount):
+            return self._address == other._address
+        return super(EVMAccount, self).__eq__(other)
 
     @property
     def name(self):
@@ -848,6 +855,7 @@ class EVMAccount(object):
             return self._address == other._address
         return self._address == other
 
+
 class EVMContract(EVMAccount):
     ''' An EVM account '''
 
@@ -867,7 +875,7 @@ class EVMContract(EVMAccount):
             raise Exception("Sorry function name is used by the python wrapping")
         if func_name in self._hashes:
             raise Exception("A function with that name is already defined")
-        if func_id in { func_id for _, func_id in self._hashes.values() }:
+        if func_id in {func_id for _, func_id in self._hashes.values()}:
             raise Exception("A function with the same hash is already defined")
         self._hashes[func_name] = signature, func_id
 
@@ -941,8 +949,7 @@ class ManticoreEVM(Manticore):
 
     def make_symbolic_buffer(self, size, name='TXBUFFER'):
         ''' Creates a symbolic buffer of size bytes to be used in transactions.
-            You can not operate on it. It is intended as a place holder for the
-            real expression.
+            You can not operate on it. 
 
             Example use::
 
@@ -951,15 +958,12 @@ class ManticoreEVM(Manticore):
                                 address=contract_account,
                                 data=symbolic_data,
                                 value=100000 )
-
-
         '''
         return self.constraints.new_array(index_bits=256, name=name, index_max=size, value_bits=8, taint=frozenset())
-         
+
     def make_symbolic_value(self, name='TXVALUE'):
         ''' Creates a symbolic value, normally a uint256, to be used in transactions.
-            You can not operate on it. It is intended as a place holder for the
-            real expression.
+            You can not operate on it. 
 
             Example use::
 
@@ -971,6 +975,20 @@ class ManticoreEVM(Manticore):
 
         '''
         return self.constraints.new_bitvec(256, name=name)
+
+    def make_symbolic_address(self, name='TXADDR', select='both'):
+        if select not in ('both', 'normal', 'constract'):
+            raise Exception('Wrong selection type')
+        symbolic_address = self.make_symbolic_value(name=name)
+
+        constraint = symbolic_address == 0
+        for contract_account_i in map(int, self._accounts.values()):
+            constraint = Operators.OR(symbolic_address == contract_account_i, constraint)
+        self.constrain(constraint)
+        return symbolic_address
+
+    def constrain(self, constraint):
+        self.constraints.add(constraint)
 
     @staticmethod
     def compile(source_code, contract_name=None, libraries=None, runtime=False):
@@ -1105,11 +1123,10 @@ class ManticoreEVM(Manticore):
         bytecode = ManticoreEVM._link(contract['bin'], libraries)
         srcmap = contract['srcmap'].split(';')
         srcmap_runtime = contract['srcmap-runtime'].split(';')
-        hashes = dict(( (str(x), str(y)) for x,y in contract['hashes'].items()))
+        hashes = dict(((str(x), str(y)) for x, y in contract['hashes'].items()))
         abi = json.loads(contract['abi'])
         runtime = ManticoreEVM._link(contract['bin-runtime'], libraries)
         return name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
-
 
     @property
     def accounts(self):
@@ -1253,8 +1270,8 @@ class ManticoreEVM(Manticore):
                 if state_id in saved_states:
                     saved_states.remove(state_id)
                     final_states.add(state_id)
-                    seth_context['_saved_states'] = saved_states # This may be not needed uin py3
-                    seth_context['_final_states'] = final_states # This may be not needed uin py3
+                    seth_context['_saved_states'] = saved_states  # This may be not needed in py3
+                    seth_context['_final_states'] = final_states  # This may be not needed in py3
         else:
             assert state_id == -1
             state_id = self.save(self._initial_state, final=True)
@@ -1381,13 +1398,21 @@ class ManticoreEVM(Manticore):
         '''
         if not self.count_running_states():
             raise NoAliveStates
+
         if address is not None and address in map(int, self.accounts.values()):
-            # Address already used 
+            # Address already used
             raise Exception("Address already used")
         
         # Let just choose the address ourself. This is not yellow paper material
         if address is None:
             address = self.new_address()
+
+        # Name check
+        if name is None:
+            name = self._get_uniq_name("contract")
+        if name in self._accounts:
+            # Account name already used 
+            raise Exception("Name already used")
 
         self._transaction('CREATE', owner, balance, address, data=init)
         # TODO detect failure in the constructor
@@ -1430,7 +1455,6 @@ class ManticoreEVM(Manticore):
         '''
         self._transaction('CALL', caller, value=value, address=address, data=data)
 
-
     def create_account(self, balance=0, address=None, code=None, name=None):
         ''' Low level creates an account. This won't generate a transaction.
 
@@ -1452,8 +1476,8 @@ class ManticoreEVM(Manticore):
                 name = self._get_uniq_name("normal")
             else:
                 name = self._get_uniq_name("contract")
-        if name in self.accounts.keys():
-            # Account name already used 
+        if name in self._accounts:
+            # Account name already used
             raise Exception("Name already used")
 
         #Balance check
@@ -1473,7 +1497,7 @@ class ManticoreEVM(Manticore):
             raise Exception("A concrete address is needed")
         assert address is not None
         if address in map(int, self.accounts.values()):
-            # Address already used 
+            # Address already used
             raise Exception("Address already used")
         
 
@@ -1518,7 +1542,7 @@ class ManticoreEVM(Manticore):
             data = bytearray(b"")
         if isinstance(data, str):
             data = bytearray(data)
-        if not data is None and not isinstance(data, (bytearray, Array)):
+        if data is not None and not isinstance(data, (bytearray, Array)):
             raise Exception("code bad type")
 
 
@@ -1529,7 +1553,7 @@ class ManticoreEVM(Manticore):
         if not isinstance(value, (numbers.Integral, BitVec)):
             raise Exception("Value invalid type")
 
-        if not isinstance(address, numbers.Integral):
+        if not isinstance(address, (numbers.Integral, BitVec)):
             raise Exception("address invalid type")
 
         if not isinstance(data, (bytearray, Array)):
@@ -1557,9 +1581,9 @@ class ManticoreEVM(Manticore):
                 raise Exception("An initialization bytecode is needed for a CREATE")
 
         #on a CALL transaction target address must be specified
-        if not isinstance(address, numbers.Integral):
-            raise Exception("A target address is needed") 
- 
+        #if not isinstance(address, numbers.Integral):
+        #    raise Exception("A target address is needed")
+
         assert address is not None
         assert caller is not None
         
@@ -1574,10 +1598,10 @@ class ManticoreEVM(Manticore):
             if '_pending_transaction' in state.context:
                 raise Exception("This is bad. It should not be a pending transaction")
 
-            # Copy global constraints into each state. 
+            # Copy global constraints into each state.
             # We should somehow remember what has been copied to each state
             # In a second transaction we should only add new constraints.
-            # And actually only constraints related to whateverwe are using in 
+            # And actually only constraints related to whateverwe are using in
             # the tx. This is a FIXME
             for c in self.constraints:
                 state.constrain(c)
@@ -1593,12 +1617,11 @@ class ManticoreEVM(Manticore):
 
             state.context['_pending_transaction'] = (sort, caller, address, value, data, price)
 
-        # run over potentially several states and 
+        # run over potentially several states and
         # generating potentially several others
         self.run(procs=self._config_procs)
 
         return address
-
 
 
     def multi_tx_analysis(self, solidity_filename, contract_name=None, tx_limit=None, tx_use_coverage=True, tx_account="combo1"):
@@ -1629,7 +1652,7 @@ class ManticoreEVM(Manticore):
                 # run_symbolic_tx
                 symbolic_data = self.make_symbolic_buffer(320)
                 symbolic_value = self.make_symbolic_value()
-                self.transaction(caller=tx_account[min(tx_no, len(tx_account)-1)],
+                self.transaction(caller=tx_account[min(tx_no, len(tx_account) - 1)],
                                  address=contract_account,
                                  data=symbolic_data,
                                  value=symbolic_value)
@@ -1919,7 +1942,7 @@ class ManticoreEVM(Manticore):
                 is_account_address_symbolic = issymbolic(account_address)
                 account_address = state.solve_one(account_address)
 
-                summary.write("%s::\n" % self.account_name(account_address))
+                summary.write("* %s::\n" % self.account_name(account_address))
                 summary.write("Address: 0x%x %s\n" % (account_address, flagged(is_account_address_symbolic)))
                 balance = blockchain.get_balance(account_address)
                 is_balance_symbolic = issymbolic(balance)
@@ -1989,8 +2012,12 @@ class ManticoreEVM(Manticore):
 
                 # The result if any RETURN or REVERT
                 tx_summary.write("Type: %s (%d)\n" % (tx.sort, tx.depth))
-                tx_summary.write("From: 0x%x %s\n" % (state.solve_one(tx.caller), flagged(issymbolic(tx.caller))))
-                tx_summary.write("To: 0x%x %s\n" % (state.solve_one(tx.address), flagged(issymbolic(tx.address))))
+                caller_solution = state.solve_one(tx.caller)
+                caller_name = self.account_name(caller_solution)
+                tx_summary.write("From: %s(0x%x) %s\n" % (caller_name, caller_solution, flagged(issymbolic(tx.caller))))
+                address_solution = state.solve_one(tx.address)
+                address_name = self.account_name(address_solution)
+                tx_summary.write("To: %s(0x%x) %s\n" % (address_name, address_solution, flagged(issymbolic(tx.address))))
                 tx_summary.write("Value: %d %s\n" % (state.solve_one(tx.value), flagged(issymbolic(tx.value))))
                 tx_data = state.solve_one(tx.data)
                 tx_summary.write("Data: %s %s\n" % (binascii.hexlify(tx_data), flagged(issymbolic(tx.data))))
@@ -2003,10 +2030,11 @@ class ManticoreEVM(Manticore):
                         function_id = tx.data[:4]  # hope there is enough data
                         function_id = binascii.hexlify(state.solve_one(function_id))
                         signature = metadata.get_func_signature(function_id)
+                        function_name = metadata.get_func_name(function_id)
                         if signature:
-                            function_name, arguments = ABI.parse(signature, tx.data)
+                            _, arguments = ABI.parse(signature, tx.data)
                         else:
-                            function_name, arguments = '{fallback}', (tx.data)
+                            arguments = (tx.data,)
 
                         return_data = None
                         if tx.result == 'RETURN':
@@ -2219,12 +2247,12 @@ class ManticoreEVM(Manticore):
 
         logger.info("Results in %s", self.workspace)
 
-    def global_coverage(self, account_address):
+    def global_coverage(self, account):
         ''' Returns code coverage for the contract on `account_address`.
             This sums up all the visited code lines from any of the explored
             states.
         '''
-        account_address = account_address
+        account_address = int(account)
         runtime_bytecode = None
         #Search one state in which the account_address exists
         for state in self.all_states:

@@ -1,4 +1,5 @@
 from functools import reduce
+import numbers
 
 
 class Expression(object):
@@ -202,7 +203,8 @@ class BitVec(Expression):
             return value
         if isinstance(value, str) and len(value) == 1:
             value = ord(value)
-        assert isinstance(value, (int, long, bool))
+        if not isinstance(value, numbers.Integral):
+            value = int(value)
         # FIXME? Assert it fits in the representation
         return BitVecConstant(self.size, value, **kwargs)
 
