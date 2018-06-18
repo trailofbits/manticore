@@ -2527,7 +2527,6 @@ class EVMWorld(Platform):
         assert self._pending_transaction is None, "Already started tx"
         self._pending_transaction = PendingTransaction(sort, address, price, data, caller, value, gas)
 
-
     def _pending_transaction_concretize_address(self):
         sort, address, price, data, caller, value, gas = self._pending_transaction
         if issymbolic(address):
@@ -2538,6 +2537,7 @@ class EVMWorld(Platform):
                              expression=address,
                              setstate=set_address,
                              policy='ALL')
+
     def _pending_transaction_concretize_caller(self):
         sort, address, price, data, caller, value, gas = self._pending_transaction
         if issymbolic(address):
@@ -2548,7 +2548,6 @@ class EVMWorld(Platform):
                              expression=caller,
                              setstate=set_caller,
                              policy='ALL')
-
 
     def _process_pending_transaction(self):
         # Nothing to do here if no pending transactions
