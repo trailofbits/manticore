@@ -762,6 +762,19 @@ class Armv7Cpu(Cpu):
         dest.write(word)
 
     @instruction
+    def UXTH(cpu, dest, src):
+        """
+        UXTH extracts an 16-bit value from a register, zero-extends
+        it to the size of the register, and writes the result to the destination register.
+
+        :param ARMv7Operand dest: the destination register; register
+        :param ARMv7Operand dest: the source register; register
+        """
+        val = GetNBits(src.read(), 16)
+        word = Operators.ZEXTEND(val, cpu.address_bit_size)
+        dest.write(word)
+
+    @instruction
     def PLD(cpu, addr, offset=None):
         """PLD instructs the cpu that the address at addr might be loaded soon."""
 
