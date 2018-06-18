@@ -2559,8 +2559,6 @@ class EVMWorld(Platform):
                              setstate=set_address,
                              policy='ALL')
 
-            raise EVMException("Symbolic target address not supported yet. (need to fork on all available addresses)")
-
         if issymbolic(caller):
             raise EVMException("Symbolic caller address not supported yet.")
 
@@ -2568,7 +2566,6 @@ class EVMWorld(Platform):
             raise EVMException('Account does not exist')
 
         failed = False
-
         if self.depth > 1024:
             failed = True
 

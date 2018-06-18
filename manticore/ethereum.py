@@ -1411,7 +1411,7 @@ class ManticoreEVM(Manticore):
         if name is None:
             name = self._get_uniq_name("contract")
         if name in self._accounts:
-            # Account name already used 
+            # Account name already used
             raise Exception("Name already used")
 
         self._transaction('CREATE', owner, balance, address, data=init)
@@ -1508,7 +1508,7 @@ class ManticoreEVM(Manticore):
                 raise Exception("This is bad. It should not be a pending transaction")
 
             if address in world.accounts:
-                # Address already used 
+                # Address already used
                 raise Exception("This is bad. Same address used for different contracts in different states")
             world.create_account(address, balance, code=code, storage=None)
 
@@ -1616,7 +1616,6 @@ class ManticoreEVM(Manticore):
 
         return address
 
-
     def multi_tx_analysis(self, solidity_filename, contract_name=None, tx_limit=None, tx_use_coverage=True, tx_account="combo1"):
         owner_account = self.create_account(balance=1000)
         attacker_account = self.create_account(balance=1000)
@@ -1653,7 +1652,7 @@ class ManticoreEVM(Manticore):
             except NoAliveStates:
                 break
 
-            # Check if the maximun number of tx was reached 
+            # Check if the maximun number of tx was reached
             if tx_limit is not None and tx_no == tx_limit:
                 break
 
