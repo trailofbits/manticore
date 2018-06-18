@@ -392,7 +392,7 @@ class BitVecConstant(BitVec, Constant):
 
     def __eq__(self, other):
         if self.taint:
-            raise NotImplementedError()
+            super(BitVecConstant, self).__eq__(other)
         return self.value == other
 
 
