@@ -444,7 +444,7 @@ class SolidityMetadata(object):
                 break
         else:
             constructor_inputs = ()
-            
+
         def process(spec):
             if spec['type'].startswith('tuple'):
                 types = []
@@ -949,7 +949,7 @@ class ManticoreEVM(Manticore):
 
     def make_symbolic_buffer(self, size, name='TXBUFFER'):
         ''' Creates a symbolic buffer of size bytes to be used in transactions.
-            You can not operate on it. 
+            You can not operate on it.
 
             Example use::
 
@@ -963,7 +963,7 @@ class ManticoreEVM(Manticore):
 
     def make_symbolic_value(self, name='TXVALUE'):
         ''' Creates a symbolic value, normally a uint256, to be used in transactions.
-            You can not operate on it. 
+            You can not operate on it.
 
             Example use::
 
@@ -1402,7 +1402,7 @@ class ManticoreEVM(Manticore):
         if address is not None and address in map(int, self.accounts.values()):
             # Address already used
             raise Exception("Address already used")
-        
+
         # Let just choose the address ourself. This is not yellow paper material
         if address is None:
             address = self.new_address()
@@ -1425,13 +1425,12 @@ class ManticoreEVM(Manticore):
         for name_i in self.accounts.keys():
             if name_i.startswith(stem):
                 try:
-                    count = max(count, int(name_i[len(stem):])+1)
+                    count = max(count, int(name_i[len(stem):]) + 1)
                 except:
                     pass
         name = "{:s}{:d}".format(stem, count)
         assert name not in self.accounts
         return name
-
 
     def new_address(self):
         ''' Create a fresh 160bit address '''
@@ -1439,7 +1438,6 @@ class ManticoreEVM(Manticore):
         if new_address in map(int, self.accounts.values()):
             return self.new_address()
         return new_address
-
 
     def transaction(self, caller, address, value, data):
         ''' Issue a symbolic transaction in all running states
@@ -1486,7 +1484,7 @@ class ManticoreEVM(Manticore):
 
         if isinstance(code, str):
             code = bytearray(code)
-        if not code is None and not isinstance(code, (bytearray, Array)):
+        if code is not None and not isinstance(code, (bytearray, Array)):
             raise Exception("code bad type")
 
         # Address check
@@ -1499,12 +1497,10 @@ class ManticoreEVM(Manticore):
         if address in map(int, self.accounts.values()):
             # Address already used
             raise Exception("Address already used")
-        
 
         # To avoid going full crazy we maintain a global list of addresses
-        # Different states may CREATE a different set of accounts. 
-        # Accounts created by a human have the same address in all states. 
-
+        # Different states may CREATE a different set of accounts.
+        # Accounts created by a human have the same address in all states.
         for state in self.running_states:
             world = state.platform
 
@@ -1518,7 +1514,6 @@ class ManticoreEVM(Manticore):
 
         self._accounts[name] = EVMAccount(address, self, name=name)
         return self.accounts[name]
-
 
     def _transaction(self, sort, caller, value=0, address=None, data=None, price=1):
         ''' Creates a contract
@@ -1545,8 +1540,7 @@ class ManticoreEVM(Manticore):
         if data is not None and not isinstance(data, (bytearray, Array)):
             raise Exception("code bad type")
 
-
-        #Check types
+        # Check types
         if not isinstance(caller, numbers.Integral):
             raise Exception("Caller invalid type")
 
@@ -1561,7 +1555,6 @@ class ManticoreEVM(Manticore):
 
         if not isinstance(price, numbers.Integral):
             raise Exception("Price invalid type")
-
 
         # Check argument consistency and set defaults ...
         if sort not in ('CREATE', 'CALL'):
@@ -1586,7 +1579,7 @@ class ManticoreEVM(Manticore):
 
         assert address is not None
         assert caller is not None
-        
+
         # Transactions (as everything else) needs at least one running state
         if not self.count_running_states():
             raise NoAliveStates
@@ -1612,7 +1605,7 @@ class ManticoreEVM(Manticore):
             # are not trying to create an already used address here
             if sort == 'CREATE':
                 if address in world.accounts:
-                    # Address already used 
+                    # Address already used
                     raise Exception("This is bad. Same address used for different contracts in different states")
 
             state.context['_pending_transaction'] = (sort, caller, address, value, data, price)
@@ -1695,7 +1688,6 @@ class ManticoreEVM(Manticore):
                 context['_saved_states'] = set()
                 assert self._running_state_ids == (-1,)
 
-
     def save(self, state, state_id=None, final=False):
         ''' Save a state in secondary storage and add it to running or final lists
 
@@ -1703,7 +1695,6 @@ class ManticoreEVM(Manticore):
             :param state_id: if not None force state_id (overwrite)
             :param final: True if state is final
             :returns: a state id
-
         '''
         # If overwriting then the state_id must be known
         if state_id is not None:
@@ -1917,7 +1908,7 @@ class ManticoreEVM(Manticore):
 
         with testcase.open_stream('summary') as summary:
             summary.write("Message: %s\n" % message)
-            summary.write("Last exception: %s\n" % state.context.get('last_exception','None'))
+            summary.write("Last exception: %s\n" % state.context.get('last_exception', 'None'))
 
             if last_tx:
                 at_runtime = last_tx.sort != 'CREATE'

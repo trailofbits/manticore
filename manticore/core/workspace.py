@@ -479,7 +479,6 @@ class ManticoreOutput(object):
     def _named_key(self, suffix):
         return '{}_{:08x}.{}'.format(self._named_key_prefix, self._last_id, suffix)
 
-
     def save_stream(self, key, *rest, **kwargs):
         return self._store.save_stream(key, *rest, **kwargs)
 
@@ -508,7 +507,7 @@ class ManticoreOutput(object):
         self._named_key_prefix = prefix
         self._increment_id()
 
-        #FIXME this should not be here. Each object must be responsible of 
+        #FIXME this should not be here. Each object must be responsible of
         #formatting its own output
         self.save_summary(state, message)
         self.save_trace(state)

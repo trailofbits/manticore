@@ -1448,7 +1448,7 @@ class EVM(Eventful):
         '''Signed integer division operation (truncated)'''
         s0, s1 = to_signed(a), to_signed(b)
         try:
-            result = (Operators.ABS(s0) // Operators.ABS(s1) * Operators.ITEBV(256, s0 * s1 <0, -1, 1))
+            result = (Operators.ABS(s0) // Operators.ABS(s1) * Operators.ITEBV(256, s0 * s1 < 0, -1, 1))
         except ZeroDivisionError:
             result = 0
         return Operators.ITEBV(256, b == 0, 0, result)
@@ -2555,10 +2555,9 @@ class EVMWorld(Platform):
                 sort, address, price, data, caller, value, gas = world._pending_transaction
                 world._pending_transaction = sort, solution, price, data, caller, value, gas
             raise Concretize('Concretizing address on transaction',
-                                     expression=address,
-                                     setstate=set_address,
-                                     policy='ALL')
-
+                             expression=address,
+                             setstate=set_address,
+                             policy='ALL')
 
             raise EVMException("Symbolic target address not supported yet. (need to fork on all available addresses)")
 
@@ -2567,7 +2566,6 @@ class EVMWorld(Platform):
 
         if address not in self.accounts or caller not in self.accounts:
             raise EVMException('Account does not exist')
-
 
         failed = False
 
