@@ -634,8 +634,7 @@ class ABI(object):
         if parsed_ty[0] != 'tuple':
             if len(value) > 1:
                 raise ValueError
-            value = value[0]
-                
+            value = value[0]                
         result, dyn_result = ABI._serialize(parsed_ty, value)
         return result + dyn_result
 
@@ -827,8 +826,8 @@ class ABI(object):
         value = Operators.SEXTEND(value, nbytes * 8, (nbytes + padding) * 8)
         if not issymbolic(value):
             #sign bit on
-            if value & (1<<(nbytes*8-1)):
-                value =   ((~value)+1)
+            if value & (1 << (nbytes * 8 - 1)):
+                value = ((~value) + 1)
         return value
 
 
