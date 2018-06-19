@@ -280,6 +280,6 @@ def SAR(size, a, b):
 
 def ABS(a):
     if issymbolic(a):
-        return ITEBV(a.size, a < 0, -1, a)
+        return ITEBV(a.size, a < 0, -a, a)
     else:
         return abs(a)

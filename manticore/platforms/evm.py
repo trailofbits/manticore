@@ -1465,7 +1465,7 @@ class EVM(Eventful):
         s0, s1 = to_signed(a), to_signed(b)
         sign = Operators.ITEBV(256, s0 < 0, -1, 1)
         try:
-            result = abs(s0) % abs(s1) * sign
+            result = (Operators.ABS(s0) % Operators.ABS(s1)) * sign
         except ZeroDivisionError:
             result = 0
 
