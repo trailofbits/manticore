@@ -12,7 +12,9 @@ RUN apt-get install -y build-essential software-properties-common && \
     apt-get update && \
     apt-get install -y solc ethereum
 
-WORKDIR /root
-ENV HOME /root
+RUN useradd -m manticore
+USER manticore
+WORKDIR /home/manticore
+ENV HOME /home/manticore
 
 CMD ["/bin/bash"]
