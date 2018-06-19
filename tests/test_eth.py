@@ -112,24 +112,58 @@ class EthAbiTests(unittest.TestCase):
         self.assertEqual(funcname, 'AAAA')
         self.assertEqual(dynargs, ('Z'*30,))
 
-    def test_simple_types(self):
+    def test_simple_types0(self):
+        d = [
+            'AAAA',                    # function hash
+            self._pack_int_to_32(32),
+            '\xff' * 32,
+        ]
+        d = ''.join(d)
+        funcname, dynargs = ABI.parse(type_spec='func(uint256,uint256)', data=d)
+        #self.assertEqual(funcname, 'AAAA')
+        self.assertEqual(dynargs, (32, 2**256 - 1 ))
+
+    def test_simple_types1(self):
         d = [
             'AAAA',                    # function hash
             self._pack_int_to_32(32),
             '\xff' * 32,
             '\xff'.rjust(32, '\0'),
             self._pack_int_to_32(0x424242),
-            '\x7f' + '\xff' *31, # int256 max
-            '\x80'.ljust(32, '\0'), # int256 min
 
 
         ]
         d = ''.join(d)
+        funcname, dynargs = ABI.parse(type_spec='func(uint256,uint256,bool,address)', data=d)
+        #self.assertEqual(funcname, 'AAAA')
+        self.assertEqual(dynargs, (32, 2**256 - 1, 0xff, 0x424242 ))
 
-        funcname, dynargs = ABI.parse(type_spec='func(uint256,uint256,bool,address,int256,int256)', data=d)
+    def test_simple_types1(self):
+        d = [
+            'AAAA',                    # function hash
+            self._pack_int_to_32(32),
+            '\xff' * 32,
+            '\xff'.rjust(32, '\0'),
+            self._pack_int_to_32(0x424242),
 
-        self.assertEqual(funcname, 'AAAA')
-        self.assertEqual(dynargs, (32, 2**256 - 1, 0xff, 0x424242, 2**255 - 1,-(2**255) ))
+
+        ]
+        d = ''.join(d)
+        funcname, dynargs = ABI.parse(type_spec='func(uint256,uint256,bool,address)', data=d)
+        #self.assertEqual(funcname, 'AAAA')
+        self.assertEqual(dynargs, (32, 2**256 - 1, 0xff, 0x424242 ))
+
+    def test_simple_types66(self):
+        d = [
+            'AAAA',                    # function hash
+            '\x7f' + '\xff' *31, # int256 max
+            '\x80'.ljust(32, '\0'), # int256 min
+        ]
+        d = ''.join(d)
+        funcname, dynargs = ABI.parse(type_spec='func(int256,int256)', data=d)
+        #self.assertEqual(funcname, 'AAAA')
+        self.assertEqual(dynargs, ( 2**255 - 1, -(2**255) ))
+
 
     def test_address0(self):
         data = '{}\x01\x55{}'.format('\0'*11, '\0'*19)
@@ -157,9 +191,8 @@ class EthAbiTests(unittest.TestCase):
 
     def test_self_make_and_parse_multi_dyn(self):
         d = ABI.function_call('func(bytes,address[])', 'h'*50, [1, 1, 2, 2, 3, 3] )
-        d = ''.join(d)
-        funcname, dynargs = ABI.parse(type_spec='func(bytes,address[])', data=d)
-        self.assertEqual(funcname, 'AAAA')
+        funcid, dynargs = ABI.parse(type_spec='func(bytes,address[])', data=d)
+        self.assertEqual(funcid, b'\x83}9\xe8')
         self.assertEqual(dynargs, ('h'*50, [1, 1, 2, 2, 3, 3]))
 
 

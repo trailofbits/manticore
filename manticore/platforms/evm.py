@@ -5,7 +5,7 @@ import inspect
 from functools import wraps
 from ..utils.helpers import issymbolic, memoized
 from ..platforms.platform import *
-from ..core.smtlib import solver, BitVec, Array, Operators, Constant, ArrayVariable
+from ..core.smtlib import solver, BitVec, Array, Operators, Constant, ArrayVariable, translate_to_smtlib
 from ..core.state import Concretize, TerminateState
 from ..core.plugin import Ref
 from ..utils.event import Eventful
@@ -1177,7 +1177,6 @@ class EVM(Eventful):
             bytecode = self.bytecode
             for pc in range(self.pc, len(bytecode)):
                 yield simplify(bytecode[pc]).value
-
             while True:
                 yield 0
         instruction = EVMAsm.disassemble_one(getcode(), offset=self.pc)

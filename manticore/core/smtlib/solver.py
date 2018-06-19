@@ -67,6 +67,11 @@ class Solver(object):
         ''' Check if expression can be valid '''
         raise Exception("Abstract method not implemented")
 
+    def must_be_true(self, constraints, expression):
+        ''' Check if expression is feasible and ca not be unfeasible'''
+        solutions = self.get_all_values(constraints, expression, maxcnt=2, silent=True)
+        return solutions == [True]
+
     def get_all_values(self, constraints, x, maxcnt=10000, silent=False):
         ''' Returns a list with all the possible values for the symbol x'''
         raise Exception("Abstract method not implemented")

@@ -221,6 +221,28 @@ class ExpressionTest(unittest.TestCase):
         # It should not be another solution for index
         self.assertFalse(self.solver.check(cs))
 
+    def testBasicArrayConcatSlice(self):
+        hw = bytearray('Hello world!')
+        cs =  ConstraintSet()
+        #make array of 32->8 bits
+        array = cs.new_array(32, index_max=12)
+
+        #assert that the array is 'A' at key position
+        array = array.write(0, hw)
+
+        self.assertTrue(self.solver.must_be_true(cs, array == hw))
+
+        self.assertTrue(self.solver.must_be_true(cs, array.read(0,12) == hw))
+
+        self.assertTrue(self.solver.must_be_true(cs, array.read(6,6) == hw[6:12]))
+
+        self.assertTrue(self.solver.must_be_true(cs, bytearray('Hello ')+array.read(6,6) == hw))
+
+        self.assertTrue(self.solver.must_be_true(cs, bytearray('Hello ')+array.read(6,5) + bytearray('!') == hw))
+
+        self.assertTrue(self.solver.must_be_true(cs, array.read(0,1) + bytearray('ello ') + array.read(6,5) + bytearray('!') == hw))
+
+
     def testBasicPickle(self):
         import pickle
         cs =  ConstraintSet()

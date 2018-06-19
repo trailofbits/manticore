@@ -556,10 +556,11 @@ class Array(Expression):
         self._index_max = index_max
         self._value_bits = value_bits
         super(Array, self).__init__(*operands, **kwargs)
+        assert type(self) is not Array, 'Abstract class'
 
     def cast(self, possible_array):
         if isinstance(possible_array, bytearray):
-            arr = Array(self.index_bits, len(possible_array), 8)
+            arr = ArrayVariable(self.index_bits, len(possible_array), 8)
             for pos, byte in enumerate(possible_array):
                 arr = arr.store(pos, byte)
             return arr
@@ -603,6 +604,17 @@ class Array(Expression):
     def store(self, index, value):
         return ArrayStore(self, self.cast_index(index), self.cast_value(value))
 
+    def write(self, offset, buf):
+        if not isinstance(buf, (Array, bytearray)):
+            raise TypeError('Array or bytearray expected got {:s}'.format(type(buf)))
+        arr = self
+        for i, val in enumerate(buf):
+            arr = arr.store(offset+i, val)
+        return arr
+
+    def read(self, offset, size):
+        return ArraySlice(self, offset, size)
+
     def __getitem__(self, index):
         return self.select(self.cast_index(index))
 
@@ -612,11 +624,14 @@ class Array(Expression):
                 return BoolConstant(False)
             cond = BoolConstant(True)
             for i in range(len(a)):
-                cond = BoolAnd(a[i] == b[i], cond)
+                cond = BoolAnd(cond.cast(a[i] == b[i]), cond)
                 if cond is BoolConstant(False):
                     return BoolConstant(False)
             return cond
         return compare_buffers(self, other)
+
+    def __ne__(self, other):
+        return BoolNot(self == other)
 
     @property
     def underlying_variable(self):
@@ -653,6 +668,36 @@ class Array(Expression):
         for offset in reversed(xrange(size)):
             array = self.store(address + offset, BitVecExtract(value, (size - 1 - offset) * self.value_bits, self.value_bits))
         return array
+
+    def __add__(self, other):
+        from manticore.core.smtlib.visitors import simplify
+        if not isinstance(other, (Array, bytearray)):
+            raise TypeError("can't concat Array to {}".format(type(other)))
+        if isinstance(other, Array):
+            if self.index_bits != other.index_bits or self.value_bits != other.value_bits:
+                raise ValueError('Array sizes do not match for concatenation')
+
+        new_arr = ArrayProxy(ArrayVariable(self.index_bits, self.index_max+len(other), self.value_bits, 'concatenation'))
+        for index in range(self.index_max):
+            new_arr[index] = simplify(self[index])
+        for index in range(len(other)):
+            new_arr[index + self.index_max] = simplify(other[index])
+        return new_arr
+
+    def __radd__(self, other):
+        from manticore.core.smtlib.visitors import simplify
+        if not isinstance(other, (Array, bytearray)):
+            raise TypeError("can't concat Array to {}".format(type(other)))
+        if isinstance(other, Array):
+            if self.index_bits != other.index_bits or self.value_bits != other.value_bits:
+                raise ValueError('Array sizes do not match for concatenation')
+
+        new_arr = ArrayProxy(ArrayVariable(self.index_bits, self.index_max+len(other), self.value_bits, 'concatenation'))
+        for index in range(len(other)):
+            new_arr[index] = simplify(other[index])
+        for index in range(self.index_max):
+            new_arr[index + len(other)] = simplify(self[index])
+        return new_arr
 
 
 class ArrayVariable(Array, Variable):

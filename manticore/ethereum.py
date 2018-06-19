@@ -8,7 +8,7 @@ import re
 import os
 from . import Manticore
 from .manticore import ManticoreError
-from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, istainted, taint_with, get_taints, BitVec, Constant, operators, Array
+from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, istainted, taint_with, get_taints, BitVec, Constant, operators, Array, ArrayVariable
 from .core.smtlib.visitors import simplify
 from .platforms import evm
 from .core.state import State
@@ -619,11 +619,11 @@ class ABI(object):
             raise EthereumError("Function signature expected")
 
         result = ABI.function_selector(type_spec)  # Funcid
-        result += ABI.serialize(m.group('type'), args)
+        result += ABI.serialize(m.group('type'), *args)
         return result
 
     @staticmethod
-    def serialize(ty, value, **kwargs):
+    def serialize(ty, *value, **kwargs):
         '''
         Serialize value using type specification in ty.
         ABI.serialize('int256', 1000)
@@ -635,6 +635,7 @@ class ABI(object):
             if len(value) > 1:
                 raise ValueError
             value = value[0]
+                
         result, dyn_result = ABI._serialize(parsed_ty, value)
         return result + dyn_result
 
@@ -666,15 +667,24 @@ class ABI(object):
                 dyn_result += dyn_result_i
         elif ty[0] in ('array'):
             result += ABI.serialize_uint(dyn_offset)
-            rep = ty[2]
-            if rep is not None and len(values) != rep:
+            rep = ty[1]
+            base_type = ty[2]
+
+            sub_result = bytearray()
+            sub_dyn_result = bytearray()
+
+            if rep is not None and len(value) != rep:
                 raise ValueError("More reps than values")
             else:
-                result += ABI.serialize_uint(len(values))
-            for value_i in values:
-                result_i, dyn_result_i = ABI._serialize(ty, value_i, dyn_offset + len(dyn_result))
-                result += result_i
-                dyn_result += dyn_result_i
+                sub_result += ABI.serialize_uint(len(value))
+
+            for value_i in value:
+                result_i, dyn_result_i = ABI._serialize(base_type, value_i, dyn_offset + len(dyn_result))
+                sub_result += result_i
+                sub_dyn_result += dyn_result_i
+
+            dyn_result += sub_result
+            dyn_result += sub_dyn_result
 
         assert len(result) == ABI.type_size(ty)
         return result, dyn_result
@@ -758,8 +768,10 @@ class ABI(object):
         '''
         if size <= 0 and size > 32:
             raise ValueError
+        if not isinstance(value, (numbers.Integral, BitVec)):
+            raise ValueError
         if issymbolic(value):
-            bytes = Array(index_bits=256, index_max=32, value_bits=8)
+            bytes = ArrayVariable(index_bits=256, index_max=32, value_bits=8, name='temporary')
             bytes.write_BE(padding, value, size)
         else:
             bytes = bytearray()
@@ -813,6 +825,10 @@ class ABI(object):
         assert isinstance(data, (bytearray, Array))
         value = ABI._readBE(data, nbytes)
         value = Operators.SEXTEND(value, nbytes * 8, (nbytes + padding) * 8)
+        if not issymbolic(value):
+            #sign bit on
+            if value & (1<<(nbytes*8-1)):
+                value =   ((~value)+1)
         return value
 
 
@@ -1616,11 +1632,18 @@ class ManticoreEVM(Manticore):
 
         return address
 
-    def multi_tx_analysis(self, solidity_filename, contract_name=None, tx_limit=None, tx_use_coverage=True, tx_account="combo1"):
-        owner_account = self.create_account(balance=1000)
-        attacker_account = self.create_account(balance=1000)
+    def multi_tx_analysis(self, solidity_filename, contract_name=None, tx_limit=None, tx_use_coverage=True, tx_account="combo1", args=None):
+
+        if args is None:
+            arg0 = self.make_symbolic_value(name='INITARG0')
+            arg1 = self.make_symbolic_value(name='INITARG1')
+            arg2 = self.make_symbolic_value(name='INITARG2')
+            arg3 = self.make_symbolic_value(name='INITARG3')
+            args = (arg0, arg1, arg2, arg3)
+        owner_account = self.create_account(balance=1000, name='owner')
+        attacker_account = self.create_account(balance=1000, name='attacker')
         with open(solidity_filename) as f:
-            contract_account = self.solidity_create_contract(f, contract_name=contract_name, owner=owner_account, args=(None, None, None, None))
+            contract_account = self.solidity_create_contract(f, contract_name=contract_name, owner=owner_account, args=args)
 
         if tx_account == "attacker":
             tx_account = [attacker_account]
