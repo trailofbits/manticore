@@ -639,9 +639,10 @@ class ABI(object):
         if dyn_offset is None:
             dyn_offset = ABI.type_size(ty)
         if ty[0] != 'tuple':
-            if not isinstance(value, tuple) or len(value) > 1:
-                raise ValueError
-            value = value[0]
+            if isinstance(value, (tuple, list)):
+                if len(value) > 1:
+                    raise ValueError
+                value = value[0]
 
         result = bytearray()
         dyn_result = bytearray()
