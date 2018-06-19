@@ -634,7 +634,7 @@ class ABI(object):
         if parsed_ty[0] != 'tuple':
             if len(value) > 1:
                 raise ValueError
-            value = value[0]                
+            value = value[0]
         result, dyn_result = ABI._serialize(parsed_ty, value)
         return result + dyn_result
 

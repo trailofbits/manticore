@@ -609,7 +609,7 @@ class Array(Expression):
             raise TypeError('Array or bytearray expected got {:s}'.format(type(buf)))
         arr = self
         for i, val in enumerate(buf):
-            arr = arr.store(offset+i, val)
+            arr = arr.store(offset + i, val)
         return arr
 
     def read(self, offset, size):
