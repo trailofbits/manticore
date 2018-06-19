@@ -45,7 +45,7 @@ class EthBenchmark(unittest.TestCase):
 
         filename = os.path.join(THIS_DIR, 'binaries', 'benchmark', '{}.sol'.format(name))
 
-        mevm.multi_tx_analysis(filename, tx_limit=3)
+        mevm.multi_tx_analysis(filename, tx_limit=3, args=(mevm.make_symbolic_value(),))
 
         expected_findings = set(( (c, d) for b, c, d in should_find))
         actual_findings = set(( (c, d) for a, b, c, d in mevm.global_findings))

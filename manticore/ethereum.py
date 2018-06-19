@@ -631,10 +631,6 @@ class ABI(object):
         '''
         offset = kwargs.get('offset')
         parsed_ty = abitypes.parse(ty)
-        if parsed_ty[0] != 'tuple':
-            if len(value) > 1:
-                raise ValueError
-            value = value[0]
         result, dyn_result = ABI._serialize(parsed_ty, value)
         return result + dyn_result
 
@@ -642,6 +638,11 @@ class ABI(object):
     def _serialize(ty, value, dyn_offset=None):
         if dyn_offset is None:
             dyn_offset = ABI.type_size(ty)
+        if ty[0] != 'tuple':
+            if not isinstance(value, tuple) or len(value) > 1:
+                raise ValueError
+            value = value[0]
+
         result = bytearray()
         dyn_result = bytearray()
 
@@ -768,6 +769,7 @@ class ABI(object):
         if size <= 0 and size > 32:
             raise ValueError
         if not isinstance(value, (numbers.Integral, BitVec)):
+            print type(value)
             raise ValueError
         if issymbolic(value):
             bytes = ArrayVariable(index_bits=256, index_max=32, value_bits=8, name='temporary')
@@ -1061,7 +1063,7 @@ class ManticoreEVM(Manticore):
         except OSError:
             raise Exception("Solidity compiler not installed.")
 
-        m = re.match(r".*Version: (?P<version>(?P<major>\d+)\.(?P<minor>\d+)\.(?P<build>\d+))\+(?P<commit>[^\s]+).*", installed_version_output, re.DOTALL | re.IGNORECASE)
+        m = re.match(r".*Version: (?P<version>(?P<major>\d+)\.(?P<minor>\d+)\.(?P<build>\d+)).*\+(?P<commit>[^\s]+).*", installed_version_output, re.DOTALL | re.IGNORECASE)
 
         if not m or m.groupdict()['version'] not in supported_versions:
             #Fixme https://github.com/trailofbits/manticore/issues/847
@@ -1632,13 +1634,6 @@ class ManticoreEVM(Manticore):
         return address
 
     def multi_tx_analysis(self, solidity_filename, contract_name=None, tx_limit=None, tx_use_coverage=True, tx_account="combo1", args=None):
-
-        if args is None:
-            arg0 = self.make_symbolic_value(name='INITARG0')
-            arg1 = self.make_symbolic_value(name='INITARG1')
-            arg2 = self.make_symbolic_value(name='INITARG2')
-            arg3 = self.make_symbolic_value(name='INITARG3')
-            args = (arg0, arg1, arg2, arg3)
         owner_account = self.create_account(balance=1000, name='owner')
         attacker_account = self.create_account(balance=1000, name='attacker')
         with open(solidity_filename) as f:
