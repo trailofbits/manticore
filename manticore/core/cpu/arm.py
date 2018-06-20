@@ -1268,7 +1268,5 @@ class Armv7Cpu(Cpu):
             byte1 = Operators.EXTRACT(src1, offset, 8)
             byte2 = Operators.EXTRACT(src2, offset, 8)
             byte_diff = byte1 - byte2
-            result.append(
-                    Operators.ITEBV(8, byte_diff < 0, 0, byte_diff))
+            result.append(Operators.ITEBV(8, byte_diff < 0, 0, byte_diff))
         dest.write(Operators.CONCAT(dest.size, *result))
-
