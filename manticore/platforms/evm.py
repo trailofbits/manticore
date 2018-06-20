@@ -108,11 +108,7 @@ class Transaction(object):
         return (self.__class__, (self.sort, self.address, self.price, self.data, self.caller, self.value, self.gas, self.depth, self.result, self.return_data))
 
     def __str__(self):
-        try:
-            data = ''.join(self.data)
-        except:
-            data = self.data
-        return 'Transaction(%s, from=0x%x, to=0x%x, value=%r, depth=%d, data=%r, result=%r..)' % (self.sort, self.caller, self.address, self.value, self.depth, data, self.result)
+        return 'Transaction(%s, from=0x%x, to=0x%x, value=%r, depth=%d, data=%r, result=%r..)' % (self.sort, self.caller, self.address, self.value, self.depth, self.data, self.result)
 
 
 class EVMAsm(object):
@@ -145,7 +141,7 @@ class EVMAsm(object):
             'PUSH1 0x60\\nBLOCKHASH\\nMSTORE\\nPUSH1 0x2\\nPUSH2 0x100'
     '''
     class Instruction(object):
-        def __init__(self, opcode, name, operand_size, pops, pushes, fee, description, operand=None, offset=0):
+        def __init__(self, opcode, name, operand_size, pops, pushes, fee, description, operand=None, pc=0):
             '''
             This represents an EVM instruction.
             EVMAsm will create this for you.
@@ -158,7 +154,7 @@ class EVMAsm(object):
             :param fee: gas fee for the instruction
             :param description: textual description of the instruction
             :param operand: optional immediate operand
-            :param offset: optional offset of this instruction in the program
+            :param pc: optional program counter of this instruction in the program
 
             Example use::
 
@@ -166,7 +162,7 @@ class EVMAsm(object):
                 print 'Instruction: %s'% instruction
                 print '\tdescription:', instruction.description
                 print '\tgroup:', instruction.group
-                print '\taddress:', instruction.offset
+                print '\tpc:', instruction.pc
                 print '\tsize:', instruction.size
                 print '\thas_operand:', instruction.has_operand
                 print '\toperand_size:', instruction.operand_size
@@ -197,7 +193,7 @@ class EVMAsm(object):
                 mask = (1 << operand_size * 8) - 1
                 if ~mask & operand:
                     raise ValueError("operand should be %d bits long" % (operand_size * 8))
-            self._offset = offset
+            self._pc = pc
 
         def __eq__(self, other):
             ''' Instructions are equal if all features match '''
@@ -208,12 +204,12 @@ class EVMAsm(object):
                 self._pops == other._pops and\
                 self._pushes == other._pushes and\
                 self._fee == other._fee and\
-                self._offset == other._offset and\
+                self._pc == other._pc and\
                 self._description == other._description
 
         def __repr__(self):
             output = 'Instruction(0x%x, %r, %d, %d, %d, %d, %r, %r, %r)' % (self._opcode, self._name, self._operand_size,
-                                                                            self._pops, self._pushes, self._fee, self._description, self._operand, self._offset)
+                                                                            self._pops, self._pushes, self._fee, self._description, self._operand, self._pc)
             return output
 
         def __str__(self):
@@ -310,9 +306,9 @@ class EVMAsm(object):
             return ''.join(bytes)
 
         @property
-        def offset(self):
+        def pc(self):
             '''Location in the program (optional)'''
-            return self._offset
+            return self._pc
 
         @property
         def group(self):
