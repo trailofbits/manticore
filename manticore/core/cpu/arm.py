@@ -748,6 +748,18 @@ class Armv7Cpu(Cpu):
         status.write(0)
         return cpu._STR(cpu.address_bit_size, *args)
 
+    def _UXT(cpu, dest, src, src_width):
+        """
+        Helper for UXT* family of instructions.
+
+        :param ARMv7Operand dest: the destination register; register
+        :param ARMv7Operand dest: the source register; register
+        :param int src_width: bits to consider of the src operand
+        """
+        val = GetNBits(src.read(), src_width)
+        word = Operators.ZEXTEND(val, cpu.address_bit_size)
+        dest.write(word)
+
     @instruction
     def UXTB(cpu, dest, src):
         """
@@ -757,9 +769,18 @@ class Armv7Cpu(Cpu):
         :param ARMv7Operand dest: the destination register; register
         :param ARMv7Operand dest: the source register; register
         """
-        val = GetNBits(src.read(), 8)
-        word = Operators.ZEXTEND(val, cpu.address_bit_size)
-        dest.write(word)
+        cpu._UXT(dest, src, 8)
+
+    @instruction
+    def UXTH(cpu, dest, src):
+        """
+        UXTH extracts an 16-bit value from a register, zero-extends
+        it to the size of the register, and writes the result to the destination register.
+
+        :param ARMv7Operand dest: the destination register; register
+        :param ARMv7Operand dest: the source register; register
+        """
+        cpu._UXT(dest, src, 16)
 
     @instruction
     def PLD(cpu, addr, offset=None):
