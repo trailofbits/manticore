@@ -649,7 +649,7 @@ class ABI(object):
         dyn_result = bytearray()
 
         if ty[0] == 'int':
-            result += ABI.serialize_int(value, size=ty[1]/8, padding=32-ty[1]/8)
+            result += ABI.serialize_int(value, size=ty[1] / 8, padding=32 - ty[1] / 8)
         elif ty[0] in 'uint':
             result += ABI.serialize_uint(value)
         elif ty[0] in ('bytes', 'string'):
@@ -679,8 +679,7 @@ class ABI(object):
 
             if rep is not None and len(value) != rep:
                 raise ValueError("More reps than values")
-            else:
-                sub_result += ABI.serialize_uint(len(value))
+            sub_result += ABI.serialize_uint(len(value))
 
             for value_i in value:
                 result_i, dyn_result_i = ABI._serialize(base_type, value_i, dyn_offset + len(dyn_result))
@@ -701,7 +700,6 @@ class ABI(object):
         s = sha3.keccak_256()
         s.update(str(method_name_and_signature))
         return bytearray(binascii.unhexlify(s.hexdigest()[:8]))
-
 
     @staticmethod
     def deserialize(type_spec, data):
@@ -777,7 +775,7 @@ class ABI(object):
             raise ValueError
         if issymbolic(value):
             bytes = ArrayVariable(index_bits=256, index_max=32, value_bits=8, name='temporary')
-            value = Operators.ZEXTEND(value, size*8)
+            value = Operators.ZEXTEND(value, size * 8)
             bytes.write_BE(padding, value, size)
         else:
             bytes = bytearray()
@@ -798,7 +796,7 @@ class ABI(object):
             raise ValueError
         if issymbolic(value):
             bytes = ArrayVariable(index_bits=256, index_max=32, value_bits=8, name='temporary')
-            value = Operators.SIGNEXTEND(value, value.size, size*8)
+            value = Operators.SIGNEXTEND(value, value.size, size * 8)
             bytes.write_BE(padding, value, size)
         else:
             bytes = bytearray()
@@ -808,8 +806,6 @@ class ABI(object):
             for position in reversed(range(size)):
                 bytes.append(Operators.EXTRACT(value, position * 8, 8))
         return bytes
-
-
 
     @staticmethod
     def _readBE(data, nbytes, padding=True):
@@ -856,7 +852,7 @@ class ABI(object):
         value = ABI._readBE(data, nbytes)
         value = Operators.SEXTEND(value, nbytes * 8, (nbytes + padding) * 8)
         if not issymbolic(value):
-           #sign bit on
+            # sign bit on
             if value & (1 << (nbytes * 8 - 1)):
                 value = -(((~value) + 1) & ((1<<(nbytes*8))-1) )
         return value
@@ -959,9 +955,9 @@ class EVMContract(EVMAccount):
                     if caller is None:
                         caller = self._default_caller
                     self._manticore.transaction(caller=caller,
-                                        address=self._address,
-                                        value=value,
-                                        data=tx_data)
+                                                address=self._address,
+                                                value=value,
+                                                data=tx_data)
                 return f
 
         return object.__getattribute__(self, name)
