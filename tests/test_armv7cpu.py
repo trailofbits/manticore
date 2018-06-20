@@ -1605,6 +1605,12 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.assertEqual(self.cpu.R2, 0x55555555)
         self.assertEqual(self.cpu.R1, 0x55)
 
+    @itest_setregs("R1=0x45", "R2=0x55555555")
+    @itest("uxth r1, r2")
+    def test_uxth(self):
+        self.assertEqual(self.cpu.R2, 0x55555555)
+        self.assertEqual(self.cpu.R1, 0x5555)
+
     @itest_setregs("R1=1","R2=0","R3=0","R4=0","R12=0x4141")
     @itest_thumb_multiple(["cmp r1, #1", "itt ne", "mov r2, r12", "mov r3, r12", "mov r4, r12"])
     def test_itt_ne_noexec(self):
