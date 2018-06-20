@@ -1074,6 +1074,12 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.assertEqual(self.rf.read('R3'), 0x03020100)
 
     @itest_custom("uqsub8 r3, r1, r2")
+    @itest_setregs("R1=0x05040302", "R2=0x07050101")
+    def test_uqsub8_concrete_saturated(self):
+        self.cpu.execute()
+        self.assertEqual(self.rf.read('R3'), 0x00000201)
+
+    @itest_custom("uqsub8 r3, r1, r2")
     @itest_setregs("R2=0x01010101")
     def test_uqsub8_sym(self):
         op1 = BitVecVariable(32, 'op1')
