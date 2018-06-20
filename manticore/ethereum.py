@@ -854,7 +854,7 @@ class ABI(object):
         if not issymbolic(value):
             # sign bit on
             if value & (1 << (nbytes * 8 - 1)):
-                value = -(((~value) + 1) & ((1<<(nbytes*8))-1) )
+                value = -(((~value) + 1) & ((1 << (nbytes * 8)) - 1))
         return value
 
 
