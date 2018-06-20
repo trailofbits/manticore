@@ -1394,7 +1394,7 @@ class ManticoreEVM(Manticore):
         # FIXME this is more naive than reasonable.
         return ABI.deserialize(types, self.make_symbolic_buffer(32, name="INITARGS"))
 
-    def solidity_create_contract(self, source_code, owner, name=None, contract_name=None, libraries=None, balance=0, address=None, args=()):
+    def solidity_create_contract(self, source_code, owner, name=None, contract_name=None, libraries=None, balance=0, address=None, args=None):
         ''' Creates a solidity contract and library dependencies
 
             :param str source_code: solidity source code
@@ -1422,7 +1422,8 @@ class ManticoreEVM(Manticore):
                 md = SolidityMetadata(*compile_results)
                 if contract_name_i == contract_name:
                     constructor_types = md.get_constructor_arguments()
-                    args = self.make_symbolic_arguments(constructor_types)
+                    if args is None:
+                        args = self.make_symbolic_arguments(constructor_types)
                     contract_account = self.create_contract(owner=owner,
                                                             balance=balance,
                                                             address=address,

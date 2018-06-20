@@ -1314,7 +1314,6 @@ class EVM(Eventful):
         #Fixme[felipe] add a with self.disabled_events context mangr to Eventful
         if self._on_transaction is False:
             self._publish('will_decode_instruction', self.pc)
-
         last_pc = self.pc
         current = self.instruction
         if self._on_transaction is False:
@@ -2276,6 +2275,7 @@ class EVMWorld(Platform):
         ''' Last completed transaction '''
         if len(self.transactions):
             return self.transactions[-1]
+        return None
 
     @property
     def last_human_transaction(self):
@@ -2283,6 +2283,7 @@ class EVMWorld(Platform):
         for tx in reversed(self.transactions):
             if tx.depth == 0:
                 return tx
+        return None
 
     @constraints.setter
     def constraints(self, constraints):
@@ -2440,10 +2441,11 @@ class EVMWorld(Platform):
 
     def get_code(self, address):
         if address not in self._world_state:
-            return ''
+            return bytearray()
         return self._world_state[address]['code']
 
     def set_code(self, address, data):
+        assert data is not None
         if self._world_state[address]['code']:
             raise EVMException("Code already set")
         self._world_state[address]['code'] = data
@@ -2517,7 +2519,10 @@ class EVMWorld(Platform):
 
         if address is None:
             address = self.new_address()
-        assert address not in self.accounts, 'The account already exists'
+        if address in self.accounts:
+            raise Exception('The account already exists')
+        if code is None:
+            code = bytearray()
         self._world_state[address] = {}
         self._world_state[address]['nonce'] = 0
         self._world_state[address]['balance'] = balance
