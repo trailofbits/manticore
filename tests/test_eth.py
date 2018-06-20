@@ -145,7 +145,7 @@ class EthAbiTests(unittest.TestCase):
         ]
         d = ''.join(d)
         func_id, dynargs = ABI.deserialize(type_spec='func(int256,int256)', data=d)
-        self.assertEqual(funce_id, ABI.function_selector('func(int256,int256)')
+        self.assertEqual(func_id, "AAAA")
         self.assertEqual(dynargs, ( 2**255 - 1, -(2**255) ))
 
 
@@ -170,7 +170,7 @@ class EthAbiTests(unittest.TestCase):
 
         func_id, dynargs = ABI.deserialize(type_spec='func(bytes,address[])', data=d)
 
-        self.assertEqual(funcname, 'AAAA')
+        self.assertEqual(func_id, 'AAAA')
         self.assertEqual(dynargs, ('helloworld', [3, 4, 5]))
 
     def test_self_make_and_parse_multi_dyn(self):
@@ -180,9 +180,40 @@ class EthAbiTests(unittest.TestCase):
         self.assertEqual(dynargs, ('h'*50, [1, 1, 2, 2, 3, 3]))
 
 
-    def test_serialize_simple_int(self):
-        self.assertEqual(ABI.serialize('int256', 0x10), '\0'*31+'\x10')
+    def test_serialize_tuple(self):
+        self.assertEqual(ABI.serialize('(int256)', 0x10), '\0'*31+'\x10')
         self.assertEqual(ABI.serialize('(int256,int256)', 0x10, 0x20), '\0'*31+'\x10'+'\0'*31+'\x20')
+        self.assertEqual(ABI.serialize('(int256,(int256,int256))', 0x10, (0x20, 0x30)), '\0'*31+'\x10'+'\0'*31+'\x20'+'\0'*31+'\x30')
+
+    def test_serialize_basic_types_int(self):
+        self.assertEqual(ABI.serialize('int256', 0x10), '\0'*31+'\x10')
+        self.assertEqual(ABI.deserialize('int256', '\0'*31+'\x10'), 0x10)
+
+        self.assertEqual(ABI.serialize('int256', -0x10), '\xff'*31+'\xf0')
+        self.assertEqual(ABI.deserialize('int256', '\xff'*31+'\xf0'), -0x10)
+
+    def test_serialize_basic_types_int8(self):
+        self.assertEqual(ABI.serialize('int8', 0x10), '\0'*31+'\x10')
+        self.assertEqual(ABI.deserialize('int8', '\0'*31+'\x10'), 0x10)
+
+        self.assertEqual(ABI.serialize('int8', -0x10), '\x00'*31+'\xf0')
+        self.assertEqual(ABI.deserialize('int8', '\x00'*31+'\xf0'), -0x10)
+
+    def test_serialize_basic_types_int16(self):
+        self.assertEqual(ABI.serialize('int16', 0x100), '\0'*30+'\x01\x00')
+        self.assertEqual(ABI.deserialize('int16', '\0'*30+'\x01\x00'), 0x100)
+
+        self.assertEqual(ABI.serialize('int16', -0x10), '\x00'*30+'\xff\xf0')
+        self.assertEqual(ABI.deserialize('int16', '\x00'*30+'\xff\xf0'), -0x10)
+
+    def test_serialize_basic_types_uint(self):
+        self.assertEqual(ABI.serialize('uint256', 0x10), '\0'*31+'\x10')
+        self.assertEqual(ABI.deserialize('uint256', '\0'*31+'\x10'), 0x10)
+
+        self.assertEqual(ABI.serialize('uint256', -0x10), '\xff'*31+'\xf0')
+        self.assertEqual(ABI.deserialize('uint256', '\xff'*31+'\xf0'),  0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0L)
+        self.assertEqual(ABI.deserialize('uint256', '\xff'*31+'\xf0'),  0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0L)
+        self.assertNotEqual(ABI.deserialize('uint256', '\xff'*31+'\xf0'), -0x10L)
 
 
     def test_parse_invalid_int(self):

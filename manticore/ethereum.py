@@ -648,7 +648,9 @@ class ABI(object):
         result = bytearray()
         dyn_result = bytearray()
 
-        if ty[0] in ('int', 'uint'):
+        if ty[0] == 'int':
+            result += ABI.serialize_int(value, size=ty[1]/8, padding=32-ty[1]/8)
+        elif ty[0] in 'uint':
             result += ABI.serialize_uint(value)
         elif ty[0] in ('bytes', 'string'):
             result += ABI.serialize_uint(dyn_offset)
@@ -656,7 +658,7 @@ class ABI(object):
             for byte in value:
                 dyn_result.append(byte)
         elif ty[0] == 'function':
-            result = ABI.serialize_uint(value[0], 20, padding=False)
+            result = ABI.serialize_uint(value[0], 20)
             result += value[1]
             if len(result) != 24:
                 raise ValueError
@@ -767,7 +769,7 @@ class ABI(object):
     @staticmethod
     def serialize_uint(value, size=32, padding=0):
         '''
-        Translates a Python integral or a BitVec into a 32 byte string, MSB first
+        Translates a python integral or a BitVec into a 32 byte string, MSB first
         '''
         if size <= 0 and size > 32:
             raise ValueError
@@ -784,6 +786,30 @@ class ABI(object):
             for position in reversed(range(size)):
                 bytes.append(Operators.EXTRACT(value, position * 8, 8))
         return bytes
+
+    @staticmethod
+    def serialize_int(value, size=32, padding=0):
+        '''
+        Translates a signed python integral or a BitVec into a 32 byte string, MSB first
+        '''
+        if size <= 0 and size > 32:
+            raise ValueError
+        if not isinstance(value, (numbers.Integral, BitVec)):
+            raise ValueError
+        if issymbolic(value):
+            bytes = ArrayVariable(index_bits=256, index_max=32, value_bits=8, name='temporary')
+            value = Operators.SIGNEXTEND(value, value.size, size*8)
+            bytes.write_BE(padding, value, size)
+        else:
+            bytes = bytearray()
+            for _ in range(padding):
+                bytes.append(0)
+
+            for position in reversed(range(size)):
+                bytes.append(Operators.EXTRACT(value, position * 8, 8))
+        return bytes
+
+
 
     @staticmethod
     def _readBE(data, nbytes, padding=True):
@@ -830,9 +856,9 @@ class ABI(object):
         value = ABI._readBE(data, nbytes)
         value = Operators.SEXTEND(value, nbytes * 8, (nbytes + padding) * 8)
         if not issymbolic(value):
-            #sign bit on
+           #sign bit on
             if value & (1 << (nbytes * 8 - 1)):
-                value = ((~value) + 1)
+                value = -(((~value) + 1) & ((1<<(nbytes*8))-1) )
         return value
 
 
