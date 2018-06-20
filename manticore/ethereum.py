@@ -1,14 +1,15 @@
+import hashlib
 import binascii
 import string
 import re
 import os
 from . import Manticore
 from .manticore import ManticoreError
-from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, istainted, Array, Expression, Constant, operators
+from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, istainted, taint_with, get_taints, Constant, operators
 from .core.smtlib.visitors import simplify
-from .core.plugin import FilterFunctions
 from .platforms import evm
 from .core.state import State
+from .utils.helpers import istainted, issymbolic
 import tempfile
 from subprocess import Popen, PIPE, check_output
 from multiprocessing import Process, Queue
@@ -20,10 +21,8 @@ import StringIO
 import cPickle as pickle
 from .core.plugin import Plugin
 from functools import reduce
-
+from contextlib import contextmanager
 logger = logging.getLogger(__name__)
-
-################ Detectors ####################
 
 
 class EthereumError(ManticoreError):
@@ -36,90 +35,334 @@ class DependencyError(EthereumError):
         self.lib_names = lib_names
 
 
-class DependencyError(EthereumError):
-    def __init__(self, lib_names):
-        super(DependencyError, self).__init__("You must pre-load and provide libraries addresses{ libname:address, ...} for %r" % lib_names)
-        self.lib_names = lib_names
-
-
 class NoAliveStates(EthereumError):
     pass
 
 
+################ Detectors ####################
 class Detector(Plugin):
     @property
     def name(self):
         return self.__class__.__name__.split('.')[-1]
 
     def get_findings(self, state):
-        return state.context.setdefault('seth.findings.%s' % self.name, set())
+        return state.context.setdefault('{:s}.findings'.format(self.name), set())
 
-    def add_finding(self, state, finding):
+    @contextmanager
+    def locked_global_findings(self):
+        with self.manticore.locked_context('{:s}.global_findings'.format(self.name), set) as global_findings:
+            yield global_findings
+
+    @property
+    def global_findings(self):
+        with self.locked_global_findings() as global_findings:
+            return global_findings
+
+    def add_finding(self, state, address, pc, finding, init):
+        self.get_findings(state).add((address, pc, finding, init))
+        with self.locked_global_findings() as gf:
+            gf.add((address, pc, finding, init))
+        #Fixme for ever broken logger
+        #logger.warning(finding)
+
+    def add_finding_here(self, state, finding):
         address = state.platform.current_vm.address
         pc = state.platform.current_vm.pc
-        self.get_findings(state).add((address, pc, finding))
+        at_init = state.platform.current_transaction.sort == 'CREATE'
+        self.add_finding(state, address, pc, finding, at_init)
 
-        with self.manticore.locked_context('seth.global_findings', set) as global_findings:
-            global_findings.add((address, pc, finding))
-        logger.warning(finding)
+    def _save_current_location(self, state, finding):
+        address = state.platform.current_vm.address
+        pc = state.platform.current_vm.pc
+        location = (address, pc, finding)
+        hash_id = hashlib.sha1(str(location)).hexdigest()
+        state.context.setdefault('{:s}.locations'.format(self.name), {})[hash_id] = location
+        return hash_id
+
+    def _get_location(self, state, hash_id):
+        return state.context.setdefault('{:s}.locations'.format(self.name), {})[hash_id]
 
     def _get_src(self, address, pc):
         return self.manticore.get_metadata(address).get_source_for(pc)
 
-    def report(self, state):
-        output = ''
-        for address, pc, finding in self.get_findings(state):
-            output += 'Finding %s\n' % finding
-            output += '\t Contract: %s\n' % address
-            output += '\t Program counter: %s\n' % pc
-            output += '\t Snippet:\n'
-            output += '\n'.join(('\t\t' + x for x in self._get_src(address, pc).split('\n')))
-            output += '\n'
-        return output
+
+class FilterFunctions(Plugin):
+    def __init__(self, regexp=r'.*', mutability='both', depth='both', fallback=False, include=True, **kwargs):
+        """
+            Constrain input based on function metadata. Include or avoid functions selected by the specified criteria.
+
+            Examples:
+            #Do not explore any human transactions that end up calling a constant function
+            no_human_constant = FilterFunctions(depth='human', mutability='constant', include=False)
+
+            #At human tx depth only accept synthetic check functions
+            only_tests = FilterFunctions(regexp=r'mcore_.*', depth='human', include=False)
+
+            :param regexp: a regular expresion over the name of the function '.*' will match all functions
+            :param mutability: mutable, constant or both will match functions declared in the abi to be of such class
+            :param depth: match functions in internal transactions, in human initiated transactions or in both types
+            :param fallback: if True include the fallback function. Hash will be 00000000 for it
+            :param include: if False exclude the selected functions, if True include them
+        """
+        super(FilterFunctions, self).__init__(**kwargs)
+        depth = depth.lower()
+        if depth not in ('human', 'internal', 'both'):
+            raise ValueError
+        mutability = mutability.lower()
+        if mutability not in ('mutable', 'constant', 'both'):
+            raise ValueError
+
+        #fixme better names for member variables
+        self._regexp = regexp
+        self._mutability = mutability
+        self._depth = depth
+        self._fallback = fallback
+        self._include = include
+
+    def will_open_transaction_callback(self, state, tx):
+        world = state.platform
+        tx_cnt = len(world.all_transactions)
+        # Constrain input only once per tx, per plugin
+        if state.context.get('constrained%d' % id(self), 0) != tx_cnt:
+            state.context['constrained%d' % id(self)] = tx_cnt
+
+            if self._depth == 'human' and not tx.is_human:
+                return
+            if self._depth == 'internal' and tx.is_human:
+                return
+
+            #Get metadata if any for the targe addreess of current tx
+            md = self.manticore.get_metadata(tx.address)
+            if md is None:
+                return
+            #Lets compile  the list of interesting hashes
+            selected_functions = []
+
+            for func_hsh in md.hashes:
+                if func_hsh == '00000000':
+                    continue
+                abi = md.get_abi(func_hsh)
+                func_name = md.get_func_name(func_hsh)
+                if self._mutability == 'constant' and not abi.get('constant', False):
+                    continue
+                if self._mutability == 'mutable' and abi.get('constant', False):
+                    continue
+                if not re.match(self._regexp, func_name):
+                    continue
+                selected_functions.append(func_hsh)
+
+            if self._fallback:
+                selected_functions.append('00000000')
+
+            if self._include:
+                # constraint the input so it can take only the interesting values
+                constraint = reduce(Operators.OR, map(lambda x: tx.data[:4] == binascii.unhexlify(x), selected_functions))
+                state.constrain(constraint)
+            else:
+                #Avoid all not seleted hashes
+                for func_hsh in md.hashes:
+                    if func_hsh in selected_functions:
+                        constraint = Operators.NOT(tx.data[:4] == binascii.unhexlify(func_hsh))
+                        state.constrain(constraint)
 
 
-class IntegerOverflow(Detector):
+class DetectInvalid(Detector):
+    def __init__(self, only_human=True, **kwargs):
+        """
+        Detects INVALID instructions.
+
+        INVALID instructions are originally designated to signal exceptional code.
+        As in practice the INVALID instruction is used in different ways this
+        detector may Generate a great deal of false positives.
+
+        :param only_human: if True report only INVALID at depth 0 transactions
+        """
+        super(DetectInvalid, self).__init__(**kwargs)
+        self._only_human = only_human
+
+    def did_evm_execute_instruction_callback(self, state, instruction, arguments, result_ref):
+        mnemonic = instruction.semantics
+        result = result_ref.value
+
+        if mnemonic == 'INVALID':
+            if not self._only_human or state.platform.current_transaction.depth == 0:
+                self.add_finding_here(state, "INVALID intruction")
+
+
+class DetectIntegerOverflow(Detector):
     '''
         Detects potential overflow and underflow conditions on ADD and SUB instructions.
     '''
-    @staticmethod
-    def _can_add_overflow(state, result, a, b):
-        # TODO FIXME (mark) this is using a signed LT. need to check if this is correct
-        return state.can_be_true(operators.ULT(result, a) | operators.ULT(result, b))
+
+    def _save_current_location(self, state, finding, condition):
+        address = state.platform.current_vm.address
+        pc = state.platform.current_vm.pc
+        at_init = state.platform.current_transaction.sort == 'CREATE'
+        location = (address, pc, finding, at_init, condition)
+        hash_id = hashlib.sha1(str(location)).hexdigest()
+        state.context.setdefault('{:s}.locations'.format(self.name), {})[hash_id] = location
+        return hash_id
+
+    def _get_location(self, state, hash_id):
+        return state.context.setdefault('{:s}.locations'.format(self.name), {})[hash_id]
 
     @staticmethod
-    def _can_mul_overflow(state, result, a, b):
-        return state.can_be_true(operators.ULT(result, a) & operators.ULT(result, b))
+    def _signed_sub_overflow(state, a, b):
+        '''
+        Sign extend the value to 512 bits and check the result can be represented
+         in 256. Following there is a 32 bit excerpt of this condition:
+        a  -  b   -80000000 -3fffffff -00000001 +00000000 +00000001 +3fffffff +7fffffff
+        +80000000    False    False    False    False     True     True     True
+        +c0000001    False    False    False    False    False    False     True
+        +ffffffff    False    False    False    False    False    False    False
+        +00000000     True    False    False    False    False    False    False
+        +00000001     True    False    False    False    False    False    False
+        +3fffffff     True    False    False    False    False    False    False
+        +7fffffff     True     True     True    False    False    False    False
+        '''
+        sub = Operators.SEXTEND(a, 256, 512) - Operators.SEXTEND(b, 256, 512)
+        cond = Operators.OR(sub < -(1 << 256), sub >= (1 << 255))
+        return cond
 
     @staticmethod
-    def _can_sub_underflow(state, a, b):
-        return state.can_be_true(b > a)
+    def _signed_add_overflow(state, a, b):
+        '''
+        Sign extend the value to 512 bits and check the result can be represented
+         in 256. Following there is a 32 bit excerpt of this condition:
 
-    def did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
+        a  +  b   -80000000 -3fffffff -00000001 +00000000 +00000001 +3fffffff +7fffffff
+        +80000000     True     True     True    False    False    False    False
+        +c0000001     True    False    False    False    False    False    False
+        +ffffffff     True    False    False    False    False    False    False
+        +00000000    False    False    False    False    False    False    False
+        +00000001    False    False    False    False    False    False     True
+        +3fffffff    False    False    False    False    False    False     True
+        +7fffffff    False    False    False    False     True     True     True
+        '''
+        add = Operators.SEXTEND(a, 256, 512) + Operators.SEXTEND(b, 256, 512)
+        cond = Operators.OR(add < -(1 << 256), add >= (1 << 255))
+        return cond
+
+    @staticmethod
+    def _unsigned_sub_overflow(state, a, b):
+        '''
+        Sign extend the value to 512 bits and check the result can be represented
+         in 256. Following there is a 32 bit excerpt of this condition:
+
+        a  -  b   ffffffff bfffffff 80000001 00000000 00000001 3ffffffff 7fffffff
+        ffffffff     True     True     True    False     True     True     True
+        bfffffff     True     True     True    False    False     True     True
+        80000001     True     True     True    False    False     True     True
+        00000000    False    False    False    False    False     True    False
+        00000001     True    False    False    False    False     True    False
+        ffffffff     True     True     True     True     True     True     True
+        7fffffff     True     True     True    False    False     True    False
+        '''
+        cond = Operators.UGT(b, a)
+        return cond
+
+    @staticmethod
+    def _unsigned_add_overflow(state, a, b):
+        '''
+        Sign extend the value to 512 bits and check the result can be represented
+         in 256. Following there is a 32 bit excerpt of this condition:
+
+        a  +  b   ffffffff bfffffff 80000001 00000000 00000001 3ffffffff 7fffffff
+        ffffffff     True     True     True    False     True     True     True
+        bfffffff     True     True     True    False    False     True     True
+        80000001     True     True     True    False    False     True     True
+        00000000    False    False    False    False    False     True    False
+        00000001     True    False    False    False    False     True    False
+        ffffffff     True     True     True     True     True     True     True
+        7fffffff     True     True     True    False    False     True    False
+        '''
+        add = Operators.ZEXTEND(a, 512) + Operators.ZEXTEND(b, 512)
+        cond = Operators.UGE(add, 1 << 256)
+        return cond
+
+    @staticmethod
+    def _signed_mul_overflow(state, a, b):
+        '''
+        Sign extend the value to 512 bits and check the result can be represented
+         in 256. Following there is a 32 bit excerpt of this condition:
+
+        a  *  b           +00000000000000000 +00000000000000001 +0000000003fffffff +0000000007fffffff +00000000080000001 +000000000bfffffff +000000000ffffffff
+        +0000000000000000  +0000000000000000  +0000000000000000  +0000000000000000  +0000000000000000  +0000000000000000  +0000000000000000  +0000000000000000
+        +0000000000000001  +0000000000000000  +0000000000000001  +000000003fffffff  +000000007fffffff  +0000000080000001  +00000000bfffffff  +00000000ffffffff
+        +000000003fffffff  +0000000000000000  +000000003fffffff *+0fffffff80000001 *+1fffffff40000001 *+1fffffffbfffffff *+2fffffff00000001 *+3ffffffec0000001
+        +000000007fffffff  +0000000000000000  +000000007fffffff *+1fffffff40000001 *+3fffffff00000001 *+3fffffffffffffff *+5ffffffec0000001 *+7ffffffe80000001
+        +0000000080000001  +0000000000000000  +0000000080000001 *+1fffffffbfffffff *+3fffffffffffffff *+4000000100000001 *+600000003fffffff *+800000007fffffff
+        +00000000bfffffff  +0000000000000000  +00000000bfffffff *+2fffffff00000001 *+5ffffffec0000001 *+600000003fffffff *+8ffffffe80000001 *+bffffffe40000001
+        +00000000ffffffff  +0000000000000000  +00000000ffffffff *+3ffffffec0000001 *+7ffffffe80000001 *+800000007fffffff *+bffffffe40000001 *+fffffffe00000001
+
+        '''
+        mul = Operators.SEXTEND(a, 256, 512) * Operators.SEXTEND(b, 256, 512)
+        cond = Operators.OR(mul < -(1 << 255), mul >= (1 << 255))
+        return cond
+
+    @staticmethod
+    def _unsigned_mul_overflow(state, a, b):
+        '''
+        Sign extend the value to 512 bits and check the result can be represented
+         in 256. Following there is a 32 bit excerpt of this condition:
+
+        a  *  b           +00000000000000000 +00000000000000001 +0000000003fffffff +0000000007fffffff +00000000080000001 +000000000bfffffff +000000000ffffffff
+        +0000000000000000  +0000000000000000  +0000000000000000  +0000000000000000  +0000000000000000  +0000000000000000  +0000000000000000  +0000000000000000
+        +0000000000000001  +0000000000000000  +0000000000000001  +000000003fffffff  +000000007fffffff  +0000000080000001  +00000000bfffffff  +00000000ffffffff
+        +000000003fffffff  +0000000000000000  +000000003fffffff *+0fffffff80000001 *+1fffffff40000001 *+1fffffffbfffffff *+2fffffff00000001 *+3ffffffec0000001
+        +000000007fffffff  +0000000000000000  +000000007fffffff *+1fffffff40000001 *+3fffffff00000001 *+3fffffffffffffff *+5ffffffec0000001 *+7ffffffe80000001
+        +0000000080000001  +0000000000000000  +0000000080000001 *+1fffffffbfffffff *+3fffffffffffffff *+4000000100000001 *+600000003fffffff *+800000007fffffff
+        +00000000bfffffff  +0000000000000000  +00000000bfffffff *+2fffffff00000001 *+5ffffffec0000001 *+600000003fffffff *+8ffffffe80000001 *+bffffffe40000001
+        +00000000ffffffff  +0000000000000000  +00000000ffffffff *+3ffffffec0000001 *+7ffffffe80000001 *+800000007fffffff *+bffffffe40000001 *+fffffffe00000001
+
+        '''
+        mul = Operators.SEXTEND(a, 256, 512) * Operators.SEXTEND(b, 256, 512)
+        cond = Operators.UGE(mul, 1 << 256)
+        return cond
+
+    def did_evm_execute_instruction_callback(self, state, instruction, arguments, result_ref):
+        result = result_ref.value
         mnemonic = instruction.semantics
+        result = result_ref.value
+        ios = False
+        iou = False
 
         if mnemonic == 'ADD':
-            if self._can_add_overflow(state, result, *arguments):
-                self.add_finding(state, "Integer overflow at {} instruction".format(mnemonic))
-                if issymbolic(result):
-                    result._taint = result.taint | frozenset(("IOA",))
+            ios = self._signed_add_overflow(state, *arguments)
+            iou = self._unsigned_add_overflow(state, *arguments)
         elif mnemonic == 'MUL':
-            if self._can_mul_overflow(state, result, *arguments):
-                self.add_finding(state, "Integer overflow at {} instruction".format(mnemonic))
-                if issymbolic(result):
-                    result._taint = result.taint | frozenset(("IOM",))
+            ios = self._signed_mul_overflow(state, *arguments)
+            iou = self._unsigned_mul_overflow(state, *arguments)
         elif mnemonic == 'SUB':
-            if self._can_sub_underflow(state, *arguments):
-                self.add_finding(state, "Integer underflow at {} instruction".format(mnemonic))
-                if issymbolic(result):
-                    result._taint = result.taint | frozenset(("IU",))
-        if mnemonic == 'SSTORE':
-            for arg in arguments:
-                if istainted(arg, 'IOA') or istainted(arg, 'IOM') or istainted(arg, 'IU'):
-                    self.add_finding(state, "Result of integuer overflowed intruction is written to the storage")
+            ios = self._signed_sub_overflow(state, *arguments)
+            iou = self._unsigned_sub_overflow(state, *arguments)
+        elif mnemonic == 'SSTORE':
+            where, what = arguments
+            if istainted(what, "SIGNED"):
+                for taint in get_taints(what, "IOS_.*"):
+                    loc = self._get_location(state, taint[4:])
+                    if state.can_be_true(loc[-1]):
+                        self.add_finding(state, *loc[:-1])
+            else:
+                for taint in get_taints(what, "IOU_.*"):
+                    loc = self._get_location(state, taint[4:])
+                    if state.can_be_true(loc[-1]):
+                        self.add_finding(state, *loc[:-1])
+
+        if mnemonic in ('SLT', 'SGT', 'SDIV', 'SMOD'):
+            result = taint_with(result, "SIGNED")
+
+        if state.can_be_true(ios):
+            id_val = self._save_current_location(state, "Signed integer overflow at %s instruction" % mnemonic, ios)
+            result = taint_with(result, "IOS_{:s}".format(id_val))
+        if state.can_be_true(iou):
+            id_val = self._save_current_location(state, "Unsigned integer overflow at %s instruction" % mnemonic, iou)
+            result = taint_with(result, "IOU_{:s}".format(id_val))
+
+        result_ref.value = result
 
 
-class UninitializedMemory(Detector):
+class DetectUninitializedMemory(Detector):
     '''
         Detects uses of uninitialized memory
     '''
@@ -132,7 +375,7 @@ class UninitializedMemory(Detector):
             if current_contract == known_contract:
                 cbu = Operators.AND(cbu, offset != known_offset)
         if state.can_be_true(cbu):
-            self.add_finding(state, "Potentially reading uninitialized memory at instruction (address: %r, offset %r)" % (current_contract, offset))
+            self.add_finding_here(state, "Potentially reading uninitialized memory at instruction (address: %r, offset %r)" % (current_contract, offset))
 
     def did_evm_write_memory_callback(self, state, offset, value):
         current_contract = state.platform.current_vm.address
@@ -141,7 +384,7 @@ class UninitializedMemory(Detector):
         state.context.setdefault('seth.detectors.initialized_memory', set()).add((current_contract, offset))
 
 
-class UninitializedStorage(Detector):
+class DetectUninitializedStorage(Detector):
     '''
         Detects uses of uninitialized storage
     '''
@@ -156,7 +399,7 @@ class UninitializedStorage(Detector):
             cbu = Operators.AND(cbu, Operators.OR(address != known_address, offset != known_offset))
 
         if state.can_be_true(cbu):
-            self.add_finding(state, "Potentially reading uninitialized storage")
+            self.add_finding_here(state, "Potentially reading uninitialized storage")
 
     def did_evm_write_storage_callback(self, state, address, offset, value):
         # concrete or symbolic write
@@ -221,28 +464,27 @@ class SolidityMetadata(object):
         asm_offset = 0
         asm_pos = 0
         md = dict(enumerate(srcmap[asm_pos].split(':')))
-        s = int(md.get(0, 0))
-        l = int(md.get(1, 0))
-        f = int(md.get(2, 0))
-        j = md.get(3, None)
+        byte_offset = int(md.get(0, 0))  # is the byte-offset to the start of the range in the source file
+        source_len = int(md.get(1, 0))  # is the length of the source range in bytes
+        file_index = int(md.get(2, 0))  # is the source index over sourceList
+        jump_type = md.get(3, None)  # this can be either i, o or - signifying whether a jump instruction goes into a function, returns from a function or is a regular jump as part of e.g. a loop
 
+        pos_to_offset = {}
         for i in evm.EVMAsm.disassemble_all(bytecode):
-            if asm_pos in srcmap and len(srcmap[asm_pos]):
-                md = srcmap[asm_pos]
-                if len(md):
-                    d = {}
-                    for p, k in enumerate(md.split(':')):
-                        if len(k):
-                            d[p] = k
-
-                    s = int(d.get(0, s))
-                    l = int(d.get(1, l))
-                    f = int(d.get(2, f))
-                    j = d.get(3, j)
-
-            new_srcmap[asm_offset] = (s, l, f, j)
+            pos_to_offset[asm_pos] = asm_offset
             asm_pos += 1
             asm_offset += i.size
+
+        for asm_pos, md in enumerate(srcmap):
+            if len(md):
+                d = dict((p, k) for p, k in enumerate(md.split(':')) if k)
+
+                byte_offset = int(d.get(0, byte_offset))
+                source_len = int(d.get(1, source_len))
+                file_index = int(d.get(2, file_index))
+                jump_type = d.get(3, jump_type)
+
+            new_srcmap[pos_to_offset[asm_pos]] = (byte_offset, source_len, file_index, jump_type)
 
         return new_srcmap
 
@@ -266,6 +508,7 @@ class SolidityMetadata(object):
             srcmap = self.srcmap
 
         try:
+            #print asm_offset, srcmap[asm_offset]
             beg, size, _, _ = srcmap[asm_offset]
         except KeyError:
             #asm_offset pointing outside the known bytecode
@@ -454,7 +697,7 @@ class ABI(object):
     @staticmethod
     def get_uint(data, nbytes, offset):
         """
-        Read a `nbytes` bytes long big endian unsigned integer from `data` starting at `offset` 
+        Read a `nbytes` bytes long big endian unsigned integer from `data` starting at `offset`
 
         :param data: sliceable buffer; symbolic buffer of Eth ABI encoded data
         :param offset: byte offset
@@ -467,12 +710,20 @@ class ABI(object):
                 return value.value
             else:
                 return value
-
         nbytes = _simplify(nbytes)
         offset = _simplify(offset)
         padding = 32 - nbytes
         start = offset + padding
-        value = Operators.CONCAT(nbytes * 8, *[Operators.ORD(x) for x in data[start:start + nbytes]])
+        values = []
+        pos = start
+        while pos < start + nbytes:
+            if pos > len(data):
+                values.append('\x00')
+            else:
+                values.append(data[pos])
+            pos = pos + 1
+        #value = Operators.CONCAT(nbytes * 8, *[Operators.ORD(x) for x in data[start:start + nbytes]])
+        value = Operators.CONCAT(nbytes * 8, *[Operators.ORD(x) for x in values])
         return _simplify(value)
 
     @staticmethod
@@ -673,7 +924,7 @@ class ManticoreEVM(Manticore):
             #Initialize user and contracts
             user_account = m.create_account(balance=1000)
             contract_account = m.solidity_create_contract(source_code, owner=user_account, balance=0)
-            contract_account.set(12345, value=100) 
+            contract_account.set(12345, value=100)
 
             seth.report()
             print seth.coverage(contract_account)
@@ -791,11 +1042,11 @@ class ManticoreEVM(Manticore):
             filename
         ]
         p = Popen(solc_invocation, stdout=PIPE, stderr=PIPE, cwd=working_folder)
-        with p.stdout as stdout, p.stderr as stderr:
-            try:
-                return json.loads(stdout.read()), stderr.read()
-            except ValueError:
-                raise Exception('Solidity compilation error:\n\n{}'.format(stderr.read()))
+        stdout, stderr = p.communicate()
+        try:
+            return json.loads(stdout), stderr
+        except ValueError:
+            raise Exception('Solidity compilation error:\n\n{}'.format(stderr))
 
     @staticmethod
     def _compile(source_code, contract_name, libraries=None):
@@ -803,7 +1054,7 @@ class ManticoreEVM(Manticore):
 
             :param source_code: solidity source as either a string or a file handle
             :param contract_name: a string with the name of the contract to analyze
-            :param libraries: an itemizable of pairs (library_name, address) 
+            :param libraries: an itemizable of pairs (library_name, address)
             :return: name, source_code, bytecode, srcmap, srcmap_runtime, hashes
             :return: name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
         """
@@ -958,19 +1209,19 @@ class ManticoreEVM(Manticore):
         '''
 
         # Move state from running to final
-        if state_id != -1:
-            with self.locked_context('seth') as seth_context:
-                saved_states = seth_context['_saved_states']
-                final_states = seth_context['_final_states']
+        with self.locked_context('seth') as seth_context:
+            saved_states = seth_context['_saved_states']
+            final_states = seth_context['_final_states']
+            if state_id != -1:
                 if state_id in saved_states:
                     saved_states.remove(state_id)
                     final_states.append(state_id)
-                seth_context['_saved_states'] = saved_states
-                seth_context['_final_states'] = final_states
-        else:
-            assert state_id == -1
-            state_id = self.save(self._initial_state, final=True)
-            self._initial_state = None
+            else:
+                assert state_id == -1
+                state_id = self.save(self._initial_state, final=True)
+                self._initial_state = None
+            seth_context['_saved_states'] = saved_states
+            seth_context['_final_states'] = final_states
         return state_id
 
     def _revive_state_id(self, state_id):
@@ -1195,14 +1446,12 @@ class ManticoreEVM(Manticore):
 
         if contract_account is None:
             logger.info("Failed to create contract. Exception in constructor")
+            self.finalize()
             return
 
         prev_coverage = 0
         current_coverage = 0
 
-        #avoid all human level tx that has no effect on the storage
-        filter_nohuman_constants = FilterFunctions(regexp=r".*", depth='human', mutability='constant', include=False)
-        self.register_plugin(filter_nohuman_constants)
         while (current_coverage < 100 or not tx_use_coverage) and not self.is_shutdown():
             try:
                 run_symbolic_tx()
@@ -1220,13 +1469,9 @@ class ManticoreEVM(Manticore):
 
                 if not found_new_coverage:
                     break
-        #Remove the filter
-        self.unregister_plugin(filter_nohuman_constants)
-        self.finalize()
 
     def run(self, **kwargs):
         ''' Run any pending transaction on any running state '''
-
         # Check if there is a pending transaction
         with self.locked_context('seth') as context:
             assert context['_pending_transaction'] is not None
@@ -1344,7 +1589,7 @@ class ManticoreEVM(Manticore):
             assert tx.result in {'SELFDESTRUCT', 'RETURN', 'STOP'}
             # if not a revert we save the state for further transactioning
             del state.context['processed']
-            self.save(state)  # Add tu running states
+            self.save(state)  # Add to running states
 
     #Callbacks
     def _load_state_callback(self, state, state_id):
@@ -1380,7 +1625,7 @@ class ManticoreEVM(Manticore):
             assert ty == 'CREATE_CONTRACT'
             world.create_contract(caller=caller, address=address, balance=value, init=data, price=price)
 
-    def _did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
+    def _did_evm_execute_instruction_callback(self, state, instruction, arguments, result_ref):
         ''' INTERNAL USE '''
         logger.debug("%s", state.platform.current_vm)
         #TODO move to a plugin
@@ -1411,21 +1656,23 @@ class ManticoreEVM(Manticore):
     def register_detector(self, d):
         if not isinstance(d, Detector):
             raise Exception("Not a Detector")
+        if d.name in self.detectors:
+            raise Exception("Detector already registered")
         self.detectors[d.name] = d
         self.register_plugin(d)
+        return d.name
 
     def unregister_detector(self, d):
-        if not isinstance(d, Detector):
+        if not isinstance(d, (Detector, str)):
             raise Exception("Not a Detector")
-        if d.name not in self.detectors:
+        name = d
+        if isinstance(d, Detector):
+            name = d.name
+        if name not in self.detectors:
             raise Exception("Detector not registered")
-        del self.detectors[d.name]
+        d = self.detectors[name]
+        del self.detectors[name]
         self.unregister_plugin(d)
-
-    @property
-    def global_findings(self):
-        with self.locked_context('seth.global_findings', set) as global_findings:
-            return global_findings
 
     @property
     def workspace(self):
@@ -1452,6 +1699,26 @@ class ManticoreEVM(Manticore):
             return '(*)' if flag else ''
         testcase = self._output.testcase(name.replace(' ', '_'))
         logger.info("Generated testcase No. {} - {}".format(testcase.num, message + blockchain.last_transaction.result))
+
+        local_findings = set()
+        for detector in self.detectors.values():
+            for address, pc, finding, at_init in detector.get_findings(state):
+                if (address, pc, finding, at_init) not in local_findings:
+                    local_findings.add((address, pc, finding, at_init))
+
+        if len(local_findings):
+            with testcase.open_stream('findings') as findings:
+                for address, pc, finding, at_init in local_findings:
+                    findings.write('- %s -\n' % finding)
+                    findings.write('  Contract: 0x%x\n' % address)
+                    findings.write('  EVM Program counter: %s%s\n' % (pc, at_init and " (at constructor)" or ""))
+                    md = self.get_metadata(address)
+                    if md is not None:
+                        src = md.get_source_for(pc, runtime=not at_init)
+                        findings.write('  Snippet:\n')
+                        findings.write(src.replace('\n', '\n    ').strip())
+                        findings.write('\n')
+
         with testcase.open_stream('summary') as summary:
             summary.write("Message: %s\n" % message)
             summary.write("Last exception: %s\n" % state.context['last_exception'])
@@ -1485,7 +1752,7 @@ class ManticoreEVM(Manticore):
                 from .core.smtlib.visitors import translate_to_smtlib
 
                 storage = blockchain.get_storage(account_address)
-                summary.write("Storage: %s" % translate_to_smtlib(storage, use_bindings=True))
+                summary.write("Storage: %s\n" % translate_to_smtlib(storage, use_bindings=True))
 
                 all_used_indexes = []
                 with state.constraints as temp_cs:
@@ -1544,7 +1811,7 @@ class ManticoreEVM(Manticore):
                 tx_summary.write("Transactions Nr. %d\n" % blockchain.transactions.index(tx))
 
                 # The result if any RETURN or REVERT
-                tx_summary.write("Type: %s\n" % tx.sort)
+                tx_summary.write("Type: %s (%d)\n" % (tx.sort, tx.depth))
                 tx_summary.write("From: 0x%x %s\n" % (state.solve_one(tx.caller), flagged(issymbolic(tx.caller))))
                 tx_summary.write("To: 0x%x %s\n" % (state.solve_one(tx.address), flagged(issymbolic(tx.address))))
                 tx_summary.write("Value: %d %s\n" % (state.solve_one(tx.value), flagged(issymbolic(tx.value))))
@@ -1559,6 +1826,7 @@ class ManticoreEVM(Manticore):
                         function_id = tx.data[:4]  # hope there is enough data
                         function_id = binascii.hexlify(state.solve_one(function_id))
                         signature = metadata.get_func_signature(function_id)
+                        # FIXME Can this fail when absurd encoding? \/
                         function_name, arguments = ABI.parse(signature, tx.data)
 
                         return_data = None
@@ -1632,56 +1900,73 @@ class ManticoreEVM(Manticore):
             ln = '0x{:x}:0x{:x} {}\n'.format(contract, pc, '*' if at_init else '')
             filestream.write(ln)
 
+    @property
+    def global_findings(self):
+        global_findings = set()
+        for detector in self.detectors.values():
+            for address, pc, finding, at_init in detector.global_findings:
+                if (address, pc, finding, at_init) not in global_findings:
+                    global_findings.add((address, pc, finding, at_init))
+        return global_findings
+
     def finalize(self):
         """
         Terminate and generate testcases for all currently alive states (contract states that cleanly executed
         to a STOP or RETURN in the last symbolic transaction).
         """
         logger.debug("Finalizing %d states.", self.count_states())
-        q = Queue()
-        map(q.put, self._all_state_ids)
 
-        def f(q):
+        def finalizer(state_id):
+            state_id = self._terminate_state_id(state_id)
+            st = self.load(state_id)
+            logger.debug("Generating testcase for state_id %d", state_id)
+            self._generate_testcase_callback(st, 'test', '')
+
+        def worker_finalize(q):
             try:
                 while True:
-                    state_id = q.get_nowait()
-                    state_id = self._terminate_state_id(state_id)
-                    st = self.load(state_id)
-                    logger.debug("Generating testcase for state_id %d", state_id)
-                    self._generate_testcase_callback(st, 'test', '')
+                    finalizer(q.get_nowait())
             except EmptyQueue:
                 pass
 
-        ps = []
+        q = Queue()
+        for state_id in self._all_state_ids:
+            #we need to remove -1 state before forking because it may be in memory
+            if state_id == -1:
+                finalizer(-1)
+            else:
+                q.put(state_id)
+
+        report_workers = []
 
         for _ in range(self._config_procs):
-            p = Process(target=f, args=(q,))
-            p.start()
-            ps.append(p)
+            proc = Process(target=worker_finalize, args=(q,))
+            proc.start()
+            report_workers.append(proc)
 
-        for p in ps:
-            p.join()
+        for proc in report_workers:
+            proc.join()
 
         #global summary
+        if len(self.global_findings):
+            with self._output.save_stream('global.findings') as global_findings:
+                for address, pc, finding, at_init in self.global_findings:
+                    global_findings.write('- %s -\n' % finding)
+                    global_findings.write('  Contract: %s\n' % address)
+                    global_findings.write('  EVM Program counter: %s%s\n' % (pc, at_init and " (at constructor)" or ""))
+
+                    md = self.get_metadata(address)
+                    if md is not None:
+                        src = md.get_source_for(pc, runtime=not at_init)
+                        global_findings.write('  Solidity snippet:\n')
+                        global_findings.write(src.replace('\n', '\n    ').strip())
+                        global_findings.write('\n')
+
         with self._output.save_stream('global.summary') as global_summary:
             # (accounts created by contract code are not in this list )
             global_summary.write("Global runtime coverage:\n")
             for address in self.contract_accounts:
-                global_summary.write("%x: %d%%\n" % (address, self.global_coverage(address)))  # coverage % for address in this state
-
-            if len(self.global_findings):
-                global_summary.write("Global Findings:\n")
-
-                for address, pc, finding in self.global_findings:
-                    global_summary.write('- %s -\n' % finding)
-                    global_summary.write('\t Contract: %s\n' % address)
-                    global_summary.write('\t Program counter: %s\n' % pc)
-                    md = self.get_metadata(address)
-                    if md is not None:
-                        src = md.get_source_for(pc)
-                        global_summary.write('\t Snippet:\n')
-                        global_summary.write('\n'.join(('\t\t' + x for x in src.split('\n'))))
-                        global_summary.write('\n\n')
+                global_summary.write("%x: %d%%\n" % (address, self.global_coverage(address)))
 
             md = self.get_metadata(address)
             if md is not None and len(md.warnings) > 0:
@@ -1740,29 +2025,6 @@ class ManticoreEVM(Manticore):
                     for o in sorted(visited):
                         f.write('0x%x\n' % o)
 
-        # move running states to final states list
-        # and generate a testcase for each
-        q = Queue()
-        map(q.put, self._running_state_ids)
-
-        def f(q):
-            try:
-                while True:
-                    state_id = q.get_nowait()
-                    self._terminate_state_id(state_id)
-            except EmptyQueue:
-                pass
-
-        ps = []
-
-        for _ in range(self._config_procs):
-            p = Process(target=f, args=(q,))
-            p.start()
-            ps.append(p)
-
-        for p in ps:
-            p.join()
-
         # delete actual streams from storage
         for state_id in self._all_state_ids:
             # state_id -1 is always only on memory
@@ -1772,22 +2034,9 @@ class ManticoreEVM(Manticore):
         # clean up lists
         with self.locked_context('seth') as seth_context:
             seth_context['_saved_states'] = []
-        with self.locked_context('seth') as seth_context:
             seth_context['_final_states'] = []
 
         logger.info("Results in %s", self.workspace)
-
-        #delete actual streams from storage
-        for state_id in self._all_state_ids:
-            #state_id -1 is always only on memory
-            if state_id != -1:
-                self._executor._workspace.rm_state(state_id)
-
-        # clean up lists
-        with self.locked_context('seth') as seth_context:
-            seth_context['_saved_states'] = []
-        with self.locked_context('seth') as seth_context:
-            seth_context['_final_states'] = []
 
     def global_coverage(self, account_address):
         ''' Returns code coverage for the contract on `account_address`.
@@ -1803,7 +2052,8 @@ class ManticoreEVM(Manticore):
                 code = world.get_code(account_address)
                 runtime_bytecode = state.solve_one(code)
                 break
-
+        else:
+            return 0.0
         with self.locked_context('runtime_coverage') as coverage:
             seen = {off for addr, off in coverage if addr == account_address}
         return calculate_coverage(runtime_bytecode, seen)

@@ -1,16 +1,15 @@
 ''' Symbolic EVM implementation based on the yellow paper: http://gavwood.com/paper.pdf '''
-import time
 import random
 import copy
 import inspect
 from functools import wraps
 from ..utils.helpers import issymbolic, memoized
 from ..platforms.platform import *
-from ..core.smtlib import solver, TooManySolutions, Expression, Bool, BitVec, Array, Operators, Constant, BitVecConstant, ConstraintSet, SolverException
-from ..core.state import ForkState, TerminateState
-from ..utils.event import Eventful
-from ..core.smtlib.visitors import pretty_print, translate_to_smtlib, simplify
+from ..core.smtlib import solver, BitVec, Array, Operators, Constant, ArrayVariable
 from ..core.state import Concretize, TerminateState
+from ..core.plugin import Ref
+from ..utils.event import Eventful
+from ..core.smtlib.visitors import simplify
 import logging
 import sys
 from collections import namedtuple
@@ -58,9 +57,8 @@ class Transaction(object):
         self.caller = caller
         self.value = value
         self.depth = depth
-        self.return_data = return_data
-        self.result = result
         self.gas = gas
+        self.set_result(result, return_data)
 
     @property
     def sort(self):
@@ -76,24 +74,12 @@ class Transaction(object):
     def result(self):
         return self._result
 
-    @result.setter
-    def result(self, result):
-        if result not in {None, 'TXERROR', 'REVERT', 'RETURN', 'THROW', 'STOP', 'SELFDESTRUCT'}:
-            raise EVMException('Invalid transaction result')
-        self._result = result
-
     def is_human(self):
         return self.depth == 0
 
     @property
     def return_data(self):
         return self._return_data
-
-    @return_data.setter
-    def return_data(self, return_data):
-        if not isinstance(return_data, (type(None), bytearray, Array)):
-            raise EVMException('Invalid transaction return_data')
-        self._return_data = return_data
 
     @property
     def return_value(self):
@@ -103,13 +89,19 @@ class Transaction(object):
             assert self.result in {'TXERROR', 'REVERT', 'THROW', 'SELFDESTRUCT'}
             return 0
 
-    def set_result(self, result, data=None):
-        if self.result is not None:
+    def set_result(self, result, return_data=None):
+        if getattr(self, 'result', None) is not None:
             raise EVMException('Transaction result already set')
-        if not isinstance(data, (type(None), bytearray, Array)):
-            raise EVMException('Transaction result data wrong type')
-        self.result = result
-        self.return_data = data
+        if result not in {None, 'TXERROR', 'REVERT', 'RETURN', 'THROW', 'STOP', 'SELFDESTRUCT'}:
+            raise EVMException('Invalid transaction result')
+        if result in {'RETURN', 'REVERT'}:
+            if not isinstance(return_data, (bytearray, Array)):
+                raise EVMException('Invalid transaction return_data')
+        else:
+            if return_data is not None:
+                raise EVMException('Invalid transaction return_data')
+        self._result = result
+        self._return_data = return_data
 
     def __reduce__(self):
         ''' Implements serialization/pickle '''
@@ -355,11 +347,6 @@ class EVMAsm(object):
         def writes_to_stack(self):
             ''' True if the instruction writes to the stack '''
             return self.pushes > 0
-
-        @property
-        def reads_from_memory(self):
-            ''' True if the instruction reads from memory '''
-            return self.semantics in ('MLOAD', 'CREATE', 'CALL', 'CALLCODE', 'RETURN', 'DELEGATECALL', 'REVERT')
 
         @property
         def writes_to_memory(self):
@@ -1218,10 +1205,16 @@ class EVM(Eventful):
             value = value.value
         self.stack.append(value)
 
+    def _top(self, n=0):
+        ''' Read a value from the top of the stack without removing it '''
+        if len(self.stack) - n < 0:
+            raise StackUnderflow()
+        return self.stack[n - 1]
+
     def _pop(self):
+        ''' Pop a value from the stack '''
         if len(self.stack) == 0:
             raise StackUnderflow()
-
         return self.stack.pop()
 
     def _consume(self, fee):
@@ -1362,7 +1355,7 @@ class EVM(Eventful):
             if not current.is_branch:
                 #advance pc pointer
                 self.pc += self.instruction.size
-            self._publish('did_evm_execute_instruction', current, arguments, result)
+            self._publish('did_evm_execute_instruction', current, arguments, Ref(result))
             self._publish('did_execute_instruction', last_pc, self.pc, current)
             raise
         except Emulated as e:
@@ -1371,12 +1364,14 @@ class EVM(Eventful):
                 self.pc += self.instruction.size
             result = e.result
 
-        self._push_results(current, result)
         if not current.is_branch:
             #advance pc pointer
             self.pc += self.instruction.size
-        self._publish('did_evm_execute_instruction', current, arguments, result)
+        result_ref = Ref(result)
+        self._publish('did_evm_execute_instruction', current, arguments, result_ref)
         self._publish('did_execute_instruction', last_pc, self.pc, current)
+
+        self._push_results(current, result_ref.value)
 
     def read_buffer(self, offset, size):
         if issymbolic(size):
@@ -1448,7 +1443,7 @@ class EVM(Eventful):
         '''Signed integer division operation (truncated)'''
         s0, s1 = to_signed(a), to_signed(b)
         try:
-            result = (abs(s0) // abs(s1) * (-1 if s0 * s1 < 0 else 1))
+            result = (Operators.ABS(s0) // Operators.ABS(s1) * Operators.ITEBV(256, s0 * s1 < 0, -1, 1))
         except ZeroDivisionError:
             result = 0
         return Operators.ITEBV(256, b == 0, 0, result)
@@ -1466,7 +1461,7 @@ class EVM(Eventful):
         s0, s1 = to_signed(a), to_signed(b)
         sign = Operators.ITEBV(256, s0 < 0, -1, 1)
         try:
-            result = abs(s0) % abs(s1) * sign
+            result = (Operators.ABS(s0) % Operators.ABS(s1)) * sign
         except ZeroDivisionError:
             result = 0
 
@@ -1671,9 +1666,9 @@ class EVM(Eventful):
         #if issymbolic(size):
         #    assert not solver.can_be_true(self.constraints, Operators.UGT(self.gas, old_gas))
 
-        self.constraints.add(size % 32 == 0)
-        self.constraints.add(Operators.ULT(size, 32 * 10))
         if issymbolic(size):
+            #self.constraints.add(size % 32 == 0)
+            #self.constraints.add(Operators.ULT(size, 32 * 10))
             raise ConcretizeStack(3, policy='SAMPLED')
 
         for i in range(size):
@@ -1747,8 +1742,8 @@ class EVM(Eventful):
 
         self._allocate(mem_offset + size)
         for i in range(size):
-            if offset + i < len(return_data):
-                self._store(mem_offset + i, return_data[offset + i])
+            if return_offset + i < len(return_data):
+                self._store(mem_offset + i, return_data[return_offset + i])
             else:
                 self._store(mem_offset + i, 0)
 
@@ -1922,12 +1917,11 @@ class EVM(Eventful):
 
     @CALL.pos
     def CALL(self, gas, address, value, in_offset, in_size, out_offset, out_size):
-        data = self.world.current_transaction.return_data
-
+        data = self.world.last_transaction.return_data
         if data is not None:
             data_size = len(data)
             size = Operators.ITEBV(256, Operators.ULT(out_size, data_size), out_size, data_size)
-            self.current_vm.write_buffer(out_offset, data[:size])
+            self.write_buffer(out_offset, data[:size])
 
         return self.world.last_transaction.return_value
 
@@ -1943,14 +1937,13 @@ class EVM(Eventful):
                                      gas=self.gas)
         raise StartTx()
 
-    @CALL.pos
-    def CALLCODE(self, gas, _ignored_, value, in_offset, in_size, out_offset, out_size):
-        data = self.world.current_transaction.return_data
-
+    @CALLCODE.pos
+    def CALLCODE(self, gas, address, value, in_offset, in_size, out_offset, out_size):
+        data = self.world.last_transaction.return_data
         if data is not None:
             data_size = len(data)
             size = Operators.ITEBV(256, Operators.ULT(out_size, data_size), out_size, data_size)
-            self.current_vm.write_buffer(out_offset, data[:size])
+            self.write_buffer(out_offset, data[:size])
 
         return self.world.last_transaction.return_value
 
@@ -1973,12 +1966,11 @@ class EVM(Eventful):
 
     @DELEGATECALL.pos
     def DELEGATECALL(self, gas, address, in_offset, in_size, out_offset, out_size):
-        data = self.world.current_transaction.return_data
-
+        data = self.world.last_transaction.return_data
         if data is not None:
             data_size = len(data)
             size = Operators.ITEBV(256, Operators.ULT(out_size, data_size), out_size, data_size)
-            self.current_vm.write_buffer(out_offset, data[:size])
+            self.write_buffer(out_offset, data[:size])
 
         return self.world.last_transaction.return_value
 
@@ -1986,7 +1978,7 @@ class EVM(Eventful):
     @concretized_args(in_offset='SAMPLED', in_size='SAMPLED')
     def STATICCALL(self, gas, address, in_offset, in_size, out_offset, out_size):
         '''Message-call into an account'''
-        self.world.start_transaction('DELEGATECALL',
+        self.world.start_transaction('STATICCALL',
                                      address,
                                      data=self.read_buffer(in_offset, in_size),
                                      caller=self.address,
@@ -1996,12 +1988,11 @@ class EVM(Eventful):
 
     @STATICCALL.pos
     def STATICCALL(self, gas, address, in_offset, in_size, out_offset, out_size):
-        data = self.world.current_transaction.return_data
-
+        data = self.world.last_transaction.return_data
         if data is not None:
             data_size = len(data)
             size = Operators.ITEBV(256, Operators.ULT(out_size, data_size), out_size, data_size)
-            self.current_vm.write_buffer(out_offset, data[:size])
+            self.write_buffer(out_offset, data[:size])
 
         return self.world.last_transaction.return_value
 
@@ -2187,13 +2178,9 @@ class EVMWorld(Platform):
             assert self._sha3[buf] == value
         self._sha3[buf] = value
 
-    @property
-    def world_state(self):
-        return self._world_state
-
     def __getitem__(self, index):
         assert isinstance(index, (int, long))
-        return self.world_state[index]
+        return self._world_state[index]
 
     def __contains__(self, key):
         assert not issymbolic(key), "Symbolic address not supported"
@@ -2205,10 +2192,6 @@ class EVMWorld(Platform):
     @property
     def logs(self):
         return self._logs
-
-    @property
-    def deleted_accounts(self):
-        return self._deleted_accounts
 
     @property
     def constraints(self):
@@ -2257,9 +2240,9 @@ class EVMWorld(Platform):
 
         if rollback:
             for address, account in self._deleted_accounts:
-                self.world_state[address] = account
+                self._world_state[address] = account
 
-            self.set_storage(vm.address, account_storage)
+            self._set_storage(vm.address, account_storage)
             self._deleted_accounts = self._deleted_accounts
             self._logs = logs
 
@@ -2343,7 +2326,7 @@ class EVMWorld(Platform):
 
     @property
     def accounts(self):
-        return self.world_state.keys()
+        return self._world_state.keys()
 
     @property
     def normal_accounts(self):
@@ -2366,20 +2349,45 @@ class EVMWorld(Platform):
         return self._deleted_accounts
 
     def delete_account(self, address):
-        if address in self.world_state:
-            deleted_account = (address, self.world_state[address])
-            del self.world_state[address]
+        if address in self._world_state:
+            deleted_account = (address, self._world_state[address])
+            del self._world_state[address]
             self._deleted_accounts.append(deleted_account)
 
     def get_storage_data(self, storage_address, offset):
-        value = self.world_state[storage_address]['storage'].get(offset, 0)
+        """
+        Read a value from a storage slot on the specified account
+
+        :param storage_address: an account address
+        :param offset: the storage slot to use.
+        :type offset: int or BitVec
+        :return: the value
+        :rtype: int or BitVec
+        """
+        value = self._world_state[storage_address]['storage'].get(offset, 0)
         return simplify(value)
 
     def set_storage_data(self, storage_address, offset, value):
-        self.world_state[storage_address]['storage'][offset] = value
+        """
+        Writes a value to a storage slot in specified account
+
+        :param storage_address: an account address
+        :param offset: the storage slot to use.
+        :type offset: int or BitVec
+        :param value: the value to write
+        :type value: int or BitVec
+        """
+        self._world_state[storage_address]['storage'][offset] = value
 
     def get_storage_items(self, address):
-        storage = self.world_state[address]['storage']
+        """
+
+
+        :param address: account address
+        :return: all items in account storage. items are tuple of (index, value). value can be symbolic
+        :rtype: list[(storage_index, storage_value)]
+        """
+        storage = self._world_state[address]['storage']
         items = []
         array = storage.array
         while not isinstance(array, ArrayVariable):
@@ -2388,43 +2396,60 @@ class EVMWorld(Platform):
         return items
 
     def has_storage(self, address):
-        #FIXME keep a variable that records if something(!=0) has been written
-        return True  # len(self.world_state[address]['storage'].items()) != 0
+        """
+        True if something has been written to the storage.
+        Note that if a slot has been erased from the storage this function may
+        lose any meaning.
+        """
+        storage = self._world_state[address]['storage']
+        array = storage.array
+        while not isinstance(array, ArrayVariable):
+            if isinstance(array, ArrayStore):
+                return True
+            array = array.array
+        return False
 
     def get_storage(self, address):
-        return self.world_state[address]['storage']
+        """
 
-    def set_storage(self, address, storage):
-        self.world_state[address]['storage'] = storage
+        :param address: account address
+        :return: account storage
+        :rtype: bytearray or ArrayProxy
+        """
+        return self._world_state[address]['storage']
+
+    def _set_storage(self, address, storage):
+        """ Private auxiliar function to replace the storage """
+        self._world_state[address]['storage'] = storage
 
     def set_balance(self, address, value):
-        self.world_state[int(address)]['balance'] = value
+        self._world_state[int(address)]['balance'] = value
 
     def get_balance(self, address):
-        if address not in self.world_state:
+        if address not in self._world_state:
             return 0
-        return self.world_state[address]['balance']
+        return self._world_state[address]['balance']
 
     def add_to_balance(self, address, value):
-        assert address in self.world_state
-        self.world_state[address]['balance'] += value
+        assert address in self._world_state
+        self._world_state[address]['balance'] += value
 
     def send_funds(self, sender, recipient, value):
-        self.world_state[sender]['balance'] -= value
-        self.world_state[recipient]['balance'] += value
+        self._world_state[sender]['balance'] -= value
+        self._world_state[recipient]['balance'] += value
 
     def get_code(self, address):
-        if address not in self.world_state:
+        if address not in self._world_state:
             return ''
-        return self.world_state[address]['code']
+        return self._world_state[address]['code']
 
     def set_code(self, address, data):
-        if self.world_state[address]['code']:
+        if self._world_state[address]['code']:
             raise EVMException("Code already set")
-        self.world_state[address]['code'] = data
+        self._world_state[address]['code'] = data
 
     def has_code(self, address):
-        return len(self.world_state[address]['code']) > 0
+        return len(self._world_state[address]['code']) > 0
 
     def log(self, address, topics, data):
         self._logs.append(EVMLog(address, data, topics))
@@ -2477,7 +2502,6 @@ class EVMWorld(Platform):
         self._process_pending_transaction()
         if self.current_vm is None:
             raise TerminateState("Trying to execute an empty transaction", testcase=False)
-
         try:
             self.current_vm.execute()
         except StartTx:

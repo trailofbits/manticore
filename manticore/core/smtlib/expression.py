@@ -390,7 +390,7 @@ class BitVecConstant(BitVec, Constant):
 
     def __eq__(self, other):
         if self.taint:
-            raise NotImplementedError()
+            super(BitVecConstant, self).__eq__(other)
         return self.value == other
 
 
@@ -721,10 +721,6 @@ class ArraySlice(Array):
         return self._array.value_bits
 
     @property
-    def value_bits(self):
-        return self._array.value_bits
-
-    @property
     def taint(self):
         return self._array.taint
 
@@ -807,7 +803,7 @@ class ArrayProxy(Array):
             index = self.cast_index(index)
         if not isinstance(value, Expression):
             value = self.cast_value(value)
-        from manticore.core.smtlib.visitors import simplify, translate_to_smtlib
+        from manticore.core.smtlib.visitors import simplify
         index = simplify(index)
         if isinstance(index, Constant):
             self._concrete_cache[index.value] = value

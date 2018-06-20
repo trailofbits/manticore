@@ -1,3 +1,4 @@
+from __future__ import print_function
 import shutil
 import struct
 import tempfile
@@ -9,7 +10,7 @@ from manticore.core.smtlib import ConstraintSet, operators
 from manticore.core.smtlib.expression import BitVec
 from manticore.core.smtlib import solver
 from manticore.core.state import State
-from manticore.ethereum import ManticoreEVM, IntegerOverflow, Detector, NoAliveStates, ABI, EthereumError
+from manticore.ethereum import ManticoreEVM, DetectIntegerOverflow, Detector, NoAliveStates, ABI, EthereumError
 from manticore.platforms.evm import EVMWorld, ConcretizeStack, concretized_args, Return, Stop
 from manticore.core.smtlib.visitors import pretty_print, translate_to_smtlib, simplify, to_constant
 
@@ -31,50 +32,45 @@ def make_mock_evm_state():
 class EthDetectorsIntegrationTest(unittest.TestCase):
     def test_int_ovf(self):
         mevm = ManticoreEVM()
-        mevm.register_detector(IntegerOverflow())
+        mevm.register_detector(DetectIntegerOverflow())
         filename = os.path.join(THIS_DIR, 'binaries/int_overflow.sol')
         mevm.multi_tx_analysis(filename, tx_limit=1)
         self.assertEqual(len(mevm.global_findings), 3)
         all_findings = ''.join(map(lambda x: x[2], mevm.global_findings))
-        self.assertIn('underflow at SUB', all_findings)
-        self.assertIn('overflow at ADD', all_findings)
-        self.assertIn('overflow at MUL', all_findings)
+        self.assertIn('Unsigned integer overflow at SUB instruction', all_findings)
+        self.assertIn('Unsigned integer overflow at ADD instruction', all_findings)
+        self.assertIn('Unsigned integer overflow at MUL instruction', all_findings)
 
 
 class EthDetectorsTest(unittest.TestCase):
     def setUp(self):
-        self.io = IntegerOverflow()
+        self.io = DetectIntegerOverflow()
         self.state = make_mock_evm_state()
 
     def test_mul_no_overflow(self):
         """
         Regression test added for issue 714, where we were using the ADD ovf check for MUL
         """
-        arguments = [1 << (8 * 31), self.state.new_symbolic_value(256)]
+        arguments = [1 << 248, self.state.new_symbolic_value(256)]
         self.state.constrain(operators.ULT(arguments[1], 256))
-
-        # TODO(mark) We should actually call into the EVM cpu here, and below, rather than
-        # effectively copy pasting what the MUL does
-        result = arguments[0] * arguments[1]
-
-        check = self.io._can_mul_overflow(self.state, result, *arguments)
+        
+        cond = self.io._unsigned_mul_overflow(self.state, *arguments)
+        check = self.state.can_be_true(cond)
         self.assertFalse(check)
 
     def test_mul_overflow0(self):
-        arguments = [2 << (8 * 31), self.state.new_symbolic_value(256)]
+        arguments = [1 << 249, self.state.new_symbolic_value(256)]
         self.state.constrain(operators.ULT(arguments[1], 256))
 
-        result = arguments[0] * arguments[1]
-
-        check = self.io._can_mul_overflow(self.state, result, *arguments)
+        cond = self.io._unsigned_mul_overflow(self.state, *arguments)
+        check = self.state.can_be_true(cond)
         self.assertTrue(check)
 
     def test_mul_overflow1(self):
         arguments = [1 << 255, self.state.new_symbolic_value(256)]
 
-        result = arguments[0] * arguments[1]
-
-        check = self.io._can_mul_overflow(self.state, result, *arguments)
+        cond = self.io._unsigned_mul_overflow(self.state, *arguments)
+        check = self.state.can_be_true(cond)
         self.assertTrue(check)
 
 
@@ -239,7 +235,47 @@ class EthTests(unittest.TestCase):
 
     def tearDown(self):
         self.mevm=None
-        #shutil.rmtree(self.worksp)
+        shutil.rmtree(self.worksp)
+
+    def test_regression_internal_tx(self):
+        m = self.mevm
+        owner_account = m.create_account(balance=1000)
+        c = '''
+        contract C1 {
+          function g() returns (uint) {
+            return 1;
+          }
+        }
+
+        contract C2 {
+          address c;
+          function C2(address x) {
+            c = x;
+          }
+          function f() returns (uint) {
+            return C1(c).g();
+          }
+        }
+        '''
+
+        c1 = m.solidity_create_contract(c, owner=owner_account, contract_name='C1')
+        self.assertEquals(m.count_states(), 1)
+        c2 = m.solidity_create_contract(c, owner=owner_account, contract_name='C2', args=[c1.address])
+        self.assertEquals(m.count_states(), 1)
+        c2.f();
+        self.assertEquals(m.count_states(), 1)
+        c2.f();
+        self.assertEquals(m.count_states(), 1)
+
+        for state in m.all_states:
+            world = state.platform
+            self.assertEquals(len(world.transactions), 6)
+            self.assertEquals(len(world.all_transactions), 6)
+            self.assertEquals(len(world.human_transactions), 4)
+            self.assertListEqual(['CREATE', 'CREATE', 'CALL', 'CALL', 'CALL', 'CALL'], [x.sort for x in world.all_transactions])
+            for tx in world.all_transactions[-4:]:
+                self.assertEquals(tx.result, 'RETURN')
+                self.assertEquals(state.solve_one(tx.return_data), b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01')
 
     def test_emit_did_execute_end_instructions(self):
         """
@@ -296,6 +332,7 @@ class EthTests(unittest.TestCase):
         filename = os.path.join(THIS_DIR, 'binaries/int_overflow.sol')
 
         mevm.multi_tx_analysis(filename, tx_limit=1)
+        mevm.finalize()
 
         worksp = mevm.workspace
         listdir = os.listdir(worksp)
@@ -384,12 +421,12 @@ class EthTests(unittest.TestCase):
                         func_name, args = ABI.parse("is_symbolic(uint256)", state.platform.current_transaction.data)
                         try:
                             arg = to_constant(args[0])
-                        except Exception,e:
+                        except Exception as e:
                             raise Return(TRUE)
                         raise Return(FALSE)
                     elif func_id == ABI.make_function_id("shutdown(string)"):
                         func_name, args = ABI.parse("shutdown(string)", state.platform.current_transaction.data)
-                        print "Shutdown", to_constant(args[0])
+                        print("Shutdown", to_constant(args[0]))
                         self.manticore.shutdown()
                     elif func_id == ABI.make_function_id("can_be_true(bool)"):
                         func_name, args = ABI.parse("can_be_true(bool)", state.platform.current_transaction.data)

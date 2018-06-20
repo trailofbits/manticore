@@ -14,6 +14,9 @@ But there are difference between format that makes it difficult to find a simple
 and common API.  interpreters? linkers? linked DLLs?
 
 '''
+from __future__ import print_function
+from elftools.elf.elffile import ELFFile
+import StringIO
 
 
 class Binary(object):
@@ -38,10 +41,6 @@ class Binary(object):
 
     def threads(self):
         pass
-
-
-from elftools.elf.elffile import ELFFile
-import StringIO
 
 
 class CGCElf(Binary):
@@ -138,5 +137,5 @@ Binary.magics = {'\x7fCGC': CGCElf,
 
 if __name__ == '__main__':
     import sys
-    print list(Binary(sys.argv[1]).threads())
-    print list(Binary(sys.argv[1]).maps())
+    print(list(Binary(sys.argv[1]).threads()))
+    print(list(Binary(sys.argv[1]).maps()))

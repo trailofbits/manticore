@@ -37,8 +37,10 @@ sudo apt-get update && sudo apt-get install python-pip -y
 # Install manticore and its dependencies
 sudo pip2 install manticore
 
-# Download and build the examples
+# Download the examples
 git clone https://github.com/trailofbits/manticore.git && cd manticore/examples/linux
+
+# Build the examples
 make
 
 # Use the Manticore CLI
@@ -50,6 +52,26 @@ cat mcore_*/*1.stdin | ./basic
 cd ../script
 python count_instructions.py ../linux/helloworld
 ```
+
+### Docker
+
+Alternatively, you can use Docker to install Manticore:
+
+```
+# Download manticore image
+docker pull trailofbits/manticore
+
+# Download the examples
+git clone https://github.com/trailofbits/manticore.git && cd manticore
+
+# Run container with a shared examples/ directory
+docker run -it -v $PWD/examples:/home/manticore/examples trailofbits/manticore
+
+# Change to examples directory
+manticore@80d441275ebf:~$ cd examples/linux
+```
+
+Then follow from the `make` command above.
 
 ## Installation
 
@@ -75,6 +97,12 @@ Option 3: Perform a system install.
 
 ```
 sudo pip install manticore
+```
+
+Option 4: Install via Docker.
+
+```
+docker pull trailofbits/manticore
 ```
 
 Once installed, the `manticore` CLI tool and Python API will be available.

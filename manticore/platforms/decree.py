@@ -2,7 +2,7 @@ from __future__ import absolute_import
 from . import cgcrandom
 # TODO use cpu factory
 from ..core.cpu.x86 import I386Cpu
-from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeRegister
+from ..core.cpu.abstractcpu import Interruption, ConcretizeRegister
 from ..core.memory import SMemory32
 from ..core.smtlib import *
 from ..core.executor import TerminateState
@@ -746,8 +746,8 @@ class Decree(Platform):
         if cpu.EAX not in syscalls.keys():
             raise TerminateState("32 bit DECREE system call number {} Not Implemented".format(cpu.EAX))
         func = syscalls[cpu.EAX]
-        logger.debug("SYSCALL32: %s (nargs: %d)", func.func_name, func.func_code.co_argcount)
-        nargs = func.func_code.co_argcount
+        logger.debug("SYSCALL32: %s (nargs: %d)", func.__name__, func.__code__.co_argcount)
+        nargs = func.__code__.co_argcount
         args = [cpu, cpu.EBX, cpu.ECX, cpu.EDX, cpu.ESI, cpu.EDI, cpu.EBP]
         cpu.EAX = func(*args[:nargs - 1])
 

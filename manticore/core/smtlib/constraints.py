@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from .expression import BitVecVariable, BoolVariable, ArrayVariable, Array, Bool, BitVec, BoolConstant, ArrayProxy, BoolEq, Variable, Constant
-from .visitors import GetDeclarations, TranslatorSmtlib, PrettyPrinter, pretty_print, translate_to_smtlib, get_depth, get_variables, simplify, replace
+from .visitors import GetDeclarations, TranslatorSmtlib, get_variables, simplify, replace
 import logging
 
 logger = logging.getLogger(__name__)

@@ -1,5 +1,7 @@
+import functools
 import collections
-from ..core.smtlib import Expression
+import re
+from ..core.smtlib import Expression, BitVecConstant
 
 
 def issymbolic(value):
@@ -18,17 +20,52 @@ def istainted(arg, taint=None):
     '''
     Helper to determine whether an object if tainted.
     :param arg: a value or Expression
-    :param taint: a sepecific taint value (eg. 'IMPORTANT'). If None this fucntions check for any taint value.
+    :param taint: a regular expression matching a taint value (eg. 'IMPORTANT.*'). If None this functions check for any taint value.
     '''
 
     if not issymbolic(arg):
         return False
     if taint is None:
         return len(arg.taint) != 0
-    return taint in arg.taint
+    for arg_taint in arg.taint:
+        m = re.match(taint, arg_taint, re.DOTALL | re.IGNORECASE)
+        if m:
+            return True
+    return False
 
 
-import functools
+def get_taints(arg, taint=None):
+    '''
+    Helper to list an object taints.
+    :param arg: a value or Expression
+    :param taint: a regular expression matching a taint value (eg. 'IMPORTANT.*'). If None this functions check for any taint value.
+    '''
+
+    if not issymbolic(arg):
+        raise StopIteration
+    for arg_taint in arg.taint:
+        if taint is not None:
+            m = re.match(taint, arg_taint, re.DOTALL | re.IGNORECASE)
+            if m:
+                yield arg_taint
+        else:
+            yield arg_taint
+    raise StopIteration
+
+
+def taint_with(arg, taint, value_bits=256, index_bits=256):
+    '''
+    Helper to taint a value, Fixme this should not taint in place.
+    :param arg: a value or Expression
+    :param taint: a regular expression matching a taint value (eg. 'IMPORTANT.*'). If None this functions check for any taint value.
+    '''
+    if not issymbolic(arg):
+        if isinstance(arg, (long, int)):
+            arg = BitVecConstant(value_bits, arg)
+    if not issymbolic(arg):
+        raise ValueError("type not supported")
+    arg._taint = arg.taint | frozenset((taint,))
+    return arg
 
 
 class memoized(object):
