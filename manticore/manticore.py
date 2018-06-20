@@ -44,7 +44,7 @@ def make_binja(program, disasm, argv, env, symbolic_files, concrete_start=''):
     def _check_disassembler_present(disasm):
         if is_binja_disassembler(disasm):
             try:
-                import binaryninja
+                import binaryninja  # noqa
             except ImportError:
                 err = ("BinaryNinja not found! You MUST own a BinaryNinja version"
                        " that supports GUI-less processing for this option"
@@ -72,7 +72,7 @@ def make_decree(program, concrete_start='', **kwargs):
     if concrete_start != '':
         logger.info('Starting with concrete input: {}'.format(concrete_start))
     platform.input.transmit(concrete_start)
-    platform.input.transmit(initial_state.symbolicate_buffer('+'*14, label='RECEIVE'))
+    platform.input.transmit(initial_state.symbolicate_buffer('+' * 14, label='RECEIVE'))
     return initial_state
 
 
@@ -206,7 +206,7 @@ class Manticore(Eventful):
         self.subscribe('will_generate_testcase', self._generate_testcase_callback)
         self.subscribe('did_finish_run', self._did_finish_run_callback)
 
-        # Default plugins for now.. FIXME?
+        # Default plugins for now.. FIXME REMOVE!
         self.register_plugin(InstructionCounter())
         self.register_plugin(Visited())
         self.register_plugin(Tracer())
@@ -382,10 +382,6 @@ class Manticore(Eventful):
 
     @property
     def running(self):
-        return self._executor._running.value
-
-    @property
-    def running(self):
         return self._executor.running
 
     def enqueue(self, state):
@@ -502,7 +498,6 @@ class Manticore(Eventful):
 
         # Imported straight from __main__.py; this will be re-written once the new
         # event code is in place.
-        from .core import cpu
         import importlib
         from . import platforms
 
@@ -708,8 +703,6 @@ class Manticore(Eventful):
         self._coverage_file = path
 
     def _did_finish_run_callback(self):
-        _shared_context = self.context
-
         with self._output.save_stream('command.sh') as f:
             f.write(' '.join(sys.argv))
 

@@ -141,12 +141,6 @@ class GetDeclarations(Visitor):
         return self.variables
 
 
-def get_variables(expression):
-    visitor = GetDeclarations()
-    visitor.visit(expression)
-    return visitor.result
-
-
 class GetDepth(Visitor):
     ''' Simple visitor to collect all variables in an expression or set of
         expressions

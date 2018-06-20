@@ -1,6 +1,8 @@
 from __future__ import absolute_import
-from .expression import *
-from ...utils.helpers import issymbolic, istainted
+from .expression import (
+    BitVec, BitVecExtract, BitVecSignExtend, BitVecZeroExtend, BitVecConstant, BitVecConcat, Bool, BitVecITE, BoolConstant, BoolITE
+)
+from ...utils.helpers import issymbolic
 import math
 
 
@@ -219,16 +221,6 @@ def UDIV(dividend, divisor):
     return dividend / divisor
 
 
-def UREM(a, b):
-    if isinstance(a, BitVec):
-        return a.urem(b)
-    if isinstance(b, BitVec):
-        return b.rurem(a)
-    if a < 0 or b < 0:
-        raise "azaraza"
-    return a % b
-
-
 def SDIV(a, b):
     if isinstance(a, BitVec):
         return a / b
@@ -284,3 +276,10 @@ def SAR(size, a, b):
             tempDest = (tempDest >> 1) | sign
             tempCount = tempCount - 1
         return tempDest
+
+
+def ABS(a):
+    if issymbolic(a):
+        return ITEBV(a.size, a < 0, -a, a)
+    else:
+        return abs(a)

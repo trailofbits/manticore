@@ -9,6 +9,19 @@ from functools import reduce
 logger = logging.getLogger(__name__)
 
 
+class Ref(object):
+    def __init__(self, value):
+        self._value = value
+
+    @property
+    def value(self):
+        return self._value
+
+    @value.setter
+    def value(self, value):
+        self._value = value
+
+
 class Plugin(object):
     @contextmanager
     def locked_context(self, key=None, value_type=list):
@@ -268,99 +281,22 @@ class ConcreteTraceFollower(Plugin):
             state.cpu.RFLAGS = self.saved_flags
 
 
-class FilterFunctions(Plugin):
-    def __init__(self, regexp=r'.*', mutability='both', depth='both', fallback=False, include=True, **kwargs):
-        """
-            Constrain input based on function metadata. Include or avoid functions selected by the specified criteria.
-
-            Examples:
-            #Do not explore any human transactions that end up calling a constant function
-            no_human_constant = FilterFunctions(depth='human', mutability='constant', include=False)
-
-            #At human tx depth only accept synthetic check functions
-            only_tests = FilterFunctions(regexp=r'mcore_.*', depth='human', include=False)
-
-            :param regexp: a regular expresion over the name of the function '.*' will match all functions
-            :param mutability: mutable, constant or both will match functions declared in the abi to be of such class
-            :param depth: match functions in internal transactions, in human initiated transactions or in both types
-            :param fallback: if True include the fallback function. Hash will be 00000000 for it
-            :param include: if False exclude the selected functions, if True include them
-        """
-        super(FilterFunctions, self).__init__(**kwargs)
-        depth = depth.lower()
-        if depth not in ('human', 'internal', 'both'):
-            raise ValueError
-        mutability = mutability.lower()
-        if mutability not in ('mutable', 'constant', 'both'):
-            raise ValueError
-
-        #fixme better names for member variables
-        self._regexp = regexp
-        self._mutability = mutability
-        self._depth = depth
-        self._fallback = fallback
-        self._include = include
-
-    def will_open_transaction_callback(self, state, tx):
-        world = state.platform
-        tx_cnt = len(world.all_transactions)
-        # Constrain input only once per tx, per plugin
-        if state.context.get('constrained%d' % id(self), 0) != tx_cnt:
-            state.context['constrained%d' % id(self)] = tx_cnt
-
-            if self._depth == 'human' and not tx.is_human:
-                return
-            if self._depth == 'internal' and tx.is_human:
-                return
-
-            #Get metadata if any for the targe addreess of current tx
-            md = self.manticore.get_metadata(tx.address)
-            if md is None:
-                return
-            #Lets compile  the list of interesting hashes
-            selected_functions = []
-
-            for func_hsh in md.hashes:
-                if func_hsh == '00000000':
-                    continue
-                abi = md.get_abi(func_hsh)
-                func_name = md.get_func_name(func_hsh)
-                if self._mutability == 'constant' and not abi.get('constant', False):
-                    continue
-                if self._mutability == 'mutable' and abi.get('constant', False):
-                    continue
-                if not re.match(self._regexp, func_name):
-                    continue
-                selected_functions.append(func_hsh)
-
-            if self._fallback:
-                selected_functions.append('00000000')
-
-            if self._include:
-                # constraint the input so it can take only the interesting values
-                from manticore.core.smtlib import Operators
-                constraint = reduce(Operators.OR, map(lambda x: tx.data[:4] == x.decode('hex'), selected_functions))
-                state.constrain(constraint)
-            else:
-                #Avoid all not seleted hashes
-                for func_hsh in md.hashes:
-                    if func_hsh in selected_functions:
-                        constraint = tx.data[:4] != func_hsh.decode('hex')
-                        state.constrain(constraint)
-
-
 # TODO document all callbacks
-
-
 class ExamplePlugin(Plugin):
+    def will_open_transaction_callback(self, state, tx):
+        logger.info('will open a transaction %r %r', state, tx)
+
+    def will_close_transaction_callback(self, state, tx):
+        logger.info('will close a transaction %r %r', state, tx)
+
     def will_decode_instruction_callback(self, state, pc):
-        logger.info('will_decode_instruction', state, pc)
+        logger.info('will_decode_instruction %r %r', state, pc)
 
     def will_execute_instruction_callback(self, state, pc, instruction):
-        logger.info('will_execute_instruction', state, pc, instruction)
+        logger.info('will_execute_instruction %r %r %r', state, pc, instruction)
 
     def did_execute_instruction_callback(self, state, pc, target_pc, instruction):
-        logger.info('did_execute_instruction', state, pc, target_pc, instruction)
+        logger.info('did_execute_instruction %r %r %r %r', state, pc, target_pc, instruction)
 
     def will_start_run_callback(self, state):
         ''' Called once at the begining of the run.
@@ -370,10 +306,6 @@ class ExamplePlugin(Plugin):
 
     def did_finish_run_callback(self):
         logger.info('did_finish_run')
-
-    def did_enqueue_state_callback(self, state_id, state):
-        ''' state was just got enqueued in the executor procesing list'''
-        logger.info('did_enqueue_state %r %r', state_id, state)
 
     def will_fork_state_callback(self, parent_state, expression, solutions, policy):
         logger.info('will_fork_state %r %r %r %r', parent_state, expression, solutions, policy)

@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os
 import errno
 import shutil
@@ -76,7 +77,7 @@ class LinuxTest(unittest.TestCase):
 
         # open a file
         filename = platform.current.push_bytes('/bin/true\x00')
-        fd = platform.sys_open(filename, os.O_RDONLY, 0600)
+        fd = platform.sys_open(filename, os.O_RDONLY, 0o600)
 
         stat = platform.current.SP - 0x100
         platform.current.R0 = fd
@@ -86,7 +87,38 @@ class LinuxTest(unittest.TestCase):
 
         platform.syscall()
 
-        print ''.join(platform.current.read_bytes(stat, 100)).encode('hex')
+        print(''.join(platform.current.read_bytes(stat, 100)).encode('hex'))
+
+    def test_linux_symbolic_files_workspace_files(self):
+        fname = 'symfile'
+        platform = self.symbolic_linux
+
+        # create symbolic file
+        with open(fname, 'w') as f:
+            f.write('+')
+
+        # tell manticore it's symbolic
+        platform.add_symbolic_file(fname)
+
+        # create filename in memory
+        platform.current.memory.mmap(0x1000, 0x1000, 'rw ')
+        platform.current.SP = 0x2000-4
+        fname_ptr = platform.current.push_bytes(fname + '\x00')
+
+        # open and close file
+        fd = platform.sys_open(fname_ptr, os.O_RDWR, 0o600)
+        platform.sys_close(fd)
+
+        # trigger testcase generation
+        files = platform.generate_workspace_files()
+
+        # clean up that file we made
+        os.remove(fname)
+
+        # make sure we generate a workspace file for that symbolic file
+        self.assertIn(fname, files)
+        self.assertEqual(len(files[fname]), 1)
+
 
     def test_linux_workspace_files(self):
         platform = self.symbolic_linux
@@ -126,7 +158,7 @@ class LinuxTest(unittest.TestCase):
         platform.current.subscribe('did_execute_instruction', r.did_exec)
 
         filename = platform.current.push_bytes('/bin/true\x00')
-        fd = platform.sys_open(filename, os.O_RDONLY, 0600)
+        fd = platform.sys_open(filename, os.O_RDONLY, 0o600)
 
         stat = platform.current.SP - 0x100
         platform.current.R0 = fd
@@ -157,14 +189,14 @@ class LinuxTest(unittest.TestCase):
 
         # open a file + directory
         dirname = platform.current.push_bytes(dir_path+'\x00')
-        dirfd = platform.sys_open(dirname, os.O_RDONLY, 0700)
+        dirfd = platform.sys_open(dirname, os.O_RDONLY, 0o700)
         filename = platform.current.push_bytes(file_name+'\x00')
 
         stat = platform.current.SP - 0x100
         platform.current.R0 = dirfd
         platform.current.R1 = filename
         platform.current.R2 = os.O_RDONLY
-        platform.current.R3 = 0700
+        platform.current.R3 = 0o700
         platform.current.R7 = nr_openat
         self.assertEquals(linux_syscalls.armv7[nr_openat], 'sys_openat')
 
