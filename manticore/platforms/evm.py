@@ -945,6 +945,7 @@ def concretized_args(**policies):
                     for known_account in self.world.accounts:
                         cond = Operators.OR(args[index] == known_account, cond)
                         self.constraints.add(cond)
+                    policy='ALL'
                 raise ConcretizeStack(index, policy=policy)
             return func(*args, **kwargs)
         return wrapper
@@ -1330,12 +1331,6 @@ class EVM(Eventful):
             if self._on_transaction is False:
                 self._publish('will_evm_execute_instruction', current, arguments)
             result = self._handler(*arguments)
-            #print current.semantics,
-            #if len(arguments): print '(', ', '.join(map(str, arguments)), ')',
-            #if result is not None:
-            #    print '->', simplify(result)
-            #else:
-            #    print
         except ConcretizeStack as ex:
             #Revert the stack and gas so it looks like before executing the instruction
             self._push_arguments(arguments)

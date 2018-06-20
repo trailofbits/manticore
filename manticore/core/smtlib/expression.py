@@ -670,13 +670,13 @@ class Array(Expression):
         return array
 
     def __add__(self, other):
-        from manticore.core.smtlib.visitors import simplify
         if not isinstance(other, (Array, bytearray)):
             raise TypeError("can't concat Array to {}".format(type(other)))
         if isinstance(other, Array):
             if self.index_bits != other.index_bits or self.value_bits != other.value_bits:
                 raise ValueError('Array sizes do not match for concatenation')
 
+        from manticore.core.smtlib.visitors import simplify
         new_arr = ArrayProxy(ArrayVariable(self.index_bits, self.index_max + len(other), self.value_bits, 'concatenation'))
         for index in range(self.index_max):
             new_arr[index] = simplify(self[index])
@@ -685,13 +685,13 @@ class Array(Expression):
         return new_arr
 
     def __radd__(self, other):
-        from manticore.core.smtlib.visitors import simplify
         if not isinstance(other, (Array, bytearray)):
             raise TypeError("can't concat Array to {}".format(type(other)))
         if isinstance(other, Array):
             if self.index_bits != other.index_bits or self.value_bits != other.value_bits:
                 raise ValueError('Array sizes do not match for concatenation')
 
+        from manticore.core.smtlib.visitors import simplify
         new_arr = ArrayProxy(ArrayVariable(self.index_bits, self.index_max + len(other), self.value_bits, 'concatenation'))
         for index in range(len(other)):
             new_arr[index] = simplify(other[index])
