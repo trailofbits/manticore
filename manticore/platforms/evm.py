@@ -1223,7 +1223,7 @@ class EVM(Eventful):
                 raise ValueError
         elif isinstance(fee, BitVec):
             if (fee.size != 512):
-                raise Exception("Fees should be 512 bit long")
+                raise EthereumError("Fees should be 512 bit long")
 
         self.constraints.add(Operators.UGE(fee, 0))
         self.constraints.add(Operators.ULE(fee, self._gas))
@@ -2520,7 +2520,7 @@ class EVMWorld(Platform):
         if address is None:
             address = self.new_address()
         if address in self.accounts:
-            raise Exception('The account already exists')
+            raise EthereumError('The account already exists')
         if code is None:
             code = bytearray()
         self._world_state[address] = {}

@@ -460,7 +460,7 @@ class SolidityMetadata(object):
         #TODO: use re, and check it's sane
         name = method_name_and_signature.split('(')[0]
         if name in self.abi:
-            raise Exception("Function already defined")
+            raise EthereumError("Function already defined")
         hsh = ABI.function_selector(method_name_and_signature)
         self._hashes.append(method_name_and_signature, hsh)
 
@@ -914,11 +914,11 @@ class EVMContract(EVMAccount):
         func_id = binascii.hexlify(ABI.function_selector(signature))
         func_name = str(signature.split('(')[0])
         if func_name.startswith('_') or func_name in {'add_function', 'address', 'name'}:
-            raise Exception("Sorry function name is used by the python wrapping")
+            raise EthereumError("Sorry function name is used by the python wrapping")
         if func_name in self._hashes:
-            raise Exception("A function with that name is already defined")
+            raise EthereumError("A function with that name is already defined")
         if func_id in {func_id for _, func_id in self._hashes.values()}:
-            raise Exception("A function with the same hash is already defined")
+            raise EthereumError("A function with the same hash is already defined")
         self._hashes[func_name] = signature, func_id
 
     def _null_func(self):
@@ -1025,7 +1025,7 @@ class ManticoreEVM(Manticore):
 
     def make_symbolic_address(self, name='TXADDR', select='both'):
         if select not in ('both', 'normal', 'contract'):
-            raise Exception('Wrong selection type')
+            raise EthereumError('Wrong selection type')
         if select in ('normal', 'contract'):
             # FIXME need to select contracts or normal accounts
             raise NotImplemented
@@ -1094,7 +1094,7 @@ class ManticoreEVM(Manticore):
         try:
             installed_version_output = check_output([solc, "--version"])
         except OSError:
-            raise Exception("Solidity compiler not installed.")
+            raise EthereumError("Solidity compiler not installed.")
 
         m = re.match(r".*Version: (?P<version>(?P<major>\d+)\.(?P<minor>\d+)\.(?P<build>\d+)).*\+(?P<commit>[^\s]+).*", installed_version_output, re.DOTALL | re.IGNORECASE)
 
@@ -1121,7 +1121,7 @@ class ManticoreEVM(Manticore):
         try:
             return json.loads(stdout), stderr
         except ValueError:
-            raise Exception('Solidity compilation error:\n\n{}'.format(stderr))
+            raise EthereumError('Solidity compilation error:\n\n{}'.format(stderr))
 
     @staticmethod
     def _compile(source_code, contract_name, libraries=None):
@@ -1153,7 +1153,7 @@ class ManticoreEVM(Manticore):
 
         contracts = output.get('contracts', [])
         if len(contracts) != 1 and contract_name is None:
-            raise Exception('Solidity file must contain exactly one contract or you must use contract parameter to specify which one.')
+            raise EthereumError('Solidity file must contain exactly one contract or you must use contract parameter to specify which one.')
 
         name, contract = None, None
         if contract_name is None:
@@ -1168,7 +1168,7 @@ class ManticoreEVM(Manticore):
         name = name.split(':')[1]
 
         if contract['bin'] == '':
-            raise Exception('Solidity failed to compile your contract.')
+            raise EthereumError('Solidity failed to compile your contract.')
 
         bytecode = ManticoreEVM._link(contract['bin'], libraries)
         srcmap = contract['srcmap'].split(';')
@@ -1429,7 +1429,7 @@ class ManticoreEVM(Manticore):
                     contract_account = self.create_contract(owner=owner, init=md._init_bytecode)
 
                 if contract_account is None:
-                    raise Exception("Failed to build contract %s" % contract_name_i)
+                    raise EthereumError("Failed to build contract %s" % contract_name_i)
                 self.metadata[int(contract_account)] = md
 
                 deps[contract_name_i] = contract_account
@@ -1460,7 +1460,7 @@ class ManticoreEVM(Manticore):
 
         if address is not None and address in map(int, self.accounts.values()):
             # Address already used
-            raise Exception("Address already used")
+            raise EthereumError("Address already used")
 
         # Let just choose the address ourself. This is not yellow paper material
         if address is None:
@@ -1471,7 +1471,7 @@ class ManticoreEVM(Manticore):
             name = self._get_uniq_name("contract")
         if name in self._accounts:
             # Account name already used
-            raise Exception("Name already used")
+            raise EthereumError("Name already used")
 
         self._transaction('CREATE', owner, balance, address, data=init)
         # TODO detect failure in the constructor
@@ -1535,27 +1535,27 @@ class ManticoreEVM(Manticore):
                 name = self._get_uniq_name("contract")
         if name in self._accounts:
             # Account name already used
-            raise Exception("Name already used")
+            raise EthereumError("Name already used")
 
         #Balance check
         if not isinstance(balance, numbers.Integral):
-            raise Exception("Balance invalid type")
+            raise EthereumError("Balance invalid type")
 
         if isinstance(code, str):
             code = bytearray(code)
         if code is not None and not isinstance(code, (bytearray, Array)):
-            raise Exception("code bad type")
+            raise EthereumError("code bad type")
 
         # Address check
         # Let just choose the address ourself. This is not yellow paper material
         if address is None:
             address = self.new_address()
         if not isinstance(address, numbers.Integral):
-            raise Exception("A concrete address is needed")
+            raise EthereumError("A concrete address is needed")
         assert address is not None
         if address in map(int, self.accounts.values()):
             # Address already used
-            raise Exception("Address already used")
+            raise EthereumError("Address already used")
 
         # To avoid going full crazy we maintain a global list of addresses
         # Different states may CREATE a different set of accounts.
@@ -1564,11 +1564,11 @@ class ManticoreEVM(Manticore):
             world = state.platform
 
             if '_pending_transaction' in state.context:
-                raise Exception("This is bad. It should not be a pending transaction")
+                raise EthereumError("This is bad. It should not be a pending transaction")
 
             if address in world.accounts:
                 # Address already used
-                raise Exception("This is bad. Same address used for different contracts in different states")
+                raise EthereumError("This is bad. Same address used for different contracts in different states")
             world.create_account(address, balance, code=code, storage=None)
 
         self._accounts[name] = EVMAccount(address, manticore=self, name=name)
@@ -1597,23 +1597,23 @@ class ManticoreEVM(Manticore):
         if isinstance(data, str):
             data = bytearray(data)
         if data is not None and not isinstance(data, (bytearray, Array)):
-            raise Exception("code bad type")
+            raise EthereumError("code bad type")
 
         # Check types
         if not isinstance(caller, numbers.Integral):
-            raise Exception("Caller invalid type")
+            raise EthereumError("Caller invalid type")
 
         if not isinstance(value, (numbers.Integral, BitVec)):
-            raise Exception("Value invalid type")
+            raise EthereumError("Value invalid type")
 
         if not isinstance(address, (numbers.Integral, BitVec)):
-            raise Exception("address invalid type")
+            raise EthereumError("address invalid type")
 
         if not isinstance(data, (bytearray, Array)):
-            raise Exception("data invalid type")
+            raise EthereumError("data invalid type")
 
         if not isinstance(price, numbers.Integral):
-            raise Exception("Price invalid type")
+            raise EthereumError("Price invalid type")
 
         # Check argument consistency and set defaults ...
         if sort not in ('CREATE', 'CALL'):
@@ -1621,7 +1621,7 @@ class ManticoreEVM(Manticore):
 
         # Caller must be a normal known account
         if caller not in self._accounts.values():
-            raise Exception("Unknown caller address!")
+            raise EthereumError("Unknown caller address!")
 
         if sort == 'CREATE':
             #let's choose an address here for now #NOTYELLOW
@@ -1630,11 +1630,11 @@ class ManticoreEVM(Manticore):
 
             # When creating data is the init_bytecode + arguments
             if len(data) == 0:
-                raise Exception("An initialization bytecode is needed for a CREATE")
+                raise EthereumError("An initialization bytecode is needed for a CREATE")
 
         #on a CALL transaction target address must be specified
         #if not isinstance(address, numbers.Integral):
-        #    raise Exception("A target address is needed")
+        #    raise EthereumError("A target address is needed")
 
         assert address is not None
         assert caller is not None
@@ -1648,7 +1648,7 @@ class ManticoreEVM(Manticore):
             world = state.platform
 
             if '_pending_transaction' in state.context:
-                raise Exception("This is bad. It should not be a pending transaction")
+                raise EthereumError("This is bad. It should not be a pending transaction")
 
             # Copy global constraints into each state.
             # We should somehow remember what has been copied to each state
@@ -1665,7 +1665,7 @@ class ManticoreEVM(Manticore):
             if sort == 'CREATE':
                 if address in world.accounts:
                     # Address already used
-                    raise Exception("This is bad. Same address used for different contracts in different states")
+                    raise EthereumError("This is bad. Same address used for different contracts in different states")
 
             state.context['_pending_transaction'] = (sort, caller, address, value, data, price)
 
@@ -1757,7 +1757,7 @@ class ManticoreEVM(Manticore):
         # If overwriting then the state_id must be known
         if state_id is not None:
             if state_id not in self._all_state_ids:
-                raise Exception("Trying to overwrite unknown state_id")
+                raise EthereumError("Trying to overwrite unknown state_id")
             with self.locked_context('seth') as context:
                 context['_final_states'].discard(state_id)
                 context['_saved_states'].discard(state_id)
@@ -1788,7 +1788,7 @@ class ManticoreEVM(Manticore):
                 #Get the ID of the single running state
                 state_id = self._running_state_ids[0]
             else:
-                raise Exception("More than one state running, you must specify state id.")
+                raise EthereumError("More than one state running, you must specify state id.")
 
         if state_id == -1:
             state = self.initial_state
@@ -1897,21 +1897,21 @@ class ManticoreEVM(Manticore):
 
     def register_detector(self, d):
         if not isinstance(d, Detector):
-            raise Exception("Not a Detector")
+            raise EthereumError("Not a Detector")
         if d.name in self.detectors:
-            raise Exception("Detector already registered")
+            raise EthereumError("Detector already registered")
         self.detectors[d.name] = d
         self.register_plugin(d)
         return d.name
 
     def unregister_detector(self, d):
         if not isinstance(d, (Detector, str)):
-            raise Exception("Not a Detector")
+            raise EthereumError("Not a Detector")
         name = d
         if isinstance(d, Detector):
             name = d.name
         if name not in self.detectors:
-            raise Exception("Detector not registered")
+            raise EthereumError("Detector not registered")
         d = self.detectors[name]
         del self.detectors[name]
         self.unregister_plugin(d)
