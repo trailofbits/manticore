@@ -590,14 +590,14 @@ class ABI(object):
 
     '''
     @staticmethod
-    def type_size(ty):
+    def _type_size(ty):
         ''' Calculate `static` type size '''
         if ty[0] in ('int', 'uint', 'bytesM', 'function'):
             return 32
         elif ty[0] in ('tuple'):
             result = 0
             for ty_i in ty[1]:
-                result += ABI.type_size(ty_i)
+                result += ABI._type_size(ty_i)
             return result
         elif ty[0] in ('array'):
             rep = ty[1]
@@ -629,7 +629,6 @@ class ABI(object):
         ABI.serialize('int256', 1000)
         ABI.serialize('(int, int256)', 1000, 2000)
         '''
-        offset = kwargs.get('offset')
         try:
             parsed_ty = abitypes.parse(ty)
         except Exception as e:
@@ -647,22 +646,22 @@ class ABI(object):
     @staticmethod
     def _serialize(ty, value, dyn_offset=None):
         if dyn_offset is None:
-            dyn_offset = ABI.type_size(ty)
+            dyn_offset = ABI._type_size(ty)
 
         result = bytearray()
         dyn_result = bytearray()
 
         if ty[0] == 'int':
-            result += ABI.serialize_int(value, size=ty[1] / 8, padding=32 - ty[1] / 8)
+            result += ABI._serialize_int(value, size=ty[1] / 8, padding=32 - ty[1] / 8)
         elif ty[0] in 'uint':
-            result += ABI.serialize_uint(value, size=ty[1] / 8, padding=32 - ty[1] / 8)
+            result += ABI._serialize_uint(value, size=ty[1] / 8, padding=32 - ty[1] / 8)
         elif ty[0] in ('bytes', 'string'):
-            result += ABI.serialize_uint(dyn_offset)
-            dyn_result += ABI.serialize_uint(len(value))
+            result += ABI._serialize_uint(dyn_offset)
+            dyn_result += ABI._serialize_uint(len(value))
             for byte in value:
                 dyn_result.append(byte)
         elif ty[0] == 'function':
-            result = ABI.serialize_uint(value[0], 20)
+            result = ABI._serialize_uint(value[0], 20)
             result += value[1] + bytearray('\0' * 8)
             assert len(result) == 32
         elif ty[0] in ('tuple'):
@@ -676,7 +675,7 @@ class ABI(object):
             result += sub_result
             dyn_result += sub_dyn_result
 
-        assert len(result) == ABI.type_size(ty)
+        assert len(result) == ABI._type_size(ty)
         return result, dyn_result
 
     @staticmethod
@@ -691,7 +690,7 @@ class ABI(object):
 
     @staticmethod
     def _serialize_array(rep, base_type, value, dyn_offset=None):
-        result = ABI.serialize_uint(dyn_offset)
+        result = ABI._serialize_uint(dyn_offset)
         dyn_result = bytearray()
 
         sub_result = bytearray()
@@ -699,7 +698,7 @@ class ABI(object):
 
         if rep is not None and len(value) != rep:
             raise ValueError("More reps than values")
-        sub_result += ABI.serialize_uint(len(value))
+        sub_result += ABI._serialize_uint(len(value))
 
         for value_i in value:
             result_i, dyn_result_i = ABI._serialize(base_type, value_i, dyn_offset + len(dyn_result))
@@ -747,9 +746,9 @@ class ABI(object):
         assert isinstance(buf, (bytearray, Array))
         result = None
         if ty[0] == 'int':
-            result = ABI.deserialize_int(buf[offset:offset + 32], nbytes=ty[1] / 8)
+            result = ABI._deserialize_int(buf[offset:offset + 32], nbytes=ty[1] / 8)
         elif ty[0] == 'uint':
-            result = ABI.deserialize_uint(buf[offset:offset + 32], nbytes=ty[1] / 8)
+            result = ABI._deserialize_uint(buf[offset:offset + 32], nbytes=ty[1] / 8)
         elif ty[0] == 'bytesM':
             result = buf[offset:offset + ty[1]]
         elif ty[0] == 'function':
@@ -757,22 +756,22 @@ class ABI(object):
             func_id = buf[offset + 20:offset + 24]
             result = (address, func_id)
         elif ty[0] in ('bytes', 'string'):
-            dyn_offset = ABI.deserialize_int(buf[offset:offset + 32])
-            size = ABI.deserialize_int(buf[dyn_offset:dyn_offset + 32])
+            dyn_offset = ABI._deserialize_int(buf[offset:offset + 32])
+            size = ABI._deserialize_int(buf[dyn_offset:dyn_offset + 32])
             result = buf[dyn_offset + 32:dyn_offset + 32 + size]
         elif ty[0] in ('tuple'):
             result = ()
             current_off = 0
             for ty_i in ty[1]:
                 result += (ABI._deserialize(ty_i, buf, offset), )
-                offset += ABI.type_size(ty_i)
+                offset += ABI._type_size(ty_i)
         elif ty[0] in ('array'):
             result = []
-            dyn_offset = ABI.deserialize_int(buf[offset:offset + 32])
+            dyn_offset = ABI._deserialize_int(buf[offset:offset + 32])
             rep = ty[1]
-            ty_size = ABI.type_size(ty[2])
+            ty_size = ABI._type_size(ty[2])
             if rep is None:
-                rep = ABI.deserialize_int(buf[dyn_offset:dyn_offset + 32])
+                rep = ABI._deserialize_int(buf[dyn_offset:dyn_offset + 32])
                 dyn_offset += 32
             for _ in range(rep):
                 result.append(ABI._deserialize(ty[2], buf, dyn_offset))
@@ -783,7 +782,7 @@ class ABI(object):
         return result
 
     @staticmethod
-    def serialize_uint(value, size=32, padding=0):
+    def _serialize_uint(value, size=32, padding=0):
         '''
         Translates a python integral or a BitVec into a 32 byte string, MSB first
         '''
@@ -805,7 +804,7 @@ class ABI(object):
         return bytes
 
     @staticmethod
-    def serialize_int(value, size=32, padding=0):
+    def _serialize_int(value, size=32, padding=0):
         '''
         Translates a signed python integral or a BitVec into a 32 byte string, MSB first
         '''
@@ -845,7 +844,7 @@ class ABI(object):
         return Operators.CONCAT(nbytes * 8, *values)
 
     @staticmethod
-    def deserialize_uint(data, nbytes=32, padding=0):
+    def _deserialize_uint(data, nbytes=32, padding=0):
         """
         Read a `nbytes` bytes long big endian unsigned integer from `data` starting at `offset`
 
@@ -859,7 +858,7 @@ class ABI(object):
         return value
 
     @staticmethod
-    def deserialize_int(data, nbytes=32, padding=0):
+    def _deserialize_int(data, nbytes=32, padding=0):
         """
         Read a `nbytes` bytes long big endian signed integer from `data` starting at `offset`
 
@@ -1647,9 +1646,6 @@ class ManticoreEVM(Manticore):
         if not self.count_running_states():
             raise NoAliveStates
 
-        # Used in the pretty print
-        completed_transactions = None
-
         # To avoid going full crazy we maintain a global list of addresses
         for state in self.running_states:
             world = state.platform
@@ -1676,12 +1672,6 @@ class ManticoreEVM(Manticore):
 
             state.context['_pending_transaction'] = (sort, caller, address, value, data, price)
 
-            # Used in the pretty print
-            if completed_transactions is None:
-                completed_transactions = len(world.human_transactions)
-
-        #pretty print
-        logger.info("Starting symbolic transaction: %d", completed_transactions + 1)
 
         # run over potentially several states and
         # generating potentially several others
@@ -1692,8 +1682,13 @@ class ManticoreEVM(Manticore):
     def multi_tx_analysis(self, solidity_filename, contract_name=None, tx_limit=None, tx_use_coverage=True, tx_account="combo1", args=None):
         owner_account = self.create_account(balance=1000, name='owner')
         attacker_account = self.create_account(balance=1000, name='attacker')
+
+        #pretty print
+        logger.info("Starting symbolic create contract")
+
         with open(solidity_filename) as f:
             contract_account = self.solidity_create_contract(f, contract_name=contract_name, owner=owner_account, args=args)
+
 
         if tx_account == "attacker":
             tx_account = [attacker_account]
@@ -1714,6 +1709,8 @@ class ManticoreEVM(Manticore):
         tx_no = 0
         while (current_coverage < 100 or not tx_use_coverage) and not self.is_shutdown():
             try:
+                logger.info("Starting symbolic transaction: %d", tx_no)
+
                 # run_symbolic_tx
                 symbolic_data = self.make_symbolic_buffer(320)
                 symbolic_value = self.make_symbolic_value()
@@ -1721,7 +1718,7 @@ class ManticoreEVM(Manticore):
                                  address=contract_account,
                                  data=symbolic_data,
                                  value=symbolic_value)
-
+                logger.info("%d alive states, %d terminated states", self.count_running_states(), self.count_terminated_states())
             except NoAliveStates:
                 break
 
@@ -2238,7 +2235,7 @@ class ManticoreEVM(Manticore):
             # (accounts created by contract code are not in this list )
             global_summary.write("Global runtime coverage:\n")
             for address in self.contract_accounts.values():
-                global_summary.write("{}: {:2.2f}%\n".format(address, self.global_coverage(address)))
+                global_summary.write("{:x}: {:2.2f}%\n".format(int(address), self.global_coverage(address)))
 
                 md = self.get_metadata(address)
                 if md is not None and len(md.warnings) > 0:

@@ -269,7 +269,7 @@ class EthAbiTests(unittest.TestCase):
         func_id = ABI.function_selector(spec)
         # build bytes24 data for function value (address+selector)
         # calls member id lookup on 'Ethereum Foundation Tip Box' (see https://www.ethereum.org/donate)
-        address = ABI.serialize_uint(0xfB6916095ca1df60bB79Ce92cE3Ea74c37c5d359, 20, padding=0)
+        address = ABI._serialize_uint(0xfB6916095ca1df60bB79Ce92cE3Ea74c37c5d359, 20, padding=0)
         selector = ABI.function_selector('memberId(address)')
         function_ref_data = address + selector + '\0'*8
         # build tx call data
@@ -466,36 +466,36 @@ class EthTests(unittest.TestCase):
                 #Once this address is reached the challenge is won
                 if pc == 0x4141414141414141414141414141414141414141:
                     func_id = to_constant(state.platform.current_transaction.data[:4])
-                    if func_id == ABI.make_function_id("print(string)"):
+                    if func_id == function_selector("print(string)"):
                         func_name, args = ABI.deserialize("print(string)", state.platform.current_transaction.data)
                         raise Return()
-                    elif func_id == ABI.make_function_id("terminate(string)"):
+                    elif func_id == function_selector("terminate(string)"):
                         func_name, args = ABI.deserialize("terminate(string)", state.platform.current_transaction.data)
                         self.manticore.shutdown()
                         raise Return(TRUE)
-                    elif func_id == ABI.make_function_id("assume(bool)"):
+                    elif func_id == function_selector("assume(bool)"):
                         func_name, args = ABI.deserialize("assume(bool)", state.platform.current_transaction.data)
                         state.add(args[0])
                         raise Return(TRUE)
-                    elif func_id == ABI.make_function_id("is_symbolic(bytes)"):
+                    elif func_id == function_selector("is_symbolic(bytes)"):
                         func_name, args = ABI.deserialize("is_symbolic(bytes)", state.platform.current_transaction.data)
                         try:
                             arg = to_constant(args[0])
                         except:
                             raise Return(TRUE)
                         raise Return(FALSE)
-                    elif func_id == ABI.make_function_id("is_symbolic(uint256)"):
+                    elif func_id == function_selector("is_symbolic(uint256)"):
                         func_name, args = ABI.deserialize("is_symbolic(uint256)", state.platform.current_transaction.data)
                         try:
                             arg = to_constant(args[0])
                         except Exception as e:
                             raise Return(TRUE)
                         raise Return(FALSE)
-                    elif func_id == ABI.make_function_id("shutdown(string)"):
+                    elif func_id == function_selector("shutdown(string)"):
                         func_name, args = ABI.deserialize("shutdown(string)", state.platform.current_transaction.data)
                         print("Shutdown", to_constant(args[0]))
                         self.manticore.shutdown()
-                    elif func_id == ABI.make_function_id("can_be_true(bool)"):
+                    elif func_id == function_selector("can_be_true(bool)"):
                         func_name, args = ABI.deserialize("can_be_true(bool)", state.platform.current_transaction.data)
                         result = solver.can_be_true(state.constraints, args[0] != 0)
                         if result:
