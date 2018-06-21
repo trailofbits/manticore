@@ -1190,19 +1190,11 @@ class ManticoreEVM(Manticore):
 
     @property
     def normal_accounts(self):
-        normal_accounts = {}
-        for name, account in self._accounts.items():
-            if not isinstance(account, EVMContract):
-                normal_accounts[name] = account
-        return normal_accounts
+        return {name:account for name, account in self._accounts.iteritems() if not isinstance(account, EVMContract)}
 
     @property
     def contract_accounts(self):
-        contract_accounts = {}
-        for name, account in self._accounts.items():
-            if isinstance(account, EVMContract):
-                contract_accounts[name] = account
-        return contract_accounts
+        return {name:account for name, account in self._accounts.iteritems() if isinstance(account, EVMContract)}
 
     def get_account(self, name):
         return self._accounts[name]
@@ -1596,7 +1588,7 @@ class ManticoreEVM(Manticore):
             data = bytearray(b"")
         if isinstance(data, str):
             data = bytearray(data)
-        if data is not None and not isinstance(data, (bytearray, Array)):
+        if not isinstance(data, (bytearray, Array)):
             raise EthereumError("code bad type")
 
         # Check types
@@ -1609,15 +1601,13 @@ class ManticoreEVM(Manticore):
         if not isinstance(address, (numbers.Integral, BitVec)):
             raise EthereumError("address invalid type")
 
-        if not isinstance(data, (bytearray, Array)):
-            raise EthereumError("data invalid type")
 
         if not isinstance(price, numbers.Integral):
             raise EthereumError("Price invalid type")
 
         # Check argument consistency and set defaults ...
         if sort not in ('CREATE', 'CALL'):
-            raise ValueError
+            raise ValueError('unsupported transaction type')
 
         # Caller must be a normal known account
         if caller not in self._accounts.values():
@@ -1631,10 +1621,6 @@ class ManticoreEVM(Manticore):
             # When creating data is the init_bytecode + arguments
             if len(data) == 0:
                 raise EthereumError("An initialization bytecode is needed for a CREATE")
-
-        #on a CALL transaction target address must be specified
-        #if not isinstance(address, numbers.Integral):
-        #    raise EthereumError("A target address is needed")
 
         assert address is not None
         assert caller is not None
