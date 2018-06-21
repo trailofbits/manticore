@@ -2196,7 +2196,7 @@ class EVMWorld(Platform):
     def constraints(self):
         return self._constraints
 
-    def _open_transaction(self, sort, address, price, data, caller, value):
+    def _open_transaction(self, sort, address, price, bytecode_or_data, caller, value):
 
         if self.depth > 0:
             origin = self.tx_origin()
@@ -2204,13 +2204,13 @@ class EVMWorld(Platform):
             origin = caller
         assert price is not None
 
-        tx = Transaction(sort, address, price, data, caller, value, depth=self.depth)
+        tx = Transaction(sort, address, price, bytecode_or_data, caller, value, depth=self.depth)
         if sort == 'CREATE':
-            bytecode = data
+            bytecode = bytecode_or_data
             data = bytearray()
         else:
             bytecode = self.get_code(address)
-            data = data
+            data = bytecode_or_data
 
         address = tx.address
         if tx.sort == 'DELEGATECALL':
@@ -2218,10 +2218,6 @@ class EVMWorld(Platform):
             assert value == 0
 
         vm = EVM(self._constraints, address, data, caller, value, bytecode, world=self)
-
-        if self.depth == 1024:
-            #FIXME this should just close the tx
-            raise TerminateState("Maximum call depth limit is reached", testcase=True)
 
         self._publish('will_open_transaction', tx)
         self._callstack.append((tx, self.logs, self.deleted_accounts, copy.copy(self.get_storage(address)), vm))
@@ -2592,12 +2588,6 @@ class EVMWorld(Platform):
             return
         sort, address, price, data, caller, value, gas = self._pending_transaction
 
-        if sort in ('CALL', 'DELEGATECALL'):
-            bytecode = self.get_code(address)
-        else:
-            bytecode = data
-            data = None
-
         if sort not in {'CALL', 'CREATE', 'DELEGATECALL'}:
             raise EVMException('Type of transaction not supported')
 
@@ -2636,16 +2626,13 @@ class EVMWorld(Platform):
         #Here we have enough funds and room in the callstack
         self.send_funds(caller, address, value)
 
-        if sort == 'CREATE':
-            data = bytecode
-
         self._open_transaction(sort, address, price, data, caller, value)
 
         if failed:
             self._close_transaction('TXERROR', rollback=True)
 
-        #Transaction to normal acocunt
-        if bytecode is None:
+        #Transaction to normal account
+        if sort in ('CALL', 'DELEGATECALL') and not self.get_code(address):
             self._close_transaction('STOP')
 
     def HASH(self, data):

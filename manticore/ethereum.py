@@ -1647,6 +1647,9 @@ class ManticoreEVM(Manticore):
         if not self.count_running_states():
             raise NoAliveStates
 
+        # Used in the pretty print
+        completed_transactions = None
+
         # To avoid going full crazy we maintain a global list of addresses
         for state in self.running_states:
             world = state.platform
@@ -1672,6 +1675,13 @@ class ManticoreEVM(Manticore):
                     raise EthereumError("This is bad. Same address used for different contracts in different states")
 
             state.context['_pending_transaction'] = (sort, caller, address, value, data, price)
+
+            # Used in the pretty print
+            if completed_transactions is None:
+                completed_transactions = len(world.human_transactions)
+
+        #pretty print
+        logger.info("Starting symbolic transaction: %d", completed_transactions + 1)
 
         # run over potentially several states and
         # generating potentially several others
