@@ -663,34 +663,51 @@ class ABI(object):
             if len(result) != 24:
                 raise ValueError
             return result + bytearray('\0' * 8)
-
         elif ty[0] in ('tuple'):
-            for ty_i, value_i in zip(ty[1], value):
-                result_i, dyn_result_i = ABI._serialize(ty_i, value_i, dyn_offset + len(dyn_result))
-                result += result_i
-                dyn_result += dyn_result_i
+            sub_result, sub_dyn_result = ABI._serialize_tuple(ty[1], value, dyn_offset)
+            result += sub_result
+            dyn_result += sub_dyn_result
         elif ty[0] in ('array'):
-            result += ABI.serialize_uint(dyn_offset)
             rep = ty[1]
             base_type = ty[2]
-
-            sub_result = bytearray()
-            sub_dyn_result = bytearray()
-
-            if rep is not None and len(value) != rep:
-                raise ValueError("More reps than values")
-            sub_result += ABI.serialize_uint(len(value))
-
-            for value_i in value:
-                result_i, dyn_result_i = ABI._serialize(base_type, value_i, dyn_offset + len(dyn_result))
-                sub_result += result_i
-                sub_dyn_result += dyn_result_i
-
-            dyn_result += sub_result
+            sub_result, sub_dyn_result = ABI._serialize_array(rep, base_type, value, dyn_offset)
+            result += sub_result
             dyn_result += sub_dyn_result
 
         assert len(result) == ABI.type_size(ty)
         return result, dyn_result
+
+    @staticmethod
+    def _serialize_tuple(types, value, dyn_offset=None):
+        result = bytearray()
+        dyn_result = result = bytearray()
+        for ty_i, value_i in zip(types, value):
+            result_i, dyn_result_i = ABI._serialize(ty_i, value_i, dyn_offset + len(dyn_result))
+            result += result_i
+            dyn_result += dyn_result_i
+        return result, dyn_result
+
+    @staticmethod
+    def _serialize_array(rep, base_type, value, dyn_offset=None):
+        result = ABI.serialize_uint(dyn_offset)
+        dyn_result = bytearray()
+
+        sub_result = bytearray()
+        sub_dyn_result = bytearray()
+
+        if rep is not None and len(value) != rep:
+            raise ValueError("More reps than values")
+        sub_result += ABI.serialize_uint(len(value))
+
+        for value_i in value:
+            result_i, dyn_result_i = ABI._serialize(base_type, value_i, dyn_offset + len(dyn_result))
+            sub_result += result_i
+            sub_dyn_result += dyn_result_i
+
+        dyn_result += sub_result
+        dyn_result += sub_dyn_result
+        return result, dyn_result
+
 
     @staticmethod
     def function_selector(method_name_and_signature):
@@ -1190,11 +1207,11 @@ class ManticoreEVM(Manticore):
 
     @property
     def normal_accounts(self):
-        return {name:account for name, account in self._accounts.iteritems() if not isinstance(account, EVMContract)}
+        return {name: account for name, account in self._accounts.iteritems() if not isinstance(account, EVMContract)}
 
     @property
     def contract_accounts(self):
-        return {name:account for name, account in self._accounts.iteritems() if isinstance(account, EVMContract)}
+        return {name: account for name, account in self._accounts.iteritems() if isinstance(account, EVMContract)}
 
     def get_account(self, name):
         return self._accounts[name]
@@ -1600,7 +1617,6 @@ class ManticoreEVM(Manticore):
 
         if not isinstance(address, (numbers.Integral, BitVec)):
             raise EthereumError("address invalid type")
-
 
         if not isinstance(price, numbers.Integral):
             raise EthereumError("Price invalid type")
