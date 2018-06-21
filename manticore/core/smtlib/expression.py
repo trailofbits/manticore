@@ -203,6 +203,7 @@ class BitVec(Expression):
             return value
         if isinstance(value, str) and len(value) == 1:
             value = ord(value)
+        # Try to support not Integral types that can be casted to int
         if not isinstance(value, numbers.Integral):
             value = int(value)
         # FIXME? Assert it fits in the representation
