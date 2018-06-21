@@ -708,7 +708,6 @@ class ABI(object):
         dyn_result += sub_dyn_result
         return result, dyn_result
 
-
     @staticmethod
     def function_selector(method_name_and_signature):
         '''
