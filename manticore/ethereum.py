@@ -630,7 +630,11 @@ class ABI(object):
         ABI.serialize('(int, int256)', 1000, 2000)
         '''
         offset = kwargs.get('offset')
-        parsed_ty = abitypes.parse(ty)
+        try:
+            parsed_ty = abitypes.parse(ty)
+        except Exception as e:
+            # Catch and rebrand parsing errors
+            raise EthereumError(e.message)
 
         if parsed_ty[0] != 'tuple':
             if len(value) > 1:
