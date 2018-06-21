@@ -651,7 +651,7 @@ class ABI(object):
         if ty[0] == 'int':
             result += ABI.serialize_int(value, size=ty[1] / 8, padding=32 - ty[1] / 8)
         elif ty[0] in 'uint':
-            result += ABI.serialize_uint(value)
+            result += ABI.serialize_uint(value, size=ty[1] / 8, padding=32 - ty[1] / 8)
         elif ty[0] in ('bytes', 'string'):
             result += ABI.serialize_uint(dyn_offset)
             dyn_result += ABI.serialize_uint(len(value))
@@ -659,10 +659,8 @@ class ABI(object):
                 dyn_result.append(byte)
         elif ty[0] == 'function':
             result = ABI.serialize_uint(value[0], 20)
-            result += value[1]
-            if len(result) != 24:
-                raise ValueError
-            return result + bytearray('\0' * 8)
+            result += value[1] + bytearray('\0' * 8)
+            assert len(result) == 32
         elif ty[0] in ('tuple'):
             sub_result, sub_dyn_result = ABI._serialize_tuple(ty[1], value, dyn_offset)
             result += sub_result
@@ -680,7 +678,7 @@ class ABI(object):
     @staticmethod
     def _serialize_tuple(types, value, dyn_offset=None):
         result = bytearray()
-        dyn_result = result = bytearray()
+        dyn_result = bytearray()
         for ty_i, value_i in zip(types, value):
             result_i, dyn_result_i = ABI._serialize(ty_i, value_i, dyn_offset + len(dyn_result))
             result += result_i
@@ -799,6 +797,7 @@ class ABI(object):
                 bytes.append(0)
             for position in reversed(range(size)):
                 bytes.append(Operators.EXTRACT(value, position * 8, 8))
+        assert len(bytes) == size + padding
         return bytes
 
     @staticmethod
