@@ -1,3 +1,6 @@
+from . import abitypes
+import numbers
+import random
 import hashlib
 import binascii
 import string
@@ -5,7 +8,7 @@ import re
 import os
 from . import Manticore
 from .manticore import ManticoreError
-from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, istainted, taint_with, get_taints, Constant, operators
+from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, istainted, taint_with, get_taints, BitVec, Constant, operators, Array, ArrayVariable
 from .core.smtlib.visitors import simplify
 from .platforms import evm
 from .core.state import State
@@ -434,12 +437,31 @@ class SolidityMetadata(object):
         self.srcmap_runtime = self.__build_source_map(self.runtime_bytecode, srcmap_runtime)
         self.srcmap = self.__build_source_map(self.init_bytecode, srcmap)
 
+    def get_constructor_arguments(self):
+        for fun in self.abi.values():
+            if fun['type'] == 'constructor':
+                constructor_inputs = fun['inputs']
+                break
+        else:
+            constructor_inputs = ()
+
+        def process(spec):
+            if spec['type'].startswith('tuple'):
+                types = []
+                for component in spec['components']:
+                    types.append(process(component))
+                return '({}){:s}'.format(','.join(types), spec['type'][5:])
+            else:
+                return spec['type']
+        inputs = {'components': constructor_inputs, 'type': 'tuple'}
+        return process(inputs)
+
     def add_function(self, method_name_and_signature):
         #TODO: use re, and check it's sane
-        if name in self.abi:
-            raise Exception("Function already defined")
-        hsh = ABI.make_function_id(method_name_and_signature)
         name = method_name_and_signature.split('(')[0]
+        if name in self.abi:
+            raise EthereumError("Function already defined")
+        hsh = ABI.function_selector(method_name_and_signature)
         self._hashes.append(method_name_and_signature, hsh)
 
         input_types = method_name_and_signature.split('(')[1].split(')')[0].split(',')
@@ -544,11 +566,11 @@ class SolidityMetadata(object):
         return signature.split('(')[0]
 
     def get_func_signature(self, hsh):
-        return self.signatures.get(hsh, '{fallback}()')
+        return self.signatures.get(hsh)
 
     def get_hash(self, method_name_and_signature):
         #helper
-        return ABI.make_function_id(method_name_and_signature)
+        return ABI.function_selector(method_name_and_signature)
 
     @property
     def functions(self):
@@ -567,287 +589,320 @@ class ABI(object):
         and for contract-to-contract interaction.
 
     '''
-    class SByte():
-        ''' Unconstrained symbolic byte string, not associated with any ConstraintSet '''
-
-        def __init__(self, size=1):
-            self.size = size
-
-        def __mul__(self, reps):
-            return Symbol(self.size * reps)
-
-    SCHAR = SByte(1)
-    SUINT = SByte(32)
-    SValue = None
+    @staticmethod
+    def _type_size(ty):
+        ''' Calculate `static` type size '''
+        if ty[0] in ('int', 'uint', 'bytesM', 'function'):
+            return 32
+        elif ty[0] in ('tuple'):
+            result = 0
+            for ty_i in ty[1]:
+                result += ABI._type_size(ty_i)
+            return result
+        elif ty[0] in ('array'):
+            rep = ty[1]
+            result = 32  # offset link
+            return result
+        elif ty[0] in ('bytes', 'string'):
+            result = 32  # offset link
+            return result
+        raise ValueError
 
     @staticmethod
-    def serialize(value):
+    def function_call(type_spec, *args):
         '''
-        Translates a Python object to its EVM ABI serialization.
+        Build transaction data from function signature and arguments
         '''
-        if isinstance(value, (str, tuple)):
-            return ABI.serialize_string(value)
-        if isinstance(value, (list)):
-            return ABI.serialize_array(value)
-        if isinstance(value, (int, long)):
-            return ABI.serialize_uint(value)
-        if isinstance(value, ABI.SByte):
-            return ABI.serialize_uint(value.size) + (None,) * value.size + (('\x00',) * (32 - (value.size % 32)))
-        if value is None:
-            return (None,) * 32
+
+        m = re.match(r"(?P<name>[a-zA-Z_]+)(?P<type>\(.*\))", type_spec)
+        if not m:
+            raise EthereumError("Function signature expected")
+
+        result = ABI.function_selector(type_spec)  # Funcid
+        result += ABI.serialize(m.group('type'), *args)
+        return result
 
     @staticmethod
-    def serialize_uint(value, size=32):
+    def serialize(ty, *value, **kwargs):
         '''
-        Translates a Python int into a 32 byte string, MSB first
+        Serialize value using type specification in ty.
+        ABI.serialize('int256', 1000)
+        ABI.serialize('(int, int256)', 1000, 2000)
         '''
-        assert size >= 1
-        bytes = []
-        for position in range(size):
-            bytes.append(Operators.EXTRACT(value, position * 8, 8))
-        chars = map(Operators.CHR, bytes)
-        return tuple(reversed(chars))
+        try:
+            parsed_ty = abitypes.parse(ty)
+        except Exception as e:
+            # Catch and rebrand parsing errors
+            raise EthereumError(e.message)
+
+        if parsed_ty[0] != 'tuple':
+            if len(value) > 1:
+                raise ValueError
+            value = value[0]
+
+        result, dyn_result = ABI._serialize(parsed_ty, value)
+        return result + dyn_result
 
     @staticmethod
-    def serialize_string(value):
-        '''
-        Translates a string or a tuple of chars its EVM ABI serialization
-        '''
-        assert isinstance(value, (str, tuple))
-        return ABI.serialize_uint(len(value)) + tuple(value) + tuple('\x00' * (32 - (len(value) % 32)))
+    def _serialize(ty, value, dyn_offset=None):
+        if dyn_offset is None:
+            dyn_offset = ABI._type_size(ty)
+
+        result = bytearray()
+        dyn_result = bytearray()
+
+        if ty[0] == 'int':
+            result += ABI._serialize_int(value, size=ty[1] / 8, padding=32 - ty[1] / 8)
+        elif ty[0] in 'uint':
+            result += ABI._serialize_uint(value, size=ty[1] / 8, padding=32 - ty[1] / 8)
+        elif ty[0] in ('bytes', 'string'):
+            result += ABI._serialize_uint(dyn_offset)
+            dyn_result += ABI._serialize_uint(len(value))
+            for byte in value:
+                dyn_result.append(byte)
+        elif ty[0] == 'function':
+            result = ABI._serialize_uint(value[0], 20)
+            result += value[1] + bytearray('\0' * 8)
+            assert len(result) == 32
+        elif ty[0] in ('tuple'):
+            sub_result, sub_dyn_result = ABI._serialize_tuple(ty[1], value, dyn_offset)
+            result += sub_result
+            dyn_result += sub_dyn_result
+        elif ty[0] in ('array'):
+            rep = ty[1]
+            base_type = ty[2]
+            sub_result, sub_dyn_result = ABI._serialize_array(rep, base_type, value, dyn_offset)
+            result += sub_result
+            dyn_result += sub_dyn_result
+
+        assert len(result) == ABI._type_size(ty)
+        return result, dyn_result
 
     @staticmethod
-    def serialize_array(value):
-        assert isinstance(value, list)
-        serialized = [ABI.serialize_uint(len(value))]
-        for item in value:
-            # TODO check all values are the same type
-            serialized.append(ABI.serialize(item))
-        return reduce(lambda x, y: x + y, serialized)
+    def _serialize_tuple(types, value, dyn_offset=None):
+        result = bytearray()
+        dyn_result = bytearray()
+        for ty_i, value_i in zip(types, value):
+            result_i, dyn_result_i = ABI._serialize(ty_i, value_i, dyn_offset + len(dyn_result))
+            result += result_i
+            dyn_result += dyn_result_i
+        return result, dyn_result
 
     @staticmethod
-    def make_function_id(method_name_and_signature):
+    def _serialize_array(rep, base_type, value, dyn_offset=None):
+        result = ABI._serialize_uint(dyn_offset)
+        dyn_result = bytearray()
+
+        sub_result = bytearray()
+        sub_dyn_result = bytearray()
+
+        if rep is not None and len(value) != rep:
+            raise ValueError("More reps than values")
+        sub_result += ABI._serialize_uint(len(value))
+
+        for value_i in value:
+            result_i, dyn_result_i = ABI._serialize(base_type, value_i, dyn_offset + len(dyn_result))
+            sub_result += result_i
+            sub_dyn_result += dyn_result_i
+
+        dyn_result += sub_result
+        dyn_result += sub_dyn_result
+        return result, dyn_result
+
+    @staticmethod
+    def function_selector(method_name_and_signature):
         '''
         Makes a function hash id from a method signature
         '''
         s = sha3.keccak_256()
-        s.update(method_name_and_signature)
-        return s.hexdigest()[:8].decode('hex')
+        s.update(str(method_name_and_signature))
+        return bytearray(binascii.unhexlify(s.hexdigest()[:8]))
 
     @staticmethod
-    def make_function_arguments(*args):
-        ''' Serializes a sequence of arguments '''
-        if len(args) == 0:
-            return ()
-        args = list(args)
-        for i in range(len(args)):
-            if isinstance(args[i], EVMAccount):
-                args[i] = int(args[i])
-        result = []
-        dynamic_args = []
-        dynamic_offset = 32 * len(args)
-        for arg in args:
-            if isinstance(arg, (list, tuple, str, ManticoreEVM.SByte)):
-                result.append(ABI.serialize(dynamic_offset))
-                serialized_arg = ABI.serialize(arg)
-                dynamic_args.append(serialized_arg)
-                assert len(serialized_arg) % 32 == 0
-                dynamic_offset += len(serialized_arg)
-            else:
-                result.append(ABI.serialize(arg))
-
-        for arg in dynamic_args:
-            result.append(arg)
-
-        return reduce(lambda x, y: x + y, result)
-
-    @staticmethod
-    def make_function_call(method_name, *args):
-        function_id = ABI.make_function_id(method_name)
-        assert len(function_id) == 4
-        result = [tuple(function_id)]
-        result.append(ABI.make_function_arguments(*args))
-        return reduce(lambda x, y: x + y, result)
-
-    @staticmethod
-    def _parse_size(num):
-        """
-        Parses the size part of a uint or int Solidity declaration.
-        If empty string, returns 256
-
-        :param str num: text following uint/int in a Solidity type declaration
-        :return: uint or int size
-        :rtype: int
-        :raises EthereumError: if invalid size
-        """
-        if not num:
-            return 256
-
-        malformed = False
+    def deserialize(type_spec, data):
         try:
-            size = int(num)
-        except ValueError:
-            malformed = True
+            if isinstance(data, str):
+                data = bytearray(data)
+            assert isinstance(data, (bytearray, Array))
 
-        if malformed or size < 8 or size > 256 or size % 8 != 0:
-            raise EthereumError('Invalid type size: {}'.format(num))
-
-        return size
+            m = re.match(r"(?P<name>[a-zA-Z_]+)(?P<type>\(.*\))", type_spec)
+            if m and m.group('name'):
+                # Type has function name. Lets take the function id from the data
+                # This does not check that the encoded func_id is valid
+                # func_id = ABI.function_selector(type_spec)
+                result = (data[:4],)
+                ty = m.group('type')
+                result += (ABI._deserialize(abitypes.parse(ty), data[4:]),)
+            else:
+                # No function name, just types
+                ty = type_spec
+                result = ABI._deserialize(abitypes.parse(ty), data)
+            return result
+        except Exception as e:
+            raise EthereumError(e.message)
 
     @staticmethod
-    def get_uint(data, nbytes, offset):
+    def _deserialize(ty, buf, offset=0):
+        assert isinstance(buf, (bytearray, Array))
+        result = None
+        if ty[0] == 'int':
+            result = ABI._deserialize_int(buf[offset:offset + 32], nbytes=ty[1] / 8)
+        elif ty[0] == 'uint':
+            result = ABI._deserialize_uint(buf[offset:offset + 32], nbytes=ty[1] / 8)
+        elif ty[0] == 'bytesM':
+            result = buf[offset:offset + ty[1]]
+        elif ty[0] == 'function':
+            address = Operators.ZEXTEND(ABI._readBE(buf[offset:offset + 20], 20, padding=False), 256)
+            func_id = buf[offset + 20:offset + 24]
+            result = (address, func_id)
+        elif ty[0] in ('bytes', 'string'):
+            dyn_offset = ABI._deserialize_int(buf[offset:offset + 32])
+            size = ABI._deserialize_int(buf[dyn_offset:dyn_offset + 32])
+            result = buf[dyn_offset + 32:dyn_offset + 32 + size]
+        elif ty[0] in ('tuple'):
+            result = ()
+            current_off = 0
+            for ty_i in ty[1]:
+                result += (ABI._deserialize(ty_i, buf, offset), )
+                offset += ABI._type_size(ty_i)
+        elif ty[0] in ('array'):
+            result = []
+            dyn_offset = ABI._deserialize_int(buf[offset:offset + 32])
+            rep = ty[1]
+            ty_size = ABI._type_size(ty[2])
+            if rep is None:
+                rep = ABI._deserialize_int(buf[dyn_offset:dyn_offset + 32])
+                dyn_offset += 32
+            for _ in range(rep):
+                result.append(ABI._deserialize(ty[2], buf, dyn_offset))
+                dyn_offset += ty_size
+        else:
+            raise NotImplemented
+
+        return result
+
+    @staticmethod
+    def _serialize_uint(value, size=32, padding=0):
+        '''
+        Translates a python integral or a BitVec into a 32 byte string, MSB first
+        '''
+        if size <= 0 and size > 32:
+            raise ValueError
+        if not isinstance(value, (numbers.Integral, BitVec)):
+            raise ValueError
+        if issymbolic(value):
+            bytes = ArrayVariable(index_bits=256, index_max=32, value_bits=8, name='temporary')
+            value = Operators.ZEXTEND(value, size * 8)
+            bytes.write_BE(padding, value, size)
+        else:
+            bytes = bytearray()
+            for _ in range(padding):
+                bytes.append(0)
+            for position in reversed(range(size)):
+                bytes.append(Operators.EXTRACT(value, position * 8, 8))
+        assert len(bytes) == size + padding
+        return bytes
+
+    @staticmethod
+    def _serialize_int(value, size=32, padding=0):
+        '''
+        Translates a signed python integral or a BitVec into a 32 byte string, MSB first
+        '''
+        if size <= 0 and size > 32:
+            raise ValueError
+        if not isinstance(value, (numbers.Integral, BitVec)):
+            raise ValueError
+        if issymbolic(value):
+            bytes = ArrayVariable(index_bits=256, index_max=32, value_bits=8, name='temporary')
+            value = Operators.SIGNEXTEND(value, value.size, size * 8)
+            bytes.write_BE(padding, value, size)
+        else:
+            bytes = bytearray()
+            for _ in range(padding):
+                bytes.append(0)
+
+            for position in reversed(range(size)):
+                bytes.append(Operators.EXTRACT(value, position * 8, 8))
+        return bytes
+
+    @staticmethod
+    def _readBE(data, nbytes, padding=True):
+        if padding:
+            pos = 32 - nbytes
+            size = 32
+        else:
+            pos = 0
+            size = nbytes
+
+        values = []
+        while pos < size:
+            if pos >= len(data):
+                values.append(0)
+            else:
+                values.append(data[pos])
+            pos += 1
+        return Operators.CONCAT(nbytes * 8, *values)
+
+    @staticmethod
+    def _deserialize_uint(data, nbytes=32, padding=0):
         """
         Read a `nbytes` bytes long big endian unsigned integer from `data` starting at `offset`
 
         :param data: sliceable buffer; symbolic buffer of Eth ABI encoded data
-        :param offset: byte offset
         :param nbytes: number of bytes to read starting from least significant byte
         :rtype: int or Expression
         """
-        def _simplify(x):
-            value = simplify(x)
-            if isinstance(value, Constant) and not value.taint:
-                return value.value
-            else:
-                return value
-        nbytes = _simplify(nbytes)
-        offset = _simplify(offset)
-        padding = 32 - nbytes
-        start = offset + padding
-        values = []
-        pos = start
-        while pos < start + nbytes:
-            if pos > len(data):
-                values.append('\x00')
-            else:
-                values.append(data[pos])
-            pos = pos + 1
-        #value = Operators.CONCAT(nbytes * 8, *[Operators.ORD(x) for x in data[start:start + nbytes]])
-        value = Operators.CONCAT(nbytes * 8, *[Operators.ORD(x) for x in values])
-        return _simplify(value)
+        assert isinstance(data, (bytearray, Array))
+        value = ABI._readBE(data, nbytes)
+        value = Operators.ZEXTEND(value, (nbytes + padding) * 8)
+        return value
 
     @staticmethod
-    def _consume_type(ty, data, offset):
+    def _deserialize_int(data, nbytes=32, padding=0):
         """
-        Parses a value of type from data
+        Read a `nbytes` bytes long big endian signed integer from `data` starting at `offset`
 
-        Further info: http://solidity.readthedocs.io/en/develop/abi-spec.html#use-of-dynamic-types
-
-        :param data: transaction data WITHOUT the function hash first 4 bytes
-        :param offset: offset into data of the first byte of the "head part" of the ABI element
-        :return: tuple where the first element is the extracted ABI element, and the second is the offset of
-            the next ABI element
-        :rtype: tuple
+        :param data: sliceable buffer; symbolic buffer of Eth ABI encoded data
+        :param nbytes: number of bytes to read starting from least significant byte
+        :rtype: int or Expression
         """
-        # TODO(mark) refactor so we don't return this tuple thing. the offset+32 thing
-        # should be something the caller keeps track of.
-
-        new_offset = offset + 32
-
-        if ty == u'':
-            new_offset = offset
-            result = None
-        elif ty.startswith('uint'):
-            size = ABI._parse_size(ty[4:]) // 8
-            result = ABI.get_uint(data, size, offset)
-        elif ty.startswith('int'):
-            size = ABI._parse_size(ty[3:])
-            value = ABI.get_uint(data, size // 8, offset)
-            mask = 2**(size - 1)
-            value = -(value & mask) + (value & ~mask)
-            result = value
-        elif ty == u'bool':
-            result = ABI.get_uint(data, 1, offset)
-        elif ty == u'address':
-            result = ABI.get_uint(data, 20, offset)
-        elif ty in (u'bytes', u'string'):
-            dyn_offset = ABI.get_uint(data, 32, offset)
-            size = ABI.get_uint(data, 32, dyn_offset)
-            result = data[dyn_offset + 32:dyn_offset + 32 + size]
-        elif ty.startswith('bytes') and 0 <= int(ty[5:]) <= 32:
-            size = int(ty[5:])
-            result = data[offset:offset + size]
-        elif ty == u'function':
-            # `function` is a special case of `bytes24`
-            size = 24
-            result = data[offset:offset + size]
-        elif ty == u'address[]':
-            dyn_offset = simplify(ABI.get_uint(data, 32, offset))
-            size = simplify(ABI.get_uint(data, 32, dyn_offset))
-            result = [ABI.get_uint(data, 20, dyn_offset + 32 + 32 * i) for i in range(size)]
-        else:
-            raise NotImplementedError(repr(ty))
-
-        return result, new_offset
-
-    @staticmethod
-    def parse_type_spec(type_spec):
-        is_multiple = '(' in type_spec
-        if is_multiple:
-            func_name = type_spec.split('(')[0]
-            types = type_spec.split('(')[1][:-1].split(',')
-            if not func_name:
-                func_name = None
-        else:
-            func_name = None
-            types = (type_spec,)
-        return is_multiple, func_name, types
-
-    @staticmethod
-    def parse(type_spec, data):
-        ''' Deserialize function ID and arguments specified in `type_spec` from `data`
-
-        :param str type_spec: EVM ABI function specification. function name is optional
-        :param data: ethereum transaction data
-        :type data: str or Array
-        :return:
-        '''
-        is_multiple, func_name, types = ABI.parse_type_spec(type_spec)
-
-        off = 0
-
-        #If it parsed the function name from the spec, skip 4 bytes from the data
-        if func_name:
-            data = data[4:]
-
-        arguments = []
-        for ty in types:
-            val, off = ABI._consume_type(ty, data, off)
-            if val is not None:
-                arguments.append(val)
-            else:
-                break
-
-        if is_multiple:
-            if func_name is not None:
-                return func_name, tuple(arguments)
-            else:
-                return tuple(arguments)
-        else:
-            return arguments[0]
+        assert isinstance(data, (bytearray, Array))
+        value = ABI._readBE(data, nbytes)
+        value = Operators.SEXTEND(value, nbytes * 8, (nbytes + padding) * 8)
+        if not issymbolic(value):
+            # sign bit on
+            if value & (1 << (nbytes * 8 - 1)):
+                value = -(((~value) + 1) & ((1 << (nbytes * 8)) - 1))
+        return value
 
 
 class EVMAccount(object):
-    ''' An EVM account '''
-
-    def __init__(self, address, m=None, default_caller=None):
+    def __init__(self, address=None, manticore=None, name=None):
         ''' Encapsulates an account.
 
             :param address: the address of this account
             :type address: 160 bit long integer
-            :param seth: the controlling Manticore
-            :param default_caller: the default caller address for any transaction
+            :param manticore: the controlling Manticore
 
         '''
-        self._default_caller = default_caller
-        self._m = m
+        self._manticore = manticore
         self._address = address
-        self._hashes = None
+        self._name = name
 
-    def add_function(self, signature):
-        func_id = ABI.make_function_id(signature)
-        func_name = str(signature.split('(')[0])
-        self._hashes[func_name] = signature, func_id
+    def __eq__(self, other):
+        if isinstance(other, numbers.Integral):
+            return self._address == other
+        if isinstance(self, EVMAccount):
+            return self._address == other._address
+        return super(EVMAccount, self).__eq__(other)
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def address(self):
+        return self._address
 
     def __int__(self):
         return self._address
@@ -855,22 +910,46 @@ class EVMAccount(object):
     def __str__(self):
         return str(self._address)
 
-    @property
-    def address(self):
-        return self._address
+    def __eq__(self, other):
+        if isinstance(other, EVMAccount):
+            return self._address == other._address
+        return self._address == other
+
+
+class EVMContract(EVMAccount):
+    ''' An EVM account '''
+
+    def __init__(self, default_caller=None, **kwargs):
+        ''' Encapsulates a contract account.
+            :param default_caller: the default caller address for any transaction
+
+        '''
+        super(EVMContract, self).__init__(**kwargs)
+        self._default_caller = default_caller
+        self._hashes = None
+
+    def add_function(self, signature):
+        func_id = binascii.hexlify(ABI.function_selector(signature))
+        func_name = str(signature.split('(')[0])
+        if func_name.startswith('_') or func_name in {'add_function', 'address', 'name'}:
+            raise EthereumError("Sorry function name is used by the python wrapping")
+        if func_name in self._hashes:
+            raise EthereumError("A function with that name is already defined")
+        if func_id in {func_id for _, func_id in self._hashes.values()}:
+            raise EthereumError("A function with the same hash is already defined")
+        self._hashes[func_name] = signature, func_id
 
     def _null_func(self):
         pass
 
     def _init_hashes(self):
         #initializes self._hashes lazy
-        if self._hashes is None and self._m is not None:
+        if self._hashes is None and self._manticore is not None:
             self._hashes = {}
-            md = self._m.get_metadata(self._address)
+            md = self._manticore.get_metadata(self._address)
             if md is not None:
                 for signature, func_id in md._hashes.items():
-                    func_name = str(signature.split('(')[0])
-                    self._hashes[func_name] = signature, func_id
+                    self.add_function(signature)
             # It was successful, no need to re-run. _init_hashes disabled
             self._init_hashes = self._null_func
 
@@ -890,15 +969,13 @@ class EVMAccount(object):
                 def f(*args, **kwargs):
                     caller = kwargs.get('caller', None)
                     value = kwargs.get('value', 0)
-                    tx_data = ABI.make_function_call(str(self._hashes[name][0]), *args)
-                    if caller is not None:
-                        caller = int(caller)
-                    else:
+                    tx_data = ABI.function_call(str(self._hashes[name][0]), *args)
+                    if caller is None:
                         caller = self._default_caller
-                    self._m.transaction(caller=caller,
-                                        address=self._address,
-                                        value=value,
-                                        data=tx_data)
+                    self._manticore.transaction(caller=caller,
+                                                address=self._address,
+                                                value=value,
+                                                data=tx_data)
                 return f
 
         return object.__getattribute__(self, name)
@@ -929,41 +1006,57 @@ class ManticoreEVM(Manticore):
             seth.report()
             print seth.coverage(contract_account)
     '''
-    SByte = ABI.SByte
-    SValue = ABI.SValue
 
-    def make_symbolic_buffer(self, size):
+    def make_symbolic_buffer(self, size, name='TXBUFFER'):
         ''' Creates a symbolic buffer of size bytes to be used in transactions.
-            You can not operate on it. It is intended as a place holder for the
-            real expression.
+            You can operate on it normally and add constrains to manticore.constraints
+            via manticore.constrain(constraint_expression)
 
             Example use::
 
-                symbolic_data = seth.make_symbolic_buffer(320)
-                seth.transaction(caller=attacker_account,
+                symbolic_data = m.make_symbolic_buffer(320)
+                m.constrain(symbolic_data[0] == 0x65)
+                m.transaction(caller=attacker_account,
                                 address=contract_account,
                                 data=symbolic_data,
                                 value=100000 )
-
-
         '''
-        return ABI.SByte(size)
+        return self.constraints.new_array(index_bits=256, name=name, index_max=size, value_bits=8, taint=frozenset())
 
-    def make_symbolic_value(self):
+    def make_symbolic_value(self, name='TXVALUE'):
         ''' Creates a symbolic value, normally a uint256, to be used in transactions.
-            You can not operate on it. It is intended as a place holder for the
-            real expression.
+            You can operate on it normally and add constrains to manticore.constraints
+            via manticore.constrain(constraint_expression)
 
             Example use::
 
-                symbolic_value = seth.make_symbolic_value()
-                seth.transaction(caller=attacker_account,
+                symbolic_value = m.make_symbolic_value()
+                m.constrain(symbolic_value > 100)
+                m.constrain(symbolic_value < 1000)
+                m.transaction(caller=attacker_account,
                                 address=contract_account,
                                 data=data,
-                                value=symbolic_data )
+                                value=symbolic_value )
 
         '''
-        return ABI.SValue
+        return self.constraints.new_bitvec(256, name=name)
+
+    def make_symbolic_address(self, name='TXADDR', select='both'):
+        if select not in ('both', 'normal', 'contract'):
+            raise EthereumError('Wrong selection type')
+        if select in ('normal', 'contract'):
+            # FIXME need to select contracts or normal accounts
+            raise NotImplemented
+        symbolic_address = self.make_symbolic_value(name=name)
+
+        constraint = symbolic_address == 0
+        for contract_account_i in map(int, self._accounts.values()):
+            constraint = Operators.OR(symbolic_address == contract_account_i, constraint)
+        self.constrain(constraint)
+        return symbolic_address
+
+    def constrain(self, constraint):
+        self.constraints.add(constraint)
 
     @staticmethod
     def compile(source_code, contract_name=None, libraries=None, runtime=False):
@@ -1002,7 +1095,7 @@ class ManticoreEVM(Manticore):
                 for pos in pos_lst:
                     hex_contract_lst[pos:pos + 40] = '%040x' % lib_address
             hex_contract = ''.join(hex_contract_lst)
-        return binascii.unhexlify(hex_contract)
+        return bytearray(binascii.unhexlify(hex_contract))
 
     @staticmethod
     def _run_solc(source_file):
@@ -1019,9 +1112,9 @@ class ManticoreEVM(Manticore):
         try:
             installed_version_output = check_output([solc, "--version"])
         except OSError:
-            raise Exception("Solidity compiler not installed.")
+            raise EthereumError("Solidity compiler not installed.")
 
-        m = re.match(r".*Version: (?P<version>(?P<major>\d+)\.(?P<minor>\d+)\.(?P<build>\d+))\+(?P<commit>[^\s]+).*", installed_version_output, re.DOTALL | re.IGNORECASE)
+        m = re.match(r".*Version: (?P<version>(?P<major>\d+)\.(?P<minor>\d+)\.(?P<build>\d+)).*\+(?P<commit>[^\s]+).*", installed_version_output, re.DOTALL | re.IGNORECASE)
 
         if not m or m.groupdict()['version'] not in supported_versions:
             #Fixme https://github.com/trailofbits/manticore/issues/847
@@ -1046,7 +1139,7 @@ class ManticoreEVM(Manticore):
         try:
             return json.loads(stdout), stderr
         except ValueError:
-            raise Exception('Solidity compilation error:\n\n{}'.format(stderr))
+            raise EthereumError('Solidity compilation error:\n\n{}'.format(stderr))
 
     @staticmethod
     def _compile(source_code, contract_name, libraries=None):
@@ -1078,7 +1171,7 @@ class ManticoreEVM(Manticore):
 
         contracts = output.get('contracts', [])
         if len(contracts) != 1 and contract_name is None:
-            raise Exception('Solidity file must contain exactly one contract or you must use contract parameter to specify which one.')
+            raise EthereumError('Solidity file must contain exactly one contract or you must use contract parameter to specify which one.')
 
         name, contract = None, None
         if contract_name is None:
@@ -1093,22 +1186,43 @@ class ManticoreEVM(Manticore):
         name = name.split(':')[1]
 
         if contract['bin'] == '':
-            raise Exception('Solidity failed to compile your contract.')
+            raise EthereumError('Solidity failed to compile your contract.')
 
         bytecode = ManticoreEVM._link(contract['bin'], libraries)
         srcmap = contract['srcmap'].split(';')
         srcmap_runtime = contract['srcmap-runtime'].split(';')
-        hashes = contract['hashes']
+        hashes = dict(((str(x), str(y)) for x, y in contract['hashes'].items()))
         abi = json.loads(contract['abi'])
         runtime = ManticoreEVM._link(contract['bin-runtime'], libraries)
         return name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
+
+    @property
+    def accounts(self):
+        return dict(self._accounts)
+
+    def account_name(self, address):
+        for name, account in self._accounts.iteritems():
+            if account.address == address:
+                return name
+        return '0x{:x}'.format(address)
+
+    @property
+    def normal_accounts(self):
+        return {name: account for name, account in self._accounts.iteritems() if not isinstance(account, EVMContract)}
+
+    @property
+    def contract_accounts(self):
+        return {name: account for name, account in self._accounts.iteritems() if isinstance(account, EVMContract)}
+
+    def get_account(self, name):
+        return self._accounts[name]
 
     def __init__(self, procs=10, **kwargs):
         ''' A Manticore EVM manager
             :param int procs: number of workers to use in the exploration
         '''
-        self.normal_accounts = set()
-        self.contract_accounts = set()
+        self._accounts = dict()
+
         self._config_procs = procs
         # Make the constraint store
         constraints = ConstraintSet()
@@ -1117,14 +1231,14 @@ class ManticoreEVM(Manticore):
         initial_state = State(constraints, world)
         super(ManticoreEVM, self).__init__(initial_state, **kwargs)
 
+        self.constraints = ConstraintSet()
         self.detectors = {}
         self.metadata = {}
 
         # The following should go to manticore.context so we can use multiprocessing
         self.context['seth'] = {}
-        self.context['seth']['_pending_transaction'] = None
-        self.context['seth']['_saved_states'] = []
-        self.context['seth']['_final_states'] = []
+        self.context['seth']['_saved_states'] = set()
+        self.context['seth']['_final_states'] = set()
         self.context['seth']['_completed_transactions'] = 0
 
         self._executor.subscribe('did_load_state', self._load_state_callback)
@@ -1149,15 +1263,15 @@ class ManticoreEVM(Manticore):
         ''' IDs of the running states'''
         with self.locked_context('seth') as context:
             if self.initial_state is not None:
-                return context['_saved_states'] + [-1]
+                return tuple(context['_saved_states']) + (-1,)
             else:
-                return context['_saved_states']
+                return tuple(context['_saved_states'])
 
     @property
     def _terminated_state_ids(self):
         ''' IDs of the terminated states '''
         with self.locked_context('seth') as context:
-            return context['_final_states']
+            return tuple(context['_final_states'])
 
     @property
     def _all_state_ids(self):
@@ -1173,7 +1287,7 @@ class ManticoreEVM(Manticore):
         for state_id in self._running_state_ids:
             state = self.load(state_id)
             yield state
-            #FIXME re save state in case it was modified by the user
+            self.save(state, state_id=state_id)  # overwrite old
 
     @property
     def terminated_states(self):
@@ -1181,7 +1295,7 @@ class ManticoreEVM(Manticore):
         for state_id in self._terminated_state_ids:
             state = self.load(state_id)
             yield state
-            #FIXME re save state in case it was modified by the user
+            self.save(state, state_id=state_id)  # overwrite old
 
     @property
     def all_states(self):
@@ -1189,7 +1303,7 @@ class ManticoreEVM(Manticore):
         for state_id in self._all_state_ids:
             state = self.load(state_id)
             yield state
-            #FIXME re save state in case it was modified by the user
+            self.save(state, state_id=state_id)  # overwrite old
 
     def count_states(self):
         ''' Total states count '''
@@ -1208,20 +1322,20 @@ class ManticoreEVM(Manticore):
             Moves the state from the running list into the terminated list
         '''
 
-        # Move state from running to final
-        with self.locked_context('seth') as seth_context:
-            saved_states = seth_context['_saved_states']
-            final_states = seth_context['_final_states']
-            if state_id != -1:
+        if state_id != -1:
+            # Move state from running to final
+            with self.locked_context('seth') as seth_context:
+                saved_states = seth_context['_saved_states']
+                final_states = seth_context['_final_states']
                 if state_id in saved_states:
                     saved_states.remove(state_id)
-                    final_states.append(state_id)
-            else:
-                assert state_id == -1
-                state_id = self.save(self._initial_state, final=True)
-                self._initial_state = None
-            seth_context['_saved_states'] = saved_states
-            seth_context['_final_states'] = final_states
+                    final_states.add(state_id)
+                    seth_context['_saved_states'] = saved_states  # TODO This two may be not needed in py3?
+                    seth_context['_final_states'] = final_states
+        else:
+            assert state_id == -1
+            state_id = self.save(self._initial_state, final=True)
+            self._initial_state = None
         return state_id
 
     def _revive_state_id(self, state_id):
@@ -1236,9 +1350,9 @@ class ManticoreEVM(Manticore):
                 final_states = seth_context['_final_states']
                 if state_id in final_states:
                     final_states.remove(state_id)
-                    saved_states.append(state_id)
-                seth_context['_saved_states'] = saved_states
-                seth_context['_final_states'] = final_states
+                    saved_states.add(state_id)
+                    seth_context['_saved_states'] = saved_states
+                    seth_context['_final_states'] = final_states
         return state_id
 
     # deprecate this 5 in favor of for sta in seth.all_states: do stuff?
@@ -1279,7 +1393,14 @@ class ManticoreEVM(Manticore):
         state = self.load(state_id)
         return state.platform.transactions
 
-    def solidity_create_contract(self, source_code, owner, contract_name=None, libraries=None, balance=0, address=None, args=()):
+    def make_symbolic_arguments(self, types):
+        '''
+            Make a reasonable serialization of the symbolic argument types
+        '''
+        # FIXME this is more naive than reasonable.
+        return ABI.deserialize(types, self.make_symbolic_buffer(32, name="INITARGS"))
+
+    def solidity_create_contract(self, source_code, owner, name=None, contract_name=None, libraries=None, balance=0, address=None, args=None):
         ''' Creates a solidity contract and library dependencies
 
             :param str source_code: solidity source code
@@ -1298,28 +1419,28 @@ class ManticoreEVM(Manticore):
             deps = {}
         else:
             deps = dict(libraries)
-        # If not selected get a new one for the main contract
-        if address is None:
-            address = self.world.new_address()
 
         contract_names = [contract_name]
         while contract_names:
             contract_name_i = contract_names.pop()
             try:
                 compile_results = self._compile(source_code, contract_name_i, libraries=deps)
-                init_bytecode = compile_results[2]
-
+                md = SolidityMetadata(*compile_results)
                 if contract_name_i == contract_name:
+                    constructor_types = md.get_constructor_arguments()
+                    if args is None:
+                        args = self.make_symbolic_arguments(constructor_types)
                     contract_account = self.create_contract(owner=owner,
                                                             balance=balance,
                                                             address=address,
-                                                            init=tuple(init_bytecode) + tuple(ABI.make_function_arguments(*args)))
+                                                            init=md._init_bytecode + ABI.serialize(constructor_types, *args),
+                                                            name=name)
                 else:
-                    contract_account = self.create_contract(owner=owner, init=tuple(init_bytecode))
+                    contract_account = self.create_contract(owner=owner, init=md._init_bytecode)
 
                 if contract_account is None:
-                    raise Exception("Failed to build contract %s" % contract_name_i)
-                self.metadata[int(contract_account)] = SolidityMetadata(*compile_results)
+                    raise EthereumError("Failed to build contract %s" % contract_name_i)
+                self.metadata[int(contract_account)] = md
 
                 deps[contract_name_i] = contract_account
             except DependencyError as e:
@@ -1328,11 +1449,11 @@ class ManticoreEVM(Manticore):
                     if lib_name not in deps:
                         contract_names.append(lib_name)
 
-        if not self.count_running_states() or self.get_code(contract_account) == '':
+        if not self.count_running_states() or len(self.get_code(contract_account)) == 0:
             return None
         return contract_account
 
-    def create_contract(self, owner, balance=0, address=None, init=None):
+    def create_contract(self, owner, balance=0, address=None, init=None, name=None):
         ''' Creates a contract
 
             :param owner: owner account (will be default caller in any transactions)
@@ -1341,50 +1462,51 @@ class ManticoreEVM(Manticore):
             :type balance: int or SValue
             :param int address: the address for the new contract (optional)
             :param str init: initializing evm bytecode and arguments
+            :param str name: a uniq name for reference
             :rtype: EVMAccount
         '''
-        assert self.count_running_states() == 1, "No forking yet"
-        assert init is not None
-        #FIxme?
-        #We force the same address/accounts on all the states
+        if not self.count_running_states():
+            raise NoAliveStates
+
+        if address is not None and address in map(int, self.accounts.values()):
+            # Address already used
+            raise EthereumError("Address already used")
+
+        # Let just choose the address ourself. This is not yellow paper material
         if address is None:
-            address = self.world.new_address()
+            address = self.new_address()
 
-        with self.locked_context('seth') as context:
-            assert context['_pending_transaction'] is None
-            context['_pending_transaction'] = ('CREATE_CONTRACT', owner, address, balance, init, 10)
+        # Name check
+        if name is None:
+            name = self._get_uniq_name("contract")
+        if name in self._accounts:
+            # Account name already used
+            raise EthereumError("Name already used")
 
-        self.run(procs=self._config_procs)
+        self._transaction('CREATE', owner, balance, address, data=init)
+        # TODO detect failure in the constructor
 
-        #FIxme?
-        #We assume the constructor run in all states effectivelly and add the
-        #address to the accounts list
-        self.contract_accounts.add(address)
-        return EVMAccount(address, self, default_caller=owner)
+        self._accounts[name] = EVMContract(address=address, manticore=self, default_caller=owner, name=name)
+        return self.accounts[name]
 
-    def create_account(self, balance=0, address=None, code=''):
-        ''' Creates a normal account
+    def _get_uniq_name(self, stem):
+        count = 0
+        for name_i in self.accounts.keys():
+            if name_i.startswith(stem):
+                try:
+                    count = max(count, int(name_i[len(stem):]) + 1)
+                except:
+                    pass
+        name = "{:s}{:d}".format(stem, count)
+        assert name not in self.accounts
+        return name
 
-            :param balance: balance to be transfered on creation
-            :type balance: int or SValue
-            :param address: the address for the new contract (optional)
-            :type address: int
-            :return: an EVMAccount
-        '''
-        if self.count_running_states() != 1:
-            raise Exception("This works only when there is a single state")
-        with self.locked_context('seth') as context:
-            if context['_pending_transaction'] is not None:
-                raise Exception("It should be no other pending transaction")
-
-        #self.world refers to the evm world of the single state in existance
-        address = self.world.new_address()
-        self.world.create_account(address, balance, code=code, storage=None)
-
-        #keep a list just in case.
-        #Caveat: After some execution the account list on different states may differ
-        self.normal_accounts.add(address)
-        return address
+    def new_address(self):
+        ''' Create a fresh 160bit address '''
+        new_address = random.randint(100, pow(2, 160))
+        if new_address in map(int, self.accounts.values()):
+            return self.new_address()
+        return new_address
 
     def transaction(self, caller, address, value, data):
         ''' Issue a symbolic transaction in all running states
@@ -1396,53 +1518,184 @@ class ManticoreEVM(Manticore):
             :param value: balance to be transfered on creation
             :type value: int or SValue
             :param data: initial data
-            :return: an EVMAccount
             :raises NoAliveStates: if there are no alive states to execute
         '''
+        self._transaction('CALL', caller, value=value, address=address, data=data)
+
+    def create_account(self, balance=0, address=None, code=None, name=None):
+        ''' Low level creates an account. This won't generate a transaction.
+
+            :param balance: balance to be set on creation (optional)
+            :type balance: int or SValue
+            :param address: the address for the new account (optional)
+            :type address: int
+            :param code: the runtime code for the new account (None means normal account) (optional)
+            :param name: a global account name eg. for use as reference in the reports (optional)
+            :return: an EVMAccount
+        '''
+        # Need at least one state where to apply this
+        if not self.count_running_states():
+            raise NoAliveStates
+
+        # Name check
+        if name is None:
+            if code is None:
+                name = self._get_uniq_name("normal")
+            else:
+                name = self._get_uniq_name("contract")
+        if name in self._accounts:
+            # Account name already used
+            raise EthereumError("Name already used")
+
+        #Balance check
+        if not isinstance(balance, numbers.Integral):
+            raise EthereumError("Balance invalid type")
+
+        if isinstance(code, str):
+            code = bytearray(code)
+        if code is not None and not isinstance(code, (bytearray, Array)):
+            raise EthereumError("code bad type")
+
+        # Address check
+        # Let just choose the address ourself. This is not yellow paper material
+        if address is None:
+            address = self.new_address()
+        if not isinstance(address, numbers.Integral):
+            raise EthereumError("A concrete address is needed")
+        assert address is not None
+        if address in map(int, self.accounts.values()):
+            # Address already used
+            raise EthereumError("Address already used")
+
+        # To avoid going full crazy we maintain a global list of addresses
+        # Different states may CREATE a different set of accounts.
+        # Accounts created by a human have the same address in all states.
+        for state in self.running_states:
+            world = state.platform
+
+            if '_pending_transaction' in state.context:
+                raise EthereumError("This is bad. It should not be a pending transaction")
+
+            if address in world.accounts:
+                # Address already used
+                raise EthereumError("This is bad. Same address used for different contracts in different states")
+            world.create_account(address, balance, code=code, storage=None)
+
+        self._accounts[name] = EVMAccount(address, manticore=self, name=name)
+        return self.accounts[name]
+
+    def _transaction(self, sort, caller, value=0, address=None, data=None, price=1):
+        ''' Creates a contract
+
+            :param caller: caller account
+            :type caller: int or EVMAccount
+            :param int address: the address for the transaction (optional)
+            :param value: value to be transferred
+            :param price: the price of gas for this transaction. Mostly unused.
+            :type value: int or SValue
+            :param str data: initializing evm bytecode and arguments or transaction call data
+            :rtype: EVMAccount
+        '''
+        #Type Forgiveness
         if isinstance(address, EVMAccount):
             address = int(address)
         if isinstance(caller, EVMAccount):
             caller = int(caller)
+        #Defaults, call data is empty
+        if data is None:
+            data = bytearray(b"")
+        if isinstance(data, str):
+            data = bytearray(data)
+        if not isinstance(data, (bytearray, Array)):
+            raise EthereumError("code bad type")
 
+        # Check types
+        if not isinstance(caller, numbers.Integral):
+            raise EthereumError("Caller invalid type")
+
+        if not isinstance(value, (numbers.Integral, BitVec)):
+            raise EthereumError("Value invalid type")
+
+        if not isinstance(address, (numbers.Integral, BitVec)):
+            raise EthereumError("address invalid type")
+
+        if not isinstance(price, numbers.Integral):
+            raise EthereumError("Price invalid type")
+
+        # Check argument consistency and set defaults ...
+        if sort not in ('CREATE', 'CALL'):
+            raise ValueError('unsupported transaction type')
+
+        # Caller must be a normal known account
+        if caller not in self._accounts.values():
+            raise EthereumError("Unknown caller address!")
+
+        if sort == 'CREATE':
+            #let's choose an address here for now #NOTYELLOW
+            if address is None:
+                address = self.new_address()
+
+            # When creating data is the init_bytecode + arguments
+            if len(data) == 0:
+                raise EthereumError("An initialization bytecode is needed for a CREATE")
+
+        assert address is not None
+        assert caller is not None
+
+        # Transactions (as everything else) needs at least one running state
         if not self.count_running_states():
             raise NoAliveStates
 
-        #Fixme
-        if isinstance(data, self.SByte):
-            data = (None,) * data.size
+        # To avoid going full crazy we maintain a global list of addresses
+        for state in self.running_states:
+            world = state.platform
 
-        with self.locked_context('seth') as context:
-            context['_pending_transaction'] = ('CALL', caller, address, value, data, 10)
+            if '_pending_transaction' in state.context:
+                raise EthereumError("This is bad. It should not be a pending transaction")
 
-        logger.info("Starting symbolic transaction: %d", self.completed_transactions + 1)
-        status = self.run(procs=self._config_procs)
-        with self.locked_context('seth') as context:
-            context['_completed_transactions'] = context['_completed_transactions'] + 1
+            # Copy global constraints into each state.
+            # We should somehow remember what has been copied to each state
+            # In a second transaction we should only add new constraints.
+            # And actually only constraints related to whateverwe are using in
+            # the tx. This is a FIXME
+            for c in self.constraints:
+                state.constrain(c)
 
-        logger.info("Finished symbolic transaction: %d | Code Coverage: %d%% | Terminated States: %d | Alive States: %d", self.completed_transactions, self.global_coverage(address), self.count_terminated_states(), self.count_running_states())
+            # Different states may CREATE a different set of accounts. Accounts
+            # that were crated by a human have the same address in all states.
+            # This diverges from the yellow paper but at least we check that we
+            # are not trying to create an already used address here
+            if sort == 'CREATE':
+                if address in world.accounts:
+                    # Address already used
+                    raise EthereumError("This is bad. Same address used for different contracts in different states")
 
-        return status
+            state.context['_pending_transaction'] = (sort, caller, address, value, data, price)
 
-    def multi_tx_analysis(self, solidity_filename, contract_name=None, tx_limit=None, tx_use_coverage=True, tx_account="attacker"):
-        owner_account = self.create_account(balance=1000)
-        attacker_account = self.create_account(balance=1000)
+        # run over potentially several states and
+        # generating potentially several others
+        self.run(procs=self._config_procs)
+
+        return address
+
+    def multi_tx_analysis(self, solidity_filename, contract_name=None, tx_limit=None, tx_use_coverage=True, tx_account="combo1", args=None):
+        owner_account = self.create_account(balance=1000, name='owner')
+        attacker_account = self.create_account(balance=1000, name='attacker')
+
+        #pretty print
+        logger.info("Starting symbolic create contract")
+
         with open(solidity_filename) as f:
-            contract_account = self.solidity_create_contract(f, contract_name=contract_name, owner=owner_account, args=(None, None, None, None))
+            contract_account = self.solidity_create_contract(f, contract_name=contract_name, owner=owner_account, args=args)
 
         if tx_account == "attacker":
-            tx_account = attacker_account
+            tx_account = [attacker_account]
         elif tx_account == "owner":
-            tx_account = owner_account
+            tx_account = [owner_account]
+        elif tx_account == "combo1":
+            tx_account = [owner_account, attacker_account]
         else:
-            raise EthereumError('The account to perform the symbolic exploration of the contract should be either "attacker" or "owner"')
-
-        def run_symbolic_tx():
-            symbolic_data = self.make_symbolic_buffer(320)
-            symbolic_value = self.make_symbolic_value()
-            self.transaction(caller=tx_account,
-                             address=contract_account,
-                             data=symbolic_data,
-                             value=symbolic_value)
+            raise EthereumError('The account to perform the symbolic exploration of the contract should be "attacker", "owner" or "combo1"')
 
         if contract_account is None:
             logger.info("Failed to create contract. Exception in constructor")
@@ -1451,17 +1704,27 @@ class ManticoreEVM(Manticore):
 
         prev_coverage = 0
         current_coverage = 0
-
+        tx_no = 0
         while (current_coverage < 100 or not tx_use_coverage) and not self.is_shutdown():
             try:
-                run_symbolic_tx()
+                logger.info("Starting symbolic transaction: %d", tx_no)
+
+                # run_symbolic_tx
+                symbolic_data = self.make_symbolic_buffer(320)
+                symbolic_value = self.make_symbolic_value()
+                self.transaction(caller=tx_account[min(tx_no, len(tx_account) - 1)],
+                                 address=contract_account,
+                                 data=symbolic_data,
+                                 value=symbolic_value)
+                logger.info("%d alive states, %d terminated states", self.count_running_states(), self.count_terminated_states())
             except NoAliveStates:
                 break
 
-            if tx_limit is not None:
-                tx_limit -= 1
-                if tx_limit == 0:
-                    break
+            # Check if the maximun number of tx was reached
+            if tx_limit is not None and tx_no == tx_limit:
+                break
+
+            # Check if coverage has improved or not
             if tx_use_coverage:
                 prev_coverage = current_coverage
                 current_coverage = self.global_coverage(contract_account)
@@ -1470,18 +1733,17 @@ class ManticoreEVM(Manticore):
                 if not found_new_coverage:
                     break
 
+            tx_no += 1
+
     def run(self, **kwargs):
         ''' Run any pending transaction on any running state '''
         # Check if there is a pending transaction
         with self.locked_context('seth') as context:
-            assert context['_pending_transaction'] is not None
-
             # there is no states added to the executor queue
             assert len(self._executor.list()) == 0
-
             for state_id in context['_saved_states']:
                 self._executor.put(state_id)
-            context['_saved_states'] = []
+            context['_saved_states'] = set()
 
         # A callback will use _pending_transaction and issue the transaction
         # in each state (see load_state_callback)
@@ -1489,30 +1751,37 @@ class ManticoreEVM(Manticore):
 
         with self.locked_context('seth') as context:
             if len(context['_saved_states']) == 1:
-                self._initial_state = self._executor._workspace.load_state(context['_saved_states'][0], delete=True)
-                context['_saved_states'] = []
-                assert self._running_state_ids == [-1]
+                self._initial_state = self._executor._workspace.load_state(context['_saved_states'].pop(), delete=True)
+                context['_saved_states'] = set()
+                assert self._running_state_ids == (-1,)
 
-            # clear pending transcations. We are done.
-            context['_pending_transaction'] = None
-
-    def save(self, state, final=False):
+    def save(self, state, state_id=None, final=False):
         ''' Save a state in secondary storage and add it to running or final lists
 
             :param state: A manticore State
+            :param state_id: if not None force state_id (overwrite)
             :param final: True if state is final
             :returns: a state id
-
         '''
-        # save the state to secondary storage
-        state_id = self._executor._workspace.save_state(state)
-        with self.locked_context('seth') as context:
-            if final:
-                # Keep it on a private list
-                context['_final_states'].append(state_id)
-            else:
-                # Keep it on a private list
-                context['_saved_states'].append(state_id)
+        # If overwriting then the state_id must be known
+        if state_id is not None:
+            if state_id not in self._all_state_ids:
+                raise EthereumError("Trying to overwrite unknown state_id")
+            with self.locked_context('seth') as context:
+                context['_final_states'].discard(state_id)
+                context['_saved_states'].discard(state_id)
+
+        if state_id != -1:
+            # save the state to secondary storage
+            state_id = self._executor._workspace.save_state(state, state_id=state_id)
+
+            with self.locked_context('seth') as context:
+                if final:
+                    # Keep it on a private list
+                    context['_final_states'].add(state_id)
+                else:
+                    # Keep it on a private list
+                    context['_saved_states'].add(state_id)
         return state_id
 
     def load(self, state_id=None):
@@ -1528,7 +1797,7 @@ class ManticoreEVM(Manticore):
                 #Get the ID of the single running state
                 state_id = self._running_state_ids[0]
             else:
-                raise Exception("More than one state running.")
+                raise EthereumError("More than one state running, you must specify state id.")
 
         if state_id == -1:
             state = self.initial_state
@@ -1588,7 +1857,6 @@ class ManticoreEVM(Manticore):
         else:
             assert tx.result in {'SELFDESTRUCT', 'RETURN', 'STOP'}
             # if not a revert we save the state for further transactioning
-            del state.context['processed']
             self.save(state)  # Add to running states
 
     #Callbacks
@@ -1596,33 +1864,16 @@ class ManticoreEVM(Manticore):
         ''' INTERNAL USE
             When a state was just loaded from stoage we do the pending transaction
         '''
-        if state.context.get('processed', False):
+        if '_pending_transaction' not in state.context:
             return
         world = state.platform
-        state.context['processed'] = True
-        with self.locked_context('seth') as context:
-            # take current global transaction we need to apply to all running states
-            ty, caller, address, value, data, price = context['_pending_transaction']
-
-        txnum = len(world.human_transactions)
-
-        # Replace any None by symbolic values
-        if value is None:
-            value = state.new_symbolic_value(256, label='tx%d_value' % txnum)
-        if isinstance(data, tuple):
-            if any(x is None for x in data):
-                symbolic_data = state.constraints.new_array(index_bits=256, name='tx%d_data' % txnum, index_max=len(data))
-                for i in range(len(data)):
-                    if data[i] is not None:
-                        symbolic_data[i] = data[i]
-                data = symbolic_data
-            else:
-                data = bytearray(data)
+        ty, caller, address, value, data, price = state.context['_pending_transaction']
+        del state.context['_pending_transaction']
 
         if ty == 'CALL':
             world.transaction(address=address, caller=caller, data=data, value=value, price=price)
         else:
-            assert ty == 'CREATE_CONTRACT'
+            assert ty == 'CREATE'
             world.create_contract(caller=caller, address=address, balance=value, init=data, price=price)
 
     def _did_evm_execute_instruction_callback(self, state, instruction, arguments, result_ref):
@@ -1655,21 +1906,21 @@ class ManticoreEVM(Manticore):
 
     def register_detector(self, d):
         if not isinstance(d, Detector):
-            raise Exception("Not a Detector")
+            raise EthereumError("Not a Detector")
         if d.name in self.detectors:
-            raise Exception("Detector already registered")
+            raise EthereumError("Detector already registered")
         self.detectors[d.name] = d
         self.register_plugin(d)
         return d.name
 
     def unregister_detector(self, d):
         if not isinstance(d, (Detector, str)):
-            raise Exception("Not a Detector")
+            raise EthereumError("Not a Detector")
         name = d
         if isinstance(d, Detector):
             name = d.name
         if name not in self.detectors:
-            raise Exception("Detector not registered")
+            raise EthereumError("Detector not registered")
         d = self.detectors[name]
         del self.detectors[name]
         self.unregister_plugin(d)
@@ -1698,7 +1949,10 @@ class ManticoreEVM(Manticore):
         def flagged(flag):
             return '(*)' if flag else ''
         testcase = self._output.testcase(name.replace(' ', '_'))
-        logger.info("Generated testcase No. {} - {}".format(testcase.num, message + blockchain.last_transaction.result))
+        last_tx = blockchain.last_transaction
+        if last_tx:
+            message = message + last_tx.result
+        logger.info("Generated testcase No. {} - {}".format(testcase.num, message))
 
         local_findings = set()
         for detector in self.detectors.values():
@@ -1721,28 +1975,32 @@ class ManticoreEVM(Manticore):
 
         with testcase.open_stream('summary') as summary:
             summary.write("Message: %s\n" % message)
-            summary.write("Last exception: %s\n" % state.context['last_exception'])
+            summary.write("Last exception: %s\n" % state.context.get('last_exception', 'None'))
 
-            at_runtime = blockchain.last_transaction.sort != 'CREATE'
-            address, offset, at_init = state.context['evm.trace'][-1]
-            assert at_runtime != at_init
+            if last_tx:
+                at_runtime = last_tx.sort != 'CREATE'
+                address, offset, at_init = state.context['evm.trace'][-1]
+                assert at_runtime != at_init
 
-            #Last instruction if last tx vas valid
-            if state.context['last_exception'].message != 'TXERROR':
-                metadata = self.get_metadata(blockchain.last_transaction.address)
-                if metadata is not None:
-                    summary.write('Last instruction at contract %x offset %x\n' % (address, offset))
-                    source_code_snippet = metadata.get_source_for(offset, at_runtime)
-                    if source_code_snippet:
-                        summary.write(source_code_snippet)
-                    summary.write('\n')
+                #Last instruction if last tx vas valid
+                if state.context['last_exception'].message != 'TXERROR':
+                    metadata = self.get_metadata(blockchain.last_transaction.address)
+                    if metadata is not None:
+                        summary.write('Last instruction at contract %x offset %x\n' % (address, offset))
+                        source_code_snippet = metadata.get_source_for(offset, at_runtime)
+                        if source_code_snippet:
+                            summary.write(source_code_snippet)
+                        summary.write('\n')
 
             # Accounts summary
             is_something_symbolic = False
             summary.write("%d accounts.\n" % len(blockchain.accounts))
+
             for account_address in blockchain.accounts:
                 is_account_address_symbolic = issymbolic(account_address)
                 account_address = state.solve_one(account_address)
+
+                summary.write("* %s::\n" % self.account_name(account_address))
                 summary.write("Address: 0x%x %s\n" % (account_address, flagged(is_account_address_symbolic)))
                 balance = blockchain.get_balance(account_address)
                 is_balance_symbolic = issymbolic(balance)
@@ -1812,8 +2070,12 @@ class ManticoreEVM(Manticore):
 
                 # The result if any RETURN or REVERT
                 tx_summary.write("Type: %s (%d)\n" % (tx.sort, tx.depth))
-                tx_summary.write("From: 0x%x %s\n" % (state.solve_one(tx.caller), flagged(issymbolic(tx.caller))))
-                tx_summary.write("To: 0x%x %s\n" % (state.solve_one(tx.address), flagged(issymbolic(tx.address))))
+                caller_solution = state.solve_one(tx.caller)
+                caller_name = self.account_name(caller_solution)
+                tx_summary.write("From: %s(0x%x) %s\n" % (caller_name, caller_solution, flagged(issymbolic(tx.caller))))
+                address_solution = state.solve_one(tx.address)
+                address_name = self.account_name(address_solution)
+                tx_summary.write("To: %s(0x%x) %s\n" % (address_name, address_solution, flagged(issymbolic(tx.address))))
                 tx_summary.write("Value: %d %s\n" % (state.solve_one(tx.value), flagged(issymbolic(tx.value))))
                 tx_data = state.solve_one(tx.data)
                 tx_summary.write("Data: %s %s\n" % (binascii.hexlify(tx_data), flagged(issymbolic(tx.data))))
@@ -1826,13 +2088,16 @@ class ManticoreEVM(Manticore):
                         function_id = tx.data[:4]  # hope there is enough data
                         function_id = binascii.hexlify(state.solve_one(function_id))
                         signature = metadata.get_func_signature(function_id)
-                        # FIXME Can this fail when absurd encoding? \/
-                        function_name, arguments = ABI.parse(signature, tx.data)
+                        function_name = metadata.get_func_name(function_id)
+                        if signature:
+                            _, arguments = ABI.deserialize(signature, tx.data)
+                        else:
+                            arguments = (tx.data,)
 
                         return_data = None
                         if tx.result == 'RETURN':
                             ret_types = metadata.get_func_return_types(function_id)
-                            return_data = ABI.parse(ret_types, tx.return_data)  # function return
+                            return_data = ABI.deserialize(ret_types, tx.return_data)  # function return
 
                         tx_summary.write('\n')
                         tx_summary.write("Function call:\n")
@@ -1883,8 +2148,10 @@ class ManticoreEVM(Manticore):
                 logger.debug("Using iterpickle to dump state")
                 statef.write(iterpickle.dumps(state, 2))
 
-        with testcase.open_stream('trace') as f:
-            self._emit_trace_file(f, state.context['evm.trace'])
+        trace = state.context.get('evm.trace')
+        if trace:
+            with testcase.open_stream('trace') as f:
+                self._emit_trace_file(f, trace)
         return testcase
 
     @staticmethod
@@ -1965,13 +2232,13 @@ class ManticoreEVM(Manticore):
         with self._output.save_stream('global.summary') as global_summary:
             # (accounts created by contract code are not in this list )
             global_summary.write("Global runtime coverage:\n")
-            for address in self.contract_accounts:
-                global_summary.write("%x: %d%%\n" % (address, self.global_coverage(address)))
+            for address in self.contract_accounts.values():
+                global_summary.write("{:x}: {:2.2f}%\n".format(int(address), self.global_coverage(address)))
 
-            md = self.get_metadata(address)
-            if md is not None and len(md.warnings) > 0:
-                global_summary.write('\n\nCompiler warnings for %s:\n' % md.name)
-                global_summary.write(md.warnings)
+                md = self.get_metadata(address)
+                if md is not None and len(md.warnings) > 0:
+                    global_summary.write('\n\nCompiler warnings for %s:\n' % md.name)
+                    global_summary.write(md.warnings)
 
         for address, md in self.metadata.items():
             with self._output.save_stream('global_%s.sol' % md.name) as global_src:
@@ -2033,17 +2300,17 @@ class ManticoreEVM(Manticore):
 
         # clean up lists
         with self.locked_context('seth') as seth_context:
-            seth_context['_saved_states'] = []
-            seth_context['_final_states'] = []
+            seth_context['_saved_states'] = set()
+            seth_context['_final_states'] = set()
 
         logger.info("Results in %s", self.workspace)
 
-    def global_coverage(self, account_address):
+    def global_coverage(self, account):
         ''' Returns code coverage for the contract on `account_address`.
             This sums up all the visited code lines from any of the explored
             states.
         '''
-        account_address = int(account_address)
+        account_address = int(account)
         runtime_bytecode = None
         #Search one state in which the account_address exists
         for state in self.all_states:

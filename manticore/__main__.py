@@ -126,7 +126,7 @@ def ethereum_cli(args):
         m.register_detector(DetectUninitializedMemory())
 
     if args.avoid_constant:
-        #avoid all human level tx that has no effect on the storage
+        # avoid all human level tx that has no effect on the storage
         filter_nohuman_constants = FilterFunctions(regexp=r".*", depth='human', mutability='constant', include=False)
         self.register_plugin(filter_nohuman_constants)
 
@@ -135,7 +135,6 @@ def ethereum_cli(args):
     m.multi_tx_analysis(args.argv[0], args.contract, args.txlimit, not args.txnocoverage, args.txaccount)
 
     #TODO unregister all plugins
-
     m.finalize()
 
 

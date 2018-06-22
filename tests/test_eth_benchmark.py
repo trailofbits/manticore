@@ -45,8 +45,7 @@ class EthBenchmark(unittest.TestCase):
 
         filename = os.path.join(THIS_DIR, 'binaries', 'benchmark', '{}.sol'.format(name))
 
-        mevm.multi_tx_analysis(filename, tx_limit=3)
-
+        mevm.multi_tx_analysis(filename, tx_limit=3, args=(mevm.make_symbolic_value(),))
 
         expected_findings = set(( (c, d) for b, c, d in should_find))
         actual_findings = set(( (c, d) for a, b, c, d in mevm.global_findings))
@@ -136,5 +135,3 @@ class EthBenchmark(unittest.TestCase):
     def test_integer_overflow_dynarray(self):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, set())
-
-
