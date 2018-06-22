@@ -560,11 +560,11 @@ class EVMAsm(object):
         return reverse_table
 
     @staticmethod
-    def assemble_one(assembler, offset=0):
+    def assemble_one(assembler, pc=0):
         ''' Assemble one EVM instruction from its textual representation.
 
             :param assembler: assembler code for one instruction
-            :param offset: offset of the instruction in the bytecode (optional)
+            :param pc: program counter of the instruction(optional)
             :return: An Instruction object
 
             Example use::
@@ -584,16 +584,16 @@ class EVMAsm(object):
                 assert len(assembler) == 1
                 operand = None
 
-            return EVMAsm.Instruction(opcode, name, operand_size, pops, pushes, gas, description, operand=operand, offset=offset)
+            return EVMAsm.Instruction(opcode, name, operand_size, pops, pushes, gas, description, operand=operand, pc=pc)
         except BaseException:
-            raise Exception("Something wrong at offset %d" % offset)
+            raise Exception("Something wrong at pc %d" % pc)
 
     @staticmethod
-    def assemble_all(assembler, offset=0):
+    def assemble_all(assembler, pc=0):
         ''' Assemble a sequence of textual representation of EVM instructions
 
             :param assembler: assembler code for any number of instructions
-            :param offset: offset of the first instruction in the bytecode(optional)
+            :param pc: program counter of the first instruction(optional)
             :return: An generator of Instruction objects
 
             Example use::
@@ -617,17 +617,17 @@ class EVMAsm(object):
         for line in assembler:
             if not line.strip():
                 continue
-            instr = EVMAsm.assemble_one(line, offset=offset)
+            instr = EVMAsm.assemble_one(line, pc=pc)
             yield instr
             offset += instr.size
 
     @staticmethod
-    def disassemble_one(bytecode, offset=0):
+    def disassemble_one(bytecode, pc=0):
         ''' Decode a single instruction from a bytecode
 
             :param bytecode: the bytecode stream
             :type bytecode: bytearray or str
-            :param offset: offset of the instruction in the bytecode(optional)
+            :param pc: program counter of the instruction(optional)
             :type bytecode: iterator/sequence/str
             :return: an Instruction object
 
@@ -644,18 +644,18 @@ class EVMAsm(object):
 
         invalid = ('INVALID', 0, 0, 0, 0, 'Unknown opcode')
         name, operand_size, pops, pushes, gas, description = EVMAsm._table.get(opcode, invalid)
-        instruction = EVMAsm.Instruction(opcode, name, operand_size, pops, pushes, gas, description, offset=offset)
+        instruction = EVMAsm.Instruction(opcode, name, operand_size, pops, pushes, gas, description, pc=pc)
         if instruction.has_operand:
             instruction.parse_operand(bytecode)
 
         return instruction
 
     @staticmethod
-    def disassemble_all(bytecode, offset=0):
+    def disassemble_all(bytecode, pc=0):
         ''' Decode all instructions in bytecode
 
             :param bytecode: an evm bytecode (binary)
-            :param offset: offset of the first instruction in the bytecode(optional)
+            :param pc: program counter of the first instruction(optional)
             :type bytecode: iterator/sequence/str
             :return: An generator of Instruction objects
 
@@ -683,16 +683,16 @@ class EVMAsm(object):
             bytecode = bytearray(bytecode)
         bytecode = iter(bytecode)
         while True:
-            instr = EVMAsm.disassemble_one(bytecode, offset=offset)
-            offset += instr.size
+            instr = EVMAsm.disassemble_one(bytecode, pc=pc)
+            pc += instr.size
             yield instr
 
     @staticmethod
-    def disassemble(bytecode, offset=0):
+    def disassemble(bytecode, pc=0):
         ''' Disassemble an EVM bytecode
 
             :param bytecode: binary representation of an evm bytecode (hexadecimal)
-            :param offset: offset of the first instruction in the bytecode(optional)
+            :param pc: program counter of the first instruction(optional)
             :type bytecode: str
             :return: the text representation of the aseembler code
 
@@ -707,14 +707,14 @@ class EVMAsm(object):
                 PUSH2 0x100
 
         '''
-        return '\n'.join(map(str, EVMAsm.disassemble_all(bytecode, offset=offset)))
+        return '\n'.join(map(str, EVMAsm.disassemble_all(bytecode, pc=pc)))
 
     @staticmethod
-    def assemble(asmcode, offset=0):
+    def assemble(asmcode, pc=0):
         ''' Assemble an EVM program
 
             :param asmcode: an evm assembler program
-            :param offset: offset of the first instruction in the bytecode(optional)
+            :param pc: program counter of the first instruction(optional)
             :type asmcode: str
             :return: the hex representation of the bytecode
 
@@ -730,14 +730,14 @@ class EVMAsm(object):
                 ...
                 "\x60\x60\x60\x40\x52\x60\x02\x61\x01\x00"
         '''
-        return ''.join(map(lambda x: x.bytes, EVMAsm.assemble_all(asmcode, offset=offset)))
+        return ''.join(map(lambda x: x.bytes, EVMAsm.assemble_all(asmcode, pc=pc)))
 
     @staticmethod
-    def disassemble_hex(bytecode, offset=0):
+    def disassemble_hex(bytecode, pc=0):
         ''' Disassemble an EVM bytecode
 
             :param bytecode: canonical representation of an evm bytecode (hexadecimal)
-            :param int offset: offset of the first instruction in the bytecode(optional)
+            :param pc: program counter of the first instruction(optional)
             :type bytecode: str
             :return: the text representation of the aseembler code
 
@@ -755,14 +755,14 @@ class EVMAsm(object):
         if bytecode.startswith('0x'):
             bytecode = bytecode[2:]
         bytecode = bytecode.decode('hex')
-        return EVMAsm.disassemble(bytecode, offset=offset)
+        return EVMAsm.disassemble(bytecode, pc=pc)
 
     @staticmethod
-    def assemble_hex(asmcode, offset=0):
+    def assemble_hex(asmcode, pc=0):
         ''' Assemble an EVM program
 
             :param asmcode: an evm assembler program
-            :param offset: offset of the first instruction in the bytecode(optional)
+            :param pc: program counter of the first instruction(optional)
             :type asmcode: str
             :return: the hex representation of the bytecode
 
@@ -778,7 +778,7 @@ class EVMAsm(object):
                 ...
                 "0x6060604052600261010"
         '''
-        return '0x' + EVMAsm.assemble(asmcode, offset=offset).encode('hex')
+        return '0x' + EVMAsm.assemble(asmcode, pc=pc).encode('hex')
 
 
 # Exceptions...
@@ -1176,7 +1176,7 @@ class EVM(Eventful):
 
             while True:
                 yield 0
-        instruction = EVMAsm.disassemble_one(getcode(), offset=self.pc)
+        instruction = EVMAsm.disassemble_one(getcode(), pc=self.pc)
         _decoding_cache[self.pc] = instruction
         return instruction
 
