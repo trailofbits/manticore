@@ -47,8 +47,8 @@ user_account = m.create_account(balance=1000)
 target_account = m.create_account(balance=1000)
 contract_account = m.solidity_create_contract(source_code, owner=user_account)
 
-contract_account.set(m.SValue,1)
-contract_account.set(m.SValue,1)
+contract_account.set(m.make_symbolic_value(name="A"),1)
+contract_account.set(m.make_symbolic_value(name="B"),1)
 
 for st in m.all_states:
     flag_storage_slot = 0

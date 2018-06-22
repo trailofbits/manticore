@@ -220,6 +220,29 @@ class ConstraintSet(object):
         ''' Makes an uniq variable name'''
         return '%s_%d' % (name, self._get_sid())
 
+    def migrate(self, expression, name=None, bindings=None):
+        ''' Migrate an expression created for a different constraint set
+            Returns an expression that can be used with this constraintSet
+        '''
+        # Simply check there are no name overlappings
+        if bindings is None:
+            bindings = {}
+        if name is None:
+            name = self._get_new_name('migrated')
+        variables = get_variables(expression)
+        for var in variables:
+            if var in bindings:
+                continue
+            if isinstance(var, Bool):
+                new_var = self.new_bool()
+            elif isinstance(expression, BitVec):
+                new_var = self.new_bitvec(var.size)
+            elif isinstance(expression, Array):
+                new_var = self.new_array(index_max=var.index_max, index_bits=var.index_bits, value_bits=var.value_bits)
+            bindings[var] = new_var
+
+        return replace(expression, bindings)
+
     def new_bool(self, name='B', taint=frozenset()):
         ''' Declares a free symbolic boolean in the constraint store
             :param name: try to assign name to internal variable representation,
