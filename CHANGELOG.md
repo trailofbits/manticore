@@ -21,6 +21,7 @@ Thanks to our external contributors!
 - Linux: Can use `--env` and `LD_LIBRARY_PATH` to specify alternate ELF interpreter locations for dynamic binaries
 - Linux: Partial chroot(2) and fork(2) models
 - Initial support for NetBSD hosts
+- Ethereum: `--avoid-constant` cli argument to enable heuristics to avoid unnecessary exploration of constant functions
 
 ### Changed
 
