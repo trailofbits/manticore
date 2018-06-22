@@ -8,16 +8,38 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 Thanks to our external contributors!
 
--  TODO
+- [khorben](https://github.com/khorben)
+- [catenacyber](https://github.com/catenacyber)
+- [dwhjames](https://github.com/dwhjames)
+- [matiasb](https://github.com/matiasb)
+- [reaperhulk](https://github.com/reaperhulk)
+- [lazzarello](https://github.com/lazzarello)
 
 ### Added
 
-### Fixed
+- ARM: New instructions to better support Raspberry Pi binaries (UTXH, UQSUB8)
+- Linux: Can use `--env` and `LD_LIBRARY_PATH` to specify alternate ELF interpreter locations for dynamic binaries
+- Linux: Partial chroot(2) and fork(2) models
+- Initial support for NetBSD hosts
 
 ### Changed
 
-### Removed
+- Ethereum detectors are now opt-in, via cli flags: `--detect-overflow`, `--detect-invalid`, `--detect-uninitialized-memory`, `--detect-uninitialized-storage`
+- Ethereum: Complete internal refactor.
+    - Model memory using smtlib arrays to better support symbolic indexing
+    - Numerous internal API improvements
+    - Better symbolic gas support
+    - More advanced overflow detection heuristics
+    - Account names, scripts can assign names to accounts or contracts
+    - Better ABI serializer/deserializer for canonical types, supports tuples/structs and recursive types
+    - State list iterations improvements, modifications to state persist
+    - Symbolic caller, address, value and data in transactions
 
+### Fixed
+
+- Linux: Generate concretized file content for symbolic files
+- Linux: Fixes in various syscall models (brk, stat*), and miscellaneous fixes
+- Ethereum: Inaccurate transaction history in some cases
 
 ## 0.1.9 - 2018-05-04
 
