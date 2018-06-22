@@ -1678,7 +1678,7 @@ class ManticoreEVM(Manticore):
 
             # Migrate any expression to state specific constraint set
             new_constraints, caller, address, value, data = self.__migrate_expressions(self.constraints, caller, address, value, data)
-            for c in newconstraints:
+            for c in new_constraints:
                 state.constrain(c)
 
             # Different states may CREATE a different set of accounts. Accounts
