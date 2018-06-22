@@ -227,6 +227,34 @@ class EthAbiTests(unittest.TestCase):
         self.assertEqual(name, func_name)
         self.assertEqual(args, (function_ref_data,))
 
+    def test_serialize_static_bytes(self):
+        sb1 = ABI.StaticBytes(0xdeadbeef, 4)
+        sb2 = ABI.StaticBytes('0xdeadbeef')
+        sb3 = ABI.StaticBytes(('\xde', '\xad', '\xbe', '\xef'))
+
+        self.assertEqual(sb1.serialize(), sb2.serialize())
+        self.assertEqual(sb2.serialize(), sb3.serialize())
+        self.assertEqual(sb1.serialize(), ABI.serialize(sb1))
+
+    def test_serialize_address(self):
+        addr = 0xfB6916095ca1df60bB79Ce92cE3Ea74c37c5d359
+        sb1 = ABI.Address(addr)
+        sb2 = ABI.Address('0xfB6916095ca1df60bB79Ce92cE3Ea74c37c5d359')
+        sb3 = ABI.Address(('\xfb','\x69','\x16','\x09','\x5c','\xa1','\xdf','\x60','\xbb','\x79','\xce','\x92','\xce','\x3e','\xa7','\x4c','\x37','\xc5','\xd3','\x59'))
+
+        self.assertEqual(sb1.serialize(), sb2.serialize())
+        self.assertEqual(sb2.serialize(), sb3.serialize())
+        self.assertEqual(sb1.serialize(), ABI.serialize(sb1))
+        self.assertEqual(sb1.serialize(), ABI.serialize(addr))
+
+    def test_serialize_external_function(self):
+        fn = ABI.ExternalFunction(ABI.Address('0xfB6916095ca1df60bB79Ce92cE3Ea74c37c5d359'), ABI.StaticBytes('0xdeadbeef'))
+
+        self.assertEqual(fn.serialize(), ABI.serialize(fn))
+        self.assertEqual(ABI._tuple_bytes_to_long(fn.serialize()[:20]), 0xfB6916095ca1df60bB79Ce92cE3Ea74c37c5d359)
+        self.assertEqual(ABI._tuple_bytes_to_long(fn.serialize()[20:24]), 0xdeadbeef)
+        self.assertEqual(ABI._tuple_bytes_to_long(fn.serialize()[24:]), 0x0)
+
 
 class EthTests(unittest.TestCase):
     def setUp(self):
