@@ -415,7 +415,7 @@ def calculate_coverage(runtime_bytecode, seen):
     count, total = 0, 0
     bytecode = SolidityMetadata._without_metadata(runtime_bytecode)
     for i in evm.EVMAsm.disassemble_all(bytecode):
-        if i.offset in seen:
+        if i.pc in seen:
             count += 1
         total += 1
 
@@ -1898,16 +1898,15 @@ class ManticoreEVM(Manticore):
         logger.debug("%s", state.platform.current_vm)
         #TODO move to a plugin
         at_init = state.platform.current_transaction.sort == 'CREATE'
-        pc = instruction.offset
         if at_init:
             coverage_context_name = 'init_coverage'
         else:
             coverage_context_name = 'runtime_coverage'
 
         with self.locked_context(coverage_context_name, set) as coverage:
-            coverage.add((state.platform.current_vm.address, pc))
+            coverage.add((state.platform.current_vm.address, instruction.pc))
 
-        state.context.setdefault('evm.trace', []).append((state.platform.current_vm.address, pc, at_init))
+        state.context.setdefault('evm.trace', []).append((state.platform.current_vm.address, instruction.pc, at_init))
 
     def _did_evm_read_code(self, state, offset, size):
         ''' INTERNAL USE '''
@@ -2272,26 +2271,26 @@ class ManticoreEVM(Manticore):
 
                     count, total = 0, 0
                     for i in evm.EVMAsm.disassemble_all(runtime_bytecode):
-                        if (address, i.offset) in seen:
+                        if (address, i.pc) in seen:
                             count += 1
                             global_runtime_asm.write('*')
                         else:
                             global_runtime_asm.write(' ')
 
-                        global_runtime_asm.write('%4x: %s\n' % (i.offset, i))
+                        global_runtime_asm.write('%4x: %s\n' % (i.pc, i))
                         total += 1
 
             with self._output.save_stream('global_%s.init_asm' % md.name) as global_init_asm:
                 with self.locked_context('init_coverage') as seen:
                     count, total = 0, 0
                     for i in evm.EVMAsm.disassemble_all(md.init_bytecode):
-                        if (address, i.offset) in seen:
+                        if (address, i.pc) in seen:
                             count += 1
                             global_init_asm.write('*')
                         else:
                             global_init_asm.write(' ')
 
-                        global_init_asm.write('%4x: %s\n' % (i.offset, i))
+                        global_init_asm.write('%4x: %s\n' % (i.pc, i))
                         total += 1
 
             with self._output.save_stream('global_%s.init_visited' % md.name) as f:

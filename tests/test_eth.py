@@ -387,7 +387,7 @@ class EthTests(unittest.TestCase):
                     # collect all end instructions based on whether they are in init or rt
                     if instruction.is_endtx:
                         with self.locked_context(name) as d:
-                            d.append(instruction.offset)
+                            d.append(instruction.pc)
                 except Exception as e:
                     raise
 
