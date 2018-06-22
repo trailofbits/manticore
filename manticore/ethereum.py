@@ -1681,7 +1681,6 @@ class ManticoreEVM(Manticore):
             for c in newconstraints:
                 state.constrain(c)
 
-
             # Different states may CREATE a different set of accounts. Accounts
             # that were crated by a human have the same address in all states.
             # This diverges from the yellow paper but at least we check that we
