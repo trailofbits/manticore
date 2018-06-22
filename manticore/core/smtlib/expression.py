@@ -890,7 +890,6 @@ class ArrayProxy(Array):
         self._array = auxiliar
         return auxiliar
 
-
     def __getitem__(self, index):
         if isinstance(index, slice):
             start, stop = self._fix_index(index)

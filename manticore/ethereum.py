@@ -787,6 +787,7 @@ class ABI(object):
         '''
         if size <= 0 and size > 32:
             raise ValueError
+
         if not isinstance(value, (numbers.Integral, BitVec, EVMAccount)):
             raise ValueError
         if issymbolic(value):
@@ -1586,6 +1587,26 @@ class ManticoreEVM(Manticore):
         self._accounts[name] = EVMAccount(address, manticore=self, name=name)
         return self.accounts[name]
 
+    def __migrate_expressions(self, constraints, caller, address, value, data):
+            # Copy global constraints into each state.
+            # We should somehow remember what has been copied to each state
+            # In a second transaction we should only add new constraints.
+            # And actually only constraints related to whateverwe are using in
+            # the tx. This is a FIXME
+            migration_bindings = {}
+            if issymbolic(caller):
+                caller = state.constraints.migrate(caller, bindings=migration_bindings)
+            if issymbolic(address):
+                address = state.constraints.migrate(address, bindings=migration_bindings)
+            if issymbolic(value):
+                value = state.constraints.migrate(value, bindings=migration_bindings)
+            if issymbolic(data):
+                data = state.constraints.migrate(data, bindings=migration_bindings)
+            new_constraints = []
+            for c in constraints:
+                new_constraints.append(state.constraints.migrate(c, bindings=migration_bindings))
+            return new_constraints, caller, address, value, data
+
     def _transaction(self, sort, caller, value=0, address=None, data=None, price=1):
         ''' Creates a contract
 
@@ -1655,22 +1676,11 @@ class ManticoreEVM(Manticore):
             if '_pending_transaction' in state.context:
                 raise EthereumError("This is bad. It should not be a pending transaction")
 
-            # Copy global constraints into each state.
-            # We should somehow remember what has been copied to each state
-            # In a second transaction we should only add new constraints.
-            # And actually only constraints related to whateverwe are using in
-            # the tx. This is a FIXME
-            migration_bindings = {}
-            if issymbolic(caller):
-                caller = state.constraints.migrate(caller, bindings=migration_bindings)
-            if issymbolic(address):
-                address = state.constraints.migrate(address, bindings=migration_bindings)
-            if issymbolic(value):
-                value = state.constraints.migrate(value, bindings=migration_bindings)
-            if issymbolic(data):
-                data = state.constraints.migrate(data, bindings=migration_bindings)
-            for c in self.constraints:
-                state.constrain(state.constraints.migrate(c, bindings=migration_bindings))
+            # Migrate any expression to state specific constraint set
+            new_constraints, caller, address, value, data = self.__migrate_expressions(self.constraints, caller, address, value, data)
+            for c in newconstraints:
+                state.constrain(c)
+
 
             # Different states may CREATE a different set of accounts. Accounts
             # that were crated by a human have the same address in all states.

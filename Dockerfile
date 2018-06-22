@@ -7,6 +7,11 @@ RUN apt-get -y update && \
 	cd manticore && \
 	pip install .
 
+RUN apt-get install -y build-essential software-properties-common && \
+    add-apt-repository -y ppa:ethereum/ethereum && \
+    apt-get update && \
+    apt-get install -y solc ethereum
+
 RUN useradd -m manticore
 USER manticore
 WORKDIR /home/manticore

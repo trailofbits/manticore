@@ -1067,6 +1067,29 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.cpu.execute()
         self.assertEqual(self.rf.read('R3'), 5)
 
+    @itest_custom("uqsub8 r3, r1, r2")
+    @itest_setregs("R1=0x04030201", "R2=0x01010101")
+    def test_uqsub8_concrete(self):
+        self.cpu.execute()
+        self.assertEqual(self.rf.read('R3'), 0x03020100)
+
+    @itest_custom("uqsub8 r3, r1, r2")
+    @itest_setregs("R1=0x05040302", "R2=0x07050101")
+    def test_uqsub8_concrete_saturated(self):
+        self.cpu.execute()
+        self.assertEqual(self.rf.read('R3'), 0x00000201)
+
+    @itest_custom("uqsub8 r3, r1, r2")
+    @itest_setregs("R2=0x01010101")
+    def test_uqsub8_sym(self):
+        op1 = BitVecVariable(32, 'op1')
+        self.cpu.memory.constraints.add(op1 >= 0x04030201)
+        self.cpu.memory.constraints.add(op1 <  0x04030204)
+        self.cpu.R1 = op1
+        self.cpu.execute()
+        all_vals = solver.get_all_values(self.cpu.memory.constraints, self.cpu.R3)
+        self.assertIn(0x03020100, all_vals)
+
     @itest_custom("sbc r3, r1, #5")
     @itest_setregs("R1=10")
     def test_sbc_imm(self):
@@ -1581,6 +1604,12 @@ class Armv7CpuInstructions(unittest.TestCase):
     def test_uxtb(self):
         self.assertEqual(self.cpu.R2, 0x55555555)
         self.assertEqual(self.cpu.R1, 0x55)
+
+    @itest_setregs("R1=0x45", "R2=0x55555555")
+    @itest("uxth r1, r2")
+    def test_uxth(self):
+        self.assertEqual(self.cpu.R2, 0x55555555)
+        self.assertEqual(self.cpu.R1, 0x5555)
 
     @itest_setregs("R1=1","R2=0","R3=0","R4=0","R12=0x4141")
     @itest_thumb_multiple(["cmp r1, #1", "itt ne", "mov r2, r12", "mov r3, r12", "mov r4, r12"])
