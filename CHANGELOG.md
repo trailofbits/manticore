@@ -24,7 +24,7 @@ Thanks to our external contributors!
 
 ### Changed
 
-- Ethereum detectors are now opt-in, via cli flags: `--detect-overflow`, `--detect-invalid`, `--detect-uninitialized-memory`, `--detect-uninitialized-storage`
+- Ethereum detectors are now opt-in, via cli flags: `--detect-overflow`, `--detect-invalid`, `--detect-uninitialized-memory`, `--detect-uninitialized-storage`, `--detect-all`
 - Ethereum: Complete internal refactor.
     - Model memory using smtlib arrays to better support symbolic indexing
     - Numerous internal API improvements
