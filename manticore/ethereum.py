@@ -1587,7 +1587,7 @@ class ManticoreEVM(Manticore):
         self._accounts[name] = EVMAccount(address, manticore=self, name=name)
         return self.accounts[name]
 
-    def __migrate_expressions(self, constraints, caller, address, value, data):
+    def __migrate_expressions(self, new_constraints, old_constraints, caller, address, value, data):
             # Copy global constraints into each state.
             # We should somehow remember what has been copied to each state
             # In a second transaction we should only add new constraints.
@@ -1595,16 +1595,15 @@ class ManticoreEVM(Manticore):
             # the tx. This is a FIXME
             migration_bindings = {}
             if issymbolic(caller):
-                caller = state.constraints.migrate(caller, bindings=migration_bindings)
+                caller = new_constraints.migrate(caller, bindings=migration_bindings)
             if issymbolic(address):
-                address = state.constraints.migrate(address, bindings=migration_bindings)
+                address = new_constraints.migrate(address, bindings=migration_bindings)
             if issymbolic(value):
-                value = state.constraints.migrate(value, bindings=migration_bindings)
+                value = new_constraints.migrate(value, bindings=migration_bindings)
             if issymbolic(data):
-                data = state.constraints.migrate(data, bindings=migration_bindings)
-            new_constraints = []
-            for c in constraints:
-                new_constraints.append(state.constraints.migrate(c, bindings=migration_bindings))
+                data = new_constraints.migrate(data, bindings=migration_bindings)
+            for c in old_constraints:
+                new_constraints.constraint(new_constraints.migrate(c, bindings=migration_bindings))
             return new_constraints, caller, address, value, data
 
     def _transaction(self, sort, caller, value=0, address=None, data=None, price=1):
@@ -1677,9 +1676,7 @@ class ManticoreEVM(Manticore):
                 raise EthereumError("This is bad. It should not be a pending transaction")
 
             # Migrate any expression to state specific constraint set
-            new_constraints, caller, address, value, data = self.__migrate_expressions(self.constraints, caller, address, value, data)
-            for c in new_constraints:
-                state.constrain(c)
+            _, caller, address, value, data = self.__migrate_expressions(state.constraints, self.constraints, caller, address, value, data)
 
             # Different states may CREATE a different set of accounts. Accounts
             # that were crated by a human have the same address in all states.
