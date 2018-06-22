@@ -504,7 +504,7 @@ class ArithmeticSimplifier(Visitor):
         if isinstance(index, BitVecConstant) and isinstance(arr, ArrayStore) and isinstance(arr.index, BitVecConstant) and arr.index.value == index.value:
             return arr.value
         else:
-            if arr != expression.array:
+            if arr is not expression.array:
                 return arr.select(index)
 
     def visit_Expression(self, expression, *operands):

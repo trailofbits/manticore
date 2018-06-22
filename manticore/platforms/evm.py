@@ -5,7 +5,7 @@ import inspect
 from functools import wraps
 from ..utils.helpers import issymbolic, memoized
 from ..platforms.platform import *
-from ..core.smtlib import solver, BitVec, Array, Operators, Constant, ArrayVariable
+from ..core.smtlib import solver, BitVec, Array, Operators, Constant, ArrayVariable, translate_to_smtlib
 from ..core.state import Concretize, TerminateState
 from ..core.plugin import Ref
 from ..utils.event import Eventful
@@ -31,7 +31,7 @@ TT255 = 2 ** 255
 TOOHIGHMEM = 0x1000
 
 #FIXME. We should just use a Transaction() for this
-PendingTransaction = namedtuple("PendingTransaction", ['type', 'address', 'origin', 'price', 'data', 'caller', 'value', 'bytecode', 'gas'])
+PendingTransaction = namedtuple("PendingTransaction", ['type', 'address', 'price', 'data', 'caller', 'value', 'gas'])
 EVMLog = namedtuple("EVMLog", ['address', 'memlog', 'topics'])
 
 
@@ -945,6 +945,7 @@ def concretized_args(**policies):
                     for known_account in self.world.accounts:
                         cond = Operators.OR(args[index] == known_account, cond)
                         self.constraints.add(cond)
+                    policy = 'ALL'
                 raise ConcretizeStack(index, policy=policy)
             return func(*args, **kwargs)
         return wrapper
@@ -1177,7 +1178,6 @@ class EVM(Eventful):
             bytecode = self.bytecode
             for pc in range(self.pc, len(bytecode)):
                 yield simplify(bytecode[pc]).value
-
             while True:
                 yield 0
         instruction = EVMAsm.disassemble_one(getcode(), offset=self.pc)
@@ -1223,7 +1223,7 @@ class EVM(Eventful):
                 raise ValueError
         elif isinstance(fee, BitVec):
             if (fee.size != 512):
-                raise Exception("Fees should be 512 bit long")
+                raise EthereumError("Fees should be 512 bit long")
 
         self.constraints.add(Operators.UGE(fee, 0))
         self.constraints.add(Operators.ULE(fee, self._gas))
@@ -1311,11 +1311,9 @@ class EVM(Eventful):
                              expression=expression,
                              setstate=setstate,
                              policy='ALL')
-
         #Fixme[felipe] add a with self.disabled_events context mangr to Eventful
         if self._on_transaction is False:
             self._publish('will_decode_instruction', self.pc)
-
         last_pc = self.pc
         current = self.instruction
         if self._on_transaction is False:
@@ -1760,10 +1758,11 @@ class EVM(Eventful):
         value = sha3.keccak_256(repr(a) + 'NONCE').hexdigest()
         value = int('0x' + value, 0)
 
-        # 0 is left on the stack if the looked for block number is greater than the current block number
-        # or more than 256 blocks behind the current block.
+        # 0 is left on the stack if the looked for block number is greater or equal
+        # than the current block number or more than 256 blocks behind the current
+        # block. (Current block hash is unknown from inside the tx)
         bnmax = Operators.ITEBV(256, self.world.block_number() > 256, 256, self.world.block_number())
-        value = Operators.ITEBV(256, Operators.OR(a > self.world.block_number(), a < bnmax), 0, value)
+        value = Operators.ITEBV(256, Operators.OR(a >= self.world.block_number(), a < bnmax), 0, value)
         return value
 
     def COINBASE(self):
@@ -2197,7 +2196,7 @@ class EVMWorld(Platform):
     def constraints(self):
         return self._constraints
 
-    def _open_transaction(self, sort, address, price, data, caller, value):
+    def _open_transaction(self, sort, address, price, bytecode_or_data, caller, value):
 
         if self.depth > 0:
             origin = self.tx_origin()
@@ -2205,13 +2204,13 @@ class EVMWorld(Platform):
             origin = caller
         assert price is not None
 
-        tx = Transaction(sort, address, price, data, caller, value, depth=self.depth)
+        tx = Transaction(sort, address, price, bytecode_or_data, caller, value, depth=self.depth)
         if sort == 'CREATE':
-            bytecode = data
-            data = None
+            bytecode = bytecode_or_data
+            data = bytearray()
         else:
-            data = data
             bytecode = self.get_code(address)
+            data = bytecode_or_data
 
         address = tx.address
         if tx.sort == 'DELEGATECALL':
@@ -2219,10 +2218,6 @@ class EVMWorld(Platform):
             assert value == 0
 
         vm = EVM(self._constraints, address, data, caller, value, bytecode, world=self)
-
-        if self.depth == 1024:
-            #FIXME this should just close the tx
-            raise TerminateState("Maximum call depth limit is reached", testcase=True)
 
         self._publish('will_open_transaction', tx)
         self._callstack.append((tx, self.logs, self.deleted_accounts, copy.copy(self.get_storage(address)), vm))
@@ -2245,7 +2240,6 @@ class EVMWorld(Platform):
             self._set_storage(vm.address, account_storage)
             self._deleted_accounts = self._deleted_accounts
             self._logs = logs
-
             self.send_funds(tx.address, tx.caller, tx.value)
 
         tx.set_result(result, data)
@@ -2275,7 +2269,9 @@ class EVMWorld(Platform):
     @property
     def last_transaction(self):
         ''' Last completed transaction '''
-        return self.transactions[-1]
+        if len(self.transactions):
+            return self.transactions[-1]
+        return None
 
     @property
     def last_human_transaction(self):
@@ -2283,6 +2279,7 @@ class EVMWorld(Platform):
         for tx in reversed(self.transactions):
             if tx.depth == 0:
                 return tx
+        return None
 
     @constraints.setter
     def constraints(self, constraints):
@@ -2440,10 +2437,11 @@ class EVMWorld(Platform):
 
     def get_code(self, address):
         if address not in self._world_state:
-            return ''
+            return bytearray()
         return self._world_state[address]['code']
 
     def set_code(self, address, data):
+        assert data is not None
         if self._world_state[address]['code']:
             raise EVMException("Code already set")
         self._world_state[address]['code'] = data
@@ -2492,7 +2490,8 @@ class EVMWorld(Platform):
         return len(self._callstack)
 
     def new_address(self):
-        ''' create a fresh 160bit address '''
+        ''' Create a fresh 160bit address '''
+        # Fix use more yellow solution
         new_address = random.randint(100, pow(2, 160))
         if new_address in self:
             return self.new_address()
@@ -2516,13 +2515,15 @@ class EVMWorld(Platform):
 
         if address is None:
             address = self.new_address()
-        assert address not in self.accounts, 'The account already exists'
+        if address in self.accounts:
+            raise EthereumError('The account already exists')
+        if code is None:
+            code = bytearray()
         self._world_state[address] = {}
         self._world_state[address]['nonce'] = 0
         self._world_state[address]['balance'] = balance
         self._world_state[address]['storage'] = storage
         self._world_state[address]['code'] = code
-
         return address
 
     def create_contract(self, price=0, address=None, caller=None, balance=0, init=None):
@@ -2557,66 +2558,67 @@ class EVMWorld(Platform):
 
         '''
         assert self._pending_transaction is None, "Already started tx"
-        if self.depth > 0:
-            origin = self.tx_origin()
-            price = self.tx_gasprice()
-        else:
-            origin = caller
-        if price is None:
-            raise EVMException("Need to set a gas price on human tx")
+        self._pending_transaction = PendingTransaction(sort, address, price, data, caller, value, gas)
+
+    def _pending_transaction_concretize_address(self):
+        sort, address, price, data, caller, value, gas = self._pending_transaction
+        if issymbolic(address):
+            def set_address(state, solution):
+                world = state.platform
+                world._pending_transaction = sort, solution, price, data, caller, value, gas
+            raise Concretize('Concretizing address on transaction',
+                             expression=address,
+                             setstate=set_address,
+                             policy='ALL')
+
+    def _pending_transaction_concretize_caller(self):
+        sort, address, price, data, caller, value, gas = self._pending_transaction
+        if issymbolic(address):
+            def set_caller(state, solution):
+                world = state.platform
+                world._pending_transaction = sort, address, price, data, solution, value, gas
+            raise Concretize('Concretizing address on transaction',
+                             expression=caller,
+                             setstate=set_caller,
+                             policy='ALL')
+
+    def _process_pending_transaction(self):
+        # Nothing to do here if no pending transactions
+        if self._pending_transaction is None:
+            return
+        sort, address, price, data, caller, value, gas = self._pending_transaction
 
         if sort not in {'CALL', 'CREATE', 'DELEGATECALL'}:
             raise EVMException('Type of transaction not supported')
-        if issymbolic(address):
-            raise EVMException("Symbolic target address not supported yet. (need to fork on all available addresses)")
-        if issymbolic(origin):
-            raise EVMException("Symbolic origin address not supported yet.")
-        if issymbolic(caller):
-            raise EVMException("Symbolic caller address not supported yet.")
 
-        if address not in self.accounts or\
-           caller not in self.accounts or \
-           origin not in self.accounts:
+        if self.depth > 0:
+            price = self.tx_gasprice()
+        if price is None:
+            raise EVMException("Need to set a gas price on human tx")
+
+        self._pending_transaction_concretize_address()
+        self._pending_transaction_concretize_caller()
+
+        if address not in self.accounts or caller not in self.accounts:
             raise EVMException('Account does not exist')
 
-        if sort in ('CALL', 'DELEGATECALL'):
-            #FIXME should len(bytecode)>0 ?
-            bytecode = self.get_code(address)
-        else:
-            bytecode = data
-            data = None
+        # Check depth
+        failed = self.depth > 1024
 
-        self._pending_transaction = PendingTransaction(sort, address, origin, price, data, caller, value, bytecode, gas)
-
-    def _process_pending_transaction(self):
-
-        if self._pending_transaction is None:
-            return
-        ty, address, origin, price, data, caller, value, bytecode, gas = self._pending_transaction
-
-        failed = False
-
-        if self.depth > 1024:
-            failed = True
-
+        # Fork on enough funds
         if not failed:
             src_balance = self.get_balance(caller)
             enough_balance = src_balance >= value
             if issymbolic(enough_balance):
                 self.constraints.add(src_balance + value >= src_balance)
-                enough_balance_solutions = solver.get_all_values(self._constraints, enough_balance)
+            enough_balance_solutions = solver.get_all_values(self._constraints, enough_balance)
 
-                if set(enough_balance_solutions) == set([True, False]):
-                    raise Concretize('Forking on available funds',
-                                     expression=src_balance < value,
-                                     setstate=lambda a, b: None,
-                                     policy='ALL')
-
-                if set(enough_balance_solutions) == set([False]):
-                    failed = True
-            else:
-                if not enough_balance:
-                    failed = True
+            if set(enough_balance_solutions) == set([True, False]):
+                raise Concretize('Forking on available funds',
+                                 expression=src_balance < value,
+                                 setstate=lambda a, b: None,
+                                 policy='ALL')
+            failed = set(enough_balance_solutions) == set([False])
 
         #processed
         self._pending_transaction = None
@@ -2624,12 +2626,14 @@ class EVMWorld(Platform):
         #Here we have enough funds and room in the callstack
         self.send_funds(caller, address, value)
 
-        if ty == 'CREATE':
-            data = bytecode
-        self._open_transaction(ty, address, price, data, caller, value)
+        self._open_transaction(sort, address, price, data, caller, value)
 
         if failed:
             self._close_transaction('TXERROR', rollback=True)
+
+        #Transaction to normal account
+        if sort in ('CALL', 'DELEGATECALL') and not self.get_code(address):
+            self._close_transaction('STOP')
 
     def HASH(self, data):
         def compare_buffers(a, b):

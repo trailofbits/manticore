@@ -64,8 +64,15 @@ class Solver(object):
         return self.can_be_true(constraints, True)
 
     def can_be_true(self, constraints, expression):
-        ''' Check if expression can be valid '''
+        ''' Check if expression could be valid '''
         raise Exception("Abstract method not implemented")
+
+    def must_be_true(self, constraints, expression):
+        ''' Check if expression is True and that it can not be False with current
+            constraints
+        '''
+        solutions = self.get_all_values(constraints, expression, maxcnt=2, silent=True)
+        return solutions == [True]
 
     def get_all_values(self, constraints, x, maxcnt=10000, silent=False):
         ''' Returns a list with all the possible values for the symbol x'''
