@@ -619,7 +619,7 @@ class EVMAsm(object):
                 continue
             instr = EVMAsm.assemble_one(line, pc=pc)
             yield instr
-            offset += instr.size
+            pc += instr.size
 
     @staticmethod
     def disassemble_one(bytecode, pc=0):
