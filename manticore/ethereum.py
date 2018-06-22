@@ -1672,7 +1672,6 @@ class ManticoreEVM(Manticore):
 
             state.context['_pending_transaction'] = (sort, caller, address, value, data, price)
 
-
         # run over potentially several states and
         # generating potentially several others
         self.run(procs=self._config_procs)
@@ -1688,7 +1687,6 @@ class ManticoreEVM(Manticore):
 
         with open(solidity_filename) as f:
             contract_account = self.solidity_create_contract(f, contract_name=contract_name, owner=owner_account, args=args)
-
 
         if tx_account == "attacker":
             tx_account = [attacker_account]
