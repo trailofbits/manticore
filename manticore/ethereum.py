@@ -1,4 +1,5 @@
 from . import abitypes
+import uuid
 import numbers
 import random
 import hashlib
@@ -530,7 +531,6 @@ class SolidityMetadata(object):
             srcmap = self.srcmap
 
         try:
-            #print asm_offset, srcmap[asm_offset]
             beg, size, _, _ = srcmap[asm_offset]
         except KeyError:
             #asm_offset pointing outside the known bytecode
@@ -613,7 +613,6 @@ class ABI(object):
         '''
         Build transaction data from function signature and arguments
         '''
-
         m = re.match(r"(?P<name>[a-zA-Z_]+)(?P<type>\(.*\))", type_spec)
         if not m:
             raise EthereumError("Function signature expected")
@@ -788,13 +787,16 @@ class ABI(object):
         '''
         if size <= 0 and size > 32:
             raise ValueError
-        if not isinstance(value, (numbers.Integral, BitVec)):
+
+        if not isinstance(value, (numbers.Integral, BitVec, EVMAccount)):
             raise ValueError
         if issymbolic(value):
-            bytes = ArrayVariable(index_bits=256, index_max=32, value_bits=8, name='temporary')
+            # FIXME This temporary array variable should be obtained from a specific constraint store
+            bytes = ArrayVariable(index_bits=256, index_max=32, value_bits=8, name='temp{}'.format(uuid.uuid1()))
             value = Operators.ZEXTEND(value, size * 8)
             bytes.write_BE(padding, value, size)
         else:
+            value = int(value)
             bytes = bytearray()
             for _ in range(padding):
                 bytes.append(0)
@@ -813,10 +815,11 @@ class ABI(object):
         if not isinstance(value, (numbers.Integral, BitVec)):
             raise ValueError
         if issymbolic(value):
-            bytes = ArrayVariable(index_bits=256, index_max=32, value_bits=8, name='temporary')
+            bytes = ArrayVariable(index_bits=256, index_max=32, value_bits=8, name='temp{}'.format(uuid.uuid1()))
             value = Operators.SIGNEXTEND(value, value.size, size * 8)
             bytes.write_BE(padding, value, size)
         else:
+            value = int(value)
             bytes = bytearray()
             for _ in range(padding):
                 bytes.append(0)
@@ -1584,6 +1587,25 @@ class ManticoreEVM(Manticore):
         self._accounts[name] = EVMAccount(address, manticore=self, name=name)
         return self.accounts[name]
 
+    def __migrate_expressions(self, new_constraints, old_constraints, caller, address, value, data):
+            # Copy global constraints into each state.
+            # We should somehow remember what has been copied to each state
+            # In a second transaction we should only add new constraints.
+            # And actually only constraints related to whateverwe are using in
+            # the tx. This is a FIXME
+            migration_bindings = {}
+            if issymbolic(caller):
+                caller = new_constraints.migrate(caller, bindings=migration_bindings)
+            if issymbolic(address):
+                address = new_constraints.migrate(address, bindings=migration_bindings)
+            if issymbolic(value):
+                value = new_constraints.migrate(value, bindings=migration_bindings)
+            if issymbolic(data):
+                data = new_constraints.migrate(data, bindings=migration_bindings)
+            for c in old_constraints:
+                new_constraints.constraint(new_constraints.migrate(c, bindings=migration_bindings))
+            return new_constraints, caller, address, value, data
+
     def _transaction(self, sort, caller, value=0, address=None, data=None, price=1):
         ''' Creates a contract
 
@@ -1653,13 +1675,8 @@ class ManticoreEVM(Manticore):
             if '_pending_transaction' in state.context:
                 raise EthereumError("This is bad. It should not be a pending transaction")
 
-            # Copy global constraints into each state.
-            # We should somehow remember what has been copied to each state
-            # In a second transaction we should only add new constraints.
-            # And actually only constraints related to whateverwe are using in
-            # the tx. This is a FIXME
-            for c in self.constraints:
-                state.constrain(c)
+            # Migrate any expression to state specific constraint set
+            _, caller, address, value, data = self.__migrate_expressions(state.constraints, self.constraints, caller, address, value, data)
 
             # Different states may CREATE a different set of accounts. Accounts
             # that were crated by a human have the same address in all states.
@@ -1682,7 +1699,7 @@ class ManticoreEVM(Manticore):
         owner_account = self.create_account(balance=1000, name='owner')
         attacker_account = self.create_account(balance=1000, name='attacker')
 
-        #pretty print
+        # Pretty print
         logger.info("Starting symbolic create contract")
 
         with open(solidity_filename) as f:
