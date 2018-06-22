@@ -108,7 +108,7 @@ class Transaction(object):
         return (self.__class__, (self.sort, self.address, self.price, self.data, self.caller, self.value, self.gas, self.depth, self.result, self.return_data))
 
     def __str__(self):
-        return 'Transaction(%s, from=0x%x, to=0x%x, value=%r, depth=%d, data=%r, result=%r..)' % (self.sort, self.caller, self.address, self.value, self.depth, self.data, self.result)
+        return 'Transaction({:s}, from=0x{:x}, to=0x{:x}, value={:r}, depth={:d}, data={:r}, result={:r}..)'.format(self.sort, self.caller, self.address, self.value, self.depth, self.data, self.result)
 
 
 class EVMAsm(object):
