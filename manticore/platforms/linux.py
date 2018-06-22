@@ -2337,22 +2337,22 @@ class Linux(Platform):
             return struct.pack('<LL', int(ts), int(ts % 1 * 1e9))
 
         bufstat = add(8, stat.st_dev)        # unsigned long long      st_dev;
-        bufstat += add(4, 0)                  # unsigned char   __pad0[4];
-        bufstat += add(8, stat.st_ino)        # unsigned long   __st_ino;
+        bufstat += add(8, stat.st_ino)        # unsigned long long   __st_ino;
         bufstat += add(4, stat.st_mode)       # unsigned int    st_mode;
         bufstat += add(4, stat.st_nlink)      # unsigned int    st_nlink;
         bufstat += add(4, stat.st_uid)        # unsigned long   st_uid;
         bufstat += add(4, stat.st_gid)        # unsigned long   st_gid;
         bufstat += add(8, stat.st_rdev)       # unsigned long long st_rdev;
-        bufstat += add(4, 0)                  # unsigned char   __pad3[4];
-        bufstat += add(4, 0)                  # unsigned char   __pad3[4];
+        bufstat += add(8, 0)                  # unsigned long long __pad1;
         bufstat += add(8, stat.st_size)       # long long       st_size;
-        bufstat += add(8, stat.st_blksize)    # unsigned long   st_blksize;
+        bufstat += add(4, stat.st_blksize)    # int   st_blksize;
+        bufstat += add(4, 0)                  # int   __pad2;
         bufstat += add(8, stat.st_blocks)     # unsigned long long st_blocks;
         bufstat += to_timespec(stat.st_atime)  # unsigned long   st_atime;
         bufstat += to_timespec(stat.st_mtime)  # unsigned long   st_mtime;
         bufstat += to_timespec(stat.st_ctime)  # unsigned long   st_ctime;
-        bufstat += add(8, stat.st_ino)        # unsigned long long      st_ino;
+        bufstat += add(4, 0)                   # unsigned int __unused4;
+        bufstat += add(4, 0)                   # unsigned int __unused5;
 
         self.current.write_bytes(buf, bufstat)
         return 0
