@@ -185,35 +185,6 @@ class ConstraintSet(object):
 
     def __str__(self):
         ''' Returns a smtlib representation of the current state '''
-        result = ''
-        translator = TranslatorSmtlib()
-        for expression in self.constraints:
-            translator.visit(simplify(expression))
-
-        # band aid hack around the fact that we are double declaring stuff :( :(
-        tmp = set()
-        for d in self.declarations:
-            tmp.add(d.declaration)
-        for d in tmp:
-            result += d + '\n'
-
-        for name, exp, smtlib in translator.bindings:
-            if isinstance(exp, BitVec):
-                result += '(declare-fun %s () (_ BitVec %d))' % (name, exp.size)
-            elif isinstance(exp, Bool):
-                result += '(declare-fun %s () Bool)' % name
-            elif isinstance(exp, Array):
-                result += '(declare-fun %s () (Array (_ BitVec %d) (_ BitVec %d)))' % (name, exp.index_bits, exp.value_bits)
-            else:
-                raise Exception("Type not supported %r", exp)
-            result += '(assert (= %s %s))\n' % (name, smtlib)
-
-        constraint_str = translator.pop()
-        while constraint_str is not None:
-            if constraint_str != 'true':
-                result += '(assert %s)\n' % constraint_str
-            constraint_str = translator.pop()
-
         return self.to_string()
 
     def _get_new_name(self, name='VAR'):
