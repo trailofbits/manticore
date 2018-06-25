@@ -237,7 +237,7 @@ class DetectDAO(Detector):
         address = world.current_vm.address
         pc = world.current_vm.pc
         at_init = world.current_transaction.sort == 'CREATE'
-        location = (address, pc, "DAO muti-million ether bug.", at_init)
+        location = (address, pc, "DAO muti-million ether bug", at_init)
         daos[location] = set(state.context[self._read_storage_name])
         state.context[name] = daos
 
@@ -1761,7 +1761,8 @@ class ManticoreEVM(Manticore):
 
         return address
 
-    def multi_tx_analysis(self, solidity_filename, contract_name=None, tx_limit=None, tx_use_coverage=True, tx_account="combo1", args=None):
+    def multi_tx_analysis(self, solidity_filename, contract_name=None, tx_limit=None, tx_use_coverage=True, tx_account="attacker", args=None):
+
         owner_account = self.create_account(balance=1000, name='owner')
         attacker_account = self.create_account(balance=1000, name='attacker')
 
