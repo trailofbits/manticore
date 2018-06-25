@@ -1260,7 +1260,6 @@ class EVM(Eventful):
             arguments.append(current.operand)
         for _ in range(current.pops):
             arguments.append(self._pop())
-
         # simplify stack arguments
         for i in range(len(arguments)):
             #if isinstance(arguments[i], Expression):

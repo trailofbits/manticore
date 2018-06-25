@@ -325,6 +325,18 @@ class DetectIntegerOverflow(Detector):
         return cond
 
     def did_evm_execute_instruction_callback(self, state, instruction, arguments, result_ref):
+        def check_finding(what):
+            if istainted(what, "SIGNED"):
+                for taint in get_taints(what, "IOS_.*"):
+                    loc = self._get_location(state, taint[4:])
+                    if state.can_be_true(loc[-1]):
+                        self.add_finding(state, *loc[:-1])
+            else:
+                for taint in get_taints(what, "IOU_.*"):
+                    loc = self._get_location(state, taint[4:])
+                    if state.can_be_true(loc[-1]):
+                        self.add_finding(state, *loc[:-1])
+
         result = result_ref.value
         mnemonic = instruction.semantics
         result = result_ref.value
@@ -340,22 +352,16 @@ class DetectIntegerOverflow(Detector):
         elif mnemonic == 'SUB':
             ios = self._signed_sub_overflow(state, *arguments)
             iou = self._unsigned_sub_overflow(state, *arguments)
-        elif mnemonic == 'SSTORE':
+        elif mnemonic == 'JUMPI':
+            # If an overflowded value is used to control flow then it is a finding
+            target, cond = arguments
+            check_finding(cond)
+        elif mnemonic in 'SSTORE':
+            # If an overflowded value is stored in the storage then it is a finding
             where, what = arguments
-            if istainted(what, "SIGNED"):
-                for taint in get_taints(what, "IOS_.*"):
-                    loc = self._get_location(state, taint[4:])
-                    if state.can_be_true(loc[-1]):
-                        self.add_finding(state, *loc[:-1])
-            else:
-                for taint in get_taints(what, "IOU_.*"):
-                    loc = self._get_location(state, taint[4:])
-                    if state.can_be_true(loc[-1]):
-                        self.add_finding(state, *loc[:-1])
-
+            check_finding(what)
         if mnemonic in ('SLT', 'SGT', 'SDIV', 'SMOD'):
             result = taint_with(result, "SIGNED")
-
         if state.can_be_true(ios):
             id_val = self._save_current_location(state, "Signed integer overflow at %s instruction" % mnemonic, ios)
             result = taint_with(result, "IOS_{:s}".format(id_val))
