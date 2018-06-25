@@ -2192,7 +2192,7 @@ class EVMWorld(Platform):
     def constraints(self):
         return self._constraints
 
-    def _open_transaction(self, sort, address, price, bytecode_or_data, caller, value, gas):
+    def _open_transaction(self, sort, address, price, bytecode_or_data, caller, value, gas=2300):
 
         if self.depth > 0:
             origin = self.tx_origin()

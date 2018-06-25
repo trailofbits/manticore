@@ -193,7 +193,6 @@ class DetectInvalid(Detector):
                 self.add_finding_here(state, "INVALID intruction")
 
 
-
 class DetectDAO(Detector):
     '''
     1) A _successful_ call to a controlled address (An account controlled by the attacker). With enough gas.
@@ -225,7 +224,7 @@ class DetectDAO(Detector):
             if tx.result:
                 # Check if gas was enough for a DAO attack
                 if tx.gas > 3000:
-                    # Check if target address is attaker controlled 
+                    # Check if target address is attaker controlled
                     if self._addresses is None and not world.get_code(tx.address) or tx.address in self._addresses:
                         #that's enough. Save current location and read list
                         self._save_location_and_reads(state)

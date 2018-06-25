@@ -92,7 +92,6 @@ def parse_arguments():
     parser.add_argument('--detect-uninitialized-storage', action='store_true',
                         help='Enable detection of uninitialized storage usage (Ethereum only)')
 
-
     parser.add_argument('--detect-dao', action='store_true',
                         help='Enable detection of dao bug (Ethereum only)')
 
