@@ -1,5 +1,5 @@
 from __future__ import absolute_import  # noqa
-from .expression import Expression, Bool, BitVec, Array  # noqa
+from .expression import Expression, Bool, BitVec, Array, BitVecConstant  # noqa
 from .constraints import ConstraintSet  # noqa
 from .solver import *  # noqa
 from . import operators as Operators  # noqa

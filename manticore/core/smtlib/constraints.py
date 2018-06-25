@@ -126,7 +126,7 @@ class ConstraintSet(object):
             # FIXME
             # band aid hack around the fact that we are double declaring stuff :( :(
             if var.declaration in tmp:
-                #logger.warning("Variable '%s' was copied twice somewhere", var.name)
+                logger.warning("Variable '%s' was copied twice somewhere", var.name)
                 continue
             tmp.add(var.declaration)
             result += var.declaration + '\n'
@@ -185,40 +185,34 @@ class ConstraintSet(object):
 
     def __str__(self):
         ''' Returns a smtlib representation of the current state '''
-        result = ''
-        translator = TranslatorSmtlib()
-        for expression in self.constraints:
-            translator.visit(simplify(expression))
-
-        # band aid hack around the fact that we are double declaring stuff :( :(
-        tmp = set()
-        for d in self.declarations:
-            tmp.add(d.declaration)
-        for d in tmp:
-            result += d + '\n'
-
-        for name, exp, smtlib in translator.bindings:
-            if isinstance(exp, BitVec):
-                result += '(declare-fun %s () (_ BitVec %d))' % (name, exp.size)
-            elif isinstance(exp, Bool):
-                result += '(declare-fun %s () Bool)' % name
-            elif isinstance(exp, Array):
-                result += '(declare-fun %s () (Array (_ BitVec %d) (_ BitVec %d)))' % (name, exp.index_bits, exp.value_bits)
-            else:
-                raise Exception("Type not supported %r", exp)
-            result += '(assert (= %s %s))\n' % (name, smtlib)
-
-        constraint_str = translator.pop()
-        while constraint_str is not None:
-            if constraint_str != 'true':
-                result += '(assert %s)\n' % constraint_str
-            constraint_str = translator.pop()
-
         return self.to_string()
 
     def _get_new_name(self, name='VAR'):
         ''' Makes an uniq variable name'''
         return '%s_%d' % (name, self._get_sid())
+
+    def migrate(self, expression, name=None, bindings=None):
+        ''' Migrate an expression created for a different constraint set
+            Returns an expression that can be used with this constraintSet
+        '''
+        # Simply check there are no name overlappings
+        if bindings is None:
+            bindings = {}
+        if name is None:
+            name = self._get_new_name('migrated')
+        variables = get_variables(expression)
+        for var in variables:
+            if var in bindings:
+                continue
+            if isinstance(var, Bool):
+                new_var = self.new_bool()
+            elif isinstance(expression, BitVec):
+                new_var = self.new_bitvec(var.size)
+            elif isinstance(expression, Array):
+                new_var = self.new_array(index_max=var.index_max, index_bits=var.index_bits, value_bits=var.value_bits)
+            bindings[var] = new_var
+
+        return replace(expression, bindings)
 
     def new_bool(self, name='B', taint=frozenset()):
         ''' Declares a free symbolic boolean in the constraint store

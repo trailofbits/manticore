@@ -66,11 +66,9 @@ def parse_arguments():
     parser.add_argument('--workspace', type=str, default=None,
                         help=("A folder name for temporaries and results."
                               "(default mcore_?????)"))
-
     parser.add_argument('--pure-symbolic', action='store_true',
                         help='Treat all writable memory as symbolic')
-
-    parser.add_argument('--version', action='version', version='Manticore 0.1.9',
+    parser.add_argument('--version', action='version', version='Manticore 0.1.10',
                         help='Show program version information')
 
     parser.add_argument('--txlimit', type=positive,
@@ -85,7 +83,7 @@ def parse_arguments():
     parser.add_argument('--contract', type=str,
                         help='Contract name to analyze in case of multiple ones (Ethereum only)')
 
-    parser.add_argument('--detect-io', action='store_true',
+    parser.add_argument('--detect-overflow', action='store_true',
                         help='Enable integer overflow detection (Ethereum only)')
 
     parser.add_argument('--detect-invalid', action='store_true',
@@ -101,7 +99,7 @@ def parse_arguments():
                         help='Enable all detector heuristics (Ethereum only)')
 
     parser.add_argument('--avoid-constant', action='store_true',
-                        help='Also explore constant functions (Ethereum only)')
+                        help='Avoid exploring constant functions for human transactions (Ethereum only)')
 
     parsed = parser.parse_args(sys.argv[1:])
     if parsed.procs <= 0:
@@ -123,7 +121,7 @@ def ethereum_cli(args):
 
     if args.detect_all or args.detect_invalid:
         m.register_detector(DetectInvalid())
-    if args.detect_all or args.detect_io:
+    if args.detect_all or args.detect_overflow:
         m.register_detector(DetectIntegerOverflow())
     if args.detect_all or args.detect_uninitialized_storage:
         m.register_detector(DetectUninitializedStorage())
@@ -131,7 +129,7 @@ def ethereum_cli(args):
         m.register_detector(DetectUninitializedMemory())
 
     if args.avoid_constant:
-        #avoid all human level tx that has no effect on the storage
+        # avoid all human level tx that has no effect on the storage
         filter_nohuman_constants = FilterFunctions(regexp=r".*", depth='human', mutability='constant', include=False)
         self.register_plugin(filter_nohuman_constants)
 
@@ -140,7 +138,6 @@ def ethereum_cli(args):
     m.multi_tx_analysis(args.argv[0], args.contract, args.txlimit, not args.txnocoverage, args.txaccount)
 
     #TODO unregister all plugins
-
     m.finalize()
 
 

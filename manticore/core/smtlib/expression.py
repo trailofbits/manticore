@@ -1,4 +1,6 @@
 from functools import reduce
+import numbers
+import uuid
 
 
 class Expression(object):
@@ -202,7 +204,9 @@ class BitVec(Expression):
             return value
         if isinstance(value, str) and len(value) == 1:
             value = ord(value)
-        assert isinstance(value, (int, long, bool))
+        # Try to support not Integral types that can be casted to int
+        if not isinstance(value, numbers.Integral):
+            value = int(value)
         # FIXME? Assert it fits in the representation
         return BitVecConstant(self.size, value, **kwargs)
 
@@ -390,7 +394,7 @@ class BitVecConstant(BitVec, Constant):
 
     def __eq__(self, other):
         if self.taint:
-            raise NotImplementedError()
+            super(BitVecConstant, self).__eq__(other)
         return self.value == other
 
 
@@ -554,10 +558,34 @@ class Array(Expression):
         self._index_max = index_max
         self._value_bits = value_bits
         super(Array, self).__init__(*operands, **kwargs)
+        assert type(self) is not Array, 'Abstract class'
+
+    def _get_size(self, index):
+        start, stop = self._fix_index(index)
+        size = stop - start
+        if isinstance(size, BitVec):
+            from manticore.core.smtlib.visitors import simplify
+            size = simplify(size)
+        else:
+            size = BitVecConstant(self.index_bits, size)
+        assert isinstance(size, BitVecConstant)
+        return size.value
+
+    def _fix_index(self, index):
+        """
+        :param slice index:
+        """
+        stop, start = index.stop, index.start
+        if start is None:
+            start = 0
+        if stop is None:
+            stop = len(self)
+        return start, stop
 
     def cast(self, possible_array):
         if isinstance(possible_array, bytearray):
-            arr = Array(self.index_bits, len(possible_array), 8)
+            # FIXME Ths should be related to a constrainSet
+            arr = ArrayVariable(self.index_bits, len(possible_array), 8)
             for pos, byte in enumerate(possible_array):
                 arr = arr.store(pos, byte)
             return arr
@@ -601,7 +629,23 @@ class Array(Expression):
     def store(self, index, value):
         return ArrayStore(self, self.cast_index(index), self.cast_value(value))
 
+    def write(self, offset, buf):
+        if not isinstance(buf, (Array, bytearray)):
+            raise TypeError('Array or bytearray expected got {:s}'.format(type(buf)))
+        arr = self
+        for i, val in enumerate(buf):
+            arr = arr.store(offset + i, val)
+        return arr
+
+    def read(self, offset, size):
+        return ArraySlice(self, offset, size)
+
     def __getitem__(self, index):
+        if isinstance(index, slice):
+            start, stop = self._fix_index(index)
+            size = self._get_size(index)
+            return ArraySlice(self, start, size)
+
         return self.select(self.cast_index(index))
 
     def __eq__(self, other):
@@ -610,11 +654,14 @@ class Array(Expression):
                 return BoolConstant(False)
             cond = BoolConstant(True)
             for i in range(len(a)):
-                cond = BoolAnd(a[i] == b[i], cond)
+                cond = BoolAnd(cond.cast(a[i] == b[i]), cond)
                 if cond is BoolConstant(False):
                     return BoolConstant(False)
             return cond
         return compare_buffers(self, other)
+
+    def __ne__(self, other):
+        return BoolNot(self == other)
 
     @property
     def underlying_variable(self):
@@ -651,6 +698,38 @@ class Array(Expression):
         for offset in reversed(xrange(size)):
             array = self.store(address + offset, BitVecExtract(value, (size - 1 - offset) * self.value_bits, self.value_bits))
         return array
+
+    def __add__(self, other):
+        if not isinstance(other, (Array, bytearray)):
+            raise TypeError("can't concat Array to {}".format(type(other)))
+        if isinstance(other, Array):
+            if self.index_bits != other.index_bits or self.value_bits != other.value_bits:
+                raise ValueError('Array sizes do not match for concatenation')
+
+        from manticore.core.smtlib.visitors import simplify
+        #FIXME This should be related to a constrainSet
+        new_arr = ArrayProxy(ArrayVariable(self.index_bits, self.index_max + len(other), self.value_bits, 'concatenation{}'.format(uuid.uuid1())))
+        for index in range(self.index_max):
+            new_arr[index] = simplify(self[index])
+        for index in range(len(other)):
+            new_arr[index + self.index_max] = simplify(other[index])
+        return new_arr
+
+    def __radd__(self, other):
+        if not isinstance(other, (Array, bytearray)):
+            raise TypeError("can't concat Array to {}".format(type(other)))
+        if isinstance(other, Array):
+            if self.index_bits != other.index_bits or self.value_bits != other.value_bits:
+                raise ValueError('Array sizes do not match for concatenation')
+
+        from manticore.core.smtlib.visitors import simplify
+        #FIXME This should be related to a constrainSet
+        new_arr = ArrayProxy(ArrayVariable(self.index_bits, self.index_max + len(other), self.value_bits, 'concatenation{}'.format(uuid.uuid1())))
+        for index in range(len(other)):
+            new_arr[index] = simplify(other[index])
+        for index in range(self.index_max):
+            new_arr[index + len(other)] = simplify(self[index])
+        return new_arr
 
 
 class ArrayVariable(Array, Variable):
@@ -788,8 +867,7 @@ class ArrayProxy(Array):
         return self._array.taint
 
     def select(self, index):
-        if not isinstance(index, Expression):
-            index = self.cast_index(index)
+        index = self.cast_index(index)
         if self.index_max is not None:
             from manticore.core.smtlib.visitors import simplify
             index = simplify(BitVecITE(self.index_bits, index < 0, self.index_max + index + 1, index))
@@ -812,45 +890,11 @@ class ArrayProxy(Array):
         self._array = auxiliar
         return auxiliar
 
-    def _fix_index(self, index):
-        """
-        :param slice index:
-        """
-        stop, start = index.stop, index.start
-        if start is None:
-            start = 0
-        if stop is None:
-            stop = len(self)
-        return start, stop
-
-    def _get_size(self, index):
-        start, stop = self._fix_index(index)
-        size = stop - start
-        if isinstance(size, BitVec):
-            from manticore.core.smtlib.visitors import simplify
-            size = simplify(size)
-        else:
-            size = BitVecConstant(self._array.index_bits, size)
-        assert isinstance(size, BitVecConstant)
-        return size.value
-
     def __getitem__(self, index):
         if isinstance(index, slice):
             start, stop = self._fix_index(index)
             size = self._get_size(index)
             return ArrayProxy(ArraySlice(self, start, size))
-            if isinstance(start, Expression) or isinstance(stop, Expression):
-                name = '{}_sliced'.format(self.name)
-            else:
-                name = '{}_sliced_b{}_e{}'.format(self.name, start, stop)
-            new_array = ArrayVariable(self.index_bits, size, self.value_bits, name=name, taint=self.taint)
-            new_array = ArrayProxy(new_array)
-            for i in xrange(size):
-                if self.index_max is not None and not isinstance(i + start, Expression) and i + start >= self.index_max:
-                    new_array[i] = 0
-                else:
-                    new_array[i] = self.select(start + i)
-            return new_array
         else:
             if self.index_max is not None:
                 if not isinstance(index, Expression) and index >= self.index_max:

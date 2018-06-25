@@ -385,18 +385,23 @@ class Workspace(object):
         """
         return self._store.load_state('{}{:08x}{}'.format(self._prefix, state_id, self._suffix), delete=delete)
 
-    def save_state(self, state):
+    def save_state(self, state, state_id=None):
         """
         Save a state to storage, return identifier.
 
         :param state: The state to save
+        :param int state_id: If not None force the state id potentially overwritting old states
         :return: New state id
         :rtype: int
         """
         assert isinstance(state, State)
-        id_ = self._get_id()
-        self._store.save_state(state, '{}{:08x}{}'.format(self._prefix, id_, self._suffix))
-        return id_
+        if state_id is None:
+            state_id = self._get_id()
+        else:
+            self.rm_state(state_id)
+
+        self._store.save_state(state, '{}{:08x}{}'.format(self._prefix, state_id, self._suffix))
+        return state_id
 
     def rm_state(self, state_id):
         """
@@ -474,31 +479,6 @@ class ManticoreOutput(object):
     def _named_key(self, suffix):
         return '{}_{:08x}.{}'.format(self._named_key_prefix, self._last_id, suffix)
 
-    def save_testcase(self, state, prefix, message=''):
-        """
-        Save the environment from `state` to storage. Return a state id
-        describing it, which should be an int or a string.
-
-        :param State state: The state to serialize
-        :param str message: The message to add to output
-        :return: A state id representing the saved state
-        """
-
-        self._named_key_prefix = prefix
-        self._increment_id()
-
-        self.save_summary(state, message)
-        self.save_trace(state)
-        self.save_constraints(state)
-        self.save_input_symbols(state)
-
-        for stream_name, data in state.platform.generate_workspace_files().items():
-            with self._named_stream(stream_name) as stream:
-                stream.write(data)
-
-        self._store.save_state(state, self._named_key('pkl'))
-        return self._last_id
-
     def save_stream(self, key, *rest, **kwargs):
         return self._store.save_stream(key, *rest, **kwargs)
 
@@ -512,6 +492,34 @@ class ManticoreOutput(object):
         """
         with self._store.save_stream(self._named_key(name)) as s:
             yield s
+
+    #Remove/move ...
+    def save_testcase(self, state, prefix, message=''):
+        """
+        Save the environment from `state` to storage. Return a state id
+        describing it, which should be an int or a string.
+
+        :param State state: The state to serialize
+        :param str message: The message to add to output
+        :return: A state id representing the saved state
+        """
+
+        self._named_key_prefix = prefix
+        self._increment_id()
+
+        #FIXME this should not be here. Each object must be responsible of
+        #formatting its own output
+        self.save_summary(state, message)
+        self.save_trace(state)
+        self.save_constraints(state)
+        self.save_input_symbols(state)
+
+        for stream_name, data in state.platform.generate_workspace_files().items():
+            with self._named_stream(stream_name) as stream:
+                stream.write(data)
+
+        self._store.save_state(state, self._named_key('pkl'))
+        return self._last_id
 
     def save_summary(self, state, message):
         with self._named_stream('messages') as summary:

