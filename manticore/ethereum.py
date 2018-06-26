@@ -1804,7 +1804,7 @@ class ManticoreEVM(Manticore):
                 break
 
             # Check if the maximun number of tx was reached
-            if tx_limit is not None and tx_no == tx_limit:
+            if tx_limit is not None and tx_no + 1 == tx_limit:
                 break
 
             # Check if coverage has improved or not
