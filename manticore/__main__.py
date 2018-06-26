@@ -132,7 +132,7 @@ def ethereum_cli(args):
 
     logger.info("Beginning analysis")
 
-    m.multi_tx_analysis(args.argv[0], args.contract, args.txlimit, not args.txnocoverage, args.txaccount)
+    m.multi_tx_analysis(args.argv[0], contract_name=args.contract, tx_limit=args.txlimit, tx_use_coverage=not args.txnocoverage, tx_account=args.txaccount)
 
     #TODO unregister all plugins
     m.finalize()
