@@ -193,17 +193,17 @@ class DetectInvalid(Detector):
                 self.add_finding_here(state, "INVALID intruction")
 
 
-class DetectDAO(Detector):
+class DetectReentrancy(Detector):
     '''
     1) A _successful_ call to a controlled address (An account controlled by the attacker). With enough gas.
     2) A SSTORE after the execution of the CALL.
     3) The storage slot of the SSTORE must be used in some path to control flow
     '''
     def __init__(self, addresses=None, **kwargs):
-        super(DetectDAO, self).__init__(**kwargs)
+        super(DetectReentrancy, self).__init__(**kwargs)
         # TODO Check addresses are normal accounts. Heuristics implemented here
-        # assume target addresses wont execute code. i.e. won't detect a DAO attack
-        # in progerr but only potential attacks
+        # assume target addresses wont execute code. i.e. won't detect a Reentrancy
+        # attack in progess but only a potential attack
         self._addresses = addresses
 
     @property
@@ -214,7 +214,7 @@ class DetectDAO(Detector):
         # Reset reading log on new human transactions
         if tx.is_human():
             state.context[self._read_storage_name] = set()
-            state.context['{:s}.daos'.format(self.name)] = dict()
+            state.context['{:s}.locations'.format(self.name)] = dict()
 
     def did_close_transaction_callback(self, state, tx):
         world = state.platform
@@ -222,7 +222,7 @@ class DetectDAO(Detector):
         if not tx.is_human():
             # Check is the tx was successful
             if tx.result:
-                # Check if gas was enough for a DAO attack
+                # Check if gas was enough for a reentrancy attack
                 if tx.gas > 3000:
                     # Check if target address is attaker controlled
                     if self._addresses is None and not world.get_code(tx.address) or tx.address in self._addresses:
@@ -230,15 +230,15 @@ class DetectDAO(Detector):
                         self._save_location_and_reads(state)
 
     def _save_location_and_reads(self, state):
-        name = '{:s}.daos'.format(self.name)
-        daos = state.context.get(name, dict)
+        name = '{:s}.locations'.format(self.name)
+        locations = state.context.get(name, dict)
         world = state.platform
         address = world.current_vm.address
         pc = world.current_vm.pc
         at_init = world.current_transaction.sort == 'CREATE'
-        location = (address, pc, "DAO muti-million ether bug", at_init)
-        daos[location] = set(state.context[self._read_storage_name])
-        state.context[name] = daos
+        location = (address, pc, "Reentrancy muti-million ether bug", at_init)
+        locations[location] = set(state.context[self._read_storage_name])
+        state.context[name] = locations
 
     def _get_location_and_reads(self, state):
         name = '{:s}.daos'.format(self.name)
