@@ -193,6 +193,71 @@ class DetectInvalid(Detector):
                 self.add_finding_here(state, "INVALID intruction")
 
 
+class DetectReentrancy(Detector):
+    '''
+    1) A _successful_ call to a controlled address (An account controlled by the attacker). With enough gas.
+    2) A SSTORE after the execution of the CALL.
+    3) The storage slot of the SSTORE must be used in some path to control flow
+    '''
+    def __init__(self, addresses=None, **kwargs):
+        super(DetectReentrancy, self).__init__(**kwargs)
+        # TODO Check addresses are normal accounts. Heuristics implemented here
+        # assume target addresses wont execute code. i.e. won't detect a Reentrancy
+        # attack in progess but only a potential attack
+        self._addresses = addresses
+
+    @property
+    def _read_storage_name(self):
+        return '{:s}.read_storage'.format(self.name)
+
+    def will_open_transaction_callback(self, state, tx):
+        # Reset reading log on new human transactions
+        if tx.is_human():
+            state.context[self._read_storage_name] = set()
+            state.context['{:s}.locations'.format(self.name)] = dict()
+
+    def did_close_transaction_callback(self, state, tx):
+        world = state.platform
+        #Check if it was an internal tx
+        if not tx.is_human():
+            # Check is the tx was successful
+            if tx.result:
+                # Check if gas was enough for a reentrancy attack
+                if tx.gas > 3000:
+                    # Check if target address is attaker controlled
+                    if self._addresses is None and not world.get_code(tx.address) or tx.address in self._addresses:
+                        #that's enough. Save current location and read list
+                        self._save_location_and_reads(state)
+
+    def _save_location_and_reads(self, state):
+        name = '{:s}.locations'.format(self.name)
+        locations = state.context.get(name, dict)
+        world = state.platform
+        address = world.current_vm.address
+        pc = world.current_vm.pc
+        at_init = world.current_transaction.sort == 'CREATE'
+        location = (address, pc, "Reentrancy muti-million ether bug", at_init)
+        locations[location] = set(state.context[self._read_storage_name])
+        state.context[name] = locations
+
+    def _get_location_and_reads(self, state):
+        name = '{:s}.locations'.format(self.name)
+        locations = state.context.get(name, dict)
+        return locations.iteritems()
+
+    def did_evm_read_storage_callback(self, state, address, offset, value):
+        state.context[self._read_storage_name].add((address, offset))
+
+    def did_evm_write_storage_callback(self, state, address, offset, value):
+        # if in potential DAO check that write to storage values read before
+        # the "send"
+        for location, reads in self._get_location_and_reads(state):
+            for address_i, offset_i in reads:
+                if address_i == address:
+                    if state.can_be_true(offset == offset_i):
+                        self.add_finding(state, *location)
+
+
 class DetectIntegerOverflow(Detector):
     '''
         Detects potential overflow and underflow conditions on ADD and SUB instructions.
@@ -372,7 +437,7 @@ class DetectUninitializedMemory(Detector):
     '''
 
     def did_evm_read_memory_callback(self, state, offset, value):
-        initialized_memory = state.context.get('seth.detectors.initialized_memory', set())
+        initialized_memory = state.context.get('{:s}.initialized_memory'.format(self.name), set())
         cbu = True  # Can be unknown
         current_contract = state.platform.current_vm.address
         for known_contract, known_offset in initialized_memory:
@@ -385,7 +450,7 @@ class DetectUninitializedMemory(Detector):
         current_contract = state.platform.current_vm.address
 
         # concrete or symbolic write
-        state.context.setdefault('seth.detectors.initialized_memory', set()).add((current_contract, offset))
+        state.context.setdefault('{:s}.initialized_memory'.format(self.name), set()).add((current_contract, offset))
 
 
 class DetectUninitializedStorage(Detector):
@@ -399,7 +464,7 @@ class DetectUninitializedStorage(Detector):
             return
         # check if offset is known
         cbu = True  # Can be unknown
-        for known_address, known_offset in state.context['seth.detectors.initialized_storage']:
+        for known_address, known_offset in state.context['{:s}.initialized_storage'.format(self.name)]:
             cbu = Operators.AND(cbu, Operators.OR(address != known_address, offset != known_offset))
 
         if state.can_be_true(cbu):
@@ -407,7 +472,7 @@ class DetectUninitializedStorage(Detector):
 
     def did_evm_write_storage_callback(self, state, address, offset, value):
         # concrete or symbolic write
-        state.context.setdefault('seth.detectors.initialized_storage', set()).add((address, offset))
+        state.context.setdefault('{:s}.initialized_storage'.format(self.name), set()).add((address, offset))
 
 
 def calculate_coverage(runtime_bytecode, seen):
@@ -1196,7 +1261,10 @@ class ManticoreEVM(Manticore):
                     name, contract = n, c
                     break
 
-        assert(name is not None)
+        if name is None:
+            print contracts, contract_name
+            raise ValueError('Specified contract not found')
+
         name = name.split(':')[1]
 
         if contract['bin'] == '':
@@ -1710,7 +1778,8 @@ class ManticoreEVM(Manticore):
 
         return address
 
-    def multi_tx_analysis(self, solidity_filename, contract_name=None, tx_limit=None, tx_use_coverage=True, tx_account="combo1", args=None):
+    def multi_tx_analysis(self, solidity_filename, contract_name=None, tx_limit=None, tx_use_coverage=True, tx_account="attacker", args=None):
+
         owner_account = self.create_account(balance=1000, name='owner')
         attacker_account = self.create_account(balance=1000, name='attacker')
 
