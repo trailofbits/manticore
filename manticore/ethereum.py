@@ -1062,9 +1062,9 @@ class ManticoreEVM(Manticore):
         self.constraints.add(constraint)
 
     @staticmethod
-    def compile(source_code, contract_name=None, libraries=None, runtime=False):
+    def compile(source_code, contract_name=None, libraries=None, runtime=False, solc_bin=None, solc_remaps=[]):
         ''' Get initialization bytecode from a Solidity source code '''
-        name, source_code, init_bytecode, runtime_bytecode, srcmap, srcmap_runtime, hashes, abi, warnings = ManticoreEVM._compile(source_code, contract_name, libraries)
+        name, source_code, init_bytecode, runtime_bytecode, srcmap, srcmap_runtime, hashes, abi, warnings = ManticoreEVM._compile(source_code, contract_name, libraries, solc_bin, solc_remaps)
         if runtime:
             return runtime_bytecode
         return init_bytecode
@@ -1101,13 +1101,18 @@ class ManticoreEVM(Manticore):
         return bytearray(binascii.unhexlify(hex_contract))
 
     @staticmethod
-    def _run_solc(source_file):
+    def _run_solc(source_file, solc_bin=None, solc_remaps=[]):
         ''' Compile a source file with the Solidity compiler
 
             :param source_file: a file object for the source file
+            :param solc_bin: path to solc binary
+            :param solc_remaps: solc import remaps
             :return: output, warnings
         '''
-        solc = "solc"
+        if solc_bin is not None:
+            solc = solc_bin
+        else:
+            solc = "solc"
 
         #check solc version
         supported_versions = ('0.4.18', '0.4.21')
@@ -1133,10 +1138,14 @@ class ManticoreEVM(Manticore):
 
         solc_invocation = [
             solc,
+        ]
+        solc_invocation.extend(solc_remaps)
+        solc_invocation.extend([
             '--combined-json', 'abi,srcmap,srcmap-runtime,bin,hashes,bin-runtime',
             '--allow-paths', '.',
             filename
-        ]
+        ])
+
         p = Popen(solc_invocation, stdout=PIPE, stderr=PIPE, cwd=working_folder)
         stdout, stderr = p.communicate()
         try:
@@ -1145,12 +1154,14 @@ class ManticoreEVM(Manticore):
             raise EthereumError('Solidity compilation error:\n\n{}'.format(stderr))
 
     @staticmethod
-    def _compile(source_code, contract_name, libraries=None):
+    def _compile(source_code, contract_name, libraries=None, solc_bin=None, solc_remaps=[]):
         """ Compile a Solidity contract, used internally
 
             :param source_code: solidity source as either a string or a file handle
             :param contract_name: a string with the name of the contract to analyze
             :param libraries: an itemizable of pairs (library_name, address)
+            :param solc_bin: path to solc binary
+            :param solc_remaps: solc import remaps
             :return: name, source_code, bytecode, srcmap, srcmap_runtime, hashes
             :return: name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
         """
@@ -1165,9 +1176,9 @@ class ManticoreEVM(Manticore):
             with tempfile.NamedTemporaryFile() as temp:
                 temp.write(source_code)
                 temp.flush()
-                output, warnings = ManticoreEVM._run_solc(temp)
+                output, warnings = ManticoreEVM._run_solc(temp, solc_bin, solc_remaps)
         elif isinstance(source_code, file_type):
-            output, warnings = ManticoreEVM._run_solc(source_code)
+            output, warnings = ManticoreEVM._run_solc(source_code, solc_bin, solc_remaps)
             source_code = source_code.read()
         else:
             raise TypeError
@@ -1403,7 +1414,7 @@ class ManticoreEVM(Manticore):
         # FIXME this is more naive than reasonable.
         return ABI.deserialize(types, self.make_symbolic_buffer(32, name="INITARGS"))
 
-    def solidity_create_contract(self, source_code, owner, name=None, contract_name=None, libraries=None, balance=0, address=None, args=None):
+    def solidity_create_contract(self, source_code, owner, name=None, contract_name=None, libraries=None, balance=0, address=None, args=(), solc_bin=None, solc_remaps=[]):
         ''' Creates a solidity contract and library dependencies
 
             :param str source_code: solidity source code
@@ -1416,6 +1427,10 @@ class ManticoreEVM(Manticore):
             :param address: the address for the new contract (optional)
             :type address: int or EVMAccount
             :param tuple args: constructor arguments
+            :param solc_bin: path to solc binary
+            :type solc_bin: str
+            :param solc_remaps: solc import remaps
+            :type solc_remaps: list of str
             :rtype: EVMAccount
         '''
         if libraries is None:
@@ -1427,7 +1442,7 @@ class ManticoreEVM(Manticore):
         while contract_names:
             contract_name_i = contract_names.pop()
             try:
-                compile_results = self._compile(source_code, contract_name_i, libraries=deps)
+                compile_results = self._compile(source_code, contract_name_i, libraries=deps, solc_bin=solc_bin, solc_remaps=solc_remaps)
                 md = SolidityMetadata(*compile_results)
                 if contract_name_i == contract_name:
                     constructor_types = md.get_constructor_arguments()
