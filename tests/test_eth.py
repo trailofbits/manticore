@@ -53,7 +53,7 @@ class EthDetectorsTest(unittest.TestCase):
         """
         arguments = [1 << 248, self.state.new_symbolic_value(256)]
         self.state.constrain(operators.ULT(arguments[1], 256))
-        
+
         cond = self.io._unsigned_mul_overflow(self.state, *arguments)
         check = self.state.can_be_true(cond)
         self.assertFalse(check)
@@ -585,5 +585,37 @@ class EthSolidityCompilerTest(unittest.TestCase):
                 source_list = output.get('sourceList', [])
                 self.assertIn(os.path.split(a.name)[-1], source_list)
                 self.assertIn(os.path.split(b.name)[-1], source_list)
+        finally:
+            shutil.rmtree(d)
+
+
+    def test_run_solc_with_remappings(self):
+        source_a = '''
+        import "test/B.sol";
+        contract A {
+            function callB(B _b) public { _b.fromA(); }
+            function fromB() public { revert(); }
+        }
+        '''
+        source_b = '''
+        import "../A.sol";
+        contract B {
+            function callA(A _a) public { _a.fromB(); }
+            function fromA() public { revert(); }
+        }
+        '''
+        d = tempfile.mkdtemp()
+        lib_dir = os.path.join(d, 'lib')
+        os.makedirs(lib_dir)
+        try:
+            with open(os.path.join(d, 'A.sol'), 'w') as a, open(os.path.join(lib_dir, 'B.sol'), 'w') as b:
+                a.write(source_a)
+                a.flush()
+                b.write(source_b)
+                b.flush()
+                output, warnings = ManticoreEVM._run_solc(a, solc_remaps=['test=lib'])
+                source_list = output.get('sourceList', [])
+                self.assertIn("A.sol", source_list)
+                self.assertIn("lib/B.sol", source_list)
         finally:
             shutil.rmtree(d)
