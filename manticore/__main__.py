@@ -144,6 +144,8 @@ def ethereum_cli(args):
 
 
 def main():
+    from .manticore import InstructionCounter, Visited, Tracer, RecordSymbolicBranches
+
     log.init_logging()
     args = parse_arguments()
 
@@ -157,6 +159,12 @@ def main():
     env = {key: val for key, val in map(lambda env: env[0].split('='), args.env)}
 
     m = Manticore(args.argv[0], argv=args.argv[1:], env=env, entry_symbol=args.entrysymbol, workspace_url=args.workspace, policy=args.policy, disasm=args.disasm, concrete_start=args.data)
+
+    # Default plugins for now.. FIXME REMOVE!
+    m.register_plugin(InstructionCounter())
+    m.register_plugin(Visited())
+    m.register_plugin(Tracer())
+    m.register_plugin(RecordSymbolicBranches())
 
     # Fixme(felipe) remove this, move to plugin
     m.coverage_file = args.coverage

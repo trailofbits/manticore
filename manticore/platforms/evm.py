@@ -3,9 +3,9 @@ import random
 import copy
 import inspect
 from functools import wraps
-from ..utils.helpers import issymbolic, memoized
+from ..utils.helpers import issymbolic, memoized, get_taints, taint_with, istainted
 from ..platforms.platform import *
-from ..core.smtlib import solver, BitVec, Array, Operators, Constant, ArrayVariable, translate_to_smtlib
+from ..core.smtlib import solver, BitVec, Array, Operators, Constant, ArrayVariable, BitVecConstant, translate_to_smtlib
 from ..core.state import Concretize, TerminateState
 from ..core.plugin import Ref
 from ..utils.event import Eventful
@@ -1167,17 +1167,21 @@ class EVM(Eventful):
         except:
             _decoding_cache = self._decoding_cache = {}
 
-        if self.pc in _decoding_cache:
-            return _decoding_cache[self.pc]
+        pc = self.pc
+        if isinstance(pc, Constant):
+            pc = pc.value
+
+        if pc in _decoding_cache:
+            return _decoding_cache[pc]
 
         def getcode():
             bytecode = self.bytecode
-            for pc in range(self.pc, len(bytecode)):
-                yield simplify(bytecode[pc]).value
+            for pc_i in range(pc, len(bytecode)):
+                yield simplify(bytecode[pc_i]).value
             while True:
                 yield 0
-        instruction = EVMAsm.disassemble_one(getcode(), pc=self.pc)
-        _decoding_cache[self.pc] = instruction
+        instruction = EVMAsm.disassemble_one(getcode(), pc=pc)
+        _decoding_cache[pc] = instruction
         return instruction
 
     # auxiliar funcs
@@ -1260,7 +1264,6 @@ class EVM(Eventful):
             arguments.append(current.operand)
         for _ in range(current.pops):
             arguments.append(self._pop())
-
         # simplify stack arguments
         for i in range(len(arguments)):
             #if isinstance(arguments[i], Expression):
@@ -1297,11 +1300,12 @@ class EVM(Eventful):
 
     #Execute an instruction from current pc
     def execute(self):
-        if issymbolic(self.pc):
+        if issymbolic(self.pc) and not isinstance(self.pc, Constant):
             expression = self.pc
+            taints = self.pc.taint
 
             def setstate(state, value):
-                state.platform.current_vm.pc = value
+                state.platform.current_vm.pc = BitVecConstant(256, value, taint=taints)
 
             raise Concretize("Concretice PC",
                              expression=expression,
@@ -1797,11 +1801,17 @@ class EVM(Eventful):
 
     def MSTORE(self, address, value):
         '''Save word to memory'''
+        if istainted(self.pc):
+            for taint in get_taints(self.pc):
+                value = taint_with(value, taint)
         self._allocate(address + 32)
         self._store(address, value, 32)
 
     def MSTORE8(self, address, value):
         '''Save byte to memory'''
+        if istainted(self.pc):
+            for taint in get_taints(self.pc):
+                value = taint_with(value, taint)
         self._allocate(address)
         self._store(address, value, 1)
 
@@ -1817,6 +1827,9 @@ class EVM(Eventful):
         '''Save word to storage'''
         storage_address = self.address
         self._publish('will_evm_write_storage', storage_address, offset, value)
+        if istainted(self.pc):
+            for taint in get_taints(self.pc):
+                value = taint_with(value, taint)
         self.world.set_storage_data(storage_address, offset, value)
         self._publish('did_evm_write_storage', storage_address, offset, value)
 
@@ -2056,11 +2069,15 @@ class EVM(Eventful):
 
         #hd = ''  # str(self.memory)
         result = ['-' * 147]
-        if issymbolic(self.pc):
+        pc = self.pc
+        if isinstance(self.pc, Constant):
+            pc = self.pc.value
+
+        if issymbolic(pc):
             result.append('<Symbolic PC>')
 
         else:
-            result.append('0x%04x: %s %s %s\n' % (self.pc, self.instruction.name, self.instruction.has_operand and '0x%x' %
+            result.append('0x%04x: %s %s %s\n' % (pc, self.instruction.name, self.instruction.has_operand and '0x%x' %
                                                   self.instruction.operand or '', self.instruction.description))
 
         result.append('Stack                                                                      Memory')

@@ -55,6 +55,16 @@ class ExpressionTest(unittest.TestCase):
         self.assertTrue('SOURCE1' in c.taint)
         self.assertTrue('SOURCE2' in c.taint)
 
+    def testBasicITETaint(self):
+        a = BitVecConstant(32, 100, taint=('SOURCE1',))
+        b = BitVecConstant(32, 200, taint=('SOURCE2',))
+        c = BitVecConstant(32, 300, taint=('SOURCE3',))
+        d = BitVecConstant(32, 400, taint=('SOURCE4',))
+        x = Operators.ITEBV(32, a > b, c, d)
+        self.assertTrue('SOURCE1' in x.taint)
+        self.assertTrue('SOURCE2' in x.taint)
+        self.assertTrue('SOURCE3' in x.taint)
+        self.assertTrue('SOURCE4' in x.taint)
 
     def testBasicConstraints(self):
         cs =  ConstraintSet()

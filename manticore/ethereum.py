@@ -21,7 +21,7 @@ from Queue import Empty as EmptyQueue
 import sha3
 import json
 import logging
-import StringIO
+from io import StringIO, BytesIO
 import cPickle as pickle
 from .core.plugin import Plugin
 from functools import reduce
@@ -67,7 +67,7 @@ class Detector(Plugin):
         with self.locked_global_findings() as gf:
             gf.add((address, pc, finding, init))
         #Fixme for ever broken logger
-        #logger.warning(finding)
+        logger.warning(finding)
 
     def add_finding_here(self, state, finding):
         address = state.platform.current_vm.address
@@ -290,7 +290,7 @@ class DetectIntegerOverflow(Detector):
         +7fffffff     True     True     True    False    False    False    False
         '''
         sub = Operators.SEXTEND(a, 256, 512) - Operators.SEXTEND(b, 256, 512)
-        cond = Operators.OR(sub < -(1 << 256), sub >= (1 << 255))
+        cond = Operators.OR(sub < -(1 << 255), sub >= (1 << 255))
         return cond
 
     @staticmethod
@@ -309,7 +309,7 @@ class DetectIntegerOverflow(Detector):
         +7fffffff    False    False    False    False     True     True     True
         '''
         add = Operators.SEXTEND(a, 256, 512) + Operators.SEXTEND(b, 256, 512)
-        cond = Operators.OR(add < -(1 << 256), add >= (1 << 255))
+        cond = Operators.OR(add < -(1 << 255), add >= (1 << 255))
         return cond
 
     @staticmethod
@@ -389,6 +389,18 @@ class DetectIntegerOverflow(Detector):
         cond = Operators.UGE(mul, 1 << 256)
         return cond
 
+    def _check_finding(self, state, what):
+        if istainted(what, "SIGNED"):
+            for taint in get_taints(what, "IOS_.*"):
+                loc = self._get_location(state, taint[4:])
+                if state.can_be_true(loc[-1]):
+                    self.add_finding(state, *loc[:-1])
+        else:
+            for taint in get_taints(what, "IOU_.*"):
+                loc = self._get_location(state, taint[4:])
+                if state.can_be_true(loc[-1]):
+                    self.add_finding(state, *loc[:-1])
+
     def did_evm_execute_instruction_callback(self, state, instruction, arguments, result_ref):
         result = result_ref.value
         mnemonic = instruction.semantics
@@ -406,21 +418,18 @@ class DetectIntegerOverflow(Detector):
             ios = self._signed_sub_overflow(state, *arguments)
             iou = self._unsigned_sub_overflow(state, *arguments)
         elif mnemonic == 'SSTORE':
+            # If an overflowded value is stored in the storage then it is a finding
             where, what = arguments
-            if istainted(what, "SIGNED"):
-                for taint in get_taints(what, "IOS_.*"):
-                    loc = self._get_location(state, taint[4:])
-                    if state.can_be_true(loc[-1]):
-                        self.add_finding(state, *loc[:-1])
-            else:
-                for taint in get_taints(what, "IOU_.*"):
-                    loc = self._get_location(state, taint[4:])
-                    if state.can_be_true(loc[-1]):
-                        self.add_finding(state, *loc[:-1])
-
+            self._check_finding(state, what)
+        elif mnemonic == 'RETURN':
+            world = state.platform
+            if world.current_transaction.is_human():
+                # If an overflowded value is returned to a human
+                offset, size = arguments
+                data = world.current_vm.read_buffer(offset, size)
+                self._check_finding(state, data)
         if mnemonic in ('SLT', 'SGT', 'SDIV', 'SMOD'):
             result = taint_with(result, "SIGNED")
-
         if state.can_be_true(ios):
             id_val = self._save_current_location(state, "Signed integer overflow at %s instruction" % mnemonic, ios)
             result = taint_with(result, "IOS_{:s}".format(id_val))
@@ -2032,6 +2041,22 @@ class ManticoreEVM(Manticore):
     def generate_testcase(self, state, name, message=''):
         self._generate_testcase_callback(state, name, message)
 
+    def current_location(self, state):
+        world = state.platform
+        address = world.current_vm.address
+        pc = world.current_vm.pc
+        at_init = world.current_transaction.sort == 'CREATE'
+        output = StringIO()
+        output.write(u'Contract: 0x{:x}\n'.format(address))
+        output.write(u'EVM Program counter: {}{:s}\n'.format(pc, at_init and " (at constructor)" or ""))
+        md = self.get_metadata(address)
+        if md is not None:
+            src = md.get_source_for(pc, runtime=not at_init)
+            output.write(u'Snippet:\n')
+            output.write(src.replace(u'\n', u'\n  ').strip())
+            output.write(u'\n')
+        return output.getvalue()
+
     def _generate_testcase_callback(self, state, name, message=''):
         '''
         Create a serialized description of a given state.
@@ -2147,7 +2172,7 @@ class ManticoreEVM(Manticore):
                 runtime_code = state.solve_one(blockchain.get_code(account_address))
                 if runtime_code:
                     summary.write("Code:\n")
-                    fcode = StringIO.StringIO(runtime_code)
+                    fcode = BytesIO(runtime_code)
                     for chunk in iter(lambda: fcode.read(32), b''):
                         summary.write('\t%s\n' % chunk.encode('hex'))
                     runtime_trace = set((pc for contract, pc, at_init in state.context['evm.trace'] if address == contract and not at_init))
