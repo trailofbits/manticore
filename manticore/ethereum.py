@@ -241,9 +241,9 @@ class DetectReentrancy(Detector):
         state.context[name] = locations
 
     def _get_location_and_reads(self, state):
-        name = '{:s}.daos'.format(self.name)
-        daos = state.context.get(name, dict)
-        return daos.iteritems()
+        name = '{:s}.locations'.format(self.name)
+        locations = state.context.get(name, dict)
+        return locations.iteritems()
 
     def did_evm_read_storage_callback(self, state, address, offset, value):
         state.context[self._read_storage_name].add((address, offset))
@@ -1250,7 +1250,10 @@ class ManticoreEVM(Manticore):
                     name, contract = n, c
                     break
 
-        assert(name is not None)
+        if name is None:
+            print contracts, contract_name
+            raise ValueError('Specified contract not found')
+
         name = name.split(':')[1]
 
         if contract['bin'] == '':
