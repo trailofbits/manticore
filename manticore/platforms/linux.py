@@ -69,8 +69,8 @@ class File(object):
         state['mode'] = self.mode
         try:
             state['pos'] = self.tell()
-        except IOError:
-            # This is to handle special files like /dev/tty
+        except (ValueError, IOError):
+            # This is to handle closed files and special files like /dev/tty
             state['pos'] = None
         return state
 
