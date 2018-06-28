@@ -572,30 +572,3 @@ class ManticoreOutput(object):
             for symbol in state.input_symbols:
                 buf = solver.get_value(state.constraints, symbol)
                 f.write('%s: %s\n' % (symbol.name, repr(buf)))
-
-    def save_syscall_trace(self, state):
-        with self._named_stream('syscalls') as f:
-            f.write(repr(state.platform.syscall_trace))
-
-    def save_fds(self, state):
-        def solve_to_fd(data, fd):
-            try:
-                for c in data:
-                    fd.write(chr(solver.get_value(state.constraints, c)))
-            except SolverException:
-                fd.write('{SolverException}')
-
-        with self._named_stream('stdout') as _out:
-            with self._named_stream('stderr') as _err:
-                with self._named_stream('stdin') as _in:
-                    with self._named_stream('net') as _net:
-                        for name, fd, data in state.platform.syscall_trace:
-                            if name in ('_transmit', '_write'):
-                                if fd == 1:
-                                    solve_to_fd(data, _out)
-                                elif fd == 2:
-                                    solve_to_fd(data, _err)
-                            if name in ('_recv'):
-                                solve_to_fd(data, _net)
-                            if name in ('_receive', '_read') and fd == 0:
-                                solve_to_fd(data, _in)
