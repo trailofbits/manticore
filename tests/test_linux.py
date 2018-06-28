@@ -5,6 +5,7 @@ import shutil
 import tempfile
 import unittest
 
+from manticore import Manticore
 from manticore.platforms import linux, linux_syscalls
 from manticore.core.smtlib import *
 from manticore.core.smtlib import *
@@ -241,3 +242,21 @@ class LinuxTest(unittest.TestCase):
         path = platform.current.push_bytes('{}\x00'.format(this_dir))
         fd = platform.sys_chroot(path)
         self.assertEqual(fd, -errno.EPERM)
+
+    def test_symbolic_argv_envp(self):
+
+        self.m = Manticore.linux('tests/binaries/arguments_linux_amd64', argv=['+'],
+                                 envp={'TEST': '+'})
+        state = self.m.initial_state
+
+        ptr = state.cpu.read_int(state.cpu.RSP + (8*2))  # get argv[1]
+        mem = state.cpu.read_bytes(ptr, 2)
+        self.assertTrue(issymbolic(mem[0]))
+        self.assertEqual(mem[1], '\0')
+
+        ptr = state.cpu.read_int(state.cpu.RSP + (8*4))  # get envp[0]
+        mem = state.cpu.read_bytes(ptr, 7)
+        self.assertEqual(''.join(mem[:5]), 'TEST=')
+        self.assertEqual(mem[6], '\0')
+        self.assertTrue(issymbolic(mem[5]))
+
