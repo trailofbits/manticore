@@ -32,6 +32,18 @@ class ManticoreTest(unittest.TestCase):
 
         self.assertEqual(self.m.context['x'], 1)
 
+    def test_init_hook(self):
+        self.m.context['x'] = 0
+
+        @self.m.init
+        def tmp(state):
+            self.m.context['x'] = 1
+            self.m.terminate()
+
+        self.m.run()
+
+        self.assertEqual(self.m.context['x'], 1)
+
     def test_hook_dec_err(self):
         with self.assertRaises(TypeError):
             @self.m.hook('0x00400e40')
