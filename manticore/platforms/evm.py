@@ -2462,7 +2462,7 @@ class EVMWorld(Platform):
     def block_gaslimit(self):
         return 0
 
-    def block_hash(self, block_number = None, force_recent = True):
+    def block_hash(self, block_number=None, force_recent=True):
         ''' Calculates a block's hash
             :param block_number: the block number for which to calculate the hash, defaulting to the most recent block
             :param force_recent: if True (the default) return zero for any block that is in the future or older than 256 blocks
@@ -2470,7 +2470,7 @@ class EVMWorld(Platform):
         '''
         if block_number is None:
             block_number = self.block_number() - 1
-        
+
         # We are not maintaining an actual -block-chain- so we just generate
         # some hashes for each virtual block
         value = sha3.keccak_256(repr(block_number) + 'NONCE').hexdigest()
