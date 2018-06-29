@@ -120,6 +120,25 @@ class IntegrationTest(unittest.TestCase):
         expected = self._loadVisitedSet(os.path.join(dirname, 'reference', 'arguments_linux_amd64_visited.txt'))
         self.assertGreaterEqual(actual, expected)
 
+    def testArgumentsAssertionsArmv7(self):
+        dirname = os.path.dirname(__file__)
+        filename = os.path.abspath(os.path.join(dirname, 'binaries/arguments_linux_armv7'))
+        self.assertTrue(filename.startswith(os.getcwd()))
+        filename = filename[len(os.getcwd())+1:]
+        workspace = '%s/workspace'%self.test_dir
+        assertions = '%s/assertions.txt'%self.test_dir
+        file(assertions,'w').write('0x0000000000401003 ZF == 1')
+        with open(os.path.join(os.pardir, '%s/output.log'%self.test_dir), "w") as output:
+            subprocess.check_call(['python', '-m', 'manticore',
+                                   '--workspace', workspace,
+                                   '--proc', '4',
+                                   '--assertions', assertions,
+                                   filename,
+                                   '+++++++++'], stdout=output)
+        actual = self._loadVisitedSet(os.path.join(dirname, '%s/visited.txt'%workspace))
+        expected = self._loadVisitedSet(os.path.join(dirname, 'reference/arguments_linux_armv7_visited.txt'))
+        self.assertGreaterEqual(actual, expected)
+
     def testDecree(self):
         dirname = os.path.dirname(__file__)
         filename = os.path.abspath(os.path.join(dirname, 'binaries', 'cadet_decree_x86'))
