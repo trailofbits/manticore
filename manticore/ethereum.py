@@ -816,7 +816,7 @@ class ABI(object):
             raise ValueError
         if issymbolic(value):
             bytes = ArrayVariable(index_bits=256, index_max=32, value_bits=8, name='temp{}'.format(uuid.uuid1()))
-            value = Operators.SIGNEXTEND(value, value.size, size * 8)
+            value = Operators.SEXTEND(value, value.size, size * 8)
             bytes.write_BE(padding, value, size)
         else:
             value = int(value)

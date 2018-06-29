@@ -242,6 +242,14 @@ class ExpressionTest(unittest.TestCase):
 
         self.assertTrue(self.solver.must_be_true(cs, array.read(0,1) + bytearray('ello ') + array.read(6,5) + bytearray('!') == hw))
 
+        self.assertTrue(len(array[1:2]) == 1)
+
+        self.assertTrue(len(array[0:12]) == 12)
+
+        results = []
+        for c in array[6:11]:
+            results.append(c)
+        self.assertTrue(len(results) == 5)
 
     def testBasicPickle(self):
         import pickle
