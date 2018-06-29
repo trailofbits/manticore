@@ -278,6 +278,21 @@ class EthAbiTests(unittest.TestCase):
         self.assertEqual(parsed_func_id, func_id)
         self.assertEqual(((0xfB6916095ca1df60bB79Ce92cE3Ea74c37c5d359, selector),), args)
 
+    def test_serialize_fixed_bytes32(self):
+        ret = ABI.serialize('bytes32', 'hi')
+        self.assertEqual(ret, 'hi'.ljust(32, '\0'))
+
+    def test_serialize_fixed_bytes2(self):
+        ret = ABI.serialize('bytes2', 'aa')
+        self.assertEqual(ret, 'aa'.ljust(32, '\0'))
+
+    def test_serialize_fixed_bytes_less_data(self):
+        ret = ABI.serialize('bytes4', 'aa')
+        self.assertEqual(ret, 'aa'.ljust(32, '\0'))
+
+    def test_serialize_fixed_bytes_too_big(self):
+        with self.assertRaises(EthereumError):
+            ABI.serialize('bytes2', 'hii')
 
 class EthTests(unittest.TestCase):
     def setUp(self):
