@@ -246,18 +246,19 @@ class Z3Solver(Solver):
 
     def _recv(self):
         ''' Reads the response from the solver '''
-        def readline():
-            buf = self._proc.stdout.readline()
-            return buf, buf.count('('), buf.count(')')
         bufl = []
         left = 0
         right = 0
-        buf, l, r = readline()
+        buf = self._proc.stdout.readline()
+        l = buf.count('(')
+        r = buf.count(')')
         bufl.append(buf)
         left += l
         right += r
         while left != right:
-            buf, l, r = readline()
+            buf = self._proc.stdout.readline()
+            l = buf.count('(')
+            r = buf.count(')')
             bufl.append(buf)
             left += l
             right += r
