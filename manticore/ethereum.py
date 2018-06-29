@@ -652,7 +652,7 @@ class ABI(object):
 
         if ty[0] == 'int':
             result += ABI._serialize_int(value, size=ty[1] / 8, padding=32 - ty[1] / 8)
-        elif ty[0] in 'uint':
+        elif ty[0] == 'uint':
             result += ABI._serialize_uint(value, size=ty[1] / 8, padding=32 - ty[1] / 8)
         elif ty[0] in ('bytes', 'string'):
             result += ABI._serialize_uint(dyn_offset)
