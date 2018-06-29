@@ -645,7 +645,10 @@ class Array(Expression):
             start, stop = self._fix_index(index)
             size = self._get_size(index)
             return ArraySlice(self, start, size)
-
+        else:
+            if self.index_max is not None:
+                if not isinstance(index, Expression) and index >= self.index_max:
+                    raise IndexError
         return self.select(self.cast_index(index))
 
     def __eq__(self, other):
@@ -772,9 +775,11 @@ class ArrayStore(ArrayOperation):
 
 
 class ArraySlice(Array):
-    def __init__(self, array, offset, size):
+    def __init__(self, array, offset, size, *args, **kwargs):
         if not isinstance(array, Array):
             raise ValueError("Array expected")
+        super(ArraySlice, self).__init__(array.index_bits, array.index_max, array.value_bits, *args, **kwargs)
+
         self._array = array
         self._slice_offset = offset
         self._slice_size = size
