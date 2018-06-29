@@ -13,6 +13,8 @@ from manticore.binary import Elf, CGCElf
 #                format = "%(asctime)s: %(name)s:%(levelname)s: %(message)s",
 #                level = logging.DEBUG)
 
+DIRPATH = os.path.dirname(__file__)
+
 
 class TestBinaryPackage(unittest.TestCase):
     _multiprocess_can_split_ = True
@@ -63,8 +65,7 @@ class IntegrationTest(unittest.TestCase):
         :param filename: Name of file inside the `tests/binaries` directory
         :return:
         """
-        dirname = os.path.dirname(__file__)
-        filename = os.path.join(dirname, 'binaries', filename)
+        filename = os.path.join(DIRPATH, 'binaries', filename)
         command = ['python', '-m', 'manticore']
 
         if contract:
@@ -92,8 +93,7 @@ class IntegrationTest(unittest.TestCase):
             sys.stderr.write("\n")
 
     def testTimeout(self):
-        dirname = os.path.dirname(__file__)
-        filename = os.path.abspath(os.path.join(dirname, 'binaries', 'arguments_linux_amd64'))
+        filename = os.path.abspath(os.path.join(DIRPATH, 'binaries', 'arguments_linux_amd64'))
         self.assertTrue(filename.startswith(os.getcwd()))
         filename = filename[len(os.getcwd())+1:]
         workspace = os.path.join(self.test_dir, 'workspace')
@@ -113,8 +113,7 @@ class IntegrationTest(unittest.TestCase):
         Tests that default verbosity produces the expected volume of output
         """
 
-        dirname = os.path.dirname(__file__)
-        filename = os.path.join(dirname, 'binaries', 'basic_linux_amd64')
+        filename = os.path.join(DIRPATH, 'binaries', 'basic_linux_amd64')
         output = subprocess.check_output(['python', '-m', 'manticore', filename])
         output_lines = output.splitlines()
         start_info = output_lines[:2]
@@ -126,29 +125,36 @@ class IntegrationTest(unittest.TestCase):
 
         for line in testcase_info:
             self.assertIn('Generated testcase', line)
-    @unittest.skip('sloowww')
-    def testArgumentsAssertions(self):
-        dirname = os.path.dirname(__file__)
-        filename = os.path.abspath(os.path.join(dirname, 'binaries', 'arguments_linux_amd64'))
+
+    def testArgumentsAssertionsAux(self, binname, refname):
+        filename = os.path.abspath(os.path.join(DIRPATH, 'binaries', binname))
         self.assertTrue(filename.startswith(os.getcwd()))
         filename = filename[len(os.getcwd())+1:]
-        workspace = os.path.join(self.test_dir, 'workspace')
-        assertions = os.path.join(self.test_dir, 'assertions.txt')
-        open(assertions,'w').write('0x0000000000401003 ZF == 1')
-        with open(os.path.join(os.pardir, self.test_dir, 'output.log'), "w") as output:
+        workspace = '%s/workspace'%self.test_dir
+        assertions = '%s/assertions.txt'%self.test_dir
+
+        with open(assertions,'w') as f:
+            f.write('0x0000000000401003 ZF == 1')
+
+        with open('%s/output.log'%self.test_dir, "w") as output:
             subprocess.check_call(['python', '-m', 'manticore',
                                    '--workspace', workspace,
                                    '--proc', '4',
                                    '--assertions', assertions,
                                    filename,
                                    '+++++++++'], stdout=output)
-        actual = self._loadVisitedSet(os.path.join(dirname, workspace, 'visited.txt'))
-        expected = self._loadVisitedSet(os.path.join(dirname, 'reference', 'arguments_linux_amd64_visited.txt'))
+        actual = self._loadVisitedSet(os.path.join(DIRPATH, workspace, 'visited.txt'))
+        expected = self._loadVisitedSet(os.path.join(DIRPATH, 'reference', refname))
         self.assertGreaterEqual(actual, expected)
 
+    def testArgumentsAssertions(self):
+        self.testArgumentsAssertionsAux('arguments_linux_amd64', 'arguments_linux_amd64_visited.txt')
+
+    def testArgumentsAssertionsArmv7(self):
+        self.testArgumentsAssertionsAux('arguments_linux_armv7', 'arguments_linux_armv7_visited.txt')
+
     def testDecree(self):
-        dirname = os.path.dirname(__file__)
-        filename = os.path.abspath(os.path.join(dirname, 'binaries', 'cadet_decree_x86'))
+        filename = os.path.abspath(os.path.join(DIRPATH, 'binaries', 'cadet_decree_x86'))
         self.assertTrue(filename.startswith(os.getcwd()))
         filename = filename[len(os.getcwd())+1:]
         workspace = os.path.join(self.test_dir, 'workspace')
@@ -159,7 +165,7 @@ class IntegrationTest(unittest.TestCase):
                     '--policy', 'uncovered',
                     filename], os.path.join(self.test_dir, 'output.log'))
 
-        actual = self._loadVisitedSet(os.path.join(dirname, workspace, 'visited.txt'))
+        actual = self._loadVisitedSet(os.path.join(DIRPATH, workspace, 'visited.txt'))
         self.assertTrue(len(actual) > 100 )
 
     def test_eth_regressions(self):
@@ -184,7 +190,6 @@ class IntegrationTest(unittest.TestCase):
     def test_eth_705(self):
         # This test needs to run inside tests/binaries because the contract imports a file
         # that is in the tests/binaries dir
-        dirname = os.path.dirname(__file__)
         old_cwd = os.getcwd()
         try:
             self._simple_cli_run('705.sol')
@@ -192,9 +197,9 @@ class IntegrationTest(unittest.TestCase):
             os.chdir(old_cwd)
 
     def test_basic_arm(self):
-        dirname = os.path.dirname(__file__)
-        filename = os.path.abspath(os.path.join(dirname, 'binaries', 'basic_linux_armv7'))
+        filename = os.path.abspath(os.path.join(DIRPATH, 'binaries', 'basic_linux_armv7'))
         workspace = os.path.join(self.test_dir, 'workspace')
+
         output = subprocess.check_output(['python', '-m', 'manticore', '--workspace', workspace, filename])
 
         with open(os.path.join(workspace, "test_00000000.stdout")) as f:
@@ -206,37 +211,36 @@ class IntegrationTest(unittest.TestCase):
         """
         Tests for brk behavior. Source of brk_static_amd64:
 
-	#include <stdio.h>
-	#include <unistd.h>
-	#include <stdint.h>
+        #include <stdio.h>
+        #include <unistd.h>
+        #include <stdint.h>
 
-	int main(int argc, char *argv[])
-	{
-	    uint8_t *p = sbrk(0);
+        int main(int argc, char *argv[])
+        {
+            uint8_t *p = sbrk(0);
 
-	    int valid_at_first = (p == sbrk(16));
-	    int valid_after_shift = ((p+16) == sbrk(0));
-	    sbrk(-16);
-	    int valid_after_reset = (p == sbrk(0));
-	    sbrk(-(2<<20));
-	    int valid_after_bad_brk = (p == sbrk(0));
+            int valid_at_first = (p == sbrk(16));
+            int valid_after_shift = ((p+16) == sbrk(0));
+            sbrk(-16);
+            int valid_after_reset = (p == sbrk(0));
+            sbrk(-(2<<20));
+            int valid_after_bad_brk = (p == sbrk(0));
 
-	    if (valid_at_first && valid_after_shift 
-		    && valid_after_reset && valid_after_bad_brk)
-		return 0;
-	    else
-		return 1;
-	}
-
-
+            if (valid_at_first && valid_after_shift
+                && valid_after_reset && valid_after_bad_brk)
+            return 0;
+            else
+            return 1;
+        }
         """
-        dirname = os.path.dirname(__file__)
-        filename = os.path.abspath(os.path.join(dirname, 'binaries/brk_static_amd64'))
+        filename = os.path.abspath(os.path.join(DIRPATH, 'binaries/brk_static_amd64'))
         workspace = f'{self.test_dir}/workspace'
+
         output = subprocess.check_output(['python', '-m', 'manticore', '--workspace', workspace, filename])
 
         with open(os.path.join(workspace, "test_00000000.messages")) as f:
             self.assertIn("finished with exit status: 0", f.read())
+
 
 if __name__ == '__main__':
     unittest.main()
