@@ -9,7 +9,8 @@ import re
 import os
 from . import Manticore
 from .manticore import ManticoreError
-from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, istainted, taint_with, get_taints, BitVec, Constant, operators, Array, ArrayVariable
+from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, istainted, taint_with, get_taints, BitVec, Constant, operators, Array, ArrayVariable, \
+    ArrayProxy
 from .core.smtlib.visitors import simplify
 from .platforms import evm
 from .core.state import State
@@ -657,18 +658,31 @@ class ABI(object):
         elif ty[0] in ('bytesM',):
             nbytes = ty[1]
 
-            if not isinstance(value, str):
-                raise EthereumError('unrecognized type for value')
+            if isinstance(value, (str, bytearray)):
+                if len(value) > nbytes:
+                    raise EthereumError('bytesM: value length exceeds size of bytes{} type'.format(nbytes))
+                # result += bytearray(value.ljust(32, '\0'))
+                result.extend(value.ljust(32, '\0'))
+            elif isinstance(value, ArrayProxy):
+                if len(value) > nbytes:
+                    raise EthereumError('bytesM: value length exceeds size of bytes{} type'.format(nbytes))
+                result = value
+                # for sym_byte in value:
+                #     # result += sym_byte
+                #     result.append(sym_byte)
+                result += '\0'*(32 - len(value))
+                # result.extend('\0'*(32 - len(value)))
 
-            if len(value) > nbytes:
-                raise EthereumError('value length exceeds size of bytes{} type'.format(nbytes))
+            else:
+                raise EthereumError('bytesM: unrecognized type <{}> for value'.format(type(value).__name__))
 
-            result += value.ljust(32, '\0')
         elif ty[0] in ('bytes', 'string'):
             result += ABI._serialize_uint(dyn_offset)
             dyn_result += ABI._serialize_uint(len(value))
             for byte in value:
                 dyn_result.append(byte)
+            dyn_result.extend('\0'*(32 - len(value)))
+            # FIXME: need padding here!
         elif ty[0] == 'function':
             result = ABI._serialize_uint(value[0], 20)
             result += value[1] + bytearray('\0' * 8)
