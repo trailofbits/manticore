@@ -670,7 +670,7 @@ class ABI(object):
                 # for sym_byte in value:
                 #     # result += sym_byte
                 #     result.append(sym_byte)
-                result += '\0'*(32 - len(value))
+                result += bytearray('\0'*(32 - len(value)))
                 # result.extend('\0'*(32 - len(value)))
 
             else:
