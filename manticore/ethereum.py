@@ -682,7 +682,6 @@ class ABI(object):
             for byte in value:
                 dyn_result.append(byte)
             dyn_result.extend('\0'*(32 - len(value)))
-            # FIXME: need padding here!
         elif ty[0] == 'function':
             result = ABI._serialize_uint(value[0], 20)
             result += value[1] + bytearray('\0' * 8)
