@@ -670,11 +670,20 @@ class ABI(object):
                 raise EthereumError('bytesM: unrecognized type <{}> for value'.format(type(value).__name__))
 
         elif ty[0] in ('bytes', 'string'):
+
             result += ABI._serialize_uint(dyn_offset)
             dyn_result += ABI._serialize_uint(len(value))
-            for byte in value:
-                dyn_result.append(byte)
-            dyn_result.extend('\0'*(32 - len(value)))
+
+            if isinstance(value, (str, bytearray)):
+                dyn_result.extend(value.ljust(32, '\0'))
+            elif isinstance(value, ArrayProxy):
+
+                dyn_result += value + bytearray('\0'*(32 - len(value)))
+
+            else:
+                raise EthereumError('bytes: unrecognized type <{}> for value'.format(type(value).__name__))
+
+
         elif ty[0] == 'function':
             result = ABI._serialize_uint(value[0], 20)
             result += value[1] + bytearray('\0' * 8)
