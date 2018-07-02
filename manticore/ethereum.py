@@ -688,7 +688,7 @@ class ABI(object):
         :param value:
         :type value: bytearray or Array
         """
-        return value + bytearray('\0'*(32 - len(value)))
+        return value + bytearray('\0'*(32-len(value)))
 
     @staticmethod
     def _serialize_tuple(types, value, dyn_offset=None):
