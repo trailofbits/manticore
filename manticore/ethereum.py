@@ -657,33 +657,13 @@ class ABI(object):
             result += ABI._serialize_uint(value, size=ty[1] / 8, padding=32 - ty[1] / 8)
         elif ty[0] in ('bytesM',):
             nbytes = ty[1]
-
-            if isinstance(value, (str, bytearray)):
-                if len(value) > nbytes:
-                    raise EthereumError('bytesM: value length exceeds size of bytes{} type'.format(nbytes))
-                result.extend(value.ljust(32, '\0'))
-            elif isinstance(value, ArrayProxy):
-                if len(value) > nbytes:
-                    raise EthereumError('bytesM: value length exceeds size of bytes{} type'.format(nbytes))
-                result = value + bytearray('\0'*(32 - len(value)))
-            else:
-                raise EthereumError('bytesM: unrecognized type <{}> for value'.format(type(value).__name__))
-
+            if len(value) > nbytes:
+                raise EthereumError('bytesM: value length exceeds size of bytes{} type'.format(nbytes))
+            result += ABI._serialize_bytes(value)
         elif ty[0] in ('bytes', 'string'):
-
             result += ABI._serialize_uint(dyn_offset)
             dyn_result += ABI._serialize_uint(len(value))
-
-            if isinstance(value, (str, bytearray)):
-                dyn_result.extend(value.ljust(32, '\0'))
-            elif isinstance(value, ArrayProxy):
-
-                dyn_result += value + bytearray('\0'*(32 - len(value)))
-
-            else:
-                raise EthereumError('bytes: unrecognized type <{}> for value'.format(type(value).__name__))
-
-
+            dyn_result += ABI._serialize_bytes(value)
         elif ty[0] == 'function':
             result = ABI._serialize_uint(value[0], 20)
             result += value[1] + bytearray('\0' * 8)
@@ -701,6 +681,16 @@ class ABI(object):
 
         assert len(result) == ABI._type_size(ty)
         return result, dyn_result
+
+    @staticmethod
+    def _serialize_bytes(value):
+        """
+        Serializes the value and pads to multiple of 32 bytes
+
+        :param value:
+        :type value: bytearray or Array
+        """
+        return value + bytearray('\0'*(32 - len(value)))
 
     @staticmethod
     def _serialize_tuple(types, value, dyn_offset=None):
