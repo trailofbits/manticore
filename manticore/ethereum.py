@@ -9,9 +9,7 @@ import re
 import os
 from . import Manticore
 from .manticore import ManticoreError
-from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, istainted, taint_with, get_taints, BitVec, Constant, operators, Array, ArrayVariable, \
-    ArrayProxy
-from .core.smtlib.visitors import simplify
+from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, istainted, taint_with, get_taints, BitVec, Constant, operators, Array, ArrayVariable
 from .platforms import evm
 from .core.state import State
 from .utils.helpers import istainted, issymbolic
