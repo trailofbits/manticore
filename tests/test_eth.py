@@ -294,6 +294,35 @@ class EthAbiTests(unittest.TestCase):
         with self.assertRaises(EthereumError):
             ABI.serialize('bytes2', 'hii')
 
+    # test serializing symbolic buffer with bytesM
+    def test_serialize_bytesM_symbolic(self):
+        cs = ConstraintSet()
+        buf = cs.new_array(index_max=17)
+        ret = ABI.serialize('bytes32', buf)
+        self.assertEqual(solver.minmax(cs, ret[0]), (0, 255))
+        self.assertEqual(solver.minmax(cs, ret[17]), (0, 0))
+
+    # test serializing symbolic buffer with bytes
+    def test_serialize_bytes_symbolic(self):
+        cs = ConstraintSet()
+        buf = cs.new_array(index_max=17)
+        ret = ABI.serialize('bytes', buf)
+
+        # does the offset field look right?
+        self.assertEqual(solver.minmax(cs, ret[0]), (0, 255))
+        self.assertEqual(solver.minmax(cs, ret[31]), (32, 32))
+
+        # does the size field look right?
+        self.assertEqual(solver.minmax(cs, ret[32]), (0, 255))
+        self.assertEqual(solver.minmax(cs, ret[63]), (2, 2))
+
+        # does the data field look right?
+        self.assertEqual(solver.minmax(cs, ret[64]), (104, 104))
+        self.assertEqual(solver.minmax(cs, ret[65]), (105, 105))
+        self.assertEqual(solver.minmax(cs, ret[66]), (0, 0))
+
+        assert 0
+
 class EthTests(unittest.TestCase):
     def setUp(self):
         self.mevm = ManticoreEVM()
