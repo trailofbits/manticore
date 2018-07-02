@@ -1314,7 +1314,6 @@ class EVM(Eventful):
         current = self.instruction
         if self._on_transaction is False:
             self._publish('will_execute_instruction', self.pc, current)
-
         #Need to consume before potential out of stack exception
         old_gas = self._gas
         self._consume(current.fee)
@@ -2226,7 +2225,7 @@ class EVMWorld(Platform):
         tx, logs, deleted_accounts, account_storage, vm = self._callstack.pop()
         self._publish('did_close_transaction', tx)
         assert self.constraints == vm.constraints
-        #seth constraints to the constraints gathered in the last vm
+        # Keep constraints gathered in the last vm
         self.constraints = vm.constraints
 
         if rollback:

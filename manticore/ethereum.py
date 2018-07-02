@@ -372,7 +372,7 @@ class DetectUninitializedMemory(Detector):
     '''
 
     def did_evm_read_memory_callback(self, state, offset, value):
-        initialized_memory = state.context.get('seth.detectors.initialized_memory', set())
+        initialized_memory = state.context.get('{:s}.initialized_memory'.format(sel.name), set())
         cbu = True  # Can be unknown
         current_contract = state.platform.current_vm.address
         for known_contract, known_offset in initialized_memory:
@@ -385,7 +385,7 @@ class DetectUninitializedMemory(Detector):
         current_contract = state.platform.current_vm.address
 
         # concrete or symbolic write
-        state.context.setdefault('seth.detectors.initialized_memory', set()).add((current_contract, offset))
+        state.context.setdefault('{:s}.initialized_memory'.format(sel.name), set()).add((current_contract, offset))
 
 
 class DetectUninitializedStorage(Detector):
@@ -399,7 +399,8 @@ class DetectUninitializedStorage(Detector):
             return
         # check if offset is known
         cbu = True  # Can be unknown
-        for known_address, known_offset in state.context['seth.detectors.initialized_storage']:
+        context_name = '{:s}.initialized_storage'.format(sel.name)
+        for known_address, known_offset in state.context.get(context_name, ()):
             cbu = Operators.AND(cbu, Operators.OR(address != known_address, offset != known_offset))
 
         if state.can_be_true(cbu):
@@ -407,7 +408,7 @@ class DetectUninitializedStorage(Detector):
 
     def did_evm_write_storage_callback(self, state, address, offset, value):
         # concrete or symbolic write
-        state.context.setdefault('seth.detectors.initialized_storage', set()).add((address, offset))
+        state.context.setdefault('{:s}.initialized_storage'.format(sel.name), set()).add((address, offset))
 
 
 def calculate_coverage(runtime_bytecode, seen):
@@ -652,7 +653,7 @@ class ABI(object):
 
         if ty[0] == 'int':
             result += ABI._serialize_int(value, size=ty[1] / 8, padding=32 - ty[1] / 8)
-        elif ty[0] in 'uint':
+        elif ty[0] == 'uint':
             result += ABI._serialize_uint(value, size=ty[1] / 8, padding=32 - ty[1] / 8)
         elif ty[0] in ('bytes', 'string'):
             result += ABI._serialize_uint(dyn_offset)
@@ -663,11 +664,11 @@ class ABI(object):
             result = ABI._serialize_uint(value[0], 20)
             result += value[1] + bytearray('\0' * 8)
             assert len(result) == 32
-        elif ty[0] in ('tuple'):
+        elif ty[0] == 'tuple':
             sub_result, sub_dyn_result = ABI._serialize_tuple(ty[1], value, dyn_offset)
             result += sub_result
             dyn_result += sub_dyn_result
-        elif ty[0] in ('array'):
+        elif ty[0] == 'array':
             rep = ty[1]
             base_type = ty[2]
             sub_result, sub_dyn_result = ABI._serialize_array(rep, base_type, value, dyn_offset)
@@ -1006,8 +1007,7 @@ class ManticoreEVM(Manticore):
             contract_account = m.solidity_create_contract(source_code, owner=user_account, balance=0)
             contract_account.set(12345, value=100)
 
-            seth.report()
-            print seth.coverage(contract_account)
+            m.finalize()
     '''
 
     def make_symbolic_buffer(self, size, name='TXBUFFER'):
@@ -1250,10 +1250,10 @@ class ManticoreEVM(Manticore):
         self.metadata = {}
 
         # The following should go to manticore.context so we can use multiprocessing
-        self.context['seth'] = {}
-        self.context['seth']['_saved_states'] = set()
-        self.context['seth']['_final_states'] = set()
-        self.context['seth']['_completed_transactions'] = 0
+        self.context['ethereum'] = {}
+        self.context['ethereum']['_saved_states'] = set()
+        self.context['ethereum']['_final_states'] = set()
+        self.context['ethereum']['_completed_transactions'] = 0
 
         self._executor.subscribe('did_load_state', self._load_state_callback)
         self._executor.subscribe('will_terminate_state', self._terminate_state_callback)
@@ -1269,13 +1269,13 @@ class ManticoreEVM(Manticore):
 
     @property
     def completed_transactions(self):
-        with self.locked_context('seth') as context:
+        with self.locked_context('ethereum') as context:
             return context['_completed_transactions']
 
     @property
     def _running_state_ids(self):
         ''' IDs of the running states'''
-        with self.locked_context('seth') as context:
+        with self.locked_context('ethereum') as context:
             if self.initial_state is not None:
                 return tuple(context['_saved_states']) + (-1,)
             else:
@@ -1284,7 +1284,7 @@ class ManticoreEVM(Manticore):
     @property
     def _terminated_state_ids(self):
         ''' IDs of the terminated states '''
-        with self.locked_context('seth') as context:
+        with self.locked_context('ethereum') as context:
             return tuple(context['_final_states'])
 
     @property
@@ -1338,14 +1338,14 @@ class ManticoreEVM(Manticore):
 
         if state_id != -1:
             # Move state from running to final
-            with self.locked_context('seth') as seth_context:
-                saved_states = seth_context['_saved_states']
-                final_states = seth_context['_final_states']
+            with self.locked_context('ethereum') as eth_context:
+                saved_states = eth_context['_saved_states']
+                final_states = eth_context['_final_states']
                 if state_id in saved_states:
                     saved_states.remove(state_id)
                     final_states.add(state_id)
-                    seth_context['_saved_states'] = saved_states  # TODO This two may be not needed in py3?
-                    seth_context['_final_states'] = final_states
+                    eth_context['_saved_states'] = saved_states  # TODO This two may be not needed in py3?
+                    eth_context['_final_states'] = final_states
         else:
             assert state_id == -1
             state_id = self.save(self._initial_state, final=True)
@@ -1359,17 +1359,17 @@ class ManticoreEVM(Manticore):
 
         # Move state from final to running
         if state_id != -1:
-            with self.locked_context('seth') as seth_context:
-                saved_states = seth_context['_saved_states']
-                final_states = seth_context['_final_states']
+            with self.locked_context('ethereum') as eth_context:
+                saved_states = eth_context['_saved_states']
+                final_states = eth_context['_final_states']
                 if state_id in final_states:
                     final_states.remove(state_id)
                     saved_states.add(state_id)
-                    seth_context['_saved_states'] = saved_states
-                    seth_context['_final_states'] = final_states
+                    eth_context['_saved_states'] = saved_states
+                    eth_context['_final_states'] = final_states
         return state_id
 
-    # deprecate this 5 in favor of for sta in seth.all_states: do stuff?
+    # deprecate this 5 in favor of for sta in m.all_states: do stuff?
 
     def get_world(self, state_id=None):
         ''' Returns the evm world of `state_id` state. '''
@@ -1602,24 +1602,29 @@ class ManticoreEVM(Manticore):
         self._accounts[name] = EVMAccount(address, manticore=self, name=name)
         return self.accounts[name]
 
-    def __migrate_expressions(self, new_constraints, old_constraints, caller, address, value, data):
+    def __migrate_expressions(self, state, global_constraints, caller, address, value, data):
             # Copy global constraints into each state.
             # We should somehow remember what has been copied to each state
             # In a second transaction we should only add new constraints.
             # And actually only constraints related to whateverwe are using in
             # the tx. This is a FIXME
+            state_constraints = state.constraints
             migration_bindings = {}
+             
             if issymbolic(caller):
-                caller = new_constraints.migrate(caller, bindings=migration_bindings)
+                caller = state_constraints(caller, bindings=migration_bindings)
             if issymbolic(address):
-                address = new_constraints.migrate(address, bindings=migration_bindings)
+                address = state_constraints.migrate(address, bindings=migration_bindings)
+
             if issymbolic(value):
-                value = new_constraints.migrate(value, bindings=migration_bindings)
+                value = state_constraints.migrate(value, bindings=migration_bindings)
             if issymbolic(data):
-                data = new_constraints.migrate(data, bindings=migration_bindings)
-            for c in old_constraints:
-                new_constraints.constraint(new_constraints.migrate(c, bindings=migration_bindings))
-            return new_constraints, caller, address, value, data
+                data = state_constraints.migrate(data, bindings=migration_bindings)
+            
+            for c in global_constraints:
+                migrated_constraint = state_constraints.migrate(c, bindings=migration_bindings)
+                state_constraints.add(migrated_constraint)
+            return caller, address, value, data
 
     def _transaction(self, sort, caller, value=0, address=None, data=None, price=1):
         ''' Creates a contract
@@ -1691,7 +1696,7 @@ class ManticoreEVM(Manticore):
                 raise EthereumError("This is bad. It should not be a pending transaction")
 
             # Migrate any expression to state specific constraint set
-            _, caller, address, value, data = self.__migrate_expressions(state.constraints, self.constraints, caller, address, value, data)
+            caller, address, value, data = self.__migrate_expressions(state, self.constraints, caller, address, value, data)
 
             # Different states may CREATE a different set of accounts. Accounts
             # that were crated by a human have the same address in all states.
@@ -1770,7 +1775,7 @@ class ManticoreEVM(Manticore):
     def run(self, **kwargs):
         ''' Run any pending transaction on any running state '''
         # Check if there is a pending transaction
-        with self.locked_context('seth') as context:
+        with self.locked_context('ethereum') as context:
             # there is no states added to the executor queue
             assert len(self._executor.list()) == 0
             for state_id in context['_saved_states']:
@@ -1781,7 +1786,7 @@ class ManticoreEVM(Manticore):
         # in each state (see load_state_callback)
         super(ManticoreEVM, self).run(**kwargs)
 
-        with self.locked_context('seth') as context:
+        with self.locked_context('ethereum') as context:
             if len(context['_saved_states']) == 1:
                 self._initial_state = self._executor._workspace.load_state(context['_saved_states'].pop(), delete=True)
                 context['_saved_states'] = set()
@@ -1799,7 +1804,7 @@ class ManticoreEVM(Manticore):
         if state_id is not None:
             if state_id not in self._all_state_ids:
                 raise EthereumError("Trying to overwrite unknown state_id")
-            with self.locked_context('seth') as context:
+            with self.locked_context('ethereum') as context:
                 context['_final_states'].discard(state_id)
                 context['_saved_states'].discard(state_id)
 
@@ -1807,7 +1812,7 @@ class ManticoreEVM(Manticore):
             # save the state to secondary storage
             state_id = self._executor._workspace.save_state(state, state_id=state_id)
 
-            with self.locked_context('seth') as context:
+            with self.locked_context('ethereum') as context:
                 if final:
                     # Keep it on a private list
                     context['_final_states'].add(state_id)
@@ -2330,9 +2335,9 @@ class ManticoreEVM(Manticore):
                 self._executor._workspace.rm_state(state_id)
 
         # clean up lists
-        with self.locked_context('seth') as seth_context:
-            seth_context['_saved_states'] = set()
-            seth_context['_final_states'] = set()
+        with self.locked_context('ethereum') as eth_context:
+            eth_context['_saved_states'] = set()
+            eth_context['_final_states'] = set()
 
         logger.info("Results in %s", self.workspace)
 

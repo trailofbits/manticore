@@ -46,6 +46,9 @@ class Variable(Expression):
         memo[id(self)] = self
         return self
 
+    def __repr__(self):
+        return "<%s(%s) at %x>" % (type(self).__name__, self.name, id(self))
+
 
 class Constant(Expression):
     def __init__(self, value, *args, **kwargs):
