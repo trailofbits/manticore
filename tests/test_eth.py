@@ -309,16 +309,13 @@ class EthAbiTests(unittest.TestCase):
         ret = ABI.serialize('bytes', buf)
 
         # does the offset field look right?
-        self.assertEqual(solver.minmax(cs, ret[0]), (0, 0))
-        self.assertEqual(solver.minmax(cs, ret[31]), (32, 32))
+        self.assertTrue(solver.must_be_true(cs, ret[0:32] == bytearray('\0'*31 + '\x20')))
 
         # does the size field look right?
-        self.assertEqual(solver.minmax(cs, ret[32]), (0, 0))
-        self.assertEqual(solver.minmax(cs, ret[63]), (17, 17))
+        self.assertTrue(solver.must_be_true(cs, ret[32:64] == bytearray('\0'*31 + '\x11')))
 
         # does the data field look right?
-        self.assertEqual(solver.minmax(cs, ret[64]), (0, 255))
-        self.assertEqual(solver.minmax(cs, ret[64+17]), (0, 0))
+        self.assertTrue(solver.must_be_true(cs, ret[64:64+32] == buf + bytearray('\0'*15)))
 
         assert 0
 
