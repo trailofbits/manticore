@@ -661,18 +661,11 @@ class ABI(object):
             if isinstance(value, (str, bytearray)):
                 if len(value) > nbytes:
                     raise EthereumError('bytesM: value length exceeds size of bytes{} type'.format(nbytes))
-                # result += bytearray(value.ljust(32, '\0'))
                 result.extend(value.ljust(32, '\0'))
             elif isinstance(value, ArrayProxy):
                 if len(value) > nbytes:
                     raise EthereumError('bytesM: value length exceeds size of bytes{} type'.format(nbytes))
-                result = value
-                # for sym_byte in value:
-                #     # result += sym_byte
-                #     result.append(sym_byte)
-                result += bytearray('\0'*(32 - len(value)))
-                # result.extend('\0'*(32 - len(value)))
-
+                result = value + bytearray('\0'*(32 - len(value)))
             else:
                 raise EthereumError('bytesM: unrecognized type <{}> for value'.format(type(value).__name__))
 
