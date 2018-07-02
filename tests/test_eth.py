@@ -317,8 +317,6 @@ class EthAbiTests(unittest.TestCase):
         # does the data field look right?
         self.assertTrue(solver.must_be_true(cs, ret[64:64+32] == buf + bytearray('\0'*15)))
 
-        assert 0
-
 class EthTests(unittest.TestCase):
     def setUp(self):
         self.mevm = ManticoreEVM()
