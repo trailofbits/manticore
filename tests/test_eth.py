@@ -278,6 +278,44 @@ class EthAbiTests(unittest.TestCase):
         self.assertEqual(parsed_func_id, func_id)
         self.assertEqual(((0xfB6916095ca1df60bB79Ce92cE3Ea74c37c5d359, selector),), args)
 
+    def test_serialize_fixed_bytes32(self):
+        ret = ABI.serialize('bytes32', 'hi')
+        self.assertEqual(ret, 'hi'.ljust(32, '\0'))
+
+    def test_serialize_fixed_bytes2(self):
+        ret = ABI.serialize('bytes2', 'aa')
+        self.assertEqual(ret, 'aa'.ljust(32, '\0'))
+
+    def test_serialize_fixed_bytes_less_data(self):
+        ret = ABI.serialize('bytes4', 'aa')
+        self.assertEqual(ret, 'aa'.ljust(32, '\0'))
+
+    def test_serialize_fixed_bytes_too_big(self):
+        with self.assertRaises(EthereumError):
+            ABI.serialize('bytes2', 'hii')
+
+    # test serializing symbolic buffer with bytesM
+    def test_serialize_bytesM_symbolic(self):
+        cs = ConstraintSet()
+        buf = cs.new_array(index_max=17)
+        ret = ABI.serialize('bytes32', buf)
+        self.assertEqual(solver.minmax(cs, ret[0]), (0, 255))
+        self.assertEqual(solver.minmax(cs, ret[17]), (0, 0))
+
+    # test serializing symbolic buffer with bytes
+    def test_serialize_bytes_symbolic(self):
+        cs = ConstraintSet()
+        buf = cs.new_array(index_max=17)
+        ret = ABI.serialize('bytes', buf)
+
+        # does the offset field look right?
+        self.assertTrue(solver.must_be_true(cs, ret[0:32] == bytearray('\0'*31 + '\x20')))
+
+        # does the size field look right?
+        self.assertTrue(solver.must_be_true(cs, ret[32:64] == bytearray('\0'*31 + '\x11')))
+
+        # does the data field look right?
+        self.assertTrue(solver.must_be_true(cs, ret[64:64+32] == buf + bytearray('\0'*15)))
 
 class EthTests(unittest.TestCase):
     def setUp(self):
