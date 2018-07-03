@@ -79,7 +79,6 @@ class ExpressionTest(unittest.TestCase):
         cs.add(a + b > 100)
         self.assertTrue(self.solver.check(cs))
 
-
     def testBool(self):
         cs =  ConstraintSet()
         bf = BoolConstant(False)
@@ -392,6 +391,18 @@ class ExpressionTest(unittest.TestCase):
         exp = arithmetic_simplify(exp)
         self.assertTrue(get_depth(exp) < 4)
         self.assertEqual(translate_to_smtlib(exp), '(bvand V_1 #x00000001)')
+
+    def testBasicReplace(self):
+        ''' Add '''
+        a = BitVecConstant(32, 100)
+        b1 = BitVecVariable(32, 'VAR1')
+        b2 = BitVecVariable(32, 'VAR2')
+
+        c = a + b1
+
+        x = replace(c, {b1:b2})
+        self.assertEqual(translate_to_smtlib(x), '(bvadd #x00000064 VAR2)')
+
 
     def test_ORD(self):
         cs = ConstraintSet()
