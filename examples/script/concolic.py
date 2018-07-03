@@ -73,7 +73,7 @@ def flip(constraint):
     cond, iifpc, eelsepc = ite.operands
     assert isinstance(iifpc, BitVecConstant) and isinstance(eelsepc, BitVecConstant)
 
-    equal.operands= (equal.operands[0], eelsepc if forcepc.value == iifpc.value else iifpc)
+    equal._operands= (equal.operands[0], eelsepc if forcepc.value == iifpc.value else iifpc)
 
     return equal
 
