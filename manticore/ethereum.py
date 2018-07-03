@@ -10,7 +10,6 @@ import os
 from . import Manticore
 from .manticore import ManticoreError
 from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, istainted, taint_with, get_taints, BitVec, Constant, operators, Array, ArrayVariable
-from .core.smtlib.visitors import simplify
 from .platforms import evm
 from .core.state import State
 from .utils.helpers import istainted, issymbolic
@@ -729,11 +728,15 @@ class ABI(object):
             result += ABI._serialize_int(value, size=ty[1] / 8, padding=32 - ty[1] / 8)
         elif ty[0] == 'uint':
             result += ABI._serialize_uint(value, size=ty[1] / 8, padding=32 - ty[1] / 8)
+        elif ty[0] in ('bytesM',):
+            nbytes = ty[1]
+            if len(value) > nbytes:
+                raise EthereumError('bytesM: value length exceeds size of bytes{} type'.format(nbytes))
+            result += ABI._serialize_bytes(value)
         elif ty[0] in ('bytes', 'string'):
             result += ABI._serialize_uint(dyn_offset)
             dyn_result += ABI._serialize_uint(len(value))
-            for byte in value:
-                dyn_result.append(byte)
+            dyn_result += ABI._serialize_bytes(value)
         elif ty[0] == 'function':
             result = ABI._serialize_uint(value[0], 20)
             result += value[1] + bytearray('\0' * 8)
@@ -751,6 +754,16 @@ class ABI(object):
 
         assert len(result) == ABI._type_size(ty)
         return result, dyn_result
+
+    @staticmethod
+    def _serialize_bytes(value):
+        """
+        Serializes the value and pads to multiple of 32 bytes
+
+        :param value:
+        :type value: bytearray or Array
+        """
+        return value + bytearray('\0' * (32 - len(value)))
 
     @staticmethod
     def _serialize_tuple(types, value, dyn_offset=None):
