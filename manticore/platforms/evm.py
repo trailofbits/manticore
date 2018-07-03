@@ -940,7 +940,7 @@ def concretized_args(**policies):
                     self = args[0]
                     for known_account in self.world.accounts:
                         cond = Operators.OR(args[index] == known_account, cond)
-                        self.constraints.add(cond)
+                    self.constraints.add(cond)
                     policy = 'ALL'
                 raise ConcretizeStack(index, policy=policy)
             return func(*args, **kwargs)
@@ -2592,6 +2592,11 @@ class EVMWorld(Platform):
             def set_address(state, solution):
                 world = state.platform
                 world._pending_transaction = sort, solution, price, data, caller, value, gas
+            #Constraint it so it can range over all accounts + address0
+            cond = address == 0
+            for known_account in self.accounts:
+                cond = Operators.OR(address == known_account, cond)
+            self.constraints.add(cond)
             raise Concretize('Concretizing address on transaction',
                              expression=address,
                              setstate=set_address,
@@ -2599,11 +2604,16 @@ class EVMWorld(Platform):
 
     def _pending_transaction_concretize_caller(self):
         sort, address, price, data, caller, value, gas = self._pending_transaction
-        if issymbolic(address):
+        if issymbolic(caller):
             def set_caller(state, solution):
                 world = state.platform
                 world._pending_transaction = sort, address, price, data, solution, value, gas
-            raise Concretize('Concretizing address on transaction',
+            #Constraint it so it can range over all accounts + address0
+            cond = caller == 0
+            for known_account in self.accounts:
+                cond = Operators.OR(caller == known_account, cond)
+            self.constraints.add(cond)
+            raise Concretize('Concretizing caller on transaction',
                              expression=caller,
                              setstate=set_caller,
                              policy='ALL')
