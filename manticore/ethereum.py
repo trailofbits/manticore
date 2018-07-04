@@ -1702,7 +1702,7 @@ class ManticoreEVM(Manticore):
             migration_bindings = {}
              
             if issymbolic(caller):
-                caller = state_constraints(caller, bindings=migration_bindings)
+                caller = state_constraints.migrate(caller, bindings=migration_bindings)
             if issymbolic(address):
                 address = state_constraints.migrate(address, bindings=migration_bindings)
 
@@ -1742,7 +1742,7 @@ class ManticoreEVM(Manticore):
             raise EthereumError("code bad type")
 
         # Check types
-        if not isinstance(caller, numbers.Integral):
+        if not isinstance(address, (numbers.Integral, BitVec)):
             raise EthereumError("Caller invalid type")
 
         if not isinstance(value, (numbers.Integral, BitVec)):
@@ -1759,8 +1759,8 @@ class ManticoreEVM(Manticore):
             raise ValueError('unsupported transaction type')
 
         # Caller must be a normal known account
-        if caller not in self._accounts.values():
-            raise EthereumError("Unknown caller address!")
+        #if caller not in self._accounts.values():
+        #    raise EthereumError("Unknown caller address!")
 
         if sort == 'CREATE':
             #let's choose an address here for now #NOTYELLOW

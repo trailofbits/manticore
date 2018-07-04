@@ -2589,7 +2589,7 @@ class EVMWorld(Platform):
         self._pending_transaction = PendingTransaction(sort, address, price, data, caller, value, gas)
 
     def _constraint_to_accounts(self, address, include_zero=False, ty='both'):
-            if ty not in  ('both', 'nomral', 'contract'):
+            if ty not in  ('both', 'normal', 'contract'):
                 raise ValueError('Bad account type. It must be `normal`, `contract` or `both`')
             if ty == 'both':
                 accounts = self.accounts
@@ -2633,7 +2633,7 @@ class EVMWorld(Platform):
                 world = state.platform
                 world._pending_transaction = sort, address, price, data, solution, value, gas
             #Constraint it so it can range over all normal accounts
-            cond = self._constraint_to_accounts(address, ty='normal')
+            cond = self._constraint_to_accounts(caller, ty='normal')
             self.constraints.add(cond)
             raise Concretize('Concretizing caller on transaction',
                              expression=caller,
@@ -2656,7 +2656,6 @@ class EVMWorld(Platform):
 
         self._pending_transaction_concretize_address()
         self._pending_transaction_concretize_caller()
-
         if caller not in self.accounts:
             raise EVMException('Caller account does not exist')
 
