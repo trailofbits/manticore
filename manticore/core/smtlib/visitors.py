@@ -51,6 +51,10 @@ class Visitor(object):
         return self._stack[-1]
 
     def _method(self, expression, *args):
+        #Special case. Need to get the unsleeved version of the array
+        if isinstance(expression, ArrayProxy):
+            expression = expression.array
+
         assert expression.__class__.__mro__[-1] is object
         for cls in expression.__class__.__mro__:
             sort = cls.__name__
@@ -74,11 +78,6 @@ class Visitor(object):
         :param use_fixed_point: if True, it runs _methods until a fixed point is found
         :type use_fixed_point: Bool
         '''
-
-        #Special case. Need to get the unsleeved version of the array
-        if isinstance(node, ArrayProxy):
-            node = node.array
-
         cache = self._cache
         visited = set()
         stack = []
@@ -130,6 +129,9 @@ class Translator(Visitor):
     '''
 
     def _method(self, expression, *args):
+        #Special case. Need to get the unsleeved version of the array
+        if isinstance(expression, ArrayProxy):
+            expression = expression.array
         assert expression.__class__.__mro__[-1] is object
         for cls in expression.__class__.__mro__:
             sort = cls.__name__
