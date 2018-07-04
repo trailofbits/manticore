@@ -36,7 +36,6 @@ print "[+] Now the symbolic values"
 symbolic_data = m.make_symbolic_buffer(320) 
 symbolic_value = m.make_symbolic_value(name="VALUE")
 symbolic_address = m.make_symbolic_value(name="ADDRESS")
-m.constrain(Operators.OR(symbolic_address == contract_account, symbolic_address == user_account))
 m.transaction(caller=user_account,
                 address=symbolic_address,
                 data=symbolic_data,

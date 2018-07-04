@@ -936,11 +936,10 @@ def concretized_args(**policies):
                     raise ConcretizeStack(index)
                 if policy == "ACCOUNTS":
                     #special handler for EVM only policy
-                    cond = args[index] == 0
-                    self = args[0]
-                    for known_account in self.world.accounts:
-                        cond = Operators.OR(args[index] == known_account, cond)
-                    self.constraints.add(cond)
+                    address = args[index]
+                    world = args[0]
+                    cond = world._constraint_to_accounts(address, ty='both', include_zero=True)
+                    world.constraints.add(cond)
                     policy = 'ALL'
                 raise ConcretizeStack(index, policy=policy)
             return func(*args, **kwargs)
@@ -2542,6 +2541,9 @@ class EVMWorld(Platform):
         if address is None:
             address = self.new_address()
         if address in self.accounts:
+            # FIXME account may have been created via selfdestruct destinatary
+            # or CALL and may contain some ether already. Though if it was a
+            # selfdestroyed address it can not be reused
             raise EthereumError('The account already exists')
         if code is None:
             code = bytearray()
@@ -2586,16 +2588,38 @@ class EVMWorld(Platform):
         assert self._pending_transaction is None, "Already started tx"
         self._pending_transaction = PendingTransaction(sort, address, price, data, caller, value, gas)
 
+    def _constraint_to_accounts(self, address, include_zero=False, ty='both'):
+            if ty not in  ('both', 'nomral', 'contract'):
+                raise ValueError('Bad account type. It must be `normal`, `contract` or `both`')
+            if ty == 'both':
+                accounts = self.accounts
+            elif ty == 'normal':
+                accounts = self.normal_accounts
+            else:
+                assert ty == 'contract' 
+                accounts = self.contract_accounts
+
+            #Constraint it so it can range over all accounts + address0
+            cond = True
+            if accounts:
+                cond = None
+                if include_zero:
+                    cond = address == 0
+
+                for known_account in accounts:
+                    if cond is None:
+                        cond = address == known_account
+                else:
+                        cond = Operators.OR(address == known_account, cond)
+            return cond
+
     def _pending_transaction_concretize_address(self):
         sort, address, price, data, caller, value, gas = self._pending_transaction
         if issymbolic(address):
             def set_address(state, solution):
                 world = state.platform
                 world._pending_transaction = sort, solution, price, data, caller, value, gas
-            #Constraint it so it can range over all accounts + address0
-            cond = address == 0
-            for known_account in self.accounts:
-                cond = Operators.OR(address == known_account, cond)
+            cond = self._constraint_to_accounts(address, ty='contract', include_zero=False)
             self.constraints.add(cond)
             raise Concretize('Concretizing address on transaction',
                              expression=address,
@@ -2608,10 +2632,8 @@ class EVMWorld(Platform):
             def set_caller(state, solution):
                 world = state.platform
                 world._pending_transaction = sort, address, price, data, solution, value, gas
-            #Constraint it so it can range over all accounts + address0
-            cond = caller == 0
-            for known_account in self.accounts:
-                cond = Operators.OR(caller == known_account, cond)
+            #Constraint it so it can range over all normal accounts
+            cond = self._constraint_to_accounts(address, ty='normal')
             self.constraints.add(cond)
             raise Concretize('Concretizing caller on transaction',
                              expression=caller,
@@ -2635,8 +2657,13 @@ class EVMWorld(Platform):
         self._pending_transaction_concretize_address()
         self._pending_transaction_concretize_caller()
 
-        if address not in self.accounts or caller not in self.accounts:
-            raise EVMException('Account does not exist')
+        if caller not in self.accounts:
+            raise EVMException('Caller account does not exist')
+
+        if address not in self.accounts:
+            # Creating a unaccessible account
+            self.create_account(address=address)
+            #raise EVMException('Account does not exist')
 
         # Check depth
         failed = self.depth > 1024
