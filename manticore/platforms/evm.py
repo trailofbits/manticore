@@ -937,7 +937,7 @@ def concretized_args(**policies):
                 if policy == "ACCOUNTS":
                     #special handler for EVM only policy
                     address = args[index]
-                    world = args[0]
+                    world = args[0].world
                     cond = world._constraint_to_accounts(address, ty='both', include_zero=True)
                     world.constraints.add(cond)
                     policy = 'ALL'
