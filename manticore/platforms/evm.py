@@ -936,11 +936,10 @@ def concretized_args(**policies):
                     raise ConcretizeStack(index)
                 if policy == "ACCOUNTS":
                     #special handler for EVM only policy
-                    cond = args[index] == 0
-                    self = args[0]
-                    for known_account in self.world.accounts:
-                        cond = Operators.OR(args[index] == known_account, cond)
-                    self.constraints.add(cond)
+                    address = args[index]
+                    world = args[0].world
+                    cond = world._constraint_to_accounts(address, ty='both', include_zero=True)
+                    world.constraints.add(cond)
                     policy = 'ALL'
                 raise ConcretizeStack(index, policy=policy)
             return func(*args, **kwargs)
