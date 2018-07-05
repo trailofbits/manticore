@@ -13,7 +13,7 @@ def skipIfNotImplemented(f):
         try:
             return f(*args, **kwargs)
         except NotImplementedError as e:
-            raise unittest.SkipTest(e.message)
+            raise unittest.SkipTest(str(e))
 
     return test_inner
 

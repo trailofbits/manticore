@@ -1,4 +1,4 @@
-from __future__ import print_function
+
 # Minimal INTEL assembler expression calculator
 import ply.yacc as yacc
 import copy
@@ -167,6 +167,7 @@ sizes = copy.copy(default_sizes_32)
 
 def p_expression_div(p):
     'expression : expression DIVIDE expression'
+    #PY3FIX, should this be INT or float division? unknown so leaving it float
     p[0] = p[1] / p[3]
 
 
@@ -215,7 +216,7 @@ def p_expression_deref(p):
     size = sizes[p[1]]
     address = p[4]
     char_list = functions['read_memory'](address, size)
-    value = Operators.CONCAT(8 * len(char_list), *reversed(map(Operators.ORD, char_list)))
+    value = Operators.CONCAT(8 * len(char_list), *reversed(list(map(Operators.ORD, char_list))))
     p[0] = value
 
 
@@ -227,7 +228,7 @@ def p_expression_derefseg(p):
     base, limit, _ = functions['get_descriptor'](seg)
     address = base + address
     char_list = functions['read_memory'](address, size)
-    value = Operators.CONCAT(8 * len(char_list), *reversed(map(Operators.ORD, char_list)))
+    value = Operators.CONCAT(8 * len(char_list), *reversed(list(map(Operators.ORD, char_list))))
     p[0] = value
 
 
@@ -340,7 +341,7 @@ def parse(expression, read_memory=None, read_register=None, get_descriptor=None,
 if __name__ == '__main__':
     while True:
         try:
-            s = raw_input('calc > ')
+            s = input('calc > ')
         except EOFError:
             break
         if not s:

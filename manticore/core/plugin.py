@@ -1,5 +1,6 @@
 import logging
 import re
+import binascii
 from capstone import CS_GRP_JUMP
 
 from ..utils.helpers import issymbolic

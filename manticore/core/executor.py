@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+
 import os
 import random
 import logging
@@ -19,9 +19,9 @@ from contextlib import contextmanager
 def mgr_init():
     signal.signal(signal.SIGINT, signal.SIG_IGN)
 
-
-manager = SyncManager()
-manager.start(mgr_init)
+#PY3FIX
+# manager = SyncManager()
+# manager.start(mgr_init)
 
 logger = logging.getLogger(__name__)
 
@@ -145,7 +145,7 @@ class BranchLimited(Policy):
             visited = policy_ctx.get('visited', dict())
             summaries = policy_ctx.get('summaries', dict())
             lst = []
-            for id_, pc in summaries.items():
+            for id_, pc in list(summaries.items()):
                 cnt = visited.get(pc, 0)
                 if id_ not in state_ids:
                     continue
@@ -176,24 +176,29 @@ class Executor(Eventful):
 
         self.subscribe('did_load_state', self._register_state_callbacks)
 
+        # This is the global manager that will handle all shared memory access among workers
+        self.manager = SyncManager()
+        self.manager.start(lambda: signal.signal(signal.SIGINT, signal.SIG_IGN))
+
         # The main executor lock. Acquire this for accessing shared objects
-        self._lock = manager.Condition(manager.RLock())
+        #PY3FIX
+        self._lock = self.manager.Condition()
 
         # Shutdown Event
-        self._shutdown = manager.Event()
+        self._shutdown = self.manager.Event()
 
         # States on storage. Shared dict state name ->  state stats
-        self._states = manager.list()
+        self._states = self.manager.list()
 
         # Number of currently running workers. Initially no running workers
-        self._running = manager.Value('i', 0)
+        self._running = self.manager.Value('i', 0)
 
         self._workspace = Workspace(self._lock, store)
 
         # Executor wide shared context
         if context is None:
             context = {}
-        self._shared_context = manager.dict(context)
+        self._shared_context = self.manager.dict(context)
 
         # scheduling priority policy (wip)
         # Set policy
@@ -329,7 +334,8 @@ class Executor(Eventful):
                 return None
             # if there is actually some workers running wait for state forks
             logger.debug("Waiting for available states")
-            self._lock.wait()
+            with self._lock:
+                self._lock.wait()
 
         state_id = self._policy.choice(list(self._states))
         if state_id is None:
@@ -484,6 +490,7 @@ class Executor(Eventful):
                         current_state = None
 
                     except SolverException as e:
+                        raise
                         import traceback
                         trace = traceback.format_exc()
                         logger.error("Exception: %s\n%s", str(e), trace)
@@ -496,6 +503,7 @@ class Executor(Eventful):
                         current_state = None
 
                 except (Exception, AssertionError) as e:
+                    raise
                     import traceback
                     trace = traceback.format_exc()
                     logger.error("Exception: %s\n%s", str(e), trace)

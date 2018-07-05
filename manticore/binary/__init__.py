@@ -14,9 +14,9 @@ But there are difference between format that makes it difficult to find a simple
 and common API.  interpreters? linkers? linked DLLs?
 
 '''
-from __future__ import print_function
+
 from elftools.elf.elffile import ELFFile
-import StringIO
+import io
 
 
 class Binary(object):
@@ -24,14 +24,14 @@ class Binary(object):
 
     def __new__(cls, path):
         if cls is Binary:
-            cl = cls.magics[file(path).read(4)]
+            cl = cls.magics[open(path).read(4)]
             return cl(path)
         else:
             return super(Binary, cls).__new__(cls, path)
 
     def __init__(self, path):
         self.path = path
-        self.magic = Binary.magics[file(path).read(4)]
+        self.magic = Binary.magics[open(path, 'rb').read(4)]
 
     def arch(self):
         pass
@@ -49,8 +49,8 @@ class CGCElf(Binary):
     def _cgc2elf(filename):
         # hack begin so we can use upstream Elftool
         with open(filename, 'rb') as fd:
-            stream = StringIO.StringIO(fd.read())
-            stream.write('\x7fELF')
+            stream = io.BytesIO(fd.read())
+            stream.write(b'\x7fELF')
             stream.name = fd.name
             return stream
 
@@ -91,7 +91,7 @@ class CGCElf(Binary):
 class Elf(Binary):
     def __init__(self, filename):
         super(Elf, self).__init__(filename)
-        self.elf = ELFFile(file(filename))
+        self.elf = ELFFile(open(filename))
         self.arch = {'x86': 'i386', 'x64': 'amd64'}[self.elf.get_machine_arch()]
         assert self.elf.header.e_type in ['ET_DYN', 'ET_EXEC', 'ET_CORE']
 
@@ -131,8 +131,8 @@ class Elf(Binary):
         yield(('Running', {'EIP': self.elf.header.e_entry}))
 
 
-Binary.magics = {'\x7fCGC': CGCElf,
-                 '\x7fELF': Elf}
+Binary.magics = {b'\x7fCGC': CGCElf,
+                 b'\x7fELF': Elf}
 
 
 if __name__ == '__main__':

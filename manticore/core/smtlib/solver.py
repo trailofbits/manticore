@@ -1,4 +1,4 @@
-from __future__ import absolute_import, print_function
+
 ###############################################################################
 # Solver
 # A solver maintains a companion smtlib capable process connected via stdio.
@@ -13,7 +13,7 @@ from __future__ import absolute_import, print_function
 # Once you Solver.check() it the status is changed to sat or unsat (or unknown+exception)
 # You can create new symbols operate on them. The declarations will be sent to the smtlib process when needed.
 # You can add new constraints. A new constraint may change the state from {None, sat} to {sat, unsat, unknown}
-
+from abc import ABCMeta, abstractmethod
 from subprocess import PIPE, Popen, check_output
 from . import operators as Operators
 from .expression import *
@@ -23,9 +23,13 @@ import re
 import time
 from .visitors import *
 from ...utils.helpers import issymbolic, istainted, taint_with, get_taints, memoized
+import io
 import collections
 
 logger = logging.getLogger(__name__)
+
+
+LINEBUF = 1
 
 
 class Z3NotFoundError(EnvironmentError):
@@ -46,7 +50,8 @@ class TooManySolutions(SolverException):
         self.solutions = solutions
 
 
-class Solver(object):
+class Solver(object, metaclass=ABCMeta):
+    @abstractmethod
     def __init__(self):
         pass
 
@@ -126,6 +131,9 @@ class Z3Solver(Solver):
         super(Z3Solver, self).__init__()
         self._proc = None
 
+        self.debug = False
+        if self.debug:
+            self._send_log = []
         self.version = self._solver_version()
 
         self.support_maximize = False
@@ -167,7 +175,7 @@ class Z3Solver(Solver):
             raise Z3NotFoundError
         try:
             version = version_cmd_output.split()[2]
-            their_version = Version(*map(int, version.split('.')))
+            their_version = Version(*list(map(int, version.split('.'))))
         except (IndexError, ValueError, TypeError):
             pass
         return their_version
@@ -176,7 +184,7 @@ class Z3Solver(Solver):
         ''' Auxiliary method to spawn the external solver process'''
         assert '_proc' not in dir(self) or self._proc is None
         try:
-            self._proc = Popen(self._command.split(' '), stdin=PIPE, stdout=PIPE)
+            self._proc = Popen(self._command.split(' '), stdin=PIPE, stdout=PIPE, bufsize=-1)
         except OSError as e:
             print(e, "Probably too  much cached expressions? visitors._cache...")
             # Z3 was removed from the system in the middle of operation
@@ -191,12 +199,12 @@ class Z3Solver(Solver):
         if self._proc is not None and self._proc.returncode is None:
             try:
                 self._send("(exit)")
-            except SolverException:
-                #z3 was too fast to close
+                self._proc.stdin.close()
+                self._proc.stdout.close()
+                self._proc.wait()
+            except (SolverException, IOError):
+                # z3 was too fast to close
                 pass
-            self._proc.stdin.close()
-            self._proc.stdout.close()
-            self._proc.wait()
         try:
             self._proc.kill()
         except BaseException:
@@ -212,9 +220,12 @@ class Z3Solver(Solver):
 
     def __del__(self):
         try:
-            self._proc.stdin.writelines(('(exit)\n',))
-            self._proc.wait()
-        except Exception:
+            if self._proc is not None:
+                self._stop_proc()
+            # self._proc.stdin.writelines(('(exit)\n',))
+            # self._proc.wait()
+        except Exception as e:
+            logger.error(str(e))
             pass
 
     def _reset(self, constraints=None):
@@ -239,32 +250,41 @@ class Z3Solver(Solver):
         '''
         logger.debug('>%s', cmd)
         try:
-            buf = str(cmd)
-            self._proc.stdin.write(buf + '\n')
+            self._proc.stdout.flush()
+            self._proc.stdin.write('{}\n'.format(cmd).encode())
+            self._proc.stdin.flush()
         except IOError as e:
-            raise SolverException(e)
+            raise SolverException(str(e))
 
-    def _recv(self):
+    def _recv(self, expect_response=True):
         ''' Reads the response from the solver '''
-        def readline():
-            buf = self._proc.stdout.readline()
-            return buf, buf.count('('), buf.count(')')
-        bufl = []
-        left = 0
-        right = 0
-        buf, l, r = readline()
-        bufl.append(buf)
-        left += l
-        right += r
-        while left != right:
-            buf, l, r = readline()
-            bufl.append(buf)
-            left += l
-            right += r
-        buf = ''.join(bufl).strip()
-        logger.debug('<%s', buf)
-        if '(error' in bufl[0]:
-            raise Exception("Error in smtlib: {}".format(bufl[0]))
+
+        received = io.BytesIO()
+        opens, closes, n = 0, 0, 0
+
+        while True:
+            c = self._proc.stdout.read(1)
+            received.write(c)
+            n += len(c)
+
+            if c == b'(':
+                opens += 1
+            elif c == b')':
+                closes += 1
+            if c != b'\n':
+                continue
+
+            if opens == closes:
+                if expect_response and n == 0:
+                    continue
+                break
+
+        buf = received.getvalue().decode().strip()
+
+        if '(error' in buf:
+            raise SolverException("Error in smtlib: {}".format(data))
+
+        logger.debug("<%s", buf)
         return buf
 
     # UTILS: check-sat get-value
@@ -459,8 +479,8 @@ class Z3Solver(Solver):
                 var = temp_cs.new_bitvec(expression.size)
             elif isinstance(expression, Array):
                 var = []
-                result = bytearray()
-                for i in xrange(expression.index_max):
+                result = []
+                for i in range(expression.index_max):
                     subvar = temp_cs.new_bitvec(expression.value_bits)
                     var.append(subvar)
                     temp_cs.add(subvar == expression[i])
@@ -469,7 +489,7 @@ class Z3Solver(Solver):
                 if self._check() != 'sat':
                     raise SolverException('Model is not available')
 
-                for i in xrange(expression.index_max):
+                for i in range(expression.index_max):
                     self._send('(get-value (%s))' % var[i].name)
                     ret = self._recv()
                     assert ret.startswith('((') and ret.endswith('))')
@@ -477,7 +497,7 @@ class Z3Solver(Solver):
                     m = pattern.match(ret)
                     expr, value = m.group('expr'), m.group('value')
                     result.append(int(value, base))
-                return result
+                return bytes(result)
 
             temp_cs.add(var == expression)
 

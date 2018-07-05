@@ -25,6 +25,7 @@ class TerminateState(StateException):
         self.testcase = testcase
 
 
+
 class Concretize(StateException):
     ''' Base class for all exceptions that trigger the concretization
         of a symbolic expression
@@ -133,8 +134,9 @@ class State(Eventful):
             expression = self.cpu.read_register(e.reg_name)
 
             def setstate(state, value):
-                state.cpu.write_register(e.reg_name, value)
-            raise Concretize(e.message,
+                state.cpu.write_register(setstate.e.reg_name, value)
+            setstate.e = e
+            raise Concretize(str(e),
                              expression=expression,
                              setstate=setstate,
                              policy=e.policy)
@@ -142,13 +144,14 @@ class State(Eventful):
             expression = self.cpu.read_int(e.address, e.size)
 
             def setstate(state, value):
-                state.cpu.write_int(e.address, value, e.size)
-            raise Concretize(e.message,
+                state.cpu.write_int(setstate.e.address, value, e.size)
+            setstate.e = e
+            raise Concretize(str(e),
                              expression=expression,
                              setstate=setstate,
                              policy=e.policy)
         except MemoryException as e:
-            raise TerminateState(e.message, testcase=True)
+            raise TerminateState(str(e), testcase=True)
 
         # Remove when code gets stable?
         assert self.platform.constraints is self.constraints
@@ -251,7 +254,7 @@ class State(Eventful):
             self._input_symbols.append(symb)
 
             tmp = []
-            for i in xrange(size):
+            for i in range(size):
                 if data[i] == wildcard:
                     tmp.append(symb[i])
                 else:
@@ -279,8 +282,8 @@ class State(Eventful):
             m, M = self._solver.minmax(self._constraints, symbolic)
             vals += [m, M]
             if M - m > 3:
-                if self._solver.can_be_true(self._constraints, symbolic == (m + M) / 2):
-                    vals.append((m + M) / 2)
+                if self._solver.can_be_true(self._constraints, symbolic == (m + M) // 2):
+                    vals.append((m + M) // 2)
             if M - m > 100:
                 vals += self._solver.get_all_values(self._constraints, symbolic,
                                                     maxcnt=maxcount, silent=True)
@@ -346,7 +349,7 @@ class State(Eventful):
         :return: Concrete value
         :rtype: list[int]
         '''
-        if isinstance(expr, (int, long)):
+        if isinstance(expr, int):
             return expr
         return self._solver.max(self._constraints, expr)
 
@@ -359,7 +362,7 @@ class State(Eventful):
         :return: Concrete value
         :rtype: list[int]
         '''
-        if isinstance(expr, (int, long)):
+        if isinstance(expr, int):
             return expr
         return self._solver.min(self._constraints, expr)
 
