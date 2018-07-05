@@ -812,7 +812,7 @@ class ABI(object):
                 data = bytearray(data)
             assert isinstance(data, (bytearray, Array))
 
-            m = re.match(r"(?P<name>[a-zA-Z_]+)(?P<type>\(.*\))", type_spec)
+            m = re.match(r"(?P<name>[a-zA-Z_0-9]+)(?P<type>\(.*\))", type_spec)
             if m and m.group('name'):
                 # Type has function name. Lets take the function id from the data
                 # This does not check that the encoded func_id is valid
@@ -826,7 +826,7 @@ class ABI(object):
                 result = ABI._deserialize(abitypes.parse(ty), data)
             return result
         except Exception as e:
-            raise EthereumError(e.message)
+            raise EthereumError("Error {} deserializing type {:s}".format(e.message,type_spec))
 
     @staticmethod
     def _deserialize(ty, buf, offset=0):
@@ -1982,10 +1982,11 @@ class ManticoreEVM(Manticore):
         # THROWit actually changes the balance and nonce? of some accounts
         if tx.result in {'REVERT', 'THROW', 'TXERROR'}:
             self.save(state, final=True)
-        else:
-            assert tx.result in {'SELFDESTRUCT', 'RETURN', 'STOP'}
+        elif tx.result in {'SELFDESTRUCT', 'RETURN', 'STOP'}:
             # if not a revert we save the state for further transactioning
             self.save(state)  # Add to running states
+        else:
+            logger.debug("Exception in state. Discarding it")
 
     #Callbacks
     def _load_state_callback(self, state, state_id):
