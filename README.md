@@ -35,7 +35,7 @@ Install and try Manticore in a few shell commands (see an [asciinema](https://as
 sudo apt-get update && sudo apt-get install python-pip -y
 
 # Install manticore and its dependencies
-sudo pip2 install manticore
+pip2 install manticore --user
 
 # Download the examples
 git clone https://github.com/trailofbits/manticore.git && cd manticore/examples/linux
