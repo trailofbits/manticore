@@ -109,7 +109,7 @@ class IntegrationTest(unittest.TestCase):
         assertions = '%s/assertions.txt'%self.test_dir
         with open(assertions,'w') as f:
             f.write('0x0000000000401003 ZF == 1')
-        with open('%s/output.log'%self.test_dir), "w") as output:
+        with open('%s/output.log'%self.test_dir, "w") as output:
             subprocess.check_call(['python', '-m', 'manticore',
                                    '--workspace', workspace,
                                    '--proc', '4',
