@@ -918,10 +918,12 @@ class EVMAccount(object):
     def __str__(self):
         return str(self._address)
 
-    def __eq__(self, other):
-        if isinstance(other, EVMAccount):
-            return self._address == other._address
-        return self._address == other
+    def __hash__(self):
+        return self._address
+    # def __eq__(self, other):
+    #     if isinstance(other, EVMAccount):
+    #         return self._address == other._address
+    #     return self._address == other
 
 
 class EVMContract(EVMAccount):
@@ -2087,7 +2089,7 @@ class ManticoreEVM(Manticore):
             if blockchain._sha3:
                 summary.write("Known hashes:\n")
                 for key, value in list(blockchain._sha3.items()):
-                    summary.write('%s::%x\n' % (binascii.hexlify(key), value))
+                    summary.write('%s::%x\n' % (binascii.hexlify(key.encode()).decode(), value))
 
             if is_something_symbolic:
                 summary.write('\n\n(*) Example solution given. Value is symbolic and may take other values\n')

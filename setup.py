@@ -26,6 +26,7 @@ setup(
         'unicorn',
         'ply',
         'pysha3',
+        'pyevmasm'
     ] + rtd_dependent_deps(),
     dependency_links=[
         'https://github.com/aquynh/capstone/archive/next.zip#egg=capstone-4&subdirectory=bindings/python',

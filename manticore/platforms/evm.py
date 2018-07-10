@@ -984,7 +984,7 @@ class EVM(Eventful):
         GCOPY = 3             # cost to copy one 32 byte word
         old_gas = self.gas
 
-        self._consume(self.safe_mul(GCOPY, self.safe_add(size, 31) / 32))
+        self._consume(self.safe_mul(GCOPY, self.safe_add(size, 31) // 32))
         self._allocate(self.safe_add(mem_offset, size))
 
         # slow debug check
