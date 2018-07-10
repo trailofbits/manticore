@@ -14,7 +14,7 @@ class Expression(object):
         self._taint = frozenset(taint)
 
     def __repr__(self):
-        return "<%s at %x>" % (type(self).__name__, id(self))
+        return "<%s at %x%s>" % (type(self).__name__, id(self), self.taint and '-T' or '')
 
     @property
     def is_tainted(self):
@@ -45,6 +45,9 @@ class Variable(Expression):
         cls = self.__class__
         memo[id(self)] = self
         return self
+
+    def __repr__(self):
+        return "<%s(%s) at %x>" % (type(self).__name__, self.name, id(self))
 
 
 class Constant(Expression):
@@ -645,7 +648,10 @@ class Array(Expression):
             start, stop = self._fix_index(index)
             size = self._get_size(index)
             return ArraySlice(self, start, size)
-
+        else:
+            if self.index_max is not None:
+                if not isinstance(index, Expression) and index >= self.index_max:
+                    raise IndexError
         return self.select(self.cast_index(index))
 
     def __eq__(self, other):
@@ -772,9 +778,11 @@ class ArrayStore(ArrayOperation):
 
 
 class ArraySlice(Array):
-    def __init__(self, array, offset, size):
+    def __init__(self, array, offset, size, *args, **kwargs):
         if not isinstance(array, Array):
             raise ValueError("Array expected")
+        super(ArraySlice, self).__init__(array.index_bits, array.index_max, array.value_bits, *args, **kwargs)
+
         self._array = array
         self._slice_offset = offset
         self._slice_size = size

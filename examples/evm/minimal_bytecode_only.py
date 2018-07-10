@@ -12,7 +12,7 @@ print "[+] Creating a user account", user_account
 print "[+] Init bytecode:", init_bytecode.encode('hex')
 print "[+] EVM init assembler:"
 for instr in evm.EVMAsm.disassemble_all(init_bytecode[:-44]):
-    print hex(instr.offset), instr
+    print hex(instr.pc), instr
 
 contract_account = m.create_contract(owner=user_account,
                                         init=init_bytecode)
@@ -20,7 +20,7 @@ print "[+] Creating a contract account", contract_account
 
 print "[+] Now the symbolic values"
 symbolic_data = m.make_symbolic_buffer(320) 
-symbolic_value = None 
+symbolic_value = m.make_symbolic_value()
 m.transaction(caller=user_account,
                 address=contract_account,
                 data=symbolic_data,

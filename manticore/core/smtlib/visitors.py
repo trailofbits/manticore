@@ -43,7 +43,6 @@ class Visitor(object):
         if len(self._stack) == 0:
             return None
         result = self._stack.pop()
-        assert result is not None
         return result
 
     @property
@@ -52,6 +51,10 @@ class Visitor(object):
         return self._stack[-1]
 
     def _method(self, expression, *args):
+        #Special case. Need to get the unsleeved version of the array
+        if isinstance(expression, ArrayProxy):
+            expression = expression.array
+
         assert expression.__class__.__mro__[-1] is object
         for cls in expression.__class__.__mro__:
             sort = cls.__name__
@@ -59,8 +62,9 @@ class Visitor(object):
             if hasattr(self, methodname):
                 value = getattr(self, methodname)(expression, *args)
                 if value is not None:
+                    assert isinstance(value, Expression)
                     return value
-        return expression
+        return self._rebuild(expression, args)
 
     def visit(self, node, use_fixed_point=False):
         '''
@@ -74,33 +78,19 @@ class Visitor(object):
         :param use_fixed_point: if True, it runs _methods until a fixed point is found
         :type use_fixed_point: Bool
         '''
-
-        #Special case. Need to get the unsleeved version of the array
-        if isinstance(node, ArrayProxy):
-            node = node.array
-
         cache = self._cache
-
         visited = set()
         stack = []
         stack.append(node)
         while stack:
             node = stack.pop()
-
             if node in cache:
                 self.push(cache[node])
             elif isinstance(node, Operation):
                 if node in visited:
                     operands = [self.pop() for _ in xrange(len(node.operands))]
-                    if use_fixed_point:
-                        new_node = self._rebuild(node, operands)
-                        value = self._method(new_node, *operands)
-                        while value is not new_node:
-                            new_node = value
-                            if isinstance(new_node, Operation):
-                                value = self._method(new_node, *new_node.operands)
-                    else:
-                        value = self._method(node, *operands)
+                    value = self._method(node, *operands)
+
                     visited.remove(node)
                     self.push(value)
                     cache[node] = value
@@ -111,16 +101,46 @@ class Visitor(object):
             else:
                 self.push(self._method(node))
 
+        if use_fixed_point:
+            old_value = None
+            new_value = self.pop()
+            while old_value is not new_value:
+                self.visit(new_value)
+                old_value = new_value
+                new_value = self.pop()
+            self.push(new_value)
+
     @staticmethod
     def _rebuild(expression, operands):
         if isinstance(expression, Constant):
             return expression
         if isinstance(expression, Operation):
-            import copy
-            aux = copy.copy(expression)
-            aux._operands = operands
-            return aux
+            if any( map (lambda (x,y): x is not y, zip(expression.operands, operands))):
+                import copy
+                aux = copy.copy(expression)
+                aux._operands = operands
+                return aux
+        return expression
         return type(expression)(*operands, taint=expression.taint)
+
+
+class Translator(Visitor):
+    ''' Simple visitor to translate an expression into something else
+    '''
+
+    def _method(self, expression, *args):
+        #Special case. Need to get the unsleeved version of the array
+        if isinstance(expression, ArrayProxy):
+            expression = expression.array
+        assert expression.__class__.__mro__[-1] is object
+        for cls in expression.__class__.__mro__:
+            sort = cls.__name__
+            methodname = 'visit_%s' % sort
+            if hasattr(self, methodname):
+                value = getattr(self, methodname)(expression, *args)
+                if value is not None:
+                    return value
+        raise Exception ("No translation for this {}".format(expression))
 
 
 class GetDeclarations(Visitor):
@@ -134,14 +154,14 @@ class GetDeclarations(Visitor):
 
     def visit_Variable(self, expression):
         self.variables.add(expression)
-        return expression
+        #return expression
 
     @property
     def result(self):
         return self.variables
 
 
-class GetDepth(Visitor):
+class GetDepth(Translator):
     ''' Simple visitor to collect all variables in an expression or set of
         expressions
     '''
@@ -316,7 +336,6 @@ class ConstantFolderSimplifier(Visitor):
 
 
 def clean_cache(cache):
-    #print "cleaning cache", id(cache), deep_getsizeof(cache), 'M'
     M = 256
     if len(cache) > M:
         import random
@@ -327,12 +346,11 @@ def clean_cache(cache):
 
 constant_folder_simplifier_cache = {}
 
-
+@lru_cache(maxsize=128)
 def constant_folder(expression):
     global constant_folder_simplifier_cache
-    #constant_folder_simplifier_cache = {}
     simp = ConstantFolderSimplifier(cache=constant_folder_simplifier_cache)
-    simp.visit(expression)
+    simp.visit(expression, use_fixed_point=True)
     clean_cache(constant_folder_simplifier_cache)
     return simp.result
 
@@ -517,14 +535,13 @@ class ArithmeticSimplifier(Visitor):
 arithmetic_simplifier_cache = {}
 
 
+@lru_cache(maxsize=128)
 def arithmetic_simplify(expression):
     global arithmetic_simplifier_cache
-    #arithmetic_simplifier_cache = {}
     simp = ArithmeticSimplifier(cache=arithmetic_simplifier_cache)
     simp.visit(expression, use_fixed_point=True)
-    value = simp.result
     clean_cache(arithmetic_simplifier_cache)
-    return value
+    return simp.result
 
 
 def to_constant(expression):
@@ -551,7 +568,7 @@ def simplify(expression):
     return expression
 
 
-class TranslatorSmtlib(Visitor):
+class TranslatorSmtlib(Translator):
     ''' Simple visitor to translate an expression to its smtlib representation
     '''
     unique = 0
@@ -675,20 +692,28 @@ def translate_to_smtlib(expression, **kwargs):
 class Replace(Visitor):
     ''' Simple visitor to replaces expresions '''
 
-    def __init__(self, bindings, **kwargs):
+    def __init__(self, bindings=None, **kwargs):
         super(Replace, self).__init__(**kwargs)
-        self.bindings = bindings
+        if bindings is None:
+            raise ValueError("bindings needed in replace")
+        self._replace_bindings = bindings
 
     def visit_Variable(self, expression):
-        if expression in self.bindings:
-            return self.bindings[expression]
+        if expression in self._replace_bindings:
+            return self._replace_bindings[expression]
         return expression
 
 
 def replace(expression, bindings):
+    from pprint import pprint
     visitor = Replace(bindings)
-    visitor.visit(expression)
-    return visitor.result
+    visitor.visit(expression, use_fixed_point=True)
+    result_expression = visitor.result
+
+    #for var in get_variables(result_expression):
+    #    assert var not in bindings
+
+    return result_expression
 
 
 def get_variables(expression):
