@@ -184,7 +184,7 @@ class Z3Solver(Solver):
         ''' Auxiliary method to spawn the external solver process'''
         assert '_proc' not in dir(self) or self._proc is None
         try:
-            self._proc = Popen(self._command.split(' '), stdin=PIPE, stdout=PIPE, bufsize=-1)
+            self._proc = Popen(self._command.split(' '), stdin=PIPE, stdout=PIPE, bufsize=0, universal_newlines=True)
         except OSError as e:
             print(e, "Probably too  much cached expressions? visitors._cache...")
             # Z3 was removed from the system in the middle of operation
@@ -202,9 +202,11 @@ class Z3Solver(Solver):
                 self._proc.stdin.close()
                 self._proc.stdout.close()
                 self._proc.wait()
-            except (SolverException, IOError):
+            except (SolverException, IOError) as e:
+                logger.debug(str(e))
                 # z3 was too fast to close
                 pass
+
         try:
             self._proc.kill()
         except BaseException:
@@ -251,40 +253,32 @@ class Z3Solver(Solver):
         logger.debug('>%s', cmd)
         try:
             self._proc.stdout.flush()
-            self._proc.stdin.write('{}\n'.format(cmd).encode())
+            self._proc.stdin.write('{}\n'.format(cmd))
             self._proc.stdin.flush()
         except IOError as e:
             raise SolverException(str(e))
 
     def _recv(self, expect_response=True):
         ''' Reads the response from the solver '''
-
-        received = io.BytesIO()
-        opens, closes, n = 0, 0, 0
-
-        while True:
-            c = self._proc.stdout.read(1)
-            received.write(c)
-            n += len(c)
-
-            if c == b'(':
-                opens += 1
-            elif c == b')':
-                closes += 1
-            if c != b'\n':
-                continue
-
-            if opens == closes:
-                if expect_response and n == 0:
-                    continue
-                break
-
-        buf = received.getvalue().decode().strip()
-
-        if '(error' in buf:
-            raise SolverException("Error in smtlib: {}".format(data))
-
-        logger.debug("<%s", buf)
+        def readline():
+            buf = self._proc.stdout.readline()
+            return buf, buf.count('('), buf.count(')')
+        bufl = []
+        left = 0
+        right = 0
+        buf, l, r = readline()
+        bufl.append(buf)
+        left += l
+        right += r
+        while left != right:
+            buf, l, r = readline()
+            bufl.append(buf)
+            left += l
+            right += r
+        buf = ''.join(bufl).strip()
+        logger.debug('<%s', buf)
+        if '(error' in bufl[0]:
+            raise Exception("Error in smtlib: {}".format(bufl[0]))
         return buf
 
     # UTILS: check-sat get-value
@@ -324,7 +318,7 @@ class Z3Solver(Solver):
 
         self._send('(get-value (%s))' % expression.name)
         ret = self._recv()
-        assert ret.startswith('((') and ret.endswith('))')
+        assert ret.startswith('((') and ret.endswith('))'), ret
 
         if isinstance(expression, Bool):
             return {'true': True, 'false': False}[ret[2:-2].split(' ')[1]]

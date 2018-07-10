@@ -19,10 +19,6 @@ from contextlib import contextmanager
 def mgr_init():
     signal.signal(signal.SIGINT, signal.SIG_IGN)
 
-#PY3FIX
-# manager = SyncManager()
-# manager.start(mgr_init)
-
 logger = logging.getLogger(__name__)
 
 
@@ -491,7 +487,7 @@ class Executor(Eventful):
 
                     except SolverException as e:
                         raise
-                        import traceback
+                        # import traceback
                         trace = traceback.format_exc()
                         logger.error("Exception: %s\n%s", str(e), trace)
 
@@ -504,7 +500,7 @@ class Executor(Eventful):
 
                 except (Exception, AssertionError) as e:
                     raise
-                    import traceback
+                    # import traceback
                     trace = traceback.format_exc()
                     logger.error("Exception: %s\n%s", str(e), trace)
                     # Notify this worker is done

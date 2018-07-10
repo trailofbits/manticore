@@ -22,7 +22,7 @@ from .core.state import State, TerminateState
 from .core.smtlib import solver, ConstraintSet
 from .core.workspace import ManticoreOutput
 #PYFIX3, minimize scope by removing platforms
-from .platforms import linux #, decree, evm
+from .platforms import linux, evm #, decree
 from .utils.helpers import issymbolic, is_binja_disassembler
 from .utils.nointerrupt import WithKeyboardInterruptAs
 from .utils.event import Eventful

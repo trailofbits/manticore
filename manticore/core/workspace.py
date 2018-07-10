@@ -450,9 +450,9 @@ class ManticoreOutput(object):
             def num(self):
                 return self._num
 
-            def open_stream(self, suffix=''):
+            def open_stream(self, suffix='', binary=False):
                 stream_name = '{}_{:08x}.{}'.format(self._prefix, self._num, suffix)
-                return self._ws.save_stream(stream_name)
+                return self._ws.save_stream(stream_name, binary=binary)
 
         return Testcase(self, prefix)
 

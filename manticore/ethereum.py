@@ -7,6 +7,7 @@ import binascii
 import string
 import re
 import os
+import pyevmasm
 from . import Manticore
 from .manticore import ManticoreError
 from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, istainted, taint_with, get_taints, BitVec, Constant, operators, Array, ArrayVariable
@@ -17,12 +18,12 @@ from .utils.helpers import istainted, issymbolic
 import tempfile
 from subprocess import Popen, PIPE, check_output
 from multiprocessing import Process, Queue
-from Queue import Empty as EmptyQueue
+from queue import Empty as EmptyQueue
 import sha3
 import json
 import logging
-import StringIO
-import cPickle as pickle
+import io
+import pickle as pickle
 from .core.plugin import Plugin
 from functools import reduce
 from contextlib import contextmanager
@@ -160,7 +161,7 @@ class FilterFunctions(Plugin):
 
             if self._include:
                 # constraint the input so it can take only the interesting values
-                constraint = reduce(Operators.OR, map(lambda x: tx.data[:4] == binascii.unhexlify(x), selected_functions))
+                constraint = reduce(Operators.OR, [tx.data[:4] == binascii.unhexlify(x) for x in selected_functions])
                 state.constrain(constraint)
             else:
                 #Avoid all not seleted hashes
@@ -203,7 +204,7 @@ class DetectIntegerOverflow(Detector):
         pc = state.platform.current_vm.pc
         at_init = state.platform.current_transaction.sort == 'CREATE'
         location = (address, pc, finding, at_init, condition)
-        hash_id = hashlib.sha1(str(location)).hexdigest()
+        hash_id = hashlib.sha1(str(location).encode()).hexdigest()
         state.context.setdefault('{:s}.locations'.format(self.name), {})[hash_id] = location
         return hash_id
 
@@ -414,7 +415,7 @@ def calculate_coverage(runtime_bytecode, seen):
     ''' Calculates what percentage of runtime_bytecode has been seen '''
     count, total = 0, 0
     bytecode = SolidityMetadata._without_metadata(runtime_bytecode)
-    for i in evm.EVMAsm.disassemble_all(bytecode):
+    for i in pyevmasm.EVMAsm.disassemble_all(bytecode):
         if i.pc in seen:
             count += 1
         total += 1
@@ -429,6 +430,8 @@ class SolidityMetadata(object):
     def __init__(self, name, source_code, init_bytecode, runtime_bytecode, srcmap, srcmap_runtime, hashes, abi, warnings):
         ''' Contract metadata for Solidity-based contracts '''
         self.name = name
+        if isinstance(source_code, bytes):
+            source_code = source_code.decode()
         self.source_code = source_code
         self._init_bytecode = init_bytecode
         self._runtime_bytecode = runtime_bytecode
@@ -439,7 +442,7 @@ class SolidityMetadata(object):
         self.srcmap = self.__build_source_map(self.init_bytecode, srcmap)
 
     def get_constructor_arguments(self):
-        for fun in self.abi.values():
+        for fun in list(self.abi.values()):
             if fun['type'] == 'constructor':
                 constructor_inputs = fun['inputs']
                 break
@@ -474,8 +477,8 @@ class SolidityMetadata(object):
     @staticmethod
     def _without_metadata(bytecode):
         end = None
-        if bytecode[-43: -34] == '\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
-                and bytecode[-2:] == '\x00\x29':
+        if bytecode[-43: -34] == b'\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
+                and bytecode[-2:] == b'\x00\x29':
             end = -9 - 32 - 2  # Size of metadata at the end of most contracts
         return bytecode[:end]
 
@@ -493,7 +496,7 @@ class SolidityMetadata(object):
         jump_type = md.get(3, None)  # this can be either i, o or - signifying whether a jump instruction goes into a function, returns from a function or is a regular jump as part of e.g. a loop
 
         pos_to_offset = {}
-        for i in evm.EVMAsm.disassemble_all(bytecode):
+        for i in pyevmasm.EVMAsm.disassemble_all(bytecode):
             pos_to_offset[asm_pos] = asm_offset
             asm_pos += 1
             asm_offset += i.size
@@ -546,11 +549,11 @@ class SolidityMetadata(object):
 
     @property
     def signatures(self):
-        return dict(((b, a) for (a, b) in self._hashes.items()))
+        return dict(((b, a) for (a, b) in list(self._hashes.items())))
 
     def get_abi(self, hsh):
         func_name = self.get_func_name(hsh)
-        default_fallback_abi = {u'stateMutability': u'nonpayable', u'payable': False, u'type': u'fallback'}
+        default_fallback_abi = {'stateMutability': 'nonpayable', 'payable': False, 'type': 'fallback'}
         return self.abi.get(func_name, default_fallback_abi)
 
     def get_func_argument_types(self, hsh):
@@ -632,7 +635,7 @@ class ABI(object):
             parsed_ty = abitypes.parse(ty)
         except Exception as e:
             # Catch and rebrand parsing errors
-            raise EthereumError(e.message)
+            raise EthereumError(str(e))
 
         if parsed_ty[0] != 'tuple':
             if len(value) > 1:
@@ -651,9 +654,9 @@ class ABI(object):
         dyn_result = bytearray()
 
         if ty[0] == 'int':
-            result += ABI._serialize_int(value, size=ty[1] / 8, padding=32 - ty[1] / 8)
+            result += ABI._serialize_int(value, size=ty[1] // 8, padding=32 - ty[1] // 8)
         elif ty[0] in 'uint':
-            result += ABI._serialize_uint(value, size=ty[1] / 8, padding=32 - ty[1] / 8)
+            result += ABI._serialize_uint(value, size=ty[1] // 8, padding=32 - ty[1] // 8)
         elif ty[0] in ('bytes', 'string'):
             result += ABI._serialize_uint(dyn_offset)
             dyn_result += ABI._serialize_uint(len(value))
@@ -714,13 +717,15 @@ class ABI(object):
         Makes a function hash id from a method signature
         '''
         s = sha3.keccak_256()
-        s.update(str(method_name_and_signature))
+        s.update(method_name_and_signature.encode())
         return bytearray(binascii.unhexlify(s.hexdigest()[:8]))
 
     @staticmethod
     def deserialize(type_spec, data):
         try:
             if isinstance(data, str):
+                data = bytearray(data.encode())
+            elif isinstance(data, bytes):
                 data = bytearray(data)
             assert isinstance(data, (bytearray, Array))
 
@@ -738,16 +743,16 @@ class ABI(object):
                 result = ABI._deserialize(abitypes.parse(ty), data)
             return result
         except Exception as e:
-            raise EthereumError(e.message)
+            raise EthereumError(str(e))
 
     @staticmethod
     def _deserialize(ty, buf, offset=0):
         assert isinstance(buf, (bytearray, Array))
         result = None
         if ty[0] == 'int':
-            result = ABI._deserialize_int(buf[offset:offset + 32], nbytes=ty[1] / 8)
+            result = ABI._deserialize_int(buf[offset:offset + 32], nbytes=ty[1] // 8)
         elif ty[0] == 'uint':
-            result = ABI._deserialize_uint(buf[offset:offset + 32], nbytes=ty[1] / 8)
+            result = ABI._deserialize_uint(buf[offset:offset + 32], nbytes=ty[1] // 8)
         elif ty[0] == 'bytesM':
             result = buf[offset:offset + ty[1]]
         elif ty[0] == 'function':
@@ -800,7 +805,7 @@ class ABI(object):
             bytes = bytearray()
             for _ in range(padding):
                 bytes.append(0)
-            for position in reversed(range(size)):
+            for position in reversed(list(range(size))):
                 bytes.append(Operators.EXTRACT(value, position * 8, 8))
         assert len(bytes) == size + padding
         return bytes
@@ -824,7 +829,7 @@ class ABI(object):
             for _ in range(padding):
                 bytes.append(0)
 
-            for position in reversed(range(size)):
+            for position in reversed(list(range(size))):
                 bytes.append(Operators.EXTRACT(value, position * 8, 8))
         return bytes
 
@@ -938,7 +943,7 @@ class EVMContract(EVMAccount):
             raise EthereumError("Sorry function name is used by the python wrapping")
         if func_name in self._hashes:
             raise EthereumError("A function with that name is already defined")
-        if func_id in {func_id for _, func_id in self._hashes.values()}:
+        if func_id in {func_id for _, func_id in list(self._hashes.values())}:
             raise EthereumError("A function with the same hash is already defined")
         self._hashes[func_name] = signature, func_id
 
@@ -951,7 +956,7 @@ class EVMContract(EVMAccount):
             self._hashes = {}
             md = self._manticore.get_metadata(self._address)
             if md is not None:
-                for signature, func_id in md._hashes.items():
+                for signature, func_id in list(md._hashes.items()):
                     self.add_function(signature)
             # It was successful, no need to re-run. _init_hashes disabled
             self._init_hashes = self._null_func
@@ -968,7 +973,7 @@ class EVMContract(EVMAccount):
         '''
         if not name.startswith('_'):
             self._init_hashes()
-            if self._hashes is not None and name in self._hashes.keys():
+            if self._hashes is not None and name in list(self._hashes.keys()):
                 def f(*args, **kwargs):
                     caller = kwargs.get('caller', None)
                     value = kwargs.get('value', 0)
@@ -1053,7 +1058,7 @@ class ManticoreEVM(Manticore):
         symbolic_address = self.make_symbolic_value(name=name)
 
         constraint = symbolic_address == 0
-        for contract_account_i in map(int, self._accounts.values()):
+        for contract_account_i in map(int, list(self._accounts.values())):
             constraint = Operators.OR(symbolic_address == contract_account_i, constraint)
         self.constrain(constraint)
         return symbolic_address
@@ -1087,10 +1092,10 @@ class ManticoreEVM(Manticore):
                     pos += 2
 
             if libraries is None:
-                raise DependencyError(deps.keys())
+                raise DependencyError(list(deps.keys()))
             libraries = dict(libraries)
             hex_contract_lst = list(hex_contract)
-            for lib_name, pos_lst in deps.items():
+            for lib_name, pos_lst in list(deps.items()):
                 try:
                     lib_address = libraries[lib_name]
                 except KeyError:
@@ -1122,7 +1127,7 @@ class ManticoreEVM(Manticore):
         except OSError:
             raise EthereumError("Solidity compiler not installed.")
 
-        m = re.match(r".*Version: (?P<version>(?P<major>\d+)\.(?P<minor>\d+)\.(?P<build>\d+)).*\+(?P<commit>[^\s]+).*", installed_version_output, re.DOTALL | re.IGNORECASE)
+        m = re.match(br".*Version: (?P<version>(?P<major>\d+)\.(?P<minor>\d+)\.(?P<build>\d+)).*\+(?P<commit>[^\s]+).*", installed_version_output, re.DOTALL | re.IGNORECASE)
 
         if not m or m.groupdict()['version'] not in supported_versions:
             #Fixme https://github.com/trailofbits/manticore/issues/847
@@ -1166,18 +1171,12 @@ class ManticoreEVM(Manticore):
             :return: name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
         """
 
-        try:
-            file_type = file  # Python 2
-        except NameError:
-            from io import IOBase
-            file_type = IOBase  # Python 3
-
         if isinstance(source_code, str):
-            with tempfile.NamedTemporaryFile() as temp:
+            with tempfile.NamedTemporaryFile('w+') as temp:
                 temp.write(source_code)
                 temp.flush()
                 output, warnings = ManticoreEVM._run_solc(temp, solc_bin, solc_remaps)
-        elif isinstance(source_code, file_type):
+        elif isinstance(source_code, io.IOBase):
             output, warnings = ManticoreEVM._run_solc(source_code, solc_bin, solc_remaps)
             source_code = source_code.read()
         else:
@@ -1189,9 +1188,9 @@ class ManticoreEVM(Manticore):
 
         name, contract = None, None
         if contract_name is None:
-            name, contract = contracts.items()[0]
+            name, contract = list(contracts.items())[0]
         else:
-            for n, c in contracts.items():
+            for n, c in list(contracts.items()):
                 if n.split(":")[1] == contract_name:
                     name, contract = n, c
                     break
@@ -1205,7 +1204,7 @@ class ManticoreEVM(Manticore):
         bytecode = ManticoreEVM._link(contract['bin'], libraries)
         srcmap = contract['srcmap'].split(';')
         srcmap_runtime = contract['srcmap-runtime'].split(';')
-        hashes = dict(((str(x), str(y)) for x, y in contract['hashes'].items()))
+        hashes = dict(((str(x), str(y)) for x, y in list(contract['hashes'].items())))
         abi = json.loads(contract['abi'])
         runtime = ManticoreEVM._link(contract['bin-runtime'], libraries)
         return name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
@@ -1215,23 +1214,23 @@ class ManticoreEVM(Manticore):
         return dict(self._accounts)
 
     def account_name(self, address):
-        for name, account in self._accounts.iteritems():
+        for name, account in self._accounts.items():
             if account.address == address:
                 return name
         return '0x{:x}'.format(address)
 
     @property
     def normal_accounts(self):
-        return {name: account for name, account in self._accounts.iteritems() if not isinstance(account, EVMContract)}
+        return {name: account for name, account in self._accounts.items() if not isinstance(account, EVMContract)}
 
     @property
     def contract_accounts(self):
-        return {name: account for name, account in self._accounts.iteritems() if isinstance(account, EVMContract)}
+        return {name: account for name, account in self._accounts.items() if isinstance(account, EVMContract)}
 
     def get_account(self, name):
         return self._accounts[name]
-
-    def __init__(self, procs=10, **kwargs):
+    #PY3FIX
+    def __init__(self, procs=1, **kwargs):
         ''' A Manticore EVM manager
             :param int procs: number of workers to use in the exploration
         '''
@@ -1486,7 +1485,7 @@ class ManticoreEVM(Manticore):
         if not self.count_running_states():
             raise NoAliveStates
 
-        if address is not None and address in map(int, self.accounts.values()):
+        if address is not None and address in list(map(int, list(self.accounts.values()))):
             # Address already used
             raise EthereumError("Address already used")
 
@@ -1509,7 +1508,7 @@ class ManticoreEVM(Manticore):
 
     def _get_uniq_name(self, stem):
         count = 0
-        for name_i in self.accounts.keys():
+        for name_i in list(self.accounts.keys()):
             if name_i.startswith(stem):
                 try:
                     count = max(count, int(name_i[len(stem):]) + 1)
@@ -1522,7 +1521,7 @@ class ManticoreEVM(Manticore):
     def new_address(self):
         ''' Create a fresh 160bit address '''
         new_address = random.randint(100, pow(2, 160))
-        if new_address in map(int, self.accounts.values()):
+        if new_address in list(map(int, list(self.accounts.values()))):
             return self.new_address()
         return new_address
 
@@ -1581,7 +1580,7 @@ class ManticoreEVM(Manticore):
         if not isinstance(address, numbers.Integral):
             raise EthereumError("A concrete address is needed")
         assert address is not None
-        if address in map(int, self.accounts.values()):
+        if address in list(map(int, list(self.accounts.values()))):
             # Address already used
             raise EthereumError("Address already used")
 
@@ -1664,7 +1663,7 @@ class ManticoreEVM(Manticore):
             raise ValueError('unsupported transaction type')
 
         # Caller must be a normal known account
-        if caller not in self._accounts.values():
+        if caller not in list(self._accounts.values()):
             raise EthereumError("Unknown caller address!")
 
         if sort == 'CREATE':
@@ -1986,7 +1985,7 @@ class ManticoreEVM(Manticore):
         logger.info("Generated testcase No. {} - {}".format(testcase.num, message))
 
         local_findings = set()
-        for detector in self.detectors.values():
+        for detector in list(self.detectors.values()):
             for address, pc, finding, at_init in detector.get_findings(state):
                 if (address, pc, finding, at_init) not in local_findings:
                     local_findings.add((address, pc, finding, at_init))
@@ -2014,7 +2013,7 @@ class ManticoreEVM(Manticore):
                 assert at_runtime != at_init
 
                 #Last instruction if last tx vas valid
-                if state.context['last_exception'].message != 'TXERROR':
+                if str(state.context['last_exception']) != 'TXERROR':
                     metadata = self.get_metadata(blockchain.last_transaction.address)
                     if metadata is not None:
                         summary.write('Last instruction at contract %x offset %x\n' % (address, offset))
@@ -2078,17 +2077,17 @@ class ManticoreEVM(Manticore):
                 runtime_code = state.solve_one(blockchain.get_code(account_address))
                 if runtime_code:
                     summary.write("Code:\n")
-                    fcode = StringIO.StringIO(runtime_code)
+                    fcode = io.BytesIO(runtime_code)
                     for chunk in iter(lambda: fcode.read(32), b''):
-                        summary.write('\t%s\n' % chunk.encode('hex'))
+                        summary.write('\t%s\n' % binascii.hexlify(chunk))
                     runtime_trace = set((pc for contract, pc, at_init in state.context['evm.trace'] if address == contract and not at_init))
                     summary.write("Coverage %d%% (on this state)\n" % calculate_coverage(runtime_code, runtime_trace))  # coverage % for address in this account/state
                 summary.write("\n")
 
             if blockchain._sha3:
                 summary.write("Known hashes:\n")
-                for key, value in blockchain._sha3.items():
-                    summary.write('%s::%x\n' % (key.encode('hex'), value))
+                for key, value in list(blockchain._sha3.items()):
+                    summary.write('%s::%x\n' % (binascii.hexlify(key), value))
 
             if is_something_symbolic:
                 summary.write('\n\n(*) Example solution given. Value is symbolic and may take other values\n')
@@ -2133,7 +2132,7 @@ class ManticoreEVM(Manticore):
                         tx_summary.write('\n')
                         tx_summary.write("Function call:\n")
                         tx_summary.write("%s(" % state.solve_one(function_name))
-                        tx_summary.write(','.join(map(repr, map(state.solve_one, arguments))))
+                        tx_summary.write(','.join(map(repr, list(map(state.solve_one, arguments)))))
                         is_argument_symbolic = any(map(issymbolic, arguments))
                         is_something_symbolic = is_something_symbolic or is_argument_symbolic
                         tx_summary.write(') -> %s %s\n' % (tx.result, flagged(is_argument_symbolic)))
@@ -2159,7 +2158,7 @@ class ManticoreEVM(Manticore):
                 is_log_symbolic = issymbolic(log_item.memlog)
                 is_something_symbolic = is_log_symbolic or is_something_symbolic
                 solved_memlog = state.solve_one(log_item.memlog)
-                printable_bytes = ''.join(filter(lambda c: c in string.printable, map(chr, solved_memlog)))
+                printable_bytes = ''.join([c for c in map(chr, solved_memlog) if c in string.printable])
 
                 logs_summary.write("Address: %x\n" % log_item.address)
                 logs_summary.write("Memlog: %s (%s) %s\n" % (binascii.hexlify(solved_memlog), printable_bytes, flagged(is_log_symbolic)))
@@ -2170,7 +2169,7 @@ class ManticoreEVM(Manticore):
         with testcase.open_stream('constraints') as smt_summary:
             smt_summary.write(str(state.constraints))
 
-        with testcase.open_stream('pkl') as statef:
+        with testcase.open_stream('pkl', binary=True) as statef:
             try:
                 statef.write(pickle.dumps(state, 2))
             except RuntimeError:
@@ -2201,7 +2200,7 @@ class ManticoreEVM(Manticore):
     @property
     def global_findings(self):
         global_findings = set()
-        for detector in self.detectors.values():
+        for detector in list(self.detectors.values()):
             for address, pc, finding, at_init in detector.global_findings:
                 if (address, pc, finding, at_init) not in global_findings:
                     global_findings.add((address, pc, finding, at_init))
@@ -2263,20 +2262,20 @@ class ManticoreEVM(Manticore):
         with self._output.save_stream('global.summary') as global_summary:
             # (accounts created by contract code are not in this list )
             global_summary.write("Global runtime coverage:\n")
-            for address in self.contract_accounts.values():
+            for address in list(self.contract_accounts.values()):
                 global_summary.write("{:x}: {:2.2f}%\n".format(int(address), self.global_coverage(address)))
 
                 md = self.get_metadata(address)
                 if md is not None and len(md.warnings) > 0:
                     global_summary.write('\n\nCompiler warnings for %s:\n' % md.name)
-                    global_summary.write(md.warnings)
+                    global_summary.write(md.warnings.decode())
 
-        for address, md in self.metadata.items():
+        for address, md in list(self.metadata.items()):
             with self._output.save_stream('global_%s.sol' % md.name) as global_src:
                 global_src.write(md.source_code)
-            with self._output.save_stream('global_%s_runtime.bytecode' % md.name) as global_runtime_bytecode:
+            with self._output.save_stream('global_%s_runtime.bytecode' % md.name, binary=True) as global_runtime_bytecode:
                 global_runtime_bytecode.write(md.runtime_bytecode)
-            with self._output.save_stream('global_%s_init.bytecode' % md.name) as global_init_bytecode:
+            with self._output.save_stream('global_%s_init.bytecode' % md.name, binary=True) as global_init_bytecode:
                 global_init_bytecode.write(md.init_bytecode)
 
             with self._output.save_stream('global_%s.runtime_asm' % md.name) as global_runtime_asm:
@@ -2285,7 +2284,7 @@ class ManticoreEVM(Manticore):
                 with self.locked_context('runtime_coverage') as seen:
 
                     count, total = 0, 0
-                    for i in evm.EVMAsm.disassemble_all(runtime_bytecode):
+                    for i in pyevmasm.EVMAsm.disassemble_all(runtime_bytecode):
                         if (address, i.pc) in seen:
                             count += 1
                             global_runtime_asm.write('*')
@@ -2298,7 +2297,7 @@ class ManticoreEVM(Manticore):
             with self._output.save_stream('global_%s.init_asm' % md.name) as global_init_asm:
                 with self.locked_context('init_coverage') as seen:
                     count, total = 0, 0
-                    for i in evm.EVMAsm.disassemble_all(md.init_bytecode):
+                    for i in pyevmasm.EVMAsm.disassemble_all(md.init_bytecode):
                         if (address, i.pc) in seen:
                             count += 1
                             global_init_asm.write('*')
