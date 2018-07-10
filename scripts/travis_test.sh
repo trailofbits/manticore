@@ -83,22 +83,22 @@ measure_cov() {
 
 should_run_examples=false
 should_run_tests=false
-should_run_eth_benchmarks=false
+should_run_eth_tests=false
 
 case $1 in
-    tests)          should_run_tests=true
-                    ;;
-    examples)       should_run_examples=true
-                    ;;
-    eth_benchmarks) should_run_eth_benchmarks=true
-                    ;;
-    "" | all)       should_run_examples=true
-                    should_run_tests=true
-                    should_run_eth_benchmarks=true
-                    ;;
-    *)              echo "Usage: $0 [tests|examples|eth_benchmarks|all]"
-                    exit 3;
-                    ;;
+    tests)    should_run_tests=true
+              ;;
+    examples) should_run_examples=true
+              ;;
+    eth)      should_run_eth_tests=true
+              ;;
+    "" | all) should_run_examples=true
+              should_run_tests=true
+              should_run_eth_tests=true
+              ;;
+    *)        echo "Usage: $0 [tests|examples|eth_tests|all]"
+              exit 3;
+              ;;
 esac
 
 if [ "$should_run_examples" = true ]; then
@@ -117,7 +117,7 @@ if [ "$should_run_examples" = true ]; then
 fi
 
 
-if [ "$should_run_eth_benchmarks" = true ] ; then
+if [ "$should_run_eth_tests" = true ] ; then
     coverage erase
     coverage run -m unittest discover --pattern eth*.py tests/ 2>&1 >/dev/null | tee travis_tests.log
     DID_OK=$(tail -n1 travis_tests.log)

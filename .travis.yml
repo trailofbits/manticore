@@ -12,7 +12,7 @@ env:
   matrix:
     - TEST_TYPE=examples
     - TEST_TYPE=tests
-    - TEST_TYPE=eth_benchmarks
+    - TEST_TYPE=eth
 
 branches:
   only:
