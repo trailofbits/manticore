@@ -119,7 +119,7 @@ fi
 
 if [ "$should_run_eth_tests" = true ] ; then
     coverage erase
-    coverage run -m unittest discover --pattern eth*.py tests/ 2>&1 >/dev/null | tee travis_tests.log
+    coverage run -m unittest discover -v --pattern eth*.py tests/ 2>&1 >/dev/null | tee travis_tests.log
     DID_OK=$(tail -n1 travis_tests.log)
     if [[ "${DID_OK}" != OK* ]]; then
         echo "Some functionality tests failed :("
@@ -129,7 +129,7 @@ fi
 
 if [ "$should_run_tests" = true ]; then
     coverage erase
-    coverage run -m unittest discover tests/ 2>&1 >/dev/null | tee travis_tests.log
+    coverage run -m unittest discover -v tests/ 2>&1 >/dev/null | tee travis_tests.log
     DID_OK=$(tail -n1 travis_tests.log)
     if [[ "${DID_OK}" != OK* ]]; then
         echo "Some non-eth functionality tests failed :("
