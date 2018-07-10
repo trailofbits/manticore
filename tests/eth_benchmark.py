@@ -1,3 +1,7 @@
+"""
+File name is purposefully not test_* to run this test separately.
+"""
+
 import inspect
 import shutil
 import struct

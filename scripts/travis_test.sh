@@ -81,17 +81,24 @@ measure_cov() {
     return 0
 }
 
-run_examples=true
-run_tests=true
+should_run_examples=false
+should_run_tests=false
+should_run_eth_benchmarks=false
 
 case $1 in
-    tests)      run_examples=false
-                ;;
-    examples)   run_tests=false
-                ;;
+    tests)          should_run_tests=true
+                    ;;
+    examples)       should_run_examples=true
+                    ;;
+    eth_benchmarks) should_run_eth_benchmarks=true
+                    ;;
+    *)              should_run_examples=true
+                    should_run_tests=true
+                    should_run_eth_benchmarks=true
+                    ;;
 esac
 
-if [ "$run_examples" = true ]; then
+if [ "$should_run_examples" = true ]; then
     pushd examples/linux
     make
     for example in $(make list); do
@@ -106,9 +113,17 @@ if [ "$run_examples" = true ]; then
     popd
 fi
 
-if [ "$run_tests" = true ]; then
+if [ "$should_run_tests" = true ] || [ "$should_run_eth_benchmarks" = true ]; then
+    echo running tests
     coverage erase
-    coverage run -m unittest discover tests/ 2>&1 >/dev/null | tee travis_tests.log
+    if [ "$should_run_tests" = true ]; then
+        echo running reg tests
+        coverage run -m unittest discover tests/ 2>&1 >/dev/null | tee travis_tests.log
+    elif [ "$should_run_eth_benchmarks" = true ] ; then
+        echo running eth bench
+        coverage run -m unittest discover --pattern eth*.py tests/ 2>&1 >/dev/null | tee travis_tests.log
+    fi
+
     DID_OK=$(tail -n1 travis_tests.log)
     if [[ "${DID_OK}" == OK* ]]
     then
