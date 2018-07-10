@@ -60,30 +60,6 @@ run_examples() {
     return 0
 }
 
-pushd examples/linux
-make
-for example in $(make list); do
-    ./$example < /dev/zero > /dev/null
-done
-echo Built and ran Linux examples
-popd
-
-pushd examples/script
-run_examples
-echo Ran example scripts
-popd
-
-coverage erase
-coverage run -m unittest discover tests/ 2>&1 >/dev/null | tee travis_tests.log
-DID_OK=$(tail -n1 travis_tests.log)
-if [[ "${DID_OK}" == OK* ]]
-then
-    echo "All functionality tests passed :)"
-else
-    echo "Some functionality tests failed :("
-    exit 2
-fi
-
 measure_cov() {
     local PYFILE=${1}
     echo "Measuring coverage for ${PYFILE}"
@@ -105,10 +81,48 @@ measure_cov() {
     return 0
 }
 
-#coverage report
-echo "Measuring code coverage..."
-measure_cov "manticore/core/smtlib/*" 80
-measure_cov "manticore/core/cpu/x86.py" 50
-measure_cov "manticore/core/memory.py" 85
+run_examples=true
+run_tests=true
+
+case $1 in
+    tests)      run_examples=false
+                ;;
+    examples)   run_tests=false
+                ;;
+esac
+
+if [ "$run_examples" = true ]; then
+    pushd examples/linux
+    make
+    for example in $(make list); do
+        ./$example < /dev/zero > /dev/null
+    done
+    echo Built and ran Linux examples
+    popd
+
+    pushd examples/script
+    run_examples
+    echo Ran example scripts
+    popd
+fi
+
+if [ "$run_tests" = true ]; then
+    coverage erase
+    coverage run -m unittest discover tests/ 2>&1 >/dev/null | tee travis_tests.log
+    DID_OK=$(tail -n1 travis_tests.log)
+    if [[ "${DID_OK}" == OK* ]]
+    then
+        echo "All functionality tests passed :)"
+    else
+        echo "Some functionality tests failed :("
+        exit 2
+    fi
+
+    #coverage report
+    echo "Measuring code coverage..."
+    measure_cov "manticore/core/smtlib/*" 80
+    measure_cov "manticore/core/cpu/x86.py" 50
+    measure_cov "manticore/core/memory.py" 85
+fi
 
 exit ${RV}
