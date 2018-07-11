@@ -2096,7 +2096,7 @@ class ManticoreEVM(Manticore):
         # Transactions
         with testcase.open_stream('tx') as tx_summary:
             is_something_symbolic = False
-            for tx in blockchain.transactions:  # external transactions
+            for tx in blockchain.human_transactions:  # external transactions
                 tx_summary.write("Transactions Nr. %d\n" % blockchain.transactions.index(tx))
 
                 # The result if any RETURN or REVERT
