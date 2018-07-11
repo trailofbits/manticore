@@ -1113,7 +1113,7 @@ class ManticoreEVM(Manticore):
         '''
         return self.constraints.new_array(index_bits=256, name=name, index_max=size, value_bits=8, taint=frozenset())
 
-    def make_symbolic_value(self, nbits, name='TXVALUE'):
+    def make_symbolic_value(self, nbits=256, name='TXVALUE'):
         ''' Creates a symbolic value, normally a uint256, to be used in transactions.
             You can operate on it normally and add constrains to manticore.constraints
             via manticore.constrain(constraint_expression)
