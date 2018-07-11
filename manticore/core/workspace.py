@@ -1,4 +1,5 @@
 import os
+import resource
 import sys
 import glob
 import signal
@@ -45,6 +46,9 @@ class StateSerializer(object):
 
 class PickleSerializer(StateSerializer):
     def serialize(self, state, f):
+        maxlim = 0x100000
+        resource.setrlimit(resource.RLIMIT_STACK, [0x100 * maxlim, resource.RLIM_INFINITY])
+        sys.setrecursionlimit(0x100000)
         try:
             f.write(pickle.dumps(state, 2))
         except RuntimeError as e:
