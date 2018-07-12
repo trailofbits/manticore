@@ -152,3 +152,7 @@ class EthBenchmark(unittest.TestCase):
     def test_reentrancy_dao(self):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, set([(247L, 'Reentrancy muti-million ether bug', False)]))
+
+    def test_eth_tx_order_dependence_multitx_1(self):
+        name = inspect.currentframe().f_code.co_name[5:]
+        self._test(name, set())

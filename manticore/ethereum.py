@@ -62,6 +62,8 @@ class Detector(Plugin):
             return global_findings
 
     def add_finding(self, state, address, pc, finding, init):
+        if not isinstance(pc, numbers.Integral):
+            raise ValueError("PC must be a number")
         self.get_findings(state).add((address, pc, finding, init))
         with self.locked_global_findings() as gf:
             gf.add((address, pc, finding, init))
@@ -71,6 +73,10 @@ class Detector(Plugin):
     def add_finding_here(self, state, finding):
         address = state.platform.current_vm.address
         pc = state.platform.current_vm.pc
+        if isinstance(pc, Constant):
+            pc = pc.value
+        if not isinstance(pc, numbers.Integral):
+            raise ValueError("PC must be a number")
         at_init = state.platform.current_transaction.sort == 'CREATE'
         self.add_finding(state, address, pc, finding, at_init)
 
@@ -222,7 +228,7 @@ class DetectReentrancy(Detector):
             # Check is the tx was successful
             if tx.result:
                 # Check if gas was enough for a reentrancy attack
-                if tx.gas > 3000:
+                if tx.gas > 2300:
                     # Check if target address is attaker controlled
                     if self._addresses is None and not world.get_code(tx.address) or tx.address in self._addresses:
                         #that's enough. Save current location and read list
@@ -234,6 +240,9 @@ class DetectReentrancy(Detector):
         world = state.platform
         address = world.current_vm.address
         pc = world.current_vm.pc
+        if isinstance(pc, Constant):
+            pc = pc.value
+        assert isinstance(pc, numbers.Integral)
         at_init = world.current_transaction.sort == 'CREATE'
         location = (address, pc, "Reentrancy muti-million ether bug", at_init)
         locations[location] = set(state.context[self._read_storage_name])

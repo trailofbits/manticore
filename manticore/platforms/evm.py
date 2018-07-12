@@ -1899,7 +1899,7 @@ class EVM(Eventful):
         return address
 
     @transact
-    @concretized_args(address='ACCOUNTS', in_offset='SAMPLED', in_size='SAMPLED')
+    @concretized_args(address='ACCOUNTS', gas='MINMAX', in_offset='SAMPLED', in_size='SAMPLED')
     def CALL(self, gas, address, value, in_offset, in_size, out_offset, out_size):
         '''Message-call into an account'''
         self.world.start_transaction('CALL',
@@ -1907,7 +1907,7 @@ class EVM(Eventful):
                                      data=self.read_buffer(in_offset, in_size),
                                      caller=self.address,
                                      value=value,
-                                     gas=self.gas)
+                                     gas=gas)
         raise StartTx()
 
     @CALL.pos
