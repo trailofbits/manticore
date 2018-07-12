@@ -133,7 +133,7 @@ def ethereum_cli(args):
     if args.avoid_constant:
         # avoid all human level tx that has no effect on the storage
         filter_nohuman_constants = FilterFunctions(regexp=r".*", depth='human', mutability='constant', include=False)
-        self.register_plugin(filter_nohuman_constants)
+        m.register_plugin(filter_nohuman_constants)
 
     logger.info("Beginning analysis")
 
