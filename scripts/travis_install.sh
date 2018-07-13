@@ -9,4 +9,4 @@ install_solc
 
 pip install -U pip
 pip uninstall -y Manticore || echo "Manticore not cached"  # uninstall any old, cached Manticore
-pip install --no-binary keystone-engine -e .[dev]  # ks can have pip install issues
+pip install --process-dependency-links --no-binary keystone-engine -e .[dev]  # ks can have pip install issues

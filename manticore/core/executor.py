@@ -486,8 +486,8 @@ class Executor(Eventful):
                         current_state = None
 
                     except SolverException as e:
-                        raise
-                        # import traceback
+                        # raise
+                        import traceback
                         trace = traceback.format_exc()
                         logger.error("Exception: %s\n%s", str(e), trace)
 
@@ -499,8 +499,8 @@ class Executor(Eventful):
                         current_state = None
 
                 except (Exception, AssertionError) as e:
-                    raise
-                    # import traceback
+                    # raise
+                    import traceback
                     trace = traceback.format_exc()
                     logger.error("Exception: %s\n%s", str(e), trace)
                     # Notify this worker is done
