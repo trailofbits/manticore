@@ -14,7 +14,7 @@ Bugs
 '''
 
 import sys
-import Queue
+import queue
 import struct
 import itertools
 
@@ -32,10 +32,10 @@ VERBOSITY = 0
 
 def _partition(pred, iterable):
     t1, t2 = itertools.tee(iterable)
-    return (list(itertools.ifilterfalse(pred, t1)), filter(pred, t2))
+    return (list(itertools.filterfalse(pred, t1)), list(filter(pred, t2)))
 
 def log(s):
-    print '[+]', s
+    print('[+]', s)
 
 class TraceReceiver(Plugin):
     def __init__(self, tracer):
@@ -257,7 +257,7 @@ def concrete_input_to_constraints(ci, prev=None):
 
 def main():
 
-    q = Queue.Queue()
+    q = queue.Queue()
 
     # todo randomly generated concrete start
     stdin = ints2inp(0, 5, 0)

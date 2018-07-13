@@ -1,4 +1,4 @@
-import StringIO
+import io
 import unittest
 import sys
 import shutil
@@ -27,7 +27,7 @@ class IntegrationTest(unittest.TestCase):
         self.assertTrue(os.path.exists(visited))
         vitems = open(visited, 'r').read().splitlines()
 
-        vitems = map(lambda x: int(x[2:], 16), vitems)
+        vitems = [int(x[2:], 16) for x in vitems]
 
         return set(vitems)
 
@@ -108,7 +108,7 @@ class IntegrationTest(unittest.TestCase):
         filename = filename[len(os.getcwd())+1:]
         workspace = os.path.join(self.test_dir, 'workspace')
         assertions = os.path.join(self.test_dir, 'assertions.txt')
-        file(assertions,'w').write('0x0000000000401003 ZF == 1')
+        open(assertions,'w').write('0x0000000000401003 ZF == 1')
         with open(os.path.join(os.pardir, self.test_dir, 'output.log'), "w") as output:
             subprocess.check_call(['python', '-m', 'manticore',
                                    '--workspace', workspace,

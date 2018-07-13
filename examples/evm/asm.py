@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
+# TODO: move this to pyevmasm
 # EVM disassembler
-# from manticore.platforms.evm import EVMAsm as ea
-from pyevmasm import EVMAsm as ea
+import pyevmasm as ea
 from binascii import hexlify
 
 def printi(instruction):
@@ -17,7 +17,7 @@ def printi(instruction):
     print('\tsemantics:', instruction.semantics)
     print('\tpops:', instruction.pops)
     print('\tpushes:', instruction.pushes)
-    print('\tbytes:', '0x'+hexlify(instruction.bytes.encode()).decode())
+    print('\tbytes:', '0x'+hexlify(instruction.bytes).decode())
     print('\twrites to stack:', instruction.writes_to_stack)
     print('\treads from stack:', instruction.reads_from_stack)
     print('\twrites to memory:', instruction.writes_to_memory)

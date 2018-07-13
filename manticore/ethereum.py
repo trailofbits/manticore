@@ -7,7 +7,7 @@ import binascii
 import string
 import re
 import os
-import pyevmasm
+import pyevmasm as EVMAsm
 from . import Manticore
 from .manticore import ManticoreError
 from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, istainted, taint_with, get_taints, BitVec, Constant, operators, Array, ArrayVariable
@@ -415,7 +415,7 @@ def calculate_coverage(runtime_bytecode, seen):
     ''' Calculates what percentage of runtime_bytecode has been seen '''
     count, total = 0, 0
     bytecode = SolidityMetadata._without_metadata(runtime_bytecode)
-    for i in pyevmasm.EVMAsm.disassemble_all(bytecode):
+    for i in EVMAsm.disassemble_all(bytecode):
         if i.pc in seen:
             count += 1
         total += 1
@@ -496,7 +496,7 @@ class SolidityMetadata(object):
         jump_type = md.get(3, None)  # this can be either i, o or - signifying whether a jump instruction goes into a function, returns from a function or is a regular jump as part of e.g. a loop
 
         pos_to_offset = {}
-        for i in pyevmasm.EVMAsm.disassemble_all(bytecode):
+        for i in EVMAsm.disassemble_all(bytecode):
             pos_to_offset[asm_pos] = asm_offset
             asm_pos += 1
             asm_offset += i.size
@@ -2286,7 +2286,7 @@ class ManticoreEVM(Manticore):
                 with self.locked_context('runtime_coverage') as seen:
 
                     count, total = 0, 0
-                    for i in pyevmasm.EVMAsm.disassemble_all(runtime_bytecode):
+                    for i in EVMAsm.disassemble_all(runtime_bytecode):
                         if (address, i.pc) in seen:
                             count += 1
                             global_runtime_asm.write('*')
@@ -2299,7 +2299,7 @@ class ManticoreEVM(Manticore):
             with self._output.save_stream('global_%s.init_asm' % md.name) as global_init_asm:
                 with self.locked_context('init_coverage') as seen:
                     count, total = 0, 0
-                    for i in pyevmasm.EVMAsm.disassemble_all(md.init_bytecode):
+                    for i in EVMAsm.disassemble_all(md.init_bytecode):
                         if (address, i.pc) in seen:
                             count += 1
                             global_init_asm.write('*')

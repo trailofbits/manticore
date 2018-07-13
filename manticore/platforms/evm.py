@@ -10,9 +10,8 @@ from ..core.state import Concretize, TerminateState
 from ..core.plugin import Ref
 from ..utils.event import Eventful
 from ..core.smtlib.visitors import simplify
-from pyevmasm import EVMAsm
+import pyevmasm as EVMAsm
 import logging
-import sys
 from collections import namedtuple
 import sha3
 

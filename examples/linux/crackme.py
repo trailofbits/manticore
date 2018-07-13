@@ -151,5 +151,5 @@ def func(password, pad, flag=True):
 
 PROGRAM += func(password, pad)
 PROGRAM += '''return 0;\n}'''
-print PROGRAM
+print(PROGRAM)
 
