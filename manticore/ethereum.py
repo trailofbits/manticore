@@ -1155,10 +1155,11 @@ class ManticoreEVM(Manticore):
 
         p = Popen(solc_invocation, stdout=PIPE, stderr=PIPE, cwd=working_folder)
         stdout, stderr = p.communicate()
+        # NOTE: py36 accepts a type of bytes to json.loads() by py35 does not
         try:
-            return json.loads(stdout), stderr
+            return json.loads(stdout.decode()), stderr.decode()
         except ValueError:
-            raise EthereumError('Solidity compilation error:\n\n{}'.format(stderr))
+            raise EthereumError('Solidity compilation error:\n\n{}'.format(stderr.decode()))
 
     @staticmethod
     def _compile(source_code, contract_name, libraries=None, solc_bin=None, solc_remaps=[]):
