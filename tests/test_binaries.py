@@ -100,7 +100,7 @@ class IntegrationTest(unittest.TestCase):
 
         for line in testcase_info:
             self.assertIn('Generated testcase', line)
-
+    @unittest.skip('sloowww')
     def testArgumentsAssertions(self):
         dirname = os.path.dirname(__file__)
         filename = os.path.abspath(os.path.join(dirname, 'binaries', 'arguments_linux_amd64'))
