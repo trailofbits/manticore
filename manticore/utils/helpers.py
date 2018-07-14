@@ -64,6 +64,7 @@ def taint_with(arg, taint, value_bits=256, index_bits=256):
             arg = BitVecConstant(value_bits, arg)
     if not issymbolic(arg):
         raise ValueError("type not supported")
+    #fixme we should make a copy and taint the copy
     arg._taint = arg.taint | frozenset((taint,))
     return arg
 

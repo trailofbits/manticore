@@ -1269,7 +1269,6 @@ class EVM(Eventful):
             #    arguments[i] = simplify(arguments[i])
             if isinstance(arguments[i], Constant) and not arguments[i].taint:
                 arguments[i] = arguments[i].value
-
         return arguments
 
     def _push_arguments(self, arguments):
@@ -1315,6 +1314,7 @@ class EVM(Eventful):
             self._publish('will_decode_instruction', self.pc)
         last_pc = self.pc
         current = self.instruction
+
         if self._on_transaction is False:
             self._publish('will_execute_instruction', self.pc, current)
         #Need to consume before potential out of stack exception

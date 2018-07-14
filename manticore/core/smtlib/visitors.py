@@ -389,9 +389,13 @@ class ArithmeticSimplifier(Visitor):
     def visit_BitVecITE(self, expression, *operands):
         if isinstance(expression.operands[0], Constant):
             if expression.operands[0].value:
-                return expression.operands[1]
+                result = expression.operands[1]
             else:
-                return expression.operands[2]
+                result = expression.operands[2]
+            import copy
+            result = copy.copy(result)
+            result._taint |= expression.operands[0].taint
+            return result
         if self._changed(expression, operands):
             return BitVecITE(expression.size, *operands, taint=expression.taint)
 
