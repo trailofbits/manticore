@@ -133,8 +133,6 @@ def make_initial_state(binary_path, **kwargs):
     elif magic == '\x7fCGC':
         # Decree
         state = make_decree(binary_path, **kwargs)
-    elif magic == '#EVM':
-        state = make_evm(binary_path, **kwargs)
     else:
         raise NotImplementedError("Binary {} not supported.".format(binary_path))
     return state
