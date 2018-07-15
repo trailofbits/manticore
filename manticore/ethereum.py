@@ -2271,7 +2271,7 @@ class ManticoreEVM(Manticore):
                 md = self.get_metadata(address)
                 if md is not None and len(md.warnings) > 0:
                     global_summary.write('\n\nCompiler warnings for %s:\n' % md.name)
-                    global_summary.write(md.warnings.decode())
+                    global_summary.write(md.warnings)
 
         for address, md in list(self.metadata.items()):
             with self._output.save_stream('global_%s.sol' % md.name) as global_src:
