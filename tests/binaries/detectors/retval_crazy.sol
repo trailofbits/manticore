@@ -1,22 +1,20 @@
 pragma solidity ^0.4.24;
 
-contract DetectThis {
+contract ReturnValue {
 
-  bool flag;
 
   function call() public pure{
-    assert(false);
+    assert(false || true);
   }
 
   function callchecked() public {
     bool retval;
     bool retval2;
-    //flag = true;
     retval = address(this).call.value(0)(bytes4(keccak256("call()")));
     retval2 = retval;
-    if (retval2)
-        assert(false);
-    //flag = false;
+    if (retval2 == true)
+        assert(false || true);
   }
 
 }
+
