@@ -42,7 +42,7 @@ def get_taints(arg, taint=None):
     '''
 
     if not issymbolic(arg):
-        raise StopIteration
+        return
     for arg_taint in arg.taint:
         if taint is not None:
             m = re.match(taint, arg_taint, re.DOTALL | re.IGNORECASE)
@@ -50,7 +50,7 @@ def get_taints(arg, taint=None):
                 yield arg_taint
         else:
             yield arg_taint
-    raise StopIteration
+    return
 
 
 def taint_with(arg, taint, value_bits=256, index_bits=256):
