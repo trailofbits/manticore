@@ -298,7 +298,7 @@ class Abi(object):
         :return: Arguments to be passed to the model
         :rtype: tuple
         '''
-        spec = inspect.getfullargspec(model) #PY3FIX
+        spec = inspect.getfullargspec(model)  # PY3FIX
 
         if spec.varargs:
             logger.warning("ABI: A vararg model must be a unary function.")
@@ -920,7 +920,7 @@ class Cpu(Eventful):
         # will disabled_signals(self):
         #    return map(self.render_register, self._regfile.canonical_registers)
         return list(map(self.render_register,
-                   sorted(self._regfile.canonical_registers)))
+                        sorted(self._regfile.canonical_registers)))
 
     # Generic string representation
     def __str__(self):

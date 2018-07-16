@@ -110,7 +110,6 @@ class Transaction(object):
         return 'Transaction({:s}, from=0x{:x}, to=0x{:x}, value={:r}, depth={:d}, data={:r}, result={:r}..)'.format(self.sort, self.caller, self.address, self.value, self.depth, self.data, self.result)
 
 
-
 # Exceptions...
 
 class EVMException(Exception):

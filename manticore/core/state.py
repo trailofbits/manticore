@@ -25,7 +25,6 @@ class TerminateState(StateException):
         self.testcase = testcase
 
 
-
 class Concretize(StateException):
     ''' Base class for all exceptions that trigger the concretization
         of a symbolic expression

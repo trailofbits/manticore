@@ -22,6 +22,7 @@ class RestartSyscall(Exception):
 class Deadlock(Exception):
     pass
 
+
 class SymbolicSyscallArgument(ConcretizeRegister):
     def __init__(self, cpu, number, message='Concretizing syscall argument', policy='SAMPLED'):
         reg_name = ['EBX', 'ECX', 'EDX', 'ESI', 'EDI', 'EBP'][number]
