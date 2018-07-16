@@ -120,7 +120,6 @@ class IntegrationTest(unittest.TestCase):
         expected = self._loadVisitedSet(os.path.join(dirname, 'reference', 'arguments_linux_amd64_visited.txt'))
         self.assertGreaterEqual(actual, expected)
 
-    @unittest.skip('Not yet ported to python3')
     def testDecree(self):
         dirname = os.path.dirname(__file__)
         filename = os.path.abspath(os.path.join(dirname, 'binaries', 'cadet_decree_x86'))

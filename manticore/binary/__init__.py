@@ -19,15 +19,15 @@ from elftools.elf.elffile import ELFFile
 import io
 
 
-class Binary(object):
+class Binary:
     magics = {}
 
     def __new__(cls, path):
         if cls is Binary:
-            cl = cls.magics[open(path).read(4)]
+            cl = cls.magics[open(path, 'rb').read(4)]
             return cl(path)
         else:
-            return super(Binary, cls).__new__(cls, path)
+            return super(Binary, cls).__new__(cls)
 
     def __init__(self, path):
         self.path = path
