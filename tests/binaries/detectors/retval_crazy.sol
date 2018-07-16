@@ -4,7 +4,7 @@ contract ReturnValue {
 
 
   function call() public pure{
-    assert(false || true);
+    assert(false);
   }
 
   function callchecked() public {
@@ -13,7 +13,7 @@ contract ReturnValue {
     retval = address(this).call.value(0)(bytes4(keccak256("call()")));
     retval2 = retval;
     if (retval2 == true)
-        assert(false || true);
+        assert(false);
   }
 
 }
