@@ -30,7 +30,6 @@ setup(
     ] + rtd_dependent_deps(),
     dependency_links=[
         'https://github.com/aquynh/capstone/archive/next.zip#egg=capstone-4&subdirectory=bindings/python',
-        'https://github.com/defunctio/pyevmasm/tarball/refactor#egg=pyevmasm-0.1.0'
     ],
     extras_require={
         'dev': [
