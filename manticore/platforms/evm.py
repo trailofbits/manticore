@@ -1738,8 +1738,6 @@ class EVMWorld(Platform):
         self._world_state[int(address)]['balance'] = value
 
     def get_balance(self, address):
-        if isinstance(address, EVMAccount):
-            address = int(address)
         if address not in self._world_state:
             return 0
         return self._world_state[address]['balance']

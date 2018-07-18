@@ -1118,11 +1118,11 @@ class ManticoreEVM(Manticore):
         supported_versions = ('0.4.18', '0.4.21')
 
         try:
-            installed_version_output = check_output([solc, "--version"], encoding='ascii')
+            installed_version_output = check_output([solc, "--version"])
         except OSError:
             raise EthereumError("Solidity compiler not installed.")
 
-        m = re.match(r".*Version: (?P<version>(?P<major>\d+)\.(?P<minor>\d+)\.(?P<build>\d+)).*\+(?P<commit>[^\s]+).*", installed_version_output, re.DOTALL | re.IGNORECASE)
+        m = re.match(r".*Version: (?P<version>(?P<major>\d+)\.(?P<minor>\d+)\.(?P<build>\d+)).*\+(?P<commit>[^\s]+).*", installed_version_output.decode('ascii'), re.DOTALL | re.IGNORECASE)
 
         if not m or m.groupdict()['version'] not in supported_versions:
             #Fixme https://github.com/trailofbits/manticore/issues/847

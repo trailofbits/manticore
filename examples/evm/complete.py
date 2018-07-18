@@ -40,7 +40,7 @@ m.transaction(caller=user_account,
 
 print("[+] Resulting balances are:")
 for state in m.running_states:
-    balance = state.platform.get_balance(user_account)
+    balance = state.platform.get_balance(int(user_account))
     print(state.solve_one(balance))
 
 m.finalize()
