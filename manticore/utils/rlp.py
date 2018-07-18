@@ -3,8 +3,8 @@
 import collections
 
 def rlp_encode(item):
-    if item is None:
-        return 0x80
+    if item is None or item == 0:
+        return chr(0x80)
     elif isinstance(item, str) or isinstance(item, bytearray):
         if len(item) == 1 and ord(item) < 0x80:
             return item
@@ -16,7 +16,7 @@ def rlp_encode(item):
     elif isinstance(item, int) or isinstance(item, long):
         if item < 0x80:
             return chr(item)
-        hex_str = hex(item)[2:]
+        hex_str = "%x" % item
         if len(hex_str) % 2:
             hex_str = "0%s" % hex_str
         return rlp_encode(hex_str.decode('hex'))
@@ -61,13 +61,14 @@ if __name__ == "__main__":
             ([ "cat", "dog" ], [ 0xc8, 0x83, 'c', 'a', 't', 0x83, 'd', 'o', 'g' ]),
             ('', [ 0x80 ]),
             ([], [ 0xc0 ]),
+            (0, [ 0x80 ]),
             ('\x00', [ 0x00 ]),
             (15, [ 0x0f ]),
             (1024, [ 0x82, 0x04, 0x00 ]),
             ([ [], [[]], [ [], [[]] ] ], [ 0xc7, 0xc0, 0xc1, 0xc0, 0xc3, 0xc0, 0xc1, 0xc0 ]),
             (LOREM_IPSUM, [ 0xb8, 0x38 ] + list(LOREM_IPSUM))
     ):
-        sys.stdout.write("Testing %s" % item)
+        sys.stdout.write("Testing %s" % str(item))
         expected_str = ''.join(map(to_str, expected))
         encoding = rlp_encode(item)
         if encoding == expected_str:
@@ -75,6 +76,7 @@ if __name__ == "__main__":
         else:
             sys.stdout.write(" ✗ expected %s but got %s\n" % (expected, to_list(encoding)))
             passed = False
+
     if passed:
         exit(0)
     else:

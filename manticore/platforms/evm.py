@@ -9,6 +9,7 @@ from ..core.smtlib import solver, BitVec, Array, Operators, Constant, ArrayVaria
 from ..core.state import Concretize, TerminateState
 from ..core.plugin import Ref
 from ..utils.event import Eventful
+from ..utils.rlp import rlp_encode
 from ..core.smtlib.visitors import simplify
 import logging
 import sys
@@ -2514,12 +2515,23 @@ class EVMWorld(Platform):
     def depth(self):
         return len(self._callstack)
 
-    def new_address(self):
+    def new_address(self, sender=None, nonce=None):
         ''' Create a fresh 160bit address '''
-        # Fix use more yellow solution
-        new_address = random.randint(100, pow(2, 160))
-        if new_address in self:
-            return self.new_address()
+        new_address = self._new_address(sender, nonce)
+        if sender is None and new_address in self:
+            return self.new_address(sender, nonce)
+        return new_address
+
+    @staticmethod
+    def _new_address(sender=None, nonce=None):
+        if sender is None:
+            # Just choose a random address for regular accounts:
+            new_address = random.randint(100, pow(2, 160))
+        else:
+            if nonce is None:
+                # As per EIP 161, contract accounts are initialized with a nonce of 1
+                nonce = 1
+            new_address = int(sha3.keccak_256(rlp_encode([sender, nonce])).hexdigest()[24:], 16)
         return new_address
 
     def execute(self):
@@ -2532,23 +2544,38 @@ class EVMWorld(Platform):
             pass
         except EndTx as ex:
             self._close_transaction(ex.result, ex.data, rollback=ex.is_rollback())
+        
+    def create_account(self, address=None, balance=0, code='', storage=None, nonce=None, sender=None):
+        '''Create an account
+            :param address: the address of the account, if known. If omitted, a new address will be generated as closely to the Yellow Paper as possible.
+            :param balance: the initial balance of the account in Wei
+            :param code: the runtime code of the account, if a contract
+            :param storage: storage array
+            :param nonce: the nonce for the account; contracts should have a nonce greater than or equal to 1
+            :param sender: the creator of this account, if it is a contract
+        '''
+        if code is None:
+            code = bytearray()
 
-    def create_account(self, address=None, balance=0, code='', storage=None, nonce=0):
-        ''' code is the runtime code '''
+        if sender is None:
+            if nonce is None:
+                nonce = 0
+            else:
+                # As per EIP 161, contract accounts are initialized with a nonce of 1
+                nonce = 1
+
         if storage is None:
             storage = self.constraints.new_array(index_bits=256, value_bits=256, name='STORAGE')
 
         if address is None:
-            address = self.new_address()
+            address = self.new_address(nonce=nonce, is_contract = is_contract)
         if address in self.accounts:
             # FIXME account may have been created via selfdestruct destinatary
             # or CALL and may contain some ether already. Though if it was a
             # selfdestroyed address it can not be reused
             raise EthereumError('The account already exists')
-        if code is None:
-            code = bytearray()
         self._world_state[address] = {}
-        self._world_state[address]['nonce'] = 0
+        self._world_state[address]['nonce'] = nonce
         self._world_state[address]['balance'] = balance
         self._world_state[address]['storage'] = storage
         self._world_state[address]['code'] = code
@@ -2564,7 +2591,7 @@ class EVMWorld(Platform):
         This is done when the byte code in the init byte array is actually run
         on the network.
         '''
-        address = self.create_account(address)
+        address = self.create_account(address, sender = caller)
         self.start_transaction('CREATE', address, price, init, caller, balance)
         self._process_pending_transaction()
         return address
