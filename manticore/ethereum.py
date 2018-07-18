@@ -23,7 +23,7 @@ import sha3
 import json
 import logging
 import io
-import pickle as pickle
+import pickle
 from .core.plugin import Plugin
 from functools import reduce
 from contextlib import contextmanager
@@ -918,13 +918,6 @@ class EVMAccount(object):
     def __str__(self):
         return str(self._address)
 
-    def __hash__(self):
-        return self._address
-    # def __eq__(self, other):
-    #     if isinstance(other, EVMAccount):
-    #         return self._address == other._address
-    #     return self._address == other
-
 
 class EVMContract(EVMAccount):
     ''' An EVM account '''
@@ -1125,11 +1118,11 @@ class ManticoreEVM(Manticore):
         supported_versions = ('0.4.18', '0.4.21')
 
         try:
-            installed_version_output = check_output([solc, "--version"])
+            installed_version_output = check_output([solc, "--version"], encoding='ascii')
         except OSError:
             raise EthereumError("Solidity compiler not installed.")
 
-        m = re.match(br".*Version: (?P<version>(?P<major>\d+)\.(?P<minor>\d+)\.(?P<build>\d+)).*\+(?P<commit>[^\s]+).*", installed_version_output, re.DOTALL | re.IGNORECASE)
+        m = re.match(r".*Version: (?P<version>(?P<major>\d+)\.(?P<minor>\d+)\.(?P<build>\d+)).*\+(?P<commit>[^\s]+).*", installed_version_output, re.DOTALL | re.IGNORECASE)
 
         if not m or m.groupdict()['version'] not in supported_versions:
             #Fixme https://github.com/trailofbits/manticore/issues/847
@@ -1583,7 +1576,7 @@ class ManticoreEVM(Manticore):
         if not isinstance(address, numbers.Integral):
             raise EthereumError("A concrete address is needed")
         assert address is not None
-        if address in list(map(int, list(self.accounts.values()))):
+        if address in map(int, self.accounts.values()):
             # Address already used
             raise EthereumError("Address already used")
 

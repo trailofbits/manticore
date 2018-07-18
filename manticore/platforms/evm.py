@@ -3,6 +3,7 @@ import random
 import copy
 import inspect
 from functools import wraps
+
 from ..utils.helpers import issymbolic, memoized
 from ..platforms.platform import *
 from ..core.smtlib import solver, BitVec, Array, Operators, Constant, ArrayVariable, translate_to_smtlib
@@ -1737,6 +1738,8 @@ class EVMWorld(Platform):
         self._world_state[int(address)]['balance'] = value
 
     def get_balance(self, address):
+        if isinstance(address, EVMAccount):
+            address = int(address)
         if address not in self._world_state:
             return 0
         return self._world_state[address]['balance']
