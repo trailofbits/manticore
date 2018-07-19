@@ -212,6 +212,9 @@ class Executor(Eventful):
             if initial is not None:
                 self.add(initial)
 
+    def __del__(self):
+        self.manager.shutdown()
+
     @contextmanager
     def locked_context(self, key=None, default=dict):
         ''' Executor context is a shared memory object. All workers share this.
@@ -330,8 +333,7 @@ class Executor(Eventful):
                 return None
             # if there is actually some workers running wait for state forks
             logger.debug("Waiting for available states")
-            with self._lock:
-                self._lock.wait()
+            self._lock.wait()
 
         state_id = self._policy.choice(list(self._states))
         if state_id is None:
