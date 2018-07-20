@@ -1878,7 +1878,7 @@ class EVM(Eventful):
     @transact
     def CREATE(self, value, offset, size):
         '''Create a new account with associated code'''
-        address = self.world.create_account()
+        address = self.world.create_account(sender=self.address)
         self.world.start_transaction('CREATE',
                                      address,
                                      data=self.read_buffer(offset, size),
@@ -2680,12 +2680,12 @@ class EVMWorld(Platform):
             price = self.tx_gasprice()
         if price is None:
             raise EVMException("Need to set a gas price on human tx")
-
+        
         self._pending_transaction_concretize_address()
         self._pending_transaction_concretize_caller()
         if caller not in self.accounts:
             raise EVMException('Caller account does not exist')
-
+        
         if address not in self.accounts:
             # Creating a unaccessible account
             self.create_account(address=address)
@@ -2708,7 +2708,7 @@ class EVMWorld(Platform):
                                  setstate=lambda a, b: None,
                                  policy='ALL')
             failed = set(enough_balance_solutions) == set([False])
-
+            
         #processed
         self._pending_transaction = None
 
@@ -2719,6 +2719,8 @@ class EVMWorld(Platform):
 
         if failed:
             self._close_transaction('TXERROR', rollback=True)
+
+        self._world_state[caller]['nonce'] += 1
 
         #Transaction to normal account
         if sort in ('CALL', 'DELEGATECALL') and not self.get_code(address):
