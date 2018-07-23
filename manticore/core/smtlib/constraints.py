@@ -89,7 +89,7 @@ class ConstraintSet(object):
                         if constraint.value:
                             continue
                         else:
-                            related_constraints = (constraint,)
+                            related_constraints = {constraint}
                             break
 
                     variables = get_variables(constraint)
