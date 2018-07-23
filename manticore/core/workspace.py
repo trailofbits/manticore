@@ -46,6 +46,8 @@ class StateSerializer(object):
 
 class PickleSerializer(StateSerializer):
     def serialize(self, state, f):
+        # TODO: port iterpickle to Python3 or alternatively switch to a more sensible usage of the following code
+        # currently this is just a hack and will increase memory usage drastically
         maxlim = 0x100000
         resource.setrlimit(resource.RLIMIT_STACK, [0x100 * maxlim, resource.RLIM_INFINITY])
         sys.setrecursionlimit(0x100000)
@@ -547,7 +549,7 @@ class ManticoreOutput(object):
                 return
 
             memories = set()
-            for cpu in [_f for _f in state.platform.procs if _f]:
+            for cpu in filter(None, state.platform.procs):
                 idx = state.platform.procs.index(cpu)
                 summary.write("================ PROC: %02d ================\n" % idx)
                 summary.write("Memory:\n")

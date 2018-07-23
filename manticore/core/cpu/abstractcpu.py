@@ -298,7 +298,7 @@ class Abi(object):
         :return: Arguments to be passed to the model
         :rtype: tuple
         '''
-        spec = inspect.getfullargspec(model)  # PY3FIX
+        spec = inspect.getfullargspec(model)
 
         if spec.varargs:
             logger.warning("ABI: A vararg model must be a unary function.")
@@ -408,10 +408,8 @@ class SyscallAbi(Abi):
                 arg_s = "0x{:x}".format(arg)
                 if self._cpu.memory.access_ok(arg, 'r'):
                     s = self._cpu.read_string(arg, max_arg_expansion)
-                    #PY3FIX (this could probably be cleaned up)
                     if all((chr(c) if isinstance(c, int) else c) in string.printable for c in s):
                         if len(s) == max_arg_expansion:
-                            #PY3FIX (this is a string, should not really be bytes)
                             s = s + '..'
                         if len(s) > 2:
                             arg_s = arg_s + ' ({})'.format(s.translate(None, '\n'))
@@ -547,7 +545,6 @@ class Cpu(Eventful):
 
         :param str name: Name of the register
         '''
-        #PY3FIX, _regfile is defined in __init__ of abstract cls, there is no instance where hasattr is false
         if name != '_regfile':
             if name in self._regfile:
                 return self.read_register(name)
@@ -561,7 +558,6 @@ class Cpu(Eventful):
         :param value: The value to set the register to
         :type param: int or long or Expression
         '''
-        #PY3FIX, _regfile is defined in __init__ of abstract cls, there is no instance where hasattr is false
         try:
             if name in self._regfile:
                 return self.write_register(name, value)
@@ -685,7 +681,6 @@ class Cpu(Eventful):
                 max_length = max_length - 1
             s.write(Operators.CHR(c))
             where += 1
-        #PY3FIX, read_string should really return a str, not bytes
         return s.getvalue().decode()
 
     def push_bytes(self, data, force=False):

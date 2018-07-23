@@ -177,7 +177,6 @@ class Executor(Eventful):
         self.manager.start(lambda: signal.signal(signal.SIGINT, signal.SIG_IGN))
 
         # The main executor lock. Acquire this for accessing shared objects
-        #PY3FIX
         self._lock = self.manager.Condition()
 
         # Shutdown Event

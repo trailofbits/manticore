@@ -1422,7 +1422,6 @@ class Linux(Platform):
         :param flags: file access bits
         :param mode: file permission mode
         '''
-        #PY3FIX ; using StringIO for read_string NOT BytesIO
         filename = self.current.read_string(buf)
         try:
             f = self._sys_open_get_file(filename, flags)
@@ -2722,7 +2721,6 @@ class SLinux(Linux):
             'net': net.getvalue()
         }
 
-        #PY3FIX, unsure of data types here, could break
         for f in self.files + self._closed_files:
             if not isinstance(f, SymbolicFile):
                 continue

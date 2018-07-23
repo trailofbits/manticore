@@ -167,7 +167,6 @@ sizes = copy.copy(default_sizes_32)
 
 def p_expression_div(p):
     'expression : expression DIVIDE expression'
-    #PY3FIX, should this be INT or float division? unknown so leaving it float
     p[0] = p[1] / p[3]
 
 

@@ -1377,7 +1377,6 @@ class X86Cpu(Cpu):
                             Operators.CONCAT(size, srch, srcl),
                             arg_dest)
         )
-        #PY3FIX: use int division to be safe?
         cpu.write_register(cmp_reg_name_l, Operators.ITEBV(size // 2, cpu.ZF, cmpl,
                                                            Operators.EXTRACT(arg_dest, 0, size // 2)))
         cpu.write_register(cmp_reg_name_h, Operators.ITEBV(size // 2, cpu.ZF, cmph,
@@ -3632,7 +3631,6 @@ class X86Cpu(Cpu):
         tempCount = Operators.ZEXTEND((count & countMask) % (src.size + 1), OperandSize)
 
         value = dest.read()
-        #PY3FIX, use isinstance
         if isinstance(tempCount, int) and tempCount == 0:
             # this is a no-op
             new_val = value
@@ -3901,7 +3899,6 @@ class X86Cpu(Cpu):
         MASK = ((1 << OperandSize) - 1)
         # count is masked based on destination size
         tempCount = Operators.ZEXTEND(count.read(), OperandSize) & (OperandSize - 1)
-        #PY3FIX: use isinstance
         if isinstance(tempCount, int) and tempCount == 0:
             pass
         else:
@@ -3940,7 +3937,6 @@ class X86Cpu(Cpu):
         res = Operators.ITEBV(OperandSize, tempCount == 0, arg0, t0 | t1)
         res = res & MASK
         dest.write(res)
-        #PY3FIX: use isinstance
         if isinstance(tempCount, int) and tempCount == 0:
             pass
         else:

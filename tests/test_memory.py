@@ -1235,7 +1235,6 @@ class MemoryTest(unittest.TestCase):
         sol = solver.get_value(cs, c)
         self.assertTrue(Operators.ORD(sol)==100)
 
-        #PY3FIX: [bytes([ord(c)]) for c in 'defg'] ... what??
         self.assertItemsEqual(mem[x:x+4], b'defg')
         self.assertItemsEqual(mem[addr:addr+4], b'defg')
         mem, x = pickle.loads(pickle.dumps((mem,x)))
