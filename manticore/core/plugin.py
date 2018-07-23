@@ -1,11 +1,9 @@
 import logging
-import re
-import binascii
+from contextlib import contextmanager
+
 from capstone import CS_GRP_JUMP
 
 from ..utils.helpers import issymbolic
-from contextlib import contextmanager
-from functools import reduce
 
 logger = logging.getLogger(__name__)
 

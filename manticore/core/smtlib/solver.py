@@ -29,9 +29,6 @@ import collections
 logger = logging.getLogger(__name__)
 
 
-LINEBUF = 1
-
-
 class Z3NotFoundError(EnvironmentError):
     pass
 
@@ -132,8 +129,6 @@ class Z3Solver(Solver):
         self._proc = None
 
         self.debug = False
-        if self.debug:
-            self._send_log = []
         self.version = self._solver_version()
 
         self.support_maximize = False
@@ -258,7 +253,7 @@ class Z3Solver(Solver):
         except IOError as e:
             raise SolverException(str(e))
 
-    def _recv(self, expect_response=True):
+    def _recv(self):
         ''' Reads the response from the solver '''
         def readline():
             buf = self._proc.stdout.readline()

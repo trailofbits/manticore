@@ -2100,7 +2100,7 @@ class Linux(Platform):
             logger.debug("None running checking if there is some process waiting for a timeout")
             if all([x is None for x in self.timers]):
                 raise Deadlock()
-            self.clocks = min([x for x in self.timers if x is not None]) + 1
+            self.clocks = min(x for x in self.timers if x is not None) + 1
             self.check_timers()
             assert len(self.running) != 0, "DEADLOCK!"
             self._current = self.running[0]

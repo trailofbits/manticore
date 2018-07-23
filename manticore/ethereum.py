@@ -1226,6 +1226,7 @@ class ManticoreEVM(Manticore):
     def get_account(self, name):
         return self._accounts[name]
 
+    # TODO: FIXME: multiprocessing is broken, procs>1 results in erroneous results
     def __init__(self, procs=1, **kwargs):
         ''' A Manticore EVM manager
             :param int procs: number of workers to use in the exploration
