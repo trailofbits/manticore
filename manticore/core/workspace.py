@@ -53,7 +53,7 @@ class PickleSerializer(StateSerializer):
         sys.setrecursionlimit(0x100000)
         try:
             f.write(pickle.dumps(state, 2))
-        except RuntimeError as e:
+        except RuntimeError:
             # recursion exceeded. try a slower, iterative solution
             from ..utils import iterpickle
             logger.debug("Using iterpickle to dump state")

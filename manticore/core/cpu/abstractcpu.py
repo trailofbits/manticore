@@ -765,7 +765,7 @@ class Cpu(Eventful):
             if issymbolic(c):
                 assert isinstance(c, BitVec) and c.size == 8
                 if isinstance(c, Constant):
-                    c = c.value
+                    c = bytes([c.value])
                 else:
                     logger.error('Concretize executable memory %r %r', c, text)
                     raise ConcretizeMemory(self.memory,

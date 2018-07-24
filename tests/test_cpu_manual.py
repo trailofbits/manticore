@@ -1124,5 +1124,25 @@ Using the SAR instruction to perform a division operation does not produce the s
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
 
+    def test_symbolic_instruction(self):
+        cs = ConstraintSet()
+        mem = SMemory32(cs)
+        cpu = I386Cpu(mem)
+
+        # alloc/map a little mem
+        code = mem.mmap(0x1000, 0x1000, 'rwx')
+        stack = mem.mmap(0xf000, 0x1000, 'rw')
+
+        mem[code] = BitVecConstant(8, 0x90)
+        cpu.EIP = code
+        cpu.EAX = 116
+        cpu.EBP = stack + 0x700
+        cpu.write_int(cpu.EBP - 0xc, 100, 32)
+
+        cpu.execute()
+
+        self.assertEqual(cpu.EIP, code+1)
+
+
 if __name__ == '__main__':
     unittest.main()

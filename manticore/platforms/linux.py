@@ -2675,7 +2675,7 @@ class SLinux(Linux):
                 if isinstance(c, int):
                     return bytes([c])
                 elif isinstance(c, str):
-                    return bytes([ord(c)])
+                    return c.encode()
                 return c
             try:
                 for c in data:

@@ -125,7 +125,7 @@ class Bool(Expression):
         return BoolXor(self.cast(other), self)
 
     def __bool__(self):
-        raise NotImplementedError("__nonzero__ for Bool")
+        raise NotImplementedError("__bool__ for Bool")
 
 
 class BoolVariable(Bool, Variable):
