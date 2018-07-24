@@ -407,12 +407,11 @@ class SyscallAbi(Abi):
             for arg in self._last_arguments:
                 arg_s = "0x{:x}".format(arg)
                 if self._cpu.memory.access_ok(arg, 'r'):
-                    s = self._cpu.read_string(arg, max_arg_expansion)
-                    if all((chr(c) if isinstance(c, int) else c) in string.printable for c in s):
-                        if len(s) == max_arg_expansion:
-                            s = s + '..'
-                        if len(s) > 2:
-                            arg_s = arg_s + ' ({})'.format(s.translate(None, '\n'))
+                    try:
+                        s = '({})'.format(self._cpu.read_string(arg, max_arg_expansion))
+                        arg_s = s if s else arg_s
+                    except UnicodeDecodeError:
+                        pass
                 args.append(arg_s)
 
             args_s = ', '.join(args)
