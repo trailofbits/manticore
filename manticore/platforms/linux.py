@@ -67,16 +67,18 @@ class File(object):
         state = {}
         state['name'] = self.name
         state['mode'] = self.mode
+        state['closed'] = self.closed
         try:
-            state['pos'] = self.tell()
-        except (ValueError, IOError):
-            # This is to handle closed files and special files like /dev/tty
+            state['pos'] = None if self.closed else self.tell()
+        except IOError:
+            # This is to handle special files like /dev/tty
             state['pos'] = None
         return state
 
     def __setstate__(self, state):
         name = state['name']
         mode = state['mode']
+        closed = state['closed']
         pos = state['pos']
         self.file = file(name, mode)
         if pos is not None:
@@ -89,6 +91,10 @@ class File(object):
     @property
     def mode(self):
         return self.file.mode
+
+    @property
+    def closed(self):
+        return self.file.closed
 
     def stat(self):
         return os.fstat(self.fileno())
