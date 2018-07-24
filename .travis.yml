@@ -1,10 +1,10 @@
-dist: trusty
+dist: precise
 sudo: required
 os:
   - linux
 language: python
 python:
-  - 3.5.2
+  - 3.6.5
 
 env:
   global:
@@ -18,8 +18,8 @@ branches:
 cache:
   pip: true
   directories:
-  - $HOME/virtualenv/python3.5.2/lib/python3.5/site-packages
-  - $HOME/virtualenv/python3.5.2/bin/
+  - $HOME/virtualenv/python3.6.5/lib/python3.6/site-packages
+  - $HOME/virtualenv/python3.6.5/bin/
 
 install:
   - scripts/travis_install.sh

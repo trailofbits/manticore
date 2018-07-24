@@ -53,7 +53,7 @@ plugins:
   radon:
     enabled: false
     config:
-      python_version: 2
+      python_version: 3
       threshold: "D"
 exclude_patterns:
   - "docs/"
