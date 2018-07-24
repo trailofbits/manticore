@@ -409,7 +409,7 @@ class SyscallAbi(Abi):
                 if self._cpu.memory.access_ok(arg, 'r'):
                     try:
                         s = self._cpu.read_string(arg, max_arg_expansion)
-                        arg_s = '({})'.format(s) if s else arg_s
+                        arg_s = '({})'.format(s.rstrip()) if s else arg_s
                     except UnicodeDecodeError:
                         pass
                 args.append(arg_s)

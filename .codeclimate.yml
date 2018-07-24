@@ -23,11 +23,11 @@ checks:
   method-lines:
     enabled: true
     config:
-      threshold: 50
+      threshold: 52
   nested-control-flow:
     enabled: true
     config:
-      threshold: 5
+      threshold: 10
   return-statements:
     enabled: true
     config:
