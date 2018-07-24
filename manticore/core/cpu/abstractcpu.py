@@ -408,8 +408,8 @@ class SyscallAbi(Abi):
                 arg_s = "0x{:x}".format(arg)
                 if self._cpu.memory.access_ok(arg, 'r'):
                     try:
-                        s = '({})'.format(self._cpu.read_string(arg, max_arg_expansion))
-                        arg_s = s if s else arg_s
+                        s = self._cpu.read_string(arg, max_arg_expansion)
+                        arg_s = '({})'.format(s) if s else arg_s
                     except UnicodeDecodeError:
                         pass
                 args.append(arg_s)
