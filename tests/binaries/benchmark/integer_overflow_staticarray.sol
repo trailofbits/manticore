@@ -1,5 +1,5 @@
 pragma solidity ^0.4.11;
-contract C {
+contract Benchmark {
     uint256[6] private numbers;
 
     function get(uint256 i) public returns(uint256) {

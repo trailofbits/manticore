@@ -14,7 +14,7 @@ class Expression(object):
         self._taint = frozenset(taint)
 
     def __repr__(self):
-        return "<%s at %x>" % (type(self).__name__, id(self))
+        return "<%s at %x%s>" % (type(self).__name__, id(self), self.taint and '-T' or '')
 
     @property
     def is_tainted(self):
@@ -45,6 +45,9 @@ class Variable(Expression):
         cls = self.__class__
         memo[id(self)] = self
         return self
+
+    def __repr__(self):
+        return "<%s(%s) at %x>" % (type(self).__name__, self.name, id(self))
 
 
 class Constant(Expression):
@@ -645,7 +648,10 @@ class Array(Expression):
             start, stop = self._fix_index(index)
             size = self._get_size(index)
             return ArraySlice(self, start, size)
-
+        else:
+            if self.index_max is not None:
+                if not isinstance(index, Expression) and index >= self.index_max:
+                    raise IndexError
         return self.select(self.cast_index(index))
 
     def __eq__(self, other):
@@ -688,7 +694,7 @@ class Array(Expression):
         value = BitVec(size * self.value_bits).cast(value)
         array = self
         for offset in xrange(size):
-            array = self.store(address + offset, BitVecExtract(value, (size - 1 - offset) * self.value_bits, self.value_bits))
+            array = array.store(address + offset, BitVecExtract(value, (size - 1 - offset) * self.value_bits, self.value_bits))
         return array
 
     def write_LE(self, address, value, size):
@@ -696,7 +702,7 @@ class Array(Expression):
         value = BitVec(size * self.value_bits).cast(value)
         array = self
         for offset in reversed(xrange(size)):
-            array = self.store(address + offset, BitVecExtract(value, (size - 1 - offset) * self.value_bits, self.value_bits))
+            array = array.store(address + offset, BitVecExtract(value, (size - 1 - offset) * self.value_bits, self.value_bits))
         return array
 
     def __add__(self, other):
@@ -772,9 +778,13 @@ class ArrayStore(ArrayOperation):
 
 
 class ArraySlice(Array):
-    def __init__(self, array, offset, size):
+    def __init__(self, array, offset, size, *args, **kwargs):
         if not isinstance(array, Array):
             raise ValueError("Array expected")
+        if isinstance(array, ArrayProxy):
+            array=array._array
+        super(ArraySlice, self).__init__(array.index_bits, array.index_max, array.value_bits, *args, **kwargs)
+
         self._array = array
         self._slice_offset = offset
         self._slice_size = size
