@@ -19,7 +19,7 @@ setup(
     author='Trail of Bits',
     version='0.1.10',
     packages=find_packages(),
-    python_requires='>=3.5.2',
+    python_requires='>=3.6',
     install_requires=[
         'capstone>=3.0.5rc2',
         'pyelftools',
