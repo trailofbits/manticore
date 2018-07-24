@@ -209,14 +209,15 @@ class ConstraintSet(object):
 
             if var in bindings:
                 continue
-            if isinstance(expression, Bool):
+
+            if isinstance(var, Bool):
                 new_var = self.new_bool(name=name)
-            elif isinstance(expression, BitVec):
+            elif isinstance(var, BitVec):
                 new_var = self.new_bitvec(var.size, name=name)
-            elif isinstance(expression, Array):
+            elif isinstance(var, Array):
                 new_var = self.new_array(index_max=var.index_max, index_bits=var.index_bits, value_bits=var.value_bits, name=name)
             else:
-                raise NotImplemented("Unknown type {}".format(type(expression)))
+                raise NotImplemented("Unknown type {}".format(type(var)))
 
             bindings[var] = new_var
 

@@ -9,7 +9,7 @@ import re
 import os
 from . import Manticore
 from .manticore import ManticoreError
-from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, istainted, taint_with, get_taints, BitVec, Constant, operators, Array, ArrayVariable
+from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, istainted, taint_with, get_taints, BitVec, Constant, operators, Array, ArrayVariable, ArrayProxy
 from .platforms import evm
 from .core.state import State
 from .utils.helpers import istainted, issymbolic
@@ -891,7 +891,8 @@ class ABI(object):
             # FIXME This temporary array variable should be obtained from a specific constraint store
             bytes = ArrayVariable(index_bits=256, index_max=32, value_bits=8, name='temp{}'.format(uuid.uuid1()))
             value = Operators.ZEXTEND(value, size * 8)
-            bytes.write_BE(padding, value, size)
+            bytes = bytes.write_BE(padding, value, size)
+            bytes = ArrayProxy(bytes)
         else:
             value = int(value)
             bytes = bytearray()
@@ -914,7 +915,7 @@ class ABI(object):
         if issymbolic(value):
             bytes = ArrayVariable(index_bits=256, index_max=32, value_bits=8, name='temp{}'.format(uuid.uuid1()))
             value = Operators.SEXTEND(value, value.size, size * 8)
-            bytes.write_BE(padding, value, size)
+            bytes = ArrayProxy(bytes.write_BE(padding, value, size))
         else:
             value = int(value)
             bytes = bytearray()
@@ -1293,7 +1294,6 @@ class ManticoreEVM(Manticore):
                     break
 
         if name is None:
-            print contracts, contract_name
             raise ValueError('Specified contract not found')
 
         name = name.split(':')[1]
@@ -1708,7 +1708,10 @@ class ManticoreEVM(Manticore):
             # And actually only constraints related to whateverwe are using in
             # the tx. This is a FIXME
             state_constraints = state.constraints
-            migration_bindings = {}
+
+            migration_bindings = state.context.get('migration_bindings')
+            if migration_bindings is None:
+                migration_bindings = {}
              
             if issymbolic(caller):
                 caller = state_constraints.migrate(caller, bindings=migration_bindings)
@@ -1718,11 +1721,17 @@ class ManticoreEVM(Manticore):
             if issymbolic(value):
                 value = state_constraints.migrate(value, bindings=migration_bindings)
             if issymbolic(data):
+                if isinstance(data, ArrayProxy):
+                    data=data.array 
                 data = state_constraints.migrate(data, bindings=migration_bindings)
+                if isinstance(data, Array):
+                    data=ArrayProxy(data)
             
             for c in global_constraints:
                 migrated_constraint = state_constraints.migrate(c, bindings=migration_bindings)
-                state_constraints.add(migrated_constraint)
+                state.constrain(migrated_constraint)
+            state.context['migration_bindings'] = migration_bindings
+
             return caller, address, value, data
 
     def _transaction(self, sort, caller, value=0, address=None, data=None, price=1):
@@ -2230,6 +2239,9 @@ class ManticoreEVM(Manticore):
                 address_name = self.account_name(address_solution)
                 tx_summary.write("To: %s(0x%x) %s\n" % (address_name, address_solution, flagged(issymbolic(tx.address))))
                 tx_summary.write("Value: %d %s\n" % (state.solve_one(tx.value), flagged(issymbolic(tx.value))))
+                tx_summary.write("Gas used: %d %s\n" % (state.solve_one(tx.gas), flagged(issymbolic(tx.gas))))
+
+
                 tx_data = state.solve_one(tx.data)
                 tx_summary.write("Data: %s %s\n" % (binascii.hexlify(tx_data), flagged(issymbolic(tx.data))))
                 if tx.return_data is not None:

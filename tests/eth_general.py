@@ -149,6 +149,23 @@ class EthAbiTests(unittest.TestCase):
         self.assertEqual(dynargs, ( 2**255 - 1, -(2**255) ))
 
 
+    def test_simple_types_ints_symbolic(self):
+        cs = ConstraintSet()
+        x = cs.new_bitvec(256, name="x")
+        y = cs.new_bitvec(256, name="y")
+        #Something is terribly wrong x,y = 10,20
+        my_ser = ABI.serialize('(uint,uint)', x, y)
+        x_, y_ = ABI.deserialize('(uint,uint)', my_ser)
+        self.assertTrue(solver.must_be_true(cs, x==x_))
+        self.assertTrue(solver.must_be_true(cs, y==y_))
+
+    def test_simple_types_ints_symbolic1(self):
+        cs = ConstraintSet()
+        x = cs.new_bitvec(256, name="x")
+        #Something is terribly wrong x,y = 10,20
+        my_ser = ABI.serialize('uint', x)
+        self.assertTrue(solver.must_be_true(cs, my_ser[0]==operators.EXTRACT(x,256-8,8)))
+
     def test_address0(self):
         data = '{}\x01\x55{}'.format('\0'*11, '\0'*19)
         parsed = ABI.deserialize('address', data)
@@ -316,6 +333,74 @@ class EthAbiTests(unittest.TestCase):
 
         # does the data field look right?
         self.assertTrue(solver.must_be_true(cs, ret[64:64+32] == buf + bytearray('\0'*15)))
+
+
+from manticore.platforms import evm
+
+class EthInstructionTests(unittest.TestCase):
+
+    def _make(self):
+        #Make the constraint store
+        constraints = ConstraintSet()
+        #make the ethereum world state
+        world = evm.EVMWorld(constraints)
+
+        address=0x222222222222222222222222222222222222200
+        caller=origin=0x111111111111111111111111111111111111100
+        price=0
+        value=10000
+        bytecode='\x05'
+        data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
+        gas = 1000000
+
+        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
+        return constraints, world, new_vm
+
+    def test_SDIV(self):
+        constraints, world, vm = self._make()
+        result = vm.SDIV(115792089237316182568066630936765703517573245936339743861833633745570447228928, 200867255532373784442745261542645325315275374222849104412672)
+        self.assertEqual(-64, result)
+
+
+    def test_SDIVS1(self):
+        constraints, world, vm = self._make()
+        xx = constraints.new_bitvec(256, name="x")
+        yy = constraints.new_bitvec(256, name="y")
+        constraints.add(xx == 0x20)
+        constraints.add(yy == 1)
+        result = vm.SDIV(xx, yy)
+        self.assertListEqual(solver.get_all_values(constraints, result), [0x20])
+
+    def test_SDIVS2(self):
+        constraints, world, vm = self._make()
+        xx = constraints.new_bitvec(256, name="x")
+        yy = constraints.new_bitvec(256, name="y")
+        constraints.add(xx == 0x20)
+        constraints.add(yy == 2)
+        result = vm.SDIV(xx, yy)
+        self.assertListEqual(solver.get_all_values(constraints, result), [0x10])
+
+    def test_SDIVS3(self):
+        constraints, world, vm = self._make()
+        xx = constraints.new_bitvec(256, name="x")
+        yy = constraints.new_bitvec(256, name="y")
+        constraints.add(xx == 0x20)
+        constraints.add(yy == -1)
+        result = vm.SDIV(xx, yy)
+        self.assertListEqual(map(evm.to_signed, solver.get_all_values(constraints, result)), [-0x20])
+
+    def test_SDIVSx(self):
+        x,y = 0x20000000000000000000000000000000000000000000000000, -0x40
+        constraints, world, vm = self._make()
+        xx = constraints.new_bitvec(256, name="x")
+        yy = constraints.new_bitvec(256, name="y")
+        constraints.add(xx == x)
+        constraints.add(yy == y)
+
+        result = vm.SDIV(xx, yy)
+        self.assertListEqual(map(evm.to_signed, solver.get_all_values(constraints, result)), [vm.SDIV(x, y)])
+
+
 
 class EthTests(unittest.TestCase):
     def setUp(self):
