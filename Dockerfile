@@ -1,8 +1,8 @@
-FROM ubuntu:16.04
+FROM ubuntu:18.04
 MAINTAINER JP Smith
 
 RUN apt-get -y update && \
-	DEBIAN_FRONTEND=noninteractive apt-get -y install python-pip git && \
+	DEBIAN_FRONTEND=noninteractive apt-get -y install python3 python3-pip git && \
 	git clone https://github.com/trailofbits/manticore.git && \
 	cd manticore && \
 	pip install .

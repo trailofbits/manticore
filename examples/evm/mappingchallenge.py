@@ -22,7 +22,7 @@ contract MappingChallenge {
     }
 }
 '''
-print "Source code:\n",source_code
+print("Source code:\n",source_code)
 
 class StopAtDepth(Detector):
     ''' This just abort explorations too deep '''
@@ -54,7 +54,7 @@ for st in m.all_states:
     flag_storage_slot = 0
     flag_value = st.platform.get_storage_data(contract_account.address, flag_storage_slot)
     if st.can_be_true(flag_value != 0):
-        print "Flag Found! Check ", m.workspace
+        print("Flag Found! Check ", m.workspace)
         st.constraints.add(flag_value != 0)
         m.generate_testcase(st, 'Flag Found', '')
     

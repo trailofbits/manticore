@@ -470,7 +470,7 @@ class AMD64RegFile(RegisterFile):
         return register in self.all_registers
 
     def _set_bv(self, register_id, register_size, offset, size, reset, value):
-        if isinstance(value, (int, long)):
+        if isinstance(value, int):
             # type error or forgiving?
             # if (value & ~((1<<size)-1)) != 0 :
             #    raise TypeError('Value bigger than register')
@@ -499,7 +499,7 @@ class AMD64RegFile(RegisterFile):
 
     def _set_flag(self, register_id, register_size, offset, size, reset, value):
         assert size == 1
-        if not isinstance(value, (bool, int, long, BitVec, Bool)):
+        if not isinstance(value, (bool, int, BitVec, Bool)):
             raise TypeError
         if isinstance(value, BitVec):
             if value.size != 1:
@@ -536,11 +536,11 @@ class AMD64RegFile(RegisterFile):
                                    BitVecConstant(register_size, 0))
 
         flags = []
-        for flag, offset in self._flags.iteritems():
+        for flag, offset in self._flags.items():
             flags.append((self._registers[flag], offset))
 
         if any(issymbolic(flag) for flag, offset in flags):
-            res = reduce(operator.or_, map(make_symbolic, flags))
+            res = reduce(operator.or_, list(map(make_symbolic, flags)))
         else:
             res = 0
             for flag, offset in flags:
@@ -550,7 +550,7 @@ class AMD64RegFile(RegisterFile):
     def _set_flags(self, reg, res):
         ''' Set individual flags from a EFLAGS/RFLAGS value '''
         #assert sizeof (res) == 32 if reg == 'EFLAGS' else 64
-        for flag, offset in self._flags.iteritems():
+        for flag, offset in self._flags.items():
             self.write(flag, Operators.EXTRACT(res, offset, 1))
 
     def write(self, name, value):
@@ -732,7 +732,7 @@ class X86Cpu(Cpu):
         :param size: the size of the value.
         '''
         assert size in (8, 16, cpu.address_bit_size)
-        cpu.STACK = cpu.STACK - size / 8
+        cpu.STACK = cpu.STACK - size // 8
         base, _, _ = cpu.get_descriptor(cpu.read_register('SS'))
         address = cpu.STACK + base
         cpu.write_int(address, value, size)
@@ -749,7 +749,7 @@ class X86Cpu(Cpu):
         base, _, _ = cpu.get_descriptor(cpu.SS)
         address = cpu.STACK + base
         value = cpu.read_int(address, size)
-        cpu.STACK = cpu.STACK + size / 8
+        cpu.STACK = cpu.STACK + size // 8
         return value
 
     ################################################
@@ -1377,11 +1377,10 @@ class X86Cpu(Cpu):
                             Operators.CONCAT(size, srch, srcl),
                             arg_dest)
         )
-
-        cpu.write_register(cmp_reg_name_l, Operators.ITEBV(size / 2, cpu.ZF, cmpl,
-                                                           Operators.EXTRACT(arg_dest, 0, size / 2)))
-        cpu.write_register(cmp_reg_name_h, Operators.ITEBV(size / 2, cpu.ZF, cmph,
-                                                           Operators.EXTRACT(arg_dest, size / 2, size / 2)))
+        cpu.write_register(cmp_reg_name_l, Operators.ITEBV(size // 2, cpu.ZF, cmpl,
+                                                           Operators.EXTRACT(arg_dest, 0, size // 2)))
+        cpu.write_register(cmp_reg_name_h, Operators.ITEBV(size // 2, cpu.ZF, cmph,
+                                                           Operators.EXTRACT(arg_dest, size // 2, size // 2)))
 
     @instruction
     def DAA(cpu):
@@ -1597,14 +1596,14 @@ class X86Cpu(Cpu):
         divisor = Operators.ZEXTEND(src.read(), size * 2)
 
         # TODO make symbol friendly
-        if isinstance(divisor, (int, long)) and divisor == 0:
+        if isinstance(divisor, int) and divisor == 0:
             raise DivideByZeroError()
         quotient = Operators.UDIV(dividend, divisor)
 
         MASK = (1 << size) - 1
 
         # TODO make symbol friendly
-        if isinstance(quotient, (int, long)) and quotient > MASK:
+        if isinstance(quotient, int) and quotient > MASK:
             raise DivideByZeroError()
         remainder = Operators.UREM(dividend, divisor)
 
@@ -1674,7 +1673,7 @@ class X86Cpu(Cpu):
                                     cpu.read_register(reg_name_l))
 
         divisor = src.read()
-        if isinstance(divisor, (int, long)) and divisor == 0:
+        if isinstance(divisor, int) and divisor == 0:
             raise DivideByZeroError()
 
         dst_size = src.size * 2
@@ -1686,19 +1685,19 @@ class X86Cpu(Cpu):
         dividend_sign = (dividend & sign_mask) != 0
         divisor_sign = (divisor & sign_mask) != 0
 
-        if isinstance(divisor, (int, long)):
+        if isinstance(divisor, int):
             if divisor_sign:
                 divisor = ((~divisor) + 1) & mask
                 divisor = -divisor
 
-        if isinstance(dividend, (int, long)):
+        if isinstance(dividend, int):
             if dividend_sign:
                 dividend = ((~dividend) + 1) & mask
                 dividend = -dividend
 
         quotient = Operators.SDIV(dividend, divisor)
-        if (isinstance(dividend, (int, long)) and
-                isinstance(dividend, (int, long))):
+        if (isinstance(dividend, int) and
+                isinstance(dividend, int)):
             # handle the concrete case
             remainder = dividend - (quotient * divisor)
         else:
@@ -2092,7 +2091,7 @@ class X86Cpu(Cpu):
         '''
         parts = []
         arg0 = dest.read()
-        for i in xrange(0, dest.size, 8):
+        for i in range(0, dest.size, 8):
             parts.append(Operators.EXTRACT(arg0, i, 8))
 
         dest.write(Operators.CONCAT(8 * len(parts), *parts))
@@ -2574,7 +2573,7 @@ class X86Cpu(Cpu):
         size = dest.size
         arg0 = dest.read()
         temp = 0
-        for pos in xrange(0, size, 8):
+        for pos in range(0, size, 8):
             temp = (temp << 8) | (arg0 & 0xff)
             arg0 = arg0 >> 8
         dest.write(arg0)
@@ -3006,7 +3005,7 @@ class X86Cpu(Cpu):
         # http://stackoverflow.com/questions/11291151/how-push-imm-encodes
         size = src.size
         v = src.read()
-        if size != 64 and size != cpu.address_bit_size / 2:
+        if size != 64 and size != cpu.address_bit_size // 2:
             v = Operators.SEXTEND(v, size, cpu.address_bit_size)
             size = cpu.address_bit_size
         cpu.push(v, size)
@@ -3587,7 +3586,7 @@ class X86Cpu(Cpu):
 
         value = dest.read()
 
-        if isinstance(tempCount, (int, long)) and tempCount == 0:
+        if isinstance(tempCount, int) and tempCount == 0:
             # this is a no-op
             new_val = value
             dest.write(new_val)
@@ -3632,8 +3631,7 @@ class X86Cpu(Cpu):
         tempCount = Operators.ZEXTEND((count & countMask) % (src.size + 1), OperandSize)
 
         value = dest.read()
-
-        if type(tempCount) in (int, long) and tempCount == 0:
+        if isinstance(tempCount, int) and tempCount == 0:
             # this is a no-op
             new_val = value
             dest.write(new_val)
@@ -3901,8 +3899,7 @@ class X86Cpu(Cpu):
         MASK = ((1 << OperandSize) - 1)
         # count is masked based on destination size
         tempCount = Operators.ZEXTEND(count.read(), OperandSize) & (OperandSize - 1)
-
-        if type(tempCount) in (int, long) and tempCount == 0:
+        if isinstance(tempCount, int) and tempCount == 0:
             pass
         else:
             arg0 = dest.read()
@@ -3940,8 +3937,7 @@ class X86Cpu(Cpu):
         res = Operators.ITEBV(OperandSize, tempCount == 0, arg0, t0 | t1)
         res = res & MASK
         dest.write(res)
-
-        if type(tempCount) in (int, long) and tempCount == 0:
+        if isinstance(tempCount, int) and tempCount == 0:
             pass
         else:
             SIGN_MASK = 1 << (OperandSize - 1)
@@ -3963,7 +3959,7 @@ class X86Cpu(Cpu):
         addr = bitbase.address()
         offt = Operators.SEXTEND(bitoffset.read(), bitoffset.size, bitbase.size)
         offt_is_neg = offt >= (1 << (bitbase.size - 1))
-        offt_in_bytes = offt / 8
+        offt_in_bytes = offt // 8
         bitpos = offt % 8
 
         new_addr = addr + Operators.ITEBV(bitbase.size, offt_is_neg, -offt_in_bytes, offt_in_bytes)
@@ -4003,7 +3999,7 @@ class X86Cpu(Cpu):
         value = src.read()
         flag = Operators.EXTRACT(value, 0, 1) == 1
         res = 0
-        for pos in xrange(1, src.size):
+        for pos in range(1, src.size):
             res = Operators.ITEBV(dest.size, flag, res, pos)
             flag = Operators.OR(flag, Operators.EXTRACT(value, pos, 1) == 1)
 
@@ -4045,7 +4041,7 @@ class X86Cpu(Cpu):
         flag = Operators.EXTRACT(value, src.size - 1, 1) == 1
         res = 0
 
-        for pos in reversed(xrange(0, src.size)):
+        for pos in reversed(range(0, src.size)):
             res = Operators.ITEBV(dest.size, flag, res, pos)
             flag = Operators.OR(flag, (Operators.EXTRACT(value, pos, 1) == 1))
 
@@ -4320,8 +4316,8 @@ class X86Cpu(Cpu):
 
         cpu._calculate_CMP_flags(size, res, arg0, arg1)
 
-        # Advance EDI/ESI pointers
-        increment = Operators.ITEBV(cpu.address_bit_size, cpu.DF, -size / 8, size / 8)
+        #Advance EDI/ESI pointers
+        increment = Operators.ITEBV(cpu.address_bit_size, cpu.DF, -size // 8, size // 8)
         cpu.write_register(src_reg, cpu.read_register(src_reg) + increment)
         cpu.write_register(dest_reg, cpu.read_register(dest_reg) + increment)
 
@@ -4352,7 +4348,7 @@ class X86Cpu(Cpu):
         arg0 = cpu.read_int(src_addr, size)
         dest.write(arg0)
 
-        increment = Operators.ITEBV(cpu.address_bit_size, cpu.DF, -size / 8, size / 8)
+        increment = Operators.ITEBV(cpu.address_bit_size, cpu.DF, -size // 8, size // 8)
         cpu.write_register(src_reg, cpu.read_register(src_reg) + increment)
 
     @rep
@@ -4382,8 +4378,8 @@ class X86Cpu(Cpu):
         # Copy the data
         dest.write(src.read())
 
-        # Advance EDI/ESI pointers
-        increment = Operators.ITEBV(cpu.address_bit_size, cpu.DF, -size / 8, size / 8)
+        #Advance EDI/ESI pointers
+        increment = Operators.ITEBV(cpu.address_bit_size, cpu.DF, -size // 8, size // 8)
         cpu.write_register(src_reg, cpu.read_register(src_reg) + increment)
         cpu.write_register(dest_reg, cpu.read_register(dest_reg) + increment)
 
@@ -4438,7 +4434,7 @@ class X86Cpu(Cpu):
         res = arg0 - arg1
         cpu._calculate_CMP_flags(size, res, arg0, arg1)
 
-        increment = Operators.ITEBV(cpu.address_bit_size, cpu.DF, -size / 8, size / 8)
+        increment = Operators.ITEBV(cpu.address_bit_size, cpu.DF, -size // 8, size // 8)
         cpu.write_register(mem_reg, cpu.read_register(mem_reg) + increment)
 
     @rep
@@ -4460,7 +4456,7 @@ class X86Cpu(Cpu):
         size = src.size
         dest.write(src.read())
         dest_reg = dest.mem.base
-        increment = Operators.ITEBV({'RDI': 64, 'EDI': 32, 'DI': 16}[dest_reg], cpu.DF, -size / 8, size / 8)
+        increment = Operators.ITEBV({'RDI': 64, 'EDI': 32, 'DI': 16}[dest_reg], cpu.DF, -size // 8, size // 8)
         cpu.write_register(dest_reg, cpu.read_register(dest_reg) + increment)
 
 
@@ -4634,7 +4630,7 @@ class X86Cpu(Cpu):
         mask = (1 << item_size) - 1
         res = 0
         count = 0
-        for pos in xrange(0, size / item_size):
+        for pos in range(0, size // item_size):
             if count >= size:
                 break
             item0 = Operators.ZEXTEND((dest_value >> (pos * item_size)) & mask, size)
@@ -4657,7 +4653,7 @@ class X86Cpu(Cpu):
         mask = (1 << item_size) - 1
         res = 0
         count = 0
-        for pos in reversed(xrange(0, size / item_size)):
+        for pos in reversed(range(0, size // item_size)):
             if count >= size:
                 break
             item0 = Operators.ZEXTEND((dest_value >> (pos * item_size)) & mask, size)
@@ -4881,7 +4877,7 @@ class X86Cpu(Cpu):
         arg1 = op1.read()
         res = 0
 
-        for i in xrange(0, op0.size, 8):
+        for i in range(0, op0.size, 8):
             res = Operators.ITEBV(op0.size, Operators.EXTRACT(arg0, i, 8) == Operators.EXTRACT(arg1, i, 8), res | (0xff << i), res)
             # if (arg0>>i)&0xff == (arg1>>i)&0xff:
             #    res = res | (0xff << i)
@@ -4918,7 +4914,7 @@ class X86Cpu(Cpu):
         # Output Selection
         # PCMPESTRI/PCMPISTRI
         stepsize = self._pcmpxstrx_srcdat_format(ctlbyte)
-        if (Operators.EXTRACT(ctlbyte, 6, 1) == 0):
+        if Operators.EXTRACT(ctlbyte, 6, 1) == 0:
             oecx = 0
             tres = res
             while ((tres & 1) == 0):
@@ -4926,10 +4922,10 @@ class X86Cpu(Cpu):
                 tres >>= 1
             return oecx
         else:
-            oecx = 128 / stepsize - 1
+            oecx = 128 // stepsize - 1
             tres = res
-            msbmask = (1 << (128 / stepsize - 1))
-            while ((tres & msbmask) == 0):
+            msbmask = 1 << (128 // stepsize) - 1
+            while (tres & msbmask) == 0:
                 oecx -= 1
                 tres = (tres << 1) & ((msbmask << 1) - 1)
             return oecx
@@ -4937,7 +4933,7 @@ class X86Cpu(Cpu):
     def _pcmpxstrm_output_selection(self, ctlbyte, res):
         # Output Selection
         # PCMPESTRM/PCMPISTRM
-        if (Operators.EXTRACT(ctlbyte, 6, 1) == 0):
+        if Operators.EXTRACT(ctlbyte, 6, 1) == 0:
             return res
         else:
             stepsize = self._pcmpxstrx_srcdat_format(ctlbyte)
@@ -4968,8 +4964,8 @@ class X86Cpu(Cpu):
             val = Operators.NOT(reg - 1)
         else:
             val = reg
-        if (val > 128 / step):
-            val = 128 / step
+        if val > 128 // step:
+            val = 128 // step
         result = []
         for i in range(val):
             uc = Operators.EXTRACT(arg, i * step, step)
@@ -5001,38 +4997,38 @@ class X86Cpu(Cpu):
         elif (Operators.EXTRACT(ctlbyte, 2, 2) == 2):
             #raise NotImplementedError("pcmpistrx Equal each")
             # Equal Each requires Null Byte Comparison Here
-            while len(needle) < xmmsize / stepsize:
+            while len(needle) < xmmsize // stepsize:
                 needle.append('\x00')
-            while len(haystack) < xmmsize / stepsize:
+            while len(haystack) < xmmsize // stepsize:
                 haystack.append('\x00')
-            for i in range(xmmsize / stepsize):
+            for i in range(xmmsize // stepsize):
                 res = Operators.ITEBV(xmmsize, needle[i] == haystack[i], res | (1 << i), res)
         elif (Operators.EXTRACT(ctlbyte, 2, 2) == 3):
             #raise NotImplementedError("pcmpistrx Equal ordered")
             if len(haystack) < len(needle):
                 return 0
             for i in range(len(haystack)):
-                subneedle = needle[: (xmmsize / stepsize - i) if len(needle) + i > xmmsize / stepsize else len(needle)]
+                subneedle = needle[: (xmmsize // stepsize - i) if len(needle) + i > xmmsize // stepsize else len(needle)]
                 res = Operators.ITEBV(xmmsize, haystack[i:i + len(subneedle)] == subneedle, res | (1 << i), res)
         return res
 
     def _pcmpxstrx_polarity(self, res1, ctlbyte, arg2len):
         # Polarity
         stepsize = self._pcmpxstrx_srcdat_format(ctlbyte)
-        if (Operators.EXTRACT(ctlbyte, 4, 2) == 0):
+        if Operators.EXTRACT(ctlbyte, 4, 2) == 0:
             res2 = res1
-        if (Operators.EXTRACT(ctlbyte, 4, 2) == 1):
-            res2 = ((1 << (128 / stepsize)) - 1) ^ res1
-        if (Operators.EXTRACT(ctlbyte, 4, 2) == 2):
+        if Operators.EXTRACT(ctlbyte, 4, 2) == 1:
+            res2 = ((1 << (128 // stepsize)) - 1) ^ res1
+        if Operators.EXTRACT(ctlbyte, 4, 2) == 2:
             res2 = res1
-        if (Operators.EXTRACT(ctlbyte, 4, 2) == 3):
+        if Operators.EXTRACT(ctlbyte, 4, 2) == 3:
             res2 = ((1 << arg2len) - 1) ^ res1
         return res2
 
     def _pcmpxstrx_setflags(self, res, varg0, varg1, ctlbyte):
         stepsize = self._pcmpxstrx_srcdat_format(ctlbyte)
-        self.ZF = len(varg1) < 128 / stepsize
-        self.SF = len(varg0) < 128 / stepsize
+        self.ZF = len(varg1) < 128 // stepsize
+        self.SF = len(varg0) < 128 // stepsize
         self.CF = res != 0
         self.OF = res & 1
         self.AF = False
@@ -5042,12 +5038,12 @@ class X86Cpu(Cpu):
         arg0 = op0.read()
         arg1 = op1.read()
         ctlbyte = op2.read()
-        if (issymbolic(arg0)):
+        if issymbolic(arg0):
             # XMM Register
             assert op0.type == 'register'
             raise ConcretizeRegister(self, op0.reg, "Concretize for PCMPXSTRX")
-        if (issymbolic(arg1)):
-            if (op1.type == 'register'):
+        if issymbolic(arg1):
+            if op1.type == 'register':
                 # XMM Register
                 raise ConcretizeRegister(self, op1.reg, "Concretize for PCMPXSTRX")
             else:
@@ -5063,8 +5059,8 @@ class X86Cpu(Cpu):
         varg1 = cpu._pcmpistrx_varg(arg1, ctlbyte)
         res = cpu._pcmpxstrx_aggregation_operation(varg0, varg1, ctlbyte)
         res = cpu._pcmpxstrx_polarity(res, ctlbyte, len(varg1))
-        if (res == 0):
-            cpu.ECX = 128 / cpu._pcmpxstrx_srcdat_format(ctlbyte)
+        if res == 0:
+            cpu.ECX = 128 // cpu._pcmpxstrx_srcdat_format(ctlbyte)
         else:
             cpu.ECX = cpu._pcmpxstri_output_selection(ctlbyte, res)
         cpu._pcmpxstrx_setflags(res, varg0, varg1, ctlbyte)
@@ -5087,7 +5083,7 @@ class X86Cpu(Cpu):
         res = cpu._pcmpxstrx_aggregation_operation(varg0, varg1, ctlbyte)
         res = cpu._pcmpxstrx_polarity(res, ctlbyte, len(varg1))
         if (res == 0):
-            cpu.ECX = 128 / cpu._pcmpxstrx_srcdat_format(ctlbyte)
+            cpu.ECX = 128 // cpu._pcmpxstrx_srcdat_format(ctlbyte)
         else:
             cpu.ECX = cpu._pcmpxstri_output_selection(ctlbyte, res)
         cpu._pcmpxstrx_setflags(res, varg0, varg1, ctlbyte)
@@ -5120,7 +5116,7 @@ class X86Cpu(Cpu):
         arg1 = op1.read()
 
         res = 0
-        for i in reversed(xrange(7, op1.size, 8)):
+        for i in reversed(range(7, op1.size, 8)):
             res = (res << 1) | ((arg1 >> i) & 1)
         op0.write(Operators.EXTRACT(res, 0, op0.size))
 
@@ -5400,7 +5396,7 @@ class X86Cpu(Cpu):
         result = []
         value_a = dest.read()
         value_b = src.read()
-        for i in reversed(range(0, dest.size, 8)):
+        for i in reversed(list(range(0, dest.size, 8))):
             a = Operators.EXTRACT(value_a, i, 8)
             b = Operators.EXTRACT(value_b, i, 8)
             result.append((a - b) & 0xff)
@@ -5848,7 +5844,7 @@ class X86Cpu(Cpu):
         value = src.read()
         flag = Operators.EXTRACT(value, 0, 1) == 1
         res = 0
-        for pos in xrange(1, src.size):
+        for pos in range(1, src.size):
             res = Operators.ITEBV(dest.size, flag, res, pos)
             flag = Operators.OR(flag, Operators.EXTRACT(value, pos, 1) == 1)
 
@@ -5958,7 +5954,7 @@ class I386CdeclAbi(Abi):
     '''
 
     def get_arguments(self):
-        base = self._cpu.STACK + self._cpu.address_bit_size / 8
+        base = self._cpu.STACK + self._cpu.address_bit_size // 8
         for address in self.values_from(base):
             yield address
 
@@ -5979,7 +5975,7 @@ class I386StdcallAbi(Abi):
         self._arguments = 0
 
     def get_arguments(self):
-        base = self._cpu.STACK + self._cpu.address_bit_size / 8
+        base = self._cpu.STACK + self._cpu.address_bit_size // 8
         for address in self.values_from(base):
             self._arguments += 1
             yield address
@@ -5990,7 +5986,7 @@ class I386StdcallAbi(Abi):
     def ret(self):
         self._cpu.EIP = self._cpu.pop(self._cpu.address_bit_size)
 
-        word_bytes = self._cpu.address_bit_size / 8
+        word_bytes = self._cpu.address_bit_size // 8
         self._cpu.ESP += self._arguments * word_bytes
         self._arguments = 0
 
@@ -6010,7 +6006,7 @@ class SystemVAbi(Abi):
         for reg in reg_args:
             yield reg
 
-        word_bytes = self._cpu.address_bit_size / 8
+        word_bytes = self._cpu.address_bit_size // 8
         for address in self.values_from(self._cpu.RSP + word_bytes):
             yield address
 
