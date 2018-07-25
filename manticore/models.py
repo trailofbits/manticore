@@ -96,7 +96,7 @@ def strcmp(state, s1, s2):
 
     ret = None
 
-    for offset in xrange(min_zero_idx, -1, -1):
+    for offset in range(min_zero_idx, -1, -1):
         s1char = ZEXTEND(cpu.read_int(s1 + offset, 8), cpu.address_bit_size)
         s2char = ZEXTEND(cpu.read_int(s2 + offset, 8), cpu.address_bit_size)
 
@@ -135,7 +135,7 @@ def strlen(state, s):
 
     ret = zero_idx
 
-    for offset in xrange(zero_idx - 1, -1, -1):
+    for offset in range(zero_idx - 1, -1, -1):
         byt = cpu.read_int(s + offset, 8)
         if issymbolic(byt):
             ret = ITEBV(cpu.address_bit_size, byt == 0, offset, ret)

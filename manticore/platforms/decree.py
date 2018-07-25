@@ -1,9 +1,9 @@
-from __future__ import absolute_import
+
 from . import cgcrandom
 # TODO use cpu factory
 from ..core.cpu.x86 import I386Cpu
-from ..core.cpu.abstractcpu import Interruption, ConcretizeRegister
-from ..core.memory import SMemory32
+from ..core.cpu.abstractcpu import Interruption, ConcretizeRegister, ConcretizeArgument
+from ..core.memory import SMemory32, Memory32
 from ..core.smtlib import *
 from ..core.executor import TerminateState
 from ..utils.helpers import issymbolic
@@ -63,7 +63,7 @@ class Socket(object):
     def receive(self, size):
         rx_bytes = min(size, len(self.buffer))
         ret = []
-        for i in xrange(rx_bytes):
+        for i in range(rx_bytes):
             ret.append(self.buffer.pop())
         return ret
 
@@ -138,14 +138,14 @@ class Decree(Platform):
         nprocs = len(self.procs)
         nfiles = len(self.files)
         assert nprocs > 0
-        self.running = range(nprocs)
+        self.running = list(range(nprocs))
         self._current = 0
 
         # Each process can wait for one timeout
         self.timers = [None] * nprocs
         # each fd has a waitlist
-        self.rwait = [set() for _ in xrange(nfiles)]
-        self.twait = [set() for _ in xrange(nfiles)]
+        self.rwait = [set() for _ in range(nfiles)]
+        self.twait = [set() for _ in range(nfiles)]
 
         # Install event forwarders
         for proc in self.procs:
@@ -218,7 +218,7 @@ class Decree(Platform):
         :todo: FIX. move to cpu or memory
         """
         filename = ""
-        for i in xrange(0, 1024):
+        for i in range(0, 1024):
             c = Operators.CHR(cpu.read_int(buf + i, 8))
             if c == '\x00':
                 break
@@ -460,16 +460,16 @@ class Decree(Platform):
                     logger.info("RANDOM: buf points to invalid address. Returning EFAULT")
                     return Decree.CGC_EFAULT
 
-                data = file("/dev/urandom", "r").read(count)
+                data = open("/dev/urandom", "r").read(count)
                 self.syscall_trace.append(("_random", -1, data))
                 cpu.write_bytes(buf, data)
 
         # TODO check 4 bytes from rx_bytes
-        if rx_bytes:
-            if rx_bytes not in cpu.memory:
-                logger.info("RANDOM: Not valid rx_bytes. Returning EFAULT")
+        if rnd_bytes:
+            if rnd_bytes not in cpu.memory:
+                logger.info("RANDOM: Not valid rnd_bytes. Returning EFAULT")
                 return Decree.CGC_EFAULT
-            cpu.write_int(rx_bytes, len(data), 32)
+            cpu.write_int(rnd_bytes, len(data), 32)
 
         logger.info("RANDOM(0x%08x, %d, 0x%08x) -> <%s>)" % (buf, count, rnd_bytes, repr(data[:10])))
         return ret
@@ -561,7 +561,7 @@ class Decree(Platform):
                 self.wait([], [fd], None)
                 raise RestartSyscall()
 
-            for i in xrange(0, count):
+            for i in range(0, count):
                 value = Operators.CHR(cpu.read_int(buf + i, 8))
                 if not isinstance(value, str):
                     logger.debug("TRANSMIT: Writing symbolic values to file %d", fd)
@@ -743,7 +743,7 @@ class Decree(Platform):
                     0x00000006: self.sys_deallocate,
                     0x00000007: self.sys_random,
                     }
-        if cpu.EAX not in syscalls.keys():
+        if cpu.EAX not in list(syscalls.keys()):
             raise TerminateState("32 bit DECREE system call number {} Not Implemented".format(cpu.EAX))
         func = syscalls[cpu.EAX]
         logger.debug("SYSCALL32: %s (nargs: %d)", func.__name__, func.__code__.co_argcount)
@@ -771,7 +771,7 @@ class Decree(Platform):
             logger.info("None running checking if there is some process waiting for a timeout")
             if all([x is None for x in self.timers]):
                 raise Deadlock()
-            self.clocks = min(filter(lambda x: x is not None, self.timers)) + 1
+            self.clocks = min([x for x in self.timers if x is not None]) + 1
             self.check_timers()
             assert len(self.running) != 0, "DEADLOCK!"
             self._current = self.running[0]
@@ -857,7 +857,7 @@ class Decree(Platform):
         ''' Awake proccess if timer has expired '''
         if self._current is None:
             # Advance the clocks. Go to future!!
-            advance = min(filter(lambda x: x is not None, self.timers)) + 1
+            advance = min([x for x in self.timers if x is not None]) + 1
             logger.info("Advancing the clock from %d to %d", self.clocks, advance)
             self.clocks = advance
         for procid in range(len(self.timers)):
@@ -1028,7 +1028,7 @@ class SDecree(Decree):
             raise SymbolicSyscallArgument(cpu, 2)
 
         data = []
-        for i in xrange(count):
+        for i in range(count):
             if False:
                 # Too slow for the new age.
                 value = self.constraints.new_bitvec(8, name="RANDOM_%04d" % self.random)
@@ -1070,7 +1070,7 @@ class DecreeEmu(object):
             raise ConcretizeArgument(platform.current, 2)
 
         data = []
-        for i in xrange(count):
+        for i in range(count):
             value = cgcrandom.stream[DecreeEmu.RANDOM]
             data.append(value)
             DecreeEmu.random += 1
