@@ -15,7 +15,9 @@ from ...utils.helpers import issymbolic
 from ...utils.emulate import UnicornEmulator
 from ...utils.event import Eventful
 
+# tmp imports
 import struct
+from ..smtlib import *
 
 logger = logging.getLogger(__name__)
 register_logger = logging.getLogger('{}.registers'.format(__name__))
@@ -764,7 +766,6 @@ class Cpu(Eventful):
             c = self.memory[address]
 
             if issymbolic(c):
-                from ..smtlib import *
                 xxx = solver.get_all_values(ConstraintSet(), c)[0]
                 # print 'the bytes', xxx
                 c =  struct.pack('B', solver.get_all_values(ConstraintSet(), c)[0])
