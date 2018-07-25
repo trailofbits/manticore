@@ -189,9 +189,8 @@ class DetectInvalid(Detector):
         super(DetectInvalid, self).__init__(**kwargs)
         self._only_human = only_human
 
-    def did_evm_execute_instruction_callback(self, state, instruction, arguments, result_ref):
+    def will_evm_execute_instruction_callback(self, state, instruction, arguments):
         mnemonic = instruction.semantics
-        result = result_ref.value
 
         if mnemonic == 'INVALID':
             if not self._only_human or state.platform.current_transaction.depth == 0:
