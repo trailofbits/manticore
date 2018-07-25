@@ -1089,7 +1089,7 @@ class LazySMemory(SMemory):
         self.bigarray = constraints.new_array(index_bits=self.memory_bit_size)
 
     def mmap(self, addr, size, perms, name=None, **kwargs):
-        assert isinstance(addr, (int, long))
+        assert isinstance(addr, int)
         map = AnonMap(addr, size, perms, name)
         self._add(map)
         return addr
@@ -1114,7 +1114,7 @@ class LazySMemory(SMemory):
                    - 'Map already used' if the piece of memory starting in C{addr} and with length C{size} isn't free.
         '''
         # If addr is NULL, the system determines where to allocate the region.
-        assert addr is None or isinstance(addr, (int, long)), 'Address shall be concrete'
+        assert addr is None or isinstance(addr, int), 'Address shall be concrete'
         assert addr < self.memory_size, 'Address too big'
         assert size > 0
 
@@ -1128,7 +1128,7 @@ class LazySMemory(SMemory):
         # size value is rounded up to the next page boundary
         size = self._ceil(size)
 
-        with open(filename, 'r') as f:
+        with open(filename, 'rb') as f:
             fdata = f.read()
 
         towrite = min(size, len(fdata[offset:]))
