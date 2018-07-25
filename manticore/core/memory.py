@@ -1169,12 +1169,12 @@ class LazySMemory(SMemory):
         size = self._ceil(size)
 
         with open(filename, 'rb') as f:
-            fdata = f.read()
+            fdata = f.read()  # fdata is a bytes now
 
         towrite = min(size, len(fdata[offset:]))
 
         for i in range(towrite):
-            self.bigarray[addr+i:addr+i+1] = fdata[offset+i]
+            self.bigarray[addr+i:addr+i+1] = chr(fdata[offset+i])
 
         logger.debug('New file-memory map @%x size:%x', addr, size)
 

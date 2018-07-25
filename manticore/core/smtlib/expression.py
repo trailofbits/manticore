@@ -611,11 +611,12 @@ class Array(Expression):
         return index
 
     def cast_value(self, value):
-        if isinstance(value, str) and len(value) == 1:
+        if isinstance(value, (str, bytes)) and len(value) == 1:
             value = ord(value)
         if isinstance(value, int):
             return BitVecConstant(self.value_bits, value)
-        assert isinstance(value, BitVec) and value.size == self.value_bits
+        assert isinstance(value, BitVec)
+        assert value.size == self.value_bits
         return value
 
     def __len__(self):
