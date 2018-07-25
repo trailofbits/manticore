@@ -287,6 +287,46 @@ class AnonMap(Map):
         return bytes([self._data[index]])
 
 
+class ArrayMap(Map):
+    def __init__(self, address, size, perms, index_bits, backing_array=None, name=None, **kwargs):
+        super(ArrayMap, self).__init__(address, size, perms)
+        if name is None:
+            name = 'ArrayMap_{:x}'.format(address)
+        if backing_array is not None:
+            self._array = backing_array
+        else:
+            self._array = expression.ArrayProxy(expression.ArrayVariable(index_bits, index_max=size, value_bits=8, name=name))
+
+    def __reduce__(self):
+        return self.__class__, (self.start, len(self), self._perms, self._array.index_bits, self._array, self._array.name)
+
+    def __setitem__(self, key, value):
+        self._array[key] = value
+
+    def __getitem__(self, key):
+        return self._array[key]
+
+    def split(self, address):
+        if address <= self.start:
+            return None, self
+        if address >= self.end:
+            return self, None
+
+        assert self.start < address < self.end
+        index_bits, value_bits = self._array.index_bits, self._array.value_bits
+
+        left_size, right_size = address - self.start, self.end - address
+        left_name, right_name = ['{}_{:d}'.format(self._array.name, i) for i in range(2)]
+
+        head_arr = expression.ArrayProxy(expression.ArrayVariable(index_bits, left_size, value_bits, name=left_name))
+        tail_arr = expression.ArrayProxy(expression.ArrayVariable(index_bits, right_size, value_bits, name=right_name))
+
+        head = ArrayMap(self.start, left_size, self.perms, index_bits, head_arr, left_name)
+        tail = ArrayMap(address, right_size, self.perms, index_bits, tail_arr, right_name)
+
+        return head, tail
+
+
 class FileMap(Map):
     '''
     A file map.
