@@ -108,7 +108,7 @@ class Transaction(object):
         return (self.__class__, (self.sort, self.address, self.price, self.data, self.caller, self.value, self.gas, self.depth, self.result, self.return_data))
 
     def __str__(self):
-        return 'Transaction({:s}, from=0x{:x}, to=0x{:x}, value={:r}, depth={:d}, data={:r}, result={:r}..)'.format(self.sort, self.caller, self.address, self.value, self.depth, self.data, self.result)
+        return 'Transaction({:s}, from=0x{:x}, to=0x{:x}, value={!r}, depth={:d}, data={!r}, result={!r}..)'.format(self.sort, self.caller, self.address, self.value, self.depth, self.data, self.result)
 
 
 # Exceptions...
@@ -1511,7 +1511,7 @@ class EVMWorld(Platform):
     def constraints(self):
         return self._constraints
 
-    def _open_transaction(self, sort, address, price, bytecode_or_data, caller, value):
+    def _open_transaction(self, sort, address, price, bytecode_or_data, caller, value, gas=2300):
 
         if self.depth > 0:
             origin = self.tx_origin()
@@ -1519,7 +1519,7 @@ class EVMWorld(Platform):
             origin = caller
         assert price is not None
 
-        tx = Transaction(sort, address, price, bytecode_or_data, caller, value, depth=self.depth)
+        tx = Transaction(sort, address, price, bytecode_or_data, caller, value, depth=self.depth, gas=gas)
         if sort == 'CREATE':
             bytecode = bytecode_or_data
             data = bytearray()
@@ -1543,7 +1543,6 @@ class EVMWorld(Platform):
     def _close_transaction(self, result, data=None, rollback=False):
         self._publish('will_close_transaction', self._callstack[-1][0])
         tx, logs, deleted_accounts, account_storage, vm = self._callstack.pop()
-        self._publish('did_close_transaction', tx)
         assert self.constraints == vm.constraints
         #seth constraints to the constraints gathered in the last vm
         self.constraints = vm.constraints
@@ -1559,6 +1558,9 @@ class EVMWorld(Platform):
 
         tx.set_result(result, data)
         self._transactions.append(tx)
+
+        self._publish('did_close_transaction', tx)
+
         if self.depth == 0:
             raise TerminateState(tx.result)
 
@@ -1964,7 +1966,7 @@ class EVMWorld(Platform):
         #Here we have enough funds and room in the callstack
         self.send_funds(caller, address, value)
 
-        self._open_transaction(sort, address, price, data, caller, value)
+        self._open_transaction(sort, address, price, data, caller, value, gas=gas)
 
         if failed:
             self._close_transaction('TXERROR', rollback=True)

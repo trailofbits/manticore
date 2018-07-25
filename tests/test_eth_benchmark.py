@@ -12,7 +12,7 @@ from manticore.core.smtlib import ConstraintSet, operators
 from manticore.core.smtlib.expression import BitVec
 from manticore.core.smtlib import solver
 from manticore.core.state import State
-from manticore.ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, Detector, NoAliveStates, ABI, EthereumError
+from manticore.ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, Detector, NoAliveStates, ABI, EthereumError, DetectReentrancy
 from manticore.platforms.evm import EVMWorld, ConcretizeStack, concretized_args, Return, Stop
 from manticore.core.smtlib.visitors import pretty_print, translate_to_smtlib, simplify, to_constant
 
@@ -46,13 +46,14 @@ class EthBenchmark(unittest.TestCase):
         Tests DetectInvalid over the consensys benchmark suit
         """
         mevm = self.mevm
-
         mevm.register_detector(DetectInvalid())
         mevm.register_detector(DetectIntegerOverflow())
+        mevm.register_detector(DetectReentrancy())
 
         filename = os.path.join(THIS_DIR, 'binaries', 'benchmark', '{}.sol'.format(name))
 
-        mevm.multi_tx_analysis(filename, tx_limit=3, args=(mevm.make_symbolic_value(),))
+
+        mevm.multi_tx_analysis(filename, contract_name='Benchmark', args=(mevm.make_symbolic_value(),))
 
         expected_findings = set(( (c, d) for b, c, d in should_find))
         actual_findings = set(( (c, d) for a, b, c, d in mevm.global_findings))
@@ -142,3 +143,15 @@ class EthBenchmark(unittest.TestCase):
     def test_integer_overflow_dynarray(self):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, set())
+
+    def test_reentrancy_nostateeffect(self):
+        name = inspect.currentframe().f_code.co_name[5:]
+        self._test(name, set())
+
+    def test_reentrancy_dao_fixed(self):
+        name = inspect.currentframe().f_code.co_name[5:]
+        self._test(name, set())
+
+    def test_reentrancy_dao(self):
+        name = inspect.currentframe().f_code.co_name[5:]
+        self._test(name, set([(247L, 'Reentrancy muti-million ether bug', False)]))
