@@ -296,6 +296,10 @@ class ConstantFolderSimplifier(Visitor):
         if all(isinstance(o, Constant) for o in operands):
             return BitVecConstant(expression.size, operands[0].value, taint=expression.taint)
 
+    def visit_BitVecSignExtend(self, expression, *operands):
+        if expression.extend == 0:
+            return operands[0]
+
     def visit_BitVecExtract(self, expression, *operands):
         if all(isinstance(o, Constant) for o in expression.operands):
             value = expression.operands[0].value
@@ -699,6 +703,7 @@ class Replace(Visitor):
         self._replace_bindings = bindings
 
     def visit_Variable(self, expression):
+
         if expression in self._replace_bindings:
             return self._replace_bindings[expression]
         return expression
