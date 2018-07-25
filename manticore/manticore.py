@@ -103,7 +103,7 @@ def make_linux(program, argv=None, env=None, entry_symbol=None, symbolic_files=N
         logger.info('Starting with concrete input: %s', concrete_start)
 
     if pure_symbolic:
-        logger.debug("[EXPERIMENTAL] Using purely symbolic memory")
+        logger.warning("[EXPERIMENTAL] Using purely symbolic memory")
 
     for i, arg in enumerate(argv):
         argv[i] = initial_state.symbolicate_buffer(arg, label='ARGV%d' % (i + 1))
