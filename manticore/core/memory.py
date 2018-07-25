@@ -1173,7 +1173,7 @@ class LazySMemory(SMemory):
 
         towrite = min(size, len(fdata[offset:]))
 
-        for i in xrange(towrite):
+        for i in range(towrite):
             self.bigarray[addr+i:addr+i+1] = fdata[offset+i]
 
         logger.debug('New file-memory map @%x size:%x', addr, size)
