@@ -15,6 +15,8 @@ from ...utils.helpers import issymbolic
 from ...utils.emulate import UnicornEmulator
 from ...utils.event import Eventful
 
+import struct
+
 logger = logging.getLogger(__name__)
 register_logger = logging.getLogger('{}.registers'.format(__name__))
 
@@ -582,7 +584,7 @@ class Cpu(Eventful):
         '''
         if size is None:
             size = self.address_bit_size
-        assert size in SANE_SIZES
+        # assert size in SANE_SIZES
         self._publish('will_write_memory', where, expression, size)
 
         data = [Operators.CHR(Operators.EXTRACT(expression, offset, 8)) for offset in range(0, size, 8)]
@@ -602,7 +604,7 @@ class Cpu(Eventful):
         '''
         if size is None:
             size = self.address_bit_size
-        assert size in SANE_SIZES
+        # assert size in SANE_SIZES
         self._publish('will_read_memory', where, size)
 
         data = self._memory.read(where, size // 8, force)
@@ -762,15 +764,19 @@ class Cpu(Eventful):
             c = self.memory[address]
 
             if issymbolic(c):
-                assert isinstance(c, BitVec) and c.size == 8
-                if isinstance(c, Constant):
-                    c = bytes([c.value])
-                else:
-                    logger.error('Concretize executable memory %r %r', c, text)
-                    raise ConcretizeMemory(self.memory,
-                                           address=pc,
-                                           size=8 * self.max_instr_width,
-                                           policy='INSTRUCTION')
+                from ..smtlib import *
+                xxx = solver.get_all_values(ConstraintSet(), c)[0]
+                # print 'the bytes', xxx
+                c =  struct.pack('B', solver.get_all_values(ConstraintSet(), c)[0])
+                # assert isinstance(c, BitVec) and c.size == 8
+                # if isinstance(c, Constant):
+                #     c = bytes([c.value])
+                # else:
+                #     logger.error('Concretize executable memory %r %r', c, text)
+                #     raise ConcretizeMemory(self.memory,
+                #                            address=pc,
+                #                            size=8 * self.max_instr_width,
+                #                            policy='INSTRUCTION')
             text += c
 
         #Pad potentially incomplete instruction with zeroes

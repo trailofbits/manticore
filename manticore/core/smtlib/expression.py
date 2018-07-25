@@ -893,8 +893,8 @@ class ArrayProxy(Array):
         if self.index_max is not None:
             from manticore.core.smtlib.visitors import simplify
             index = simplify(BitVecITE(self.index_bits, index < 0, self.index_max + index + 1, index))
-        if isinstance(index, Constant) and index.value in self._concrete_cache:
-            return self._concrete_cache[index.value]
+        # if isinstance(index, Constant) and index.value in self._concrete_cache:
+        #     return self._concrete_cache[index.value]
 
         return self._array.select(index)
 
@@ -905,8 +905,8 @@ class ArrayProxy(Array):
             value = self.cast_value(value)
         from manticore.core.smtlib.visitors import simplify
         index = simplify(index)
-        if isinstance(index, Constant):
-            self._concrete_cache[index.value] = value
+        # if isinstance(index, Constant):
+        #     self._concrete_cache[index.value] = value
         self.written.add(index)
         auxiliar = self._array.store(index, value)
         self._array = auxiliar

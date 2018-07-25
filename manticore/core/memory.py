@@ -1069,6 +1069,178 @@ class SMemory(Memory):
         return solutions
 
 
+class LazySMemory(SMemory):
+    '''
+    A fully symbolic memory.
+
+    Currently does not support cross-page reads/writes.
+    '''
+
+    def __reduce__(self):
+        return (self.__class__, (self.constraints, self._symbols, self._maps), {'backing_array': self.bigarray })
+
+    def __setstate__(self, state):
+        self.bigarray = state['backing_array']
+
+    def __init__(self, constraints, *args, **kwargs):
+        super(LazySMemory, self).__init__(constraints, *args, **kwargs)
+        # self.bigarray = ArrayMap(0, 2**32 - 1, 'rwx', 32, name='bigarray')
+        # self.bigarray = ArrayMap(0, 2**32 - 1, 'rwx', 32, name='bigarray')
+        self.bigarray = constraints.new_array(index_bits=self.memory_bit_size)
+
+    def mmap(self, addr, size, perms, name=None, **kwargs):
+        assert isinstance(addr, (int, long))
+        map = AnonMap(addr, size, perms, name)
+        self._add(map)
+        return addr
+
+    def mmapFile(self, addr, size, perms, filename, offset=0):
+        '''
+        Creates a new file mapping in the memory address space.
+
+        :param addr: the starting address (took as hint). If C{addr} is C{0} the first big enough
+                     chunk of memory will be selected as starting address.
+        :param size: the contents of a file mapping are initialized using C{size} bytes starting
+                     at offset C{offset} in the file C{filename}.
+        :param perms: the access permissions to this memory.
+        :param filename: the pathname to the file to map.
+        :param offset: the contents of a file mapping are initialized using C{size} bytes starting
+                      at offset C{offset} in the file C{filename}.
+        :return: the starting address where the file was mapped.
+        :rtype: int
+        :raises error:
+                   - 'Address shall be concrete' if C{addr} is not an integer number.
+                   - 'Address too big' if C{addr} goes beyond the limit of the memory.
+                   - 'Map already used' if the piece of memory starting in C{addr} and with length C{size} isn't free.
+        '''
+        # If addr is NULL, the system determines where to allocate the region.
+        assert addr is None or isinstance(addr, (int, long)), 'Address shall be concrete'
+        assert addr < self.memory_size, 'Address too big'
+        assert size > 0
+
+        map = AnonMap(addr, size, perms)
+        self._add(map)
+
+        # address is rounded down to the nearest multiple of the allocation granularity
+        if addr is not None:
+            addr = self._floor(addr)
+
+        # size value is rounded up to the next page boundary
+        size = self._ceil(size)
+
+        with open(filename, 'r') as f:
+            fdata = f.read()
+
+        towrite = min(size, len(fdata[offset:]))
+
+        for i in xrange(towrite):
+            self.bigarray[addr+i:addr+i+1] = fdata[offset+i]
+
+        logger.debug('New file-memory map @%x size:%x', addr, size)
+
+        return addr
+
+    def _deref_can_succeed(self, map, address, size):
+        if not issymbolic(address):
+            return address >= map.start and address + size < map.end
+        else:
+            constraint = Operators.AND(address >= map.start, address + size < map.end)
+            return solver.can_be_true(self.constraints, constraint)
+
+    def map_containing(self, address):
+        if not issymbolic(address):
+            return super(LazySMemory, self).map_containing(address)
+        else:
+            found = None
+            for m in self._maps:
+                if self._deref_can_succeed(m, address, 1):
+                    if not isinstance(m, ArrayMap):
+                        continue
+                    if found:
+                        raise InvalidMemoryAccess(address, 'r')
+                    found = m
+            return found
+
+    def read(self, address, size, force=False):
+        def _constrain_to_maps(cs, mappings, where):
+            # maps = state.cpu.memory.mappings()
+            maps = mappings
+
+            from manticore.core.smtlib.operators import UGE, ULT, OR
+
+            cons = []
+            print(maps)
+            for map in maps:
+                print(33)
+                start, end = map[:2]
+
+                startcons = UGE(where, start)
+                endcons = ULT(where, end)
+
+                c = startcons & endcons
+                cons.append(c)
+
+                logger.info('map', hex(start), hex(end))
+
+            if len(cons) > 1:
+                big = OR(*cons)
+            else:
+                big = cons[0]
+
+            cs.add(big)
+            # state.constrain(big)
+
+        # print 'address', address, 'size', size
+        if issymbolic(address):
+            # TODO FIXME what to do here? constrain to maps and continue?
+            # don't constrain to maps because then we can't distinguish later if a solution isn't SAT because of maps
+            # or because of the actual code
+
+            # sym access, constrain to maps and continue
+            pass
+            # _constrain_to_maps(self.constraints, self.mappings(), address)
+        else:
+            if not self.access_ok(slice(address, address + size), 'r', force):
+                raise InvalidMemoryAccess(address, 'r')
+
+        page_offset = address
+        # print 'mem read', hex(address), size
+        ret = self.bigarray[page_offset:page_offset + size]
+        # print 'got the ret', ret
+        return ret
+
+        # m = self.map_containing(address)
+        # if isinstance(m, ArrayMap):
+        #     page_offset = address - m.start
+        #     return m[page_offset:page_offset + size]
+        # else:
+        #     return super(SMemory, self).read(address, size, force)
+
+    def write(self, address, value, force=False):
+        if issymbolic(address):
+            # TODO FIXME what do we do here?
+            pass
+        else:
+            if not self.access_ok(slice(address, address + len(value)), 'w', force):
+                raise InvalidMemoryAccess(address, 'w')
+
+        page_offset = address
+        # print 'mem write', hex(address), value
+        from ..core.smtlib import pretty_print
+        # print 'pre write', pretty_print(self.bigarray.array)
+        self.bigarray[page_offset:page_offset + len(value)] = value
+        # print 'post write', pretty_print(self.bigarray.array)
+        return
+
+        # m = self.map_containing(address)
+        # if isinstance(m, ArrayMap):
+        #     page_offset = address - m.start
+        #     m[page_offset:page_offset + len(value)] = value
+        # else:
+        #     return super(SMemory, self).write(address, value, force)
+
+
+
 class Memory32(Memory):
     memory_bit_size = 32
     page_bit_size = 12
@@ -1090,5 +1262,15 @@ class SMemory32L(SMemory):
 
 
 class SMemory64(SMemory):
+    memory_bit_size = 64
+    page_bit_size = 12
+
+
+class LazySMemory32(LazySMemory):
+    memory_bit_size = 32
+    page_bit_size = 12
+
+
+class LazySMemory64(LazySMemory):
     memory_bit_size = 64
     page_bit_size = 12
