@@ -525,7 +525,7 @@ class ManticoreOutput(object):
         self.save_constraints(state)
         self.save_input_symbols(state)
 
-        for stream_name, data in list(state.platform.generate_workspace_files().items()):
+        for stream_name, data in state.platform.generate_workspace_files().items():
             with self._named_stream(stream_name, binary=True) as stream:
                 if isinstance(data, str):
                     data = data.encode()

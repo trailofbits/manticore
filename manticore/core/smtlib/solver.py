@@ -129,6 +129,8 @@ class Z3Solver(Solver):
         self._proc = None
 
         self.debug = False
+        if self.debug:
+            self._send_log = []
         self.version = self._solver_version()
 
         self.support_maximize = False
@@ -170,7 +172,7 @@ class Z3Solver(Solver):
             raise Z3NotFoundError
         try:
             version = version_cmd_output.split()[2]
-            their_version = Version(*list(map(int, version.split('.'))))
+            their_version = Version(*map(int, version.split('.')))
         except (IndexError, ValueError, TypeError):
             pass
         return their_version

@@ -743,7 +743,7 @@ class Decree(Platform):
                     0x00000006: self.sys_deallocate,
                     0x00000007: self.sys_random,
                     }
-        if cpu.EAX not in list(syscalls.keys()):
+        if cpu.EAX not in syscalls.keys():
             raise TerminateState("32 bit DECREE system call number {} Not Implemented".format(cpu.EAX))
         func = syscalls[cpu.EAX]
         logger.debug("SYSCALL32: %s (nargs: %d)", func.__name__, func.__code__.co_argcount)

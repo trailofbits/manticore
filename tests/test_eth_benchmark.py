@@ -59,25 +59,25 @@ class EthBenchmark(unittest.TestCase):
         self.assertEqual(expected_findings, actual_findings)
 
     def test_assert_minimal(self):
-        self._test('assert_minimal', set([(95, 'INVALID intruction', False)]))
+        self._test('assert_minimal', {(95, 'INVALID intruction', False)})
 
     def test_assert_constructor(self):
-        self._test('assert_constructor', set([(23, 'INVALID intruction', True)]))
+        self._test('assert_constructor', {(23, 'INVALID intruction', True)})
 
     def test_assert_multitx_1(self):
         self._test('assert_multitx_1', set())
 
     def test_assert_multitx_2(self):
-        self._test('assert_multitx_2', set([(150, 'INVALID intruction', False)]))
+        self._test('assert_multitx_2', {(150, 'INVALID intruction', False)})
 
     def test_integer_overflow_minimal(self):
-        self._test('integer_overflow_minimal', set([(163, 'Unsigned integer overflow at SUB instruction', False)]))
+        self._test('integer_overflow_minimal', {(163, 'Unsigned integer overflow at SUB instruction', False)})
 
     def test_integer_overflow_add(self):
-        self._test('integer_overflow_add', set([(163, 'Unsigned integer overflow at ADD instruction', False)]))
+        self._test('integer_overflow_add', {(163, 'Unsigned integer overflow at ADD instruction', False)})
 
     def test_integer_overflow_mul(self):
-        self._test('integer_overflow_mul', set([(163, 'Unsigned integer overflow at MUL instruction', False)]))
+        self._test('integer_overflow_mul', {(163, 'Unsigned integer overflow at MUL instruction', False)})
 
     def test_integer_overflow_path_1(self):
         self._test('integer_overflow_path_1', set())
@@ -89,19 +89,21 @@ class EthBenchmark(unittest.TestCase):
         self._test('integer_overflow_benign_2', set())
 
     def test_integer_overflow_multitx_onefunc_feasible(self):
-        self._test('integer_overflow_multitx_onefunc_feasible', set([(185, 'Unsigned integer overflow at SUB instruction', False)]))
+        self._test('integer_overflow_multitx_onefunc_feasible',
+                   {(185, 'Unsigned integer overflow at SUB instruction', False)})
 
     def test_integer_overflow_multitx_onefunc_infeasible(self):
         self._test('integer_overflow_multitx_onefunc_infeasible', set())
 
     def test_integer_overflow_multitx_multifunc_feasible(self):
-        self._test('integer_overflow_multitx_multifunc_feasible', set([(205, 'Unsigned integer overflow at SUB instruction', False)]))
+        self._test('integer_overflow_multitx_multifunc_feasible',
+                   {(205, 'Unsigned integer overflow at SUB instruction', False)})
 
     def test_integer_overflow_storageinvariant(self):
         self._test('integer_overflow_storageinvariant', set())
 
     def test_integer_overflow_mapping_sym_1(self):
-        self._test('integer_overflow_mapping_sym_1', set([(135, 'Unsigned integer overflow at SUB instruction', False)]))
+        self._test('integer_overflow_mapping_sym_1', {(135, 'Unsigned integer overflow at SUB instruction', False)})
 
     def test_integer_overflow_mapping_sym_2(self):
         self._test('integer_overflow_mapping_sym_2', set())

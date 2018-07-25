@@ -59,7 +59,7 @@ class Eventful(object, metaclass=EventsGatherMetaclass):
         Return all events that all subclasses have so far registered to publish.
         '''
         all_evts = set()
-        for cls, evts in list(cls.__all_events__.items()):
+        for cls, evts in cls.__all_events__.items():
             all_evts.update(evts)
         return all_evts
 
@@ -126,7 +126,7 @@ class Eventful(object, metaclass=EventsGatherMetaclass):
 
         # The include_source flag indicates to prepend the source of the event in
         # the callback signature. This is set on forward_events_from/to
-        for sink, include_source in list(self._forwards.items()):
+        for sink, include_source in self._forwards.items():
             if include_source:
                 sink._publish_impl(_name, self, *args, **kwargs)
             else:

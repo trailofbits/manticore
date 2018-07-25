@@ -607,7 +607,7 @@ class Cpu(Eventful):
 
         data = self._memory.read(where, size // 8, force)
         assert (8 * len(data)) == size
-        value = Operators.CONCAT(size, *list(map(Operators.ORD, reversed(data))))
+        value = Operators.CONCAT(size, *map(Operators.ORD, reversed(data)))
 
         self._publish('did_read_memory', where, value, size)
         return value
@@ -913,8 +913,7 @@ class Cpu(Eventful):
         # backup, null, use, then restore the list.
         # will disabled_signals(self):
         #    return map(self.render_register, self._regfile.canonical_registers)
-        return list(map(self.render_register,
-                        sorted(self._regfile.canonical_registers)))
+        return map(self.render_register, sorted(self._regfile.canonical_registers))
 
     # Generic string representation
     def __str__(self):

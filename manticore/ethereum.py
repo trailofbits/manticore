@@ -436,13 +436,13 @@ class SolidityMetadata(object):
         self._init_bytecode = init_bytecode
         self._runtime_bytecode = runtime_bytecode
         self._hashes = hashes
-        self.abi = dict([(item.get('name', '{fallback}'), item) for item in abi])
+        self.abi = {item.get('name', '{fallback}'): item for item in abi}
         self.warnings = warnings
         self.srcmap_runtime = self.__build_source_map(self.runtime_bytecode, srcmap_runtime)
         self.srcmap = self.__build_source_map(self.init_bytecode, srcmap)
 
     def get_constructor_arguments(self):
-        for fun in list(self.abi.values()):
+        for fun in self.abi.values():
             if fun['type'] == 'constructor':
                 constructor_inputs = fun['inputs']
                 break
@@ -503,7 +503,7 @@ class SolidityMetadata(object):
 
         for asm_pos, md in enumerate(srcmap):
             if len(md):
-                d = dict((p, k) for p, k in enumerate(md.split(':')) if k)
+                d = {p: k for p, k in enumerate(md.split(':')) if k}
 
                 byte_offset = int(d.get(0, byte_offset))
                 source_len = int(d.get(1, source_len))
@@ -549,7 +549,7 @@ class SolidityMetadata(object):
 
     @property
     def signatures(self):
-        return dict(((b, a) for (a, b) in list(self._hashes.items())))
+        return {b: a for a, b in self._hashes.items()}
 
     def get_abi(self, hsh):
         func_name = self.get_func_name(hsh)
@@ -805,7 +805,7 @@ class ABI(object):
             bytes = bytearray()
             for _ in range(padding):
                 bytes.append(0)
-            for position in reversed(list(range(size))):
+            for position in reversed(range(size)):
                 bytes.append(Operators.EXTRACT(value, position * 8, 8))
         assert len(bytes) == size + padding
         return bytes
@@ -829,7 +829,7 @@ class ABI(object):
             for _ in range(padding):
                 bytes.append(0)
 
-            for position in reversed(list(range(size))):
+            for position in reversed(range(size)):
                 bytes.append(Operators.EXTRACT(value, position * 8, 8))
         return bytes
 
@@ -938,7 +938,7 @@ class EVMContract(EVMAccount):
             raise EthereumError("Sorry function name is used by the python wrapping")
         if func_name in self._hashes:
             raise EthereumError("A function with that name is already defined")
-        if func_id in {func_id for _, func_id in list(self._hashes.values())}:
+        if func_id in {func_id for _, func_id in self._hashes.values()}:
             raise EthereumError("A function with the same hash is already defined")
         self._hashes[func_name] = signature, func_id
 
@@ -951,7 +951,7 @@ class EVMContract(EVMAccount):
             self._hashes = {}
             md = self._manticore.get_metadata(self._address)
             if md is not None:
-                for signature, func_id in list(md._hashes.items()):
+                for signature, func_id in md._hashes.items():
                     self.add_function(signature)
             # It was successful, no need to re-run. _init_hashes disabled
             self._init_hashes = self._null_func
@@ -968,7 +968,7 @@ class EVMContract(EVMAccount):
         '''
         if not name.startswith('_'):
             self._init_hashes()
-            if self._hashes is not None and name in list(self._hashes.keys()):
+            if self._hashes is not None and name in self._hashes.keys():
                 def f(*args, **kwargs):
                     caller = kwargs.get('caller', None)
                     value = kwargs.get('value', 0)
@@ -1053,7 +1053,7 @@ class ManticoreEVM(Manticore):
         symbolic_address = self.make_symbolic_value(name=name)
 
         constraint = symbolic_address == 0
-        for contract_account_i in map(int, list(self._accounts.values())):
+        for contract_account_i in map(int, self._accounts.values()):
             constraint = Operators.OR(symbolic_address == contract_account_i, constraint)
         self.constrain(constraint)
         return symbolic_address
@@ -1087,10 +1087,10 @@ class ManticoreEVM(Manticore):
                     pos += 2
 
             if libraries is None:
-                raise DependencyError(list(deps.keys()))
+                raise DependencyError(deps.keys())
             libraries = dict(libraries)
             hex_contract_lst = list(hex_contract)
-            for lib_name, pos_lst in list(deps.items()):
+            for lib_name, pos_lst in deps.items():
                 try:
                     lib_address = libraries[lib_name]
                 except KeyError:
@@ -1186,7 +1186,7 @@ class ManticoreEVM(Manticore):
         if contract_name is None:
             name, contract = list(contracts.items())[0]
         else:
-            for n, c in list(contracts.items()):
+            for n, c in contracts.items():
                 if n.split(":")[1] == contract_name:
                     name, contract = n, c
                     break
@@ -1200,7 +1200,7 @@ class ManticoreEVM(Manticore):
         bytecode = ManticoreEVM._link(contract['bin'], libraries)
         srcmap = contract['srcmap'].split(';')
         srcmap_runtime = contract['srcmap-runtime'].split(';')
-        hashes = dict(((str(x), str(y)) for x, y in list(contract['hashes'].items())))
+        hashes = {str(x): str(y) for x, y in contract['hashes'].items()}
         abi = json.loads(contract['abi'])
         runtime = ManticoreEVM._link(contract['bin-runtime'], libraries)
         return name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
@@ -1482,7 +1482,7 @@ class ManticoreEVM(Manticore):
         if not self.count_running_states():
             raise NoAliveStates
 
-        if address is not None and address in list(map(int, list(self.accounts.values()))):
+        if address is not None and address in map(int, self.accounts.values()):
             # Address already used
             raise EthereumError("Address already used")
 
@@ -1505,7 +1505,7 @@ class ManticoreEVM(Manticore):
 
     def _get_uniq_name(self, stem):
         count = 0
-        for name_i in list(self.accounts.keys()):
+        for name_i in self.accounts.keys():
             if name_i.startswith(stem):
                 try:
                     count = max(count, int(name_i[len(stem):]) + 1)
@@ -1518,7 +1518,7 @@ class ManticoreEVM(Manticore):
     def new_address(self):
         ''' Create a fresh 160bit address '''
         new_address = random.randint(100, pow(2, 160))
-        if new_address in list(map(int, list(self.accounts.values()))):
+        if new_address in map(int, self.accounts.values()):
             return self.new_address()
         return new_address
 
@@ -1660,7 +1660,7 @@ class ManticoreEVM(Manticore):
             raise ValueError('unsupported transaction type')
 
         # Caller must be a normal known account
-        if caller not in list(self._accounts.values()):
+        if caller not in self._accounts.values():
             raise EthereumError("Unknown caller address!")
 
         if sort == 'CREATE':
@@ -1982,7 +1982,7 @@ class ManticoreEVM(Manticore):
         logger.info("Generated testcase No. {} - {}".format(testcase.num, message))
 
         local_findings = set()
-        for detector in list(self.detectors.values()):
+        for detector in self.detectors.values():
             for address, pc, finding, at_init in detector.get_findings(state):
                 if (address, pc, finding, at_init) not in local_findings:
                     local_findings.add((address, pc, finding, at_init))
@@ -2083,7 +2083,7 @@ class ManticoreEVM(Manticore):
 
             if blockchain._sha3:
                 summary.write("Known hashes:\n")
-                for key, value in list(blockchain._sha3.items()):
+                for key, value in blockchain._sha3.items():
                     summary.write('%s::%x\n' % (binascii.hexlify(key.encode()).decode(), value))
 
             if is_something_symbolic:
@@ -2129,7 +2129,7 @@ class ManticoreEVM(Manticore):
                         tx_summary.write('\n')
                         tx_summary.write("Function call:\n")
                         tx_summary.write("%s(" % state.solve_one(function_name))
-                        tx_summary.write(','.join(map(repr, list(map(state.solve_one, arguments)))))
+                        tx_summary.write(','.join(map(repr, map(state.solve_one, arguments))))
                         is_argument_symbolic = any(map(issymbolic, arguments))
                         is_something_symbolic = is_something_symbolic or is_argument_symbolic
                         tx_summary.write(') -> %s %s\n' % (tx.result, flagged(is_argument_symbolic)))
@@ -2197,7 +2197,7 @@ class ManticoreEVM(Manticore):
     @property
     def global_findings(self):
         global_findings = set()
-        for detector in list(self.detectors.values()):
+        for detector in self.detectors.values():
             for address, pc, finding, at_init in detector.global_findings:
                 if (address, pc, finding, at_init) not in global_findings:
                     global_findings.add((address, pc, finding, at_init))
@@ -2259,7 +2259,7 @@ class ManticoreEVM(Manticore):
         with self._output.save_stream('global.summary') as global_summary:
             # (accounts created by contract code are not in this list )
             global_summary.write("Global runtime coverage:\n")
-            for address in list(self.contract_accounts.values()):
+            for address in self.contract_accounts.values():
                 global_summary.write("{:x}: {:2.2f}%\n".format(int(address), self.global_coverage(address)))
 
                 md = self.get_metadata(address)
@@ -2267,7 +2267,7 @@ class ManticoreEVM(Manticore):
                     global_summary.write('\n\nCompiler warnings for %s:\n' % md.name)
                     global_summary.write(md.warnings)
 
-        for address, md in list(self.metadata.items()):
+        for address, md in self.metadata.items():
             with self._output.save_stream('global_%s.sol' % md.name) as global_src:
                 global_src.write(md.source_code)
             with self._output.save_stream('global_%s_runtime.bytecode' % md.name, binary=True) as global_runtime_bytecode:

@@ -1285,7 +1285,7 @@ class Armv7Cpu(Cpu):
         src1 = op1.read()
         src2 = op2.read()
         result = []
-        for offset in reversed(list(range(0, op1.size, 8))):
+        for offset in reversed(range(0, op1.size, 8)):
             byte1 = Operators.EXTRACT(src1, offset, 8)
             byte2 = Operators.EXTRACT(src2, offset, 8)
             byte_diff = byte1 - byte2

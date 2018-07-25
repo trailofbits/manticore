@@ -255,7 +255,7 @@ def concretized_args(**policies):
         @wraps(func)
         def wrapper(*args, **kwargs):
             spec = inspect.getargspec(func)
-            for arg, policy in list(policies.items()):
+            for arg, policy in policies.items():
                 assert arg in spec.args, "Concretizer argument not found in wrapped function."
                 # index is 0-indexed, but ConcretizeStack is 1-indexed. However, this is correct
                 # since implementation method is always a bound method (self is param 0)
@@ -1993,7 +1993,7 @@ class EVMWorld(Platform):
 
         # If know_hashes is true then there is a _known_ solution for the hash
         known_hashes = False
-        for key, value in list(self._sha3.items()):
+        for key, value in self._sha3.items():
             assert not any(map(issymbolic, key)), "Saved sha3 data,hash pairs should be concrete"
             cond = compare_buffers(key, data)
             if solver.can_be_true(self._constraints, cond):

@@ -79,7 +79,7 @@ def make_decree(program, concrete_start='', **kwargs):
 def make_linux(program, argv=None, env=None, entry_symbol=None, symbolic_files=None, concrete_start=''):
     env = {} if env is None else env
     argv = [] if argv is None else argv
-    env = ['%s=%s' % (k, v) for k, v in list(env.items())]
+    env = ['%s=%s' % (k, v) for k, v in env.items()]
 
     logger.info('Loading program %s', program)
 
@@ -408,7 +408,7 @@ class Manticore(Eventful):
                     profile.disable()
                     profile.create_stats()
                     with self.locked_context('profiling_stats', list) as profiling_stats:
-                        profiling_stats.append(list(profile.stats.items()))
+                        profiling_stats.append(profile.stats.items())
                     return result
                 return wrapper
 

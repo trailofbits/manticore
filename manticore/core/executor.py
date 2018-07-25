@@ -141,7 +141,7 @@ class BranchLimited(Policy):
             visited = policy_ctx.get('visited', dict())
             summaries = policy_ctx.get('summaries', dict())
             lst = []
-            for id_, pc in list(summaries.items()):
+            for id_, pc in summaries.items():
                 cnt = visited.get(pc, 0)
                 if id_ not in state_ids:
                     continue

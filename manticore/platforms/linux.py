@@ -754,7 +754,7 @@ class Linux(Platform):
                 logger.debug("\t\t%s", repr(e))
 
         logger.debug("\tAuxv:")
-        for name, val in list(auxv.items()):
+        for name, val in auxv.items():
             logger.debug("\t\t%s: %s", name, hex(val))
 
         # We save the argument and environment pointers
@@ -773,7 +773,7 @@ class Linux(Platform):
         # Put all auxv strings into the string stack area.
         # And replace the value be its pointer
 
-        for name, value in list(auxv.items()):
+        for name, value in auxv.items():
             if hasattr(value, '__len__'):
                 cpu.push_bytes(value)
                 auxv[name] = cpu.STACK
@@ -810,7 +810,7 @@ class Linux(Platform):
         # AT_NULL
         cpu.push_int(0)
         cpu.push_int(0)
-        for name, val in list(auxv.items()):
+        for name, val in auxv.items():
             cpu.push_int(val)
             cpu.push_int(auxvnames[name])
 

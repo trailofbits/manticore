@@ -540,7 +540,7 @@ class AMD64RegFile(RegisterFile):
             flags.append((self._registers[flag], offset))
 
         if any(issymbolic(flag) for flag, offset in flags):
-            res = reduce(operator.or_, list(map(make_symbolic, flags)))
+            res = reduce(operator.or_, map(make_symbolic, flags))
         else:
             res = 0
             for flag, offset in flags:
@@ -5396,7 +5396,7 @@ class X86Cpu(Cpu):
         result = []
         value_a = dest.read()
         value_b = src.read()
-        for i in reversed(list(range(0, dest.size, 8))):
+        for i in reversed(range(0, dest.size, 8)):
             a = Operators.EXTRACT(value_a, i, 8)
             b = Operators.EXTRACT(value_b, i, 8)
             result.append((a - b) & 0xff)
