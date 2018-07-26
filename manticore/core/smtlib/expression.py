@@ -898,7 +898,7 @@ class ArrayProxy(Array):
         self.written.add(index)
         auxiliar = self._array.store(index, value)
         self._array = auxiliar
-        return auxiliar
+        return self
 
     def __getitem__(self, index):
         if isinstance(index, slice):
