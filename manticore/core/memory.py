@@ -1191,6 +1191,7 @@ class LazySMemory(SMemory):
         if not issymbolic(address):
             return super(LazySMemory, self).map_containing(address)
         else:
+            # ??? iterate through maps looking for the first ArrayMap that is accessible? but raise invalid if there is a second one? i don't understand
             found = None
             for m in self._maps:
                 if self._deref_can_succeed(m, address, 1):
