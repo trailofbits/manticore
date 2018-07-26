@@ -1184,7 +1184,7 @@ class LazySMemory(SMemory):
         if not issymbolic(address):
             return address >= map.start and address + size < map.end
         else:
-            constraint = Operators.AND(address >= map.start, address + size < map.end)
+            constraint = Operators.AND(address >= map.start, address + size < map.end)  # FIXME is address + size < map.end a bug? address + size is first oob of the access. address + size <= map.end?
             return solver.can_be_true(self.constraints, constraint)
 
     def map_containing(self, address):
