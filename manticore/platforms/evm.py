@@ -2568,7 +2568,7 @@ class EVMWorld(Platform):
             storage = self.constraints.new_array(index_bits=256, value_bits=256, name='STORAGE')
 
         if address is None:
-            address = self.new_address(nonce=nonce, is_contract = is_contract)
+            address = self.new_address(sender = sender, nonce=nonce)
         if address in self.accounts:
             # FIXME account may have been created via selfdestruct destinatary
             # or CALL and may contain some ether already. Though if it was a
@@ -2720,7 +2720,12 @@ class EVMWorld(Platform):
         if failed:
             self._close_transaction('TXERROR', rollback=True)
 
-        self._world_state[caller]['nonce'] += 1
+        if caller not in self._world_state:
+            self._world_state[caller] = {}
+        if 'nonce' not in self._world_state[caller] or self._world_state[caller]['nonce'] is None:
+            self._world_state[caller]['nonce'] = 1
+        else:
+            self._world_state[caller]['nonce'] += 1
 
         #Transaction to normal account
         if sort in ('CALL', 'DELEGATECALL') and not self.get_code(address):
