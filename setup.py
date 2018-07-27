@@ -19,13 +19,14 @@ setup(
     author='Trail of Bits',
     version='0.1.10',
     packages=find_packages(),
+    python_requires='>=3.6',
     install_requires=[
         'capstone>=3.0.5rc2',
         'pyelftools',
         'unicorn',
         'ply',
         'pysha3',
-        'functools32',
+        'pyevmasm'
     ] + rtd_dependent_deps(),
     dependency_links=[
         'https://github.com/aquynh/capstone/archive/next.zip#egg=capstone-4&subdirectory=bindings/python',
@@ -36,7 +37,11 @@ setup(
             'coverage',
             'nose',
             'Sphinx',
-            'redis',
+        ],
+        'dev-noks': [
+            'coverage',
+            'nose',
+            'Sphinx',
         ],
         'redis': [
             'redis',

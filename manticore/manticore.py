@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+
 import os
 import sys
 import time
@@ -21,7 +21,7 @@ from .core.executor import Executor
 from .core.state import State, TerminateState
 from .core.smtlib import solver, ConstraintSet
 from .core.workspace import ManticoreOutput
-from .platforms import linux, decree, evm
+from .platforms import linux, evm, decree
 from .utils.helpers import issymbolic, is_binja_disassembler
 from .utils.nointerrupt import WithKeyboardInterruptAs
 from .utils.event import Eventful
@@ -79,7 +79,7 @@ def make_decree(program, concrete_start='', **kwargs):
 def make_linux(program, argv=None, env=None, entry_symbol=None, symbolic_files=None, concrete_start=''):
     env = {} if env is None else env
     argv = [] if argv is None else argv
-    env = ['%s=%s' % (k, v) for k, v in env.items()]
+    env = ['%s=%s' % (k, v) for k, v in list(env.items())]
 
     logger.info('Loading program %s', program)
 
@@ -126,11 +126,12 @@ def make_initial_state(binary_path, **kwargs):
             return make_binja(binary_path, **kwargs)
         else:
             del kwargs['disasm']
-    magic = file(binary_path).read(4)
-    if magic == '\x7fELF':
+    with open(binary_path, 'rb') as f:
+        magic = f.read(4)
+    if magic == b'\x7fELF':
         # Linux
         state = make_linux(binary_path, **kwargs)
-    elif magic == '\x7fCGC':
+    elif magic == b'\x7fCGC':
         # Decree
         state = make_decree(binary_path, **kwargs)
     else:
@@ -203,12 +204,6 @@ class Manticore(Eventful):
         # FIXME move the folowing to aplugin
         self.subscribe('will_generate_testcase', self._generate_testcase_callback)
         self.subscribe('did_finish_run', self._did_finish_run_callback)
-
-        # Default plugins for now.. FIXME REMOVE!
-        self.register_plugin(InstructionCounter())
-        self.register_plugin(Visited())
-        self.register_plugin(Tracer())
-        self.register_plugin(RecordSymbolicBranches())
 
     def register_plugin(self, plugin):
         # Global enumeration of valid events
@@ -405,7 +400,7 @@ class Manticore(Eventful):
                     profile.disable()
                     profile.create_stats()
                     with self.locked_context('profiling_stats', list) as profiling_stats:
-                        profiling_stats.append(profile.stats.items())
+                        profiling_stats.append(list(profile.stats.items()))
                     return result
                 return wrapper
 
@@ -463,7 +458,7 @@ class Manticore(Eventful):
         :type pc: int or None
         :param callable callback: Hook function
         '''
-        if not (isinstance(pc, (int, long)) or pc is None):
+        if not (isinstance(pc, int) or pc is None):
             raise TypeError("pc must be either an int or None, not {}".format(pc.__class__.__name__))
         else:
             self._hooks.setdefault(pc, set()).add(callback)
@@ -476,7 +471,8 @@ class Manticore(Eventful):
         # Ignore symbolic pc.
         # TODO(yan): Should we ask the solver if any of the hooks are possible,
         # and execute those that are?
-        if not isinstance(pc, (int, long)):
+
+        if issymbolic(pc):
             return
 
         # Invoke all pc-specific hooks
@@ -672,7 +668,7 @@ class Manticore(Eventful):
         # XXX(yan) This is a bit obtuse; once PE support is updated this should
         # be refactored out
         if self._binary_type == 'ELF':
-            self._binary_obj = ELFFile(file(self._binary))
+            self._binary_obj = ELFFile(open(self._binary))
 
         if self._binary_obj is None:
             return NotImplementedError("Symbols aren't supported")

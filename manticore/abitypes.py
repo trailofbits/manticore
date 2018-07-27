@@ -226,7 +226,7 @@ if __name__ == '__main__':
     #(((((((address,string,bytes)[1],int256)[0],bytes8[1])[],((address,string,bytes)[1],int256))[])[])[4])
     while True:
         try:
-            s = raw_input('abitype > ')   # use input() on Python 3
+            s = input('abitype > ')   # use input() on Python 3
         except EOFError:
             break
-        print "R:", parser.parse(s, debug=True, tracking=True)
+        print("R:", parser.parse(s, debug=True, tracking=True))

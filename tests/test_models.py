@@ -37,6 +37,10 @@ class ModelTest(unittest.TestCase):
         cpu.write_bytes(cpu.RSP, s)
         return cpu.RSP
 
+    def assertItemsEqual(self, a, b):
+        # Required for Python3 compatibility
+        self.assertEqual(sorted(a), sorted(b))
+
 
 class StrcmpTest(ModelTest):
     _multiprocess_can_split_ = True
@@ -139,7 +143,7 @@ class StrlenTest(ModelTest):
         s = self._push_string(sy)
 
         ret = strlen(self.state, s)
-        self.assertItemsEqual(range(4), solver.get_all_values(self.state.constraints, ret))
+        self.assertItemsEqual(list(range(4)), solver.get_all_values(self.state.constraints, ret))
 
         self.state.constrain(sy[0] == 0)
         ret = strlen(self.state, s)
