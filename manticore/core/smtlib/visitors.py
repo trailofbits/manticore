@@ -43,7 +43,6 @@ class Visitor(object):
         if len(self._stack) == 0:
             return None
         result = self._stack.pop()
-        #FIXME: PY3 hmm? not sure where this came from
         return result
 
     @property

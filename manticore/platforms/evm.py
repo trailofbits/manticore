@@ -1995,7 +1995,6 @@ class EVMWorld(Platform):
         if address not in self.accounts:
             # Creating a unaccessible account
             self.create_account(address=address)
-            #raise EVMException('Account does not exist')
 
         # Check depth
         failed = self.depth > 1024
