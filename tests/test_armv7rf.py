@@ -64,16 +64,16 @@ class Armv7RFTest(unittest.TestCase):
         aliases = {'SB': 'R9', 'SL': 'R10', 'FP': 'R11', 'IP': 'R12', 'STACK': 'R13', 'SP': 'R13', 'LR': 'R14',
                    'PC': 'R15'}
 
-        for j in xrange(16):
-            for i in xrange(16):
+        for j in range(16):
+            for i in range(16):
                 if i == j:
                     self.r.write(regs[i], 0x41424344)
                 else:
                     self.r.write(regs[i], 0)
-            for a, b in aliases.items():
+            for a, b in list(aliases.items()):
                 self.assertEqual(self.r.read(a), self.r.read(b))
 
-            for i in xrange(16):
+            for i in range(16):
                 if i == j:
                     self.assertEqual(self.r.read(regs[i]), 0x41424344)
                 else:

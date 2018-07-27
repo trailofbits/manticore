@@ -1,6 +1,6 @@
-from __future__ import absolute_import
+
 from .expression import *
-from functools32 import lru_cache
+from functools import lru_cache
 import logging
 import operator
 logger = logging.getLogger(__name__)
@@ -51,6 +51,10 @@ class Visitor(object):
         return self._stack[-1]
 
     def _method(self, expression, *args):
+        #Special case. Need to get the unsleeved version of the array
+        if isinstance(expression, ArrayProxy):
+            expression = expression.array
+
         assert expression.__class__.__mro__[-1] is object
         for cls in expression.__class__.__mro__:
             sort = cls.__name__
@@ -74,11 +78,6 @@ class Visitor(object):
         :param use_fixed_point: if True, it runs _methods until a fixed point is found
         :type use_fixed_point: Bool
         '''
-
-        #Special case. Need to get the unsleeved version of the array
-        if isinstance(node, ArrayProxy):
-            node = node.array
-
         cache = self._cache
         visited = set()
         stack = []
@@ -89,7 +88,7 @@ class Visitor(object):
                 self.push(cache[node])
             elif isinstance(node, Operation):
                 if node in visited:
-                    operands = [self.pop() for _ in xrange(len(node.operands))]
+                    operands = [self.pop() for _ in range(len(node.operands))]
                     value = self._method(node, *operands)
 
                     visited.remove(node)
@@ -116,13 +115,12 @@ class Visitor(object):
         if isinstance(expression, Constant):
             return expression
         if isinstance(expression, Operation):
-            if any( map (lambda (x,y): x is not y, zip(expression.operands, operands))):
+            if any(x is not y for x, y in zip(expression.operands, operands)):
                 import copy
                 aux = copy.copy(expression)
                 aux._operands = operands
                 return aux
         return expression
-        return type(expression)(*operands, taint=expression.taint)
 
 
 class Translator(Visitor):
@@ -130,15 +128,18 @@ class Translator(Visitor):
     '''
 
     def _method(self, expression, *args):
+        #Special case. Need to get the unsleeved version of the array
+        if isinstance(expression, ArrayProxy):
+            expression = expression.array
         assert expression.__class__.__mro__[-1] is object
         for cls in expression.__class__.__mro__:
             sort = cls.__name__
-            methodname = 'visit_%s' % sort
+            methodname = 'visit_{:s}'.format(sort)
             if hasattr(self, methodname):
                 value = getattr(self, methodname)(expression, *args)
                 if value is not None:
                     return value
-        raise Exception ("No translation for this {}".format(expression))
+        raise Exception("No translation for this {}".format(expression))
 
 
 class GetDeclarations(Visitor):
@@ -152,7 +153,6 @@ class GetDeclarations(Visitor):
 
     def visit_Variable(self, expression):
         self.variables.add(expression)
-        #return expression
 
     @property
     def result(self):
@@ -265,7 +265,7 @@ class ConstantFolderSimplifier(Visitor):
     operations = {BitVecAdd: operator.__add__,
                   BitVecSub: operator.__sub__,
                   BitVecMul: operator.__mul__,
-                  BitVecDiv: operator.__div__,
+                  BitVecDiv: operator.__truediv__,
                   BitVecShiftLeft: operator.__lshift__,
                   BitVecShiftRight: operator.__rshift__,
                   BitVecAnd: operator.__and__,
@@ -293,6 +293,10 @@ class ConstantFolderSimplifier(Visitor):
     def visit_BitVecZeroExtend(self, expression, *operands):
         if all(isinstance(o, Constant) for o in operands):
             return BitVecConstant(expression.size, operands[0].value, taint=expression.taint)
+
+    def visit_BitVecSignExtend(self, expression, *operands):
+        if expression.extend == 0:
+            return operands[0]
 
     def visit_BitVecExtract(self, expression, *operands):
         if all(isinstance(o, Constant) for o in expression.operands):
@@ -328,7 +332,7 @@ class ConstantFolderSimplifier(Visitor):
                 isinstance(expression, Bool)
                 return BoolConstant(value, taint=expression.taint)
         else:
-            if any(operands[i] is not expression.operands[i] for i in xrange(len(operands))):
+            if any(operands[i] is not expression.operands[i] for i in range(len(operands))):
                 expression = self._rebuild(expression, operands)
         return expression
 
@@ -339,10 +343,11 @@ def clean_cache(cache):
         import random
         N = len(cache) - M
         for i in range(N):
-            cache.pop(random.choice(cache.keys()))
+            cache.pop(random.choice(list(cache.keys())))
 
 
 constant_folder_simplifier_cache = {}
+
 
 @lru_cache(maxsize=128)
 def constant_folder(expression):
@@ -413,7 +418,7 @@ class ArithmeticSimplifier(Visitor):
                         new_operands.append(item)
                     bitcount += item.size
             if begining != expression.begining:
-                return BitVecExtract(BitVecConcat(sum(map(lambda x: x.size, new_operands)), *reversed(new_operands)),
+                return BitVecExtract(BitVecConcat(sum([x.size for x in new_operands]), *reversed(new_operands)),
                                      begining, expression.size, taint=expression.taint)
         if isinstance(op, (BitVecAnd, BitVecOr, BitVecXor)):
             bitoperand_a, bitoperand_b = op.operands
@@ -665,7 +670,7 @@ class TranslatorSmtlib(Translator):
         elif isinstance(expression, BitVecExtract):
             operation = operation % (expression.end, expression.begining)
 
-        operands = map(lambda x: self._add_binding(*x), zip(expression.operands, operands))
+        operands = [self._add_binding(*x) for x in zip(expression.operands, operands)]
         return '(%s %s)' % (operation, ' '.join(operands))
 
     @property

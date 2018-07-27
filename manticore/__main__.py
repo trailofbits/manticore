@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+
 import sys
 import logging
 import argparse
@@ -133,7 +133,7 @@ def ethereum_cli(args):
     if args.avoid_constant:
         # avoid all human level tx that has no effect on the storage
         filter_nohuman_constants = FilterFunctions(regexp=r".*", depth='human', mutability='constant', include=False)
-        self.register_plugin(filter_nohuman_constants)
+        m.register_plugin(filter_nohuman_constants)
 
     logger.info("Beginning analysis")
 
@@ -156,7 +156,7 @@ def main():
         ethereum_cli(args)
         return
 
-    env = {key: val for key, val in map(lambda env: env[0].split('='), args.env)}
+    env = {key: val for key, val in [env[0].split('=') for env in args.env]}
 
     m = Manticore(args.argv[0], argv=args.argv[1:], env=env, entry_symbol=args.entrysymbol, workspace_url=args.workspace, policy=args.policy, disasm=args.disasm, concrete_start=args.data)
 

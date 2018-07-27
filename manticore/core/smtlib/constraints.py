@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+
 from .expression import BitVecVariable, BoolVariable, ArrayVariable, Array, Bool, BitVec, BoolConstant, ArrayProxy, BoolEq, Variable, Constant
 from .visitors import GetDeclarations, TranslatorSmtlib, get_variables, simplify, replace, translate_to_smtlib
 import logging
@@ -83,13 +83,13 @@ class ConstraintSet(object):
             added = True
             while added:
                 added = False
-                logger.debug('Related variables %r', map(lambda x: x.name, related_variables))
+                logger.debug('Related variables %r', [x.name for x in related_variables])
                 for constraint in list(remaining_constraints):
                     if isinstance(constraint, BoolConstant):
                         if constraint.value:
                             continue
                         else:
-                            related_constraints = set((constraint,))
+                            related_constraints = {constraint}
                             break
 
                     variables = get_variables(constraint)
@@ -209,14 +209,15 @@ class ConstraintSet(object):
 
             if var in bindings:
                 continue
-            if isinstance(expression, Bool):
+
+            if isinstance(var, Bool):
                 new_var = self.new_bool(name=name)
-            elif isinstance(expression, BitVec):
+            elif isinstance(var, BitVec):
                 new_var = self.new_bitvec(var.size, name=name)
-            elif isinstance(expression, Array):
+            elif isinstance(var, Array):
                 new_var = self.new_array(index_max=var.index_max, index_bits=var.index_bits, value_bits=var.value_bits, name=name)
             else:
-                raise NotImplemented("Unknown type {}".format(type(expression)))
+                raise NotImplemented("Unknown type {}".format(type(var)))
 
             bindings[var] = new_var
 

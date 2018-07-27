@@ -1,5 +1,6 @@
 import inspect
 import logging
+from itertools import takewhile
 from weakref import WeakKeyDictionary, ref
 
 logger = logging.getLogger(__name__)
@@ -14,14 +15,13 @@ class EventsGatherMetaclass(type):
         eventful_sub = super(EventsGatherMetaclass, cls).__new__(cls, name, parents, d)
 
         bases = inspect.getmro(parents[0])
-        if len(bases) < 2:
+
+        if name is 'Eventful':
             return eventful_sub
 
-        # bases[-1] is always 'object', bases[-2] is next super class, which
-        # will always be Eventful.
-        eventful_cls = bases[-2]
-        subclasses = bases[:-2]
+        subclasses = takewhile(lambda c: c is not Eventful, bases)
         relevant_classes = [eventful_sub] + list(subclasses)
+
         # Add a class that defines '_published_events' classmethod to a dict for
         # later lookup. Aggregate the events of all subclasses.
         relevant_events = set()
@@ -30,12 +30,12 @@ class EventsGatherMetaclass(type):
             # defined.
             if '_published_events' in sub.__dict__:
                 relevant_events.update(sub._published_events)
-        eventful_cls.__all_events__[eventful_sub] = relevant_events
+        Eventful.__all_events__[eventful_sub] = relevant_events
 
         return eventful_sub
 
 
-class Eventful(object):
+class Eventful(object, metaclass=EventsGatherMetaclass):
     '''
         Abstract class for objects emitting and receiving events
         An eventful object can:
@@ -43,7 +43,6 @@ class Eventful(object):
           - let foreign objects subscribe their methods to events emitted here
           - forward events to/from other eventful objects
     '''
-    __metaclass__ = EventsGatherMetaclass
 
     # Maps an Eventful subclass with a set of all the events it publishes.
     __all_events__ = dict()
@@ -60,7 +59,7 @@ class Eventful(object):
         Return all events that all subclasses have so far registered to publish.
         '''
         all_evts = set()
-        for cls, evts in cls.__all_events__.items():
+        for cls, evts in list(cls.__all_events__.items()):
             all_evts.update(evts)
         return all_evts
 
@@ -87,7 +86,7 @@ class Eventful(object):
         # This simply removes all callback methods associated with that object
         # Also if no more callbacks at all for an event name it deletes the event entry
         remove = set()
-        for name, bucket in self._signals.iteritems():
+        for name, bucket in self._signals.items():
             if robj in bucket:
                 del bucket[robj]
             if len(bucket) == 0:
@@ -121,13 +120,13 @@ class Eventful(object):
     # shouldn't check the event.
     def _publish_impl(self, _name, *args, **kwargs):
         bucket = self._get_signal_bucket(_name)
-        for robj, methods in bucket.iteritems():
+        for robj, methods in bucket.items():
             for callback in methods:
                 callback(robj(), *args, **kwargs)
 
         # The include_source flag indicates to prepend the source of the event in
         # the callback signature. This is set on forward_events_from/to
-        for sink, include_source in self._forwards.items():
+        for sink, include_source in list(self._forwards.items()):
             if include_source:
                 sink._publish_impl(_name, self, *args, **kwargs)
             else:
