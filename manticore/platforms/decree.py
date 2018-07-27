@@ -26,7 +26,7 @@ class Deadlock(Exception):
 class SymbolicSyscallArgument(ConcretizeRegister):
     def __init__(self, cpu, number, message='Concretizing syscall argument', policy='SAMPLED'):
         reg_name = ['EBX', 'ECX', 'EDX', 'ESI', 'EDI', 'EBP'][number]
-        super(SymbolicSyscallArgument, self).__init__(cpu, reg_name, message, policy)
+        super().__init__(cpu, reg_name, message, policy)
 
 
 class Socket(object):
@@ -101,7 +101,7 @@ class Decree(Platform):
         :todo: fix deps?
         '''
         programs = programs.split(",")
-        super(Decree, self).__init__(path=programs[0], **kwargs)
+        super().__init__(path=programs[0], **kwargs)
         self.clocks = 0
         self.files = []
         self.syscall_trace = []
@@ -159,7 +159,7 @@ class Decree(Platform):
         return self.procs[self._current]
 
     def __getstate__(self):
-        state = super(Decree, self).__getstate__()
+        state = super().__getstate__()
         state['clocks'] = self.clocks
         state['input'] = self.input.buffer
         state['output'] = self.output.buffer
@@ -178,7 +178,7 @@ class Decree(Platform):
         :todo: some asserts
         :todo: fix deps? (last line)
         """
-        super(Decree, self).__setstate__(state)
+        super().__setstate__(state)
         self.input = Socket()
         self.input.buffer = state['input']
         self.output = Socket()
@@ -908,7 +908,7 @@ class SDecree(Decree):
         '''
         self.random = 0
         self._constraints = constraints
-        super(SDecree, self).__init__(programs)
+        super().__init__(programs)
 
     def _mk_proc(self):
         return I386Cpu(SMemory32(self.constraints))
@@ -925,7 +925,7 @@ class SDecree(Decree):
 
     # marshaling/pickle
     def __getstate__(self):
-        state = super(SDecree, self).__getstate__()
+        state = super().__getstate__()
         state['constraints'] = self.constraints
         state['random'] = self.random
         return state
@@ -933,7 +933,7 @@ class SDecree(Decree):
     def __setstate__(self, state):
         self._constraints = state['constraints']
         self.random = state['random']
-        super(SDecree, self).__setstate__(state)
+        super().__setstate__(state)
 
     def sys_receive(self, cpu, fd, buf, count, rx_bytes):
         ''' Symbolic version of Decree.sys_receive
@@ -958,7 +958,7 @@ class SDecree(Decree):
             cpu.PC = cpu.PC - cpu.instruction.size
             raise SymbolicSyscallArgument(cpu, 3)
 
-        return super(SDecree, self).sys_receive(cpu, fd, buf, count, rx_bytes)
+        return super().sys_receive(cpu, fd, buf, count, rx_bytes)
 
     def sys_transmit(self, cpu, fd, buf, count, tx_bytes):
         ''' Symbolic version of Decree.sys_receive
@@ -983,7 +983,7 @@ class SDecree(Decree):
             cpu.PC = cpu.PC - cpu.instruction.size
             raise SymbolicSyscallArgument(cpu, 3)
 
-        return super(SDecree, self).sys_transmit(cpu, fd, buf, count, tx_bytes)
+        return super().sys_transmit(cpu, fd, buf, count, tx_bytes)
 
     def sys_allocate(self, cpu, length, isX, address_p):
         if issymbolic(length):
@@ -998,7 +998,7 @@ class SDecree(Decree):
             logger.info("Ask to return ALLOCATE result to a symbolic reference ")
             cpu.PC = cpu.PC - cpu.instruction.size
             raise SymbolicSyscallArgument(cpu, 2)
-        return super(SDecree, self).sys_allocate(cpu, length, isX, address_p)
+        return super().sys_allocate(cpu, length, isX, address_p)
 
     def sys_deallocate(self, cpu, addr, size):
         if issymbolic(addr):
@@ -1009,7 +1009,7 @@ class SDecree(Decree):
             logger.info("Ask to DEALLOCATE a symbolic size?!")
             cpu.PC = cpu.PC - cpu.instruction.size
             raise SymbolicSyscallArgument(cpu, 1)
-        return super(SDecree, self).sys_deallocate(cpu, addr, size)
+        return super().sys_deallocate(cpu, addr, size)
 
     def sys_random(self, cpu, buf, count, rnd_bytes):
         if issymbolic(buf):

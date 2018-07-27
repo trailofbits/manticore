@@ -212,7 +212,7 @@ class FilesystemStore(Store):
         else:
             os.mkdir(uri)
 
-        super(FilesystemStore, self).__init__(uri)
+        super().__init__(uri)
 
     @contextmanager
     def save_stream(self, key, binary=False):
@@ -271,7 +271,7 @@ class MemoryStore(Store):
 
     def __init__(self, uri=None):
         self._data = {}
-        super(MemoryStore, self).__init__(None)
+        super().__init__(None)
 
     def save_value(self, key, value):
         self._data[key] = value
@@ -303,7 +303,7 @@ class RedisStore(Store):
         hostname, port = uri.split(':')
         self._client = redis.StrictRedis(host=hostname, port=int(port), db=0)
 
-        super(RedisStore, self).__init__(uri)
+        super().__init__(uri)
 
     def save_value(self, key, value):
         """

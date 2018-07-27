@@ -55,7 +55,7 @@ def instruction(body):
 
 class Armv7Operand(Operand):
     def __init__(self, cpu, op, **kwargs):
-        super(Armv7Operand, self).__init__(cpu, op, **kwargs)
+        super().__init__(cpu, op, **kwargs)
 
     @property
     def type(self):
@@ -204,7 +204,7 @@ class Armv7RegisterFile(RegisterFile):
         ARM Register file abstraction. GPRs use ints for read/write. APSR
         flags allow writes of bool/{1, 0} but always read bools.
         """
-        super(Armv7RegisterFile, self).__init__({'SB': 'R9',
+        super().__init__({'SB': 'R9',
                                                  'SL': 'R10',
                                                  'FP': 'R11',
                                                  'IP': 'R12',
@@ -290,7 +290,7 @@ class Armv7RegisterFile(RegisterFile):
 
     @property
     def all_registers(self):
-        return super(Armv7RegisterFile, self).all_registers + \
+        return super().all_registers + \
             ('R0', 'R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8', 'R9', 'R10', 'R11', 'R12', 'R13', 'R14', 'R15',
                 'D0', 'D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'D8', 'D9', 'D10', 'D11', 'D12', 'D13', 'D14', 'D15',
                 'D16', 'D17', 'D18', 'D19', 'D20', 'D21', 'D22', 'D23', 'D24', 'D25', 'D26', 'D27', 'D28', 'D29',
@@ -360,10 +360,10 @@ class Armv7Cpu(Cpu):
         self._last_flags = {'C': 0, 'V': 0, 'N': 0, 'Z': 0, 'GE': 0}
         self._at_symbolic_conditional = False
         self._mode = cs.CS_MODE_ARM
-        super(Armv7Cpu, self).__init__(Armv7RegisterFile(), memory)
+        super().__init__(Armv7RegisterFile(), memory)
 
     def __getstate__(self):
-        state = super(Armv7Cpu, self).__getstate__()
+        state = super().__getstate__()
         state['_last_flags'] = self._last_flags
         state['at_symbolic_conditional'] = self._at_symbolic_conditional
         state['_it_conditional'] = self._it_conditional
@@ -375,7 +375,7 @@ class Armv7Cpu(Cpu):
         self._at_symbolic_conditional = state['at_symbolic_conditional']
         self._it_conditional = state['_it_conditional']
         self._mode = state['_mode']
-        super(Armv7Cpu, self).__setstate__(state)
+        super().__setstate__(state)
 
     @property
     def mode(self):

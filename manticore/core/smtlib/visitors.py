@@ -31,7 +31,7 @@ class Visitor(object):
     '''
 
     def __init__(self, cache=None, **kwargs):
-        super(Visitor, self).__init__()
+        super().__init__()
         self._stack = []
         self._cache = {} if cache is None else cache
 
@@ -148,7 +148,7 @@ class GetDeclarations(Visitor):
     '''
 
     def __init__(self, **kwargs):
-        super(GetDeclarations, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.variables = set()
 
     def visit_Variable(self, expression):
@@ -165,7 +165,7 @@ class GetDepth(Translator):
     '''
 
     def __init__(self, *args, **kwargs):
-        super(GetDepth, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def visit_Expression(self, expression):
         return 1
@@ -182,7 +182,7 @@ def get_depth(exp):
 
 class PrettyPrinter(Visitor):
     def __init__(self, depth=None, **kwargs):
-        super(PrettyPrinter, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.output = ''
         self.indent = 0
         self.depth = depth
@@ -260,7 +260,7 @@ def pretty_print(expression, **kwargs):
 
 class ConstantFolderSimplifier(Visitor):
     def __init__(self, **kw):
-        super(ConstantFolderSimplifier, self).__init__(**kw)
+        super().__init__(**kw)
 
     operations = {BitVecAdd: operator.__add__,
                   BitVecSub: operator.__sub__,
@@ -360,7 +360,7 @@ def constant_folder(expression):
 
 class ArithmeticSimplifier(Visitor):
     def __init__(self, parent=None, **kw):
-        super(ArithmeticSimplifier, self).__init__(**kw)
+        super().__init__(**kw)
 
     @staticmethod
     def _same_constant(a, b):
@@ -578,7 +578,7 @@ class TranslatorSmtlib(Translator):
 
     def __init__(self, use_bindings=False, *args, **kw):
         assert 'bindings' not in kw
-        super(TranslatorSmtlib, self).__init__(*args, **kw)
+        super().__init__(*args, **kw)
         self.use_bindings = use_bindings
         self._bindings_cache = {}
         self._bindings = []
@@ -679,7 +679,7 @@ class TranslatorSmtlib(Translator):
 
     @property
     def result(self):
-        output = super(TranslatorSmtlib, self).result
+        output = super().result
         if self.use_bindings:
             for name, expr, smtlib in reversed(self._bindings):
                 output = '( let ((%s %s)) %s )' % (name, smtlib, output)
@@ -696,7 +696,7 @@ class Replace(Visitor):
     ''' Simple visitor to replaces expresions '''
 
     def __init__(self, bindings=None, **kwargs):
-        super(Replace, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         if bindings is None:
             raise ValueError("bindings needed in replace")
         self._replace_bindings = bindings

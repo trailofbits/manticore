@@ -105,7 +105,7 @@ class Map(object, metaclass=ABCMeta):
         assert isinstance(start, int) and start >= 0, 'Invalid start address'
         assert isinstance(size, int) and size > 0, 'Invalid end address'
 
-        super(Map, self).__init__()
+        super().__init__()
         self._start = start
         self._end = start + size
         self._set_perms(perms)
@@ -245,7 +245,7 @@ class AnonMap(Map):
         :param perms: the access permissions of the map.
         :param data_init: the data to initialize the map.
         '''
-        super(AnonMap, self).__init__(start, size, perms, **kwargs)
+        super().__init__(start, size, perms, **kwargs)
         self._data = bytearray(size)
         if data_init is not None:
             assert len(data_init) <= size, 'More initial data than reserved memory'
@@ -309,7 +309,7 @@ class FileMap(Map):
         :param offset: the offset into the file where to start the mapping. \
                 This offset must be a multiple of pagebitsize.
         '''
-        super(FileMap, self).__init__(addr, size, perms, **kwargs)
+        super().__init__(addr, size, perms, **kwargs)
         assert isinstance(offset, int)
         assert offset >= 0
         self._filename = filename
@@ -396,7 +396,7 @@ class COWMap(Map):
         if perms is None:
             perms = parent.perms
 
-        super(COWMap, self).__init__(parent.start + offset, size, perms, **kwargs)
+        super().__init__(parent.start + offset, size, perms, **kwargs)
         self._parent = parent
         self._parent.__setitem__ = False
         self._cow = {}
@@ -443,7 +443,7 @@ class Memory(object, metaclass=ABCMeta):
         '''
         Builds a memory manager.
         '''
-        super(Memory, self).__init__()
+        super().__init__()
         if maps is None:
             self._maps = set()
         else:
@@ -895,7 +895,7 @@ class SMemory(Memory):
         :param constraints:  a set of constraints
         :param symbols: Symbolic chunks
         '''
-        super(SMemory, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         assert isinstance(constraints, ConstraintSet)
         self._constraints = constraints
         if symbols is None:
@@ -936,7 +936,7 @@ class SMemory(Memory):
                 break
             if addr in self._symbols:
                 del self._symbols[addr]
-        super(SMemory, self).munmap(start, size)
+        super().munmap(start, size)
 
     def read(self, address, size, force=False):
         '''
@@ -1002,7 +1002,7 @@ class SMemory(Memory):
                     assert len(result) == offset + 1
             return list(map(Operators.CHR, result))
         else:
-            result = list(map(Operators.ORD, super(SMemory, self).read(address, size, force)))
+            result = list(map(Operators.ORD, super().read(address, size, force)))
             for offset in range(size):
                 if address + offset in self._symbols:
                     for condition, value in self._symbols[address + offset]:
@@ -1041,7 +1041,7 @@ class SMemory(Memory):
                     # overwrite all previous items
                     if address + offset in self._symbols:
                         del self._symbols[address + offset]
-                    super(SMemory, self).write(address + offset, [value[offset]], force)
+                    super().write(address + offset, [value[offset]], force)
 
     def _try_get_solutions(self, address, size, access, max_solutions=0x1000, force=False):
         '''

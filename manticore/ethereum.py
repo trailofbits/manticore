@@ -35,7 +35,7 @@ class EthereumError(ManticoreError):
 
 class DependencyError(EthereumError):
     def __init__(self, lib_names):
-        super(DependencyError, self).__init__("You must pre-load and provide libraries addresses{ libname:address, ...} for %r" % lib_names)
+        super().__init__("You must pre-load and provide libraries addresses{ libname:address, ...} for %r" % lib_names)
         self.lib_names = lib_names
 
 
@@ -114,7 +114,7 @@ class FilterFunctions(Plugin):
             :param fallback: if True include the fallback function. Hash will be 00000000 for it
             :param include: if False exclude the selected functions, if True include them
         """
-        super(FilterFunctions, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         depth = depth.lower()
         if depth not in ('human', 'internal', 'both'):
             raise ValueError
@@ -187,7 +187,7 @@ class DetectInvalid(Detector):
 
         :param only_human: if True report only INVALID at depth 0 transactions
         """
-        super(DetectInvalid, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self._only_human = only_human
 
     def will_evm_execute_instruction_callback(self, state, instruction, arguments):
@@ -205,7 +205,7 @@ class DetectReentrancy(Detector):
     3) The storage slot of the SSTORE must be used in some path to control flow
     '''
     def __init__(self, addresses=None, **kwargs):
-        super(DetectReentrancy, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         # TODO Check addresses are normal accounts. Heuristics implemented here
         # assume target addresses wont execute code. i.e. won't detect a Reentrancy
         # attack in progess but only a potential attack
@@ -998,7 +998,7 @@ class EVMAccount(object):
             return self._address == other
         if isinstance(self, EVMAccount):
             return self._address == other._address
-        return super(EVMAccount, self).__eq__(other)
+        return super().__eq__(other)
 
     @property
     def name(self):
@@ -1023,7 +1023,7 @@ class EVMContract(EVMAccount):
             :param default_caller: the default caller address for any transaction
 
         '''
-        super(EVMContract, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self._default_caller = default_caller
         self._hashes = None
 
@@ -1335,7 +1335,7 @@ class ManticoreEVM(Manticore):
         # make the ethereum world state
         world = evm.EVMWorld(constraints)
         initial_state = State(constraints, world)
-        super(ManticoreEVM, self).__init__(initial_state, **kwargs)
+        super().__init__(initial_state, **kwargs)
 
         self.constraints = ConstraintSet()
         self.detectors = {}
@@ -1881,7 +1881,7 @@ class ManticoreEVM(Manticore):
 
         # A callback will use _pending_transaction and issue the transaction
         # in each state (see load_state_callback)
-        super(ManticoreEVM, self).run(**kwargs)
+        super().run(**kwargs)
 
         with self.locked_context('ethereum') as context:
             if len(context['_saved_states']) == 1:
@@ -2091,7 +2091,7 @@ class ManticoreEVM(Manticore):
         # workspace should not be responsible for formating the output
         # each object knows its secrets, each class should be able to report its
         # final state
-        #super(ManticoreEVM, self)._generate_testcase_callback(state, name, message)
+        #super()._generate_testcase_callback(state, name, message)
         # TODO(mark): Refactor ManticoreOutput to let the platform be more in control
         #  so this function can be fully ported to EVMWorld.generate_workspace_files.
         blockchain = state.platform

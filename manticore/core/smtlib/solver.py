@@ -43,7 +43,7 @@ class SolverUnknown(SolverException):
 
 class TooManySolutions(SolverException):
     def __init__(self, solutions):
-        super(TooManySolutions, self).__init__("Max number of different solutions hit")
+        super().__init__("Max number of different solutions hit")
         self.solutions = solutions
 
 
@@ -125,7 +125,7 @@ class Z3Solver(Solver):
         ''' Build a Z3 solver instance.
             This is implemented using an external z3 solver (via a subprocess).
         '''
-        super(Z3Solver, self).__init__()
+        super().__init__()
         self._proc = None
 
         self.debug = False

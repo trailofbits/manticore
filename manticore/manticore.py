@@ -159,7 +159,7 @@ class Manticore(Eventful):
     _published_events = {'start_run', 'finish_run'}
 
     def __init__(self, path_or_state, argv=None, workspace_url=None, policy='random', **kwargs):
-        super(Manticore, self).__init__()
+        super().__init__()
 
         if isinstance(workspace_url, str):
             if ':' not in workspace_url:
@@ -313,7 +313,7 @@ class Manticore(Eventful):
         from types import MethodType
         if not isinstance(callback, MethodType):
             callback = MethodType(callback, self)
-        super(Manticore, self).subscribe(name, callback)
+        super().subscribe(name, callback)
 
     @property
     def context(self):

@@ -433,7 +433,7 @@ class AMD64RegFile(RegisterFile):
                             'FPSW', 'FPCW', 'FPTAG')
 
     def __init__(self, *args, **kwargs):
-        super(AMD64RegFile, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self._registers = {}
         for reg in ('RAX', 'RCX', 'RDX', 'RBX', 'RSP', 'RBP', 'RSI', 'RDI',
@@ -612,7 +612,7 @@ class AMD64Operand(Operand):
     ''' This class deals with capstone X86 operands '''
 
     def __init__(self, cpu, op, **kwargs):
-        super(AMD64Operand, self).__init__(cpu, op, **kwargs)
+        super().__init__(cpu, op, **kwargs)
 
     @property
     def type(self):
@@ -696,18 +696,18 @@ class X86Cpu(Cpu):
         :param regfile: regfile object for this CPU.
         :param memory: memory object for this CPU.
         '''
-        super(X86Cpu, self).__init__(regfile, memory, *args, **kwargs)
+        super().__init__(regfile, memory, *args, **kwargs)
         #Segments ('base', 'limit', 'perms', 'gatetype')
         self._segments = {}
 
     def __getstate__(self):
-        state = super(X86Cpu, self).__getstate__()
+        state = super().__getstate__()
         state['segments'] = self._segments
         return state
 
     def __setstate__(self, state):
         self._segments = state['segments']
-        super(X86Cpu, self).__setstate__(state)
+        super().__setstate__(state)
 
     # Segments
     def set_descriptor(self, selector, base, limit, perms):
@@ -5971,7 +5971,7 @@ class I386StdcallAbi(Abi):
     '''
 
     def __init__(self, cpu):
-        super(I386StdcallAbi, self).__init__(cpu)
+        super().__init__(cpu)
         self._arguments = 0
 
     def get_arguments(self):
@@ -6031,7 +6031,7 @@ class AMD64Cpu(X86Cpu):
         Builds a CPU model.
         :param memory: memory object for this CPU.
         '''
-        super(AMD64Cpu, self).__init__(AMD64RegFile(aliases={'PC': 'RIP', 'STACK': 'RSP', 'FRAME': 'RBP'},),
+        super().__init__(AMD64RegFile(aliases={'PC': 'RIP', 'STACK': 'RSP', 'FRAME': 'RBP'},),
                                        memory,
                                        *args,
                                        **kwargs)
@@ -6141,7 +6141,7 @@ class I386Cpu(X86Cpu):
         Builds a CPU model.
         :param memory: memory object for this CPU.
         '''
-        super(I386Cpu, self).__init__(AMD64RegFile({'PC': 'EIP', 'STACK': 'ESP', 'FRAME': 'EBP'}),
+        super().__init__(AMD64RegFile({'PC': 'EIP', 'STACK': 'ESP', 'FRAME': 'EBP'}),
                                       memory,
                                       *args,
                                       **kwargs)

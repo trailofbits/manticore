@@ -31,7 +31,7 @@ class DecodeException(CpuException):
     Raised when trying to decode an unknown or invalid instruction '''
 
     def __init__(self, pc, bytes):
-        super(DecodeException, self).__init__("Error decoding instruction @%08x", pc)
+        super().__init__("Error decoding instruction @%08x", pc)
         self.pc = pc
         self.bytes = bytes
 
@@ -57,7 +57,7 @@ class Interruption(CpuException):
     ''' A software interrupt. '''
 
     def __init__(self, N):
-        super(Interruption, self).__init__("CPU Software Interruption %08x", N)
+        super().__init__("CPU Software Interruption %08x", N)
         self.N = N
 
 
@@ -65,7 +65,7 @@ class Syscall(CpuException):
     ''' '''
 
     def __init__(self):
-        super(Syscall, self).__init__("CPU Syscall")
+        super().__init__("CPU Syscall")
 
 
 class ConcretizeRegister(CpuException):
@@ -388,14 +388,14 @@ class SyscallAbi(Abi):
         raise NotImplementedError
 
     def get_argument_values(self, model, prefix_args):
-        self._last_arguments = super(SyscallAbi, self).get_argument_values(model, prefix_args)
+        self._last_arguments = super().get_argument_values(model, prefix_args)
         return self._last_arguments
 
     def invoke(self, model, prefix_args=None):
         # invoke() will call get_argument_values()
         self._last_arguments = ()
 
-        ret = super(SyscallAbi, self).invoke(model, prefix_args)
+        ret = super().invoke(model, prefix_args)
 
         if platform_logger.isEnabledFor(logging.DEBUG):
             # Try to expand strings up to max_arg_expansion
@@ -448,7 +448,7 @@ class Cpu(Eventful):
     def __init__(self, regfile, memory, **kwargs):
         assert isinstance(regfile, RegisterFile)
         self._disasm = kwargs.pop("disasm", 'capstone')
-        super(Cpu, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self._regfile = regfile
         self._memory = memory
         self._instruction_cache = {}
@@ -461,7 +461,7 @@ class Cpu(Eventful):
         assert 'PC' in self._regfile
 
     def __getstate__(self):
-        state = super(Cpu, self).__getstate__()
+        state = super().__getstate__()
         state['regfile'] = self._regfile
         state['memory'] = self._memory
         state['icount'] = self._icount
@@ -476,7 +476,7 @@ class Cpu(Eventful):
         self._icount = state['icount']
         self._last_pc = state['last_pc']
         self._disasm = state['disassembler']
-        super(Cpu, self).__setstate__(state)
+        super().__setstate__(state)
 
     @property
     def icount(self):
