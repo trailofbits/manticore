@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+
 from .expression import BitVecVariable, BoolVariable, ArrayVariable, Array, Bool, BitVec, BoolConstant, ArrayProxy, BoolEq, Variable, Constant
 from .visitors import GetDeclarations, TranslatorSmtlib, get_variables, simplify, replace, translate_to_smtlib
 import logging
@@ -83,13 +83,13 @@ class ConstraintSet(object):
             added = True
             while added:
                 added = False
-                logger.debug('Related variables %r', map(lambda x: x.name, related_variables))
+                logger.debug('Related variables %r', [x.name for x in related_variables])
                 for constraint in list(remaining_constraints):
                     if isinstance(constraint, BoolConstant):
                         if constraint.value:
                             continue
                         else:
-                            related_constraints = set((constraint,))
+                            related_constraints = {constraint}
                             break
 
                     variables = get_variables(constraint)
