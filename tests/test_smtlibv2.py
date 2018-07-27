@@ -60,6 +60,17 @@ class ExpressionTest(unittest.TestCase):
         self.assertTrue('SOURCE1' in c.taint)
         self.assertTrue('SOURCE2' in c.taint)
 
+    def testBasicITETaint(self):
+        a = BitVecConstant(32, 100, taint=('SOURCE1',))
+        b = BitVecConstant(32, 200, taint=('SOURCE2',))
+        c = BitVecConstant(32, 300, taint=('SOURCE3',))
+        d = BitVecConstant(32, 400, taint=('SOURCE4',))
+        x = Operators.ITEBV(32, a > b, c, d)
+        self.assertTrue('SOURCE1' in x.taint)
+        self.assertTrue('SOURCE2' in x.taint)
+        self.assertTrue('SOURCE3' in x.taint)
+
+        self.assertTrue('SOURCE4' in x.taint)
 
     def testBasicConstraints(self):
         cs =  ConstraintSet()
@@ -73,7 +84,6 @@ class ExpressionTest(unittest.TestCase):
         b = cs.new_bitvec(32)
         cs.add(a + b > 100)
         self.assertTrue(self.solver.check(cs))
-
 
     def testBool(self):
         cs =  ConstraintSet()
@@ -247,6 +257,14 @@ class ExpressionTest(unittest.TestCase):
 
         self.assertTrue(self.solver.must_be_true(cs, array.read(0,1) + bytearray(b'ello ') + array.read(6,5) + bytearray(b'!') == hw))
 
+        self.assertTrue(len(array[1:2]) == 1)
+
+        self.assertTrue(len(array[0:12]) == 12)
+
+        results = []
+        for c in array[6:11]:
+            results.append(c)
+        self.assertTrue(len(results) == 5)
 
     def testBasicPickle(self):
         import pickle
@@ -379,6 +397,18 @@ class ExpressionTest(unittest.TestCase):
         exp = arithmetic_simplify(exp)
         self.assertTrue(get_depth(exp) < 4)
         self.assertEqual(translate_to_smtlib(exp), '(bvand V_1 #x00000001)')
+
+    def testBasicReplace(self):
+        ''' Add '''
+        a = BitVecConstant(32, 100)
+        b1 = BitVecVariable(32, 'VAR1')
+        b2 = BitVecVariable(32, 'VAR2')
+
+        c = a + b1
+
+        x = replace(c, {b1:b2})
+        self.assertEqual(translate_to_smtlib(x), '(bvadd #x00000064 VAR2)')
+
 
     def test_ORD(self):
         cs = ConstraintSet()

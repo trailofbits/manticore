@@ -2,7 +2,7 @@
 //  keccak(bytes32(k) + bytes32(position['map']))+offset['a']
 pragma solidity ^0.4.11;
 
-contract C {
+contract Benchmark {
     mapping(uint256 => bytes2) map;
 
     function init(uint256 k) public {
