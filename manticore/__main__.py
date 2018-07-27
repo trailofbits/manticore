@@ -135,7 +135,6 @@ def ethereum_cli(args):
     if args.detect_all or args.detect_unused_retval:
         m.register_detector(DetectUnusedRetVal())
 
-
     if args.avoid_constant:
         # avoid all human level tx that has no effect on the storage
         filter_nohuman_constants = FilterFunctions(regexp=r".*", depth='human', mutability='constant', include=False)

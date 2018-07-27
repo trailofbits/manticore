@@ -142,25 +142,6 @@ class Translator(Visitor):
         raise Exception("No translation for this {}".format(expression))
 
 
-class Translator(Visitor):
-    ''' Simple visitor to translate an expression into something else
-    '''
-
-    def _method(self, expression, *args):
-        #Special case. Need to get the unsleeved version of the array
-        if isinstance(expression, ArrayProxy):
-            expression = expression.array
-        assert expression.__class__.__mro__[-1] is object
-        for cls in expression.__class__.__mro__:
-            sort = cls.__name__
-            methodname = 'visit_%s' % sort
-            if hasattr(self, methodname):
-                value = getattr(self, methodname)(expression, *args)
-                if value is not None:
-                    return value
-        raise Exception ("No translation for this {}".format(expression))
-
-
 class GetDeclarations(Visitor):
     ''' Simple visitor to collect all variables in an expression or set of
         expressions

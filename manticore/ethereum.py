@@ -90,8 +90,6 @@ class Detector(Plugin):
         state.context.setdefault('{:s}.locations'.format(self.name), {})[hash_id] = location
         return hash_id
 
-
-
     def _get_location(self, state, hash_id):
         return state.context.setdefault('{:s}.locations'.format(self.name), {})[hash_id]
 
@@ -507,7 +505,6 @@ class DetectIntegerOverflow(Detector):
         result_ref.value = result
 
 
-
 class DetectUnusedRetVal(Detector):
     '''
         Detects unused return value from internal transactions
@@ -522,7 +519,6 @@ class DetectUnusedRetVal(Detector):
         list_of_taints.add(taint)
         state.context[self._stack_name][-1] = list_of_taints
 
-
     def _remove_retval_taint(self, state, taint):
         list_of_taints = state.context[self._stack_name][-1]
         if taint in list_of_taints:
@@ -536,11 +532,11 @@ class DetectUnusedRetVal(Detector):
         # Reset reading log on new human transactions
         if tx.is_human():
             state.context[self._stack_name] = []
-        state.context[self._stack_name].append(set()) #will it work in py2?
+        state.context[self._stack_name].append(set())
 
     def did_close_transaction_callback(self, state, tx):
         world = state.platform
-        #Check that all retvals where used in control flow
+        # Check that all retvals where used in control flow
         for taint in self._get_retval_taints(state):
             id_val = taint[7:]
             address, pc, finding, at_init, condition = self._get_location(state, id_val)
@@ -555,7 +551,7 @@ class DetectUnusedRetVal(Detector):
         mnemonic = instruction.semantics
         result = result_ref.value
         if instruction.is_starttx:
-            # A transactional instruction just returned add a taint to result 
+            # A transactional instruction just returned add a taint to result
             # and add that taint to the set
             id_val = self._save_current_location(state, "Returned value at {:s} instruction is not used".format(mnemonic))
             taint = "RETVAL_{:s}".format(id_val)
