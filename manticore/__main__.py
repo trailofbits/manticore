@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+
 import sys
 import logging
 import argparse
@@ -92,6 +92,9 @@ def parse_arguments():
     parser.add_argument('--detect-uninitialized-storage', action='store_true',
                         help='Enable detection of uninitialized storage usage (Ethereum only)')
 
+    parser.add_argument('--detect-reentrancy', action='store_true',
+                        help='Enable detection of reentrancy bug (Ethereum only)')
+
     parser.add_argument('--detect-all', action='store_true',
                         help='Enable all detector heuristics (Ethereum only)')
 
@@ -111,7 +114,7 @@ def parse_arguments():
 
 
 def ethereum_cli(args):
-    from .ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, DetectUninitializedStorage, DetectUninitializedMemory, FilterFunctions
+    from .ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, DetectUninitializedStorage, DetectUninitializedMemory, FilterFunctions, DetectReentrancy
     log.init_logging()
 
     m = ManticoreEVM(procs=args.procs)
@@ -124,15 +127,17 @@ def ethereum_cli(args):
         m.register_detector(DetectUninitializedStorage())
     if args.detect_all or args.detect_uninitialized_memory:
         m.register_detector(DetectUninitializedMemory())
+    if args.detect_all or args.detect_reentrancy:
+        m.register_detector(DetectReentrancy())
 
     if args.avoid_constant:
         # avoid all human level tx that has no effect on the storage
         filter_nohuman_constants = FilterFunctions(regexp=r".*", depth='human', mutability='constant', include=False)
-        self.register_plugin(filter_nohuman_constants)
+        m.register_plugin(filter_nohuman_constants)
 
     logger.info("Beginning analysis")
 
-    m.multi_tx_analysis(args.argv[0], args.contract, args.txlimit, not args.txnocoverage, args.txaccount)
+    m.multi_tx_analysis(args.argv[0], contract_name=args.contract, tx_limit=args.txlimit, tx_use_coverage=not args.txnocoverage, tx_account=args.txaccount)
 
     #TODO unregister all plugins
     m.finalize()
@@ -151,7 +156,7 @@ def main():
         ethereum_cli(args)
         return
 
-    env = {key: val for key, val in map(lambda env: env[0].split('='), args.env)}
+    env = {key: val for key, val in [env[0].split('=') for env in args.env]}
 
     m = Manticore(args.argv[0], argv=args.argv[1:], env=env, entry_symbol=args.entrysymbol, workspace_url=args.workspace, policy=args.policy, disasm=args.disasm, concrete_start=args.data)
 

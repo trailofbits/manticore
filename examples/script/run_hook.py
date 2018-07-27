@@ -22,8 +22,8 @@ if __name__ == '__main__':
         assert cpu.PC == pc
 
         instruction = cpu.read_int(cpu.PC)
-        print "Execution goal reached."
-        print "Instruction bytes: {:08x}".format(instruction)
+        print("Execution goal reached.")
+        print("Instruction bytes: {:08x}".format(instruction))
 
     m.run()
 

@@ -1,15 +1,16 @@
-from __future__ import print_function
+
 import os
 import errno
 import shutil
 import tempfile
 import unittest
 
+from manticore import Manticore
 from manticore.platforms import linux, linux_syscalls
 from manticore.core.smtlib import *
 from manticore.core.smtlib import *
 from manticore.core.cpu.abstractcpu import ConcretizeRegister
-
+from binascii import hexlify
 
 class LinuxTest(unittest.TestCase):
     '''
@@ -31,7 +32,7 @@ class LinuxTest(unittest.TestCase):
         }
         cpu = self.linux.current
 
-        for reg, val in x86_defaults.iteritems():
+        for reg, val in x86_defaults.items():
             self.assertEqual(cpu.regfile.read(reg), val)
 
     def test_stack_init(self):
@@ -83,11 +84,11 @@ class LinuxTest(unittest.TestCase):
         platform.current.R0 = fd
         platform.current.R1 = stat
         platform.current.R7 = nr_fstat64
-        self.assertEquals(linux_syscalls.armv7[nr_fstat64], 'sys_fstat64')
+        self.assertEqual(linux_syscalls.armv7[nr_fstat64], 'sys_fstat64')
 
         platform.syscall()
 
-        print(''.join(platform.current.read_bytes(stat, 100)).encode('hex'))
+        print(hexlify(b''.join(platform.current.read_bytes(stat, 100))))
 
     def test_linux_symbolic_files_workspace_files(self):
         fname = 'symfile'
@@ -127,7 +128,7 @@ class LinuxTest(unittest.TestCase):
         files = platform.generate_workspace_files()
         self.assertIn('syscalls', files)
         self.assertIn('argv', files)
-        self.assertEquals(files['argv'], "arg1\narg2\n")
+        self.assertEqual(files['argv'], b"arg1\narg2\n")
         self.assertIn('env', files)
         self.assertIn('stdout', files)
         self.assertIn('stdin', files)
@@ -164,14 +165,14 @@ class LinuxTest(unittest.TestCase):
         platform.current.R0 = fd
         platform.current.R1 = stat
         platform.current.R7 = nr_fstat64
-        self.assertEquals(linux_syscalls.armv7[nr_fstat64], 'sys_fstat64')
+        self.assertEqual(linux_syscalls.armv7[nr_fstat64], 'sys_fstat64')
 
         pre_icount = platform.current.icount
         platform.execute()
         post_icount = platform.current.icount
 
-        self.assertEquals(pre_icount+1, post_icount)
-        self.assertEquals(r.nevents, 2)
+        self.assertEqual(pre_icount+1, post_icount)
+        self.assertEqual(r.nevents, 2)
 
     def _create_openat_state(self):
         nr_openat = 322
@@ -184,8 +185,8 @@ class LinuxTest(unittest.TestCase):
         dir_path = tempfile.mkdtemp()
         file_name = "file"
         file_path = os.path.join(dir_path, file_name)
-        with open(file_path, 'w') as f:
-            f.write('test')
+        with open(file_path, 'wb') as f:
+            f.write(b'test')
 
         # open a file + directory
         dirname = platform.current.push_bytes(dir_path+'\x00')
@@ -198,7 +199,7 @@ class LinuxTest(unittest.TestCase):
         platform.current.R2 = os.O_RDONLY
         platform.current.R3 = 0o700
         platform.current.R7 = nr_openat
-        self.assertEquals(linux_syscalls.armv7[nr_openat], 'sys_openat')
+        self.assertEqual(linux_syscalls.armv7[nr_openat], 'sys_openat')
 
         return platform
 
@@ -241,3 +242,21 @@ class LinuxTest(unittest.TestCase):
         path = platform.current.push_bytes('{}\x00'.format(this_dir))
         fd = platform.sys_chroot(path)
         self.assertEqual(fd, -errno.EPERM)
+
+    def test_symbolic_argv_envp(self):
+
+        self.m = Manticore.linux('tests/binaries/arguments_linux_amd64', argv=['+'],
+                                 envp={'TEST': '+'})
+        state = self.m.initial_state
+
+        ptr = state.cpu.read_int(state.cpu.RSP + (8*2))  # get argv[1]
+        mem = state.cpu.read_bytes(ptr, 2)
+        self.assertTrue(issymbolic(mem[0]))
+        self.assertEqual(mem[1], b'\0')
+
+        ptr = state.cpu.read_int(state.cpu.RSP + (8*4))  # get envp[0]
+        mem = state.cpu.read_bytes(ptr, 7)
+        self.assertEqual(b''.join(mem[:5]), b'TEST=')
+        self.assertEqual(mem[6], b'\0')
+        self.assertTrue(issymbolic(mem[5]))
+

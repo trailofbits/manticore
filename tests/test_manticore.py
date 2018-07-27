@@ -32,6 +32,18 @@ class ManticoreTest(unittest.TestCase):
 
         self.assertEqual(self.m.context['x'], 1)
 
+    def test_init_hook(self):
+        self.m.context['x'] = 0
+
+        @self.m.init
+        def tmp(state):
+            self.m.context['x'] = 1
+            self.m.terminate()
+
+        self.m.run()
+
+        self.assertEqual(self.m.context['x'], 1)
+
     def test_hook_dec_err(self):
         with self.assertRaises(TypeError):
             @self.m.hook('0x00400e40')
@@ -43,9 +55,9 @@ class ManticoreTest(unittest.TestCase):
         self.m = Manticore('tests/binaries/basic_linux_amd64')
         self.m.run()
         workspace = self.m._output.store.uri
-        with open(os.path.join(workspace, 'test_00000000.stdin')) as f:
+        with open(os.path.join(workspace, 'test_00000000.stdin'), 'rb') as f:
             a = struct.unpack('<I', f.read())[0]
-        with open(os.path.join(workspace, 'test_00000001.stdin')) as f:
+        with open(os.path.join(workspace, 'test_00000001.stdin'), 'rb') as f:
             b = struct.unpack('<I', f.read())[0]
         if a > 0x41:
             self.assertTrue(a > 0x41)

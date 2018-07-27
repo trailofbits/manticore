@@ -22,7 +22,7 @@ class Register(object):
             self.value = val
         elif isinstance(val, BitVec):
             self.value = val.Bool() if self.is_flag() else val
-        elif isinstance(val, (int, long)):
+        elif isinstance(val, int):
             self.value = Operators.EXTRACT(val, 0, self.width)
             if self.is_flag():
                 self.value = bool(self.value)
