@@ -7,6 +7,7 @@ import os
 import sys
 import resource
 
+from manticore.platforms import evm
 from manticore.core.plugin import Plugin
 from manticore.core.smtlib import ConstraintSet, operators
 from manticore.core.smtlib.expression import BitVec
@@ -155,6 +156,22 @@ class EthAbiTests(unittest.TestCase):
         self.assertEqual(func_id, b"AAAA")
         self.assertEqual(dynargs, ( 2**255 - 1, -(2**255) ))
 
+    def test_simple_types_ints_symbolic(self):
+        cs = ConstraintSet()
+        x = cs.new_bitvec(256, name="x")
+        y = cs.new_bitvec(256, name="y")
+        # Something is terribly wrong x,y = 10,20
+        my_ser = ABI.serialize('(uint,uint)', x, y)
+        x_, y_ = ABI.deserialize('(uint,uint)', my_ser)
+        self.assertTrue(solver.must_be_true(cs, x == x_))
+        self.assertTrue(solver.must_be_true(cs, y == y_))
+
+    def test_simple_types_ints_symbolic1(self):
+        cs = ConstraintSet()
+        x = cs.new_bitvec(256, name="x")
+        # Something is terribly wrong x,y = 10,20
+        my_ser = ABI.serialize('uint', x)
+        self.assertTrue(solver.must_be_true(cs, my_ser[0] == operators.EXTRACT(x, 256 - 8, 8)))
 
     def test_address0(self):
         data = '{}\x01\x55{}'.format('\0'*11, '\0'*19)
@@ -287,6 +304,110 @@ class EthAbiTests(unittest.TestCase):
         parsed_func_id, args = ABI.deserialize(spec, call_data)
         self.assertEqual(parsed_func_id, func_id)
         self.assertEqual(((0xfB6916095ca1df60bB79Ce92cE3Ea74c37c5d359, selector),), args)
+
+    def test_serialize_fixed_bytes32(self):
+        ret = ABI.serialize('bytes32', b'hi')
+        self.assertEqual(ret, b'hi'.ljust(32, b'\x00'))
+
+    def test_serialize_fixed_bytes2(self):
+        ret = ABI.serialize('bytes2', b'aa')
+        self.assertEqual(ret, b'aa'.ljust(32, b'\x00'))
+
+    def test_serialize_fixed_bytes_less_data(self):
+        ret = ABI.serialize('bytes4', b'aa')
+        self.assertEqual(ret, b'aa'.ljust(32, b'\x00'))
+
+    def test_serialize_fixed_bytes_too_big(self):
+        with self.assertRaises(EthereumError):
+            ABI.serialize('bytes2', b'hii')
+
+    # test serializing symbolic buffer with bytesM
+    def test_serialize_bytesM_symbolic(self):
+        cs = ConstraintSet()
+        buf = cs.new_array(index_max=17)
+        ret = ABI.serialize('bytes32', buf)
+        self.assertEqual(solver.minmax(cs, ret[0]), (0, 255))
+        self.assertEqual(solver.minmax(cs, ret[17]), (0, 0))
+
+    # test serializing symbolic buffer with bytes
+    def test_serialize_bytes_symbolic(self):
+        cs = ConstraintSet()
+        buf = cs.new_array(index_max=17)
+        ret = ABI.serialize('bytes', buf)
+
+        # does the offset field look right?
+        self.assertTrue(solver.must_be_true(cs, ret[0:32] == bytearray(b'\x00'*31 + b'\x20')))
+
+        # does the size field look right?
+        self.assertTrue(solver.must_be_true(cs, ret[32:64] == bytearray(b'\x00'*31 + b'\x11')))
+
+        # does the data field look right?
+        self.assertTrue(solver.must_be_true(cs, ret[64:64+32] == buf + bytearray(b'\x00'*15)))
+
+
+class EthInstructionTests(unittest.TestCase):
+
+    def _make(self):
+        #Make the constraint store
+        constraints = ConstraintSet()
+        #make the ethereum world state
+        world = evm.EVMWorld(constraints)
+
+        address=0x222222222222222222222222222222222222200
+        caller=origin=0x111111111111111111111111111111111111100
+        price=0
+        value=10000
+        bytecode=b'\x05'
+        data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
+        gas = 1000000
+
+        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
+        return constraints, world, new_vm
+
+    def test_SDIV(self):
+        constraints, world, vm = self._make()
+        result = vm.SDIV(115792089237316182568066630936765703517573245936339743861833633745570447228928, 200867255532373784442745261542645325315275374222849104412672)
+        self.assertEqual(-64, result)
+
+
+    def test_SDIVS1(self):
+        constraints, world, vm = self._make()
+        xx = constraints.new_bitvec(256, name="x")
+        yy = constraints.new_bitvec(256, name="y")
+        constraints.add(xx == 0x20)
+        constraints.add(yy == 1)
+        result = vm.SDIV(xx, yy)
+        self.assertListEqual(solver.get_all_values(constraints, result), [0x20])
+
+    def test_SDIVS2(self):
+        constraints, world, vm = self._make()
+        xx = constraints.new_bitvec(256, name="x")
+        yy = constraints.new_bitvec(256, name="y")
+        constraints.add(xx == 0x20)
+        constraints.add(yy == 2)
+        result = vm.SDIV(xx, yy)
+        self.assertListEqual(solver.get_all_values(constraints, result), [0x10])
+
+    def test_SDIVS3(self):
+        constraints, world, vm = self._make()
+        xx = constraints.new_bitvec(256, name="x")
+        yy = constraints.new_bitvec(256, name="y")
+        constraints.add(xx == 0x20)
+        constraints.add(yy == -1)
+        result = vm.SDIV(xx, yy)
+        self.assertListEqual(list(map(evm.to_signed, solver.get_all_values(constraints, result))), [-0x20])
+
+    def test_SDIVSx(self):
+        x,y = 0x20000000000000000000000000000000000000000000000000, -0x40
+        constraints, world, vm = self._make()
+        xx = constraints.new_bitvec(256, name="x")
+        yy = constraints.new_bitvec(256, name="y")
+        constraints.add(xx == x)
+        constraints.add(yy == y)
+
+        result = vm.SDIV(xx, yy)
+        self.assertListEqual(list(map(evm.to_signed, solver.get_all_values(constraints, result))), [vm.SDIV(x, y)])
+
 
 
 class EthTests(unittest.TestCase):

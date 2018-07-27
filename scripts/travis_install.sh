@@ -9,4 +9,12 @@ install_solc
 
 pip install -U pip
 pip uninstall -y Manticore || echo "Manticore not cached"  # uninstall any old, cached Manticore
-pip install --no-binary keystone-engine -e .[dev]  # ks can have pip install issues
+
+# We only need to install keystone if we're just running regular tests
+EXTRAS="dev-noks"
+if [ "$1" = "tests" ]; then
+    EXTRAS="dev"
+fi
+
+pip install --no-binary keystone-engine -e .[$EXTRAS]  # ks can have pip install issues
+

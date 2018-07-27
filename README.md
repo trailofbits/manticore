@@ -141,8 +141,8 @@ m = Manticore('./path/to/binary')
 @m.hook(hook_pc)
 def hook(state):
   cpu = state.cpu
-  print 'eax', cpu.EAX
-  print cpu.read_int(cpu.ESP)
+  print('eax', cpu.EAX)
+  print(cpu.read_int(cpu.ESP))
 
   m.terminate()  # tell Manticore to stop
 

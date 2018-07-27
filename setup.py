@@ -37,7 +37,11 @@ setup(
             'coverage',
             'nose',
             'Sphinx',
-            'redis',
+        ],
+        'dev-noks': [
+            'coverage',
+            'nose',
+            'Sphinx',
         ],
         'redis': [
             'redis',

@@ -21,7 +21,7 @@ print("[+] Creating a contract account", contract_account)
 
 print("[+] Now the symbolic values")
 symbolic_data = m.make_symbolic_buffer(320) 
-symbolic_value = None 
+symbolic_value = m.make_symbolic_value()
 m.transaction(caller=user_account,
                 address=contract_account,
                 data=symbolic_data,

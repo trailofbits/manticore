@@ -384,6 +384,9 @@ class Executor(Eventful):
         # Find a set of solutions for expression
         solutions = state.concretize(expression, policy)
 
+        if not solutions:
+            logger.info("Forking on unfeasible constraint set")
+
         if len(solutions) == 1:
             setstate(state, solutions[0])
             return state
@@ -473,7 +476,6 @@ class Executor(Eventful):
                         # expression
                         # policy
                         # setstate()
-
                         logger.debug("Generic state fork on condition")
                         current_state = self.fork(current_state, e.expression, e.policy, e.setstate)
 
