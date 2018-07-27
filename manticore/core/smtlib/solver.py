@@ -246,6 +246,7 @@ class Z3Solver(Solver):
             :param cmd: a SMTLIBv2 command (ex. (check-sat))
         '''
         logger.debug('>%s', cmd)
+        print(cmd)
         try:
             self._proc.stdout.flush()
             self._proc.stdin.write('{}\n'.format(cmd))
@@ -272,6 +273,7 @@ class Z3Solver(Solver):
             right += r
         buf = ''.join(bufl).strip()
         logger.debug('<%s', buf)
+        print(buf)
         if '(error' in bufl[0]:
             raise Exception("Error in smtlib: {}".format(bufl[0]))
         return buf
