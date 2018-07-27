@@ -1,6 +1,6 @@
-from __future__ import absolute_import
+
 from .expression import *
-from functools32 import lru_cache
+from functools import lru_cache
 import logging
 import operator
 logger = logging.getLogger(__name__)
@@ -91,7 +91,7 @@ class Visitor(object):
                 self.push(cache[node])
             elif isinstance(node, Operation):
                 if node in visited:
-                    operands = [self.pop() for _ in xrange(len(node.operands))]
+                    operands = [self.pop() for _ in range(len(node.operands))]
                     if use_fixed_point:
                         new_node = self._rebuild(node, operands)
                         value = self._method(new_node, *operands)
@@ -247,7 +247,7 @@ class ConstantFolderSimplifier(Visitor):
     operations = {BitVecAdd: operator.__add__,
                   BitVecSub: operator.__sub__,
                   BitVecMul: operator.__mul__,
-                  BitVecDiv: operator.__div__,
+                  BitVecDiv: operator.__truediv__,
                   BitVecShiftLeft: operator.__lshift__,
                   BitVecShiftRight: operator.__rshift__,
                   BitVecAnd: operator.__and__,
@@ -310,7 +310,7 @@ class ConstantFolderSimplifier(Visitor):
                 isinstance(expression, Bool)
                 return BoolConstant(value, taint=expression.taint)
         else:
-            if any(operands[i] is not expression.operands[i] for i in xrange(len(operands))):
+            if any(operands[i] is not expression.operands[i] for i in range(len(operands))):
                 expression = self._rebuild(expression, operands)
         return expression
 
@@ -322,7 +322,7 @@ def clean_cache(cache):
         import random
         N = len(cache) - M
         for i in range(N):
-            cache.pop(random.choice(cache.keys()))
+            cache.pop(random.choice(list(cache.keys())))
 
 
 constant_folder_simplifier_cache = {}
@@ -397,7 +397,7 @@ class ArithmeticSimplifier(Visitor):
                         new_operands.append(item)
                     bitcount += item.size
             if begining != expression.begining:
-                return BitVecExtract(BitVecConcat(sum(map(lambda x: x.size, new_operands)), *reversed(new_operands)),
+                return BitVecExtract(BitVecConcat(sum([x.size for x in new_operands]), *reversed(new_operands)),
                                      begining, expression.size, taint=expression.taint)
         if isinstance(op, (BitVecAnd, BitVecOr, BitVecXor)):
             bitoperand_a, bitoperand_b = op.operands
@@ -650,7 +650,7 @@ class TranslatorSmtlib(Visitor):
         elif isinstance(expression, BitVecExtract):
             operation = operation % (expression.end, expression.begining)
 
-        operands = map(lambda x: self._add_binding(*x), zip(expression.operands, operands))
+        operands = [self._add_binding(*x) for x in zip(expression.operands, operands)]
         return '(%s %s)' % (operation, ' '.join(operands))
 
     @property

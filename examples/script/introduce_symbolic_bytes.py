@@ -56,7 +56,7 @@ if __name__ == '__main__':
         #  400a0e:       85 c0                   test   %eax,%eax
         #
 
-        print "introducing symbolic value to {:x}".format(state.cpu.RBP-0xc)
+        print("introducing symbolic value to {:x}".format(state.cpu.RBP-0xc))
 
         val = state.new_symbolic_value(32, taint=(taint_id,))
         state.cpu.write_int(state.cpu.RBP - 0xc, val, 32)
@@ -77,9 +77,9 @@ if __name__ == '__main__':
             return
         if insn.mnemonic in ('cmp', 'test'):
             if has_tainted_operands(insn.operands, taint_id):
-                print '{:x}: {} {}'.format(insn.address, insn.mnemonic, insn.op_str)
+                print('{:x}: {} {}'.format(insn.address, insn.mnemonic, insn.op_str))
 
-    print 'Tainted Control Flow:'
+    print('Tainted Control Flow:')
     m.run()
 
-    print 'Analysis finished. See {} for results.'.format(m.workspace)
+    print('Analysis finished. See {} for results.'.format(m.workspace))

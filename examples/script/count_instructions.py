@@ -27,4 +27,4 @@ if __name__ == '__main__':
 
     m.run(procs=3)
 
-    print "Executed ", m.context['count'], " instructions."
+    print("Executed ", m.context['count'], " instructions.")

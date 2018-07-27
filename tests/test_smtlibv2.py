@@ -15,6 +15,11 @@ class ExpressionTest(unittest.TestCase):
         self.solver = Z3Solver()
 
 
+    def assertItemsEqual(self, a, b):
+        # Required for Python3 compatibility
+        self.assertEqual(sorted(a), sorted(b))
+
+
     def tearDown(self):
         del self.solver
 
@@ -222,7 +227,7 @@ class ExpressionTest(unittest.TestCase):
         self.assertFalse(self.solver.check(cs))
 
     def testBasicArrayConcatSlice(self):
-        hw = bytearray('Hello world!')
+        hw = bytearray(b'Hello world!')
         cs =  ConstraintSet()
         #make array of 32->8 bits
         array = cs.new_array(32, index_max=12)
@@ -236,11 +241,11 @@ class ExpressionTest(unittest.TestCase):
 
         self.assertTrue(self.solver.must_be_true(cs, array.read(6,6) == hw[6:12]))
 
-        self.assertTrue(self.solver.must_be_true(cs, bytearray('Hello ')+array.read(6,6) == hw))
+        self.assertTrue(self.solver.must_be_true(cs, bytearray(b'Hello ')+array.read(6,6) == hw))
 
-        self.assertTrue(self.solver.must_be_true(cs, bytearray('Hello ')+array.read(6,5) + bytearray('!') == hw))
+        self.assertTrue(self.solver.must_be_true(cs, bytearray(b'Hello ')+array.read(6,5) + bytearray(b'!') == hw))
 
-        self.assertTrue(self.solver.must_be_true(cs, array.read(0,1) + bytearray('ello ') + array.read(6,5) + bytearray('!') == hw))
+        self.assertTrue(self.solver.must_be_true(cs, array.read(0,1) + bytearray(b'ello ') + array.read(6,5) + bytearray(b'!') == hw))
 
         self.assertTrue(len(array[1:2]) == 1)
 
@@ -314,8 +319,8 @@ class ExpressionTest(unittest.TestCase):
         self.assertEqual(self.solver.minmax(cs, a), (101,199))
 
     def testBool_nonzero(self):
-        self.assertTrue(BoolConstant(True).__nonzero__())
-        self.assertFalse(BoolConstant(False).__nonzero__())
+        self.assertTrue(BoolConstant(True).__bool__())
+        self.assertFalse(BoolConstant(False).__bool__())
 
     def test_visitors(self):
         cs = ConstraintSet()
@@ -509,7 +514,7 @@ class ExpressionTest(unittest.TestCase):
         cs.add(b == 0x86) #-122
         cs.add(c == 0x11) #17
         cs.add(a == Operators.SDIV(b, c))
-        cs.add(d == b/c)
+        cs.add(d == b // c)
         cs.add(a == d)
 
         self.assertTrue(solver.check(cs))
@@ -518,7 +523,7 @@ class ExpressionTest(unittest.TestCase):
 
     def test_SAR(self):
         A = 0xbadf00d
-        for B in xrange(32):
+        for B in range(32):
             cs = ConstraintSet()
             a = cs.new_bitvec(32)
             b = cs.new_bitvec(32)

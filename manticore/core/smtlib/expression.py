@@ -51,7 +51,7 @@ class Constant(Expression):
     def __init__(self, value, *args, **kwargs):
         if self.__class__ is Constant:
             raise TypeError
-        assert isinstance(value, (bool, int, long))
+        assert isinstance(value, (bool, int))
         super(Constant, self).__init__(*args, **kwargs)
         self._value = value
 
@@ -88,7 +88,7 @@ class Bool(Expression):
     def cast(self, value, **kwargs):
         if isinstance(value, Bool):
             return value
-        assert isinstance(value, (int, long, bool))
+        assert isinstance(value, (int, bool))
         return BoolConstant(bool(value), **kwargs)
 
     def __cmp__(self, *args):
@@ -99,6 +99,9 @@ class Bool(Expression):
 
     def __eq__(self, other):
         return BoolEq(self, self.cast(other))
+
+    def __hash__(self):
+        return object.__hash__(self)
 
     def __ne__(self, other):
         return BoolNot(self == self.cast(other))
@@ -121,8 +124,8 @@ class Bool(Expression):
     def __rxor__(self, other):
         return BoolXor(self.cast(other), self)
 
-    def __nonzero__(self):
-        raise NotImplementedError("__nonzero__ for Bool")
+    def __bool__(self):
+        raise NotImplementedError("__bool__ for Bool")
 
 
 class BoolVariable(Bool, Variable):
@@ -139,7 +142,7 @@ class BoolConstant(Bool, Constant):
         assert isinstance(value, bool)
         super(BoolConstant, self).__init__(value, *args, **kwargs)
 
-    def __nonzero__(self):
+    def __bool__(self):
         return self.value
 
 
@@ -202,7 +205,7 @@ class BitVec(Expression):
         if isinstance(value, BitVec):
             assert value.size == self.size
             return value
-        if isinstance(value, str) and len(value) == 1:
+        if isinstance(value, (str, bytes)) and len(value) == 1:
             value = ord(value)
         # Try to support not Integral types that can be casted to int
         if not isinstance(value, numbers.Integral):
@@ -322,6 +325,9 @@ class BitVec(Expression):
     def __eq__(self, other):
         return Equal(self, self.cast(other))
 
+    def __hash__(self):
+        return object.__hash__(self)
+
     def __ne__(self, other):
         return BoolNot(Equal(self, self.cast(other)))
 
@@ -386,16 +392,19 @@ class BitVecVariable(BitVec, Variable):
 
 class BitVecConstant(BitVec, Constant):
     def __init__(self, size, value, *args, **kwargs):
-        assert isinstance(value, (int, long))
+        assert isinstance(value, int)
         super(BitVecConstant, self).__init__(size, value, *args, **kwargs)
 
-    def __nonzero__(self):
+    def __bool__(self):
         return self.value != 0
 
     def __eq__(self, other):
         if self.taint:
             super(BitVecConstant, self).__eq__(other)
         return self.value == other
+
+    def __hash__(self):
+        return super(BitVecConstant, self).__hash__()
 
 
 class BitVecOperation(BitVec, Operation):
@@ -552,7 +561,7 @@ class Array(Expression):
     def __init__(self, index_bits, index_max, value_bits, *operands, **kwargs):
         assert index_bits in (32, 64, 256)
         assert value_bits in (8, 16, 32, 64, 256)
-        assert index_max is None or isinstance(index_max, (int, long))
+        assert index_max is None or isinstance(index_max, int)
         assert index_max is None or index_max >= 0 and index_max < 2 ** index_bits
         self._index_bits = index_bits
         self._index_max = index_max
@@ -592,7 +601,7 @@ class Array(Expression):
         raise ValueError  # cast not implemented
 
     def cast_index(self, index):
-        if isinstance(index, (int, long)):
+        if isinstance(index, int):
             #assert self.index_max is None or index >= 0 and index < self.index_max
             return BitVecConstant(self.index_bits, index)
         assert isinstance(index, BitVec) and index.size == self.index_bits
@@ -601,7 +610,7 @@ class Array(Expression):
     def cast_value(self, value):
         if isinstance(value, str) and len(value) == 1:
             value = ord(value)
-        if isinstance(value, (int, long)):
+        if isinstance(value, int):
             return BitVecConstant(self.value_bits, value)
         assert isinstance(value, BitVec) and value.size == self.value_bits
         return value
@@ -666,6 +675,9 @@ class Array(Expression):
     def __ne__(self, other):
         return BoolNot(self == other)
 
+    def __hash__(self):
+        return super(Array, self).__hash__()
+
     @property
     def underlying_variable(self):
         array = self
@@ -675,14 +687,14 @@ class Array(Expression):
 
     def read_BE(self, address, size):
         bytes = []
-        for offset in xrange(size):
+        for offset in range(size):
             bytes.append(self.get(address + offset, 0))
         return BitVecConcat(size * self.value_bits, *bytes)
 
     def read_LE(self, address, size):
         address = self.cast_index(address)
         bytes = []
-        for offset in xrange(size):
+        for offset in range(size):
             bytes.append(self.get(address + offset, 0))
         return BitVecConcat(size * self.value_bits, *reversed(bytes))
 
@@ -690,7 +702,7 @@ class Array(Expression):
         address = self.cast_index(address)
         value = BitVec(size * self.value_bits).cast(value)
         array = self
-        for offset in xrange(size):
+        for offset in range(size):
             array = self.store(address + offset, BitVecExtract(value, (size - 1 - offset) * self.value_bits, self.value_bits))
         return array
 
@@ -698,7 +710,7 @@ class Array(Expression):
         address = self.cast_index(address)
         value = BitVec(size * self.value_bits).cast(value)
         array = self
-        for offset in reversed(xrange(size)):
+        for offset in reversed(range(size)):
             array = self.store(address + offset, BitVecExtract(value, (size - 1 - offset) * self.value_bits, self.value_bits))
         return array
 
@@ -911,7 +923,7 @@ class ArrayProxy(Array):
             start, stop = self._fix_index(index)
             size = self._get_size(index)
             assert len(value) == size
-            for i in xrange(size):
+            for i in range(size):
                 self.store(start + i, value[i])
         else:
             self.store(index, value)
@@ -985,7 +997,7 @@ class ArraySelect(BitVec, Operation):
 class BitVecSignExtend(BitVecOperation):
     def __init__(self, operand, size_dest, *args, **kwargs):
         assert isinstance(operand, BitVec)
-        assert isinstance(size_dest, (int, long))
+        assert isinstance(size_dest, int)
         assert size_dest >= operand.size
         super(BitVecSignExtend, self).__init__(size_dest, operand, *args, **kwargs)
         self.extend = size_dest - operand.size
@@ -994,7 +1006,7 @@ class BitVecSignExtend(BitVecOperation):
 class BitVecZeroExtend(BitVecOperation):
     def __init__(self, size_dest, operand, *args, **kwargs):
         assert isinstance(operand, BitVec)
-        assert isinstance(size_dest, (int, long))
+        assert isinstance(size_dest, int)
         assert size_dest >= operand.size
         super(BitVecZeroExtend, self).__init__(size_dest, operand, *args, **kwargs)
         self.extend = size_dest - operand.size
@@ -1002,8 +1014,8 @@ class BitVecZeroExtend(BitVecOperation):
 
 class BitVecExtract(BitVecOperation):
     def __init__(self, operand, offset, size, *args, **kwargs):
-        assert isinstance(offset, (int, long))
-        assert isinstance(size, (int, long))
+        assert isinstance(offset, int)
+        assert isinstance(size, int)
         assert offset >= 0 and offset + size <= operand.size
         super(BitVecExtract, self).__init__(size, operand, *args, **kwargs)
         self.begining = offset
@@ -1012,9 +1024,9 @@ class BitVecExtract(BitVecOperation):
 
 class BitVecConcat(BitVecOperation):
     def __init__(self, size_dest, *operands, **kwargs):
-        assert isinstance(size_dest, (int, long))
-        assert all(map(lambda x: isinstance(x, BitVec), operands))
-        assert size_dest == sum(map(lambda x: x.size, operands))
+        assert isinstance(size_dest, int)
+        assert all(isinstance(x, BitVec) for x in operands)
+        assert size_dest == sum([x.size for x in operands])
         super(BitVecConcat, self).__init__(size_dest, *operands, **kwargs)
 
 
