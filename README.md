@@ -23,7 +23,7 @@ Manticore can analyze the following types of programs:
 
 ## Requirements
 
-Manticore is supported on Linux and requires Python 2.7. Ubuntu 16.04 is strongly recommended.
+Manticore is supported on Linux and requires Python >=3.6. Ubuntu 18.04 is strongly recommended.
 Ethereum smart contract analysis requires the [`solc`](https://github.com/ethereum/solidity) program in your `$PATH`.
 
 ## Quick Start
@@ -32,10 +32,10 @@ Install and try Manticore in a few shell commands (see an [asciinema](https://as
 
 ```
 # Install system dependencies
-sudo apt-get update && sudo apt-get install python-pip -y
+sudo apt-get update && sudo apt-get install python3 python-pip3 -y
 
 # Install manticore and its dependencies
-pip2 install manticore --user
+sudo pip3 install manticore
 
 # Download the examples
 git clone https://github.com/trailofbits/manticore.git && cd manticore/examples/linux
@@ -50,7 +50,7 @@ cat mcore_*/*1.stdin | ./basic
 
 # Use the Manticore API
 cd ../script
-python count_instructions.py ../linux/helloworld
+python3 count_instructions.py ../linux/helloworld
 ```
 
 ### Docker
@@ -141,8 +141,8 @@ m = Manticore('./path/to/binary')
 @m.hook(hook_pc)
 def hook(state):
   cpu = state.cpu
-  print 'eax', cpu.EAX
-  print cpu.read_int(cpu.ESP)
+  print('eax', cpu.EAX)
+  print(cpu.read_int(cpu.ESP))
 
   m.terminate()  # tell Manticore to stop
 

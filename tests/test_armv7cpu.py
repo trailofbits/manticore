@@ -66,19 +66,19 @@ class Armv7CpuTest(unittest.TestCase):
     def test_stack_push(self):
         self.c.stack_push(42)
         self.c.stack_push(44)
-        self.assertItemsEqual(self.c.read(self.c.STACK, 4), '\x2c\x00\x00\x00')
-        self.assertItemsEqual(self.c.read(self.c.STACK + 4, 4), '\x2a\x00\x00\x00')
+        self.assertEqual(b''.join(self.c.read(self.c.STACK, 4)), b'\x2c\x00\x00\x00')
+        self.assertEqual(b''.join(self.c.read(self.c.STACK + 4, 4)), b'\x2a\x00\x00\x00')
 
     def test_stack_pop(self):
         v = 0x55
         v_bytes = struct.pack('<I', v)
         self.c.stack_push(v)
         val = self.c.stack_pop()
-        self.assertItemsEqual(self.c.read(self.c.STACK - 4, 4), v_bytes)
+        self.assertEqual(b''.join(self.c.read(self.c.STACK - 4, 4)), v_bytes)
 
     def test_stack_peek(self):
         self.c.stack_push(42)
-        self.assertItemsEqual(self.c.stack_peek(), '\x2a\x00\x00\x00')
+        self.assertEqual(b''.join(self.c.stack_peek()), b'\x2a\x00\x00\x00')
 
     def test_readwrite_int(self):
         self.c.STACK -= 4
@@ -880,7 +880,7 @@ class Armv7CpuInstructions(unittest.TestCase):
     @itest_setregs("R1=3")
     def test_push_one_reg(self):
         self.cpu.execute()
-        self.assertItemsEqual(self.cpu.stack_peek(), struct.pack('<I', 3))
+        self.assertEqual(b''.join(self.cpu.stack_peek()), struct.pack('<I', 3))
 
     @itest_custom("push {r1, r2, r3}")
     @itest_setregs("R1=3", "R2=0x55", "R3=0xffffffff")
@@ -889,7 +889,7 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.cpu.execute()
         sp = self.cpu.STACK
         self.assertEqual(self.rf.read('SP'), pre_sp - (3 * 4))
-        self.assertItemsEqual(self.cpu.stack_peek(), struct.pack('<I', 3))
+        self.assertEqual(b''.join(self.cpu.stack_peek()), struct.pack('<I', 3))
         self.assertEqual(self.cpu.read_int(sp + 4, self.cpu.address_bit_size), 0x55)
         self.assertEqual(self.cpu.read_int(sp + 8, self.cpu.address_bit_size), 0xffffffff)
 

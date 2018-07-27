@@ -1,10 +1,13 @@
-from __future__ import print_function
+
 import shutil
 import struct
 import tempfile
 import unittest
 import os
+import sys
+import resource
 
+from manticore.platforms import evm
 from manticore.core.plugin import Plugin
 from manticore.core.smtlib import ConstraintSet, operators
 from manticore.core.smtlib.expression import BitVec
@@ -17,6 +20,11 @@ from manticore.core.smtlib.visitors import pretty_print, translate_to_smtlib, si
 import shutil
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# FIXME(tim), increase the stack size and recursion limit to avoid using iterpickle (too lazy to fix it)
+maxlim = 0x100000
+resource.setrlimit(resource.RLIMIT_STACK, [0x100 * maxlim, resource.RLIM_INFINITY])
+sys.setrecursionlimit(0x100000)
 
 # FIXME(mark): Remove these two lines when logging works for ManticoreEVM
 from manticore.utils.log import init_logging
@@ -36,7 +44,7 @@ class EthDetectorsIntegrationTest(unittest.TestCase):
         filename = os.path.join(THIS_DIR, 'binaries/int_overflow.sol')
         mevm.multi_tx_analysis(filename, tx_limit=1)
         self.assertEqual(len(mevm.global_findings), 3)
-        all_findings = ''.join(map(lambda x: x[2], mevm.global_findings))
+        all_findings = ''.join([x[2] for x in mevm.global_findings])
         self.assertIn('Unsigned integer overflow at SUB instruction', all_findings)
         self.assertIn('Unsigned integer overflow at ADD instruction', all_findings)
         self.assertIn('Unsigned integer overflow at MUL instruction', all_findings)
@@ -79,59 +87,59 @@ class EthAbiTests(unittest.TestCase):
 
     @staticmethod
     def _pack_int_to_32(x):
-        return '\x00' * 28 + struct.pack('>I', x)
+        return b'\x00' * 28 + struct.pack('>I', x)
 
     def test_dyn_address(self):
         d = [
-            'AAAA',                    # function hash
+            b'AAAA',                    # function hash
             self._pack_int_to_32(32),  # offset to data start
             self._pack_int_to_32(2),   # data start; # of elements
             self._pack_int_to_32(42),  # element 1
             self._pack_int_to_32(43),  # element 2
         ]
-        d = ''.join(d)
+        d = b''.join(d)
 
 
         func_id, dynargs = ABI.deserialize(type_spec='func(address[])', data=d)
 
 
-        self.assertEqual(func_id, 'AAAA')
+        self.assertEqual(func_id, b'AAAA')
         self.assertEqual(dynargs, ([42, 43],))
 
     def test_dyn_bytes(self):
         d = [
-            'AAAA',                    # function hash
+            b'AAAA',                    # function hash
             self._pack_int_to_32(32),  # offset to data start
             self._pack_int_to_32(30),   # data start; # of elements
-            'Z'*30, '\x00'*2
+            b'Z'*30, b'\x00'*2
         ]
-        d = ''.join(d)
+        d = b''.join(d)
 
         funcname, dynargs = ABI.deserialize(type_spec='func(bytes)', data=d)
 
-        self.assertEqual(funcname, 'AAAA')
-        self.assertEqual(dynargs, ('Z'*30,))
+        self.assertEqual(funcname, b'AAAA')
+        self.assertEqual(dynargs, (b'Z'*30,))
 
     def test_simple_types0(self):
         d = [
-            'AAAA',                    # function hash
+            b'AAAA',                    # function hash
             self._pack_int_to_32(32),
-            '\xff' * 32,
+            b'\xff' * 32,
         ]
-        d = ''.join(d)
+        d = b''.join(d)
         funcname, dynargs = ABI.deserialize(type_spec='func(uint256,uint256)', data=d)
         #self.assertEqual(funcname, 'AAAA')
         self.assertEqual(dynargs, (32, 2**256 - 1 ))
 
     def test_simple_types1(self):
         d = [
-            'AAAA',                    # function hash
+            b'AAAA',                    # function hash
             self._pack_int_to_32(32),
-            '\xff' * 32,
-            '\xff'.rjust(32, '\0'),
+            b'\xff' * 32,
+            b'\xff'.rjust(32, b'\0'),
             self._pack_int_to_32(0x424242),
         ]
-        d = ''.join(d)
+        d = b''.join(d)
         funcname, dynargs = ABI.deserialize(type_spec='func(uint256,uint256,bool,address)', data=d)
         #self.assertEqual(funcname, 'AAAA')
         self.assertEqual(dynargs, (32, 2**256 - 1, 0xff, 0x424242 ))
@@ -139,15 +147,31 @@ class EthAbiTests(unittest.TestCase):
 
     def test_simple_types_ints(self):
         d = [
-            'AAAA',                    # function hash
-            '\x7f' + '\xff' *31, # int256 max
-            '\x80'.ljust(32, '\0'), # int256 min
+            b'AAAA',                    # function hash
+            b'\x7f' + b'\xff' *31, # int256 max
+            b'\x80'.ljust(32, b'\0'), # int256 min
         ]
-        d = ''.join(d)
+        d = b''.join(d)
         func_id, dynargs = ABI.deserialize(type_spec='func(int256,int256)', data=d)
-        self.assertEqual(func_id, "AAAA")
+        self.assertEqual(func_id, b"AAAA")
         self.assertEqual(dynargs, ( 2**255 - 1, -(2**255) ))
 
+    def test_simple_types_ints_symbolic(self):
+        cs = ConstraintSet()
+        x = cs.new_bitvec(256, name="x")
+        y = cs.new_bitvec(256, name="y")
+        # Something is terribly wrong x,y = 10,20
+        my_ser = ABI.serialize('(uint,uint)', x, y)
+        x_, y_ = ABI.deserialize('(uint,uint)', my_ser)
+        self.assertTrue(solver.must_be_true(cs, x == x_))
+        self.assertTrue(solver.must_be_true(cs, y == y_))
+
+    def test_simple_types_ints_symbolic1(self):
+        cs = ConstraintSet()
+        x = cs.new_bitvec(256, name="x")
+        # Something is terribly wrong x,y = 10,20
+        my_ser = ABI.serialize('uint', x)
+        self.assertTrue(solver.must_be_true(cs, my_ser[0] == operators.EXTRACT(x, 256 - 8, 8)))
 
     def test_address0(self):
         data = '{}\x01\x55{}'.format('\0'*11, '\0'*19)
@@ -156,64 +180,67 @@ class EthAbiTests(unittest.TestCase):
 
     def test_mult_dyn_types(self):
         d = [
-            'AAAA',                    # function hash
+            b'AAAA',                    # function hash
             self._pack_int_to_32(0x40),  # offset to data 1 start
             self._pack_int_to_32(0x80),  # offset to data 2 start
             self._pack_int_to_32(10),  # data 1 size
-            'helloworld'.ljust(32, '\x00'), # data 1
+            b'helloworld'.ljust(32, b'\x00'), # data 1
             self._pack_int_to_32(3),  # data 2 size
             self._pack_int_to_32(3),  # data 2
             self._pack_int_to_32(4),
             self._pack_int_to_32(5),
         ]
-        d = ''.join(d)
+        d = b''.join(d)
 
         func_id, dynargs = ABI.deserialize(type_spec='func(bytes,address[])', data=d)
 
-        self.assertEqual(func_id, 'AAAA')
-        self.assertEqual(dynargs, ('helloworld', [3, 4, 5]))
+        self.assertEqual(func_id, b'AAAA')
+        self.assertEqual(dynargs, (b'helloworld', [3, 4, 5]))
 
     def test_self_make_and_parse_multi_dyn(self):
-        d = ABI.function_call('func(bytes,address[])', 'h'*50, [1, 1, 2, 2, 3, 3] )
+        d = ABI.function_call('func(bytes,address[])', b'h'*50, [1, 1, 2, 2, 3, 3] )
         funcid, dynargs = ABI.deserialize(type_spec='func(bytes,address[])', data=d)
         self.assertEqual(funcid, b'\x83}9\xe8')
-        self.assertEqual(dynargs, ('h'*50, [1, 1, 2, 2, 3, 3]))
+        self.assertEqual(dynargs, (b'h'*50, [1, 1, 2, 2, 3, 3]))
 
 
     def test_serialize_tuple(self):
-        self.assertEqual(ABI.serialize('(int256)', 0x10), '\0'*31+'\x10')
-        self.assertEqual(ABI.serialize('(int256,int256)', 0x10, 0x20), '\0'*31+'\x10'+'\0'*31+'\x20')
-        self.assertEqual(ABI.serialize('(int256,(int256,int256))', 0x10, (0x20, 0x30)), '\0'*31+'\x10'+'\0'*31+'\x20'+'\0'*31+'\x30')
+        self.assertEqual(ABI.serialize('(int256)', 0x10), b'\0' * 31 + b'\x10')
+        self.assertEqual(ABI.serialize('(int256,int256)', 0x10, 0x20), b'\0' * 31 + b'\x10' + b'\0' * 31 + b'\x20')
+        self.assertEqual(ABI.serialize('(int256,(int256,int256))', 0x10, (0x20, 0x30)),
+                         b'\0' * 31 + b'\x10' + b'\0' * 31 + b'\x20' + b'\0' * 31 + b'\x30')
 
     def test_serialize_basic_types_int(self):
-        self.assertEqual(ABI.serialize('int256', 0x10), '\0'*31+'\x10')
-        self.assertEqual(ABI.deserialize('int256', '\0'*31+'\x10'), 0x10)
+        self.assertEqual(ABI.serialize('int256', 0x10), b'\0' * 31 + b'\x10')
+        self.assertEqual(ABI.deserialize('int256', b'\0' * 31 + b'\x10'), 0x10)
 
-        self.assertEqual(ABI.serialize('int256', -0x10), '\xff'*31+'\xf0')
-        self.assertEqual(ABI.deserialize('int256', '\xff'*31+'\xf0'), -0x10)
+        self.assertEqual(ABI.serialize('int256', -0x10), b'\xff' * 31 + b'\xf0')
+        self.assertEqual(ABI.deserialize('int256', b'\xff' * 31 + b'\xf0'), -0x10)
 
     def test_serialize_basic_types_int8(self):
-        self.assertEqual(ABI.serialize('int8', 0x10), '\0'*31+'\x10')
-        self.assertEqual(ABI.deserialize('int8', '\0'*31+'\x10'), 0x10)
+        self.assertEqual(ABI.serialize('int8', 0x10), b'\0' * 31 + b'\x10')
+        self.assertEqual(ABI.deserialize('int8', b'\0' * 31 + b'\x10'), 0x10)
 
-        self.assertEqual(ABI.serialize('int8', -0x10), '\x00'*31+'\xf0')
-        self.assertEqual(ABI.deserialize('int8', '\x00'*31+'\xf0'), -0x10)
+        self.assertEqual(ABI.serialize('int8', -0x10), b'\x00' * 31 + b'\xf0')
+        self.assertEqual(ABI.deserialize('int8', b'\x00' * 31 + b'\xf0'), -0x10)
 
     def test_serialize_basic_types_int16(self):
-        self.assertEqual(ABI.serialize('int16', 0x100), '\0'*30+'\x01\x00')
-        self.assertEqual(ABI.deserialize('int16', '\0'*30+'\x01\x00'), 0x100)
+        self.assertEqual(ABI.serialize('int16', 0x100), b'\0' * 30 + b'\x01\x00')
+        self.assertEqual(ABI.deserialize('int16', b'\0' * 30 + b'\x01\x00'), 0x100)
 
-        self.assertEqual(ABI.serialize('int16', -0x10), '\x00'*30+'\xff\xf0')
-        self.assertEqual(ABI.deserialize('int16', '\x00'*30+'\xff\xf0'), -0x10)
+        self.assertEqual(ABI.serialize('int16', -0x10), b'\x00' * 30 + b'\xff\xf0')
+        self.assertEqual(ABI.deserialize('int16', b'\x00' * 30 + b'\xff\xf0'), -0x10)
 
     def test_serialize_basic_types_uint(self):
-        self.assertEqual(ABI.serialize('uint256', 0x10), '\0'*31+'\x10')
-        self.assertEqual(ABI.deserialize('uint256', '\0'*31+'\x10'), 0x10)
+        self.assertEqual(ABI.serialize('uint256', 0x10), b'\0' * 31 + b'\x10')
+        self.assertEqual(ABI.deserialize('uint256', b'\0' * 31 + b'\x10'), 0x10)
 
-        self.assertEqual(ABI.serialize('uint256', -0x10), '\xff'*31+'\xf0')
-        self.assertEqual(ABI.deserialize('uint256', '\xff'*31+'\xf0'),  0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0L)
-        self.assertEqual(ABI.deserialize('uint256', '\xff'*31+'\xf0'),  0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0L)
-        self.assertNotEqual(ABI.deserialize('uint256', '\xff'*31+'\xf0'), -0x10L)
+        self.assertEqual(ABI.serialize('uint256', -0x10), b'\xff' * 31 + b'\xf0')
+        self.assertEqual(ABI.deserialize('uint256', b'\xff' * 31 + b'\xf0'),
+                         0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0)
+        self.assertEqual(ABI.deserialize('uint256', b'\xff' * 31 + b'\xf0'),
+                         0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0)
+        self.assertNotEqual(ABI.deserialize('uint256', b'\xff' * 31 + b'\xf0'), -0x10)
 
 
     def test_parse_invalid_int(self):
@@ -249,7 +276,7 @@ class EthAbiTests(unittest.TestCase):
         self.assertEqual(ret, 1 << 38)
 
     def test_valid_uint(self):
-        data = "\xFF"*32
+        data = b"\xFF"*32
 
         parsed = ABI.deserialize('uint', data)
         self.assertEqual(parsed, 2**256 - 1)
@@ -260,7 +287,7 @@ class EthAbiTests(unittest.TestCase):
 
     def test_empty_types(self):
         name, args = ABI.deserialize('func()', '\0'*32)
-        self.assertEqual(name, '\x00\x00\x00\x00')
+        self.assertEqual(name, b'\x00\x00\x00\x00')
         self.assertEqual(args, tuple())
 
     def test_function_type(self):
@@ -271,7 +298,7 @@ class EthAbiTests(unittest.TestCase):
         # calls member id lookup on 'Ethereum Foundation Tip Box' (see https://www.ethereum.org/donate)
         address = ABI._serialize_uint(0xfB6916095ca1df60bB79Ce92cE3Ea74c37c5d359, 20, padding=0)
         selector = ABI.function_selector('memberId(address)')
-        function_ref_data = address + selector + '\0'*8
+        function_ref_data = address + selector + b'\0'*8
         # build tx call data
         call_data = func_id + function_ref_data 
         parsed_func_id, args = ABI.deserialize(spec, call_data)
@@ -279,20 +306,20 @@ class EthAbiTests(unittest.TestCase):
         self.assertEqual(((0xfB6916095ca1df60bB79Ce92cE3Ea74c37c5d359, selector),), args)
 
     def test_serialize_fixed_bytes32(self):
-        ret = ABI.serialize('bytes32', 'hi')
-        self.assertEqual(ret, 'hi'.ljust(32, '\0'))
+        ret = ABI.serialize('bytes32', b'hi')
+        self.assertEqual(ret, b'hi'.ljust(32, b'\x00'))
 
     def test_serialize_fixed_bytes2(self):
-        ret = ABI.serialize('bytes2', 'aa')
-        self.assertEqual(ret, 'aa'.ljust(32, '\0'))
+        ret = ABI.serialize('bytes2', b'aa')
+        self.assertEqual(ret, b'aa'.ljust(32, b'\x00'))
 
     def test_serialize_fixed_bytes_less_data(self):
-        ret = ABI.serialize('bytes4', 'aa')
-        self.assertEqual(ret, 'aa'.ljust(32, '\0'))
+        ret = ABI.serialize('bytes4', b'aa')
+        self.assertEqual(ret, b'aa'.ljust(32, b'\x00'))
 
     def test_serialize_fixed_bytes_too_big(self):
         with self.assertRaises(EthereumError):
-            ABI.serialize('bytes2', 'hii')
+            ABI.serialize('bytes2', b'hii')
 
     # test serializing symbolic buffer with bytesM
     def test_serialize_bytesM_symbolic(self):
@@ -309,13 +336,78 @@ class EthAbiTests(unittest.TestCase):
         ret = ABI.serialize('bytes', buf)
 
         # does the offset field look right?
-        self.assertTrue(solver.must_be_true(cs, ret[0:32] == bytearray('\0'*31 + '\x20')))
+        self.assertTrue(solver.must_be_true(cs, ret[0:32] == bytearray(b'\x00'*31 + b'\x20')))
 
         # does the size field look right?
-        self.assertTrue(solver.must_be_true(cs, ret[32:64] == bytearray('\0'*31 + '\x11')))
+        self.assertTrue(solver.must_be_true(cs, ret[32:64] == bytearray(b'\x00'*31 + b'\x11')))
 
         # does the data field look right?
-        self.assertTrue(solver.must_be_true(cs, ret[64:64+32] == buf + bytearray('\0'*15)))
+        self.assertTrue(solver.must_be_true(cs, ret[64:64+32] == buf + bytearray(b'\x00'*15)))
+
+
+class EthInstructionTests(unittest.TestCase):
+
+    def _make(self):
+        #Make the constraint store
+        constraints = ConstraintSet()
+        #make the ethereum world state
+        world = evm.EVMWorld(constraints)
+
+        address=0x222222222222222222222222222222222222200
+        caller=origin=0x111111111111111111111111111111111111100
+        price=0
+        value=10000
+        bytecode=b'\x05'
+        data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
+        gas = 1000000
+
+        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
+        return constraints, world, new_vm
+
+    def test_SDIV(self):
+        constraints, world, vm = self._make()
+        result = vm.SDIV(115792089237316182568066630936765703517573245936339743861833633745570447228928, 200867255532373784442745261542645325315275374222849104412672)
+        self.assertEqual(-64, result)
+
+
+    def test_SDIVS1(self):
+        constraints, world, vm = self._make()
+        xx = constraints.new_bitvec(256, name="x")
+        yy = constraints.new_bitvec(256, name="y")
+        constraints.add(xx == 0x20)
+        constraints.add(yy == 1)
+        result = vm.SDIV(xx, yy)
+        self.assertListEqual(solver.get_all_values(constraints, result), [0x20])
+
+    def test_SDIVS2(self):
+        constraints, world, vm = self._make()
+        xx = constraints.new_bitvec(256, name="x")
+        yy = constraints.new_bitvec(256, name="y")
+        constraints.add(xx == 0x20)
+        constraints.add(yy == 2)
+        result = vm.SDIV(xx, yy)
+        self.assertListEqual(solver.get_all_values(constraints, result), [0x10])
+
+    def test_SDIVS3(self):
+        constraints, world, vm = self._make()
+        xx = constraints.new_bitvec(256, name="x")
+        yy = constraints.new_bitvec(256, name="y")
+        constraints.add(xx == 0x20)
+        constraints.add(yy == -1)
+        result = vm.SDIV(xx, yy)
+        self.assertListEqual(list(map(evm.to_signed, solver.get_all_values(constraints, result))), [-0x20])
+
+    def test_SDIVSx(self):
+        x,y = 0x20000000000000000000000000000000000000000000000000, -0x40
+        constraints, world, vm = self._make()
+        xx = constraints.new_bitvec(256, name="x")
+        yy = constraints.new_bitvec(256, name="y")
+        constraints.add(xx == x)
+        constraints.add(yy == y)
+
+        result = vm.SDIV(xx, yy)
+        self.assertListEqual(list(map(evm.to_signed, solver.get_all_values(constraints, result))), [vm.SDIV(x, y)])
+
 
 class EthTests(unittest.TestCase):
     def setUp(self):
@@ -364,23 +456,23 @@ class EthTests(unittest.TestCase):
         '''
 
         c1 = m.solidity_create_contract(c, owner=owner_account, contract_name='C1')
-        self.assertEquals(m.count_states(), 1)
+        self.assertEqual(m.count_states(), 1)
         c2 = m.solidity_create_contract(c, owner=owner_account, contract_name='C2', args=[c1.address])
-        self.assertEquals(m.count_states(), 1)
-        c2.f();
-        self.assertEquals(m.count_states(), 1)
-        c2.f();
-        self.assertEquals(m.count_states(), 1)
+        self.assertEqual(m.count_states(), 1)
+        c2.f()
+        self.assertEqual(m.count_states(), 1)
+        c2.f()
+        self.assertEqual(m.count_states(), 1)
 
         for state in m.all_states:
             world = state.platform
-            self.assertEquals(len(world.transactions), 6)
-            self.assertEquals(len(world.all_transactions), 6)
-            self.assertEquals(len(world.human_transactions), 4)
+            self.assertEqual(len(world.transactions), 6)
+            self.assertEqual(len(world.all_transactions), 6)
+            self.assertEqual(len(world.human_transactions), 4)
             self.assertListEqual(['CREATE', 'CREATE', 'CALL', 'CALL', 'CALL', 'CALL'], [x.sort for x in world.all_transactions])
             for tx in world.all_transactions[-4:]:
-                self.assertEquals(tx.result, 'RETURN')
-                self.assertEquals(state.solve_one(tx.return_data), b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01')
+                self.assertEqual(tx.result, 'RETURN')
+                self.assertEqual(state.solve_one(tx.return_data), b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01')
 
     def test_emit_did_execute_end_instructions(self):
         """
@@ -568,8 +660,8 @@ class EthHelpersTest(unittest.TestCase):
         with self.assertRaises(ConcretizeStack) as cm:
             inner_func(None, self.bv, 34)
 
-        self.assertEquals(cm.exception.pos, 1)
-        self.assertEquals(cm.exception.policy, policy)
+        self.assertEqual(cm.exception.pos, 1)
+        self.assertEqual(cm.exception.policy, policy)
 
     def test_concretizer_default(self):
         @concretized_args(b='')
@@ -579,11 +671,11 @@ class EthHelpersTest(unittest.TestCase):
         with self.assertRaises(ConcretizeStack) as cm:
             inner_func(None, 34, self.bv)
 
-        self.assertEquals(cm.exception.pos, 2)
+        self.assertEqual(cm.exception.pos, 2)
         # Make sure the policy isn't blank, i.e. we didn't pass through
         # a falsifiable value, and we selected a default
         self.assertTrue(cm.exception.policy)
-        self.assertNotEquals(cm.exception.policy, '')
+        self.assertNotEqual(cm.exception.policy, '')
 
 
     def test_concretizer_doesnt_overreach(self):
