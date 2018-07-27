@@ -63,7 +63,7 @@ run_examples() {
 measure_cov() {
     local PYFILE=${1}
     echo "Measuring coverage for ${PYFILE}"
-    local HAS_COV=$(coverage report --include ${PYFILE} | tail -n1 | grep -o 'No data to report')
+    local HAS_COV=$(coverage report --include=${PYFILE} | tail -n1 | grep -o 'No data to report')
     if [ "${HAS_COV}" = "No data to report" ]
     then
         echo "    FAIL: No coverage for ${PYFILE}"

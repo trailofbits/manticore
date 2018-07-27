@@ -116,8 +116,7 @@ class Visitor(object):
         if isinstance(expression, Constant):
             return expression
         if isinstance(expression, Operation):
-            #TODO: PY3 if any(map(lambda x, y: x is not y, zip(expression.operands, operands))):
-            if any(x != y for x, y in zip(expression.operands, operands)):
+            if any(x is not y for x, y in zip(expression.operands, operands)):
                 import copy
                 aux = copy.copy(expression)
                 aux._operands = operands
@@ -341,7 +340,7 @@ def clean_cache(cache):
         import random
         N = len(cache) - M
         for i in range(N):
-            cache.pop(random.choice(cache.keys()))
+            cache.pop(random.choice(list(cache.keys())))
 
 
 constant_folder_simplifier_cache = {}

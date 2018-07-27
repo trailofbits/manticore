@@ -1031,7 +1031,7 @@ class BitVecConcat(BitVecOperation):
     def __init__(self, size_dest, *operands, **kwargs):
         assert isinstance(size_dest, int)
         assert all(isinstance(x, BitVec) for x in operands)
-        assert size_dest == sum([x.size for x in operands])
+        assert size_dest == sum(x.size for x in operands)
         super(BitVecConcat, self).__init__(size_dest, *operands, **kwargs)
 
 

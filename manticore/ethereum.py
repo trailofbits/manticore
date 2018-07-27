@@ -196,7 +196,7 @@ class DetectInvalid(Detector):
 
         if mnemonic == 'INVALID':
             if not self._only_human or state.platform.current_transaction.depth == 0:
-                self.add_finding_here(state, "INVALID intruction")
+                self.add_finding_here(state, "INVALID instruction")
 
 
 class DetectReentrancy(Detector):
@@ -252,7 +252,7 @@ class DetectReentrancy(Detector):
     def _get_location_and_reads(self, state):
         name = '{:s}.locations'.format(self.name)
         locations = state.context.get(name, dict)
-        return locations.iteritems()
+        return locations.items()
 
     def did_evm_read_storage_callback(self, state, address, offset, value):
         state.context[self._read_storage_name].add((address, offset))
@@ -748,8 +748,7 @@ class ABI(object):
         elif ty[0] in ('bytes', 'string'):
             result += ABI._serialize_uint(dyn_offset)
             dyn_result += ABI._serialize_uint(len(value))
-            for byte in value:
-                dyn_result.append(byte)
+            dyn_result += ABI._serialize_bytes(value)
         elif ty[0] == 'function':
             result = ABI._serialize_uint(value[0], 20)
             result += value[1] + bytearray('\0' * 8)

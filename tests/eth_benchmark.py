@@ -64,16 +64,16 @@ class EthBenchmark(unittest.TestCase):
         self.assertEqual(expected_findings, actual_findings)
 
     def test_assert_minimal(self):
-        self._test('assert_minimal', set([(95, 'INVALID intruction', False)]))
+        self._test('assert_minimal', set([(95, 'INVALID instruction', False)]))
 
     def test_assert_constructor(self):
-        self._test('assert_constructor', set([(23, 'INVALID intruction', True)]))
+        self._test('assert_constructor', set([(23, 'INVALID instruction', True)]))
 
     def test_assert_multitx_1(self):
         self._test('assert_multitx_1', set())
 
     def test_assert_multitx_2(self):
-        self._test('assert_multitx_2', set([(150, 'INVALID intruction', False)]))
+        self._test('assert_multitx_2', set([(150, 'INVALID instruction', False)]))
 
     def test_integer_overflow_minimal(self):
         self._test('integer_overflow_minimal', set([(163, 'Unsigned integer overflow at SUB instruction', False)]))
@@ -158,8 +158,9 @@ class EthBenchmark(unittest.TestCase):
 
     def test_reentrancy_dao(self):
         name = inspect.currentframe().f_code.co_name[5:]
-        self._test(name, set([(247L, 'Reentrancy muti-million ether bug', False)]))
+        self._test(name, set([(247, 'Reentrancy muti-million ether bug', False)]))
 
+    @unittest.skip('too slow')
     def test_eth_tx_order_dependence_multitx_1(self):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, set())
