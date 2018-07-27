@@ -69,7 +69,6 @@ class ExpressionTest(unittest.TestCase):
         self.assertTrue('SOURCE1' in x.taint)
         self.assertTrue('SOURCE2' in x.taint)
         self.assertTrue('SOURCE3' in x.taint)
-
         self.assertTrue('SOURCE4' in x.taint)
 
     def testBasicConstraints(self):
