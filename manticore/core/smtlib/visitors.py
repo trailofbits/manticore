@@ -140,7 +140,7 @@ class Translator(Visitor):
                 value = getattr(self, methodname)(expression, *args)
                 if value is not None:
                     return value
-        raise Exception ("No translation for this {}".format(expression))
+        raise Exception("No translation for this {}".format(expression))
 
 
 class GetDeclarations(Visitor):

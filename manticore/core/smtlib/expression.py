@@ -794,7 +794,7 @@ class ArraySlice(Array):
         if not isinstance(array, Array):
             raise ValueError("Array expected")
         if isinstance(array, ArrayProxy):
-            array=array._array
+            array = array._array
         super(ArraySlice, self).__init__(array.index_bits, array.index_max, array.value_bits, *args, **kwargs)
 
         self._array = array

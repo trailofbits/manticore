@@ -1922,7 +1922,7 @@ class EVMWorld(Platform):
         self._pending_transaction = PendingTransaction(sort, address, price, data, caller, value, gas)
 
     def _constraint_to_accounts(self, address, include_zero=False, ty='both'):
-            if ty not in  ('both', 'normal', 'contract'):
+            if ty not in ('both', 'normal', 'contract'):
                 raise ValueError('Bad account type. It must be `normal`, `contract` or `both`')
             if ty == 'both':
                 accounts = self.accounts

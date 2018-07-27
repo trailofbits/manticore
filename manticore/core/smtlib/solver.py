@@ -369,7 +369,6 @@ class Z3Solver(Solver):
 
             temp_cs.add(var == expression)
             self._reset(temp_cs.to_string(related_to=var))
-            
             result = []
             val = None
             while self._check() == 'sat':
