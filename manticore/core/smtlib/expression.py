@@ -211,7 +211,7 @@ class BitVec(Expression):
         if isinstance(value, (str, bytes)) and len(value) == 1:
             value = ord(value)
         # Try to support not Integral types that can be casted to int
-        if not isinstance(value, numbers.Integral):
+        if not isinstance(value, int):
             value = int(value)
         # FIXME? Assert it fits in the representation
         return BitVecConstant(self.size, value, **kwargs)

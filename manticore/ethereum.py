@@ -889,7 +889,7 @@ class ABI(object):
         if size <= 0 and size > 32:
             raise ValueError
 
-        if not isinstance(value, (numbers.Integral, BitVec, EVMAccount)):
+        if not isinstance(value, (int, BitVec, EVMAccount)):
             raise ValueError
         if issymbolic(value):
             # FIXME This temporary array variable should be obtained from a specific constraint store
@@ -913,7 +913,7 @@ class ABI(object):
         '''
         if size <= 0 and size > 32:
             raise ValueError
-        if not isinstance(value, (numbers.Integral, BitVec)):
+        if not isinstance(value, (int, BitVec)):
             raise ValueError
         if issymbolic(value):
             buf = ArrayVariable(index_bits=256, index_max=32, value_bits=8, name='temp{}'.format(uuid.uuid1()))
@@ -994,7 +994,7 @@ class EVMAccount(object):
         self._name = name
 
     def __eq__(self, other):
-        if isinstance(other, numbers.Integral):
+        if isinstance(other, int):
             return self._address == other
         if isinstance(self, EVMAccount):
             return self._address == other._address
@@ -1658,7 +1658,7 @@ class ManticoreEVM(Manticore):
             raise EthereumError("Name already used")
 
         #Balance check
-        if not isinstance(balance, numbers.Integral):
+        if not isinstance(balance, int):
             raise EthereumError("Balance invalid type")
 
         if isinstance(code, str):
@@ -1670,7 +1670,7 @@ class ManticoreEVM(Manticore):
         # Let just choose the address ourself. This is not yellow paper material
         if address is None:
             address = self.new_address()
-        if not isinstance(address, numbers.Integral):
+        if not isinstance(address, int):
             raise EthereumError("A concrete address is needed")
         assert address is not None
         if address in map(int, self.accounts.values()):
@@ -1752,16 +1752,16 @@ class ManticoreEVM(Manticore):
             raise EthereumError("code bad type")
 
         # Check types
-        if not isinstance(address, (numbers.Integral, BitVec)):
+        if not isinstance(address, (int, BitVec)):
             raise EthereumError("Caller invalid type")
 
-        if not isinstance(value, (numbers.Integral, BitVec)):
+        if not isinstance(value, (int, BitVec)):
             raise EthereumError("Value invalid type")
 
-        if not isinstance(address, (numbers.Integral, BitVec)):
+        if not isinstance(address, (int, BitVec)):
             raise EthereumError("address invalid type")
 
-        if not isinstance(price, numbers.Integral):
+        if not isinstance(price, int):
             raise EthereumError("Price invalid type")
 
         # Check argument consistency and set defaults ...
