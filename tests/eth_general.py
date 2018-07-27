@@ -348,16 +348,16 @@ class EthAbiTests(unittest.TestCase):
 class EthInstructionTests(unittest.TestCase):
 
     def _make(self):
-        # Make the constraint store
+        #Make the constraint store
         constraints = ConstraintSet()
-        # make the ethereum world state
+        #make the ethereum world state
         world = evm.EVMWorld(constraints)
 
-        address = 0x222222222222222222222222222222222222200
-        caller = origin = 0x111111111111111111111111111111111111100
-        price = 0
-        value = 10000
-        bytecode = b'\x05'
+        address=0x222222222222222222222222222222222222200
+        caller=origin=0x111111111111111111111111111111111111100
+        price=0
+        value=10000
+        bytecode=b'\x05'
         data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
         gas = 1000000
 
@@ -366,9 +366,9 @@ class EthInstructionTests(unittest.TestCase):
 
     def test_SDIV(self):
         constraints, world, vm = self._make()
-        result = vm.SDIV(115792089237316182568066630936765703517573245936339743861833633745570447228928,
-                         200867255532373784442745261542645325315275374222849104412672)
+        result = vm.SDIV(115792089237316182568066630936765703517573245936339743861833633745570447228928, 200867255532373784442745261542645325315275374222849104412672)
         self.assertEqual(-64, result)
+
 
     def test_SDIVS1(self):
         constraints, world, vm = self._make()
@@ -398,7 +398,7 @@ class EthInstructionTests(unittest.TestCase):
         self.assertListEqual(list(map(evm.to_signed, solver.get_all_values(constraints, result))), [-0x20])
 
     def test_SDIVSx(self):
-        x, y = 0x20000000000000000000000000000000000000000000000000, -0x40
+        x,y = 0x20000000000000000000000000000000000000000000000000, -0x40
         constraints, world, vm = self._make()
         xx = constraints.new_bitvec(256, name="x")
         yy = constraints.new_bitvec(256, name="y")
@@ -407,6 +407,7 @@ class EthInstructionTests(unittest.TestCase):
 
         result = vm.SDIV(xx, yy)
         self.assertListEqual(list(map(evm.to_signed, solver.get_all_values(constraints, result))), [vm.SDIV(x, y)])
+
 
 
 class EthTests(unittest.TestCase):
