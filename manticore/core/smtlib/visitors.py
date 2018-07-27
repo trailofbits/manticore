@@ -134,7 +134,7 @@ class Translator(Visitor):
         assert expression.__class__.__mro__[-1] is object
         for cls in expression.__class__.__mro__:
             sort = cls.__name__
-            methodname = 'visit_%s' % sort
+            methodname = 'visit_{:s}'.format(sort)
             if hasattr(self, methodname):
                 value = getattr(self, methodname)(expression, *args)
                 if value is not None:

@@ -242,7 +242,7 @@ class DetectReentrancy(Detector):
         pc = world.current_vm.pc
         if isinstance(pc, Constant):
             pc = pc.value
-        assert isinstance(pc, numbers.Integral)
+        assert isinstance(pc, int)
         at_init = world.current_transaction.sort == 'CREATE'
         location = (address, pc, "Reentrancy muti-million ether bug", at_init)
         locations[location] = set(state.context[self._read_storage_name])
@@ -752,11 +752,11 @@ class ABI(object):
             result = ABI._serialize_uint(value[0], 20)
             result += value[1] + bytearray('\0' * 8)
             assert len(result) == 32
-        elif ty[0] in ('tuple'):
+        elif ty[0] == 'tuple':
             sub_result, sub_dyn_result = ABI._serialize_tuple(ty[1], value, dyn_offset)
             result += sub_result
             dyn_result += sub_dyn_result
-        elif ty[0] in ('array'):
+        elif ty[0] == 'array':
             rep = ty[1]
             base_type = ty[2]
             sub_result, sub_dyn_result = ABI._serialize_array(rep, base_type, value, dyn_offset)
