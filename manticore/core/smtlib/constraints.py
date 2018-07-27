@@ -1,6 +1,6 @@
 
 from .expression import BitVecVariable, BoolVariable, ArrayVariable, Array, Bool, BitVec, BoolConstant, ArrayProxy, BoolEq, Variable, Constant
-from .visitors import GetDeclarations, TranslatorSmtlib, get_variables, simplify, replace
+from .visitors import GetDeclarations, TranslatorSmtlib, get_variables, simplify, replace, translate_to_smtlib
 import logging
 
 logger = logging.getLogger(__name__)
@@ -105,11 +105,9 @@ class ConstraintSet(object):
             for constraint in self.constraints:
                 related_variables |= get_variables(constraint)
             related_constraints = set(self.constraints)
-
         return related_variables, related_constraints
 
-    def to_string(self, related_to=None, replace_constants=False):
-        replace_constants = True
+    def to_string(self, related_to=None, replace_constants=True):
         related_variables, related_constraints = self.__get_related(related_to)
 
         if replace_constants:
@@ -134,9 +132,15 @@ class ConstraintSet(object):
         translator = TranslatorSmtlib(use_bindings=True)
         for constraint in related_constraints:
             if replace_constants:
-                constraint = simplify(replace(constraint, constant_bindings))
-            translator.visit(constraint)
+                if isinstance(constraint, BoolEq) and \
+                   isinstance(constraint.operands[0], Variable) and \
+                   isinstance(constraint.operands[1], Constant):
+                    var = constraint.operands[0]
+                    expression = constraint.operands[1]
+                    expression = simplify(replace(expression, constant_bindings))
+                    constraint = var == expression
 
+            translator.visit(constraint)
         for name, exp, smtlib in translator.bindings:
             if isinstance(exp, BitVec):
                 result += '(declare-fun %s () (_ BitVec %d))' % (name, exp.size)
@@ -198,21 +202,27 @@ class ConstraintSet(object):
         # Simply check there are no name overlappings
         if bindings is None:
             bindings = {}
-        if name is None:
-            name = self._get_new_name('migrated')
         variables = get_variables(expression)
         for var in variables:
+            if name is None:
+                name = self._get_new_name(var.name + '_migrated')
+
             if var in bindings:
                 continue
+
             if isinstance(var, Bool):
-                new_var = self.new_bool()
-            elif isinstance(expression, BitVec):
-                new_var = self.new_bitvec(var.size)
-            elif isinstance(expression, Array):
-                new_var = self.new_array(index_max=var.index_max, index_bits=var.index_bits, value_bits=var.value_bits)
+                new_var = self.new_bool(name=name)
+            elif isinstance(var, BitVec):
+                new_var = self.new_bitvec(var.size, name=name)
+            elif isinstance(var, Array):
+                new_var = self.new_array(index_max=var.index_max, index_bits=var.index_bits, value_bits=var.value_bits, name=name)
+            else:
+                raise NotImplemented("Unknown type {}".format(type(var)))
+
             bindings[var] = new_var
 
-        return replace(expression, bindings)
+        migrated_expression = replace(expression, bindings)
+        return migrated_expression
 
     def new_bool(self, name='B', taint=frozenset()):
         ''' Declares a free symbolic boolean in the constraint store

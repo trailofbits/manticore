@@ -129,8 +129,6 @@ class Z3Solver(Solver):
         self._proc = None
 
         self.debug = False
-        if self.debug:
-            self._send_log = []
         self.version = self._solver_version()
 
         self.support_maximize = False
@@ -367,7 +365,7 @@ class Z3Solver(Solver):
             elif isinstance(expression, BitVec):
                 var = temp_cs.new_bitvec(expression.size)
             else:
-                raise NotImplementedError("get_all_values only implemted for Bool and BitVec")
+                raise NotImplementedError("get_all_values only implemented for Bool and BitVec")
 
             temp_cs.add(var == expression)
             self._reset(temp_cs.to_string(related_to=var))
@@ -388,6 +386,7 @@ class Z3Solver(Solver):
                         break
                     else:
                         raise TooManySolutions(result)
+
             return result
 
     #@memoized

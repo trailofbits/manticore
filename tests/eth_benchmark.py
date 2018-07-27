@@ -1,3 +1,7 @@
+"""
+File name is purposefully not test_* to run this test separately.
+"""
+
 import inspect
 import shutil
 import struct
@@ -12,7 +16,7 @@ from manticore.core.smtlib import ConstraintSet, operators
 from manticore.core.smtlib.expression import BitVec
 from manticore.core.smtlib import solver
 from manticore.core.state import State
-from manticore.ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, Detector, NoAliveStates, ABI, EthereumError
+from manticore.ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, Detector, NoAliveStates, ABI, EthereumError, DetectReentrancy
 from manticore.platforms.evm import EVMWorld, ConcretizeStack, concretized_args, Return, Stop
 from manticore.core.smtlib.visitors import pretty_print, translate_to_smtlib, simplify, to_constant
 
@@ -46,29 +50,30 @@ class EthBenchmark(unittest.TestCase):
         Tests DetectInvalid over the consensys benchmark suit
         """
         mevm = self.mevm
-
         mevm.register_detector(DetectInvalid())
         mevm.register_detector(DetectIntegerOverflow())
+        mevm.register_detector(DetectReentrancy())
 
         filename = os.path.join(THIS_DIR, 'binaries', 'benchmark', '{}.sol'.format(name))
 
-        mevm.multi_tx_analysis(filename, tx_limit=3, args=(mevm.make_symbolic_value(),))
+
+        mevm.multi_tx_analysis(filename, contract_name='Benchmark', args=(mevm.make_symbolic_value(),))
 
         expected_findings = set(( (c, d) for b, c, d in should_find))
         actual_findings = set(( (c, d) for a, b, c, d in mevm.global_findings))
         self.assertEqual(expected_findings, actual_findings)
 
     def test_assert_minimal(self):
-        self._test('assert_minimal', {(95, 'INVALID intruction', False)})
+        self._test('assert_minimal', {(95, 'INVALID instruction', False)})
 
     def test_assert_constructor(self):
-        self._test('assert_constructor', {(23, 'INVALID intruction', True)})
+        self._test('assert_constructor', {(23, 'INVALID instruction', True)})
 
     def test_assert_multitx_1(self):
         self._test('assert_multitx_1', set())
 
     def test_assert_multitx_2(self):
-        self._test('assert_multitx_2', {(150, 'INVALID intruction', False)})
+        self._test('assert_multitx_2', {(150, 'INVALID instruction', False)})
 
     def test_integer_overflow_minimal(self):
         self._test('integer_overflow_minimal', {(163, 'Unsigned integer overflow at SUB instruction', False)})
@@ -142,5 +147,22 @@ class EthBenchmark(unittest.TestCase):
         self._test(name, set())
 
     def test_integer_overflow_dynarray(self):
+        name = inspect.currentframe().f_code.co_name[5:]
+        self._test(name, set())
+
+    def test_reentrancy_nostateeffect(self):
+        name = inspect.currentframe().f_code.co_name[5:]
+        self._test(name, set())
+
+    def test_reentrancy_dao_fixed(self):
+        name = inspect.currentframe().f_code.co_name[5:]
+        self._test(name, set())
+
+    def test_reentrancy_dao(self):
+        name = inspect.currentframe().f_code.co_name[5:]
+        self._test(name, {(247, 'Reentrancy muti-million ether bug', False)})
+
+    @unittest.skip('too slow')
+    def test_eth_tx_order_dependence_multitx_1(self):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, set())

@@ -3,10 +3,9 @@ import random
 import copy
 import inspect
 from functools import wraps
-
-from ..utils.helpers import issymbolic, memoized
+from ..utils.helpers import issymbolic, memoized, get_taints, taint_with, istainted
 from ..platforms.platform import *
-from ..core.smtlib import solver, BitVec, Array, Operators, Constant, ArrayVariable, translate_to_smtlib
+from ..core.smtlib import solver, BitVec, Array, Operators, Constant, ArrayVariable, BitVecConstant, translate_to_smtlib
 from ..core.state import Concretize, TerminateState
 from ..core.plugin import Ref
 from ..utils.event import Eventful
@@ -108,7 +107,7 @@ class Transaction(object):
         return (self.__class__, (self.sort, self.address, self.price, self.data, self.caller, self.value, self.gas, self.depth, self.result, self.return_data))
 
     def __str__(self):
-        return 'Transaction({:s}, from=0x{:x}, to=0x{:x}, value={:r}, depth={:d}, data={:r}, result={:r}..)'.format(self.sort, self.caller, self.address, self.value, self.depth, self.data, self.result)
+        return 'Transaction({:s}, from=0x{:x}, to=0x{:x}, value={!r}, depth={:d}, data={!r}, result={!r}..)'.format(self.sort, self.caller, self.address, self.value, self.depth, self.data, self.result)
 
 
 # Exceptions...
@@ -266,11 +265,10 @@ def concretized_args(**policies):
                     raise ConcretizeStack(index)
                 if policy == "ACCOUNTS":
                     #special handler for EVM only policy
-                    cond = args[index] == 0
-                    self = args[0]
-                    for known_account in self.world.accounts:
-                        cond = Operators.OR(args[index] == known_account, cond)
-                        self.constraints.add(cond)
+                    address = args[index]
+                    world = args[0].world
+                    cond = world._constraint_to_accounts(address, ty='both', include_zero=True)
+                    world.constraints.add(cond)
                     policy = 'ALL'
                 raise ConcretizeStack(index, policy=policy)
             return func(*args, **kwargs)
@@ -497,17 +495,21 @@ class EVM(Eventful):
         except:
             _decoding_cache = self._decoding_cache = {}
 
-        if self.pc in _decoding_cache:
-            return _decoding_cache[self.pc]
+        pc = self.pc
+        if isinstance(pc, Constant):
+            pc = pc.value
+
+        if pc in _decoding_cache:
+            return _decoding_cache[pc]
 
         def getcode():
             bytecode = self.bytecode
-            for pc in range(self.pc, len(bytecode)):
-                yield simplify(bytecode[pc]).value
+            for pc_i in range(pc, len(bytecode)):
+                yield simplify(bytecode[pc_i]).value
             while True:
                 yield 0
-        instruction = EVMAsm.disassemble_one(getcode(), pc=self.pc)
-        _decoding_cache[self.pc] = instruction
+        instruction = EVMAsm.disassemble_one(getcode(), pc=pc)
+        _decoding_cache[pc] = instruction
         return instruction
 
     # auxiliar funcs
@@ -590,7 +592,6 @@ class EVM(Eventful):
             arguments.append(current.operand)
         for _ in range(current.pops):
             arguments.append(self._pop())
-
         # simplify stack arguments
         for i in range(len(arguments)):
             #if isinstance(arguments[i], Expression):
@@ -627,11 +628,12 @@ class EVM(Eventful):
 
     #Execute an instruction from current pc
     def execute(self):
-        if issymbolic(self.pc):
+        if issymbolic(self.pc) and not isinstance(self.pc, Constant):
             expression = self.pc
+            taints = self.pc.taint
 
             def setstate(state, value):
-                state.platform.current_vm.pc = value
+                state.platform.current_vm.pc = BitVecConstant(256, value, taint=taints)
 
             raise Concretize("Concretice PC",
                              expression=expression,
@@ -644,7 +646,6 @@ class EVM(Eventful):
         current = self.instruction
         if self._on_transaction is False:
             self._publish('will_execute_instruction', self.pc, current)
-
         #Need to consume before potential out of stack exception
         old_gas = self._gas
         self._consume(current.fee)
@@ -767,10 +768,13 @@ class EVM(Eventful):
         '''Signed integer division operation (truncated)'''
         s0, s1 = to_signed(a), to_signed(b)
         try:
-            result = (Operators.ABS(s0) // Operators.ABS(s1) * Operators.ITEBV(256, s0 * s1 < 0, -1, 1))
+            result = (Operators.ABS(s0) // Operators.ABS(s1) * Operators.ITEBV(256, (s0 < 0) != (s1 < 0), -1, 1))
         except ZeroDivisionError:
             result = 0
-        return Operators.ITEBV(256, b == 0, 0, result)
+        result = Operators.ITEBV(256, b == 0, 0, result)
+        if not issymbolic(result):
+            result = to_signed(result)
+        return result
 
     def MOD(self, a, b):
         '''Modulo remainder operation'''
@@ -1116,11 +1120,17 @@ class EVM(Eventful):
 
     def MSTORE(self, address, value):
         '''Save word to memory'''
+        if istainted(self.pc):
+            for taint in get_taints(self.pc):
+                value = taint_with(value, taint)
         self._allocate(address + 32)
         self._store(address, value, 32)
 
     def MSTORE8(self, address, value):
         '''Save byte to memory'''
+        if istainted(self.pc):
+            for taint in get_taints(self.pc):
+                value = taint_with(value, taint)
         self._allocate(address)
         self._store(address, value, 1)
 
@@ -1136,6 +1146,9 @@ class EVM(Eventful):
         '''Save word to storage'''
         storage_address = self.address
         self._publish('will_evm_write_storage', storage_address, offset, value)
+        if istainted(self.pc):
+            for taint in get_taints(self.pc):
+                value = taint_with(value, taint)
         self.world.set_storage_data(storage_address, offset, value)
         self._publish('did_evm_write_storage', storage_address, offset, value)
 
@@ -1218,7 +1231,7 @@ class EVM(Eventful):
         return address
 
     @transact
-    @concretized_args(address='ACCOUNTS', in_offset='SAMPLED', in_size='SAMPLED')
+    @concretized_args(address='ACCOUNTS', gas='MINMAX', in_offset='SAMPLED', in_size='SAMPLED')
     def CALL(self, gas, address, value, in_offset, in_size, out_offset, out_size):
         '''Message-call into an account'''
         self.world.start_transaction('CALL',
@@ -1226,7 +1239,7 @@ class EVM(Eventful):
                                      data=self.read_buffer(in_offset, in_size),
                                      caller=self.address,
                                      value=value,
-                                     gas=self.gas)
+                                     gas=gas)
         raise StartTx()
 
     @CALL.pos
@@ -1375,11 +1388,15 @@ class EVM(Eventful):
 
         #hd = ''  # str(self.memory)
         result = ['-' * 147]
-        if issymbolic(self.pc):
+        pc = self.pc
+        if isinstance(self.pc, Constant):
+            pc = self.pc.value
+
+        if issymbolic(pc):
             result.append('<Symbolic PC>')
 
         else:
-            result.append('0x%04x: %s %s %s\n' % (self.pc, self.instruction.name, self.instruction.has_operand and '0x%x' %
+            result.append('0x%04x: %s %s %s\n' % (pc, self.instruction.name, self.instruction.has_operand and '0x%x' %
                                                   self.instruction.operand or '', self.instruction.description))
 
         result.append('Stack                                                                      Memory')
@@ -1511,7 +1528,7 @@ class EVMWorld(Platform):
     def constraints(self):
         return self._constraints
 
-    def _open_transaction(self, sort, address, price, bytecode_or_data, caller, value):
+    def _open_transaction(self, sort, address, price, bytecode_or_data, caller, value, gas=2300):
 
         if self.depth > 0:
             origin = self.tx_origin()
@@ -1519,7 +1536,7 @@ class EVMWorld(Platform):
             origin = caller
         assert price is not None
 
-        tx = Transaction(sort, address, price, bytecode_or_data, caller, value, depth=self.depth)
+        tx = Transaction(sort, address, price, bytecode_or_data, caller, value, depth=self.depth, gas=gas)
         if sort == 'CREATE':
             bytecode = bytecode_or_data
             data = bytearray()
@@ -1543,9 +1560,8 @@ class EVMWorld(Platform):
     def _close_transaction(self, result, data=None, rollback=False):
         self._publish('will_close_transaction', self._callstack[-1][0])
         tx, logs, deleted_accounts, account_storage, vm = self._callstack.pop()
-        self._publish('did_close_transaction', tx)
         assert self.constraints == vm.constraints
-        #seth constraints to the constraints gathered in the last vm
+        # Keep constraints gathered in the last vm
         self.constraints = vm.constraints
 
         if rollback:
@@ -1559,6 +1575,9 @@ class EVMWorld(Platform):
 
         tx.set_result(result, data)
         self._transactions.append(tx)
+
+        self._publish('did_close_transaction', tx)
+
         if self.depth == 0:
             raise TerminateState(tx.result)
 
@@ -1854,6 +1873,9 @@ class EVMWorld(Platform):
         if address is None:
             address = self.new_address()
         if address in self.accounts:
+            # FIXME account may have been created via selfdestruct destinatary
+            # or CALL and may contain some ether already. Though if it was a
+            # selfdestroyed address it can not be reused
             raise EthereumError('The account already exists')
         if code is None:
             code = bytearray()
@@ -1898,12 +1920,39 @@ class EVMWorld(Platform):
         assert self._pending_transaction is None, "Already started tx"
         self._pending_transaction = PendingTransaction(sort, address, price, data, caller, value, gas)
 
+    def _constraint_to_accounts(self, address, include_zero=False, ty='both'):
+            if ty not in ('both', 'normal', 'contract'):
+                raise ValueError('Bad account type. It must be `normal`, `contract` or `both`')
+            if ty == 'both':
+                accounts = self.accounts
+            elif ty == 'normal':
+                accounts = self.normal_accounts
+            else:
+                assert ty == 'contract'
+                accounts = self.contract_accounts
+
+            #Constraint it so it can range over all accounts + address0
+            cond = True
+            if accounts:
+                cond = None
+                if include_zero:
+                    cond = address == 0
+
+                for known_account in accounts:
+                    if cond is None:
+                        cond = address == known_account
+                    else:
+                        cond = Operators.OR(address == known_account, cond)
+            return cond
+
     def _pending_transaction_concretize_address(self):
         sort, address, price, data, caller, value, gas = self._pending_transaction
         if issymbolic(address):
             def set_address(state, solution):
                 world = state.platform
                 world._pending_transaction = sort, solution, price, data, caller, value, gas
+            cond = self._constraint_to_accounts(address, ty='contract', include_zero=False)
+            self.constraints.add(cond)
             raise Concretize('Concretizing address on transaction',
                              expression=address,
                              setstate=set_address,
@@ -1911,11 +1960,14 @@ class EVMWorld(Platform):
 
     def _pending_transaction_concretize_caller(self):
         sort, address, price, data, caller, value, gas = self._pending_transaction
-        if issymbolic(address):
+        if issymbolic(caller):
             def set_caller(state, solution):
                 world = state.platform
                 world._pending_transaction = sort, address, price, data, solution, value, gas
-            raise Concretize('Concretizing address on transaction',
+            #Constraint it so it can range over all normal accounts
+            cond = self._constraint_to_accounts(caller, ty='normal')
+            self.constraints.add(cond)
+            raise Concretize('Concretizing caller on transaction',
                              expression=caller,
                              setstate=set_caller,
                              policy='ALL')
@@ -1936,9 +1988,12 @@ class EVMWorld(Platform):
 
         self._pending_transaction_concretize_address()
         self._pending_transaction_concretize_caller()
+        if caller not in self.accounts:
+            raise EVMException('Caller account does not exist')
 
-        if address not in self.accounts or caller not in self.accounts:
-            raise EVMException('Account does not exist')
+        if address not in self.accounts:
+            # Creating a unaccessible account
+            self.create_account(address=address)
 
         # Check depth
         failed = self.depth > 1024
@@ -1964,7 +2019,7 @@ class EVMWorld(Platform):
         #Here we have enough funds and room in the callstack
         self.send_funds(caller, address, value)
 
-        self._open_transaction(sort, address, price, data, caller, value)
+        self._open_transaction(sort, address, price, data, caller, value, gas=gas)
 
         if failed:
             self._close_transaction('TXERROR', rollback=True)

@@ -9,6 +9,10 @@ python:
 env:
   global:
     - CC_TEST_REPORTER_ID=db72f1ed59628c16eb0c00cbcd629c4c71f68aa1892ef42d18c7c2b8326f460a
+  matrix:
+    - TEST_TYPE=examples
+    - TEST_TYPE=tests
+    - TEST_TYPE=eth
 
 branches:
   only:
@@ -22,7 +26,7 @@ cache:
   - $HOME/virtualenv/python3.6.5/bin/
 
 install:
-  - scripts/travis_install.sh
+  - scripts/travis_install.sh $TEST_TYPE
 
 before_script:
   - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
@@ -30,7 +34,7 @@ before_script:
   - ./cc-test-reporter before-build
 
 script:
-  - scripts/travis_test.sh
+  - scripts/travis_test.sh $TEST_TYPE
 
 after_script:
   - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT

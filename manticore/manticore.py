@@ -134,8 +134,6 @@ def make_initial_state(binary_path, **kwargs):
     elif magic == b'\x7fCGC':
         # Decree
         state = make_decree(binary_path, **kwargs)
-    elif magic == b'#EVM':
-        state = make_evm(binary_path, **kwargs)
     else:
         raise NotImplementedError("Binary {} not supported.".format(binary_path))
     return state
@@ -206,12 +204,6 @@ class Manticore(Eventful):
         # FIXME move the folowing to aplugin
         self.subscribe('will_generate_testcase', self._generate_testcase_callback)
         self.subscribe('did_finish_run', self._did_finish_run_callback)
-
-        # Default plugins for now.. FIXME REMOVE!
-        self.register_plugin(InstructionCounter())
-        self.register_plugin(Visited())
-        self.register_plugin(Tracer())
-        self.register_plugin(RecordSymbolicBranches())
 
     def register_plugin(self, plugin):
         # Global enumeration of valid events
