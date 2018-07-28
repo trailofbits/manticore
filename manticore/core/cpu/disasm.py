@@ -6,32 +6,39 @@ import capstone as cs
 class Instruction(object):
     """Capstone-like instruction to be used internally
     """
-    @abstractproperty
+    @property
+    @abstractmethod
     def address(self):
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def mnemonic(self):
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def op_str(self):
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def size(self):
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def operands(self):
         pass
 
     # FIXME (theo) eliminate one of the two of insn_name, name
-    @abstractproperty
+    @property
+    @abstractmethod
     def insn_name(self):
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def name(self):
         pass
 

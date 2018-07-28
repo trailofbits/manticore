@@ -458,11 +458,13 @@ class Memory(object, metaclass=ABCMeta):
     def __reduce__(self):
         return (self.__class__, (self._maps, ))
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def memory_bit_size(self):
         return 32
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def page_bit_size(self):
         return 12
 
