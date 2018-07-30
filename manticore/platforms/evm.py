@@ -253,12 +253,12 @@ def concretized_args(**policies):
     def concretizer(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
-            spec = inspect.getfullargspec(func)
+            args = inspect.signature(func)
             for arg, policy in policies.items():
-                assert arg in spec.args, "Concretizer argument not found in wrapped function."
+                assert arg in args, "Concretizer argument not found in wrapped function."
                 # index is 0-indexed, but ConcretizeStack is 1-indexed. However, this is correct
                 # since implementation method is always a bound method (self is param 0)
-                index = spec.args.index(arg)
+                index = args
                 if not issymbolic(args[index]):
                     continue
                 if not policy:
