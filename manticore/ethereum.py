@@ -252,7 +252,7 @@ class DetectReentrancy(Detector):
     def _get_location_and_reads(self, state):
         name = '{:s}.locations'.format(self.name)
         locations = state.context.get(name, dict)
-        return locations.iteritems()
+        return locations.items()
 
     def did_evm_read_storage_callback(self, state, address, offset, value):
         state.context[self._read_storage_name].add((address, offset))
