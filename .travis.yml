@@ -42,7 +42,6 @@ jobs:
       env: TEST_TYPE=env
       script:
         - ./cc-test-reporter sum-coverage --output - --parts $JOB_COUNT coverage/codeclimate.*.json | ./cc-test-reporter upload-coverage --input -
-      install:
       after_script:
 
 install:
