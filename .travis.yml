@@ -34,17 +34,16 @@ cache:
 jobs:
   include:
     - stage: prepare
+      env: TEST_TYPE=env
       script:
-        - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
-        - chmod +x ./cc-test-reporter
         - ./cc-test-reporter before-build
+      after_script:
     - stage: submit
+      env: TEST_TYPE=env
       script:
-        - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
-        - chmod +x ./cc-test-reporter
-        - pip install awscli
-        - aws s3 sync "s3://manticore-testdata/coverage/$TRAVIS_COMMIT" coverage/
         - ./cc-test-reporter sum-coverage --output - --parts $JOB_COUNT coverage/codeclimate.*.json | ./cc-test-reporter upload-coverage --input -
+      install:
+      after_script:
 
 install:
   - scripts/travis_install.sh $TEST_TYPE
