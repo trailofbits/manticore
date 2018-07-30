@@ -662,6 +662,7 @@ class EVM(Eventful):
             self._push_arguments(arguments)
             self._gast = old_gas
             pos = -ex.pos
+
             def setstate(state, value):
                 self.stack[pos] = value
 
@@ -683,11 +684,6 @@ class EVM(Eventful):
             self._publish('did_evm_execute_instruction', current, arguments, Ref(result))
             self._publish('did_execute_instruction', last_pc, self.pc, current)
             raise
-        except Emulated as e:
-            if not current.is_branch:
-                #advance pc pointer
-                self.pc += self.instruction.size
-            result = e.result
 
         if not current.is_branch:
             #advance pc pointer
