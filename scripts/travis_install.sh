@@ -10,6 +10,9 @@ install_solc
 pip install -U pip
 pip uninstall -y Manticore || echo "Manticore not cached"  # uninstall any old, cached Manticore
 
+curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+chmod +x ./cc-test-reporter
+
 # We only need to install keystone if we're just running regular tests
 EXTRAS="dev-noks"
 if [ "$1" = "tests" ]; then

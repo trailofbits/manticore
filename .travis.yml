@@ -40,9 +40,9 @@ jobs:
     - stage: submit
       script:
         - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
-        - pip install --user awscli
+        - pip install awscli
         - aws s3 sync "s3://manticore-testdata/coverage/$TRAVIS_COMMIT" coverage/
-        - ./cc-test-reporter sum-coverage --output - --parts 2 coverage/codeclimate.*.json | ./cc-test-reporter upload-coverage --input -
+        - ./cc-test-reporter sum-coverage -t coverage.py --output - --parts 2 coverage/codeclimate.*.json | ./cc-test-reporter upload-coverage --input -
 
 install:
   - scripts/travis_install.sh $TEST_TYPE
