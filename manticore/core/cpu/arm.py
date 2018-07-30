@@ -205,13 +205,13 @@ class Armv7RegisterFile(RegisterFile):
         flags allow writes of bool/{1, 0} but always read bools.
         """
         super().__init__({'SB': 'R9',
-                                                 'SL': 'R10',
-                                                 'FP': 'R11',
-                                                 'IP': 'R12',
-                                                 'STACK': 'R13',
-                                                 'SP': 'R13',
-                                                 'LR': 'R14',
-                                                 'PC': 'R15'})
+                          'SL': 'R10',
+                          'FP': 'R11',
+                          'IP': 'R12',
+                          'STACK': 'R13',
+                          'SP': 'R13',
+                          'LR': 'R14',
+                          'PC': 'R15'})
         self._regs = {}
         # 32 bit registers
         for reg_name in ('R0', 'R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8',

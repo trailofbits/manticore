@@ -2447,10 +2447,7 @@ class SLinux(Linux):
         self._constraints = ConstraintSet()
         self.random = 0
         self.symbolic_files = symbolic_files
-        super().__init__(programs,
-                                     argv=argv,
-                                     envp=envp,
-                                     disasm=disasm)
+        super().__init__(programs, argv=argv, envp=envp, disasm=disasm)
 
     def _mk_proc(self, arch):
         if arch in {'i386', 'armv7'}:

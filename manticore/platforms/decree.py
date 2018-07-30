@@ -936,7 +936,8 @@ class SDecree(Decree):
         super().__setstate__(state)
 
     def sys_receive(self, cpu, fd, buf, count, rx_bytes):
-        ''' Symbolic version of Decree.sys_receive
+        '''
+        Symbolic version of Decree.sys_receive
         '''
         if issymbolic(fd):
             logger.info("Ask to read from a symbolic file descriptor!!")
@@ -961,7 +962,8 @@ class SDecree(Decree):
         return super().sys_receive(cpu, fd, buf, count, rx_bytes)
 
     def sys_transmit(self, cpu, fd, buf, count, tx_bytes):
-        ''' Symbolic version of Decree.sys_receive
+        '''
+        Symbolic version of Decree.sys_transmit
         '''
         if issymbolic(fd):
             logger.info("Ask to write to a symbolic file descriptor!!")

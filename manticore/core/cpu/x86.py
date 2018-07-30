@@ -6031,10 +6031,10 @@ class AMD64Cpu(X86Cpu):
         Builds a CPU model.
         :param memory: memory object for this CPU.
         '''
-        super().__init__(AMD64RegFile(aliases={'PC': 'RIP', 'STACK': 'RSP', 'FRAME': 'RBP'},),
-                                       memory,
-                                       *args,
-                                       **kwargs)
+        super().__init__(AMD64RegFile(aliases={'PC': 'RIP', 'STACK': 'RSP', 'FRAME': 'RBP'}, ),
+                         memory,
+                         *args,
+                         **kwargs)
 
     def __str__(self):
         '''
@@ -6142,9 +6142,9 @@ class I386Cpu(X86Cpu):
         :param memory: memory object for this CPU.
         '''
         super().__init__(AMD64RegFile({'PC': 'EIP', 'STACK': 'ESP', 'FRAME': 'EBP'}),
-                                      memory,
-                                      *args,
-                                      **kwargs)
+                         memory,
+                         *args,
+                         **kwargs)
 
     def __str__(self):
         '''
