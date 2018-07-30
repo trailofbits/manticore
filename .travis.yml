@@ -6,6 +6,11 @@ language: python
 python:
   - 3.6.5
 
+stages:
+  - prepare
+  - test
+  - submit
+
 env:
   global:
     - CC_TEST_REPORTER_ID=db72f1ed59628c16eb0c00cbcd629c4c71f68aa1892ef42d18c7c2b8326f460a
@@ -25,16 +30,27 @@ cache:
   - $HOME/virtualenv/python3.6.5/lib/python3.6/site-packages
   - $HOME/virtualenv/python3.6.5/bin/
 
+jobs:
+  include:
+    - stage: prepare
+      script:
+        - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+        - chmod +x ./cc-test-reporter
+        - ./cc-test-reporter before-build
+    - stage: submit
+      script:
+        - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+        - pip install --user awscli
+        - aws s3 sync "s3://manticore-testdata/coverage/$TRAVIS_COMMIT" coverage/
+        - ./cc-test-reporter sum-coverage --output - --parts 2 coverage/codeclimate.*.json | ./cc-test-reporter upload-coverage --input -
+
 install:
   - scripts/travis_install.sh $TEST_TYPE
-
-before_script:
-  - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
-  - chmod +x ./cc-test-reporter
-  - ./cc-test-reporter before-build
 
 script:
   - scripts/travis_test.sh $TEST_TYPE
 
 after_script:
-  - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT
+  - ./cc-test-reporter format-coverage --output "coverage/codeclimate.$TEST_TYPE.json"
+  - aws s3 sync coverage/ "s3://manticore-testdata/coverage/$TRAVIS_COMMIT"
+

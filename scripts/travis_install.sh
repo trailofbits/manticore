@@ -17,4 +17,5 @@ if [ "$1" = "tests" ]; then
 fi
 
 pip install --no-binary keystone-engine -e .[$EXTRAS]  # ks can have pip install issues
+pip install awscli
 
