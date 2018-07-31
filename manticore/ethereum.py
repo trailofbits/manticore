@@ -1191,7 +1191,7 @@ class ManticoreEVM(Manticore):
                 except KeyError:
                     raise DependencyError([lib_name])
                 for pos in pos_lst:
-                    hex_contract_lst[pos:pos + 40] = '%040x' % lib_address
+                    hex_contract_lst[pos:pos + 40] = '%040x' % int(lib_address)
             hex_contract = ''.join(hex_contract_lst)
         return bytearray(binascii.unhexlify(hex_contract))
 
