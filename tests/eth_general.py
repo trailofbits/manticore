@@ -409,7 +409,6 @@ class EthInstructionTests(unittest.TestCase):
         self.assertListEqual(list(map(evm.to_signed, solver.get_all_values(constraints, result))), [vm.SDIV(x, y)])
 
 
-
 class EthTests(unittest.TestCase):
     def setUp(self):
         self.mevm = ManticoreEVM()

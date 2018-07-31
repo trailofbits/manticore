@@ -646,7 +646,6 @@ class EVM(Eventful):
         current = self.instruction
         if self._on_transaction is False:
             self._publish('will_execute_instruction', self.pc, current)
-
         #Need to consume before potential out of stack exception
         old_gas = self._gas
         self._consume(current.fee)
