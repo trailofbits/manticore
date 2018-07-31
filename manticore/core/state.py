@@ -232,6 +232,157 @@ class State(Eventful):
         self._input_symbols.append(expr)
         return expr
 
+    def concretize(self, symbolic, policy, maxcount=5):
+        ''' This finds a set of solutions for symbolic using policy.
+            This raises TooManySolutions if more solutions than maxcount
+        '''
+        assert self.constraints == self.platform.constraints
+        vals = []
+        if policy == 'MINMAX':
+            vals = self._solver.minmax(self._constraints, symbolic)
+        elif policy == 'SAMPLED':
+            m, M = self._solver.minmax(self._constraints, symbolic)
+            vals += [m, M]
+            if M - m > 3:
+                if self._solver.can_be_true(self._constraints, symbolic == (m + M) // 2):
+                    vals.append((m + M) // 2)
+            if M - m > 100:
+                vals += self._solver.get_all_values(self._constraints, symbolic,
+                                                    maxcnt=maxcount, silent=True)
+        elif policy == 'ONE':
+            vals = [self._solver.get_value(self._constraints, symbolic)]
+        else:
+            assert policy == 'ALL'
+            vals = solver.get_all_values(self._constraints, symbolic, maxcnt=maxcount,
+                                         silent=False)
+
+        return tuple(set(vals))
+
+    @property
+    def _solver(self):
+        from .smtlib import solver
+        return solver
+
+
+    def migrate_expression(self, expression):
+        migration_bindings = self.context.get('migration_bindings')
+        if migration_bindings is None:
+            migration_bindings = {}
+        migrated_expression = self.constraints.migrate(expression, bindings=migration_bindings)
+        self.context['migration_bindings'] = migration_bindings
+        return migrated_expression
+
+    def is_feasible(self):
+        return self.can_be_true(True)
+
+    def can_be_true(self, expr):
+        return self._solver.can_be_true(self._constraints, expr)
+
+    def must_be_true(self, expr):
+        return not self._solver.can_be_true(self._constraints, expr == False)
+
+    def solve_one(self, expr):
+        '''
+        Concretize a symbolic :class:`~manticore.core.smtlib.expression.Expression` into
+        one solution.
+
+        :param manticore.core.smtlib.Expression expr: Symbolic value to concretize
+        :return: Concrete value
+        :rtype: int
+        '''
+        if issymbolic(expr):
+            expr = self.migrate_expression(expr)
+        value = self._solver.get_value(self._constraints, expr)
+        #Include forgiveness here
+        if isinstance(value, tuple):
+            try:
+                return ''.join(map(chr, value))
+            except:
+                pass
+            try:
+                return ''.join(value)
+            except:
+                pass
+        return value
+
+    def solve_n(self, expr, nsolves):
+        '''
+        Concretize a symbolic :class:`~manticore.core.smtlib.expression.Expression` into
+        `nsolves` solutions.
+
+        :param manticore.core.smtlib.Expression expr: Symbolic value to concretize
+        :return: Concrete value
+        :rtype: list[int]
+        '''
+        if issymbolic(expr):
+            expr = self.migrate_expression(expr)
+        return self._solver.get_all_values(self._constraints, expr, nsolves, silent=True)
+
+    def solve_max(self, expr):
+        '''
+        Solves a symbolic :class:`~manticore.core.smtlib.expression.Expression` into
+        its maximun solution
+
+        :param manticore.core.smtlib.Expression expr: Symbolic value to solve
+        :return: Concrete value
+        :rtype: list[int]
+        '''
+        if isinstance(expr, int):
+            return expr
+        if issymbolic(expr):
+            expr = self.migrate_expression(expr)
+        return self._solver.max(self._constraints, expr)
+
+    def solve_min(self, expr):
+        '''
+        Solves a symbolic :class:`~manticore.core.smtlib.expression.Expression` into
+        its minimun solution
+
+        :param manticore.core.smtlib.Expression expr: Symbolic value to solve
+        :return: Concrete value
+        :rtype: list[int]
+        '''
+        if isinstance(expr, int):
+            return expr
+        if issymbolic(expr):
+            expr = self.migrate_expression(expr)
+        return self._solver.min(self._constraints, expr)
+
+    ################################################################################################
+    # The following should be moved to specific class StatePosix?
+    def solve_buffer(self, addr, nbytes):
+        '''
+        Reads `nbytes` of symbolic data from a buffer in memory at `addr` and attempts to
+        concretize it
+
+        :param int address: Address of buffer to concretize
+        :param int nbytes: Size of buffer to concretize
+        :return: Concrete contents of buffer
+        :rtype: list[int]
+        '''
+        buffer = self.cpu.read_bytes(addr, nbytes)
+        result = []
+        with self._constraints as temp_cs:
+            for c in buffer:
+                result.append(self._solver.get_value(temp_cs, c))
+                temp_cs.add(c == result[-1])
+        return result
+
+    def invoke_model(self, model):
+        '''
+        Invoke a `model`. A `model` is a callable whose first argument is a
+        :class:`~manticore.core.state.State`. If the `model` models a normal (non-variadic)
+        function, the following arguments correspond to the arguments of the C function
+        being modeled. If the `model` models a variadic function, the following argument
+        is a generator object, which can be used to access function arguments dynamically.
+        The `model` callable should simply return the value that should be returned by the
+        native function being modeled.
+
+        :param callable model: Model to invoke
+        '''
+        self._platform.invoke_model(model, prefix_args=(self,))
+
+
     def symbolicate_buffer(self, data, label='INPUT', wildcard='+', string=False, taint=frozenset()):
         '''Mark parts of a buffer as symbolic (demarked by the wildcard byte)
 
@@ -269,136 +420,6 @@ class State(Eventful):
                     assert b != 0
         return data
 
-    def concretize(self, symbolic, policy, maxcount=5):
-        ''' This finds a set of solutions for symbolic using policy.
-            This raises TooManySolutions if more solutions than maxcount
-        '''
-        assert self.constraints == self.platform.constraints
-        vals = []
-        if policy == 'MINMAX':
-            vals = self._solver.minmax(self._constraints, symbolic)
-        elif policy == 'SAMPLED':
-            m, M = self._solver.minmax(self._constraints, symbolic)
-            vals += [m, M]
-            if M - m > 3:
-                if self._solver.can_be_true(self._constraints, symbolic == (m + M) // 2):
-                    vals.append((m + M) // 2)
-            if M - m > 100:
-                vals += self._solver.get_all_values(self._constraints, symbolic,
-                                                    maxcnt=maxcount, silent=True)
-        elif policy == 'ONE':
-            vals = [self._solver.get_value(self._constraints, symbolic)]
-        else:
-            assert policy == 'ALL'
-            vals = solver.get_all_values(self._constraints, symbolic, maxcnt=maxcount,
-                                         silent=False)
-
-        return tuple(set(vals))
-
-    @property
-    def _solver(self):
-        from .smtlib import solver
-        return solver
-
-    def can_be_true(self, expr):
-        return self._solver.can_be_true(self._constraints, expr)
-
-    def must_be_true(self, expr):
-        return not self._solver.can_be_true(self._constraints, expr == False)
-
-    def solve_one(self, expr):
-        '''
-        Concretize a symbolic :class:`~manticore.core.smtlib.expression.Expression` into
-        one solution.
-
-        :param manticore.core.smtlib.Expression expr: Symbolic value to concretize
-        :return: Concrete value
-        :rtype: int
-        '''
-        value = self._solver.get_value(self._constraints, expr)
-        #Include forgiveness here
-        if isinstance(value, tuple):
-            try:
-                return ''.join(map(chr, value))
-            except:
-                pass
-            try:
-                return ''.join(value)
-            except:
-                pass
-        return value
-
-    def solve_n(self, expr, nsolves):
-        '''
-        Concretize a symbolic :class:`~manticore.core.smtlib.expression.Expression` into
-        `nsolves` solutions.
-
-        :param manticore.core.smtlib.Expression expr: Symbolic value to concretize
-        :return: Concrete value
-        :rtype: list[int]
-        '''
-        return self._solver.get_all_values(self._constraints, expr, nsolves, silent=True)
-
-    def solve_max(self, expr):
-        '''
-        Solves a symbolic :class:`~manticore.core.smtlib.expression.Expression` into
-        its maximun solution
-
-        :param manticore.core.smtlib.Expression expr: Symbolic value to solve
-        :return: Concrete value
-        :rtype: list[int]
-        '''
-        if isinstance(expr, int):
-            return expr
-        return self._solver.max(self._constraints, expr)
-
-    def solve_min(self, expr):
-        '''
-        Solves a symbolic :class:`~manticore.core.smtlib.expression.Expression` into
-        its minimun solution
-
-        :param manticore.core.smtlib.Expression expr: Symbolic value to solve
-        :return: Concrete value
-        :rtype: list[int]
-        '''
-        if isinstance(expr, int):
-            return expr
-        return self._solver.min(self._constraints, expr)
-
-    def solve_buffer(self, addr, nbytes):
-        '''
-        Reads `nbytes` of symbolic data from a buffer in memory at `addr` and attempts to
-        concretize it
-
-        :param int address: Address of buffer to concretize
-        :param int nbytes: Size of buffer to concretize
-        :return: Concrete contents of buffer
-        :rtype: list[int]
-        '''
-        buffer = self.cpu.read_bytes(addr, nbytes)
-        result = []
-        with self._constraints as temp_cs:
-            for c in buffer:
-                result.append(self._solver.get_value(temp_cs, c))
-                temp_cs.add(c == result[-1])
-        return result
-
-    def invoke_model(self, model):
-        '''
-        Invoke a `model`. A `model` is a callable whose first argument is a
-        :class:`~manticore.core.state.State`. If the `model` models a normal (non-variadic)
-        function, the following arguments correspond to the arguments of the C function
-        being modeled. If the `model` models a variadic function, the following argument
-        is a generator object, which can be used to access function arguments dynamically.
-        The `model` callable should simply return the value that should be returned by the
-        native function being modeled.
-
-        :param callable model: Model to invoke
-        '''
-        self._platform.invoke_model(model, prefix_args=(self,))
-
-    ################################################################################################
-    # The following should be moved to specific class StatePosix?
     @property
     def cpu(self):
         return self._platform.current

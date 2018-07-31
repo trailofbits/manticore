@@ -17,16 +17,18 @@ class ConstraintSet(object):
         self._constraints = list()
         self._parent = None
         self._sid = 0
+        self._declarations = {}
         self._child = None
 
     def __reduce__(self):
-        return (self.__class__, (), {'_parent': self._parent, '_constraints': self._constraints, '_sid': self._sid})
+        return (self.__class__, (), {'_parent': self._parent, '_constraints': self._constraints, '_sid': self._sid,  '_declarations': self._declarations})
 
     def __enter__(self):
         assert self._child is None
         self._child = self.__class__()
         self._child._parent = self
         self._child._sid = self._sid
+        self._child._declarations = dict(self._declarations)
         return self._child
 
     def __exit__(self, ty, value, traceback):
@@ -159,6 +161,22 @@ class ConstraintSet(object):
             constraint_str = translator.pop()
         return result
 
+    def _declare(self, var):
+        if var.name in self._declarations:
+            raise ValueError('Variable already declared')
+        self._declarations[var.name] = var
+
+    def get_declared_variables(self):
+        return self._declarations.keys()
+
+    def get_declared_names(self):
+        return self._declarations.keys()
+
+    def get_variable(self, name):
+        if name not in self._declarations:
+            raise ValueError('Unknown variable')
+        return self._declarations[name]
+
     @property
     def declarations(self):
         declarations = GetDeclarations()
@@ -193,7 +211,9 @@ class ConstraintSet(object):
 
     def _get_new_name(self, name='VAR'):
         ''' Makes an uniq variable name'''
-        return '%s_%d' % (name, self._get_sid())
+        if name in self._declarations.keys():
+            name = '%s_%d' % (name, self._get_sid())
+        return name
 
     def migrate(self, expression, name=None, bindings=None):
         ''' Migrate an expression created for a different constraint set
@@ -203,13 +223,21 @@ class ConstraintSet(object):
         if bindings is None:
             bindings = {}
         variables = get_variables(expression)
-        for var in variables:
-            if name is None:
-                name = self._get_new_name(var.name + '_migrated')
+        old_variables = dict([ (x.name, x) for x in variables])
+        fat_bindings = {}
+        for old_name, migrated_name in bindings.items():
+            if old_name in old_variables and migrated_name in self.get_declared_names():
+                fat_bindings[old_variables[old_name]] = self.get_variable(migrated_name)
 
-            if var in bindings:
+        for var in variables:
+
+            if var in self.get_declared_variables():
                 continue
 
+            if var in fat_bindings:
+                continue
+
+            name = self._get_new_name(var.name + '_migrated')
             if isinstance(var, Bool):
                 new_var = self.new_bool(name=name)
             elif isinstance(var, BitVec):
@@ -219,9 +247,10 @@ class ConstraintSet(object):
             else:
                 raise NotImplemented("Unknown type {}".format(type(var)))
 
-            bindings[var] = new_var
+            fat_bindings[var] = new_var
+            bindings[var.name] = new_var.name
 
-        migrated_expression = replace(expression, bindings)
+        migrated_expression = replace(expression, fat_bindings)
         return migrated_expression
 
     def new_bool(self, name='B', taint=frozenset()):
@@ -231,7 +260,9 @@ class ConstraintSet(object):
             :return: a fresh BoolVariable
         '''
         name = self._get_new_name(name)
-        return BoolVariable(name, taint=taint)
+        var = BoolVariable(name, taint=taint)
+        self._declare(var)
+        return var
 
     def new_bitvec(self, size, name='V', taint=frozenset()):
         ''' Declares a free symbolic bitvector in the constraint store
@@ -243,7 +274,9 @@ class ConstraintSet(object):
         if not (size == 1 or size % 8 == 0):
             raise Exception('Invalid bitvec size %s' % size)
         name = self._get_new_name(name)
-        return BitVecVariable(size, name, taint=taint)
+        var = BitVecVariable(size, name, taint=taint)
+        self._declare(var)
+        return var
 
     def new_array(self, index_bits=32, name='A', index_max=None, value_bits=8, taint=frozenset()):
         ''' Declares a free symbolic array of value_bits long bitvectors in the constraint store.
@@ -255,4 +288,7 @@ class ConstraintSet(object):
             :return: a fresh ArrayProxy
         '''
         name = self._get_new_name(name)
-        return ArrayProxy(ArrayVariable(index_bits, index_max, value_bits, name, taint=taint))
+        var = ArrayProxy(ArrayVariable(index_bits, index_max, value_bits, name, taint=taint))
+        self._declare(var)
+        return var
+

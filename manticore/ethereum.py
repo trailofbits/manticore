@@ -631,7 +631,7 @@ class SolidityMetadata(object):
 
     @property
     def signatures(self):
-        return dict(((b, a) for (a, b) in self._hashes.items()))
+        return dict(((b.encode(), a) for (a, b) in self._hashes.items()))
 
     def get_abi(self, hsh):
         func_name = self.get_func_name(hsh)
@@ -1154,7 +1154,20 @@ class ManticoreEVM(Manticore):
         return symbolic_address
 
     def constrain(self, constraint):
-        self.constraints.add(constraint)
+        if self.count_states() == 0 :
+            self.constraints.add(constraint)
+        else:
+            for state in self.all_states:
+                state_constraints = state.constraints
+
+                migration_bindings = state.context.get('migration_bindings')
+                if migration_bindings is None:
+                    migration_bindings = {}
+
+                migrated_constraint = state_constraints.migrate(constraint, bindings=migration_bindings)
+                state_constraints.add(migrated_constraint)
+
+                state.context['migration_bindings'] = migration_bindings
 
     @staticmethod
     def compile(source_code, contract_name=None, libraries=None, runtime=False, solc_bin=None, solc_remaps=[]):
@@ -1694,25 +1707,27 @@ class ManticoreEVM(Manticore):
         self._accounts[name] = EVMAccount(address, manticore=self, name=name)
         return self.accounts[name]
 
-    def __migrate_expressions(self, state, global_constraints, caller, address, value, data):
+    def __migrate_tx_expressions(self, state, caller, address, value, data):
             # Copy global constraints into each state.
             # We should somehow remember what has been copied to each state
             # In a second transaction we should only add new constraints.
             # And actually only constraints related to whateverwe are using in
             # the tx. This is a FIXME
             state_constraints = state.constraints
+            global_constraints = self.constraints
 
             migration_bindings = state.context.get('migration_bindings')
             if migration_bindings is None:
                 migration_bindings = {}
-
             if issymbolic(caller):
                 caller = state_constraints.migrate(caller, bindings=migration_bindings)
+
             if issymbolic(address):
                 address = state_constraints.migrate(address, bindings=migration_bindings)
 
             if issymbolic(value):
                 value = state_constraints.migrate(value, bindings=migration_bindings)
+
             if issymbolic(data):
                 if isinstance(data, ArrayProxy):
                     data = data.array
@@ -1724,6 +1739,7 @@ class ManticoreEVM(Manticore):
                 migrated_constraint = state_constraints.migrate(c, bindings=migration_bindings)
                 state.constrain(migrated_constraint)
             state.context['migration_bindings'] = migration_bindings
+
             return caller, address, value, data
 
     def _transaction(self, sort, caller, value=0, address=None, data=None, price=1):
@@ -1792,7 +1808,7 @@ class ManticoreEVM(Manticore):
                 raise EthereumError("This is bad. It should not be a pending transaction")
 
             # Migrate any expression to state specific constraint set
-            caller, address, value, data = self.__migrate_expressions(state, self.constraints, caller, address, value, data)
+            caller, address, value, data = self.__migrate_tx_expressions(state, caller, address, value, data)
 
             # Different states may CREATE a different set of accounts. Accounts
             # that were crated by a human have the same address in all states.
