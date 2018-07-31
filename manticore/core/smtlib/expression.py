@@ -14,7 +14,7 @@ class Expression(object):
         self._taint = frozenset(taint)
 
     def __repr__(self):
-        return "<%s at %x%s>" % (type(self).__name__, id(self), self.taint and '-T' or '')
+        return '<{:s} at {:x}{:s}>'.format(type(self).__name__, id(self), self.taint and '-T' or '')
 
     @property
     def is_tainted(self):
@@ -47,7 +47,7 @@ class Variable(Expression):
         return self
 
     def __repr__(self):
-        return "<%s(%s) at %x>" % (type(self).__name__, self.name, id(self))
+        return '<{:s}({:s}) at {:x}>'.format(type(self).__name__, self.name, id(self))
 
 
 class Constant(Expression):

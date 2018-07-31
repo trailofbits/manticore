@@ -243,7 +243,7 @@ class DetectReentrancy(Detector):
         pc = world.current_vm.pc
         if isinstance(pc, Constant):
             pc = pc.value
-        assert isinstance(pc, numbers.Integral)
+        assert isinstance(pc, int)
         at_init = world.current_transaction.sort == 'CREATE'
         location = (address, pc, "Reentrancy muti-million ether bug", at_init)
         locations[location] = set(state.context[self._read_storage_name])
