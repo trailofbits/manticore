@@ -41,9 +41,10 @@ jobs:
     - stage: submit
       env: TEST_TYPE=env
       script:
+        - true
+      after_script:
         - aws s3 sync "s3://manticore-testdata/coverage/$TRAVIS_COMMIT" coverage/ 
         - ./cc-test-reporter sum-coverage --output - --parts $JOB_COUNT coverage/codeclimate.*.json | ./cc-test-reporter upload-coverage --input -
-      after_success:
 
 install:
   - scripts/travis_install.sh $TEST_TYPE
