@@ -1746,7 +1746,7 @@ class ManticoreEVM(Manticore):
         #Defaults, call data is empty
         if data is None:
             data = bytearray(b"")
-        if isinstance(data, str):
+        if isinstance(data, (str, bytes)):
             data = bytearray(data)
         if not isinstance(data, (bytearray, Array)):
             raise EthereumError("code bad type")
