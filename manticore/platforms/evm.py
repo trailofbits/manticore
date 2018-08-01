@@ -253,7 +253,7 @@ def concretized_args(**policies):
     def concretizer(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
-            spec = inspect.getargspec(func)
+            spec = inspect.getfullargspec(func)
             for arg, policy in policies.items():
                 assert arg in spec.args, "Concretizer argument not found in wrapped function."
                 # index is 0-indexed, but ConcretizeStack is 1-indexed. However, this is correct
@@ -346,13 +346,13 @@ class EVM(Eventful):
         super(EVM, self).__init__(**kwargs)
         if data is not None and not issymbolic(data):
             data_size = len(data)
-            data_symbolic = constraints.new_array(index_bits=256, value_bits=8, index_max=data_size, name='DATA')
+            data_symbolic = constraints.new_array(index_bits=256, value_bits=8, index_max=data_size, name='DATA_{:x}'.format(address), rename=True)
             data_symbolic[0:data_size] = data
             data = data_symbolic
 
         if bytecode is not None and not issymbolic(bytecode):
             bytecode_size = len(bytecode)
-            bytecode_symbolic = constraints.new_array(index_bits=256, value_bits=8, index_max=bytecode_size, name='BYTECODE')
+            bytecode_symbolic = constraints.new_array(index_bits=256, value_bits=8, index_max=bytecode_size, name='BYTECODE_{:x}'.format(address), rename=True)
             bytecode_symbolic[0:bytecode_size] = bytecode
             bytecode = bytecode_symbolic
 
@@ -361,7 +361,7 @@ class EVM(Eventful):
         #if len(bytecode) == 0:
         #    raise EVMException("Need code")
         self._constraints = constraints
-        self.memory = constraints.new_array(index_bits=256, value_bits=8, name='EMPTY_MEMORY')
+        self.memory = constraints.new_array(index_bits=256, value_bits=8, name='EMPTY_MEMORY_{:x}'.format(address), rename=True)
         self.address = address
         self.caller = caller  # address of the account that is directly responsible for this execution
         self.data = data
@@ -1867,9 +1867,6 @@ class EVMWorld(Platform):
 
     def create_account(self, address=None, balance=0, code='', storage=None, nonce=0):
         ''' code is the runtime code '''
-        if storage is None:
-            storage = self.constraints.new_array(index_bits=256, value_bits=256, name='STORAGE')
-
         if address is None:
             address = self.new_address()
         if address in self.accounts:
@@ -1877,6 +1874,8 @@ class EVMWorld(Platform):
             # or CALL and may contain some ether already. Though if it was a
             # selfdestroyed address it can not be reused
             raise EthereumError('The account already exists')
+        if storage is None:
+            storage = self.constraints.new_array(index_bits=256, value_bits=256, name='STORAGE_{:x}'.format(address))
         if code is None:
             code = bytearray()
         self._world_state[address] = {}

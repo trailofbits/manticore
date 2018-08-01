@@ -165,6 +165,7 @@ class ConstraintSet(object):
         if var.name in self._declarations:
             raise ValueError('Variable already declared')
         self._declarations[var.name] = var
+        return var
 
     def get_declared_variables(self):
         return self._declarations.keys()
@@ -253,42 +254,56 @@ class ConstraintSet(object):
         migrated_expression = replace(expression, fat_bindings)
         return migrated_expression
 
-    def new_bool(self, name='B', taint=frozenset()):
+    def new_bool(self, name='B', taint=frozenset(), rename=False):
         ''' Declares a free symbolic boolean in the constraint store
             :param name: try to assign name to internal variable representation,
                          if not uniq a numeric nonce will be appended
+            :param rename: potentially rename the variable to avoid name colisions if True 
             :return: a fresh BoolVariable
         '''
-        name = self._get_new_name(name)
-        var = BoolVariable(name, taint=taint)
-        self._declare(var)
-        return var
+        if rename:
+            name = self._get_new_name(name)
 
-    def new_bitvec(self, size, name='V', taint=frozenset()):
+        if not rename and name in self._declarations:
+            raise ValueError("Name already used")
+
+        var = BoolVariable(name, taint=taint)
+        return self._declare(var)
+
+    def new_bitvec(self, size, name=None, taint=frozenset(), rename=False):
         ''' Declares a free symbolic bitvector in the constraint store
             :param size: size in bits for the bitvector
             :param name: try to assign name to internal variable representation,
                          if not uniq a numeric nonce will be appended
+            :param rename: potentially rename the variable to avoid name colisions if True 
             :return: a fresh BitVecVariable
         '''
         if not (size == 1 or size % 8 == 0):
             raise Exception('Invalid bitvec size %s' % size)
-        name = self._get_new_name(name)
-        var = BitVecVariable(size, name, taint=taint)
-        self._declare(var)
-        return var
 
-    def new_array(self, index_bits=32, name='A', index_max=None, value_bits=8, taint=frozenset()):
+        if name is None:
+            name = 'BV'
+            rename=True
+        if rename:
+            name = self._get_new_name(name)
+        if not rename and name in self._declarations:
+            raise ValueError("Name already used")
+        var = BitVecVariable(size, name, taint=taint)
+        return self._declare(var)
+
+    def new_array(self, index_bits=32, name='A', index_max=None, value_bits=8, taint=frozenset(), rename=False):
         ''' Declares a free symbolic array of value_bits long bitvectors in the constraint store.
             :param index_bits: size in bits for the array indexes one of [32, 64]
             :param value_bits: size in bits for the array values
             :param name: try to assign name to internal variable representation,
                          if not uniq a numeric nonce will be appended
             :param index_max: upper limit for indexes on ths array (#FIXME)
+            :param rename: potentially rename the variable to avoid name colisions if True 
             :return: a fresh ArrayProxy
         '''
-        name = self._get_new_name(name)
+        if rename:
+            name = self._get_new_name(name)
+        if not rename and name in self._declarations:
+            raise ValueError("Name already used")
         var = ArrayProxy(ArrayVariable(index_bits, index_max, value_bits, name, taint=taint))
-        self._declare(var)
-        return var
-
+        return self._declare(var)

@@ -1119,7 +1119,7 @@ class ManticoreEVM(Manticore):
                                 data=symbolic_data,
                                 value=100000 )
         '''
-        return self.constraints.new_array(index_bits=256, name=name, index_max=size, value_bits=8, taint=frozenset())
+        return self.constraints.new_array(index_bits=256, name=name, index_max=size, value_bits=8, taint=frozenset(), rename=True)
 
     def make_symbolic_value(self, nbits=256, name='TXVALUE'):
         ''' Creates a symbolic value, normally a uint256, to be used in transactions.
@@ -1137,7 +1137,7 @@ class ManticoreEVM(Manticore):
                                 value=symbolic_value )
 
         '''
-        return self.constraints.new_bitvec(nbits, name=name)
+        return self.constraints.new_bitvec(nbits, name=name, rename=True)
 
     def make_symbolic_address(self, name='TXADDR', select='both'):
         if select not in ('both', 'normal', 'contract'):
