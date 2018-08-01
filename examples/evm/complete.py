@@ -31,7 +31,7 @@ print(source_code)
 
 print("[+] Now the symbolic values")
 symbolic_data = m.make_symbolic_buffer(320)
-symbolic_value = m.make_symbolic_value('value')
+symbolic_value = m.make_symbolic_value(name='value')
 m.transaction(caller=user_account,
               address=contract_account,
               value=symbolic_value,

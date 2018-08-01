@@ -1762,7 +1762,7 @@ class ManticoreEVM(Manticore):
         #Defaults, call data is empty
         if data is None:
             data = bytearray(b"")
-        if isinstance(data, str):
+        if isinstance(data, (str, bytes)):
             data = bytearray(data)
         if not isinstance(data, (bytearray, Array)):
             raise EthereumError("code bad type")
@@ -2253,7 +2253,7 @@ class ManticoreEVM(Manticore):
                 if tx.sort == 'CALL':
                     if metadata is not None:
                         function_id = tx.data[:4]  # hope there is enough data
-                        function_id = binascii.hexlify(state.solve_one(function_id))
+                        function_id = binascii.hexlify(state.solve_one(function_id)).decode()
                         signature = metadata.get_func_signature(function_id)
                         function_name = metadata.get_func_name(function_id)
                         if signature:
