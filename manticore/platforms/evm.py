@@ -663,8 +663,8 @@ class EVM(Eventful):
             self._gast = old_gas
 
             def setstate(state, value):
-                self.stack[-ex.pos] = value
-
+                self.stack[-setstate.e.pos] = value
+            setstate.e = ex
             raise Concretize("Concretice Stack Variable",
                              expression=self.stack[-ex.pos],
                              setstate=setstate,
