@@ -885,6 +885,7 @@ class EVM(Eventful):
 
     def SHA3(self, start, size):
         '''Compute Keccak-256 hash'''
+        print ("sha3")
         GSHA3WORD = 6         # Cost of SHA3 per word
         # read memory from start to end
         # calculate hash on it/ maybe remember in some structure where that hash came from
@@ -893,31 +894,29 @@ class EVM(Eventful):
             self._consume(GSHA3WORD * (ceil32(size) // 32))
         data = self.read_buffer(start, size)
 
-        try:
-            concrete_data = []
-            for i in range(len(data)):
-                try:
-                    concrete_data.append(chr(simplify(data[i]).value))
-                except:
-                    pass
-                    #simplify by solving. probably means that we need another simplification
-                    s = solver.get_all_values(self.constraints, data, 2)
-                    logger.debug("Simplifying by solving")  # :(
-                    if len(s) == 1:
-                        concrete_data.append(s[0])
+        concrete_data = bytearray()
+        for i in range(len(data)):
+            simplified = simplify(data[i])
+            if isinstance(simplified, Constant):
+                concrete_data.append(simplified.value)
+            else:
+                #simplify by solving. probably means that we need to improve simplification
+                solutions = solver.get_all_values(self.constraints, data[i], 2, silent=True)
+                if len(solutions) != 1:
+                    break
+                concrete_data.append(solutions[0])
+        else:
+            data = bytes(concrete_data)
 
-            data = ''.join(concrete_data)
-        except:
-            pass
-
-        if any(map(issymbolic, data)):
+        print ("DATA:", data)
+        if issymbolic(data):
             return self.world.HASH(data)
         else:
-            buf = ''.join(data)
-            value = sha3.keccak_256(buf.encode()).hexdigest()
+            value = sha3.keccak_256(data).hexdigest()
             value = int('0x' + value, 0)
-            self._publish('on_concrete_sha3', buf, value)
-            logger.info("Found a concrete SHA3 example %r -> %x", buf, value)
+            self._publish('on_concrete_sha3', data, value)
+            logger.info("Found a concrete SHA3 example %r -> %x", data, value)
+            print ("Found a concrete SHA3 example %r -> %x"%( data, value))
             return value
 
     ############################################################################
@@ -1454,17 +1453,16 @@ class EVMWorld(Platform):
         self._initial_timestamp = initial_timestamp
 
         self._do_events()
-        '''
         for var_i in range(5):
             for offset_i in range(10):
-                data = ("%064x%064x" % (var_i, offset_i)).decode('hex')
+                import binascii
+                data = binascii.unhexlify(("%064x%064x" % (var_i, offset_i)))
                 value = int(sha3.keccak_256(data).hexdigest(), 16)
                 self._concrete_sha3_callback(data, value)
                 for offset_j in range(10):
-                    data = ("%064x" % offset_j).decode('hex') + data
+                    data = binascii.unhexlify("%064x" % offset_j) + data
                     value = int(sha3.keccak_256(data).hexdigest(), 16)
                     self._concrete_sha3_callback(data, value)
-        '''
 
     def __getstate__(self):
         state = super(EVMWorld, self).__getstate__()
@@ -1500,6 +1498,8 @@ class EVMWorld(Platform):
             self.subscribe('on_concrete_sha3', self._concrete_sha3_callback)
 
     def _concrete_sha3_callback(self, buf, value):
+        print ("!!Found a concrete SHA3 example %r -> %x"%( buf, value))
+
         buf = str(buf)
         if buf in self._sha3:
             assert self._sha3[buf] == value
@@ -1880,6 +1880,12 @@ class EVMWorld(Platform):
         self._world_state[address]['balance'] = balance
         self._world_state[address]['storage'] = storage
         self._world_state[address]['code'] = code
+
+        import binascii
+        data = binascii.unhexlify(("%064x" % address)) + b'\x00'*32
+        value = int(sha3.keccak_256(data).hexdigest(), 16)
+        self._concrete_sha3_callback(data, value)
+
         return address
 
     def create_contract(self, price=0, address=None, caller=None, balance=0, init=None):
@@ -2025,7 +2031,7 @@ class EVMWorld(Platform):
             self._close_transaction('STOP')
 
     def HASH(self, data):
-        def compare_buffers(a, b):
+        '''def compare_buffers(a, b):
             if len(a) != len(b):
                 return False
             cond = True
@@ -2034,8 +2040,8 @@ class EVMWorld(Platform):
                 if cond is False:
                     return False
             return cond
-
-        assert any(map(issymbolic, data))
+        '''
+        assert issymbolic(data)
         logger.info("SHA3 Searching over %d known hashes", len(self._sha3))
         logger.info("SHA3 TODO save this state for future explorations with more known hashes")
         # Broadcast the signal
@@ -2045,8 +2051,8 @@ class EVMWorld(Platform):
         # If know_hashes is true then there is a _known_ solution for the hash
         known_hashes = False
         for key, value in self._sha3.items():
-            assert not any(map(issymbolic, key)), "Saved sha3 data,hash pairs should be concrete"
-            cond = compare_buffers(key, data)
+            assert not issymbolic(key), "Saved sha3 data,hash pairs should be concrete"
+            cond = key == data
             if solver.can_be_true(self._constraints, cond):
                 results.append((cond, value))
                 known_hashes = Operators.OR(cond, known_hashes)
@@ -2068,7 +2074,7 @@ class EVMWorld(Platform):
                 temp_cs.add(Operators.NOT(known_hashes))
                 # a_buffer is different from all strings we know a hash for
                 a_buffer = solver.get_value(temp_cs, data)
-                cond = compare_buffers(a_buffer, data)
+                cond = a_buffer == data
                 # Get the sha3 for a_buffer
                 a_value = int(sha3.keccak_256(a_buffer).hexdigest(), 16)
                 # add the new sha3 pair to the known_hashes and result

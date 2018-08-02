@@ -566,8 +566,9 @@ class SolidityMetadata(object):
         self.source_code = source_code
         self._init_bytecode = init_bytecode
         self._runtime_bytecode = runtime_bytecode
-        self._hashes = hashes
+        #self._hashes = dict( ((key, binascii.unhexlify(value)) for key, value in hashes.items()))
         self.abi = dict([(item.get('name', '{fallback}'), item) for item in abi])
+        self._functions = hashes.keys()
         self.warnings = warnings
         self.srcmap_runtime = self.__build_source_map(self.runtime_bytecode, srcmap_runtime)
         self.srcmap = self.__build_source_map(self.init_bytecode, srcmap)
@@ -592,12 +593,14 @@ class SolidityMetadata(object):
         return process(inputs)
 
     def add_function(self, method_name_and_signature):
+        if not isinstance(method_name_and_signature, str):
+            raise ValueError("method_name_and_signature needs to be a string")
         #TODO: use re, and check it's sane
         name = method_name_and_signature.split('(')[0]
         if name in self.abi:
             raise EthereumError("Function already defined")
         hsh = ABI.function_selector(method_name_and_signature)
-        self._hashes.append(method_name_and_signature, hsh)
+        self._functions.add(method_name_and_signature)
 
         input_types = method_name_and_signature.split('(')[1].split(')')[0].split(',')
         output_types = method_name_and_signature.split(')')[1].split(',')
@@ -680,7 +683,7 @@ class SolidityMetadata(object):
 
     @property
     def signatures(self):
-        return dict(((b, a) for (a, b) in self._hashes.items()))
+        return dict(((self.get_hash(f), f) for f in self._functions))
 
     def get_abi(self, hsh):
         func_name = self.get_func_name(hsh)
@@ -696,6 +699,9 @@ class SolidityMetadata(object):
         return '(' + ','.join(x['type'] for x in abi.get('outputs', [])) + ')'
 
     def get_func_name(self, hsh):
+        if len(hsh) == 8:
+            hsh = binascii.unhexlify(hsh)
+            import traceback; traceback.print_stack()
         signature = self.signatures.get(hsh, '{fallback}()')
         return signature.split('(')[0]
 
@@ -708,11 +714,11 @@ class SolidityMetadata(object):
 
     @property
     def functions(self):
-        return tuple(self.signatures.values()) + ('{fallback}()',)
+        return tuple(self._functions) + ('{fallback}()',)
 
     @property
     def hashes(self):
-        return tuple(self.signatures.keys()) + ('00000000',)
+        return tuple(map(self.get_hash, self._functions)) + ( b'\x00\x00\x00\x00',)
 
 
 class ABI(object):
@@ -863,7 +869,7 @@ class ABI(object):
         '''
         s = sha3.keccak_256()
         s.update(method_name_and_signature.encode())
-        return bytearray(binascii.unhexlify(s.hexdigest()[:8]))
+        return bytes(s.digest()[:4])
 
     @staticmethod
     def deserialize(type_spec, data):
@@ -1077,7 +1083,7 @@ class EVMContract(EVMAccount):
         self._hashes = None
 
     def add_function(self, signature):
-        func_id = binascii.hexlify(ABI.function_selector(signature))
+        func_id = ABI.function_selector(signature)
         func_name = str(signature.split('(')[0])
         if func_name.startswith('_') or func_name in {'add_function', 'address', 'name'}:
             raise EthereumError("Sorry function name is used by the python wrapping")
@@ -1096,7 +1102,7 @@ class EVMContract(EVMAccount):
             self._hashes = {}
             md = self._manticore.get_metadata(self._address)
             if md is not None:
-                for signature, func_id in md._hashes.items():
+                for signature in md.functions:
                     self.add_function(signature)
             # It was successful, no need to re-run. _init_hashes disabled
             self._init_hashes = self._null_func
@@ -2285,8 +2291,7 @@ class ManticoreEVM(Manticore):
                 metadata = self.get_metadata(tx.address)
                 if tx.sort == 'CALL':
                     if metadata is not None:
-                        function_id = tx.data[:4]  # hope there is enough data
-                        function_id = binascii.hexlify(state.solve_one(function_id))
+                        function_id = state.solve_one(tx.data[:4])  # hope there is enough data
                         signature = metadata.get_func_signature(function_id)
                         function_name = metadata.get_func_name(function_id)
                         if signature:
@@ -2301,7 +2306,7 @@ class ManticoreEVM(Manticore):
 
                         tx_summary.write('\n')
                         tx_summary.write("Function call:\n")
-                        tx_summary.write("%s(" % state.solve_one(function_name))
+                        tx_summary.write("%s(" % function_name)
                         tx_summary.write(','.join(map(repr, map(state.solve_one, arguments))))
                         is_argument_symbolic = any(map(issymbolic, arguments))
                         is_something_symbolic = is_something_symbolic or is_argument_symbolic
