@@ -10,7 +10,7 @@ class Expression(object):
         if self.__class__ is Expression:
             raise TypeError
         assert isinstance(taint, (tuple, frozenset))
-        super(Expression, self).__init__()
+        super().__init__()
         self._taint = frozenset(taint)
 
     def __repr__(self):
@@ -30,7 +30,7 @@ class Variable(Expression):
         if self.__class__ is Variable:
             raise TypeError
         assert isinstance(name, str) and ' ' not in name
-        super(Variable, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._name = name
 
     @property
@@ -55,7 +55,7 @@ class Constant(Expression):
         if self.__class__ is Constant:
             raise TypeError
         assert isinstance(value, (bool, int))
-        super(Constant, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._value = value
 
     @property
@@ -75,7 +75,7 @@ class Operation(Expression):
         if 'taint' not in kwargs:
             kwargs['taint'] = reduce(lambda x, y: x.union(y.taint), operands, frozenset())
 
-        super(Operation, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     @property
     def operands(self):
@@ -86,7 +86,7 @@ class Operation(Expression):
 # Booleans
 class Bool(Expression):
     def __init__(self, *operands, **kwargs):
-        super(Bool, self).__init__(*operands, **kwargs)
+        super().__init__(*operands, **kwargs)
 
     def cast(self, value, **kwargs):
         if isinstance(value, Bool):
@@ -133,7 +133,7 @@ class Bool(Expression):
 
 class BoolVariable(Bool, Variable):
     def __init__(self, name, *args, **kwargs):
-        super(BoolVariable, self).__init__(name, *args, **kwargs)
+        super().__init__(name, *args, **kwargs)
 
     @property
     def declaration(self):
@@ -143,7 +143,7 @@ class BoolVariable(Bool, Variable):
 class BoolConstant(Bool, Constant):
     def __init__(self, value, *args, **kwargs):
         assert isinstance(value, bool)
-        super(BoolConstant, self).__init__(value, *args, **kwargs)
+        super().__init__(value, *args, **kwargs)
 
     def __bool__(self):
         return self.value
@@ -151,34 +151,34 @@ class BoolConstant(Bool, Constant):
 
 class BoolOperation(Operation, Bool):
     def __init__(self, *operands, **kwargs):
-        super(BoolOperation, self).__init__(*operands, **kwargs)
+        super().__init__(*operands, **kwargs)
 
 
 class BoolNot(BoolOperation):
     def __init__(self, value, **kwargs):
-        super(BoolNot, self).__init__(value, **kwargs)
+        super().__init__(value, **kwargs)
 
 
 class BoolEq(BoolOperation):
     def __init__(self, a, b, **kwargs):
-        super(BoolEq, self).__init__(a, b, **kwargs)
+        super().__init__(a, b, **kwargs)
 
 
 class BoolAnd(BoolOperation):
     def __init__(self, a, b, **kwargs):
-        super(BoolAnd, self).__init__(a, b, **kwargs)
+        super().__init__(a, b, **kwargs)
 
 
 class BoolOr(BoolOperation):
     def __init__(self, a, b, **kwargs):
         assert isinstance(a, Bool)
         assert isinstance(b, Bool)
-        super(BoolOr, self).__init__(a, b, **kwargs)
+        super().__init__(a, b, **kwargs)
 
 
 class BoolXor(BoolOperation):
     def __init__(self, a, b, **kwargs):
-        super(BoolXor, self).__init__(a, b, **kwargs)
+        super().__init__(a, b, **kwargs)
 
 
 class BoolITE(BoolOperation):
@@ -186,14 +186,14 @@ class BoolITE(BoolOperation):
         assert isinstance(true, Bool)
         assert isinstance(false, Bool)
         assert isinstance(cond, Bool)
-        super(BoolITE, self).__init__(cond, true, false, **kwargs)
+        super().__init__(cond, true, false, **kwargs)
 
 
 class BitVec(Expression):
     ''' This adds a bitsize to the Expression class '''
 
     def __init__(self, size, *operands, **kwargs):
-        super(BitVec, self).__init__(*operands, **kwargs)
+        super().__init__(*operands, **kwargs)
         self.size = size
 
     @property
@@ -211,7 +211,7 @@ class BitVec(Expression):
         if isinstance(value, (str, bytes)) and len(value) == 1:
             value = ord(value)
         # Try to support not Integral types that can be casted to int
-        if not isinstance(value, numbers.Integral):
+        if not isinstance(value, int):
             value = int(value)
         # FIXME? Assert it fits in the representation
         return BitVecConstant(self.size, value, **kwargs)
@@ -386,7 +386,7 @@ class BitVec(Expression):
 
 class BitVecVariable(BitVec, Variable):
     def __init__(self, *args, **kwargs):
-        super(BitVecVariable, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     @property
     def declaration(self):
@@ -396,89 +396,89 @@ class BitVecVariable(BitVec, Variable):
 class BitVecConstant(BitVec, Constant):
     def __init__(self, size, value, *args, **kwargs):
         assert isinstance(value, int)
-        super(BitVecConstant, self).__init__(size, value, *args, **kwargs)
+        super().__init__(size, value, *args, **kwargs)
 
     def __bool__(self):
         return self.value != 0
 
     def __eq__(self, other):
         if self.taint:
-            super(BitVecConstant, self).__eq__(other)
+            super().__eq__(other)
         return self.value == other
 
     def __hash__(self):
-        return super(BitVecConstant, self).__hash__()
+        return super().__hash__()
 
 
 class BitVecOperation(BitVec, Operation):
     def __init__(self, size, *operands, **kwargs):
         #assert all(x.size == size for x in operands)
-        super(BitVecOperation, self).__init__(size, *operands, **kwargs)
+        super().__init__(size, *operands, **kwargs)
 
 
 class BitVecAdd(BitVecOperation):
     def __init__(self, a, b, *args, **kwargs):
-        super(BitVecAdd, self).__init__(a.size, a, b, *args, **kwargs)
+        super().__init__(a.size, a, b, *args, **kwargs)
 
 
 class BitVecSub(BitVecOperation):
     def __init__(self, a, b, *args, **kwargs):
-        super(BitVecSub, self).__init__(a.size, a, b, *args, **kwargs)
+        super().__init__(a.size, a, b, *args, **kwargs)
 
 
 class BitVecMul(BitVecOperation):
     def __init__(self, a, b, *args, **kwargs):
-        super(BitVecMul, self).__init__(a.size, a, b, *args, **kwargs)
+        super().__init__(a.size, a, b, *args, **kwargs)
 
 
 class BitVecDiv(BitVecOperation):
     def __init__(self, a, b, *args, **kwargs):
-        super(BitVecDiv, self).__init__(a.size, a, b, *args, **kwargs)
+        super().__init__(a.size, a, b, *args, **kwargs)
 
 
 class BitVecUnsignedDiv(BitVecOperation):
     def __init__(self, a, b, *args, **kwargs):
-        super(BitVecUnsignedDiv, self).__init__(a.size, a, b, *args, **kwargs)
+        super().__init__(a.size, a, b, *args, **kwargs)
 
 
 class BitVecMod(BitVecOperation):
     def __init__(self, a, b, *args, **kwargs):
-        super(BitVecMod, self).__init__(a.size, a, b, *args, **kwargs)
+        super().__init__(a.size, a, b, *args, **kwargs)
 
 
 class BitVecRem(BitVecOperation):
     def __init__(self, a, b, *args, **kwargs):
-        super(BitVecRem, self).__init__(a.size, a, b, *args, **kwargs)
+        super().__init__(a.size, a, b, *args, **kwargs)
 
 
 class BitVecUnsignedRem(BitVecOperation):
     def __init__(self, a, b, *args, **kwargs):
-        super(BitVecUnsignedRem, self).__init__(a.size, a, b, *args, **kwargs)
+        super().__init__(a.size, a, b, *args, **kwargs)
 
 
 class BitVecShiftLeft(BitVecOperation):
     def __init__(self, a, b, *args, **kwargs):
-        super(BitVecShiftLeft, self).__init__(a.size, a, b, *args, **kwargs)
+        super().__init__(a.size, a, b, *args, **kwargs)
 
 
 class BitVecShiftRight(BitVecOperation):
     def __init__(self, a, b, *args, **kwargs):
-        super(BitVecShiftRight, self).__init__(a.size, a, b, *args, **kwargs)
+        super().__init__(a.size, a, b, *args, **kwargs)
 
 
 class BitVecArithmeticShiftLeft(BitVecOperation):
     def __init__(self, a, b, *args, **kwargs):
-        super(self.__class__, self).__init__(a.size, a, b, *args, **kwargs)
+        super().__init__(a.size, a, b, *args, **kwargs)
 
 
 class BitVecArithmeticShiftRight(BitVecOperation):
     def __init__(self, a, b, *args, **kwargs):
-        super(self.__class__, self).__init__(a.size, a, b, *args, **kwargs)
+        super().__init__(a.size, a, b, *args, **kwargs)
 
 
 class BitVecAnd(BitVecOperation):
     def __init__(self, a, b, *args, **kwargs):
-        super(BitVecAnd, self).__init__(a.size, a, b, *args, **kwargs)
+        super().__init__(a.size, a, b, *args, **kwargs)
 
 
 class BitVecOr(BitVecOperation):
@@ -486,69 +486,69 @@ class BitVecOr(BitVecOperation):
         assert isinstance(a, BitVec)
         assert isinstance(b, BitVec)
         assert a.size == b.size
-        super(BitVecOr, self).__init__(a.size, a, b, *args, **kwargs)
+        super().__init__(a.size, a, b, *args, **kwargs)
 
 
 class BitVecXor(BitVecOperation):
     def __init__(self, a, b, *args, **kwargs):
-        super(BitVecXor, self).__init__(a.size, a, b, *args, **kwargs)
+        super().__init__(a.size, a, b, *args, **kwargs)
 
 
 class BitVecNot(BitVecOperation):
     def __init__(self, a, **kwargs):
-        super(BitVecNot, self).__init__(a.size, a, **kwargs)
+        super().__init__(a.size, a, **kwargs)
 
 
 class BitVecNeg(BitVecOperation):
     def __init__(self, a, *args, **kwargs):
-        super(BitVecNeg, self).__init__(a.size, a, *args, **kwargs)
+        super().__init__(a.size, a, *args, **kwargs)
 
 
 # Comparing two bitvectors results in a Bool
 class LessThan(BoolOperation):
     def __init__(self, a, b, *args, **kwargs):
-        super(LessThan, self).__init__(a, b, *args, **kwargs)
+        super().__init__(a, b, *args, **kwargs)
 
 
 class LessOrEqual(BoolOperation):
     def __init__(self, a, b, *args, **kwargs):
-        super(LessOrEqual, self).__init__(a, b, *args, **kwargs)
+        super().__init__(a, b, *args, **kwargs)
 
 
 class Equal(BoolOperation):
     def __init__(self, a, b, *args, **kwargs):
         assert a.size == b.size
-        super(Equal, self).__init__(a, b, *args, **kwargs)
+        super().__init__(a, b, *args, **kwargs)
 
 
 class GreaterThan(BoolOperation):
     def __init__(self, a, b, *args, **kwargs):
         assert a.size == b.size
-        super(GreaterThan, self).__init__(a, b, *args, **kwargs)
+        super().__init__(a, b, *args, **kwargs)
 
 
 class GreaterOrEqual(BoolOperation):
     def __init__(self, a, b, *args, **kwargs):
         assert a.size == b.size
-        super(GreaterOrEqual, self).__init__(a, b, *args, **kwargs)
+        super().__init__(a, b, *args, **kwargs)
 
 
 class UnsignedLessThan(BoolOperation):
     def __init__(self, a, b, *args, **kwargs):
-        super(UnsignedLessThan, self).__init__(a, b, *args, **kwargs)
+        super().__init__(a, b, *args, **kwargs)
         assert a.size == b.size
 
 
 class UnsignedLessOrEqual(BoolOperation):
     def __init__(self, a, b, *args, **kwargs):
         assert a.size == b.size
-        super(UnsignedLessOrEqual, self).__init__(a, b, *args, **kwargs)
+        super().__init__(a, b, *args, **kwargs)
 
 
 class UnsignedGreaterThan(BoolOperation):
     def __init__(self, a, b, *args, **kwargs):
         assert a.size == b.size
-        super(UnsignedGreaterThan, self).__init__(a, b, *args, **kwargs)
+        super().__init__(a, b, *args, **kwargs)
 
 
 class UnsignedGreaterOrEqual(BoolOperation):
@@ -569,7 +569,7 @@ class Array(Expression):
         self._index_bits = index_bits
         self._index_max = index_max
         self._value_bits = value_bits
-        super(Array, self).__init__(*operands, **kwargs)
+        super().__init__(*operands, **kwargs)
         assert type(self) is not Array, 'Abstract class'
 
     def _get_size(self, index):
@@ -679,7 +679,7 @@ class Array(Expression):
         return BoolNot(self == other)
 
     def __hash__(self):
-        return super(Array, self).__hash__()
+        return super().__hash__()
 
     @property
     def underlying_variable(self):
@@ -752,7 +752,7 @@ class Array(Expression):
 
 class ArrayVariable(Array, Variable):
     def __init__(self, index_bits, index_max, value_bits, name, *operands, **kwargs):
-        super(ArrayVariable, self).__init__(index_bits, index_max, value_bits, name, **kwargs)
+        super().__init__(index_bits, index_max, value_bits, name, **kwargs)
 
     @property
     def declaration(self):
@@ -762,7 +762,7 @@ class ArrayVariable(Array, Variable):
 class ArrayOperation(Array, Operation):
     def __init__(self, array, *operands, **kwargs):
         assert isinstance(array, Array)
-        super(ArrayOperation, self).__init__(array.index_bits, array.index_max, array.value_bits, array, *operands, **kwargs)
+        super().__init__(array.index_bits, array.index_max, array.value_bits, array, *operands, **kwargs)
 
 
 class ArrayStore(ArrayOperation):
@@ -770,7 +770,7 @@ class ArrayStore(ArrayOperation):
         assert isinstance(array, Array)
         assert isinstance(index, BitVec) and index.size == array.index_bits
         assert isinstance(value, BitVec) and value.size == array.value_bits
-        super(ArrayStore, self).__init__(array, index, value, *args, **kwargs)
+        super().__init__(array, index, value, *args, **kwargs)
 
     @property
     def array(self):
@@ -795,7 +795,7 @@ class ArraySlice(Array):
             raise ValueError("Array expected")
         if isinstance(array, ArrayProxy):
             array = array._array
-        super(ArraySlice, self).__init__(array.index_bits, array.index_max, array.value_bits, *args, **kwargs)
+        super().__init__(array.index_bits, array.index_max, array.value_bits, *args, **kwargs)
 
         self._array = array
         self._slice_offset = offset
@@ -839,7 +839,7 @@ class ArrayProxy(Array):
         self._written = None
         if isinstance(array, ArrayProxy):
             #copy constructor
-            super(ArrayProxy, self).__init__(array.index_bits, array.index_max, array.value_bits)
+            super().__init__(array.index_bits, array.index_max, array.value_bits)
             self._array = array._array
             self._name = array._name
             self._concrete_cache = dict(array._concrete_cache)
@@ -847,12 +847,12 @@ class ArrayProxy(Array):
                 self._written = set(array._written)
         elif isinstance(array, ArrayVariable):
             #fresh array proxy
-            super(ArrayProxy, self).__init__(array.index_bits, array.index_max, array.value_bits)
+            super().__init__(array.index_bits, array.index_max, array.value_bits)
             self._array = array
             self._name = array.name
         else:
             #arrayproxy for an prepopulated array
-            super(ArrayProxy, self).__init__(array.index_bits, array.index_max, array.value_bits)
+            super().__init__(array.index_bits, array.index_max, array.value_bits)
             self._name = array.underlying_variable.name
             self._array = array
 
@@ -988,7 +988,7 @@ class ArraySelect(BitVec, Operation):
     def __init__(self, array, index, *args, **kwargs):
         assert isinstance(array, Array)
         assert isinstance(index, BitVec) and index.size == array.index_bits
-        super(ArraySelect, self).__init__(array.value_bits, array, index, *args, **kwargs)
+        super().__init__(array.value_bits, array, index, *args, **kwargs)
 
     @property
     def array(self):
@@ -1004,7 +1004,7 @@ class BitVecSignExtend(BitVecOperation):
         assert isinstance(operand, BitVec)
         assert isinstance(size_dest, int)
         assert size_dest >= operand.size
-        super(BitVecSignExtend, self).__init__(size_dest, operand, *args, **kwargs)
+        super().__init__(size_dest, operand, *args, **kwargs)
         self.extend = size_dest - operand.size
 
 
@@ -1013,7 +1013,7 @@ class BitVecZeroExtend(BitVecOperation):
         assert isinstance(operand, BitVec)
         assert isinstance(size_dest, int)
         assert size_dest >= operand.size
-        super(BitVecZeroExtend, self).__init__(size_dest, operand, *args, **kwargs)
+        super().__init__(size_dest, operand, *args, **kwargs)
         self.extend = size_dest - operand.size
 
 
@@ -1022,7 +1022,7 @@ class BitVecExtract(BitVecOperation):
         assert isinstance(offset, int)
         assert isinstance(size, int)
         assert offset >= 0 and offset + size <= operand.size
-        super(BitVecExtract, self).__init__(size, operand, *args, **kwargs)
+        super().__init__(size, operand, *args, **kwargs)
         self.begining = offset
         self.end = offset + size - 1
 
@@ -1032,7 +1032,7 @@ class BitVecConcat(BitVecOperation):
         assert isinstance(size_dest, int)
         assert all(isinstance(x, BitVec) for x in operands)
         assert size_dest == sum(x.size for x in operands)
-        super(BitVecConcat, self).__init__(size_dest, *operands, **kwargs)
+        super().__init__(size_dest, *operands, **kwargs)
 
 
 class BitVecITE(BitVecOperation):
@@ -1041,4 +1041,4 @@ class BitVecITE(BitVecOperation):
         assert isinstance(false_value, BitVec)
         assert true_value.size == size
         assert false_value.size == size
-        super(BitVecITE, self).__init__(size, condition, true_value, false_value, *args, **kwargs)
+        super().__init__(size, condition, true_value, false_value, *args, **kwargs)

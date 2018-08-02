@@ -37,11 +37,11 @@ class SMem(object):
     def __init__(self, array, init):
         self.code = {}
         self.mem = array
-        for addr, val in list(init.items()):
+        for addr, val in init.items():
             self.mem[addr] = val
 
     def getchar(self, addr):
-        if isinstance(addr, int) and addr in list(self.code.keys()):
+        if isinstance(addr, int) and addr in self.code.keys():
             return self.code[addr]
         return self.mem[addr]
 
