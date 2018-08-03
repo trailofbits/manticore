@@ -794,33 +794,23 @@ class ExpressionTest(unittest.TestCase):
         self.assertTrue(solver.check(cs))
         self.assertEqual(solver.get_value(cs, a), -7&0xFF)
 
-import importlib
-class Z3Test(unittest.TestCase):
-    def setUp(self):
-        #Manual mock for check_output
-        self.module = importlib.import_module('manticore.core.smtlib.solver')
-        self.module.check_output = lambda *args, **kwargs: self.version
-        self.z3 = self.module.Z3Solver
-
     def test_check_solver_min(self):
-        self.version = 'Z3 version 4.4.1'
-        self.assertTrue(self.z3._solver_version() == Version(major=4, minor=4, patch=1))
+        self.solver._received_version = '(:version "4.4.1")'
+        self.assertTrue(self.solver._solver_version() == Version(major=4, minor=4, patch=1))
 
     def test_check_solver_newer(self):
-        self.version = 'Z3 version 4.5.0'
-        self.assertTrue(self.z3._solver_version() > Version(major=4, minor=4, patch=1))
+        self.solver._received_version = '(:version "4.5.0")'
+        self.assertTrue(self.solver._solver_version() > Version(major=4, minor=4, patch=1))
 
     def test_check_solver_optimize(self):
-        self.version = 'Z3 version 4.5.0'
-        solver = self.z3()
-        self.assertTrue(solver.support_maximize)
-        self.assertTrue(solver.support_minimize)
+        self.solver._received_version = '(:version "4.5.0")'
+        self.assertTrue(self.solver.support_maximize)
+        self.assertTrue(self.solver.support_minimize)
 
     def test_check_solver_optimize(self):
-        self.version = 'Z3 version 4.4.0'
-        solver = self.z3()
-        self.assertFalse(solver.support_maximize)
-        self.assertFalse(solver.support_minimize)
+        self.solver._received_version = '(:version "4.4.0")'
+        self.assertFalse(self.solver.support_maximize)
+        self.assertFalse(self.solver.support_minimize)
 
 if __name__ == '__main__':
     unittest.main()

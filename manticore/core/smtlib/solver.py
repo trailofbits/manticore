@@ -134,6 +134,8 @@ class Z3Solver(Solver):
         self._get_value_fmt = (re.compile('\(\((?P<expr>(.*))\ #x(?P<value>([0-9a-fA-F]*))\)\)'), 16)
 
         self.debug = False
+        # To cache what get-info returned; can be directly set when writing tests
+        self._received_version = None
         self.version = self._solver_version()
 
         self.support_maximize = False
@@ -165,9 +167,10 @@ class Z3Solver(Solver):
         '''
         their_version = Version(0, 0, 0)
         self._reset()
-        self._send('(get-info :version)')
-        version_output = self._recv()
-        key, version = shlex.split(version_output[1:-1])
+        if self._received_version is None:
+            self._send('(get-info :version)')
+            self._received_version = self._recv()
+        key, version = shlex.split(self._received_version[1:-1])
         return Version(*map(int, version.split('.')))
 
     def _start_proc(self):
