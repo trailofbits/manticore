@@ -20,6 +20,7 @@ from .expression import *
 from .constraints import *
 import logging
 import re
+import shlex
 import time
 from .visitors import *
 from ...utils.helpers import issymbolic, istainted, taint_with, get_taints, memoized
@@ -128,6 +129,10 @@ class Z3Solver(Solver):
         super().__init__()
         self._proc = None
 
+        self._command = 'z3 -t:240000 -memory:16384 -smt2 -in'
+        self._init = ['(set-logic QF_AUFBV)', '(set-option :global-decls false)']
+        self._get_value_fmt = (re.compile('\(\((?P<expr>(.*))\ #x(?P<value>([0-9a-fA-F]*))\)\)'), 16)
+
         self.debug = False
         self.version = self._solver_version()
 
@@ -147,12 +152,7 @@ class Z3Solver(Solver):
         else:
             logger.debug(' Please install Z3 4.4.1 or newer to get optimization support')
 
-        self._command = 'z3 -t:240000 -memory:16384 -smt2 -in'
-        self._init = ['(set-logic QF_AUFBV)', '(set-option :global-decls false)']
-        self._get_value_fmt = (re.compile('\(\((?P<expr>(.*))\ #x(?P<value>([0-9a-fA-F]*))\)\)'), 16)
-
-    @staticmethod
-    def _solver_version():
+    def _solver_version(self):
         '''
         If we
         fail to parse the version, we assume z3's output has changed, meaning it's a newer
@@ -164,16 +164,11 @@ class Z3Solver(Solver):
 
         '''
         their_version = Version(0, 0, 0)
-        try:
-            version_cmd_output = check_output('z3 -version'.split())
-        except OSError:
-            raise Z3NotFoundError
-        try:
-            version = version_cmd_output.split()[2]
-            their_version = Version(*map(int, version.split('.')))
-        except (IndexError, ValueError, TypeError):
-            pass
-        return their_version
+        self._reset()
+        self._send('(get-info :version)')
+        version_output = self._recv()
+        key, version = shlex.split(version_output[1:-1])
+        return Version(*map(int, version.split('.')))
 
     def _start_proc(self):
         ''' Auxiliary method to spawn the external solver process'''
