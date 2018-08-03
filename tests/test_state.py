@@ -30,19 +30,19 @@ class FakeCpu(object):
 
 class FakePlatform(Eventful):
     def __init__(self):
-        super(FakePlatform, self).__init__()
+        super().__init__()
         self._constraints = None
         self.procs = [FakeCpu()]
 
 
     
     def __getstate__(self):
-        state = super(FakePlatform, self).__getstate__()
+        state = super().__getstate__()
         state['cons'] = self._constraints
         state['procs'] = self.procs
         return state
     def __setstate__(self, state):
-        super(FakePlatform, self).__setstate__(state)
+        super().__setstate__(state)
         self._constraints = state['cons']
         self.procs = state['procs']
 

@@ -25,6 +25,6 @@ if __name__ == '__main__':
         with m.locked_context() as context:
             context['count'] += 1
 
-    m.run(procs=3)
+    m.run(procs=1)
 
     print("Executed ", m.context['count'], " instructions.")
