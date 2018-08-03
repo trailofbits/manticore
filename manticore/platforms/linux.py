@@ -1292,12 +1292,12 @@ class Linux(Platform):
             data = self._transform_write_data(data)
             write_fd.write(data)
 
-            for line in ''.join([str(x) for x in data]).split('\n'):
+            for line in b''.join([x for x in data]).split(b'\n'):
                 logger.debug("WRITE(%d, 0x%08x, %d) -> <%.48r>",
                              fd,
                              buf,
                              count,
-                             line)
+                             line.decode('latin-1'))
             self.syscall_trace.append(("_write", fd, data))
             self.signal_transmit(fd)
 
