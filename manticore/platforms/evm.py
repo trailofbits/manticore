@@ -661,12 +661,12 @@ class EVM(Eventful):
             #Revert the stack and gas so it looks like before executing the instruction
             self._push_arguments(arguments)
             self._gast = old_gas
+            pos = -ex.pos
 
             def setstate(state, value):
-                self.stack[-setstate.e.pos] = value
-            setstate.e = ex
+                self.stack[pos] = value
             raise Concretize("Concretice Stack Variable",
-                             expression=self.stack[-ex.pos],
+                             expression=self.stack[pos],
                              setstate=setstate,
                              policy=ex.policy)
         except StartTx:
