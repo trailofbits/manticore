@@ -32,7 +32,7 @@ def parse_arguments():
     parser.add_argument('--data', type=str, default='',
                         help='Initial concrete concrete_data for the input symbolic buffer')
     # FIXME (theo) similarly to policy, add documentation here.
-    disas = ['capstone', 'binja-il']
+    disas = ['capstone']
     parser.add_argument('--disasm', type=str, default='capstone', choices=disas,
                         help=argparse.SUPPRESS)
     parser.add_argument('--env', type=str, nargs=1, default=[], action='append',
