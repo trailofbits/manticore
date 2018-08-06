@@ -1124,7 +1124,7 @@ class LazySMemory(SMemory):
 
     def __init__(self, constraints, *args, **kwargs):
         super(LazySMemory, self).__init__(constraints, *args, **kwargs)
-        self._inverted = {}
+        self._backing_array = constraints.new_array(index_bits=self.memory_bit_size)
 
     def mmap(self, addr, size, perms, name=None, **kwargs):
         assert addr is None or isinstance(addr, (int, long)), 'Address must be concrete'
@@ -1183,6 +1183,7 @@ class LazySMemory(SMemory):
         if not issymbolic(address):
             return super(LazySMemory, self).map_containing(address)
         else:
+            found = None
             for m in self._maps:
                 if self._deref_can_succeed(m, address, 1):
                     if not isinstance(m, ArrayMap):
