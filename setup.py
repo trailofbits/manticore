@@ -21,7 +21,7 @@ setup(
     packages=find_packages(),
     python_requires='>=3.6',
     install_requires=[
-        'capstone>=3.0.5rc2',
+        'capstone>=3.0.5',
         'pyelftools',
         'unicorn',
         'ply',
