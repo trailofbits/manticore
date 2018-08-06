@@ -288,7 +288,7 @@ class AnonMap(Map):
 
 
 class ArrayMap(Map):
-    def __init__(self, address, size, perms, index_bits, backing_array=None, name=None, **kwargs):
+    def __init__(self, address, size, perms, index_bits, backing_array=None, name=None, data_init=None, **kwargs):
         super(ArrayMap, self).__init__(address, size, perms)
         if name is None:
             name = 'ArrayMap_{:x}'.format(address)
@@ -296,6 +296,14 @@ class ArrayMap(Map):
             self._array = backing_array
         else:
             self._array = expression.ArrayProxy(expression.ArrayVariable(index_bits, index_max=size, value_bits=8, name=name))
+
+        if data_init is not None:
+            assert len(data_init) <= size, 'More initial data than reserved memory'
+            # check that the values this slice points to are ints
+            if isinstance(data_init[0], int):
+                self._array[0:len(data_init)] = data_init
+            else:
+                self._array[0:len(data_init)] = [ord(s) for s in data_init]
 
     def __reduce__(self):
         return self.__class__, (self.start, len(self), self._perms, self._array.index_bits, self._array, self._array.name)
@@ -659,6 +667,9 @@ class Memory(object, metaclass=ABCMeta):
         :rtype: int
 
         '''
+        return self._do_mmap(AnonMap, addr, size, perms, data_init=data_init, name=name)
+
+    def _do_mmap(self, map_cls, addr, size, perms, **kwargs):
         # If addr is NULL, the system determines where to allocate the region.
         assert addr is None or isinstance(addr, int), 'Address shall be concrete'
 
@@ -678,12 +689,12 @@ class Memory(object, metaclass=ABCMeta):
             assert i not in self._page2map, 'Map already used'
 
         # Create the anonymous map
-        m = AnonMap(start=addr, size=size, perms=perms, data_init=data_init)
+        m = map_cls(start=addr, size=size, perms=perms, **kwargs)
 
         # Okay, ready to alloc
         self._add(m)
 
-        logger.debug('New memory map @%x size:%x', addr, size)
+        logger.debug('New %s memory map @%x size:%x', map_cls.__name__, addr, size)
         return addr
 
     def _add(self, m):
@@ -1127,29 +1138,7 @@ class LazySMemory(SMemory):
         self._backing_array = constraints.new_array(index_bits=self.memory_bit_size)
 
     def mmap(self, addr, size, perms, name=None, **kwargs):
-        assert addr is None or isinstance(addr, (int, long)), 'Address must be concrete'
-        assert addr < self.memory_size, 'Address too big'
-        assert size > 0
-
-        if addr is not None:
-            addr = self._floor(addr)
-
-        size = self._ceil(size)
-
-        addr = self._search(size, addr)
-
-        # It should not be allocated
-        for i in xrange(self._page(addr), self._page(addr + size)):
-            if i in self._page2map:
-                raise MemoryException("Can't mmap; map already used", addr)
-
-        m = ArrayMap(addr, size, perms, self.memory_bit_size, name=name)
-
-        self._add(m)
-
-        logger.debug('New symbolic memory map @{:x} size:{:x}'.format(addr, size))
-
-        return addr
+        return self._do_mmap(ArrayMap, addr, size, perms, index_bits=self.memory_bit_size, name=name)
 
     def _map_deref_expr(self, map, address, size):
         return Operators.AND(
@@ -1180,6 +1169,10 @@ class LazySMemory(SMemory):
         return deref_expression
 
     def map_containing(self, address):
+        """
+        :param address:
+        :return:
+        """
         if not issymbolic(address):
             return super(LazySMemory, self).map_containing(address)
         else:
@@ -1194,18 +1187,16 @@ class LazySMemory(SMemory):
             return found
 
     def read(self, address, size, force=False):
-        if issymbolic(address):
-            return self._aggregate_read(address, size)
-        else:
-            return super(SMemory, self).read(address, size, force)
+        if not issymbolic(address) and not self.access_ok(slice(address, address + size), 'r', force):
+            raise InvalidMemoryAccess(address, 'r')
+
+        return self._backing_array[address:address + size]
 
     def write(self, address, value, force=False):
-        m = self.map_containing(address)
-        if isinstance(m, ArrayMap):
-            page_offset = address - m.start
-            m[page_offset:page_offset + len(value)] = value
-        else:
-            return super(SMemory, self).write(address, value, force)
+        if not issymbolic(address) and not self.access_ok(slice(address, address + len(value)), 'w', force):
+            raise InvalidMemoryAccess(address, 'w')
+
+        self._backing_array[address:address + len(value)] = value
 
 
 class Memory32(Memory):
