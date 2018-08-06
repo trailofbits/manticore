@@ -1,6 +1,9 @@
 import functools
 import collections
 import re
+import logging
+from collections import OrderedDict
+
 from ..core.smtlib import Expression, BitVecConstant
 
 
@@ -103,3 +106,38 @@ class memoized(object):
 
 def is_binja_disassembler(disasm):
     return disasm == "binja-il"
+
+
+class CacheDict(OrderedDict):
+    def __init__(self, *args, max_size=30000, flush_perc=30, **kwargs):
+        self._max_size = max_size
+        self._purge_percent = flush_perc * 0.01
+        self._misses = 0
+        self._hits = 0
+        self._flushes = 0
+        super().__init__(*args, **kwargs)
+
+    def __del__(self):
+        log = logging.getLogger(self.__class__.__name__)
+        log.debug(
+            f'DictCache: hits: {self._hits}, misses: {self._misses}, flushes: {self._flushes}, size: {self.__len__()}')
+
+    def __setitem__(self, key, value):
+        if len(self) > self._max_size:
+            self.flush()
+        return super().__setitem__(key, value)
+
+    def __contains__(self, item):
+        x = super().__contains__(item)
+        if x:
+            self._hits += 1
+        else:
+            self._misses += 1
+        return x
+
+    def flush(self):
+        self._flushes += 1
+        purge_count = int(len(self) * self._purge_percent)
+        for i in range(purge_count):
+            self.popitem(last=False)
+        self._hits -= purge_count
