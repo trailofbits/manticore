@@ -98,8 +98,6 @@ def make_linux(program, argv=None, env=None, entry_symbol=None, symbolic_files=N
 
 
 def make_initial_state(binary_path, **kwargs):
-    if 'disasm' in kwargs:
-        del kwargs['disasm']
     with open(binary_path, 'rb') as f:
         magic = f.read(4)
     if magic == b'\x7fELF':

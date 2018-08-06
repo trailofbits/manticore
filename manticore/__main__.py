@@ -32,9 +32,6 @@ def parse_arguments():
     parser.add_argument('--data', type=str, default='',
                         help='Initial concrete concrete_data for the input symbolic buffer')
     # FIXME (theo) similarly to policy, add documentation here.
-    disas = ['capstone']
-    parser.add_argument('--disasm', type=str, default='capstone', choices=disas,
-                        help=argparse.SUPPRESS)
     parser.add_argument('--env', type=str, nargs=1, default=[], action='append',
                         help='Add an environment variable. Use "+" for symbolic bytes. (VARNAME=++++)')
     #TODO allow entry as an address
