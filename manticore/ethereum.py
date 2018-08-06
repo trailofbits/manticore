@@ -66,9 +66,9 @@ class Detector(Plugin):
         '''
         Logs a finding at specified contract and assembler line.
         :param state: current state
-        :param address: contract address of the finding 
-        :param pc: program counter of the finding 
-        :param at_init: true if executing the constructor 
+        :param address: contract address of the finding
+        :param pc: program counter of the finding
+        :param at_init: true if executing the constructor
         :param finding: textual description of the finding
         :param constraint: finding is considered reproducible only when constraint is True
         '''
@@ -115,9 +115,9 @@ class Detector(Plugin):
         return hash_id
 
     def _get_location(self, state, hash_id):
-        ''' Get previously saved location 
+        ''' Get previously saved location
             A location is composed of: address, pc, finding, at_init, condition
-        ''' 
+        '''
         return state.context.setdefault('{:s}.locations'.format(self.name), {})[hash_id]
 
     def _get_src(self, address, pc):
@@ -258,7 +258,6 @@ class DetectReentrancy(Detector):
                 # Check if gas was enough for a reentrancy attack
                 if tx.gas > 2300:
                     # Check if target address is attaker controlled
-                    print (self._addresses, world.get_code(tx.address), tx.address)
                     if self._addresses is None and not world.get_code(tx.address) or self._addresses is not None and tx.address in self._addresses:
                         #that's enough. Save current location and read list
                         self._save_location_and_reads(state)
