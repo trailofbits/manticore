@@ -31,7 +31,6 @@ def parse_arguments():
                         help='where to write the coverage data')
     parser.add_argument('--data', type=str, default='',
                         help='Initial concrete concrete_data for the input symbolic buffer')
-    # FIXME (theo) similarly to policy, add documentation here.
     parser.add_argument('--env', type=str, nargs=1, default=[], action='append',
                         help='Add an environment variable. Use "+" for symbolic bytes. (VARNAME=++++)')
     #TODO allow entry as an address
