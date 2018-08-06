@@ -45,19 +45,22 @@ class StateSerializer(object):
 
 
 class PickleSerializer(StateSerializer):
+    DEFAULT_RECURSION: int = 0x100000  # 1M
+    MAX_RECURSION: int = 0x1000000  # 16.7M
+
+    def __init__(self):
+        super().__init__()
+        sys.setrecursionlimit(PickleSerializer.DEFAULT_RECURSION)
+
     def serialize(self, state, f):
-        # TODO: port iterpickle to Python3 or alternatively switch to a more sensible usage of the following code
-        # currently this is just a hack and will increase memory usage drastically
-        maxlim = 0x100000
-        resource.setrlimit(resource.RLIMIT_STACK, [0x100 * maxlim, resource.RLIM_INFINITY])
-        sys.setrecursionlimit(0x100000)
         try:
             f.write(pickle.dumps(state, 2))
         except RuntimeError:
-            # recursion exceeded. try a slower, iterative solution
-            from ..utils import iterpickle
-            logger.debug("Using iterpickle to dump state")
-            f.write(iterpickle.dumps(state, 2))
+            if sys.getrecursionlimit() >= PickleSerializer.MAX_RECURSION:
+                raise Exception(f'PickleSerializer recursion limit surpassed {PickleSerializer.MAX_RECURSION}, aborting')
+            logger.info(f'Recursion maximum {sys.getrecursionlimit()} hit, increasing')
+            sys.setrecursionlimit(sys.getrecursionlimit() + PickleSerializer.DEFAULT_RECURSION)
+            self.serialize(state, f)
 
     def deserialize(self, f):
         return pickle.load(f)
