@@ -2,7 +2,7 @@
 //  keccak(bytes32(i) + bytes32(position['tuples']))+offset[a]
 pragma solidity ^0.4.11;
 
-contract C {
+contract Benchmark {
     mapping(uint256 => uint256) tuples;
 
     //tuple variable offset added to keccak(bytes32(key) + bytes32(position))

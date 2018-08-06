@@ -21,7 +21,7 @@ class TerminateState(StateException):
     ''' Terminates current state exploration '''
 
     def __init__(self, message, testcase=False):
-        super(TerminateState, self).__init__(message)
+        super().__init__(message)
         self.testcase = testcase
 
 
@@ -43,7 +43,7 @@ class Concretize(StateException):
         self.setstate = setstate
         self.policy = policy
         self.message = "Concretize: %s (Policy: %s)" % (message, policy)
-        super(Concretize, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
 
 class ForkState(Concretize):
@@ -57,7 +57,7 @@ class ForkState(Concretize):
 
     def __init__(self, message, expression, **kwargs):
         assert isinstance(expression, Bool), 'Need a Bool to fork a state in two states'
-        super(ForkState, self).__init__(message, expression, policy='ALL', **kwargs)
+        super().__init__(message, expression, policy='ALL', **kwargs)
 
 
 class State(Eventful):
@@ -73,7 +73,7 @@ class State(Eventful):
     _published_events = {'generate_testcase'}
 
     def __init__(self, constraints, platform, **kwargs):
-        super(State, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self._platform = platform
         self._constraints = constraints
         self._platform.constraints = constraints
@@ -88,7 +88,7 @@ class State(Eventful):
         self._init_context()
 
     def __getstate__(self):
-        state = super(State, self).__getstate__()
+        state = super().__getstate__()
         state['platform'] = self._platform
         state['constraints'] = self._constraints
         state['input_symbols'] = self._input_symbols
@@ -97,7 +97,7 @@ class State(Eventful):
         return state
 
     def __setstate__(self, state):
-        super(State, self).__setstate__(state)
+        super().__setstate__(state)
         self._platform = state['platform']
         self._constraints = state['constraints']
         self._input_symbols = state['input_symbols']
@@ -133,8 +133,9 @@ class State(Eventful):
             expression = self.cpu.read_register(e.reg_name)
 
             def setstate(state, value):
-                state.cpu.write_register(e.reg_name, value)
-            raise Concretize(e.message,
+                state.cpu.write_register(setstate.e.reg_name, value)
+            setstate.e = e
+            raise Concretize(str(e),
                              expression=expression,
                              setstate=setstate,
                              policy=e.policy)
@@ -142,13 +143,14 @@ class State(Eventful):
             expression = self.cpu.read_int(e.address, e.size)
 
             def setstate(state, value):
-                state.cpu.write_int(e.address, value, e.size)
-            raise Concretize(e.message,
+                state.cpu.write_int(setstate.e.address, value, e.size)
+            setstate.e = e
+            raise Concretize(str(e),
                              expression=expression,
                              setstate=setstate,
                              policy=e.policy)
         except MemoryException as e:
-            raise TerminateState(e.message, testcase=True)
+            raise TerminateState(str(e), testcase=True)
 
         # Remove when code gets stable?
         assert self.platform.constraints is self.constraints
@@ -251,7 +253,7 @@ class State(Eventful):
             self._input_symbols.append(symb)
 
             tmp = []
-            for i in xrange(size):
+            for i in range(size):
                 if data[i] == wildcard:
                     tmp.append(symb[i])
                 else:
@@ -279,8 +281,8 @@ class State(Eventful):
             m, M = self._solver.minmax(self._constraints, symbolic)
             vals += [m, M]
             if M - m > 3:
-                if self._solver.can_be_true(self._constraints, symbolic == (m + M) / 2):
-                    vals.append((m + M) / 2)
+                if self._solver.can_be_true(self._constraints, symbolic == (m + M) // 2):
+                    vals.append((m + M) // 2)
             if M - m > 100:
                 vals += self._solver.get_all_values(self._constraints, symbolic,
                                                     maxcnt=maxcount, silent=True)
@@ -346,7 +348,7 @@ class State(Eventful):
         :return: Concrete value
         :rtype: list[int]
         '''
-        if isinstance(expr, (int, long)):
+        if isinstance(expr, int):
             return expr
         return self._solver.max(self._constraints, expr)
 
@@ -359,7 +361,7 @@ class State(Eventful):
         :return: Concrete value
         :rtype: list[int]
         '''
-        if isinstance(expr, (int, long)):
+        if isinstance(expr, int):
             return expr
         return self._solver.min(self._constraints, expr)
 

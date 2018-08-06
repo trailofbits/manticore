@@ -23,11 +23,11 @@ checks:
   method-lines:
     enabled: true
     config:
-      threshold: 50
+      threshold: 53
   nested-control-flow:
     enabled: true
     config:
-      threshold: 5
+      threshold: 10
   return-statements:
     enabled: true
     config:
@@ -35,7 +35,7 @@ checks:
   similar-code:
     enabled: true
     config:
-      threshold: 100
+      threshold: 210
   identical-code:
     enabled: true
     config:
@@ -53,7 +53,7 @@ plugins:
   radon:
     enabled: false
     config:
-      python_version: 2
+      python_version: 3
       threshold: "D"
 exclude_patterns:
   - "docs/"

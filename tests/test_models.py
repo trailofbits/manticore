@@ -37,6 +37,10 @@ class ModelTest(unittest.TestCase):
         cpu.write_bytes(cpu.RSP, s)
         return cpu.RSP
 
+    def assertItemsEqual(self, a, b):
+        # Required for Python3 compatibility
+        self.assertEqual(sorted(a), sorted(b))
+
 
 class StrcmpTest(ModelTest):
     _multiprocess_can_split_ = True

