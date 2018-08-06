@@ -35,7 +35,7 @@ class EthereumError(ManticoreError):
 
 class DependencyError(EthereumError):
     def __init__(self, lib_names):
-        super(DependencyError, self).__init__("You must pre-load and provide libraries addresses{ libname:address, ...} for %r" % lib_names)
+        super().__init__("You must pre-load and provide libraries addresses{ libname:address, ...} for %r" % lib_names)
         self.lib_names = lib_names
 
 
@@ -62,16 +62,32 @@ class Detector(Plugin):
         with self.locked_global_findings() as global_findings:
             return global_findings
 
-    def add_finding(self, state, address, pc, finding, init):
+    def add_finding(self, state, address, pc, finding, at_init, constraint=True):
+        '''
+        Logs a finding at specified contract and assembler line.
+        :param state: current state
+        :param address: contract address of the finding
+        :param pc: program counter of the finding
+        :param at_init: true if executing the constructor
+        :param finding: textual description of the finding
+        :param constraint: finding is considered reproducible only when constraint is True
+        '''
+
         if not isinstance(pc, int):
             raise ValueError("PC must be a number")
-        self.get_findings(state).add((address, pc, finding, init))
+        self.get_findings(state).add((address, pc, finding, at_init, constraint))
         with self.locked_global_findings() as gf:
-            gf.add((address, pc, finding, init))
+            gf.add((address, pc, finding, at_init))
         #Fixme for ever broken logger
         logger.warning(finding)
 
-    def add_finding_here(self, state, finding):
+    def add_finding_here(self, state, finding, constraint=True):
+        '''
+        Logs a finding in current contract and assembler line.
+        :param state: current state
+        :param finding: textual description of the finding
+        :param constraint: finding is considered reproducible only when constraint is True
+        '''
         address = state.platform.current_vm.address
         pc = state.platform.current_vm.pc
         if isinstance(pc, Constant):
@@ -79,17 +95,29 @@ class Detector(Plugin):
         if not isinstance(pc, int):
             raise ValueError("PC must be a number")
         at_init = state.platform.current_transaction.sort == 'CREATE'
-        self.add_finding(state, address, pc, finding, at_init)
+        self.add_finding(state, address, pc, finding, at_init, constraint)
 
-    def _save_current_location(self, state, finding):
+    def _save_current_location(self, state, finding, condition=True):
+        '''
+        Save current location in the internal locations list and returns a textual id for it.
+        This is used to save locations that could later be promoted to a finding if other conditions hold
+        See _get_location()
+        :param state: current state
+        :param finding: textual description of the finding
+        :param condition: general purpose constraint
+        '''
         address = state.platform.current_vm.address
         pc = state.platform.current_vm.pc
-        location = (address, pc, finding)
-        hash_id = hashlib.sha1(str(location)).hexdigest()
+        at_init = state.platform.current_transaction.sort == 'CREATE'
+        location = (address, pc, finding, at_init, condition)
+        hash_id = hashlib.sha1(str(location).encode()).hexdigest()
         state.context.setdefault('{:s}.locations'.format(self.name), {})[hash_id] = location
         return hash_id
 
     def _get_location(self, state, hash_id):
+        ''' Get previously saved location
+            A location is composed of: address, pc, finding, at_init, condition
+        '''
         return state.context.setdefault('{:s}.locations'.format(self.name), {})[hash_id]
 
     def _get_src(self, address, pc):
@@ -114,7 +142,7 @@ class FilterFunctions(Plugin):
             :param fallback: if True include the fallback function. Hash will be 00000000 for it
             :param include: if False exclude the selected functions, if True include them
         """
-        super(FilterFunctions, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         depth = depth.lower()
         if depth not in ('human', 'internal', 'both'):
             raise ValueError
@@ -187,7 +215,7 @@ class DetectInvalid(Detector):
 
         :param only_human: if True report only INVALID at depth 0 transactions
         """
-        super(DetectInvalid, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self._only_human = only_human
 
     def will_evm_execute_instruction_callback(self, state, instruction, arguments):
@@ -205,7 +233,7 @@ class DetectReentrancy(Detector):
     3) The storage slot of the SSTORE must be used in some path to control flow
     '''
     def __init__(self, addresses=None, **kwargs):
-        super(DetectReentrancy, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         # TODO Check addresses are normal accounts. Heuristics implemented here
         # assume target addresses wont execute code. i.e. won't detect a Reentrancy
         # attack in progess but only a potential attack
@@ -230,7 +258,7 @@ class DetectReentrancy(Detector):
                 # Check if gas was enough for a reentrancy attack
                 if tx.gas > 2300:
                     # Check if target address is attaker controlled
-                    if self._addresses is None and not world.get_code(tx.address) or tx.address in self._addresses:
+                    if self._addresses is None and not world.get_code(tx.address) or self._addresses is not None and tx.address in self._addresses:
                         #that's enough. Save current location and read list
                         self._save_location_and_reads(state)
 
@@ -270,18 +298,6 @@ class DetectIntegerOverflow(Detector):
     '''
         Detects potential overflow and underflow conditions on ADD and SUB instructions.
     '''
-
-    def _save_current_location(self, state, finding, condition):
-        address = state.platform.current_vm.address
-        pc = state.platform.current_vm.pc
-        at_init = state.platform.current_transaction.sort == 'CREATE'
-        location = (address, pc, finding, at_init, condition)
-        hash_id = hashlib.sha1(str(location).encode()).hexdigest()
-        state.context.setdefault('{:s}.locations'.format(self.name), {})[hash_id] = location
-        return hash_id
-
-    def _get_location(self, state, hash_id):
-        return state.context.setdefault('{:s}.locations'.format(self.name), {})[hash_id]
 
     @staticmethod
     def _signed_sub_overflow(state, a, b):
@@ -400,14 +416,14 @@ class DetectIntegerOverflow(Detector):
     def _check_finding(self, state, what):
         if istainted(what, "SIGNED"):
             for taint in get_taints(what, "IOS_.*"):
-                loc = self._get_location(state, taint[4:])
-                if state.can_be_true(loc[-1]):
-                    self.add_finding(state, *loc[:-1])
+                address, pc, finding, at_init, condition = self._get_location(state, taint[4:])
+                if state.can_be_true(condition):
+                    self.add_finding(state, address, pc, finding, at_init)
         else:
             for taint in get_taints(what, "IOU_.*"):
-                loc = self._get_location(state, taint[4:])
-                if state.can_be_true(loc[-1]):
-                    self.add_finding(state, *loc[:-1])
+                address, pc, finding, at_init, condition = self._get_location(state, taint[4:])
+                if state.can_be_true(condition):
+                    self.add_finding(state, address, pc, finding, at_init)
 
     def did_evm_execute_instruction_callback(self, state, instruction, arguments, result_ref):
         result = result_ref.value
@@ -444,6 +460,66 @@ class DetectIntegerOverflow(Detector):
         if state.can_be_true(iou):
             id_val = self._save_current_location(state, "Unsigned integer overflow at %s instruction" % mnemonic, iou)
             result = taint_with(result, "IOU_{:s}".format(id_val))
+
+        result_ref.value = result
+
+
+class DetectUnusedRetVal(Detector):
+    '''
+        Detects unused return value from internal transactions
+    '''
+
+    @property
+    def _stack_name(self):
+        return '{:s}.stack'.format(self.name)
+
+    def _add_retval_taint(self, state, taint):
+        list_of_taints = state.context[self._stack_name][-1]
+        list_of_taints.add(taint)
+        state.context[self._stack_name][-1] = list_of_taints
+
+    def _remove_retval_taint(self, state, taint):
+        list_of_taints = state.context[self._stack_name][-1]
+        if taint in list_of_taints:
+            list_of_taints.remove(taint)
+            state.context[self._stack_name][-1] = list_of_taints
+
+    def _get_retval_taints(self, state):
+        return state.context[self._stack_name][-1]
+
+    def will_open_transaction_callback(self, state, tx):
+        # Reset reading log on new human transactions
+        if tx.is_human():
+            state.context[self._stack_name] = []
+        state.context[self._stack_name].append(set())
+
+    def did_close_transaction_callback(self, state, tx):
+        world = state.platform
+        # Check that all retvals where used in control flow
+        for taint in self._get_retval_taints(state):
+            id_val = taint[7:]
+            address, pc, finding, at_init, condition = self._get_location(state, id_val)
+            if state.can_be_true(condition):
+                self.add_finding(state, address, pc, finding, at_init)
+
+        state.context[self._stack_name].pop()
+
+    def did_evm_execute_instruction_callback(self, state, instruction, arguments, result_ref):
+        world = state.platform
+        result = result_ref.value
+        mnemonic = instruction.semantics
+        result = result_ref.value
+        if instruction.is_starttx:
+            # A transactional instruction just returned add a taint to result
+            # and add that taint to the set
+            id_val = self._save_current_location(state, "Returned value at {:s} instruction is not used".format(mnemonic))
+            taint = "RETVAL_{:s}".format(id_val)
+            result = taint_with(result, taint)
+            self._add_retval_taint(state, taint)
+        elif mnemonic == 'JUMPI':
+            dest, cond = arguments
+            for used_taint in get_taints(cond, "RETVAL_.*"):
+                self._remove_retval_taint(state, used_taint)
 
         result_ref.value = result
 
@@ -518,7 +594,7 @@ class SolidityMetadata(object):
         self._init_bytecode = init_bytecode
         self._runtime_bytecode = runtime_bytecode
         self._hashes = hashes
-        self.abi = dict([(item.get('name', '{fallback}'), item) for item in abi])
+        self.abi = {item.get('name', '{fallback}'): item for item in abi}
         self.warnings = warnings
         self.srcmap_runtime = self.__build_source_map(self.runtime_bytecode, srcmap_runtime)
         self.srcmap = self.__build_source_map(self.init_bytecode, srcmap)
@@ -585,7 +661,7 @@ class SolidityMetadata(object):
 
         for asm_pos, md in enumerate(srcmap):
             if len(md):
-                d = dict((p, k) for p, k in enumerate(md.split(':')) if k)
+                d = {p: k for p, k in enumerate(md.split(':')) if k}
 
                 byte_offset = int(d.get(0, byte_offset))
                 source_len = int(d.get(1, source_len))
@@ -622,7 +698,7 @@ class SolidityMetadata(object):
             return ''
 
         output = ''
-        nl = self.source_code.count('\n')
+        nl = self.source_code[:beg].count('\n')
         snippet = self.source_code[beg:beg + size]
         for l in snippet.split('\n'):
             output += '    %s  %s\n' % (nl, l)
@@ -889,7 +965,7 @@ class ABI(object):
         if size <= 0 and size > 32:
             raise ValueError
 
-        if not isinstance(value, (numbers.Integral, BitVec, EVMAccount)):
+        if not isinstance(value, (int, BitVec, EVMAccount)):
             raise ValueError
         if issymbolic(value):
             # FIXME This temporary array variable should be obtained from a specific constraint store
@@ -913,7 +989,7 @@ class ABI(object):
         '''
         if size <= 0 and size > 32:
             raise ValueError
-        if not isinstance(value, (numbers.Integral, BitVec)):
+        if not isinstance(value, (int, BitVec)):
             raise ValueError
         if issymbolic(value):
             buf = ArrayVariable(index_bits=256, index_max=32, value_bits=8, name='temp{}'.format(uuid.uuid1()))
@@ -994,11 +1070,11 @@ class EVMAccount(object):
         self._name = name
 
     def __eq__(self, other):
-        if isinstance(other, numbers.Integral):
+        if isinstance(other, int):
             return self._address == other
         if isinstance(self, EVMAccount):
             return self._address == other._address
-        return super(EVMAccount, self).__eq__(other)
+        return super().__eq__(other)
 
     @property
     def name(self):
@@ -1023,7 +1099,7 @@ class EVMContract(EVMAccount):
             :param default_caller: the default caller address for any transaction
 
         '''
-        super(EVMContract, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self._default_caller = default_caller
         self._hashes = None
 
@@ -1154,7 +1230,7 @@ class ManticoreEVM(Manticore):
         return symbolic_address
 
     def constrain(self, constraint):
-        if self.count_states() == 0 :
+        if self.count_states() == 0:
             self.constraints.add(constraint)
         else:
             for state in self.all_states:
@@ -1309,7 +1385,7 @@ class ManticoreEVM(Manticore):
         bytecode = ManticoreEVM._link(contract['bin'], libraries)
         srcmap = contract['srcmap'].split(';')
         srcmap_runtime = contract['srcmap-runtime'].split(';')
-        hashes = dict(((str(x), str(y)) for x, y in contract['hashes'].items()))
+        hashes = {str(x): str(y) for x, y in contract['hashes'].items()}
         abi = json.loads(contract['abi'])
         runtime = ManticoreEVM._link(contract['bin-runtime'], libraries)
         return name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
@@ -1348,7 +1424,7 @@ class ManticoreEVM(Manticore):
         # make the ethereum world state
         world = evm.EVMWorld(constraints)
         initial_state = State(constraints, world)
-        super(ManticoreEVM, self).__init__(initial_state, **kwargs)
+        super().__init__(initial_state, **kwargs)
 
         self.constraints = ConstraintSet()
         self.detectors = {}
@@ -1671,7 +1747,7 @@ class ManticoreEVM(Manticore):
             raise EthereumError("Name already used")
 
         #Balance check
-        if not isinstance(balance, numbers.Integral):
+        if not isinstance(balance, int):
             raise EthereumError("Balance invalid type")
 
         if isinstance(code, str):
@@ -1683,7 +1759,7 @@ class ManticoreEVM(Manticore):
         # Let just choose the address ourself. This is not yellow paper material
         if address is None:
             address = self.new_address()
-        if not isinstance(address, numbers.Integral):
+        if not isinstance(address, int):
             raise EthereumError("A concrete address is needed")
         assert address is not None
         if address in map(int, self.accounts.values()):
@@ -1729,7 +1805,7 @@ class ManticoreEVM(Manticore):
                 value = state_constraints.migrate(value, bindings=migration_bindings)
 
             if issymbolic(data):
-                if isinstance(data, ArrayProxy):
+                if isinstance(data, ArrayProxy):  # FIXME is this necesary here?
                     data = data.array
                 data = state_constraints.migrate(data, bindings=migration_bindings)
                 if isinstance(data, Array):
@@ -1768,16 +1844,16 @@ class ManticoreEVM(Manticore):
             raise EthereumError("code bad type")
 
         # Check types
-        if not isinstance(address, (numbers.Integral, BitVec)):
+        if not isinstance(address, (int, BitVec)):
             raise EthereumError("Caller invalid type")
 
-        if not isinstance(value, (numbers.Integral, BitVec)):
+        if not isinstance(value, (int, BitVec)):
             raise EthereumError("Value invalid type")
 
-        if not isinstance(address, (numbers.Integral, BitVec)):
+        if not isinstance(address, (int, BitVec)):
             raise EthereumError("address invalid type")
 
-        if not isinstance(price, numbers.Integral):
+        if not isinstance(price, int):
             raise EthereumError("Price invalid type")
 
         # Check argument consistency and set defaults ...
@@ -1897,7 +1973,7 @@ class ManticoreEVM(Manticore):
 
         # A callback will use _pending_transaction and issue the transaction
         # in each state (see load_state_callback)
-        super(ManticoreEVM, self).run(**kwargs)
+        super().run(**kwargs)
 
         with self.locked_context('ethereum') as context:
             if len(context['_saved_states']) == 1:
@@ -2107,7 +2183,7 @@ class ManticoreEVM(Manticore):
         # workspace should not be responsible for formating the output
         # each object knows its secrets, each class should be able to report its
         # final state
-        #super(ManticoreEVM, self)._generate_testcase_callback(state, name, message)
+        #super()._generate_testcase_callback(state, name, message)
         # TODO(mark): Refactor ManticoreOutput to let the platform be more in control
         #  so this function can be fully ported to EVMWorld.generate_workspace_files.
         blockchain = state.platform
@@ -2122,13 +2198,13 @@ class ManticoreEVM(Manticore):
 
         local_findings = set()
         for detector in self.detectors.values():
-            for address, pc, finding, at_init in detector.get_findings(state):
+            for address, pc, finding, at_init, constraint in detector.get_findings(state):
                 if (address, pc, finding, at_init) not in local_findings:
-                    local_findings.add((address, pc, finding, at_init))
+                    local_findings.add((address, pc, finding, at_init, constraint))
 
         if len(local_findings):
             with testcase.open_stream('findings') as findings:
-                for address, pc, finding, at_init in local_findings:
+                for address, pc, finding, at_init, constraint in local_findings:
                     findings.write('- %s -\n' % finding)
                     findings.write('  Contract: 0x%x\n' % address)
                     findings.write('  EVM Program counter: %s%s\n' % (pc, at_init and " (at constructor)" or ""))
@@ -2155,7 +2231,7 @@ class ManticoreEVM(Manticore):
                         summary.write('Last instruction at contract %x offset %x\n' % (address, offset))
                         source_code_snippet = metadata.get_source_for(offset, at_runtime)
                         if source_code_snippet:
-                            summary.write(source_code_snippet)
+                            summary.write('    '.join(source_code_snippet.splitlines(True)))
                         summary.write('\n')
 
             # Accounts summary
@@ -2391,9 +2467,9 @@ class ManticoreEVM(Manticore):
 
                     md = self.get_metadata(address)
                     if md is not None:
-                        src = md.get_source_for(pc, runtime=not at_init)
+                        source_code_snippet = md.get_source_for(pc, runtime=not at_init)
                         global_findings.write('  Solidity snippet:\n')
-                        global_findings.write(src.replace('\n', '\n    ').strip())
+                        global_findings.write('    '.join(source_code_snippet.splitlines(True)))
                         global_findings.write('\n')
 
         with self._output.save_stream('global.summary') as global_summary:

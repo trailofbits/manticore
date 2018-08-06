@@ -20,6 +20,7 @@ from .expression import *
 from .constraints import *
 import logging
 import re
+import shlex
 import time
 from .visitors import *
 from ...utils.helpers import issymbolic, istainted, taint_with, get_taints, memoized
@@ -43,7 +44,7 @@ class SolverUnknown(SolverException):
 
 class TooManySolutions(SolverException):
     def __init__(self, solutions):
-        super(TooManySolutions, self).__init__("Max number of different solutions hit")
+        super().__init__("Max number of different solutions hit")
         self.solutions = solutions
 
 
@@ -125,10 +126,16 @@ class Z3Solver(Solver):
         ''' Build a Z3 solver instance.
             This is implemented using an external z3 solver (via a subprocess).
         '''
-        super(Z3Solver, self).__init__()
+        super().__init__()
         self._proc = None
 
+        self._command = 'z3 -t:240000 -memory:16384 -smt2 -in'
+        self._init = ['(set-logic QF_AUFBV)', '(set-option :global-decls false)']
+        self._get_value_fmt = (re.compile('\(\((?P<expr>(.*))\ #x(?P<value>([0-9a-fA-F]*))\)\)'), 16)
+
         self.debug = False
+        # To cache what get-info returned; can be directly set when writing tests
+        self._received_version = None
         self.version = self._solver_version()
 
         self.support_maximize = False
@@ -147,12 +154,7 @@ class Z3Solver(Solver):
         else:
             logger.debug(' Please install Z3 4.4.1 or newer to get optimization support')
 
-        self._command = 'z3 -t:240000 -memory:16384 -smt2 -in'
-        self._init = ['(set-logic QF_AUFBV)', '(set-option :global-decls false)']
-        self._get_value_fmt = (re.compile('\(\((?P<expr>(.*))\ #x(?P<value>([0-9a-fA-F]*))\)\)'), 16)
-
-    @staticmethod
-    def _solver_version():
+    def _solver_version(self):
         '''
         If we
         fail to parse the version, we assume z3's output has changed, meaning it's a newer
@@ -164,16 +166,12 @@ class Z3Solver(Solver):
 
         '''
         their_version = Version(0, 0, 0)
-        try:
-            version_cmd_output = check_output('z3 -version'.split())
-        except OSError:
-            raise Z3NotFoundError
-        try:
-            version = version_cmd_output.split()[2]
-            their_version = Version(*list(map(int, version.split('.'))))
-        except (IndexError, ValueError, TypeError):
-            pass
-        return their_version
+        self._reset()
+        if self._received_version is None:
+            self._send('(get-info :version)')
+            self._received_version = self._recv()
+        key, version = shlex.split(self._received_version[1:-1])
+        return Version(*map(int, version.split('.')))
 
     def _start_proc(self):
         ''' Auxiliary method to spawn the external solver process'''

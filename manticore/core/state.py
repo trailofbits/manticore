@@ -21,7 +21,7 @@ class TerminateState(StateException):
     ''' Terminates current state exploration '''
 
     def __init__(self, message, testcase=False):
-        super(TerminateState, self).__init__(message)
+        super().__init__(message)
         self.testcase = testcase
 
 
@@ -43,7 +43,7 @@ class Concretize(StateException):
         self.setstate = setstate
         self.policy = policy
         self.message = "Concretize: %s (Policy: %s)" % (message, policy)
-        super(Concretize, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
 
 class ForkState(Concretize):
@@ -57,7 +57,7 @@ class ForkState(Concretize):
 
     def __init__(self, message, expression, **kwargs):
         assert isinstance(expression, Bool), 'Need a Bool to fork a state in two states'
-        super(ForkState, self).__init__(message, expression, policy='ALL', **kwargs)
+        super().__init__(message, expression, policy='ALL', **kwargs)
 
 
 class State(Eventful):
@@ -73,7 +73,7 @@ class State(Eventful):
     _published_events = {'generate_testcase'}
 
     def __init__(self, constraints, platform, **kwargs):
-        super(State, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self._platform = platform
         self._constraints = constraints
         self._platform.constraints = constraints
@@ -88,7 +88,7 @@ class State(Eventful):
         self._init_context()
 
     def __getstate__(self):
-        state = super(State, self).__getstate__()
+        state = super().__getstate__()
         state['platform'] = self._platform
         state['constraints'] = self._constraints
         state['input_symbols'] = self._input_symbols
@@ -97,7 +97,7 @@ class State(Eventful):
         return state
 
     def __setstate__(self, state):
-        super(State, self).__setstate__(state)
+        super().__setstate__(state)
         self._platform = state['platform']
         self._constraints = state['constraints']
         self._input_symbols = state['input_symbols']
@@ -263,7 +263,6 @@ class State(Eventful):
         from .smtlib import solver
         return solver
 
-
     def migrate_expression(self, expression):
         migration_bindings = self.context.get('migration_bindings')
         if migration_bindings is None:
@@ -381,7 +380,6 @@ class State(Eventful):
         :param callable model: Model to invoke
         '''
         self._platform.invoke_model(model, prefix_args=(self,))
-
 
     def symbolicate_buffer(self, data, label='INPUT', wildcard='+', string=False, taint=frozenset()):
         '''Mark parts of a buffer as symbolic (demarked by the wildcard byte)

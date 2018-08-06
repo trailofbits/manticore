@@ -118,7 +118,7 @@ class EVMException(Exception):
 
 class Emulated(EVMException):
     def __init__(self, result):
-        super(Emulated, self).__init__("Emulated instruction")
+        super().__init__("Emulated instruction")
         self.result = result
 
 
@@ -173,63 +173,63 @@ class StackOverflow(EndTx):
     ''' Attemped to push more than 1024 items '''
 
     def __init__(self):
-        super(StackOverflow, self).__init__('THROW')
+        super().__init__('THROW')
 
 
 class StackUnderflow(EndTx):
     ''' Attemped to popo from an empty stack '''
 
     def __init__(self):
-        super(StackUnderflow, self).__init__('THROW')
+        super().__init__('THROW')
 
 
 class InvalidOpcode(EndTx):
     ''' Trying to execute invalid opcode '''
 
     def __init__(self):
-        super(InvalidOpcode, self).__init__('THROW')
+        super().__init__('THROW')
 
 
 class NotEnoughGas(EndTx):
     ''' Not enough gas for operation '''
 
     def __init__(self):
-        super(NotEnoughGas, self).__init__('THROW')
+        super().__init__('THROW')
 
 
 class Stop(EndTx):
     ''' Program reached a STOP instruction '''
 
     def __init__(self):
-        super(Stop, self).__init__('STOP')
+        super().__init__('STOP')
 
 
 class Return(EndTx):
     ''' Program reached a RETURN instruction '''
 
     def __init__(self, data=bytearray()):
-        super(Return, self).__init__('RETURN', data)
+        super().__init__('RETURN', data)
 
 
 class Revert(EndTx):
     ''' Program reached a REVERT instruction '''
 
     def __init__(self, data):
-        super(Revert, self).__init__('REVERT', data)
+        super().__init__('REVERT', data)
 
 
 class SelfDestruct(EndTx):
     ''' Program reached a SELFDESTRUCT instruction '''
 
     def __init__(self):
-        super(SelfDestruct, self).__init__('SELFDESTRUCT')
+        super().__init__('SELFDESTRUCT')
 
 
 class TXError(EndTx):
     ''' A failed Transaction '''
 
     def __init__(self):
-        super(TXError, self).__init__('TXERROR')
+        super().__init__('TXERROR')
 
 
 def concretized_args(**policies):
@@ -343,7 +343,7 @@ class EVM(Eventful):
         :param gas: gas budget for this transaction
 
         '''
-        super(EVM, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         if data is not None and not issymbolic(data):
             data_size = len(data)
             data_symbolic = constraints.new_array(index_bits=256, value_bits=8, index_max=data_size, name='DATA_{:x}'.format(address), rename=True)
@@ -398,7 +398,7 @@ class EVM(Eventful):
         return self._gas
 
     def __getstate__(self):
-        state = super(EVM, self).__getstate__()
+        state = super().__getstate__()
         state['memory'] = self.memory
         state['world'] = self._world
         state['constraints'] = self.constraints
@@ -432,7 +432,7 @@ class EVM(Eventful):
         self.stack = state['stack']
         self._allocated = state['allocated']
         self.suicides = state['suicides']
-        super(EVM, self).__setstate__(state)
+        super().__setstate__(state)
 
     def _allocate(self, address):
         allocated = self.allocated
@@ -598,7 +598,6 @@ class EVM(Eventful):
             #    arguments[i] = simplify(arguments[i])
             if isinstance(arguments[i], Constant) and not arguments[i].taint:
                 arguments[i] = arguments[i].value
-
         return arguments
 
     def _push_arguments(self, arguments):
@@ -644,6 +643,7 @@ class EVM(Eventful):
             self._publish('will_decode_instruction', self.pc)
         last_pc = self.pc
         current = self.instruction
+
         if self._on_transaction is False:
             self._publish('will_execute_instruction', self.pc, current)
         #Need to consume before potential out of stack exception
@@ -661,12 +661,13 @@ class EVM(Eventful):
             #Revert the stack and gas so it looks like before executing the instruction
             self._push_arguments(arguments)
             self._gast = old_gas
+            pos = -ex.pos
 
             def setstate(state, value):
-                self.stack[-ex.pos] = value
+                self.stack[pos] = value
 
             raise Concretize("Concretice Stack Variable",
-                             expression=self.stack[-ex.pos],
+                             expression=self.stack[pos],
                              setstate=setstate,
                              policy=ex.policy)
         except StartTx:
@@ -683,11 +684,6 @@ class EVM(Eventful):
             self._publish('did_evm_execute_instruction', current, arguments, Ref(result))
             self._publish('did_execute_instruction', last_pc, self.pc, current)
             raise
-        except Emulated as e:
-            if not current.is_branch:
-                #advance pc pointer
-                self.pc += self.instruction.size
-            result = e.result
 
         if not current.is_branch:
             #advance pc pointer
@@ -1436,7 +1432,7 @@ class EVMWorld(Platform):
                          'open_transaction', 'close_transaction'}
 
     def __init__(self, constraints, storage=None, initial_block_number=None, initial_timestamp=None, **kwargs):
-        super(EVMWorld, self).__init__(path="NOPATH", **kwargs)
+        super().__init__(path="NOPATH", **kwargs)
         self._world_state = {} if storage is None else storage
         self._constraints = constraints
         self._callstack = []
@@ -1471,7 +1467,7 @@ class EVMWorld(Platform):
         '''
 
     def __getstate__(self):
-        state = super(EVMWorld, self).__getstate__()
+        state = super().__getstate__()
         state['sha3'] = self._sha3
         state['pending_transaction'] = self._pending_transaction
         state['logs'] = self._logs
@@ -1485,7 +1481,7 @@ class EVMWorld(Platform):
         return state
 
     def __setstate__(self, state):
-        super(EVMWorld, self).__setstate__(state)
+        super().__setstate__(state)
         self._constraints = state['constraints']
         self._sha3 = state['sha3']
         self._pending_transaction = state['pending_transaction']
@@ -2005,12 +2001,12 @@ class EVMWorld(Platform):
                 self.constraints.add(src_balance + value >= src_balance)
             enough_balance_solutions = solver.get_all_values(self._constraints, enough_balance)
 
-            if set(enough_balance_solutions) == set([True, False]):
+            if set(enough_balance_solutions) == {True, False}:
                 raise Concretize('Forking on available funds',
                                  expression=src_balance < value,
                                  setstate=lambda a, b: None,
                                  policy='ALL')
-            failed = set(enough_balance_solutions) == set([False])
+            failed = set(enough_balance_solutions) == {False}
 
         #processed
         self._pending_transaction = None

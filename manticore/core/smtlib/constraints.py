@@ -21,7 +21,7 @@ class ConstraintSet(object):
         self._child = None
 
     def __reduce__(self):
-        return (self.__class__, (), {'_parent': self._parent, '_constraints': self._constraints, '_sid': self._sid,  '_declarations': self._declarations})
+        return (self.__class__, (), {'_parent': self._parent, '_constraints': self._constraints, '_sid': self._sid, '_declarations': self._declarations})
 
     def __enter__(self):
         assert self._child is None
@@ -224,7 +224,7 @@ class ConstraintSet(object):
         if bindings is None:
             bindings = {}
         variables = get_variables(expression)
-        old_variables = dict([ (x.name, x) for x in variables])
+        old_variables = dict([(x.name, x) for x in variables])
         fat_bindings = {}
         for old_name, migrated_name in bindings.items():
             if old_name in old_variables and migrated_name in self.get_declared_names():
@@ -254,56 +254,59 @@ class ConstraintSet(object):
         migrated_expression = replace(expression, fat_bindings)
         return migrated_expression
 
-    def new_bool(self, name='B', taint=frozenset(), rename=False):
+    def new_bool(self, name='B', taint=frozenset(), avoid_collisions=False):
         ''' Declares a free symbolic boolean in the constraint store
             :param name: try to assign name to internal variable representation,
                          if not uniq a numeric nonce will be appended
-            :param rename: potentially rename the variable to avoid name colisions if True 
+            :param avoid_collisions: potentially avoid_collisions the variable to avoid name colisions if True
             :return: a fresh BoolVariable
         '''
-        if rename:
+        if name is None:
+            name = 'B'
+            avoid_collisions = True
+        if avoid_collisions:
             name = self._get_new_name(name)
-
-        if not rename and name in self._declarations:
+        if not avoid_collisions and name in self._declarations:
             raise ValueError("Name already used")
-
         var = BoolVariable(name, taint=taint)
         return self._declare(var)
 
-    def new_bitvec(self, size, name=None, taint=frozenset(), rename=False):
+    def new_bitvec(self, size, name=None, taint=frozenset(), avoid_collisions=False):
         ''' Declares a free symbolic bitvector in the constraint store
             :param size: size in bits for the bitvector
             :param name: try to assign name to internal variable representation,
                          if not uniq a numeric nonce will be appended
-            :param rename: potentially rename the variable to avoid name colisions if True 
+            :param avoid_collisions: potentially avoid_collisions the variable to avoid name colisions if True
             :return: a fresh BitVecVariable
         '''
         if not (size == 1 or size % 8 == 0):
             raise Exception('Invalid bitvec size %s' % size)
-
         if name is None:
             name = 'BV'
-            rename=True
-        if rename:
+            avoid_collisions = True
+        if avoid_collisions:
             name = self._get_new_name(name)
-        if not rename and name in self._declarations:
+        if not avoid_collisions and name in self._declarations:
             raise ValueError("Name already used")
         var = BitVecVariable(size, name, taint=taint)
         return self._declare(var)
 
-    def new_array(self, index_bits=32, name='A', index_max=None, value_bits=8, taint=frozenset(), rename=False):
+    def new_array(self, index_bits=32, name='A', index_max=None, value_bits=8, taint=frozenset(), avoid_collisions=False):
         ''' Declares a free symbolic array of value_bits long bitvectors in the constraint store.
             :param index_bits: size in bits for the array indexes one of [32, 64]
             :param value_bits: size in bits for the array values
             :param name: try to assign name to internal variable representation,
                          if not uniq a numeric nonce will be appended
             :param index_max: upper limit for indexes on ths array (#FIXME)
-            :param rename: potentially rename the variable to avoid name colisions if True 
+            :param avoid_collisions: potentially avoid_collisions the variable to avoid name colisions if True 
             :return: a fresh ArrayProxy
         '''
-        if rename:
+        if name is None:
+            name = 'A'
+            avoid_collisions = True
+        if avoid_collisions:
             name = self._get_new_name(name)
-        if not rename and name in self._declarations:
+        if not avoid_collisions and name in self._declarations:
             raise ValueError("Name already used")
         var = ArrayProxy(ArrayVariable(index_bits, index_max, value_bits, name, taint=taint))
         return self._declare(var)

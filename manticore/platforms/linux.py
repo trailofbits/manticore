@@ -42,7 +42,7 @@ class EnvironmentError(RuntimeError):
 class FdError(Exception):
     def __init__(self, message='', err=errno.EBADF):
         self.err = err
-        super(FdError, self).__init__(message)
+        super().__init__(message)
 
 
 def perms_from_elf(elf_flags):
@@ -54,7 +54,7 @@ def perms_from_protflags(prot_flags):
 
 
 def mode_from_flags(file_flags):
-    return {os.O_RDWR: 'r+', os.O_RDONLY: 'r', os.O_WRONLY: 'w'}[file_flags & 7]
+    return {os.O_RDWR: 'rb+', os.O_RDONLY: 'rb', os.O_WRONLY: 'wb'}[file_flags & 7]
 
 
 class File(object):
@@ -65,11 +65,13 @@ class File(object):
         self.file = open(path, mode)
 
     def __getstate__(self):
-        state = {}
-        state['name'] = self.name
-        state['mode'] = self.mode
+        state = {
+            'name': self.name,
+            'mode': self.mode,
+            'closed': self.closed
+        }
         try:
-            state['pos'] = self.tell()
+            state['pos'] = None if self.closed else self.tell()
         except IOError:
             # This is to handle special files like /dev/tty
             state['pos'] = None
@@ -78,8 +80,15 @@ class File(object):
     def __setstate__(self, state):
         name = state['name']
         mode = state['mode']
+        closed = state['closed']
         pos = state['pos']
-        self.file = open(name, mode)
+        try:
+            self.file = open(name, mode)
+            if closed:
+                self.file.close()
+        except IOError:
+            # If the file can't be opened anymore, should not typically happen
+            self.file = None
         if pos is not None:
             self.seek(pos)
 
@@ -90,6 +99,10 @@ class File(object):
     @property
     def mode(self):
         return self.file.mode
+
+    @property
+    def closed(self):
+        return self.file.closed
 
     def stat(self):
         return os.fstat(self.fileno())
@@ -189,7 +202,7 @@ class SymbolicFile(File):
         :param max_size: Maximum amount of bytes of the symbolic file
         :param str wildcard: Wildcard to be used in symbolic file
         '''
-        super(SymbolicFile, self).__init__(path, mode)
+        super().__init__(path, mode)
 
         # read the concrete data using the parent the read() form the File class
         data = self.file.read()
@@ -220,7 +233,7 @@ class SymbolicFile(File):
                          self.name)
 
     def __getstate__(self):
-        state = super(SymbolicFile, self).__getstate__()
+        state = super().__getstate__()
         state['array'] = self.array
         state['pos'] = self.pos
         state['max_size'] = self.max_size
@@ -230,7 +243,7 @@ class SymbolicFile(File):
         self.pos = state['pos']
         self.max_size = state['max_size']
         self.array = state['array']
-        super(SymbolicFile, self).__setstate__(state)
+        super().__setstate__(state)
 
     def tell(self):
         '''
@@ -382,7 +395,7 @@ class Linux(Platform):
         :ivar files: List of active file descriptors
         :type files: list[Socket] or list[File]
         '''
-        super(Linux, self).__init__(path=program, **kwargs)
+        super().__init__(path=program, **kwargs)
 
         self.program = program
         self.clocks = 0
@@ -514,7 +527,7 @@ class Linux(Platform):
         return self.procs[self._current]
 
     def __getstate__(self):
-        state = super(Linux, self).__getstate__()
+        state = super().__getstate__()
         state['clocks'] = self.clocks
         state['input'] = self.input.buffer
         state['output'] = self.output.buffer
@@ -560,7 +573,7 @@ class Linux(Platform):
         :todo: some asserts
         :todo: fix deps? (last line)
         """
-        super(Linux, self).__setstate__(state)
+        super().__setstate__(state)
 
         self.input = Socket()
         self.input.buffer = state['input']
@@ -754,7 +767,7 @@ class Linux(Platform):
                 logger.debug("\t\t%s", repr(e))
 
         logger.debug("\tAuxv:")
-        for name, val in list(auxv.items()):
+        for name, val in auxv.items():
             logger.debug("\t\t%s: %s", name, hex(val))
 
         # We save the argument and environment pointers
@@ -773,7 +786,7 @@ class Linux(Platform):
         # Put all auxv strings into the string stack area.
         # And replace the value be its pointer
 
-        for name, value in list(auxv.items()):
+        for name, value in auxv.items():
             if hasattr(value, '__len__'):
                 cpu.push_bytes(value)
                 auxv[name] = cpu.STACK
@@ -810,7 +823,7 @@ class Linux(Platform):
         # AT_NULL
         cpu.push_int(0)
         cpu.push_int(0)
-        for name, val in list(auxv.items()):
+        for name, val in auxv.items():
             cpu.push_int(val)
             cpu.push_int(auxvnames[name])
 
@@ -2447,10 +2460,7 @@ class SLinux(Linux):
         self._constraints = ConstraintSet()
         self.random = 0
         self.symbolic_files = symbolic_files
-        super(SLinux, self).__init__(programs,
-                                     argv=argv,
-                                     envp=envp,
-                                     disasm=disasm)
+        super().__init__(programs, argv=argv, envp=envp, disasm=disasm)
 
     def _mk_proc(self, arch):
         if arch in {'i386', 'armv7'}:
@@ -2487,7 +2497,7 @@ class SLinux(Linux):
 
     # marshaling/pickle
     def __getstate__(self):
-        state = super(SLinux, self).__getstate__()
+        state = super().__getstate__()
         state['constraints'] = self.constraints
         state['random'] = self.random
         state['symbolic_files'] = self.symbolic_files
@@ -2497,14 +2507,14 @@ class SLinux(Linux):
         self._constraints = state['constraints']
         self.random = state['random']
         self.symbolic_files = state['symbolic_files']
-        super(SLinux, self).__setstate__(state)
+        super().__setstate__(state)
 
     def _sys_open_get_file(self, filename, flags):
         if filename in self.symbolic_files:
             logger.debug("%s file is considered symbolic", filename)
             f = SymbolicFile(self.constraints, filename, flags)
         else:
-            f = super(SLinux, self)._sys_open_get_file(filename, flags)
+            f = super()._sys_open_get_file(filename, flags)
 
         return f
 
@@ -2520,7 +2530,7 @@ class SLinux(Linux):
         if bytes_concretized > 0:
             logger.debug("Concretized {} written bytes.".format(bytes_concretized))
 
-        return super(SLinux, self)._transform_write_data(concrete_data)
+        return super()._transform_write_data(concrete_data)
 
     # Dispatchers...
 
@@ -2529,7 +2539,7 @@ class SLinux(Linux):
             error_code = solver.get_value(self.constraints, error_code)
             return self._exit("Program finished with exit status: {} (*)".format(ctypes.c_int32(error_code).value))
         else:
-            return super(SLinux, self).sys_exit_group(error_code)
+            return super().sys_exit_group(error_code)
 
     def sys_read(self, fd, buf, count):
         if issymbolic(fd):
@@ -2544,7 +2554,7 @@ class SLinux(Linux):
             logger.debug("Ask to read a symbolic number of bytes ")
             raise ConcretizeArgument(self, 2)
 
-        return super(SLinux, self).sys_read(fd, buf, count)
+        return super().sys_read(fd, buf, count)
 
     def sys_write(self, fd, buf, count):
         if issymbolic(fd):
@@ -2559,7 +2569,7 @@ class SLinux(Linux):
             logger.debug("Ask to write a symbolic number of bytes ")
             raise ConcretizeArgument(self, 2)
 
-        return super(SLinux, self).sys_write(fd, buf, count)
+        return super().sys_write(fd, buf, count)
 
     def sys_recv(self, sockfd, buf, count, flags):
         if issymbolic(sockfd):
@@ -2578,13 +2588,13 @@ class SLinux(Linux):
             logger.debug("Submitted a symbolic flags")
             raise ConcretizeArgument(self, 3)
 
-        return super(SLinux, self).sys_recv(sockfd, buf, count, flags)
+        return super().sys_recv(sockfd, buf, count, flags)
 
     def sys_accept(self, sockfd, addr, addrlen, flags):
         # TODO(yan): Transmit some symbolic bytes as soon as we start.
         # Remove this hack once no longer needed.
 
-        fd = super(SLinux, self).sys_accept(sockfd, addr, addrlen, flags)
+        fd = super().sys_accept(sockfd, addr, addrlen, flags)
         if fd < 0:
             return fd
         sock = self._get_fd(fd)
@@ -2614,7 +2624,7 @@ class SLinux(Linux):
             self.symbolic_files.append(path)
             buf = self.current.memory.mmap(None, 1024, 'rw ', data_init=path)
 
-        rv = super(SLinux, self).sys_open(buf, flags, mode)
+        rv = super().sys_open(buf, flags, mode)
 
         if symbolic_path:
             self.current.memory.munmap(buf, 1024)
@@ -2642,7 +2652,7 @@ class SLinux(Linux):
             logger.debug("Ask to read to a symbolic buffer")
             raise ConcretizeArgument(self, 1)
 
-        return super(SLinux, self).sys_openat(dirfd, buf, flags, mode)
+        return super().sys_openat(dirfd, buf, flags, mode)
 
     def sys_getrandom(self, buf, size, flags):
         '''
@@ -2667,7 +2677,7 @@ class SLinux(Linux):
             logger.debug("sys_getrandom: Passed symbolic flags")
             raise ConcretizeArgument(self, 2)
 
-        return super(SLinux, self).sys_getrandom(buf, size, flags)
+        return super().sys_getrandom(buf, size, flags)
 
     def generate_workspace_files(self):
         def solve_to_fd(data, fd):
