@@ -65,7 +65,11 @@ class File(object):
         self.file = open(path, mode)
 
     def __getstate__(self):
-        state = {'name': self.name, 'mode': self.mode}
+        state = {
+            'name': self.name,
+            'mode': self.mode,
+            'closed': self.closed
+        }
         try:
             state['pos'] = None if self.closed else self.tell()
         except IOError:
