@@ -254,7 +254,7 @@ class ConstraintSet(object):
         migrated_expression = replace(expression, fat_bindings)
         return migrated_expression
 
-    def new_bool(self, name='B', taint=frozenset(), avoid_collisions=False):
+    def new_bool(self, name=None, taint=frozenset(), avoid_collisions=False):
         ''' Declares a free symbolic boolean in the constraint store
             :param name: try to assign name to internal variable representation,
                          if not uniq a numeric nonce will be appended
@@ -291,7 +291,7 @@ class ConstraintSet(object):
         var = BitVecVariable(size, name, taint=taint)
         return self._declare(var)
 
-    def new_array(self, index_bits=32, name='A', index_max=None, value_bits=8, taint=frozenset(), avoid_collisions=False):
+    def new_array(self, index_bits=32, name=None, index_max=None, value_bits=8, taint=frozenset(), avoid_collisions=False):
         ''' Declares a free symbolic array of value_bits long bitvectors in the constraint store.
             :param index_bits: size in bits for the array indexes one of [32, 64]
             :param value_bits: size in bits for the array values
