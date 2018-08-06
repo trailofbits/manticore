@@ -598,7 +598,6 @@ class EVM(Eventful):
             #    arguments[i] = simplify(arguments[i])
             if isinstance(arguments[i], Constant) and not arguments[i].taint:
                 arguments[i] = arguments[i].value
-
         return arguments
 
     def _push_arguments(self, arguments):
@@ -644,6 +643,7 @@ class EVM(Eventful):
             self._publish('will_decode_instruction', self.pc)
         last_pc = self.pc
         current = self.instruction
+
         if self._on_transaction is False:
             self._publish('will_execute_instruction', self.pc, current)
         #Need to consume before potential out of stack exception
@@ -661,12 +661,13 @@ class EVM(Eventful):
             #Revert the stack and gas so it looks like before executing the instruction
             self._push_arguments(arguments)
             self._gast = old_gas
+            pos = -ex.pos
 
             def setstate(state, value):
-                self.stack[-ex.pos] = value
+                self.stack[pos] = value
 
             raise Concretize("Concretice Stack Variable",
-                             expression=self.stack[-ex.pos],
+                             expression=self.stack[pos],
                              setstate=setstate,
                              policy=ex.policy)
         except StartTx:
@@ -683,11 +684,6 @@ class EVM(Eventful):
             self._publish('did_evm_execute_instruction', current, arguments, Ref(result))
             self._publish('did_execute_instruction', last_pc, self.pc, current)
             raise
-        except Emulated as e:
-            if not current.is_branch:
-                #advance pc pointer
-                self.pc += self.instruction.size
-            result = e.result
 
         if not current.is_branch:
             #advance pc pointer
