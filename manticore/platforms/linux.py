@@ -9,8 +9,8 @@ import ctypes
 import socket
 import binascii
 
-# Remove in favor of binary.py
 from typing import Union, List, TypeVar, Iterable, ByteString, Sequence, Generic, cast, Collection
+# Remove in favor of binary.py
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 from elftools.elf.descriptions import describe_symbol_type
@@ -122,8 +122,7 @@ class File(object):
         return self.file.seek(*args)
 
     def write(self, buf):
-        for c in buf:
-            self.file.write(c)
+        return self.file.write(buf)
 
     def read(self, *args):
         return self.file.read(*args)
@@ -1310,7 +1309,7 @@ class Linux(Platform):
                              fd,
                              buf,
                              count,
-                             line.decode('latin-1'))
+                             line.decode('latin-1'))  # latin-1 encoding will happily decode any byte (0x00-0xff)
             self.syscall_trace.append(("_write", fd, data))
             self.signal_transmit(fd)
 
