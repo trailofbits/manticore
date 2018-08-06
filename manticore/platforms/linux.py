@@ -10,10 +10,12 @@ import socket
 import binascii
 
 # Remove in favor of binary.py
+from typing import Union, List, TypeVar, Iterable, ByteString, Sequence, Generic, cast, Collection
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 from elftools.elf.descriptions import describe_symbol_type
 
+from manticore.core.smtlib import Expression
 from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeArgument
 from ..core.cpu.cpufactory import CpuFactory
 from ..core.memory import SMemory32, SMemory64, Memory32, Memory64
@@ -25,6 +27,9 @@ from ..utils.helpers import issymbolic, is_binja_disassembler
 from . import linux_syscalls
 
 logger = logging.getLogger(__name__)
+
+T = TypeVar('T')
+MixedSymbolicBuffer = Union[List[Union[bytes, Expression]], bytes]
 
 
 class RestartSyscall(Exception):
@@ -54,7 +59,7 @@ def perms_from_protflags(prot_flags):
 
 
 def mode_from_flags(file_flags):
-    return {os.O_RDWR: 'r+', os.O_RDONLY: 'r', os.O_WRONLY: 'w'}[file_flags & 7]
+    return {os.O_RDWR: 'rb+', os.O_RDONLY: 'rb', os.O_WRONLY: 'wb'}[file_flags & 7]
 
 
 class File(object):
@@ -1142,14 +1147,10 @@ class Linux(Platform):
         else:
             return self.files[fd]
 
-    def _transform_write_data(self, data):
+    def _transform_write_data(self, data: T) -> T:
         '''
         Implement in subclass to transform data written by write(2)/writev(2)
-
         Nop by default.
-        :param list data: Anything being written to a file descriptor
-        :rtype list
-        :return: Transformed data
         '''
         return data
 
@@ -1237,7 +1238,7 @@ class Linux(Platform):
         return 0
 
     def sys_read(self, fd, buf, count):
-        data = ''
+        data: bytes = bytes()
         if count != 0:
             # TODO check count bytes from buf
             if buf not in self.current.memory:  # or not  self.current.memory.isValid(buf+count):
@@ -1269,7 +1270,7 @@ class Linux(Platform):
                     EBADF      fd is not a valid file descriptor or is not open.
                     EFAULT     buf or tx_bytes points to an invalid address.
         '''
-        data = []
+        data: bytes = bytes()
         cpu = self.current
         if count != 0:
             try:
@@ -1288,11 +1289,11 @@ class Linux(Platform):
                 self.wait([], [fd], None)
                 raise RestartSyscall()
 
-            data = cpu.read_bytes(buf, count)
-            data = self._transform_write_data(data)
+            data: MixedSymbolicBuffer = cpu.read_bytes(buf, count)
+            data: bytes = self._transform_write_data(data)
             write_fd.write(data)
 
-            for line in b''.join([x for x in data]).split(b'\n'):
+            for line in data.split(b'\n'):
                 logger.debug("WRITE(%d, 0x%08x, %d) -> <%.48r>",
                              fd,
                              buf,
@@ -1829,9 +1830,7 @@ class Linux(Platform):
             buf = cpu.read_int(iov + i * sizeof_iovec, ptrsize)
             size = cpu.read_int(iov + i * sizeof_iovec + (sizeof_iovec // 2), ptrsize)
 
-            data = ""
-            for j in range(0, size):
-                data += Operators.CHR(cpu.read_int(buf + j, 8))
+            data = [Operators.CHR(cpu.read_int(buf + i, 8)) for i in range(size)]
             data = self._transform_write_data(data)
             write_fd.write(data)
             self.syscall_trace.append(("_write", fd, data))
@@ -2505,14 +2504,14 @@ class SLinux(Linux):
 
         return f
 
-    def _transform_write_data(self, data):
-        bytes_concretized = 0
-        concrete_data = []
+    def _transform_write_data(self, data: MixedSymbolicBuffer) -> bytes:
+        bytes_concretized: int = 0
+        concrete_data: bytes = bytes()
         for c in data:
             if issymbolic(c):
                 bytes_concretized += 1
                 c = bytes([solver.get_value(self.constraints, c)])
-            concrete_data.append(c)
+            concrete_data += cast(bytes, c)
 
         if bytes_concretized > 0:
             logger.debug("Concretized {} written bytes.".format(bytes_concretized))
