@@ -1110,8 +1110,10 @@ class SMemory(Memory):
 
         return solutions
 
+
 class InvalidAccess(expression.BitVecConstant):
     pass
+
 
 class LazySMemory(SMemory):
     '''
@@ -1173,10 +1175,9 @@ class LazySMemory(SMemory):
 
         for m in self._maps:
             within_map = self._map_deref_expr(m, address, size)
-            deref_expression = Operators.ITE(within_map, m[address:address+size], deref_expression)
+            deref_expression = Operators.ITE(within_map, m[address:address + size], deref_expression)
 
         return deref_expression
-
 
     def map_containing(self, address):
         if not issymbolic(address):
