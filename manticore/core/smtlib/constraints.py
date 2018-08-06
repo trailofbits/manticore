@@ -298,7 +298,7 @@ class ConstraintSet(object):
             :param name: try to assign name to internal variable representation,
                          if not uniq a numeric nonce will be appended
             :param index_max: upper limit for indexes on ths array (#FIXME)
-            :param avoid_collisions: potentially avoid_collisions the variable to avoid name colisions if True 
+            :param avoid_collisions: potentially avoid_collisions the variable to avoid name colisions if True
             :return: a fresh ArrayProxy
         '''
         if name is None:
