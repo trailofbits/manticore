@@ -1768,6 +1768,36 @@ class MemoryTest(unittest.TestCase):
         with self.assertRaises(InvalidSymbolicMemoryAccess):
             mem.read(addr2, 5)
 
+    def test_access_lazysymbolic_r(self):
+        cs = ConstraintSet()
+        mem = LazySMemory32(cs)
+        sym = cs.new_bitvec(32)
+        val = cs.new_bitvec(8)
+
+        cs.add(sym.uge(0xfff))
+        cs.add(sym.ule(0x1010))
+
+        #start with no maps
+        self.assertEqual(len(mem.mappings()), 0)
+
+        self.assertRaises(MemoryException, mem.__getitem__, 0x1000)
+        self.assertIsInstance(mem[sym], InvalidAccessConstant)
+        self.assertRaises(MemoryException, mem.__setitem__, 0x1000, '\x42')
+
+        #alloc/map a byte
+        first = mem.mmap(0x1000, 0x1000, 'r')
+
+        self.assertEqual(first, 0x1000)
+        self.assertEqual(solver.get_value(cs, mem[0x1000]), 0)
+        print(sym)
+        print(mem._backing_array[sym:sym+1])
+        print(mem[sym])
+        self.assertRaises(MemoryException, mem.__getitem__, sym)
+        self.assertRaises(MemoryException, mem.__setitem__, 0x1000, '\x41')
+        self.assertRaises(MemoryException, mem.__setitem__, 0x1000, val)
+        self.assertRaises(MemoryException, mem.__setitem__, sym, '\x41')
+        self.assertRaises(MemoryException, mem.__setitem__, sym, val)
+
 
 if __name__ == '__main__':
     unittest.main()

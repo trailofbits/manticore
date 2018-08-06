@@ -1122,9 +1122,34 @@ class SMemory(Memory):
         return solutions
 
 
-class InvalidAccess(expression.BitVecConstant):
+class InvalidAccessConstant(expression.BitVecConstant):
     pass
 
+
+class SentinelMap(Map):
+    '''
+    A placeholder map that is only used for permissions checks, but should never be actually read from.
+    '''
+
+    def __reduce__(self):
+        return (self.__class__, (self.start, len(self), self.perms,))
+
+    def split(self, address):
+        if address <= self.start:
+            return None, self
+        if address >= self.end:
+            return self, None
+
+        assert address > self.start and address < self.end
+        head = SentinelMap(self.start, address - self.start, self.perms)
+        tail = SentinelMap(address, self.end - address, self.perms)
+        return head, tail
+
+    def __getitem__(self, *args, **kwargs):
+        raise InvalidMemoryAccess(0, 'r')
+
+    def __setitem__(self, *args, **kwargs):
+        raise InvalidMemoryAccess(0, 'w')
 
 class LazySMemory(SMemory):
     '''
@@ -1138,7 +1163,7 @@ class LazySMemory(SMemory):
         self._backing_array = constraints.new_array(index_bits=self.memory_bit_size)
 
     def mmap(self, addr, size, perms, name=None, **kwargs):
-        return self._do_mmap(ArrayMap, addr, size, perms, index_bits=self.memory_bit_size, name=name)
+        return self._do_mmap(SentinelMap, addr, size, perms, name=name) # index_bits=self.memory_bit_size
 
     def _map_deref_expr(self, map, address, size):
         return Operators.AND(
@@ -1160,11 +1185,11 @@ class LazySMemory(SMemory):
         '''
         assert isinstance(address, expression.Expression)
 
-        deref_expression = InvalidAccess(self.memory_bit_size, 0xffffffff)
+        deref_expression = [InvalidAccessConstant(self.memory_bit_size, 0xffffffff)]
 
         for m in self._maps:
             within_map = self._map_deref_expr(m, address, size)
-            deref_expression = Operators.ITE(within_map, m[address:address + size], deref_expression)
+            deref_expression = Operators.ITE(within_map, self._backing_array[address:address + size], deref_expression)
 
         return deref_expression
 
@@ -1187,10 +1212,12 @@ class LazySMemory(SMemory):
             return found
 
     def read(self, address, size, force=False):
-        if not issymbolic(address) and not self.access_ok(slice(address, address + size), 'r', force):
-            raise InvalidMemoryAccess(address, 'r')
+        if not issymbolic(address):
+            if not self.access_ok(slice(address, address + size), 'r', force):
+                raise InvalidMemoryAccess(address, 'r')
+            return self._backing_array[address:address + size]
 
-        return self._backing_array[address:address + size]
+        return self._aggregate_read(address, size)
 
     def write(self, address, value, force=False):
         if not issymbolic(address) and not self.access_ok(slice(address, address + len(value)), 'w', force):
