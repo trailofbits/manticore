@@ -124,6 +124,8 @@ if [ "$should_run_eth_tests" = true ] ; then
     if [[ "${DID_OK}" != OK* ]]; then
         echo "Some functionality tests failed :("
         exit 2
+    else
+        coverage xml
     fi
 fi
 
@@ -134,6 +136,8 @@ if [ "$should_run_tests" = true ]; then
     if [[ "${DID_OK}" != OK* ]]; then
         echo "Some non-eth functionality tests failed :("
         exit 2
+    else
+        coverage xml
     fi
 
     echo "Measuring code coverage..."

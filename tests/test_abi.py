@@ -254,7 +254,7 @@ class ABITest(unittest.TestCase):
 
         @variadic
         def test(params):
-            for val, idx in zip(params, list(range(1, 4))):
+            for val, idx in zip(params, range(1, 4)):
                 self.assertEqual(val, idx)
 
         cpu.func_abi.invoke(test)

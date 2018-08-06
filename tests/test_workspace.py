@@ -24,7 +24,7 @@ class FakeMemory(object):
 
 class FakeCpu(Eventful):
     def __init__(self):
-        super(FakeCpu, self).__init__()
+        super().__init__()
 
         self._memory = FakeMemory()
 

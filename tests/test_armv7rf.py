@@ -70,7 +70,7 @@ class Armv7RFTest(unittest.TestCase):
                     self.r.write(regs[i], 0x41424344)
                 else:
                     self.r.write(regs[i], 0)
-            for a, b in list(aliases.items()):
+            for a, b in aliases.items():
                 self.assertEqual(self.r.read(a), self.r.read(b))
 
             for i in range(16):

@@ -34,7 +34,7 @@ all_loggers = []
 
 def init_logging(default_level=logging.WARNING):
     global all_loggers
-    loggers = list(logging.getLogger().manager.loggerDict.keys())
+    loggers = logging.getLogger().manager.loggerDict.keys()
 
     ctxfilter = ContextFilter()
     logfmt = ("%(asctime)s: [%(process)d]%(stateid)s %(name)s:%(levelname)s:"

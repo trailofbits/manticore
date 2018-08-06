@@ -116,12 +116,6 @@ class EVMException(Exception):
     pass
 
 
-class Emulated(EVMException):
-    def __init__(self, result):
-        super(Emulated, self).__init__("Emulated instruction")
-        self.result = result
-
-
 class ConcretizeStack(EVMException):
     '''
     Raised when a symbolic memory cell needs to be concretized.
@@ -132,14 +126,6 @@ class ConcretizeStack(EVMException):
         self.pos = pos
         self.expression = expression
         self.policy = policy
-
-
-class Sha3(EVMException):
-    def __init__(self, data):
-        self.data = data
-
-    def __reduce__(self):
-        return (self.__class__, (self.data, ))
 
 
 class StartTx(EVMException):
@@ -173,63 +159,63 @@ class StackOverflow(EndTx):
     ''' Attemped to push more than 1024 items '''
 
     def __init__(self):
-        super(StackOverflow, self).__init__('THROW')
+        super().__init__('THROW')
 
 
 class StackUnderflow(EndTx):
     ''' Attemped to popo from an empty stack '''
 
     def __init__(self):
-        super(StackUnderflow, self).__init__('THROW')
+        super().__init__('THROW')
 
 
 class InvalidOpcode(EndTx):
     ''' Trying to execute invalid opcode '''
 
     def __init__(self):
-        super(InvalidOpcode, self).__init__('THROW')
+        super().__init__('THROW')
 
 
 class NotEnoughGas(EndTx):
     ''' Not enough gas for operation '''
 
     def __init__(self):
-        super(NotEnoughGas, self).__init__('THROW')
+        super().__init__('THROW')
 
 
 class Stop(EndTx):
     ''' Program reached a STOP instruction '''
 
     def __init__(self):
-        super(Stop, self).__init__('STOP')
+        super().__init__('STOP')
 
 
 class Return(EndTx):
     ''' Program reached a RETURN instruction '''
 
     def __init__(self, data=bytearray()):
-        super(Return, self).__init__('RETURN', data)
+        super().__init__('RETURN', data)
 
 
 class Revert(EndTx):
     ''' Program reached a REVERT instruction '''
 
     def __init__(self, data):
-        super(Revert, self).__init__('REVERT', data)
+        super().__init__('REVERT', data)
 
 
 class SelfDestruct(EndTx):
     ''' Program reached a SELFDESTRUCT instruction '''
 
     def __init__(self):
-        super(SelfDestruct, self).__init__('SELFDESTRUCT')
+        super().__init__('SELFDESTRUCT')
 
 
 class TXError(EndTx):
     ''' A failed Transaction '''
 
     def __init__(self):
-        super(TXError, self).__init__('TXERROR')
+        super().__init__('TXERROR')
 
 
 def concretized_args(**policies):
@@ -343,7 +329,7 @@ class EVM(Eventful):
         :param gas: gas budget for this transaction
 
         '''
-        super(EVM, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         if data is not None and not issymbolic(data):
             data_size = len(data)
             data_symbolic = constraints.new_array(index_bits=256, value_bits=8, index_max=data_size, name='DATA')
@@ -379,7 +365,7 @@ class EVM(Eventful):
         self._world = world
         self._allocated = 0
         self._on_transaction = False  # for @transact
-
+        self._checkpoint_data = None
     @property
     def bytecode(self):
         return self._bytecode
@@ -398,7 +384,7 @@ class EVM(Eventful):
         return self._gas
 
     def __getstate__(self):
-        state = super(EVM, self).__getstate__()
+        state = super().__getstate__()
         state['memory'] = self.memory
         state['world'] = self._world
         state['constraints'] = self.constraints
@@ -414,9 +400,11 @@ class EVM(Eventful):
         state['suicides'] = self.suicides
         state['logs'] = self.logs
         state['_on_transaction'] = self._on_transaction
+        state['_checkpoint_data'] = self._checkpoint_data
         return state
 
     def __setstate__(self, state):
+        self._checkpoint_data = state['_checkpoint_data']
         self._on_transaction = state['_on_transaction']
         self._gas = state['gas']
         self.memory = state['memory']
@@ -432,7 +420,7 @@ class EVM(Eventful):
         self.stack = state['stack']
         self._allocated = state['allocated']
         self.suicides = state['suicides']
-        super(EVM, self).__setstate__(state)
+        super().__setstate__(state)
 
     def _allocate(self, address):
         allocated = self.allocated
@@ -588,16 +576,28 @@ class EVM(Eventful):
         #Get arguments (imm, pop)
         current = self.instruction
         arguments = []
-        if self.instruction.has_operand:
+        if current.has_operand:
             arguments.append(current.operand)
         for _ in range(current.pops):
             arguments.append(self._pop())
         # simplify stack arguments
         for i in range(len(arguments)):
-            #if isinstance(arguments[i], Expression):
-            #    arguments[i] = simplify(arguments[i])
             if isinstance(arguments[i], Constant) and not arguments[i].taint:
                 arguments[i] = arguments[i].value
+        return arguments
+
+    def _top_arguments(self):
+        #Get arguments (imm, top). Stack is not chanaged
+        current = self.instruction
+        arguments = []
+        if current.has_operand:
+            arguments.append(current.operand)
+
+        if len(self.stack) < current.pops:
+            raise StackUnderflow()
+
+        if current.pops:
+            arguments.extend(reversed(self.stack[-current.pops:]))
         return arguments
 
     def _push_arguments(self, arguments):
@@ -625,6 +625,53 @@ class EVM(Eventful):
             raise TerminateState("Instruction not implemented %s" % current.semantics, testcase=True)
         return implementation(*arguments)
 
+    def _checkpoint(self):
+        #Fixme[felipe] add a with self.disabled_events context mangr to Eventful
+        if self._checkpoint_data is None:
+            if self._on_transaction is False:
+                self._publish('will_decode_instruction', self.pc)
+                self._publish('will_execute_instruction', self.pc, self.instruction)
+                self._publish('will_evm_execute_instruction', self.instruction, self._top_arguments())
+                self._consume(self.instruction.fee)
+
+            self._checkpoint_data = ( self.pc, self.gas, self.instruction, self._pop_arguments() )
+        return self._checkpoint_data
+
+    def _rollback(self):
+        #Revert the stack, gas and pc so it looks like before executing the instruction
+        last_pc, last_gas, last_instruction, last_arguments = self._checkpoint_data
+        self._push_arguments(last_arguments)
+        self._gas = last_gas
+        self._pc = last_pc
+        self._checkpoint_data = None
+
+    def _advance(self, result=None):
+        last_pc, last_gas, last_instruction, last_arguments = self._checkpoint_data
+        if not last_instruction.is_branch:
+            #advance pc pointer
+            self.pc += last_instruction.size
+        self._push_results(last_instruction, result)
+        self._publish('did_evm_execute_instruction', last_instruction, last_arguments, result)
+        self._publish('did_execute_instruction', last_pc, self.pc, last_instruction)
+        self._checkpoint_data = None
+
+    def change_last_result(self, result):
+        last_pc, last_gas, last_instruction, last_arguments = self._checkpoint_data
+
+        # Check result (push)
+        if last_instruction.pushes > 1:
+            assert len(result) == last_instruction.pushes
+            for _ in range(last_instruction.pushes):
+                self._pop()
+            for value in reversed(result):
+                self._push(value)
+        elif last_instruction.pushes == 1:
+            self._pop()
+            self._push(result)
+        else:
+            assert last_instruction.pushes == 0
+            assert result is None
+
     #Execute an instruction from current pc
     def execute(self):
         if issymbolic(self.pc) and not isinstance(self.pc, Constant):
@@ -638,61 +685,26 @@ class EVM(Eventful):
                              expression=expression,
                              setstate=setstate,
                              policy='ALL')
-        #Fixme[felipe] add a with self.disabled_events context mangr to Eventful
-        if self._on_transaction is False:
-            self._publish('will_decode_instruction', self.pc)
-        last_pc = self.pc
-        current = self.instruction
 
-        if self._on_transaction is False:
-            self._publish('will_execute_instruction', self.pc, current)
-        #Need to consume before potential out of stack exception
-        old_gas = self._gas
-        self._consume(current.fee)
-        arguments = self._pop_arguments()
-        result = None
-
-        ex = None
         try:
-            if self._on_transaction is False:
-                self._publish('will_evm_execute_instruction', current, arguments)
+            last_pc, last_gas, instruction, arguments = self._checkpoint()
             result = self._handler(*arguments)
+            self._advance(result)
         except ConcretizeStack as ex:
-            #Revert the stack and gas so it looks like before executing the instruction
-            self._push_arguments(arguments)
-            self._gast = old_gas
             pos = -ex.pos
-
             def setstate(state, value):
                 self.stack[pos] = value
-
             raise Concretize("Concretice Stack Variable",
                              expression=self.stack[pos],
                              setstate=setstate,
                              policy=ex.policy)
         except StartTx:
-            #Revert the stack and gas so it looks like before executing the instruction
-            self._push_arguments(arguments)
-            self._gast = old_gas
             raise
-
         except EndTx as ex:
-            #do not push result nor advance the pc
-            if not current.is_branch:
-                #advance pc pointer
-                self.pc += self.instruction.size
-            self._publish('did_evm_execute_instruction', current, arguments, Ref(result))
-            self._publish('did_execute_instruction', last_pc, self.pc, current)
+            self._advance()
             raise
 
-        if not current.is_branch:
-            #advance pc pointer
-            self.pc += self.instruction.size
-        result_ref = Ref(result)
-        self._publish('did_evm_execute_instruction', current, arguments, result_ref)
-        self._publish('did_execute_instruction', last_pc, self.pc, current)
 
-        self._push_results(current, result_ref.value)
 
     def read_buffer(self, offset, size):
         if issymbolic(size):
@@ -883,17 +895,7 @@ class EVM(Eventful):
         offset = Operators.ITEBV(256, offset < 32, (31 - offset) * 8, 256)
         return Operators.ZEXTEND(Operators.EXTRACT(value, offset, 8), 256)
 
-    def SHA3(self, start, size):
-        '''Compute Keccak-256 hash'''
-        print ("sha3")
-        GSHA3WORD = 6         # Cost of SHA3 per word
-        # read memory from start to end
-        # calculate hash on it/ maybe remember in some structure where that hash came from
-        # http://gavwood.com/paper.pdf
-        if size:
-            self._consume(GSHA3WORD * (ceil32(size) // 32))
-        data = self.read_buffer(start, size)
-
+    def try_simplify_to_constant(self, data):
         concrete_data = bytearray()
         for i in range(len(data)):
             simplified = simplify(data[i])
@@ -907,17 +909,44 @@ class EVM(Eventful):
                 concrete_data.append(solutions[0])
         else:
             data = bytes(concrete_data)
+        return data
 
-        print ("DATA:", data)
+    def SHA3(self, start, size):
+        '''Compute Keccak-256 hash'''
+        GSHA3WORD = 6         # Cost of SHA3 per word
+        # read memory from start to end
+        # calculate hash on it/ maybe remember in some structure where that hash came from
+        # http://gavwood.com/paper.pdf
+        old_gas = self.gas-self.instruction.fee
+        if size:
+            self._consume(GSHA3WORD * (ceil32(size) // 32))
+        data = self.try_simplify_to_constant(self.read_buffer(start, size))
+
         if issymbolic(data):
-            return self.world.HASH(data)
-        else:
-            value = sha3.keccak_256(data).hexdigest()
-            value = int('0x' + value, 0)
-            self._publish('on_concrete_sha3', data, value)
-            logger.info("Found a concrete SHA3 example %r -> %x", data, value)
-            print ("Found a concrete SHA3 example %r -> %x"%( data, value))
+            #self._rollback()  #Because it may fork
+
+            known_sha3 = {}
+            # Broadcast the signal
+            self._publish('on_symbolic_sha3', data, known_sha3)  #This updates the local copy of sha3 with the pairs we need to explore
+
+            #last_pc, last_gas, instruction, arguments = self._checkpoint()
+            #self._consume(instruction.fee)
+
+            value = 0  # never used
+            known_hashes_cond = False
+            for key, hsh in known_sha3.items():
+                assert not issymbolic(key), "Saved sha3 data,hash pairs should be concrete"
+                cond = key == data
+
+                known_hashes_cond = Operators.OR(cond, known_hashes_cond)
+                value = Operators.ITEBV(256, cond, hsh, value)
             return value
+
+        value = sha3.keccak_256(data).hexdigest()
+        value = int('0x' + value, 0)
+        self._publish('on_concrete_sha3', data, value)
+        logger.info("Found a concrete SHA3 example %r -> %x", data, value)
+        return value
 
     ############################################################################
     # Environmental Information
@@ -1431,13 +1460,12 @@ class EVMWorld(Platform):
                          'open_transaction', 'close_transaction'}
 
     def __init__(self, constraints, storage=None, initial_block_number=None, initial_timestamp=None, **kwargs):
-        super(EVMWorld, self).__init__(path="NOPATH", **kwargs)
+        super().__init__(path="NOPATH", **kwargs)
         self._world_state = {} if storage is None else storage
         self._constraints = constraints
         self._callstack = []
         self._deleted_accounts = []
         self._logs = list()
-        self._sha3 = {}
         self._pending_transaction = None
         self._transactions = list()
 
@@ -1451,22 +1479,10 @@ class EVMWorld(Platform):
             constraints.add(Operators.UGT(initial_timestamp, 1000000000))
             constraints.add(Operators.ULT(initial_timestamp, 3000000000))
         self._initial_timestamp = initial_timestamp
-
         self._do_events()
-        for var_i in range(5):
-            for offset_i in range(10):
-                import binascii
-                data = binascii.unhexlify(("%064x%064x" % (var_i, offset_i)))
-                value = int(sha3.keccak_256(data).hexdigest(), 16)
-                self._concrete_sha3_callback(data, value)
-                for offset_j in range(10):
-                    data = binascii.unhexlify("%064x" % offset_j) + data
-                    value = int(sha3.keccak_256(data).hexdigest(), 16)
-                    self._concrete_sha3_callback(data, value)
 
     def __getstate__(self):
-        state = super(EVMWorld, self).__getstate__()
-        state['sha3'] = self._sha3
+        state = super().__getstate__()
         state['pending_transaction'] = self._pending_transaction
         state['logs'] = self._logs
         state['world_state'] = self._world_state
@@ -1479,9 +1495,8 @@ class EVMWorld(Platform):
         return state
 
     def __setstate__(self, state):
-        super(EVMWorld, self).__setstate__(state)
+        super().__setstate__(state)
         self._constraints = state['constraints']
-        self._sha3 = state['sha3']
         self._pending_transaction = state['pending_transaction']
         self._world_state = state['world_state']
         self._deleted_accounts = state['deleted_accounts']
@@ -1495,15 +1510,6 @@ class EVMWorld(Platform):
     def _do_events(self):
         if self.current_vm is not None:
             self.forward_events_from(self.current_vm)
-            self.subscribe('on_concrete_sha3', self._concrete_sha3_callback)
-
-    def _concrete_sha3_callback(self, buf, value):
-        print ("!!Found a concrete SHA3 example %r -> %x"%( buf, value))
-
-        buf = str(buf)
-        if buf in self._sha3:
-            assert self._sha3[buf] == value
-        self._sha3[buf] = value
 
     def __getitem__(self, index):
         assert isinstance(index, int)
@@ -1881,10 +1887,13 @@ class EVMWorld(Platform):
         self._world_state[address]['storage'] = storage
         self._world_state[address]['code'] = code
 
+
+        # adds hash of new address 
         import binascii
-        data = binascii.unhexlify(("%064x" % address)) + b'\x00'*32
-        value = int(sha3.keccak_256(data).hexdigest(), 16)
-        self._concrete_sha3_callback(data, value)
+        data = binascii.unhexlify('{:064x}{:064x}'.format(address, 0))
+        value = sha3.keccak_256(data).hexdigest()
+        value = int('0x' + value, 0)
+        self._publish('on_concrete_sha3', data, value)
 
         return address
 
@@ -2008,12 +2017,12 @@ class EVMWorld(Platform):
                 self.constraints.add(src_balance + value >= src_balance)
             enough_balance_solutions = solver.get_all_values(self._constraints, enough_balance)
 
-            if set(enough_balance_solutions) == set([True, False]):
+            if set(enough_balance_solutions) == {True, False}:
                 raise Concretize('Forking on available funds',
                                  expression=src_balance < value,
                                  setstate=lambda a, b: None,
                                  policy='ALL')
-            failed = set(enough_balance_solutions) == set([False])
+            failed = set(enough_balance_solutions) == {False}
 
         #processed
         self._pending_transaction = None
@@ -2029,65 +2038,3 @@ class EVMWorld(Platform):
         #Transaction to normal account
         if sort in ('CALL', 'DELEGATECALL') and not self.get_code(address):
             self._close_transaction('STOP')
-
-    def HASH(self, data):
-        '''def compare_buffers(a, b):
-            if len(a) != len(b):
-                return False
-            cond = True
-            for i in range(len(a)):
-                cond = Operators.AND(a[i] == b[i], cond)
-                if cond is False:
-                    return False
-            return cond
-        '''
-        assert issymbolic(data)
-        logger.info("SHA3 Searching over %d known hashes", len(self._sha3))
-        logger.info("SHA3 TODO save this state for future explorations with more known hashes")
-        # Broadcast the signal
-        self._publish('on_symbolic_sha3', data, list(self._sha3.items()))
-        results = []
-
-        # If know_hashes is true then there is a _known_ solution for the hash
-        known_hashes = False
-        for key, value in self._sha3.items():
-            assert not issymbolic(key), "Saved sha3 data,hash pairs should be concrete"
-            cond = key == data
-            if solver.can_be_true(self._constraints, cond):
-                results.append((cond, value))
-                known_hashes = Operators.OR(cond, known_hashes)
-
-        # results contains all the possible and known solutions
-
-        # If known_hashes can be False then data can take at least one concrete
-        # value of which we do not know a hash for.
-
-        # Calculate the sha3 of one extra example solution and add this as a
-        # potential result
-        # This is an incomplete result:
-        # Intead of choosing one single extra concrete solution we should save
-        # the state and when a new sha3 example is found load it back and try
-        # the new concretization for sha3.
-
-        with self._constraints as temp_cs:
-            if solver.can_be_true(temp_cs, Operators.NOT(known_hashes)):
-                temp_cs.add(Operators.NOT(known_hashes))
-                # a_buffer is different from all strings we know a hash for
-                a_buffer = solver.get_value(temp_cs, data)
-                cond = a_buffer == data
-                # Get the sha3 for a_buffer
-                a_value = int(sha3.keccak_256(a_buffer).hexdigest(), 16)
-                # add the new sha3 pair to the known_hashes and result
-                self._publish('on_concrete_sha3', a_buffer, a_value)
-                results.append((cond, a_value))
-                known_hashes = Operators.OR(cond, known_hashes)
-
-        if solver.can_be_true(self._constraints, known_hashes):
-            self._constraints.add(known_hashes)
-            value = 0  # never used
-            for cond, sha in results:
-                value = Operators.ITEBV(256, cond, sha, value)
-        else:
-            raise TerminateState("Unknown hash")
-
-        return value

@@ -79,7 +79,7 @@ def make_decree(program, concrete_start='', **kwargs):
 def make_linux(program, argv=None, env=None, entry_symbol=None, symbolic_files=None, concrete_start=''):
     env = {} if env is None else env
     argv = [] if argv is None else argv
-    env = ['%s=%s' % (k, v) for k, v in list(env.items())]
+    env = ['%s=%s' % (k, v) for k, v in env.items()]
 
     logger.info('Loading program %s', program)
 
@@ -159,7 +159,7 @@ class Manticore(Eventful):
     _published_events = {'start_run', 'finish_run'}
 
     def __init__(self, path_or_state, argv=None, workspace_url=None, policy='random', **kwargs):
-        super(Manticore, self).__init__()
+        super().__init__()
 
         if isinstance(workspace_url, str):
             if ':' not in workspace_url:
@@ -188,6 +188,8 @@ class Manticore(Eventful):
             self._initial_state = make_initial_state(path_or_state, argv=argv, **kwargs)
         elif isinstance(path_or_state, State):
             self._initial_state = path_or_state
+            #froward events from newly loaded object
+            self._executor.forward_events_from(self._initial_state, True)
         else:
             raise TypeError('path_or_state must be either a str or State, not {}'.format(type(path_or_state).__name__))
 
@@ -196,12 +198,12 @@ class Manticore(Eventful):
 
         self.plugins = set()
 
-        # Move the folowing into a plugin
+        # Move the folowing into a linux plugin
         self._assertions = {}
         self._coverage_file = None
         self.trace = None
 
-        # FIXME move the folowing to aplugin
+        # FIXME move the folowing to a plugin
         self.subscribe('will_generate_testcase', self._generate_testcase_callback)
         self.subscribe('did_finish_run', self._did_finish_run_callback)
 
@@ -313,12 +315,12 @@ class Manticore(Eventful):
         from types import MethodType
         if not isinstance(callback, MethodType):
             callback = MethodType(callback, self)
-        super(Manticore, self).subscribe(name, callback)
+        super().subscribe(name, callback)
 
     @property
     def context(self):
         ''' Convenient access to shared context '''
-        if not self.running:
+        if self._context is not None:
             return self._context
         else:
             logger.warning("Using shared context without a lock")
@@ -351,7 +353,7 @@ class Manticore(Eventful):
 
         @contextmanager
         def _real_context():
-            if not self.running:
+            if self._context is not None:
                 yield self._context
             else:
                 with self._executor.locked_context() as context:
@@ -400,7 +402,7 @@ class Manticore(Eventful):
                     profile.disable()
                     profile.create_stats()
                     with self.locked_context('profiling_stats', list) as profiling_stats:
-                        profiling_stats.append(list(profile.stats.items()))
+                        profiling_stats.append(profile.stats.items())
                     return result
                 return wrapper
 
@@ -594,7 +596,7 @@ class Manticore(Eventful):
                     marshal.dump(ps.stats, s)
 
     def _start_run(self):
-        assert not self.running
+        assert not self.running and self._context is not None
         self._publish('will_start_run', self._initial_state)
 
         if self._initial_state is not None:
@@ -603,11 +605,13 @@ class Manticore(Eventful):
 
         # Copy the local main context to the shared conext
         self._executor._shared_context.update(self._context)
+        self._context = None
 
     def _finish_run(self, profiling=False):
         assert not self.running
         # Copy back the shared context
-        self._context = dict(self._executor._shared_context)
+        with self._executor.locked_context() as shared_context:
+            self._context = dict(shared_context)
 
         if profiling:
             self._produce_profiling_data()

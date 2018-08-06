@@ -148,8 +148,7 @@ class IntegrationTest(unittest.TestCase):
             {'number': 795, 'contract': None, 'txlimit': 1},
             {'number': 799, 'contract': 'C', 'txlimit': 1},
             {'number': 807, 'contract': 'C', 'txlimit': 1},
-            # TODO: fixme, broken in master and yolo_master
-            #{'number': 808, 'contract': 'C', 'txlimit': 1},
+            {'number': 808, 'contract': 'C', 'txlimit': 1},
         ]
 
         for issue in issues:
