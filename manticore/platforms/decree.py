@@ -151,6 +151,13 @@ class Decree(Platform):
         for proc in self.procs:
             self.forward_events_from(proc)
 
+    @property
+    def PC(self):
+        return (self._current, self.procs[self._current].PC)
+
+    def __deepcopy__(self, memo):
+        return self
+
     def _mk_proc(self):
         return I386Cpu(Memory32())
 

@@ -403,7 +403,7 @@ class BitVecConstant(BitVec, Constant):
 
     def __eq__(self, other):
         if self.taint:
-            super().__eq__(other)
+            return super().__eq__(other)
         return self.value == other
 
     def __hash__(self):

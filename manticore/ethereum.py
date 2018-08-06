@@ -62,16 +62,32 @@ class Detector(Plugin):
         with self.locked_global_findings() as global_findings:
             return global_findings
 
-    def add_finding(self, state, address, pc, finding, init):
+    def add_finding(self, state, address, pc, finding, at_init, constraint=True):
+        '''
+        Logs a finding at specified contract and assembler line.
+        :param state: current state
+        :param address: contract address of the finding
+        :param pc: program counter of the finding
+        :param at_init: true if executing the constructor
+        :param finding: textual description of the finding
+        :param constraint: finding is considered reproducible only when constraint is True
+        '''
+
         if not isinstance(pc, int):
             raise ValueError("PC must be a number")
-        self.get_findings(state).add((address, pc, finding, init))
+        self.get_findings(state).add((address, pc, finding, at_init, constraint))
         with self.locked_global_findings() as gf:
-            gf.add((address, pc, finding, init))
+            gf.add((address, pc, finding, at_init))
         #Fixme for ever broken logger
         logger.warning(finding)
 
-    def add_finding_here(self, state, finding):
+    def add_finding_here(self, state, finding, condition=True):
+        '''
+        Logs a finding in current contract and assembler line.
+        :param state: current state
+        :param finding: textual description of the finding
+        :param condition: finding is considered reproducible only when condition holds
+        '''
         address = state.platform.current_vm.address
         pc = state.platform.current_vm.pc
         if isinstance(pc, Constant):
@@ -79,9 +95,17 @@ class Detector(Plugin):
         if not isinstance(pc, int):
             raise ValueError("PC must be a number")
         at_init = state.platform.current_transaction.sort == 'CREATE'
-        self.add_finding(state, address, pc, finding, at_init)
+        self.add_finding(state, address, pc, finding, at_init, condition)
 
     def _save_current_location(self, state, finding, condition=True):
+        '''
+        Save current location in the internal locations list and returns a textual id for it.
+        This is used to save locations that could later be promoted to a finding if other condition holds
+        See _get_location()
+        :param state: current state
+        :param finding: textual description of the finding
+        :param condition: general purpose constraint
+        '''
         address = state.platform.current_vm.address
         pc = state.platform.current_vm.pc
         at_init = state.platform.current_transaction.sort == 'CREATE'
@@ -91,6 +115,9 @@ class Detector(Plugin):
         return hash_id
 
     def _get_location(self, state, hash_id):
+        ''' Get previously saved location
+            A location is composed of: address, pc, finding, at_init, condition
+        '''
         return state.context.setdefault('{:s}.locations'.format(self.name), {})[hash_id]
 
     def _get_src(self, address, pc):
@@ -231,7 +258,7 @@ class DetectReentrancy(Detector):
                 # Check if gas was enough for a reentrancy attack
                 if tx.gas > 2300:
                     # Check if target address is attaker controlled
-                    if self._addresses is None and not world.get_code(tx.address) or tx.address in self._addresses:
+                    if self._addresses is None and not world.get_code(tx.address) or self._addresses is not None and tx.address in self._addresses:
                         #that's enough. Save current location and read list
                         self._save_location_and_reads(state)
 
@@ -498,6 +525,66 @@ class DetectUnusedRetVal(Detector):
         result_ref.value = result
 
 
+class DetectUnusedRetVal(Detector):
+    '''
+        Detects unused return value from internal transactions
+    '''
+
+    @property
+    def _stack_name(self):
+        return '{:s}.stack'.format(self.name)
+
+    def _add_retval_taint(self, state, taint):
+        list_of_taints = state.context[self._stack_name][-1]
+        list_of_taints.add(taint)
+        state.context[self._stack_name][-1] = list_of_taints
+
+    def _remove_retval_taint(self, state, taint):
+        list_of_taints = state.context[self._stack_name][-1]
+        if taint in list_of_taints:
+            list_of_taints.remove(taint)
+            state.context[self._stack_name][-1] = list_of_taints
+
+    def _get_retval_taints(self, state):
+        return state.context[self._stack_name][-1]
+
+    def will_open_transaction_callback(self, state, tx):
+        # Reset reading log on new human transactions
+        if tx.is_human():
+            state.context[self._stack_name] = []
+        state.context[self._stack_name].append(set())
+
+    def did_close_transaction_callback(self, state, tx):
+        world = state.platform
+        # Check that all retvals where used in control flow
+        for taint in self._get_retval_taints(state):
+            id_val = taint[7:]
+            address, pc, finding, at_init, condition = self._get_location(state, id_val)
+            if state.can_be_true(condition):
+                self.add_finding(state, address, pc, finding, at_init)
+
+        state.context[self._stack_name].pop()
+
+    def did_evm_execute_instruction_callback(self, state, instruction, arguments, result_ref):
+        world = state.platform
+        result = result_ref.value
+        mnemonic = instruction.semantics
+        result = result_ref.value
+        if instruction.is_starttx:
+            # A transactional instruction just returned add a taint to result
+            # and add that taint to the set
+            id_val = self._save_current_location(state, "Returned value at {:s} instruction is not used".format(mnemonic))
+            taint = "RETVAL_{:s}".format(id_val)
+            result = taint_with(result, taint)
+            self._add_retval_taint(state, taint)
+        elif mnemonic == 'JUMPI':
+            dest, cond = arguments
+            for used_taint in get_taints(cond, "RETVAL_.*"):
+                self._remove_retval_taint(state, used_taint)
+
+        result_ref.value = result
+
+
 class DetectUninitializedMemory(Detector):
     '''
         Detects uses of uninitialized memory
@@ -674,7 +761,7 @@ class SolidityMetadata(object):
             return ''
 
         output = ''
-        nl = self.source_code.count('\n')
+        nl = self.source_code[:beg].count('\n')
         snippet = self.source_code[beg:beg + size]
         for l in snippet.split('\n'):
             output += '    %s  %s\n' % (nl, l)
@@ -2207,13 +2294,13 @@ class ManticoreEVM(Manticore):
 
         local_findings = set()
         for detector in self.detectors.values():
-            for address, pc, finding, at_init in detector.get_findings(state):
+            for address, pc, finding, at_init, constraint in detector.get_findings(state):
                 if (address, pc, finding, at_init) not in local_findings:
-                    local_findings.add((address, pc, finding, at_init))
+                    local_findings.add((address, pc, finding, at_init, constraint))
 
         if len(local_findings):
             with testcase.open_stream('findings') as findings:
-                for address, pc, finding, at_init in local_findings:
+                for address, pc, finding, at_init, constraint in local_findings:
                     findings.write('- %s -\n' % finding)
                     findings.write('  Contract: 0x%x\n' % address)
                     findings.write('  EVM Program counter: %s%s\n' % (pc, at_init and " (at constructor)" or ""))
@@ -2240,7 +2327,7 @@ class ManticoreEVM(Manticore):
                         summary.write('Last instruction at contract %x offset %x\n' % (address, offset))
                         source_code_snippet = metadata.get_source_for(offset, at_runtime)
                         if source_code_snippet:
-                            summary.write(source_code_snippet)
+                            summary.write('    '.join(source_code_snippet.splitlines(True)))
                         summary.write('\n')
 
             # Accounts summary
@@ -2482,9 +2569,9 @@ class ManticoreEVM(Manticore):
 
                     md = self.get_metadata(address)
                     if md is not None:
-                        src = md.get_source_for(pc, runtime=not at_init)
+                        source_code_snippet = md.get_source_for(pc, runtime=not at_init)
                         global_findings.write('  Solidity snippet:\n')
-                        global_findings.write(src.replace('\n', '\n    ').strip())
+                        global_findings.write('    '.join(source_code_snippet.splitlines(True)))
                         global_findings.write('\n')
 
         with self._output.save_stream('global.summary') as global_summary:

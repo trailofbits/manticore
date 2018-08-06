@@ -685,7 +685,6 @@ class EVM(Eventful):
                              expression=expression,
                              setstate=setstate,
                              policy='ALL')
-
         try:
             last_pc, last_gas, instruction, arguments = self._checkpoint()
             result = self._handler(*arguments)
@@ -1506,6 +1505,10 @@ class EVMWorld(Platform):
         self._initial_block_number = state['initial_block_number']
         self._initial_timestamp = state['_initial_timestamp']
         self._do_events()
+
+    @property
+    def PC(self):
+        return (self.current_vm.address, self.current_vm.pc)
 
     def _do_events(self):
         if self.current_vm is not None:

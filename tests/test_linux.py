@@ -1,6 +1,7 @@
 
 import os
 import errno
+import pickle
 import shutil
 import tempfile
 import unittest
@@ -260,3 +261,11 @@ class LinuxTest(unittest.TestCase):
         self.assertEqual(mem[6], b'\0')
         self.assertTrue(issymbolic(mem[5]))
 
+    def test_serialize_state_with_closed_files(self):
+        # regression test: issue 954
+
+        platform = self.linux
+        filename = platform.current.push_bytes('/bin/true\x00')
+        fd = platform.sys_open(filename, os.O_RDONLY, 0o600)
+        platform.sys_close(fd)
+        pickle.dumps(platform)

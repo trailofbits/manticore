@@ -54,7 +54,7 @@ def perms_from_protflags(prot_flags):
 
 
 def mode_from_flags(file_flags):
-    return {os.O_RDWR: 'r+', os.O_RDONLY: 'r', os.O_WRONLY: 'w'}[file_flags & 7]
+    return {os.O_RDWR: 'rb+', os.O_RDONLY: 'rb', os.O_WRONLY: 'wb'}[file_flags & 7]
 
 
 class File(object):
@@ -65,11 +65,13 @@ class File(object):
         self.file = open(path, mode)
 
     def __getstate__(self):
-        state = {}
-        state['name'] = self.name
-        state['mode'] = self.mode
+        state = {
+            'name': self.name,
+            'mode': self.mode,
+            'closed': self.closed
+        }
         try:
-            state['pos'] = self.tell()
+            state['pos'] = None if self.closed else self.tell()
         except IOError:
             # This is to handle special files like /dev/tty
             state['pos'] = None
@@ -78,8 +80,15 @@ class File(object):
     def __setstate__(self, state):
         name = state['name']
         mode = state['mode']
+        closed = state['closed']
         pos = state['pos']
-        self.file = open(name, mode)
+        try:
+            self.file = open(name, mode)
+            if closed:
+                self.file.close()
+        except IOError:
+            # If the file can't be opened anymore, should not typically happen
+            self.file = None
         if pos is not None:
             self.seek(pos)
 
@@ -90,6 +99,10 @@ class File(object):
     @property
     def mode(self):
         return self.file.mode
+
+    @property
+    def closed(self):
+        return self.file.closed
 
     def stat(self):
         return os.fstat(self.fileno())
@@ -409,6 +422,13 @@ class Linux(Platform):
             self._init_cpu(self.arch)
             self._init_std_fds()
             self._execve(program, argv, envp)
+
+    @property
+    def PC(self):
+        return (self._current, self.procs[self._current].PC)
+
+    def __deepcopy__(self, memo):
+        return self
 
     @classmethod
     def empty_platform(cls, arch):
