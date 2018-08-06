@@ -1151,6 +1151,7 @@ class SentinelMap(Map):
     def __setitem__(self, *args, **kwargs):
         raise InvalidMemoryAccess(0, 'w')
 
+
 class LazySMemory(SMemory):
     '''
     A fully symbolic memory.
@@ -1163,7 +1164,7 @@ class LazySMemory(SMemory):
         self._backing_array = constraints.new_array(index_bits=self.memory_bit_size)
 
     def mmap(self, addr, size, perms, name=None, **kwargs):
-        return self._do_mmap(SentinelMap, addr, size, perms, name=name) # index_bits=self.memory_bit_size
+        return self._do_mmap(SentinelMap, addr, size, perms, name=name)  # index_bits=self.memory_bit_size
 
     def _map_deref_expr(self, map, address, size):
         return Operators.AND(
