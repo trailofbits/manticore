@@ -55,7 +55,7 @@ class CGCElf(Binary):
             return stream
 
     def __init__(self, filename):
-        super(CGCElf, self).__init__(filename)
+        super().__init__(filename)
         stream = self._cgc2elf(filename)
         self.elf = ELFFile(stream)
         self.arch = {'x86': 'i386', 'x64': 'amd64'}[self.elf.get_machine_arch()]
@@ -90,7 +90,7 @@ class CGCElf(Binary):
 
 class Elf(Binary):
     def __init__(self, filename):
-        super(Elf, self).__init__(filename)
+        super().__init__(filename)
         self.elf = ELFFile(open(filename))
         self.arch = {'x86': 'i386', 'x64': 'amd64'}[self.elf.get_machine_arch()]
         assert self.elf.header.e_type in ['ET_DYN', 'ET_EXEC', 'ET_CORE']

@@ -215,7 +215,7 @@ def p_expression_deref(p):
     size = sizes[p[1]]
     address = p[4]
     char_list = functions['read_memory'](address, size)
-    value = Operators.CONCAT(8 * len(char_list), *reversed(list(map(Operators.ORD, char_list))))
+    value = Operators.CONCAT(8 * len(char_list), *reversed(map(Operators.ORD, char_list)))
     p[0] = value
 
 
@@ -227,7 +227,7 @@ def p_expression_derefseg(p):
     base, limit, _ = functions['get_descriptor'](seg)
     address = base + address
     char_list = functions['read_memory'](address, size)
-    value = Operators.CONCAT(8 * len(char_list), *reversed(list(map(Operators.ORD, char_list))))
+    value = Operators.CONCAT(8 * len(char_list), *reversed(map(Operators.ORD, char_list)))
     p[0] = value
 
 

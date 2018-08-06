@@ -23,7 +23,7 @@ class TraceReceiver(Plugin):
     def __init__(self, tracer):
         self._trace = None
         self._tracer = tracer
-        super(self.__class__, self).__init__()
+        super().__init__()
 
     @property
     def trace(self):
@@ -45,7 +45,7 @@ class Follower(Plugin):
         self.last_instruction = None
         self.symbolic_ranges = []
         self.active = True
-        super(self.__class__, self).__init__()
+        super().__init__()
 
     def add_symbolic_range(self, pc_start, pc_end):
         self.symbolic_ranges.append((pc_start,pc_end))

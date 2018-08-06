@@ -79,7 +79,7 @@ def make_decree(program, concrete_start='', **kwargs):
 def make_linux(program, argv=None, env=None, entry_symbol=None, symbolic_files=None, concrete_start=''):
     env = {} if env is None else env
     argv = [] if argv is None else argv
-    env = ['%s=%s' % (k, v) for k, v in list(env.items())]
+    env = ['%s=%s' % (k, v) for k, v in env.items()]
 
     logger.info('Loading program %s', program)
 
@@ -159,7 +159,7 @@ class Manticore(Eventful):
     _published_events = {'start_run', 'finish_run'}
 
     def __init__(self, path_or_state, argv=None, workspace_url=None, policy='random', **kwargs):
-        super(Manticore, self).__init__()
+        super().__init__()
 
         if isinstance(workspace_url, str):
             if ':' not in workspace_url:
@@ -313,7 +313,7 @@ class Manticore(Eventful):
         from types import MethodType
         if not isinstance(callback, MethodType):
             callback = MethodType(callback, self)
-        super(Manticore, self).subscribe(name, callback)
+        super().subscribe(name, callback)
 
     @property
     def context(self):
@@ -400,7 +400,7 @@ class Manticore(Eventful):
                     profile.disable()
                     profile.create_stats()
                     with self.locked_context('profiling_stats', list) as profiling_stats:
-                        profiling_stats.append(list(profile.stats.items()))
+                        profiling_stats.append(profile.stats.items())
                     return result
                 return wrapper
 

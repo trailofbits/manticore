@@ -1066,35 +1066,35 @@ class MemoryTest(unittest.TestCase):
 
         mem[symbolic_addr] = sym
         cs.add(sym.uge(0xfe))
-        values = list(solver.get_all_values(cs, sym))
+        values = solver.get_all_values(cs, sym)
         self.assertIn(0xfe, values)
         self.assertIn(0xff, values)
         self.assertNotIn(0x7f, values)
 
         self.assertTrue(isinstance(mem[symbolic_addr], Expression))
 
-        values = list(solver.get_all_values(cs, mem[symbolic_addr]))
+        values = solver.get_all_values(cs, mem[symbolic_addr])
         self.assertIn(0xfe, values)
         self.assertIn(0xff, values)
         self.assertNotIn(0x7f, values)
 
         with cs as cs_temp:
             cs_temp.add(sym==0xfe)
-            values = list(solver.get_all_values(cs_temp, sym))
+            values = solver.get_all_values(cs_temp, sym)
             self.assertIn(0xfe, values)
             self.assertNotIn(0xff, values)
             self.assertNotIn(0x7f, values)
-            values = list(solver.get_all_values(cs_temp, mem[symbolic_addr]))
+            values = solver.get_all_values(cs_temp, mem[symbolic_addr])
             self.assertIn(0xfe, values)
             self.assertNotIn(0xff, values)
             self.assertNotIn(0x7f, values)
 
 
-        values = list(solver.get_all_values(cs, sym))
+        values = solver.get_all_values(cs, sym)
         self.assertIn(0xfe, values)
         self.assertIn(0xff, values)
         self.assertNotIn(0x7f, values)
-        values = list(solver.get_all_values(cs, mem[symbolic_addr]))
+        values = solver.get_all_values(cs, mem[symbolic_addr])
         self.assertIn(0xfe, values)
         self.assertIn(0xff, values)
         self.assertNotIn(0x7f, values)
@@ -1158,7 +1158,7 @@ class MemoryTest(unittest.TestCase):
 
         mem[addr_for_symbol1+1] = symbol1
 
-        values = list(solver.get_all_values(cs, symbol1))
+        values = solver.get_all_values(cs, symbol1)
         self.assertIn(Operators.ORD('B'), values)
         self.assertIn(Operators.ORD('C'), values)
 
@@ -1169,7 +1169,7 @@ class MemoryTest(unittest.TestCase):
         c = mem[symbol2]
         self.assertTrue(issymbolic(c))
 
-        values = list(solver.get_all_values(cs, c))
+        values = solver.get_all_values(cs, c)
 
         self.assertIn(Operators.ORD('A'), values)
         self.assertIn(Operators.ORD('B'), values)
