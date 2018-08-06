@@ -46,6 +46,8 @@ plugins:
     checks:
       E712:
         enabled: false
+      E701:
+        enabled: false
   sonar-python:
     enabled: false
     config:
