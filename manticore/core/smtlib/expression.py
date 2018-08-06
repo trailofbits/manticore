@@ -403,7 +403,7 @@ class BitVecConstant(BitVec, Constant):
 
     def __eq__(self, other):
         if self.taint:
-            super().__eq__(other)
+            return super().__eq__(other)
         return self.value == other
 
     def __hash__(self):
@@ -664,6 +664,7 @@ class Array(Expression):
         return self.select(self.cast_index(index))
 
     def __eq__(self, other):
+        #FIXME taint
         def compare_buffers(a, b):
             if len(a) != len(b):
                 return BoolConstant(False)
