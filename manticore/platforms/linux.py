@@ -1459,7 +1459,7 @@ class Linux(Platform):
         '''
 
         filename = self.current.read_string(buf)
-        dirfd = self._to_signed_dword(dirfd)
+        dirfd = ctypes.c_int32(dirfd).value
 
         if os.path.isabs(filename) or dirfd == self.FCNTL_FDCWD:
             return self.sys_open(buf, flags, mode)
