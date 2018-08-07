@@ -31,10 +31,6 @@ def parse_arguments():
                         help='where to write the coverage data')
     parser.add_argument('--data', type=str, default='',
                         help='Initial concrete concrete_data for the input symbolic buffer')
-    # FIXME (theo) similarly to policy, add documentation here.
-    disas = ['capstone', 'binja-il']
-    parser.add_argument('--disasm', type=str, default='capstone', choices=disas,
-                        help=argparse.SUPPRESS)
     parser.add_argument('--env', type=str, nargs=1, default=[], action='append',
                         help='Add an environment variable. Use "+" for symbolic bytes. (VARNAME=++++)')
     #TODO allow entry as an address
@@ -98,6 +94,9 @@ def parse_arguments():
     parser.add_argument('--detect-reentrancy', action='store_true',
                         help='Enable detection of reentrancy bug (Ethereum only)')
 
+    parser.add_argument('--detect-unused-retval', action='store_true',
+                        help='Enable detection of not used internal transaction return value')
+
     parser.add_argument('--detect-all', action='store_true',
                         help='Enable all detector heuristics (Ethereum only)')
 
@@ -117,7 +116,7 @@ def parse_arguments():
 
 
 def ethereum_cli(args):
-    from .ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, DetectUninitializedStorage, DetectUninitializedMemory, FilterFunctions, DetectReentrancy
+    from .ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, DetectUninitializedStorage, DetectUninitializedMemory, FilterFunctions, DetectReentrancy, DetectUnusedRetVal
     log.init_logging()
 
     m = ManticoreEVM(procs=args.procs)
@@ -132,6 +131,8 @@ def ethereum_cli(args):
         m.register_detector(DetectUninitializedMemory())
     if args.detect_all or args.detect_reentrancy:
         m.register_detector(DetectReentrancy())
+    if args.detect_all or args.detect_unused_retval:
+        m.register_detector(DetectUnusedRetVal())
 
     if args.avoid_constant:
         # avoid all human level tx that has no effect on the storage
@@ -161,9 +162,9 @@ def main():
 
     env = {key: val for key, val in [env[0].split('=') for env in args.env]}
 
-    m = Manticore(args.argv[0], argv=args.argv[1:], env=env, entry_symbol=args.entrysymbol,
-                  workspace_url=args.workspace, policy=args.policy, disasm=args.disasm,
-                  concrete_start=args.data, pure_symbolic=args.pure_symbolic)
+    m = Manticore(args.argv[0], argv=args.argv[1:], env=env, entry_symbol=args.entrysymbol, 
+                  workspace_url=args.workspace, policy=args.policy, concrete_start=args.data, 
+                  pure_symbolic=args.pure_symbolic)
 
     # Default plugins for now.. FIXME REMOVE!
     m.register_plugin(InstructionCounter())

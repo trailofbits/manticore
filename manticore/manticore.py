@@ -22,7 +22,7 @@ from .core.state import State, TerminateState
 from .core.smtlib import solver, ConstraintSet
 from .core.workspace import ManticoreOutput
 from .platforms import linux, evm, decree
-from .utils.helpers import issymbolic, is_binja_disassembler
+from .utils.helpers import issymbolic
 from .utils.nointerrupt import WithKeyboardInterruptAs
 from .utils.event import Eventful
 from .core.plugin import Plugin, InstructionCounter, RecordSymbolicBranches, Visited, Tracer
@@ -38,29 +38,6 @@ class ManticoreError(Exception):
     Top level Exception object for custom exception hierarchy
     """
     pass
-
-
-def make_binja(program, disasm, argv, env, symbolic_files, concrete_start=''):
-    def _check_disassembler_present(disasm):
-        if is_binja_disassembler(disasm):
-            try:
-                import binaryninja  # noqa
-            except ImportError:
-                err = ("BinaryNinja not found! You MUST own a BinaryNinja version"
-                       " that supports GUI-less processing for this option"
-                       " to work. Please configure your PYTHONPATH appropriately or"
-                       " select a different disassembler")
-                raise SystemExit(err)
-    _check_disassembler_present(disasm)
-    constraints = ConstraintSet()
-    logger.info('Loading binary ninja IL from %s', program)
-    platform = linux.SLinux(program,
-                            argv=argv,
-                            envp=env,
-                            symbolic_files=symbolic_files,
-                            disasm=disasm)
-    initial_state = State(constraints, platform)
-    return initial_state
 
 
 def make_decree(program, concrete_start='', **kwargs):
@@ -125,11 +102,6 @@ def make_linux(program, argv=None, env=None, entry_symbol=None, symbolic_files=N
 
 
 def make_initial_state(binary_path, **kwargs):
-    if 'disasm' in kwargs:
-        if kwargs.get('disasm') == "binja-il":
-            return make_binja(binary_path, **kwargs)
-        else:
-            del kwargs['disasm']
     with open(binary_path, 'rb') as f:
         magic = f.read(4)
     if magic == b'\x7fELF':

@@ -21,7 +21,7 @@ from ..core.smtlib import Operators, ConstraintSet, SolverException, solver
 from ..core.cpu.arm import *
 from ..core.executor import TerminateState
 from ..platforms.platform import Platform, SyscallNotImplemented
-from ..utils.helpers import issymbolic, is_binja_disassembler
+from ..utils.helpers import issymbolic
 from . import linux_syscalls
 
 logger = logging.getLogger(__name__)
@@ -54,7 +54,7 @@ def perms_from_protflags(prot_flags):
 
 
 def mode_from_flags(file_flags):
-    return {os.O_RDWR: 'r+', os.O_RDONLY: 'r', os.O_WRONLY: 'w'}[file_flags & 7]
+    return {os.O_RDWR: 'rb+', os.O_RDONLY: 'rb', os.O_WRONLY: 'wb'}[file_flags & 7]
 
 
 class File(object):
@@ -65,10 +65,11 @@ class File(object):
         self.file = open(path, mode)
 
     def __getstate__(self):
-        state = {}
-        state['name'] = self.name
-        state['mode'] = self.mode
-        state['closed'] = self.closed
+        state = {
+            'name': self.name,
+            'mode': self.mode,
+            'closed': self.closed
+        }
         try:
             state['pos'] = None if self.closed else self.tell()
         except IOError:
@@ -2419,9 +2420,6 @@ class Linux(Platform):
             for reg, val in x86_defaults.items():
                 self.current.regfile.write(reg, val)
 
-        if is_binja_disassembler(self.disasm):
-            cpu = self.current.initialize_disassembler(self.program)
-
     @staticmethod
     def _interp_total_size(interp):
         '''
@@ -2473,10 +2471,6 @@ class SLinux(Linux):
                 mem = LazySMemory64(self.constraints)
             else:
                 mem = SMemory64(self.constraints)
-
-        if is_binja_disassembler(self.disasm):
-            from ..core.cpu.binja import BinjaCpu
-            return BinjaCpu(mem)
 
         cpu = CpuFactory.get_cpu(mem, arch)
         return cpu

@@ -1,4 +1,4 @@
-
+from manticore.utils.helpers import CacheDict
 from .expression import *
 from functools import lru_cache
 import logging
@@ -337,16 +337,7 @@ class ConstantFolderSimplifier(Visitor):
         return expression
 
 
-def clean_cache(cache):
-    M = 256
-    if len(cache) > M:
-        import random
-        N = len(cache) - M
-        for i in range(N):
-            cache.pop(random.choice(list(cache.keys())))
-
-
-constant_folder_simplifier_cache = {}
+constant_folder_simplifier_cache = CacheDict(max_size=150000, flush_perc=25)
 
 
 @lru_cache(maxsize=128)
@@ -354,7 +345,6 @@ def constant_folder(expression):
     global constant_folder_simplifier_cache
     simp = ConstantFolderSimplifier(cache=constant_folder_simplifier_cache)
     simp.visit(expression, use_fixed_point=True)
-    clean_cache(constant_folder_simplifier_cache)
     return simp.result
 
 
@@ -392,9 +382,13 @@ class ArithmeticSimplifier(Visitor):
     def visit_BitVecITE(self, expression, *operands):
         if isinstance(expression.operands[0], Constant):
             if expression.operands[0].value:
-                return expression.operands[1]
+                result = expression.operands[1]
             else:
-                return expression.operands[2]
+                result = expression.operands[2]
+            import copy
+            result = copy.copy(result)
+            result._taint |= expression.operands[0].taint
+            return result
         if self._changed(expression, operands):
             return BitVecITE(expression.size, *operands, taint=expression.taint)
 
@@ -519,8 +513,12 @@ class ArithmeticSimplifier(Visitor):
         if isinstance(arr, ArrayVariable):
             return
 
-        while isinstance(arr, ArrayStore) and isinstance(index, BitVecConstant) and isinstance(arr.index, BitVecConstant) and arr.index.value != index.value:
-            arr = arr.array
+        if isinstance(index, BitVecConstant):
+            ival = index.value
+            # props are slow and using them tight loops should be avoided, esp when they offer no additional validation
+            # arr._operands[1] = arr.index, arr._operands[0] = arr.array
+            while isinstance(arr, ArrayStore) and isinstance(arr._operands[1], BitVecConstant) and arr._operands[1]._value != ival:
+                arr = arr._operands[0]  # arr.array
 
         if isinstance(index, BitVecConstant) and isinstance(arr, ArrayStore) and isinstance(arr.index, BitVecConstant) and arr.index.value == index.value:
             return arr.value
@@ -534,8 +532,7 @@ class ArithmeticSimplifier(Visitor):
         return expression
 
 
-# FIXME this should forget old expressions lru?
-arithmetic_simplifier_cache = {}
+arithmetic_simplifier_cache = CacheDict(max_size=150000, flush_perc=25)
 
 
 @lru_cache(maxsize=128)
@@ -543,7 +540,6 @@ def arithmetic_simplify(expression):
     global arithmetic_simplifier_cache
     simp = ArithmeticSimplifier(cache=arithmetic_simplifier_cache)
     simp.visit(expression, use_fixed_point=True)
-    clean_cache(arithmetic_simplifier_cache)
     return simp.result
 
 
@@ -708,7 +704,6 @@ class Replace(Visitor):
 
 
 def replace(expression, bindings):
-    from pprint import pprint
     visitor = Replace(bindings)
     visitor.visit(expression, use_fixed_point=True)
     result_expression = visitor.result
