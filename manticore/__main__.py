@@ -162,8 +162,8 @@ def main():
 
     env = {key: val for key, val in [env[0].split('=') for env in args.env]}
 
-    m = Manticore(args.argv[0], argv=args.argv[1:], env=env, entry_symbol=args.entrysymbol, 
-                  workspace_url=args.workspace, policy=args.policy, concrete_start=args.data, 
+    m = Manticore(args.argv[0], argv=args.argv[1:], env=env, entry_symbol=args.entrysymbol,
+                  workspace_url=args.workspace, policy=args.policy, concrete_start=args.data,
                   pure_symbolic=args.pure_symbolic)
 
     # Default plugins for now.. FIXME REMOVE!
