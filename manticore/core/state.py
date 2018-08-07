@@ -207,7 +207,7 @@ class State(Eventful):
         '''
         label = options.get('label', 'buffer')
         taint = options.get('taint', frozenset())
-        expr = self._constraints.new_array(name=label, index_max=nbytes, value_bits=8, taint=taint)
+        expr = self._constraints.new_array(name=label, index_max=nbytes, value_bits=8, taint=taint, avoid_collisions=True)
         self._input_symbols.append(expr)
 
         if options.get('cstring', False):
@@ -228,7 +228,7 @@ class State(Eventful):
         :return: :class:`~manticore.core.smtlib.expression.Expression` representing the value
         '''
         assert nbits in (1, 4, 8, 16, 32, 64, 128, 256)
-        expr = self._constraints.new_bitvec(nbits, name=label, taint=taint)
+        expr = self._constraints.new_bitvec(nbits, name=label, taint=taint, avoid_collisions=True)
         self._input_symbols.append(expr)
         return expr
 
@@ -398,7 +398,7 @@ class State(Eventful):
         '''
         if wildcard in data:
             size = len(data)
-            symb = self._constraints.new_array(name=label, index_max=size, taint=taint)
+            symb = self._constraints.new_array(name=label, index_max=size, taint=taint, avoid_collisions=True)
             self._input_symbols.append(symb)
 
             tmp = []
