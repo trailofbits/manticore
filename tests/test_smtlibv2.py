@@ -187,7 +187,7 @@ class ExpressionTest(unittest.TestCase):
         self.assertTrue(self.solver.can_be_true(cs, array.select(1001) == ord('B')))
 
         #name is correctly proxied
-        self.assertEqual(array.name, name + "_1")
+        self.assertEqual(array.name, name)
 
         with cs as temp_cs:
             #but if it is 'B' ...
@@ -344,13 +344,14 @@ class ExpressionTest(unittest.TestCase):
 
         self.assertEqual(get_depth(cond), 3)
         self.assertEqual(get_depth(arr[a+1]), 4)
-        self.assertEqual(translate_to_smtlib(arr[a+1]), '(select (store (store MEM_1 #x00000000 #x61) #x00000001 #x62) (bvadd VAR_2 #x00000001))' )
+        self.assertEqual(translate_to_smtlib(arr[a+1]), '(select (store (store MEM #x00000000 #x61) #x00000001 #x62) (bvadd VAR #x00000001))' )
 
         arr[3] = arr[a+1]
         aux = arr[a+Operators.ZEXTEND(arr[a],32)]
 
         self.assertEqual(get_depth(aux), 9)
-        self.assertEqual(translate_to_smtlib(aux) ,'(select (store (store (store MEM_1 #x00000000 #x61) #x00000001 #x62) #x00000003 (select (store (store MEM_1 #x00000000 #x61) #x00000001 #x62) (bvadd VAR_2 #x00000001))) (bvadd VAR_2 ((_ zero_extend 24) (select (store (store (store MEM_1 #x00000000 #x61) #x00000001 #x62) #x00000003 (select (store (store MEM_1 #x00000000 #x61) #x00000001 #x62) (bvadd VAR_2 #x00000001))) VAR_2))))')
+        self.maxDiff = 1500
+        self.assertEqual(translate_to_smtlib(aux) ,'(select (store (store (store MEM #x00000000 #x61) #x00000001 #x62) #x00000003 (select (store (store MEM #x00000000 #x61) #x00000001 #x62) (bvadd VAR #x00000001))) (bvadd VAR ((_ zero_extend 24) (select (store (store (store MEM #x00000000 #x61) #x00000001 #x62) #x00000003 (select (store (store MEM #x00000000 #x61) #x00000001 #x62) (bvadd VAR #x00000001))) VAR))))')
 
         values = arr[0:2]
         self.assertEqual(len(values), 2)
@@ -377,8 +378,8 @@ class ExpressionTest(unittest.TestCase):
         a = cs.new_bitvec(32, name='VARA')
         b = cs.new_bitvec(32, name='VARB')
         c = a*2+b
-        self.assertEqual( translate_to_smtlib(c), '(bvadd (bvmul VARA_2 #x00000002) VARB_3)')
-        self.assertEqual( translate_to_smtlib((c+4)-4), '(bvsub (bvadd (bvadd (bvmul VARA_2 #x00000002) VARB_3) #x00000004) #x00000004)')
+        self.assertEqual( translate_to_smtlib(c), '(bvadd (bvmul VARA #x00000002) VARB)')
+        self.assertEqual( translate_to_smtlib((c+4)-4), '(bvsub (bvadd (bvadd (bvmul VARA #x00000002) VARB) #x00000004) #x00000004)')
 
         d = c+4
         s = arithmetic_simplify(d-c)
@@ -392,10 +393,10 @@ class ExpressionTest(unittest.TestCase):
         exp &= 1
         exp |= 0
         self.assertEqual(get_depth(exp), 4)
-        self.assertEqual(translate_to_smtlib(exp), '(bvor (bvand (bvor V_1 #x00000000) #x00000001) #x00000000)')
+        self.assertEqual(translate_to_smtlib(exp), '(bvor (bvand (bvor BV #x00000000) #x00000001) #x00000000)')
         exp = arithmetic_simplify(exp)
         self.assertTrue(get_depth(exp) < 4)
-        self.assertEqual(translate_to_smtlib(exp), '(bvand V_1 #x00000001)')
+        self.assertEqual(translate_to_smtlib(exp), '(bvand BV #x00000001)')
 
     def testBasicReplace(self):
         ''' Add '''
@@ -802,15 +803,6 @@ class ExpressionTest(unittest.TestCase):
         self.solver._received_version = '(:version "4.5.0")'
         self.assertTrue(self.solver._solver_version() > Version(major=4, minor=4, patch=1))
 
-    def test_check_solver_optimize(self):
-        self.solver._received_version = '(:version "4.5.0")'
-        self.assertTrue(self.solver.support_maximize)
-        self.assertTrue(self.solver.support_minimize)
-
-    def test_check_solver_optimize(self):
-        self.solver._received_version = '(:version "4.4.0")'
-        self.assertFalse(self.solver.support_maximize)
-        self.assertFalse(self.solver.support_minimize)
 
 if __name__ == '__main__':
     unittest.main()

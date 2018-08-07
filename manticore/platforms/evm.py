@@ -346,13 +346,13 @@ class EVM(Eventful):
         super().__init__(**kwargs)
         if data is not None and not issymbolic(data):
             data_size = len(data)
-            data_symbolic = constraints.new_array(index_bits=256, value_bits=8, index_max=data_size, name='DATA_{:x}'.format(address), rename=True)
+            data_symbolic = constraints.new_array(index_bits=256, value_bits=8, index_max=data_size, name='DATA_{:x}'.format(address), avoid_collisions=True)
             data_symbolic[0:data_size] = data
             data = data_symbolic
 
         if bytecode is not None and not issymbolic(bytecode):
             bytecode_size = len(bytecode)
-            bytecode_symbolic = constraints.new_array(index_bits=256, value_bits=8, index_max=bytecode_size, name='BYTECODE_{:x}'.format(address), rename=True)
+            bytecode_symbolic = constraints.new_array(index_bits=256, value_bits=8, index_max=bytecode_size, name='BYTECODE_{:x}'.format(address), avoid_collisions=True)
             bytecode_symbolic[0:bytecode_size] = bytecode
             bytecode = bytecode_symbolic
 
@@ -361,7 +361,7 @@ class EVM(Eventful):
         #if len(bytecode) == 0:
         #    raise EVMException("Need code")
         self._constraints = constraints
-        self.memory = constraints.new_array(index_bits=256, value_bits=8, name='EMPTY_MEMORY_{:x}'.format(address), rename=True)
+        self.memory = constraints.new_array(index_bits=256, value_bits=8, name='EMPTY_MEMORY_{:x}'.format(address), avoid_collisions=True)
         self.address = address
         self.caller = caller  # address of the account that is directly responsible for this execution
         self.data = data
