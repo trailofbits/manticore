@@ -1173,7 +1173,7 @@ class LazySMemory(SMemory):
 
         # this worked
         fdata = fdata[offset:]
-        fdata = fdata.ljust(size, '\0')
+        fdata = fdata.ljust(size, b'\0')
 
         for i in range(size):
             self.bigarray[addr + i:addr + i + 1] = fdata[i]
