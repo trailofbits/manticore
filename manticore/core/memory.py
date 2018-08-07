@@ -233,6 +233,11 @@ class Map(object, metaclass=ABCMeta):
         '''
 
 
+def _new_anonmap(cls, args, kwargs):
+    " Helper for __reduce__ for classes that include kwargs "
+    return cls(*args, **kwargs)
+
+
 class AnonMap(Map):
     ''' A concrete anonymous memory map '''
 
@@ -256,7 +261,9 @@ class AnonMap(Map):
                 self._data[0:len(data_init)] = [ord(s) for s in data_init]
 
     def __reduce__(self):
-        return (self.__class__, (self.start, len(self), self.perms, self._data, ))
+        args = (self.start, len(self), self.perms, self._data)
+        kwargs = {'name':self.name}
+        return _new_anonmap, (self.__class__, args, kwargs)
 
     def split(self, address):
         if address <= self.start:
@@ -688,7 +695,7 @@ class Memory(object, metaclass=ABCMeta):
         for i in range(self._page(addr), self._page(addr + size)):
             assert i not in self._page2map, 'Map already used'
 
-        # Create the anonymous map
+        # Create the map
         m = map_cls(start=addr, size=size, perms=perms, **kwargs)
 
         # Okay, ready to alloc
