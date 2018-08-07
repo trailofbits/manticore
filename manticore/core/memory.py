@@ -1176,7 +1176,7 @@ class LazySMemory(SMemory):
         fdata = fdata.ljust(size, b'\0')
 
         for i in range(size):
-            self.bigarray[addr + i:addr + i + 1] = fdata[i]
+            self.bigarray[addr + i:addr + i + 1] = chr(fdata[i])
 
         # original
         # towrite = min(size, len(fdata[offset:]))
