@@ -262,7 +262,7 @@ class AnonMap(Map):
 
     def __reduce__(self):
         args = (self.start, len(self), self.perms, self._data)
-        kwargs = {'name':self.name}
+        kwargs = {'name': self.name}
         return _new_anonmap, (self.__class__, args, kwargs)
 
     def split(self, address):
