@@ -420,7 +420,7 @@ class SyscallAbi(Abi):
             if ret > min_hex_expansion:
                 ret_s = ret_s + '(0x{:x})'.format(ret)
 
-            platform_logger.debug('%s(%s) -> %s', model.__func__.__name__, args_s, ret_s)
+            platform_logger.debug('%s(%s) -> %s', model.__func__.__name__, repr(args_s), ret_s)
 
 ############################################################################
 # Abstract cpu encapsulating common cpu methods used by platforms and executor.
