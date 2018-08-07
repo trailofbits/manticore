@@ -182,6 +182,8 @@ class State(Eventful):
 
         :param manticore.core.smtlib.Bool constraint: Constraint to add
         '''
+        if issymbolic(constraint):
+            constraint = self.migrate_expression(constraint)
         self._constraints.add(constraint)
 
     def abandon(self):
