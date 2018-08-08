@@ -182,8 +182,7 @@ class State(Eventful):
 
         :param manticore.core.smtlib.Bool constraint: Constraint to add
         '''
-        if issymbolic(constraint):
-            constraint = self.migrate_expression(constraint)
+        constraint = self.migrate_expression(constraint)
         self._constraints.add(constraint)
 
     def abandon(self):
@@ -266,6 +265,8 @@ class State(Eventful):
         return solver
 
     def migrate_expression(self, expression):
+        if not issymbolic(expression):
+            return expression
         migration_bindings = self.context.get('migration_bindings')
         if migration_bindings is None:
             migration_bindings = {}
@@ -277,13 +278,11 @@ class State(Eventful):
         return self.can_be_true(True)
 
     def can_be_true(self, expr):
-        if issymbolic(expr):
-            expr = self.migrate_expression(expr)
+        expr = self.migrate_expression(expr)
         return self._solver.can_be_true(self._constraints, expr)
 
     def must_be_true(self, expr):
-        if issymbolic(expr):
-            expr = self.migrate_expression(expr)
+        expr = self.migrate_expression(expr)
         return not self._solver.can_be_true(self._constraints, expr == False)
 
     def solve_one(self, expr):
@@ -295,8 +294,7 @@ class State(Eventful):
         :return: Concrete value
         :rtype: int
         '''
-        if issymbolic(expr):
-            expr = self.migrate_expression(expr)
+        expr = self.migrate_expression(expr)
         value = self._solver.get_value(self._constraints, expr)
         #Include forgiveness here
         if isinstance(value, tuple):
@@ -319,8 +317,7 @@ class State(Eventful):
         :return: Concrete value
         :rtype: list[int]
         '''
-        if issymbolic(expr):
-            expr = self.migrate_expression(expr)
+        expr = self.migrate_expression(expr)
         return self._solver.get_all_values(self._constraints, expr, nsolves, silent=True)
 
     def solve_max(self, expr):
@@ -334,8 +331,7 @@ class State(Eventful):
         '''
         if isinstance(expr, int):
             return expr
-        if issymbolic(expr):
-            expr = self.migrate_expression(expr)
+        expr = self.migrate_expression(expr)
         return self._solver.max(self._constraints, expr)
 
     def solve_min(self, expr):
@@ -349,8 +345,7 @@ class State(Eventful):
         '''
         if isinstance(expr, int):
             return expr
-        if issymbolic(expr):
-            expr = self.migrate_expression(expr)
+        expr = self.migrate_expression(expr)
         return self._solver.min(self._constraints, expr)
 
     ################################################################################################
