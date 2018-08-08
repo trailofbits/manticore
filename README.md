@@ -90,7 +90,7 @@ user_account=m.create_account(balance=1000)
 contract_account=m.solidity_create_contract(contract_src,
                                             owner=user_account,
                                             balance=0)
-bar=m.make_symbolic_value(name="bar")
+bar=m.make_symbolic_value()
 
 contract_account.foo(bar)
 
