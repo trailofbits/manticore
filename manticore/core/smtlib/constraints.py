@@ -226,7 +226,7 @@ class ConstraintSet(object):
             migration_bindings = {}
 
         #  migration_bindings -> fat_bindings
-        #  Based on the name mapping in migration_bindings build an object to 
+        #  Based on the name mapping in migration_bindings build an object to
         #  object mapping to be used in the replacing of variables
         fat_bindings = {}
         declared_names = self.get_declared_names()
@@ -235,7 +235,7 @@ class ConstraintSet(object):
             migrated_name = migration_bindings.get(old_name)
             if migrated_name in declared_names:
                 fat_bindings[expression_variables[old_name]] = self.get_variable(migrated_name)
-            
+
         # Make a new migrated variable for each unkonw variable in the expression
         for var in expression_variables.values():
 
@@ -249,8 +249,6 @@ class ConstraintSet(object):
                 continue
 
             assert var.name not in migration_bindings.keys()
-            if '_migrated'  in var.name or 'TXVALUE_2' in var.name:
-                import pdb; pdb.set_trace()
 
             # var needs migration use old_name_migrated if name already used
             name = var.name
@@ -334,4 +332,3 @@ class ConstraintSet(object):
             raise ValueError("Name already used")
         var = self._declare(ArrayVariable(index_bits, index_max, value_bits, name, taint=taint))
         return ArrayProxy(var)
-
