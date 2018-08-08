@@ -64,7 +64,8 @@ m.run()
 ```
 
 ### Ethereum
-Manticore ships with a library of vulnerability finding analyses accessible from the command line. Solidity smart contracts must have a `.sol` extension to be consumed by Manticore.
+
+Manticore ships with _detectors_ accessible from the command line. Solidity smart contracts must have a `.sol` extension to be consumed by Manticore.
 
 ```
 $ manticore ./path/to/contract.sol  # runs, and creates a mcore_* directory with analysis results
@@ -72,7 +73,7 @@ $ manticore --detect-reentrancy ./path/to/contract.sol  # Above, but with reentr
 $ manticore --detect-all ./path/to/contract.sol  # Above, but with all bug detectors enabled
 ```
 
-Manticore also contains a python API specifically designed for analyzing smart contracts.
+Use the Python API to verify arbitrary properties of smart contracts by inspecting the states that Manticore discovers.
 
 ```python
 from manticore.ethereum import ManticoreEVM
@@ -100,8 +101,6 @@ for state in m.running_states:
 
 ```
 
-
-
 Further documentation is available in several places:
 
   * The [wiki](https://github.com/trailofbits/manticore/wiki) contains some
@@ -120,7 +119,7 @@ Manticore is beta software. It is actively developed and maintained, and users s
 
 
 
-## Quick Start
+## Installation
 
 Install and try Manticore in a few shell commands (see an [asciinema](https://asciinema.org/a/567nko3eh2yzit099s0nq4e8z)):
 
@@ -167,7 +166,7 @@ manticore@80d441275ebf:~$ cd examples/linux
 
 Then follow from the `make` command above.
 
-## Installation
+### Expert Installation
 
 Option 1: Perform a user install (requires `~/.local/bin` in your `PATH`).
 
