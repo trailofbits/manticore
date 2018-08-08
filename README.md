@@ -21,11 +21,6 @@ Manticore can analyze the following types of programs:
 - Linux ELF binaries (x86, x86_64 and ARMv7)
 - Ethereum smart contracts (EVM bytecode) ([release announcement](https://github.com/trailofbits/manticore/releases/tag/0.1.6))
 
-## Requirements
-
-Manticore is supported on Linux and requires Python >=3.6. Ubuntu 18.04 is strongly recommended.
-Ethereum smart contract analysis requires the [`solc`](https://github.com/ethereum/solidity) program in your `$PATH`.
-
 ## Usage
 
 ### CLI
@@ -65,7 +60,9 @@ m.run()
 
 ### Ethereum
 
-Manticore ships with _detectors_ accessible from the command line. Solidity smart contracts must have a `.sol` extension to be consumed by Manticore.
+Manticore includes a symbolic Ethereum Virtual Machine (EVM) and a convenient interface for automated compilation and analysis of Solidity. It also integrates with [Ethersplay](https://github.com/trailofbits/ethersplay), Trail of Bits’ visual disassembler for EVM bytecode, for analysis visualization. As with binaries, Manticore offers a simple command line interface and a Python API for analysis of EVM bytecode. See a demo: https://asciinema.org/a/154012
+
+Use the CLI to explore possible states in Ethereum smart contracts. Manticore includes _detectors_ which flag certain conditions, including known vulnerable code, as it explores possible states. Note: Solidity smart contracts must have a `.sol` extension for consumption by Manticore.
 
 ```
 $ manticore ./path/to/contract.sol  # runs, and creates a mcore_* directory with analysis results
@@ -73,7 +70,7 @@ $ manticore --detect-reentrancy ./path/to/contract.sol  # Above, but with reentr
 $ manticore --detect-all ./path/to/contract.sol  # Above, but with all bug detectors enabled
 ```
 
-Use the Python API to verify arbitrary properties of smart contracts by inspecting the states that Manticore discovers.
+Manticore is capable of detailed verification of arbitrary properties of smart contracts via its Python API.
 
 ```python
 from manticore.ethereum import ManticoreEVM
@@ -115,9 +112,10 @@ Further documentation is available in several places:
   * The [API reference](http://manticore.readthedocs.io/en/latest/) has more
     thorough and in-depth documentation on our API
 
-Manticore is beta software. It is actively developed and maintained, and users should expect improvements, interface changes, and of course, some bugs.
+## Requirements
 
-
+Manticore is supported on Linux and requires Python >=3.6. Ubuntu 18.04 is strongly recommended.
+Ethereum smart contract analysis requires the [`solc`](https://github.com/ethereum/solidity) program in your `$PATH`.
 
 ## Installation
 
