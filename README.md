@@ -19,7 +19,7 @@ Manticore is a symbolic execution tool for analysis of binaries and smart contra
 Manticore can analyze the following types of programs:
 
 - Linux ELF binaries (x86, x86_64 and ARMv7)
-- Ethereum smart contracts (EVM bytecode) ([release announcement](https://github.com/trailofbits/manticore/releases/tag/0.1.6))
+- Ethereum smart contracts (EVM bytecode)
 
 ## Usage
 
