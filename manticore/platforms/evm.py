@@ -1996,14 +1996,12 @@ class EVMWorld(Platform):
         # Fork on enough funds
         if not failed:
             src_balance = self.get_balance(caller)
-            enough_balance = src_balance >= value
-            if issymbolic(enough_balance):
-                self.constraints.add(src_balance + value >= src_balance)
+            enough_balance = Operators.UGE(src_balance, value)
             enough_balance_solutions = solver.get_all_values(self._constraints, enough_balance)
 
             if set(enough_balance_solutions) == {True, False}:
                 raise Concretize('Forking on available funds',
-                                 expression=src_balance < value,
+                                 expression=Operators.ULT(src_balance, value),
                                  setstate=lambda a, b: None,
                                  policy='ALL')
             failed = set(enough_balance_solutions) == {False}

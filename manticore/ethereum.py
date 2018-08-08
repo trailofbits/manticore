@@ -1239,8 +1239,7 @@ class ManticoreEVM(Manticore):
                 migration_bindings = state.context.get('migration_bindings')
                 if migration_bindings is None:
                     migration_bindings = {}
-
-                migrated_constraint = state_constraints.migrate(constraint, bindings=migration_bindings)
+                migrated_constraint = state_constraints.migrate(constraint, migration_bindings=migration_bindings)
                 state_constraints.add(migrated_constraint)
 
                 state.context['migration_bindings'] = migration_bindings
@@ -1796,23 +1795,23 @@ class ManticoreEVM(Manticore):
             if migration_bindings is None:
                 migration_bindings = {}
             if issymbolic(caller):
-                caller = state_constraints.migrate(caller, bindings=migration_bindings)
+                caller = state_constraints.migrate(caller, migration_bindings=migration_bindings)
 
             if issymbolic(address):
-                address = state_constraints.migrate(address, bindings=migration_bindings)
+                address = state_constraints.migrate(address, migration_bindings=migration_bindings)
 
             if issymbolic(value):
-                value = state_constraints.migrate(value, bindings=migration_bindings)
+                value = state_constraints.migrate(value, migration_bindings=migration_bindings)
 
             if issymbolic(data):
                 if isinstance(data, ArrayProxy):  # FIXME is this necesary here?
                     data = data.array
-                data = state_constraints.migrate(data, bindings=migration_bindings)
+                data = state_constraints.migrate(data, migration_bindings=migration_bindings)
                 if isinstance(data, Array):
                     data = ArrayProxy(data)
 
             for c in global_constraints:
-                migrated_constraint = state_constraints.migrate(c, bindings=migration_bindings)
+                migrated_constraint = state_constraints.migrate(c, migration_bindings=migration_bindings)
                 state.constrain(migrated_constraint)
             state.context['migration_bindings'] = migration_bindings
 

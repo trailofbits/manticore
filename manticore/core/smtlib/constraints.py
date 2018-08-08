@@ -168,7 +168,7 @@ class ConstraintSet(object):
         return var
 
     def get_declared_variables(self):
-        return self._declarations.keys()
+        return self._declarations.values()
 
     def get_declared_names(self):
         return self._declarations.keys()
@@ -216,29 +216,50 @@ class ConstraintSet(object):
             name = '%s_%d' % (name, self._get_sid())
         return name
 
-    def migrate(self, expression, name=None, bindings=None):
-        ''' Migrate an expression created for a different constraint set
+    def migrate(self, expression, migration_bindings=None):
+        ''' Migrate an expression created for a different constraint set to self.
             Returns an expression that can be used with this constraintSet
+
+            :param migration_bindings: a name to name mapping of already migrated variables
         '''
-        # Simply check there are no name overlappings
-        if bindings is None:
-            bindings = {}
-        variables = get_variables(expression)
-        old_variables = dict([(x.name, x) for x in variables])
+        if migration_bindings is None:
+            migration_bindings = {}
+
+        #  migration_bindings -> fat_bindings
+        #  Based on the name mapping in migration_bindings build an object to 
+        #  object mapping to be used in the replacing of variables
         fat_bindings = {}
-        for old_name, migrated_name in bindings.items():
-            if old_name in old_variables and migrated_name in self.get_declared_names():
-                fat_bindings[old_variables[old_name]] = self.get_variable(migrated_name)
+        declared_names = self.get_declared_names()
+        expression_variables = dict([(x.name, x) for x in get_variables(expression)])
+        for old_name in expression_variables:
+            migrated_name = migration_bindings.get(old_name)
+            if migrated_name in declared_names:
+                fat_bindings[expression_variables[old_name]] = self.get_variable(migrated_name)
+            
+        # Make a new migrated variable for each unkonw variable in the expression
+        for var in expression_variables.values():
 
-        for var in variables:
-
-            if var in self.get_declared_variables():
+            # do nothing if it is a known/declared variable
+            if any(x is var for x in self.get_declared_variables()):
                 continue
 
+            # do nothing if there is already a migrated variable for it
+            #if any(x is var for x in fat_bindings.values()):
             if var in fat_bindings:
                 continue
 
-            name = self._get_new_name(var.name + '_migrated')
+            assert var.name not in migration_bindings.keys()
+            if '_migrated'  in var.name or 'TXVALUE_2' in var.name:
+                import pdb; pdb.set_trace()
+
+            # var needs migration use old_name_migrated if name already used
+            name = var.name
+            if name in self._declarations:
+                name = self._get_new_name(var.name + '_migrated')
+            if name in self._declarations:
+                raise ValueError("Migration name already used")
+
+            # Create and declare a new variable of given type
             if isinstance(var, Bool):
                 new_var = self.new_bool(name=name)
             elif isinstance(var, BitVec):
@@ -248,9 +269,12 @@ class ConstraintSet(object):
             else:
                 raise NotImplemented("Unknown type {}".format(type(var)))
 
+            # Update the var to var mapping
             fat_bindings[var] = new_var
-            bindings[var.name] = new_var.name
+            # Update the name to name mapping
+            migration_bindings[var.name] = new_var.name
 
+        #  Actually replace each appearence of migrated variables by the new ones
         migrated_expression = replace(expression, fat_bindings)
         return migrated_expression
 
@@ -308,5 +332,6 @@ class ConstraintSet(object):
             name = self._get_new_name(name)
         if not avoid_collisions and name in self._declarations:
             raise ValueError("Name already used")
-        var = ArrayProxy(ArrayVariable(index_bits, index_max, value_bits, name, taint=taint))
-        return self._declare(var)
+        var = self._declare(ArrayVariable(index_bits, index_max, value_bits, name, taint=taint))
+        return ArrayProxy(var)
+

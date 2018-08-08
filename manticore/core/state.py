@@ -269,7 +269,7 @@ class State(Eventful):
         migration_bindings = self.context.get('migration_bindings')
         if migration_bindings is None:
             migration_bindings = {}
-        migrated_expression = self.constraints.migrate(expression, bindings=migration_bindings)
+        migrated_expression = self.constraints.migrate(expression, migration_bindings=migration_bindings)
         self.context['migration_bindings'] = migration_bindings
         return migrated_expression
 
