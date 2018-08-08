@@ -248,25 +248,21 @@ class ConstraintSet(object):
             if var in fat_bindings:
                 continue
 
-            assert var.name not in migration_bindings.keys()
-
             # var needs migration use old_name_migrated if name already used
             name = var.name
             if name in self._declarations:
                 name = self._get_new_name(var.name + '_migrated')
             if name in self._declarations:
                 raise ValueError("Migration name already used")
-
             # Create and declare a new variable of given type
             if isinstance(var, Bool):
                 new_var = self.new_bool(name=name)
             elif isinstance(var, BitVec):
                 new_var = self.new_bitvec(var.size, name=name)
             elif isinstance(var, Array):
-                new_var = self.new_array(index_max=var.index_max, index_bits=var.index_bits, value_bits=var.value_bits, name=name)
+                new_var = self.new_array(index_max=var.index_max, index_bits=var.index_bits, value_bits=var.value_bits, name=name).array
             else:
                 raise NotImplemented("Unknown type {}".format(type(var)))
-
             # Update the var to var mapping
             fat_bindings[var] = new_var
             # Update the name to name mapping

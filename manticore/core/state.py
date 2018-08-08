@@ -277,9 +277,13 @@ class State(Eventful):
         return self.can_be_true(True)
 
     def can_be_true(self, expr):
+        if issymbolic(expr):
+            expr = self.migrate_expression(expr)
         return self._solver.can_be_true(self._constraints, expr)
 
     def must_be_true(self, expr):
+        if issymbolic(expr):
+            expr = self.migrate_expression(expr)
         return not self._solver.can_be_true(self._constraints, expr == False)
 
     def solve_one(self, expr):
