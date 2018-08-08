@@ -247,7 +247,6 @@ class Z3Solver(Solver):
         try:
             self._proc.stdout.flush()
             self._proc.stdin.write('{}\n'.format(cmd))
-            self._proc.stdin.flush()
         except IOError as e:
             raise SolverException(str(e))
 

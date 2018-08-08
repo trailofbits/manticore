@@ -104,10 +104,6 @@ class memoized(object):
         return functools.partial(self.__call__, obj)
 
 
-def is_binja_disassembler(disasm):
-    return disasm == "binja-il"
-
-
 class CacheDict(OrderedDict):
     def __init__(self, *args, max_size=30000, flush_perc=30, **kwargs):
         self._max_size = max_size
