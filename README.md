@@ -67,10 +67,10 @@ Use the CLI to explore possible states in Ethereum smart contracts. Manticore in
 ```
 $ manticore ./path/to/contract.sol  # runs, and creates a mcore_* directory with analysis results
 $ manticore --detect-reentrancy ./path/to/contract.sol  # Above, but with reentrancy detection enabled
-$ manticore --detect-all ./path/to/contract.sol  # Above, but with all bug detectors enabled
+$ manticore --detect-all ./path/to/contract.sol  # Above, but with all detectors enabled
 ```
 
-Manticore is capable of detailed verification of arbitrary properties of smart contracts via its Python API.
+Manticore is capable of detailed verification of arbitrary properties of smart contracts via its Python API. Set starting conditions, identify symbolic transactions, then review discovered states to ensure invariants for your contract hold.
 
 ```python
 from manticore.ethereum import ManticoreEVM
@@ -112,12 +112,9 @@ Further documentation is available in several places:
   * The [API reference](http://manticore.readthedocs.io/en/latest/) has more
     thorough and in-depth documentation on our API
 
-## Requirements
-
-Manticore is supported on Linux and requires Python >=3.6. Ubuntu 18.04 is strongly recommended.
-Ethereum smart contract analysis requires the [`solc`](https://github.com/ethereum/solidity) program in your `$PATH`.
-
 ## Installation
+
+Manticore is supported on Linux and requires Python >=3.6. Ubuntu 18.04 is strongly recommended. Ethereum smart contract analysis requires the [`solc`](https://github.com/ethereum/solidity) program in your `$PATH`.
 
 Install and try Manticore in a few shell commands (see an [asciinema](https://asciinema.org/a/567nko3eh2yzit099s0nq4e8z)):
 
