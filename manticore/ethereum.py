@@ -505,25 +505,23 @@ class DetectUnusedRetVal(Detector):
 
         state.context[self._stack_name].pop()
 
-    def did_evm_execute_instruction_callback(self, state, instruction, arguments, result_ref):
+    def did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
         world = state.platform
-        result = result_ref.value
         mnemonic = instruction.semantics
-        result = result_ref.value
+        current_vm = world.current_vm
         if instruction.is_starttx:
             # A transactional instruction just returned add a taint to result
             # and add that taint to the set
             id_val = self._save_current_location(state, "Returned value at {:s} instruction is not used".format(mnemonic))
             taint = "RETVAL_{:s}".format(id_val)
-            result = taint_with(result, taint)
+            current_vm.change_last_result(taint_with(result, taint))
             self._add_retval_taint(state, taint)
         elif mnemonic == 'JUMPI':
             dest, cond = arguments
             for used_taint in get_taints(cond, "RETVAL_.*"):
                 self._remove_retval_taint(state, used_taint)
 
-        result_ref.value = result
-
+        
 
 class DetectUnusedRetVal(Detector):
     '''
@@ -565,24 +563,21 @@ class DetectUnusedRetVal(Detector):
 
         state.context[self._stack_name].pop()
 
-    def did_evm_execute_instruction_callback(self, state, instruction, arguments, result_ref):
+    def did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
         world = state.platform
-        result = result_ref.value
+        current_vm = world.current_vm
         mnemonic = instruction.semantics
-        result = result_ref.value
         if instruction.is_starttx:
             # A transactional instruction just returned add a taint to result
             # and add that taint to the set
             id_val = self._save_current_location(state, "Returned value at {:s} instruction is not used".format(mnemonic))
             taint = "RETVAL_{:s}".format(id_val)
-            result = taint_with(result, taint)
+            current_vm.change_last_result(taint_with(result, taint))
             self._add_retval_taint(state, taint)
         elif mnemonic == 'JUMPI':
             dest, cond = arguments
             for used_taint in get_taints(cond, "RETVAL_.*"):
                 self._remove_retval_taint(state, used_taint)
-
-        result_ref.value = result
 
 
 class DetectUninitializedMemory(Detector):
@@ -2192,7 +2187,7 @@ class ManticoreEVM(Manticore):
             assert ty == 'CREATE'
             world.create_contract(caller=caller, address=address, balance=value, init=data, price=price)
 
-    def _did_evm_execute_instruction_callback(self, state, instruction, arguments, result_ref):
+    def _did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
         ''' INTERNAL USE '''
         logger.debug("%s", state.platform.current_vm)
         #TODO move to a plugin

@@ -97,6 +97,11 @@ class Transaction(object):
         if result in {'RETURN', 'REVERT'}:
             if not isinstance(return_data, (bytearray, Array)):
                 raise EVMException('Invalid transaction return_data')
+        elif result in {'STOP', 'THROW', 'SELFDESTRUCT'}:
+            if return_data is None:
+                return_data = bytearray()
+            if not isinstance(return_data, (bytearray, Array)) or len(return_data) != 0:
+                raise EVMException('Invalid transaction return_data. To much data for STOP,THROW or SELFDESTRUCT')
         else:
             if return_data is not None:
                 raise EVMException('Invalid transaction return_data')
@@ -144,7 +149,7 @@ class EndTx(EVMException):
             raise EVMException('Invalid end transaction result')
         if not isinstance(data, (type(None), Array, bytearray)):
             raise EVMException('Invalid end transaction data type')
-
+        
         self.result = result
         self.data = data
 
@@ -691,7 +696,6 @@ class EVM(Eventful):
                              expression=expression,
                              setstate=setstate,
                              policy='ALL')
-
         try:
             last_pc, last_gas, instruction, arguments = self._checkpoint()
             result = self._handler(*arguments)
