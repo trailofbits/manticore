@@ -1,10 +1,15 @@
 import functools
 import collections
 import logging
+import pickle
 import re
+import sys
 
 from collections import OrderedDict
 from ..core.smtlib import Expression, BitVecConstant
+
+
+logger = logging.getLogger(__name__)
 
 
 def issymbolic(value):
@@ -137,3 +142,41 @@ class CacheDict(OrderedDict):
         for i in range(purge_count):
             self.popitem(last=False)
         self._hits -= purge_count
+
+
+class StateSerializer(object):
+    """
+    StateSerializer can serialize and deserialize :class:`~manticore.core.state.State` objects from and to
+    stream-like objects.
+    """
+
+    def __init__(self):
+        pass
+
+    def serialize(self, state, f):
+        raise NotImplementedError
+
+    def deserialize(self, f):
+        raise NotImplementedError
+
+
+class PickleSerializer(StateSerializer):
+    DEFAULT_RECURSION: int = 0x100000  # 1M
+    MAX_RECURSION: int = 0x1000000  # 16.7M
+
+    def __init__(self):
+        super().__init__()
+        sys.setrecursionlimit(PickleSerializer.DEFAULT_RECURSION)
+
+    def serialize(self, state, f):
+        try:
+            f.write(pickle.dumps(state, 2))
+        except RuntimeError:
+            if sys.getrecursionlimit() >= PickleSerializer.MAX_RECURSION:
+                raise Exception(f'PickleSerializer recursion limit surpassed {PickleSerializer.MAX_RECURSION}, aborting')
+            logger.info(f'Recursion maximum {sys.getrecursionlimit()} hit, increasing')
+            sys.setrecursionlimit(sys.getrecursionlimit() + PickleSerializer.DEFAULT_RECURSION)
+            self.serialize(state, f)
+
+    def deserialize(self, f):
+        return pickle.load(f)

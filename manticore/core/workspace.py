@@ -9,7 +9,7 @@ import io
 from contextlib import contextmanager
 from multiprocessing.managers import SyncManager
 
-from manticore.core.state import PickleSerializer
+from manticore.utils.helpers import PickleSerializer
 from .smtlib import solver
 from .state import State
 

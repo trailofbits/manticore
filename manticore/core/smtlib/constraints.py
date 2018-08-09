@@ -1,4 +1,6 @@
+import sys
 
+from manticore.utils.helpers import PickleSerializer
 from .expression import BitVecVariable, BoolVariable, ArrayVariable, Array, Bool, BitVec, BoolConstant, ArrayProxy, BoolEq, Variable, Constant
 from .visitors import GetDeclarations, TranslatorSmtlib, get_variables, simplify, replace, translate_to_smtlib
 import logging
@@ -165,13 +167,14 @@ class ConstraintSet(object):
         for a in self.constraints:
             try:
                 declarations.visit(a)
-            except BaseException:
-                # there recursion limit exceeded problem,
-                # try a slower, iterative solution
-                #logger.info('WARNING: using iterpickle to dump recursive expression')
-                #from utils import iterpickle
-                #file('recursive.pkl', 'w').write(iterpickle.dumps(a))
-                raise
+            except RuntimeError:
+                # TODO: (defunct) move recursion management out of PickleSerializer
+                if sys.getrecursionlimit() >= PickleSerializer.MAX_RECURSION:
+                    raise Exception(f'declarations recursion limit surpassed {PickleSerializer.MAX_RECURSION}, aborting')
+                new_limit = sys.getrecursionlimit() + PickleSerializer.DEFAULT_RECURSION
+                if new_limit <= PickleSerializer.DEFAULT_RECURSION:
+                    sys.setrecursionlimit(new_limit)
+                    return self.declarations
         return declarations.result
 
     @property

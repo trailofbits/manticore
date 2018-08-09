@@ -1,4 +1,3 @@
-from manticore.core.state import PickleSerializer
 from . import abitypes
 import uuid
 import numbers
@@ -14,7 +13,7 @@ from .manticore import ManticoreError
 from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, istainted, taint_with, get_taints, BitVec, Constant, operators, Array, ArrayVariable, ArrayProxy
 from .platforms import evm
 from .core.state import State
-from .utils.helpers import istainted, issymbolic
+from .utils.helpers import istainted, issymbolic, PickleSerializer
 import tempfile
 from subprocess import Popen, PIPE, check_output
 from multiprocessing import Process, Queue
