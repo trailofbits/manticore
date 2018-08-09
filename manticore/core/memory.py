@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod, abstractproperty
 from weakref import WeakValueDictionary
 from .smtlib import *
-from .smtlib.visitors *
+from .smtlib.visitors import *
 import logging
 from ..utils.mappings import mmap, munmap
 from ..utils.helpers import issymbolic
