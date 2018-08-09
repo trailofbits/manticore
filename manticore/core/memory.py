@@ -1,6 +1,7 @@
 from abc import ABCMeta, abstractmethod, abstractproperty
 from weakref import WeakValueDictionary
 from .smtlib import *
+from .smtlib.visitors *
 import logging
 from ..utils.mappings import mmap, munmap
 from ..utils.helpers import issymbolic
@@ -1197,7 +1198,11 @@ class LazySMemory(SMemory):
 
         for m in self._maps:
             within_map = self._map_deref_expr(m, address, size)
-            deref_expression = Operators.ITE(within_map, self._backing_array[address:address + size], deref_expression)
+            print(within_map)
+            print(translate_to_smtlib(self._backing_array[address:address+size]))
+            deref_expression = Operators.ITEBV(within_map, size // 8,
+                                               self._backing_array[address:address + size],
+                                               deref_expression)
 
         return deref_expression
 
