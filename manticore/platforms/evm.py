@@ -149,7 +149,6 @@ class EndTx(EVMException):
             raise EVMException('Invalid end transaction result')
         if not isinstance(data, (type(None), Array, bytearray)):
             raise EVMException('Invalid end transaction data type')
-        
         self.result = result
         self.data = data
 

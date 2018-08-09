@@ -521,7 +521,6 @@ class DetectUnusedRetVal(Detector):
             for used_taint in get_taints(cond, "RETVAL_.*"):
                 self._remove_retval_taint(state, used_taint)
 
-        
 
 class DetectUnusedRetVal(Detector):
     '''
