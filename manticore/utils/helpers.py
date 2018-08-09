@@ -1,9 +1,9 @@
 import functools
 import collections
-import re
 import logging
-from collections import OrderedDict
+import re
 
+from collections import OrderedDict
 from ..core.smtlib import Expression, BitVecConstant
 
 

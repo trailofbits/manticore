@@ -1,3 +1,4 @@
+from manticore.core.state import PickleSerializer
 from . import abitypes
 import uuid
 import numbers
@@ -22,7 +23,6 @@ import sha3
 import json
 import logging
 import io
-import pickle
 from .core.plugin import Plugin
 from functools import reduce
 from contextlib import contextmanager
@@ -1403,6 +1403,7 @@ class ManticoreEVM(Manticore):
             :param int procs: number of workers to use in the exploration
         '''
         self._accounts = dict()
+        self._serializer = PickleSerializer()
 
         self._config_procs = procs
         # Make the constraint store
@@ -2366,13 +2367,7 @@ class ManticoreEVM(Manticore):
             smt_summary.write(str(state.constraints))
 
         with testcase.open_stream('pkl', binary=True) as statef:
-            try:
-                statef.write(pickle.dumps(state, 2))
-            except RuntimeError:
-                # recursion exceeded. try a slower, iterative solution
-                from .utils import iterpickle
-                logger.debug("Using iterpickle to dump state")
-                statef.write(iterpickle.dumps(state, 2))
+            self._serializer.serialize(state, statef)
 
         trace = state.context.get('evm.trace')
         if trace:
