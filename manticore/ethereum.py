@@ -786,9 +786,6 @@ class SolidityMetadata(object):
         return '(' + ','.join(x['type'] for x in abi.get('outputs', [])) + ')'
 
     def get_func_name(self, hsh):
-        if len(hsh) == 8:
-            hsh = binascii.unhexlify(hsh)
-            import traceback; traceback.print_stack()
         signature = self.signatures.get(hsh, '{fallback}()')
         return signature.split('(')[0]
 
@@ -805,7 +802,7 @@ class SolidityMetadata(object):
 
     @property
     def hashes(self):
-        return tuple(map(self.get_hash, self._functions)) + ( b'\x00\x00\x00\x00',)
+        return tuple(map(self.get_hash, self._functions)) + (b'\x00\x00\x00\x00',)
 
 
 class ABI(object):
@@ -2084,7 +2081,6 @@ class ManticoreEVM(Manticore):
             self._executor.forward_events_from(state, True)
         return state
 
-
     # Callbacks
     def _on_symbolic_sha3_callback(self, state, data, known_hashes):
         ''' INTERNAL USE '''
@@ -2113,8 +2109,6 @@ class ManticoreEVM(Manticore):
             not_known_hashes_cond = Operators.NOT(known_hashes_cond)
 
             # We need to fork/save the state
-
-
             #################################
             # save the state to secondary storage
             # Build and enqueue a state for each solution
@@ -2122,14 +2116,14 @@ class ManticoreEVM(Manticore):
                 if temp_state.can_be_true(not_known_hashes_cond):
                     temp_state.constrain(not_known_hashes_cond)
                     state_id = self._executor._workspace.save_state(temp_state)
-                    sha3_states[state_id] = [ hsh for buf, hsh in known_sha3 ]
+                    sha3_states[state_id] = [hsh for buf, hsh in known_sha3]
             context['_sha3_states'] = sha3_states
 
             if not state.can_be_true(known_hashes_cond):
                 raise state.abandon()
 
             #send knwon hashes to evm
-            known_hashes.update( results)
+            known_hashes.update(results)
 
     def _on_concrete_sha3_callback(self, state, buf, value):
         ''' INTERNAL USE '''
@@ -2519,12 +2513,6 @@ class ManticoreEVM(Manticore):
         Terminate and generate testcases for all currently alive states (contract states that cleanly executed
         to a STOP or RETURN in the last symbolic transaction).
         """
-        #with self.locked_context('ethereum') as context:
-        #    globally_known_sha3 = context.get('known_sha3', set())
-        #    sha3_states = context.get('_sha3_states', [])
-        #    print ('sha3states', globally_known_sha3, sha3_states)
-
-
         logger.debug("Finalizing %d states.", self.count_states())
 
         def finalizer(state_id):

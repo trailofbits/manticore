@@ -1,4 +1,5 @@
 ''' Symbolic EVM implementation based on the yellow paper: http://gavwood.com/paper.pdf '''
+import binascii
 import random
 import copy
 import inspect
@@ -155,6 +156,13 @@ class EndTx(EVMException):
             return True
 
 
+class InvalidOpcode(EndTx):
+    ''' Trying to execute invalid opcode '''
+
+    def __init__(self):
+        super().__init__('THROW')
+
+
 class StackOverflow(EndTx):
     ''' Attemped to push more than 1024 items '''
 
@@ -163,14 +171,7 @@ class StackOverflow(EndTx):
 
 
 class StackUnderflow(EndTx):
-    ''' Attemped to popo from an empty stack '''
-
-    def __init__(self):
-        super().__init__('THROW')
-
-
-class InvalidOpcode(EndTx):
-    ''' Trying to execute invalid opcode '''
+    ''' Attemped to pop from an empty stack '''
 
     def __init__(self):
         super().__init__('THROW')
@@ -593,9 +594,6 @@ class EVM(Eventful):
         if current.has_operand:
             arguments.append(current.operand)
 
-        if len(self.stack) < current.pops:
-            raise StackUnderflow()
-
         if current.pops:
             arguments.extend(reversed(self.stack[-current.pops:]))
         return arguments
@@ -632,9 +630,13 @@ class EVM(Eventful):
                 self._publish('will_decode_instruction', self.pc)
                 self._publish('will_execute_instruction', self.pc, self.instruction)
                 self._publish('will_evm_execute_instruction', self.instruction, self._top_arguments())
-                self._consume(self.instruction.fee)
 
-            self._checkpoint_data = ( self.pc, self.gas, self.instruction, self._pop_arguments() )
+            pc = self.pc
+            instruction = self.instruction
+            old_gas = self.gas
+            self._consume(instruction.fee)
+            arguments = self._pop_arguments()
+            self._checkpoint_data = (pc, old_gas, instruction, arguments)
         return self._checkpoint_data
 
     def _rollback(self):
@@ -645,12 +647,15 @@ class EVM(Eventful):
         self._pc = last_pc
         self._checkpoint_data = None
 
-    def _advance(self, result=None):
+    def _advance(self, result=None, exception=False):
+        if self._checkpoint_data is None:
+            return
         last_pc, last_gas, last_instruction, last_arguments = self._checkpoint_data
-        if not last_instruction.is_branch:
-            #advance pc pointer
-            self.pc += last_instruction.size
-        self._push_results(last_instruction, result)
+        if not exception:
+            if not last_instruction.is_branch:
+                #advance pc pointer
+                self.pc += last_instruction.size
+            self._push_results(last_instruction, result)
         self._publish('did_evm_execute_instruction', last_instruction, last_arguments, result)
         self._publish('did_execute_instruction', last_pc, self.pc, last_instruction)
         self._checkpoint_data = None
@@ -685,12 +690,14 @@ class EVM(Eventful):
                              expression=expression,
                              setstate=setstate,
                              policy='ALL')
+
         try:
             last_pc, last_gas, instruction, arguments = self._checkpoint()
             result = self._handler(*arguments)
             self._advance(result)
         except ConcretizeStack as ex:
             pos = -ex.pos
+
             def setstate(state, value):
                 self.stack[pos] = value
             raise Concretize("Concretice Stack Variable",
@@ -700,10 +707,8 @@ class EVM(Eventful):
         except StartTx:
             raise
         except EndTx as ex:
-            self._advance()
+            self._advance(exception=True)
             raise
-
-
 
     def read_buffer(self, offset, size):
         if issymbolic(size):
@@ -910,26 +915,20 @@ class EVM(Eventful):
             data = bytes(concrete_data)
         return data
 
+    @concretized_args(size='SAMPLED')
     def SHA3(self, start, size):
         '''Compute Keccak-256 hash'''
         GSHA3WORD = 6         # Cost of SHA3 per word
         # read memory from start to end
         # calculate hash on it/ maybe remember in some structure where that hash came from
         # http://gavwood.com/paper.pdf
-        old_gas = self.gas-self.instruction.fee
-        if size:
-            self._consume(GSHA3WORD * (ceil32(size) // 32))
+        self._consume(GSHA3WORD * (ceil32(size) // 32))
         data = self.try_simplify_to_constant(self.read_buffer(start, size))
 
         if issymbolic(data):
-            #self._rollback()  #Because it may fork
-
             known_sha3 = {}
             # Broadcast the signal
-            self._publish('on_symbolic_sha3', data, known_sha3)  #This updates the local copy of sha3 with the pairs we need to explore
-
-            #last_pc, last_gas, instruction, arguments = self._checkpoint()
-            #self._consume(instruction.fee)
+            self._publish('on_symbolic_sha3', data, known_sha3)  # This updates the local copy of sha3 with the pairs we need to explore
 
             value = 0  # never used
             known_hashes_cond = False
@@ -1891,8 +1890,7 @@ class EVMWorld(Platform):
         self._world_state[address]['code'] = code
 
 
-        # adds hash of new address 
-        import binascii
+        # adds hash of new address
         data = binascii.unhexlify('{:064x}{:064x}'.format(address, 0))
         value = sha3.keccak_256(data).hexdigest()
         value = int('0x' + value, 0)

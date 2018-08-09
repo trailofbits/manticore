@@ -322,7 +322,7 @@ class State(Eventful):
         value = self._solver.get_value(self._constraints, expr)
         #Include forgiveness here
         if isinstance(value, bytearray):
-            value=bytes(value)
+            value = bytes(value)
         return value
 
     def solve_n(self, expr, nsolves):
