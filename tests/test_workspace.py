@@ -1,5 +1,6 @@
 import signal
 import unittest
+import os
 
 from multiprocessing.managers import SyncManager
 
@@ -58,7 +59,8 @@ class StateTest(unittest.TestCase):
         if not hasattr(self, 'manager'):
             self.manager = SyncManager()
             self.manager.start(lambda: signal.signal(signal.SIGINT, signal.SIG_IGN))
-        l = linux.Linux('/bin/ls')
+        dirname = os.path.dirname(__file__)
+        l = linux.Linux(os.path.join(dirname, 'binaries', 'basic_linux_amd64'))
         self.state = State(ConstraintSet(), l)
         self.lock = self.manager.Condition()
 

@@ -24,7 +24,8 @@ class ManticoreDriverTest(unittest.TestCase):
 
 
     def testCreating(self):
-        m = Manticore('/bin/ls')
+        dirname = os.path.dirname(__file__)
+        m = Manticore(os.path.join(dirname, 'binaries', 'basic_linux_amd64'))
         m.log_file = '/dev/null'
 
     def test_issymbolic(self):
