@@ -367,6 +367,7 @@ class EVM(Eventful):
         self._allocated = 0
         self._on_transaction = False  # for @transact
         self._checkpoint_data = None
+
     @property
     def bytecode(self):
         return self._bytecode
@@ -1888,7 +1889,6 @@ class EVMWorld(Platform):
         self._world_state[address]['balance'] = balance
         self._world_state[address]['storage'] = storage
         self._world_state[address]['code'] = code
-
 
         # adds hash of new address
         data = binascii.unhexlify('{:064x}{:064x}'.format(address, 0))
