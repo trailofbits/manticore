@@ -98,10 +98,10 @@ m.transaction(caller=user_account,
               value=symbolic_value,
               data=symbolic_data
               )
-print("READS", p.context['storage_reads'])
-print("WRITES", p.context['storage_writes'])
+print('READS', p.context['storage_reads'])
+print('WRITES', p.context['storage_writes'])
 
-print("It makes no sense to try f3() after 1 tx")
+print('It makes no sense to try f3() after 1 tx')
 
 m.finalize()
-print("[+] Look for results in %s" % m.workspace)
+print(f'[+] Look for results in {m.workspace}')

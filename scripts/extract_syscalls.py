@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 '''
 Generate syscall tables from the Linux source. Used to generate
@@ -12,10 +12,9 @@ Usage:
 
 '''
 
-import os
-import sys
-import urllib
 import argparse
+import sys
+from urllib.request import urlopen
 
 base_url = 'https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/{}?id=refs/tags/v{}'
 
@@ -50,7 +49,7 @@ if __name__=='__main__':
 
     for arch, path in arch_tables.items():
         url = base_url.format(path, args.linux_version)
-        tbl = urllib.urlopen(url)
+        tbl = urlopen(url)
 
         if tbl.code // 100 != 2:
             sys.stderr.write("Failed retrieving table; check version and connection.\n")
@@ -59,6 +58,7 @@ if __name__=='__main__':
 
         output.write('{} = {{\n'.format(arch))
         for line in tbl.readlines():
+            line = line.decode()
             line = line.strip()
             if line.startswith('#'):
                 continue
