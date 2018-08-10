@@ -27,7 +27,6 @@ Manticore can analyze the following types of programs:
 
 Manticore has a command line interface which can be used to easily symbolically execute a supported program. Analysis results will be placed into a new directory beginning with `mcore_`.
 
-
 ```
 $ manticore ./path/to/binary        # runs, and creates a mcore_* directory with analysis results
 $ manticore ./path/to/binary ab cd  # use concrete strings "ab", "cd" as program arguments
@@ -37,7 +36,6 @@ $ manticore ./path/to/binary ++ ++  # use two symbolic strings of length two as 
 ### API
 
 Manticore has a Python programming interface which can be used to implement custom analyses.
-
 
 ```python
 # example Manticore script
@@ -112,9 +110,11 @@ Further documentation is available in several places:
   * The [API reference](http://manticore.readthedocs.io/en/latest/) has more
     thorough and in-depth documentation on our API
 
-## Installation
+## Requirements
 
 Manticore is supported on Linux and requires Python >=3.6. Ubuntu 18.04 is strongly recommended. Ethereum smart contract analysis requires the [`solc`](https://github.com/ethereum/solidity) program in your `$PATH`.
+
+## Quickstart
 
 Install and try Manticore in a few shell commands (see an [asciinema](https://asciinema.org/a/567nko3eh2yzit099s0nq4e8z)):
 
@@ -141,9 +141,7 @@ cd ../script
 python3 count_instructions.py ../linux/helloworld
 ```
 
-### Docker
-
-Alternatively, you can use Docker to install Manticore:
+Alternatively, you can use Docker to quickly install and test out Manticore:
 
 ```
 # Download manticore image
@@ -161,7 +159,7 @@ manticore@80d441275ebf:~$ cd examples/linux
 
 Then follow from the `make` command above.
 
-### Expert Installation
+### Installation Options
 
 Option 1: Perform a user install (requires `~/.local/bin` in your `PATH`).
 
