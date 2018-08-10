@@ -1,3 +1,5 @@
+![Manticore](docs/images/manticore.png?raw=true "Manticore")
+
 # Manticore
 
 [![Build Status](https://travis-ci.org/trailofbits/manticore.svg?branch=master)](https://travis-ci.org/trailofbits/manticore)
