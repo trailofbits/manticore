@@ -157,7 +157,7 @@ cd ../script
 python3 count_instructions.py ../linux/helloworld
 ```
 
-## Installation Options
+## Installation
 
 Option 1: Perform a user install (requires `~/.local/bin` in your `PATH`).
 
@@ -203,8 +203,8 @@ Documentation is available in several places:
   * The [examples](examples) directory has some very minimal examples that
     showcase API features
 
-  * The [manticore-examples](https://github.com/trailofbits/manticore-examples)
-    repository has some more involved examples, for instance solving real CTF problems
-
   * The [API reference](http://manticore.readthedocs.io/en/latest/) has more
     thorough and in-depth documentation on our API
+
+  * The [manticore-examples](https://github.com/trailofbits/manticore-examples)
+    repository has some more involved examples, for instance solving real CTF problems
