@@ -10,8 +10,7 @@ def benchmark(program):
     print("[*] Benchmarking program \"{}\"".format(program))
 
     m = Manticore(program)
-    m.should_profile = True
-    m.run()
+    m.run(should_profile=True)
 
     results = m._executor.dump_stats()
     if results is None:
