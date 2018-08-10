@@ -58,9 +58,9 @@ m.run()
 
 ### Ethereum
 
-Manticore includes a symbolic Ethereum Virtual Machine (EVM) and a convenient interface for automated compilation and analysis of Solidity. It also integrates with [Ethersplay](https://github.com/trailofbits/ethersplay), Trail of Bits’ visual disassembler for EVM bytecode, for analysis visualization. As with binaries, Manticore offers a simple command line interface and a Python API for analysis of EVM bytecode. See a demo: https://asciinema.org/a/154012
+Manticore includes a symbolic Ethereum Virtual Machine (EVM) and a convenient interface for automated compilation and analysis of Solidity. It also integrates with [Ethersplay](https://github.com/trailofbits/ethersplay), Trail of Bits’ visual disassembler for EVM bytecode, for analysis visualization. As with binaries, Manticore offers a simple command line interface and a Python API for analysis of EVM bytecode.
 
-Use the CLI to explore possible states in Ethereum smart contracts. Manticore includes _detectors_ which flag certain conditions, including known vulnerable code, as it explores possible states. Note: Solidity smart contracts must have a `.sol` extension for analysis by Manticore.
+Use the CLI to explore possible states in Ethereum smart contracts. Manticore includes _detectors_ which flag certain conditions, including known vulnerable code, as it explores possible states. Note: Solidity smart contracts must have a `.sol` extension for analysis by Manticore. See a demo: https://asciinema.org/a/154012
 
 ```
 $ manticore ./path/to/contract.sol  # runs, and creates a mcore_* directory with analysis results
@@ -96,23 +96,11 @@ for state in m.running_states:
 
 ```
 
-Further documentation is available in several places:
-
-  * The [wiki](https://github.com/trailofbits/manticore/wiki) contains some
-    basic information about getting started with manticore and contributing
-
-  * The [examples](examples) directory has some very minimal examples that
-    showcase API features
-
-  * The [manticore-examples](https://github.com/trailofbits/manticore-examples)
-    repository has some more involved examples, for instance solving real CTF problems
-
-  * The [API reference](http://manticore.readthedocs.io/en/latest/) has more
-    thorough and in-depth documentation on our API
-
 ## Requirements
 
-Manticore is supported on Linux and requires Python >=3.6. Ubuntu 18.04 is strongly recommended. Ethereum smart contract analysis requires the [`solc`](https://github.com/ethereum/solidity) program in your `$PATH`.
+* Manticore is supported on Linux and requires Python >=3.6.
+* Ubuntu 18.04 is strongly recommended.
+* Ethereum smart contract analysis requires the [`solc`](https://github.com/ethereum/solidity) program in your `$PATH`.
 
 ## Quickstart
 
@@ -141,7 +129,7 @@ cd ../script
 python3 count_instructions.py ../linux/helloworld
 ```
 
-Alternatively, you can use Docker to quickly install and test out Manticore:
+You can also use Docker to quickly install and try Manticore:
 
 ```
 # Download manticore image
@@ -159,7 +147,7 @@ manticore@80d441275ebf:~$ cd examples/linux
 
 Then follow from the `make` command above.
 
-### Installation Options
+## Installation Options
 
 Option 1: Perform a user install (requires `~/.local/bin` in your `PATH`).
 
@@ -196,3 +184,19 @@ Once installed, the `manticore` CLI tool and Python API will be available.
 For installing a development version of Manticore, see our [wiki](https://github.com/trailofbits/manticore/wiki/Hacking-on-Manticore).
 
 > Note: If you are experiencing unanticipated errors when running Manticore on native binaries, you can try using the `--process-dependency-links` pip flag. This will install the development branch of our disassembler dependency, which may contain useful bug fixes.
+
+## Further Documentation
+
+Further documentation is available in several places:
+
+  * The [wiki](https://github.com/trailofbits/manticore/wiki) contains some
+    basic information about getting started with manticore and contributing
+
+  * The [examples](examples) directory has some very minimal examples that
+    showcase API features
+
+  * The [manticore-examples](https://github.com/trailofbits/manticore-examples)
+    repository has some more involved examples, for instance solving real CTF problems
+
+  * The [API reference](http://manticore.readthedocs.io/en/latest/) has more
+    thorough and in-depth documentation on our API
