@@ -3,6 +3,7 @@ from weakref import WeakValueDictionary
 from .smtlib import *
 from .smtlib.visitors import *
 import logging
+import functools
 from ..utils.mappings import mmap, munmap
 from ..utils.helpers import issymbolic
 
@@ -1177,8 +1178,10 @@ class LazySMemory(SMemory):
 
     def _map_deref_expr(self, map, address, size):
         return Operators.AND(
-            Operators.UGE(address, map.start),
-            Operators.ULT(address + size, map.end))
+            #Operators.UGE(address, map.start),
+            #Operators.ULT(address + size, map.end))
+            address >= map.start,
+            address + size < map.end)
 
     def _deref_can_succeed(self, map, address, size):
         deref_possible = self._map_deref_expr(map, address, size)
@@ -1193,7 +1196,8 @@ class LazySMemory(SMemory):
         :param size:
         :return:
         '''
-        assert isinstance(address, expression.Expression)
+        assert issymbolic(address)
+        assert not issymbolic(size)
 
 
         result = []
@@ -1229,13 +1233,29 @@ class LazySMemory(SMemory):
                     found = m
             return found
 
+    def valid_ptr(self, address):
+        assert issymbolic(address)
+
+        expressions = [self._map_deref_expr(m, address, 1) for m in self._maps]
+        valid = functools.reduce(Operators.OR, expressions)
+
+        return valid
+
+    def invalid_ptr(self, address):
+        return Operators.NOT(self.valid_ptr(address))
+
     def read(self, address, size, force=False):
         if not issymbolic(address):
             if not self.access_ok(slice(address, address + size), 'r', force):
                 raise InvalidMemoryAccess(address, 'r')
-            return self._backing_array[address:address + size]
+            # return self._backing_array[address:address + size]
 
-        return self._aggregate_read(address, size)
+        # return self._aggregate_read(address, size)
+        return [self._backing_array[address + offset] for offset in range(size)]
+        #result = []
+        #for offset in range(size):
+            #result.append(self._backing_array[address + offset])
+        ##return result
 
     def write(self, address, value, force=False):
         if not issymbolic(address) and not self.access_ok(slice(address, address + len(value)), 'w', force):

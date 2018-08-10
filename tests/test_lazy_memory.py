@@ -29,7 +29,9 @@ class LazyMemoryTest(unittest.TestCase):
         mem.mmap(0, 4096, 'rwx', name='map')
 
         val_mapped = mem.read(0, 4)
-        self.assertIsInstance(val_mapped, Array)
+
+        for val in val_mapped:
+            self.assertIsInstance(val, Expression)
 
         with self.assertRaises(InvalidMemoryAccess):
             mem.read(8096, 4)
@@ -40,16 +42,26 @@ class LazyMemoryTest(unittest.TestCase):
         mem.mmap(0, 4096, 'rwx', name='map')
 
         addr = cs.new_bitvec(32)
-        cs.add(addr >= 4096)
-        cs.add(addr < 4098)
+
+        # constrain on a boundary
+        cs.add(addr >= 0xffc)
+        cs.add(addr <  0x1002)
+
+        with cs as new_cs:
+            new_cs.add(mem.valid_ptr(addr))
+            vals = solver.get_all_values(new_cs, addr)
+            self.assertGreater(len(vals), 0)
+            for v in vals:
+                self.assertTrue(0 <= v < 4095)
+
+        with cs as new_cs:
+            new_cs.add(mem.invalid_ptr(addr))
+            vals = solver.get_all_values(new_cs, addr)
+            self.assertGreater(len(vals), 0)
+            for v in vals:
+                self.assertFalse(0 <= v < 4095)
 
         val = mem.read(addr, 1)[0]
-        print(pretty_print(val))
-
-        
-        print(sorted(solver.get_all_values(cs, val)))
-
-        
 
         self.assertIsInstance(val, Expression)
 
@@ -67,14 +79,14 @@ class LazyMemoryTest(unittest.TestCase):
         self.assertEqual(len(mem.mappings()), 0)
 
         self.assertRaises(MemoryException, mem.__getitem__, 0x1000)
-        self.assertIsInstance(mem[sym], InvalidAccessConstant)
-        self.assertRaises(MemoryException, mem.__setitem__, 0x1000, '\x42')
+        #self.assertIsInstance(mem[sym], InvalidAccessConstant)
+        #self.assertRaises(MemoryException, mem.__setitem__, 0x1000, '\x42')
 
         #alloc/map a byte
-        first = mem.mmap(0x1000, 0x1000, 'r')
+        #first = mem.mmap(0x1000, 0x1000, 'r')
 
-        self.assertEqual(first, 0x1000)
-        self.assertEqual(solver.get_value(cs, mem[0x1000]), 0)
+        #self.assertEqual(first, 0x1000)
+        #self.assertEqual(solver.get_value(cs, mem[0x1000]), 0)
         # self.assertRaises(MemoryException, mem.__getitem__, sym)
         # self.assertRaises(MemoryException, mem.__setitem__, 0x1000, '\x41')
         # self.assertRaises(MemoryException, mem.__setitem__, 0x1000, val)
