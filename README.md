@@ -143,9 +143,19 @@ docker run -it -v $PWD/examples:/home/manticore/examples trailofbits/manticore
 
 # Change to examples directory
 manticore@80d441275ebf:~$ cd examples/linux
-```
 
-Then follow from the `make` command above.
+# Build the examples
+make
+
+# Use the Manticore CLI
+manticore basic
+cat mcore_*/*0.stdin | ./basic
+cat mcore_*/*1.stdin | ./basic
+
+# Use the Manticore API
+cd ../script
+python3 count_instructions.py ../linux/helloworld
+```
 
 ## Installation Options
 
