@@ -9,6 +9,8 @@
 
 Manticore is a symbolic execution tool for analysis of binaries and smart contracts.
 
+> Note: Beginning with version 0.2.0, Python 3.6+ is required.
+
 ## Features
 
 - **Input Generation**: Manticore automatically generates inputs that trigger unique code paths
@@ -98,7 +100,7 @@ for state in m.running_states:
 
 ## Requirements
 
-* Manticore is supported on Linux and requires Python >=3.6.
+* Manticore is supported on Linux and requires **Python >=3.6**.
 * Ubuntu 18.04 is strongly recommended.
 * Ethereum smart contract analysis requires the [`solc`](https://github.com/ethereum/solidity) program in your `$PATH`.
 
