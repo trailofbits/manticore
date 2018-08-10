@@ -58,9 +58,9 @@ m.run()
 
 ### Ethereum
 
-Manticore includes a symbolic Ethereum Virtual Machine (EVM) and a convenient interface for automated compilation and analysis of Solidity. It also integrates with [Ethersplay](https://github.com/trailofbits/ethersplay), Trail of Bits’ visual disassembler for EVM bytecode, for analysis visualization. As with binaries, Manticore offers a simple command line interface and a Python API for analysis of EVM bytecode.
+Manticore includes a symbolic Ethereum Virtual Machine (EVM) and a convenient interface for automated compilation and analysis of Solidity. It integrates with [Ethersplay](https://github.com/trailofbits/ethersplay), Trail of Bits’ visual disassembler for EVM bytecode, for analysis visualization. As with binaries, Manticore offers a simple command line interface and a Python API for analysis of EVM bytecode.
 
-Use the CLI to explore possible states in Ethereum smart contracts. Manticore includes _detectors_ which flag certain conditions, including known vulnerable code, as it explores possible states. Note: Solidity smart contracts must have a `.sol` extension for analysis by Manticore. See a demo: https://asciinema.org/a/154012
+Use the CLI to explore possible states in Ethereum smart contracts. Manticore includes _detectors_ which flag certain conditions, including known vulnerable code, as it explores possible states. Solidity smart contracts must have a `.sol` extension for analysis by Manticore. See a demo: https://asciinema.org/a/154012
 
 ```
 $ manticore ./path/to/contract.sol  # runs, and creates a mcore_* directory with analysis results
@@ -185,9 +185,9 @@ For installing a development version of Manticore, see our [wiki](https://github
 
 > Note: If you are experiencing unanticipated errors when running Manticore on native binaries, you can try using the `--process-dependency-links` pip flag. This will install the development branch of our disassembler dependency, which may contain useful bug fixes.
 
-## Further Documentation
+## Documentation
 
-Further documentation is available in several places:
+Documentation is available in several places:
 
   * The [wiki](https://github.com/trailofbits/manticore/wiki) contains some
     basic information about getting started with manticore and contributing
