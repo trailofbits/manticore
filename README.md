@@ -1,4 +1,9 @@
 # Manticore
+<p align="center">
+  <img src="docs/images/manticore.png?raw=true" width="256" title="Manticore">
+</p>
+<br />
+
 
 [![Build Status](https://travis-ci.org/trailofbits/manticore.svg?branch=master)](https://travis-ci.org/trailofbits/manticore)
 [![PyPI version](https://badge.fury.io/py/manticore.svg)](https://badge.fury.io/py/manticore)
