@@ -937,7 +937,8 @@ class Memory(object, metaclass=ABCMeta):
         if isinstance(index, slice):
             result = self.read(index.start, index.stop - index.start)
         else:
-            result = self.read(index, 1)[0]
+            result = self.read(index, 1)
+            result = result[0]
         return result
 
 
@@ -1148,9 +1149,9 @@ class SentinelMap(Map):
         if address >= self.end:
             return self, None
 
-        assert address > self.start and address < self.end
         head = SentinelMap(self.start, address - self.start, self.perms)
         tail = SentinelMap(address, self.end - address, self.perms)
+
         return head, tail
 
     def __getitem__(self, *args, **kwargs):
@@ -1194,17 +1195,21 @@ class LazySMemory(SMemory):
         '''
         assert isinstance(address, expression.Expression)
 
-        deref_expression = [InvalidAccessConstant(self.memory_bit_size, 0xffffffff)]
 
-        for m in self._maps:
-            within_map = self._map_deref_expr(m, address, size)
-            print(within_map)
-            print(translate_to_smtlib(self._backing_array[address:address+size]))
-            deref_expression = Operators.ITEBV(within_map, size // 8,
-                                               self._backing_array[address:address + size],
-                                               deref_expression)
+        result = []
+        for offset in range(size):
+            deref_expression = InvalidAccessConstant(8, 0xff)
+            for m in self._maps:
+                within_map = self._map_deref_expr(m, address+offset, 1)
+                deref_expression = Operators.ITEBV(8, within_map,
+                                                   self._backing_array[address+offset],
+                                                   deref_expression)
+            result.append(deref_expression)
 
-        return deref_expression
+        if len(result) == 0:
+            result = [InvalidAccessConstant(8, 0xff) for _ in range(size)]
+
+        return result
 
     def map_containing(self, address):
         """

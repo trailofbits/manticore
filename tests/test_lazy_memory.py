@@ -40,11 +40,18 @@ class LazyMemoryTest(unittest.TestCase):
         mem.mmap(0, 4096, 'rwx', name='map')
 
         addr = cs.new_bitvec(32)
-        cs.add(addr >= 2048)
-        cs.add(addr < 4096)
+        cs.add(addr >= 4096)
+        cs.add(addr < 4098)
 
-        val = mem.read(addr, 4)
-        self.assertIsInstance(val, Array)
+        val = mem.read(addr, 1)[0]
+        print(pretty_print(val))
+
+        
+        print(sorted(solver.get_all_values(cs, val)))
+
+        
+
+        self.assertIsInstance(val, Expression)
 
 
     def test_lazysymbolic_r(self):
