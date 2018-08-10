@@ -142,19 +142,19 @@ git clone https://github.com/trailofbits/manticore.git && cd manticore
 docker run -it -v $PWD/examples:/home/manticore/examples trailofbits/manticore
 
 # Change to examples directory
-manticore@80d441275ebf:~$ cd examples/linux
+manticore@80d441275ebf$ cd examples/linux
 
 # Build the examples
-make
+manticore@80d441275ebf$ make
 
 # Use the Manticore CLI
-manticore basic
-cat mcore_*/*0.stdin | ./basic
-cat mcore_*/*1.stdin | ./basic
+manticore@80d441275ebf$ manticore basic
+manticore@80d441275ebf$ cat mcore_*/*0.stdin | ./basic
+manticore@80d441275ebf$ cat mcore_*/*1.stdin | ./basic
 
 # Use the Manticore API
-cd ../script
-python3 count_instructions.py ../linux/helloworld
+manticore@80d441275ebf$ cd ../script
+manticore@80d441275ebf$ python3 count_instructions.py ../linux/helloworld
 ```
 
 ## Installation
