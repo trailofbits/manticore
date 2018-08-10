@@ -16,11 +16,27 @@ Thanks to our external contributors!
 
 ### Added
 
+- Ethereum: More flexibility for Solidity compilation toolchains
+- Ethereum: Detectors for unused return value, reentrancy
+- Ethereum: Support for Solidity `bytesM` and `bytes` types
+- Improved performance for smtlib module
+
 ### Changed
+
+- **Codebase has been entirely ported to Python 3.6+**
+- Ethereum: `ManticoreEVM.make_symbolic_value()` can be size adjustable
 
 ### Fixed
 
+- Linux: Bugs related to handling of closed files
+- Ethereum: Handling of symbolic callers/addresses
+- Ethereum: Handling of gas handling on CALL instructions
+- Various smtlib/expression fixes
+
 ### Removed
+
+- Support for Python 2
+- Experimental support for Binary Ninja IL emulation
 
 ## 0.1.10 - 2018-06-22
 
