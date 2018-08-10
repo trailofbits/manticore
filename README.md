@@ -1,4 +1,6 @@
-![Manticore](docs/images/manticore.png?raw=true "Manticore")
+<p align="center">
+  <img src="docs/images/manticore.png?raw=true" width="256" title="Manticore">
+</p>
 
 # Manticore
 
@@ -8,6 +10,7 @@
 [![Documentation Status](https://readthedocs.org/projects/manticore/badge/?version=latest)](http://manticore.readthedocs.io/en/latest/?badge=latest)
 [![Maintainability](https://api.codeclimate.com/v1/badges/9161568d8378cea903f4/maintainability)](https://codeclimate.com/github/trailofbits/manticore/maintainability)
 [![Test Coverage](https://api.codeclimate.com/v1/badges/9161568d8378cea903f4/test_coverage)](https://codeclimate.com/github/trailofbits/manticore/test_coverage)
+Manticore 0.2.0 was released! Lots of EVM improvements, bug fixes and improved performance. First release to support Python 3! https://github.com/trailofbits/manticore/blob/master/CHANGELOG.md
 
 Manticore is a symbolic execution tool for analysis of binaries and smart contracts.
 
