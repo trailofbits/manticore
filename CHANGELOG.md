@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## 0.2.0 - 2018-08-10
 
+In this release, the codebase has been ported to Python 3.6, which is a breaking change for API clients. Beginning with 0.2.0, client programs of Manticore must be compatible with Python 3.6.
+
+Thanks to our external contributors!
+
+- [ianklatzco](https://github.com/ianklatzco)
+- [devtty1er](https://github.com/devtty1er)
+- [catenacyber](https://github.com/catenacyber)
+
+### Added
+
+### Changed
+
+### Fixed
+
+### Removed
+
 ## 0.1.10 - 2018-06-22
 
 Thanks to our external contributors!
