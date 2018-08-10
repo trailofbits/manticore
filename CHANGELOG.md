@@ -19,12 +19,17 @@ Thanks to our external contributors!
 - Ethereum: More flexibility for Solidity compilation toolchains
 - Ethereum: Detectors for unused return value, reentrancy
 - Ethereum: Support for Solidity `bytesM` and `bytes` types
+- Ethereum: Beta API for preconstraining inputs (`ManticoreEVM.constrain`)
 - Improved performance for smtlib module
+- Ability to transparently operate on bytearray and symbolic buffer (ArrayProxy) types (e.g: concatenate, slice)
 
 ### Changed
 
 - **Codebase has been entirely ported to Python 3.6+**
 - Ethereum: `ManticoreEVM.make_symbolic_value()` can be size adjustable
+- Ethereum: Ethereum ABI (`manticore.ethereum.ABI`) API refactor, including real Solidity prototype parser
+- Ethereum: Improved APIs for accessing transaction history
+- Ethereum: Significant internal refactor
 
 ### Fixed
 
@@ -36,6 +41,7 @@ Thanks to our external contributors!
 ### Removed
 
 - Support for Python 2
+- EVM disassembler/assembler module (EVMAsm) has been removed and separately released as [pyevmasm](https://github.com/trailofbits/pyevmasm)
 - Experimental support for Binary Ninja IL emulation
 
 ## 0.1.10 - 2018-06-22
