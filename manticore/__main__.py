@@ -161,7 +161,7 @@ def main():
 
     m = Manticore(args.argv[0], argv=args.argv[1:], env=env, entry_symbol=args.entrysymbol, workspace_url=args.workspace, policy=args.policy, concrete_start=args.data)
 
-    # Default plugins for now.
+    # Default plugins for now.. FIXME REMOVE!
     m.register_plugin(InstructionCounter())
     m.register_plugin(Visited())
     m.register_plugin(Tracer())
