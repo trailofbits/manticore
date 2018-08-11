@@ -1,5 +1,6 @@
 import signal
 import unittest
+import os
 
 from multiprocessing.managers import SyncManager
 
@@ -9,8 +10,6 @@ from manticore.core.smtlib import BitVecVariable, ConstraintSet
 from manticore.core.workspace import *
 from manticore.utils.event import Eventful
 
-manager = SyncManager()
-manager.start(lambda: signal.signal(signal.SIGINT, signal.SIG_IGN))
 
 class FakeMemory(object):
     def __init__(self):
@@ -26,7 +25,7 @@ class FakeMemory(object):
 
 class FakeCpu(Eventful):
     def __init__(self):
-        super(FakeCpu, self).__init__()
+        super().__init__()
 
         self._memory = FakeMemory()
 
@@ -57,9 +56,13 @@ class FakePlatform(object):
 class StateTest(unittest.TestCase):
     _multiprocess_can_split_ = True
     def setUp(self):
-        l = linux.Linux('/bin/ls')
+        if not hasattr(self, 'manager'):
+            self.manager = SyncManager()
+            self.manager.start(lambda: signal.signal(signal.SIGINT, signal.SIG_IGN))
+        dirname = os.path.dirname(__file__)
+        l = linux.Linux(os.path.join(dirname, 'binaries', 'basic_linux_amd64'))
         self.state = State(ConstraintSet(), l)
-        self.lock = manager.Condition(manager.RLock())
+        self.lock = self.manager.Condition()
 
     def test_workspace_save_load(self):
         self.state.constraints.add(True)

@@ -37,7 +37,7 @@ def GetNBits(value, nbits):
     :rtype int or long or BitVec
     '''
     # NOP if sizes are the same
-    if isinstance(value, (int, long)):
+    if isinstance(value, int):
         return Operators.EXTRACT(value, 0, nbits)
     elif isinstance(value, BitVec):
         if value.size < nbits:

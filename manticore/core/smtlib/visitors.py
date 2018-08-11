@@ -1,6 +1,6 @@
-from __future__ import absolute_import
+from manticore.utils.helpers import CacheDict
 from .expression import *
-from functools32 import lru_cache
+from functools import lru_cache
 import logging
 import operator
 logger = logging.getLogger(__name__)
@@ -31,7 +31,7 @@ class Visitor(object):
     '''
 
     def __init__(self, cache=None, **kwargs):
-        super(Visitor, self).__init__()
+        super().__init__()
         self._stack = []
         self._cache = {} if cache is None else cache
 
@@ -88,7 +88,7 @@ class Visitor(object):
                 self.push(cache[node])
             elif isinstance(node, Operation):
                 if node in visited:
-                    operands = [self.pop() for _ in xrange(len(node.operands))]
+                    operands = [self.pop() for _ in range(len(node.operands))]
                     value = self._method(node, *operands)
 
                     visited.remove(node)
@@ -115,13 +115,12 @@ class Visitor(object):
         if isinstance(expression, Constant):
             return expression
         if isinstance(expression, Operation):
-            if any( map (lambda (x,y): x is not y, zip(expression.operands, operands))):
+            if any(x is not y for x, y in zip(expression.operands, operands)):
                 import copy
                 aux = copy.copy(expression)
                 aux._operands = operands
                 return aux
         return expression
-        return type(expression)(*operands, taint=expression.taint)
 
 
 class Translator(Visitor):
@@ -135,12 +134,12 @@ class Translator(Visitor):
         assert expression.__class__.__mro__[-1] is object
         for cls in expression.__class__.__mro__:
             sort = cls.__name__
-            methodname = 'visit_%s' % sort
+            methodname = 'visit_{:s}'.format(sort)
             if hasattr(self, methodname):
                 value = getattr(self, methodname)(expression, *args)
                 if value is not None:
                     return value
-        raise Exception ("No translation for this {}".format(expression))
+        raise Exception("No translation for this {}".format(expression))
 
 
 class GetDeclarations(Visitor):
@@ -149,12 +148,11 @@ class GetDeclarations(Visitor):
     '''
 
     def __init__(self, **kwargs):
-        super(GetDeclarations, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.variables = set()
 
     def visit_Variable(self, expression):
         self.variables.add(expression)
-        #return expression
 
     @property
     def result(self):
@@ -167,7 +165,7 @@ class GetDepth(Translator):
     '''
 
     def __init__(self, *args, **kwargs):
-        super(GetDepth, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def visit_Expression(self, expression):
         return 1
@@ -184,7 +182,7 @@ def get_depth(exp):
 
 class PrettyPrinter(Visitor):
     def __init__(self, depth=None, **kwargs):
-        super(PrettyPrinter, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.output = ''
         self.indent = 0
         self.depth = depth
@@ -262,12 +260,12 @@ def pretty_print(expression, **kwargs):
 
 class ConstantFolderSimplifier(Visitor):
     def __init__(self, **kw):
-        super(ConstantFolderSimplifier, self).__init__(**kw)
+        super().__init__(**kw)
 
     operations = {BitVecAdd: operator.__add__,
                   BitVecSub: operator.__sub__,
                   BitVecMul: operator.__mul__,
-                  BitVecDiv: operator.__div__,
+                  BitVecDiv: operator.__truediv__,
                   BitVecShiftLeft: operator.__lshift__,
                   BitVecShiftRight: operator.__rshift__,
                   BitVecAnd: operator.__and__,
@@ -295,6 +293,10 @@ class ConstantFolderSimplifier(Visitor):
     def visit_BitVecZeroExtend(self, expression, *operands):
         if all(isinstance(o, Constant) for o in operands):
             return BitVecConstant(expression.size, operands[0].value, taint=expression.taint)
+
+    def visit_BitVecSignExtend(self, expression, *operands):
+        if expression.extend == 0:
+            return operands[0]
 
     def visit_BitVecExtract(self, expression, *operands):
         if all(isinstance(o, Constant) for o in expression.operands):
@@ -330,34 +332,25 @@ class ConstantFolderSimplifier(Visitor):
                 isinstance(expression, Bool)
                 return BoolConstant(value, taint=expression.taint)
         else:
-            if any(operands[i] is not expression.operands[i] for i in xrange(len(operands))):
+            if any(operands[i] is not expression.operands[i] for i in range(len(operands))):
                 expression = self._rebuild(expression, operands)
         return expression
 
 
-def clean_cache(cache):
-    M = 256
-    if len(cache) > M:
-        import random
-        N = len(cache) - M
-        for i in range(N):
-            cache.pop(random.choice(cache.keys()))
+constant_folder_simplifier_cache = CacheDict(max_size=150000, flush_perc=25)
 
-
-constant_folder_simplifier_cache = {}
 
 @lru_cache(maxsize=128)
 def constant_folder(expression):
     global constant_folder_simplifier_cache
     simp = ConstantFolderSimplifier(cache=constant_folder_simplifier_cache)
     simp.visit(expression, use_fixed_point=True)
-    clean_cache(constant_folder_simplifier_cache)
     return simp.result
 
 
 class ArithmeticSimplifier(Visitor):
     def __init__(self, parent=None, **kw):
-        super(ArithmeticSimplifier, self).__init__(**kw)
+        super().__init__(**kw)
 
     @staticmethod
     def _same_constant(a, b):
@@ -389,9 +382,13 @@ class ArithmeticSimplifier(Visitor):
     def visit_BitVecITE(self, expression, *operands):
         if isinstance(expression.operands[0], Constant):
             if expression.operands[0].value:
-                return expression.operands[1]
+                result = expression.operands[1]
             else:
-                return expression.operands[2]
+                result = expression.operands[2]
+            import copy
+            result = copy.copy(result)
+            result._taint |= expression.operands[0].taint
+            return result
         if self._changed(expression, operands):
             return BitVecITE(expression.size, *operands, taint=expression.taint)
 
@@ -415,7 +412,7 @@ class ArithmeticSimplifier(Visitor):
                         new_operands.append(item)
                     bitcount += item.size
             if begining != expression.begining:
-                return BitVecExtract(BitVecConcat(sum(map(lambda x: x.size, new_operands)), *reversed(new_operands)),
+                return BitVecExtract(BitVecConcat(sum([x.size for x in new_operands]), *reversed(new_operands)),
                                      begining, expression.size, taint=expression.taint)
         if isinstance(op, (BitVecAnd, BitVecOr, BitVecXor)):
             bitoperand_a, bitoperand_b = op.operands
@@ -516,8 +513,12 @@ class ArithmeticSimplifier(Visitor):
         if isinstance(arr, ArrayVariable):
             return
 
-        while isinstance(arr, ArrayStore) and isinstance(index, BitVecConstant) and isinstance(arr.index, BitVecConstant) and arr.index.value != index.value:
-            arr = arr.array
+        if isinstance(index, BitVecConstant):
+            ival = index.value
+            # props are slow and using them tight loops should be avoided, esp when they offer no additional validation
+            # arr._operands[1] = arr.index, arr._operands[0] = arr.array
+            while isinstance(arr, ArrayStore) and isinstance(arr._operands[1], BitVecConstant) and arr._operands[1]._value != ival:
+                arr = arr._operands[0]  # arr.array
 
         if isinstance(index, BitVecConstant) and isinstance(arr, ArrayStore) and isinstance(arr.index, BitVecConstant) and arr.index.value == index.value:
             return arr.value
@@ -531,8 +532,7 @@ class ArithmeticSimplifier(Visitor):
         return expression
 
 
-# FIXME this should forget old expressions lru?
-arithmetic_simplifier_cache = {}
+arithmetic_simplifier_cache = CacheDict(max_size=150000, flush_perc=25)
 
 
 @lru_cache(maxsize=128)
@@ -540,7 +540,6 @@ def arithmetic_simplify(expression):
     global arithmetic_simplifier_cache
     simp = ArithmeticSimplifier(cache=arithmetic_simplifier_cache)
     simp.visit(expression, use_fixed_point=True)
-    clean_cache(arithmetic_simplifier_cache)
     return simp.result
 
 
@@ -575,7 +574,7 @@ class TranslatorSmtlib(Translator):
 
     def __init__(self, use_bindings=False, *args, **kw):
         assert 'bindings' not in kw
-        super(TranslatorSmtlib, self).__init__(*args, **kw)
+        super().__init__(*args, **kw)
         self.use_bindings = use_bindings
         self._bindings_cache = {}
         self._bindings = []
@@ -667,7 +666,7 @@ class TranslatorSmtlib(Translator):
         elif isinstance(expression, BitVecExtract):
             operation = operation % (expression.end, expression.begining)
 
-        operands = map(lambda x: self._add_binding(*x), zip(expression.operands, operands))
+        operands = [self._add_binding(*x) for x in zip(expression.operands, operands)]
         return '(%s %s)' % (operation, ' '.join(operands))
 
     @property
@@ -676,7 +675,7 @@ class TranslatorSmtlib(Translator):
 
     @property
     def result(self):
-        output = super(TranslatorSmtlib, self).result
+        output = super().result
         if self.use_bindings:
             for name, expr, smtlib in reversed(self._bindings):
                 output = '( let ((%s %s)) %s )' % (name, smtlib, output)
@@ -693,7 +692,7 @@ class Replace(Visitor):
     ''' Simple visitor to replaces expresions '''
 
     def __init__(self, bindings=None, **kwargs):
-        super(Replace, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         if bindings is None:
             raise ValueError("bindings needed in replace")
         self._replace_bindings = bindings
@@ -705,14 +704,9 @@ class Replace(Visitor):
 
 
 def replace(expression, bindings):
-    from pprint import pprint
     visitor = Replace(bindings)
     visitor.visit(expression, use_fixed_point=True)
     result_expression = visitor.result
-
-    #for var in get_variables(result_expression):
-    #    assert var not in bindings
-
     return result_expression
 
 

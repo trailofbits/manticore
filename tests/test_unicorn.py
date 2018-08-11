@@ -1,5 +1,6 @@
 import unittest
 import struct
+import os
 from functools import wraps
 
 from manticore.core.cpu.arm import Armv7Cpu as Cpu, Mask, Interruption
@@ -741,7 +742,7 @@ class Armv7UnicornInstructions(unittest.TestCase):
     @itest_setregs("R1=3")
     def test_push_one_reg(self):
         emulate_next(self.cpu)
-        self.assertItemsEqual(self.cpu.stack_peek(), struct.pack('<I', 3))
+        self.assertCountEqual(b''.join(self.cpu.stack_peek()), struct.pack('<I', 3))
 
     @itest_custom("push {r1, r2, r3}")
     @itest_setregs("R1=3", "R2=0x55", "R3=0xffffffff")
@@ -750,7 +751,7 @@ class Armv7UnicornInstructions(unittest.TestCase):
         emulate_next(self.cpu)
         sp = self.cpu.STACK
         self.assertEqual(self.rf.read('SP'), pre_sp - (3 * 4))
-        self.assertItemsEqual(self.cpu.stack_peek(), struct.pack('<I', 3))
+        self.assertCountEqual(b''.join(self.cpu.stack_peek()), struct.pack('<I', 3))
         self.assertEqual(self.cpu.read_int(sp + 4, self.cpu.address_bit_size), 0x55)
         self.assertEqual(self.cpu.read_int(sp + 8, self.cpu.address_bit_size), 0xffffffff)
 
@@ -1318,7 +1319,8 @@ class UnicornConcretization(unittest.TestCase):
     def get_state(cls):
         if cls.cpu is None:
             constraints = ConstraintSet()
-            platform = linux.SLinux('/bin/ls')
+            dirname = os.path.dirname(__file__)
+            platform = linux.SLinux(os.path.join(dirname, 'binaries', 'basic_linux_amd64'))
             cls.state = State(constraints, platform)
             cls.cpu = platform._mk_proc('armv7')
         return (cls.cpu, cls.state)

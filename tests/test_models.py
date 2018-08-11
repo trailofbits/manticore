@@ -1,4 +1,5 @@
 import unittest
+import os
 
 from manticore.core.smtlib import ConstraintSet, solver
 from manticore.core.state import State
@@ -20,7 +21,8 @@ class ModelMiscTest(unittest.TestCase):
 
 
 class ModelTest(unittest.TestCase):
-    l = linux.SLinux('/bin/ls')
+    dirname = os.path.dirname(__file__)
+    l = linux.SLinux(os.path.join(dirname, 'binaries', 'basic_linux_amd64'))
     state = State(ConstraintSet(), l)
     stack_top = state.cpu.RSP
 
@@ -36,6 +38,10 @@ class ModelTest(unittest.TestCase):
         cpu.RSP -= len(s)
         cpu.write_bytes(cpu.RSP, s)
         return cpu.RSP
+
+    def assertItemsEqual(self, a, b):
+        # Required for Python3 compatibility
+        self.assertEqual(sorted(a), sorted(b))
 
 
 class StrcmpTest(ModelTest):

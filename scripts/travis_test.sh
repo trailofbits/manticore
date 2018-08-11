@@ -60,34 +60,10 @@ run_examples() {
     return 0
 }
 
-pushd examples/linux
-make
-for example in $(make list); do
-    ./$example < /dev/zero > /dev/null
-done
-echo Built and ran Linux examples
-popd
-
-pushd examples/script
-run_examples
-echo Ran example scripts
-popd
-
-coverage erase
-coverage run -m unittest discover tests/ 2>&1 >/dev/null | tee travis_tests.log
-DID_OK=$(tail -n1 travis_tests.log)
-if [[ "${DID_OK}" == OK* ]]
-then
-    echo "All functionality tests passed :)"
-else
-    echo "Some functionality tests failed :("
-    exit 2
-fi
-
 measure_cov() {
     local PYFILE=${1}
     echo "Measuring coverage for ${PYFILE}"
-    local HAS_COV=$(coverage report --include ${PYFILE} | tail -n1 | grep -o 'No data to report')
+    local HAS_COV=$(coverage report --include=${PYFILE} | tail -n1 | grep -o 'No data to report')
     if [ "${HAS_COV}" = "No data to report" ]
     then
         echo "    FAIL: No coverage for ${PYFILE}"
@@ -105,10 +81,70 @@ measure_cov() {
     return 0
 }
 
-#coverage report
-echo "Measuring code coverage..."
-measure_cov "manticore/core/smtlib/*" 80
-measure_cov "manticore/core/cpu/x86.py" 50
-measure_cov "manticore/core/memory.py" 85
+should_run_examples=false
+should_run_tests=false
+should_run_eth_tests=false
+
+case $1 in
+    tests)    should_run_tests=true
+              ;;
+    examples) should_run_examples=true
+              ;;
+    eth)      should_run_eth_tests=true
+              ;;
+    "" | all) should_run_examples=true
+              should_run_tests=true
+              should_run_eth_tests=true
+              ;;
+    *)        echo "Usage: $0 [tests|examples|eth_tests|all]"
+              exit 3;
+              ;;
+esac
+
+if [ "$should_run_examples" = true ]; then
+    pushd examples/linux
+    make
+    for example in $(make list); do
+        ./$example < /dev/zero > /dev/null
+    done
+    echo Built and ran Linux examples
+    popd
+
+    pushd examples/script
+    run_examples
+    echo Ran example scripts
+    popd
+fi
+
+
+if [ "$should_run_eth_tests" = true ] ; then
+    coverage erase
+    coverage run -m unittest discover --pattern eth*.py tests/ 2>&1 >/dev/null | tee travis_tests.log
+    DID_OK=$(tail -n1 travis_tests.log)
+    if [[ "${DID_OK}" != OK* ]]; then
+        echo "Some functionality tests failed :("
+        exit 2
+    else
+        coverage xml
+    fi
+fi
+
+if [ "$should_run_tests" = true ]; then
+    coverage erase
+    coverage run -m unittest discover tests/ 2>&1 >/dev/null | tee travis_tests.log
+    DID_OK=$(tail -n1 travis_tests.log)
+    if [[ "${DID_OK}" != OK* ]]; then
+        echo "Some non-eth functionality tests failed :("
+        exit 2
+    else
+        coverage xml
+    fi
+
+    echo "Measuring code coverage..."
+    measure_cov "manticore/core/smtlib/*" 80
+    measure_cov "manticore/core/cpu/x86.py" 50
+    measure_cov "manticore/core/memory.py" 85
+
+fi
 
 exit ${RV}
