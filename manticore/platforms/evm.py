@@ -2007,7 +2007,7 @@ class EVMWorld(Platform):
             price = self.tx_gasprice()
         if price is None:
             raise EVMException("Need to set a gas price on human tx")
-        
+
         self._pending_transaction_concretize_address()
         self._pending_transaction_concretize_caller()
         if caller not in self.accounts:
