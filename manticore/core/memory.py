@@ -1178,10 +1178,10 @@ class LazySMemory(SMemory):
 
     def _map_deref_expr(self, map, address, size):
         return Operators.AND(
-            # Operators.UGE(address, map.start),
-            # Operators.ULT(address + size, map.end))
-            address >= map.start,
-            address + size < map.end)
+            Operators.UGE(address, map.start),
+            Operators.ULT(address + size, map.end))
+            # address >= map.start,
+            # address + size < map.end)
 
     def _deref_can_succeed(self, map, address, size):
         deref_possible = self._map_deref_expr(map, address, size)
@@ -1199,14 +1199,13 @@ class LazySMemory(SMemory):
         assert issymbolic(address)
         assert not issymbolic(size)
 
-
         result = []
         for offset in range(size):
             deref_expression = InvalidAccessConstant(8, 0xff)
             for m in self._maps:
-                within_map = self._map_deref_expr(m, address+offset, 1)
+                within_map = self._map_deref_expr(m, address + offset, 1)
                 deref_expression = Operators.ITEBV(8, within_map,
-                                                   self._backing_array[address+offset],
+                                                   self._backing_array[address + offset],
                                                    deref_expression)
             result.append(deref_expression)
 
@@ -1252,10 +1251,10 @@ class LazySMemory(SMemory):
 
         # return self._aggregate_read(address, size)
         return [self._backing_array[address + offset] for offset in range(size)]
-        #result = []
-        #for offset in range(size):
-            #result.append(self._backing_array[address + offset])
-        ##return result
+        # result = []
+        # for offset in range(size):
+        #    result.append(self._backing_array[address + offset])
+        # return result
 
     def write(self, address, value, force=False):
         if not issymbolic(address) and not self.access_ok(slice(address, address + len(value)), 'w', force):
