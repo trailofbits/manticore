@@ -64,7 +64,7 @@ def parse_arguments():
                               "(default mcore_?????)"))
     parser.add_argument('--pure-symbolic', action='store_true',
                         help='Treat all writable memory as symbolic')
-    parser.add_argument('--version', action='version', version='Manticore 0.1.10',
+    parser.add_argument('--version', action='version', version='Manticore 0.2.0',
                         help='Show program version information')
 
     parser.add_argument('--txlimit', type=positive,

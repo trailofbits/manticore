@@ -4,7 +4,7 @@
 A simple trace following execution driver script. Only supports passing symbolic arguments via argv.
 
 '''
-from __future__ import print_function
+
 
 import sys
 import time
@@ -16,7 +16,7 @@ from manticore.core.plugin import ExtendedTracer, Plugin
 
 def _partition(pred, iterable):
     t1, t2 = itertools.tee(iterable)
-    return (list(itertools.ifilterfalse(pred, t1)), filter(pred, t2))
+    return list(itertools.filterfalse(pred, t1)), list(filter(pred, t2))
 
 
 class TraceReceiver(Plugin):
@@ -85,7 +85,7 @@ def main():
     parser.add_argument('-f', '--explore_from', help='Value of PC from which to explore symbolically', type=str)
     parser.add_argument('-t', '--explore_to', type=str, default=sys.maxsize,
                         help="Value of PC until which to explore symbolically. (Probably don't want this set)")
-    parser.add_argument('--verbose', '-v', action='count', help='Increase verbosity')
+    parser.add_argument('--verbose', '-v', action='count', default=0, help='Increase verbosity')
     parser.add_argument('cmd', type=str, nargs='+',
                         help='Program and arguments. Use "--" to separate script arguments from target arguments')
     args = parser.parse_args(sys.argv[1:])
