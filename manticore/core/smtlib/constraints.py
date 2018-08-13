@@ -168,22 +168,19 @@ class ConstraintSet(object):
         self._declarations[var.name] = var
         return var
 
-    def get_declared_variables(self):
-        ''' Returns the variable expressions of this constraint set '''
-        return self._declarations.values()
-
-    def get_declared_names(self):
-        ''' Returns the names of the declared variables in of this constaraint set '''
-        return self._declarations.keys()
-
     def get_variable(self, name):
         ''' Returns the variable declared under name or None if it does not exists '''
         if name not in self._declarations:
             return None
         return self._declarations[name]
 
+    def get_declared_variables(self):
+        ''' Returns the variable expressions of this constraint set '''
+        return self._declarations.values()
+
     @property
     def declarations(self):
+        ''' Returns the variable expressions of this constraint set '''
         declarations = GetDeclarations()
         for a in self.constraints:
             try:
@@ -216,7 +213,7 @@ class ConstraintSet(object):
 
     def _make_unique_name(self, name='VAR'):
         ''' Makes an uniq variable name'''
-        if name in self._declarations.keys():
+        while name in self._declarations.keys():
             name = '%s_%d' % (name, self._get_sid())
         return name
 
@@ -269,7 +266,6 @@ class ConstraintSet(object):
         #  Based on the name mapping in name_migration_map build an object to
         #  object mapping to be used in the replacing of variables
         object_migration_map = {}
-        declared_names = self.get_declared_names()
         expression_variables = [(x.name, x) for x in get_variables(expression)]
         for expression_name, expression_var in expression_variables:
             migrated_name = name_migration_map.get(expression_name)
@@ -282,16 +278,17 @@ class ConstraintSet(object):
 
             # do nothing if it is a known/declared variable
             if any(x is var for x in self.get_declared_variables()):
+            #if var in self.get_declared_variables():
                 continue
 
             # do nothing if there is already a migrated variable for it
-            #if any(x is var for x in object_migration_map.values()):
-            if var in object_migration_map:
+            if any(x is var for x in object_migration_map.values()):
+            #if var in object_migration_map:
                 continue
 
             # var needs migration use old_name_migrated if name already used
             name = var.name
-            while name in self._declarations:
+            if name in self._declarations:
                 name = self._make_unique_name(var.name + '_migrated')
             # Create and declare a new variable of given type
             if isinstance(var, Bool):
