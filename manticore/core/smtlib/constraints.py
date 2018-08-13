@@ -267,11 +267,11 @@ class ConstraintSet(object):
         fat_migration_map = {}
         declared_names = self.get_declared_names()
         expression_variables = dict([(x.name, x) for x in get_variables(expression)])
-        for old_name in expression_variables:
-            migrated_name = migration_map.get(old_name)
+        for expression_name, expresison_var in expression_variables.items():
+            migrated_name = migration_map.get(expression_name)
             native_var = self.get_variable(migrated_name)
             if native_var is not None:
-                fat_migration_map[expression_variables[old_name]] = native_var
+                fat_migration_map[expression_var] = native_var
 
         # Make a new migrated variable for each unkonw variable in the expression
         for var in expression_variables.values():
