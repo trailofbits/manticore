@@ -1113,8 +1113,7 @@ class EVMContract(EVMAccount):
         if func_name in self._hashes:
             self._hashes[func_name].append((signature, func_id))
             return
-            # raise EthereumError("A function with that name is already defined")
-        if func_id in {func_id for _, func_id in self._hashes.values()}:
+        if func_id in {h[1] for names in self._hashes.values() for h in names}:
             raise EthereumError("A function with the same hash is already defined")
         self._hashes[func_name] = [(signature, func_id)]
 
