@@ -418,6 +418,53 @@ class EthTests(unittest.TestCase):
         self.mevm=None
         shutil.rmtree(self.worksp)
 
+    def testIntegrationMigrate(self):
+        m = self.mevm
+
+        contract_src='''
+        contract Overflow {
+          uint public sellerBalance=0;
+
+          function add(uint value)public  returns (bool){
+              sellerBalance += value;
+          }
+        }
+        '''
+
+        owner_account=m.create_account(balance=1000)
+        attacker_account=m.create_account(balance=1000)
+        contract_account=m.solidity_create_contract(contract_src,
+                                                    owner=owner_account,
+                                                    balance=0)
+
+        #Some global expression `sym_add1` 
+        sym_add1 = m.make_symbolic_value(name='sym_add1')
+        #Let's constraint it on the global fake constraintset
+        m.constrain(sym_add1>0)
+        m.constrain(sym_add1<10)
+        #Symb tx 1
+        contract_account.add(sym_add1, caller=attacker_account)
+
+        # A new!? global expression 
+        sym_add2 = m.make_symbolic_value(name='sym_add2')
+        #constraints involve old expression.  Some states may get invalidated by this. Should this be accepted?
+        m.constrain(sym_add1 > sym_add2)
+        #Symb tx 2
+        contract_account.add(sym_add2, caller=attacker_account)
+
+        #random concrete tx
+        contract_account.sellerBalance(caller=attacker_account)
+
+        #anooother constraining on the global constraintset. Yet more running states could get unfeasible by this.
+        m.constrain(sym_add1 > 8)
+
+
+
+        for state_num, state in enumerate(m.all_states):
+            if state.is_feasible():
+                self.assertTrue(state.can_be_true(sym_add1 == 9))
+                self.assertTrue(state.can_be_true(sym_add2 == 8))
+
     def test_account_names(self):
         m = self.mevm
         user_account = m.create_account(name='user_account')
