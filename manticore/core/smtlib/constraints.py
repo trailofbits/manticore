@@ -175,7 +175,7 @@ class ConstraintSet(object):
 
     def get_variable(self, name):
         if name not in self._declarations:
-            raise ValueError('Unknown variable')
+            return None
         return self._declarations[name]
 
     @property
@@ -210,31 +210,68 @@ class ConstraintSet(object):
         ''' Returns a smtlib representation of the current state '''
         return self.to_string()
 
-    def _get_new_name(self, name='VAR'):
+    def _make_unique_name(self, name='VAR'):
         ''' Makes an uniq variable name'''
         if name in self._declarations.keys():
             name = '%s_%d' % (name, self._get_sid())
         return name
 
-    def migrate(self, expression, migration_bindings=None):
+    def migrate(self, expression, migration_map=None):
         ''' Migrate an expression created for a different constraint set to self.
             Returns an expression that can be used with this constraintSet
 
-            :param migration_bindings: a name to name mapping of already migrated variables
-        '''
-        if migration_bindings is None:
-            migration_bindings = {}
+            All the foreign variables used in the expression are replaced by 
+            variables of this constraint set. If the variable was replaced before 
+            the replacement is taken from the provided migration map.
 
-        #  migration_bindings -> fat_bindings
-        #  Based on the name mapping in migration_bindings build an object to
+            The migration mapping is updated with new replacements.
+
+            ```
+            from manticore.core.smtlib import *
+
+            cs1 = ConstraintSet()
+            cs2 = ConstraintSet()
+            var1 = cs1.new_bitvec(32, 'var')
+            var2 = cs2.new_bitvec(32, 'var')
+            cs1.add(Operators.ULT(var1, 3)) # var1 can be 0, 1, 2
+
+            # make a migration map dict
+            migration_map1 = {}
+
+            #this expression is composed with variables of both cs 
+            expression = var1 > var2
+            migrated_expression = cs1.migrate(expression, migration_map1)
+            cs1.add(migrated_expression)
+
+
+            expression = var2 > 0
+            migrated_expression = cs1.migrate(expression, migration_map1)
+            cs1.add(migrated_expression)
+
+            print (cs1)
+            print (solver.check(cs1))
+            print (solver.get_all_values(cs1, var1)) # should only be [2]
+            ```
+
+            :param expression: the potentially foreign expression
+            :param migration_map: a name to name mapping of already migrated variables
+            :return: a migrated expresion where all the variables are fresh BoolVariable
+
+        '''
+        if migration_map is None:
+            migration_map = {}
+
+        #  migration_map -> fat_migration_map
+        #  Based on the name mapping in migration_map build an object to
         #  object mapping to be used in the replacing of variables
-        fat_bindings = {}
+        fat_migration_map = {}
         declared_names = self.get_declared_names()
         expression_variables = dict([(x.name, x) for x in get_variables(expression)])
         for old_name in expression_variables:
-            migrated_name = migration_bindings.get(old_name)
-            if migrated_name in declared_names:
-                fat_bindings[expression_variables[old_name]] = self.get_variable(migrated_name)
+            migrated_name = migration_map.get(old_name)
+            native_var = self.get_variable(migrated_name)
+            if native_var is not None:
+                  fat_migration_map[expression_variables[old_name]] = native_var
 
         # Make a new migrated variable for each unkonw variable in the expression
         for var in expression_variables.values():
@@ -244,16 +281,14 @@ class ConstraintSet(object):
                 continue
 
             # do nothing if there is already a migrated variable for it
-            #if any(x is var for x in fat_bindings.values()):
-            if var in fat_bindings:
+            #if any(x is var for x in fat_migration_map.values()):
+            if var in fat_migration_map:
                 continue
 
             # var needs migration use old_name_migrated if name already used
             name = var.name
-            if name in self._declarations:
-                name = self._get_new_name(var.name + '_migrated')
-            if name in self._declarations:
-                raise ValueError("Migration name already used")
+            while name in self._declarations:
+                name = self._make_unique_name(var.name + '_migrated')
             # Create and declare a new variable of given type
             if isinstance(var, Bool):
                 new_var = self.new_bool(name=name)
@@ -262,14 +297,14 @@ class ConstraintSet(object):
             elif isinstance(var, Array):
                 new_var = self.new_array(index_max=var.index_max, index_bits=var.index_bits, value_bits=var.value_bits, name=name).array
             else:
-                raise NotImplemented("Unknown type {}".format(type(var)))
+                raise NotImplemented("Unknown expression type {} encountered during expression migration".format(type(var)))
             # Update the var to var mapping
-            fat_bindings[var] = new_var
+            fat_migration_map[var] = new_var
             # Update the name to name mapping
-            migration_bindings[var.name] = new_var.name
+            migration_map[var.name] = new_var.name
 
         #  Actually replace each appearence of migrated variables by the new ones
-        migrated_expression = replace(expression, fat_bindings)
+        migrated_expression = replace(expression, fat_migration_map)
         return migrated_expression
 
     def new_bool(self, name=None, taint=frozenset(), avoid_collisions=False):
@@ -283,7 +318,7 @@ class ConstraintSet(object):
             name = 'B'
             avoid_collisions = True
         if avoid_collisions:
-            name = self._get_new_name(name)
+            name = self._make_unique_name(name)
         if not avoid_collisions and name in self._declarations:
             raise ValueError("Name already used")
         var = BoolVariable(name, taint=taint)
@@ -303,7 +338,7 @@ class ConstraintSet(object):
             name = 'BV'
             avoid_collisions = True
         if avoid_collisions:
-            name = self._get_new_name(name)
+            name = self._make_unique_name(name)
         if not avoid_collisions and name in self._declarations:
             raise ValueError("Name already used")
         var = BitVecVariable(size, name, taint=taint)
@@ -323,7 +358,7 @@ class ConstraintSet(object):
             name = 'A'
             avoid_collisions = True
         if avoid_collisions:
-            name = self._get_new_name(name)
+            name = self._make_unique_name(name)
         if not avoid_collisions and name in self._declarations:
             raise ValueError("Name already used")
         var = self._declare(ArrayVariable(index_bits, index_max, value_bits, name, taint=taint))

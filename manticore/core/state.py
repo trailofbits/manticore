@@ -206,9 +206,13 @@ class State(Eventful):
 
         :return: :class:`~manticore.core.smtlib.expression.Expression` representing the buffer.
         '''
-        label = options.get('label', 'buffer')
+        label = options.get('label')
+        avoid_collisions = False
+        if label is None:
+            label = 'buffer'
+            avoid_collisions = True
         taint = options.get('taint', frozenset())
-        expr = self._constraints.new_array(name=label, index_max=nbytes, value_bits=8, taint=taint, avoid_collisions=True)
+        expr = self._constraints.new_array(name=label, index_max=nbytes, value_bits=8, taint=taint, avoid_collisions=avoid_collisions)
         self._input_symbols.append(expr)
 
         if options.get('cstring', False):
@@ -217,7 +221,7 @@ class State(Eventful):
 
         return expr
 
-    def new_symbolic_value(self, nbits, label='val', taint=frozenset()):
+    def new_symbolic_value(self, nbits, label=None, taint=frozenset()):
         '''Create and return a symbolic value that is `nbits` bits wide. Assign
         the value to a register or write it into the address space to introduce
         it into the program state.
@@ -229,7 +233,12 @@ class State(Eventful):
         :return: :class:`~manticore.core.smtlib.expression.Expression` representing the value
         '''
         assert nbits in (1, 4, 8, 16, 32, 64, 128, 256)
-        expr = self._constraints.new_bitvec(nbits, name=label, taint=taint, avoid_collisions=True)
+        avoid_collisions = False
+        if label is None:
+            label = 'val'
+            avoid_collisions = True
+
+        expr = self._constraints.new_bitvec(nbits, name=label, taint=taint, avoid_collisions=avoid_collisions)
         self._input_symbols.append(expr)
         return expr
 
@@ -267,11 +276,11 @@ class State(Eventful):
     def migrate_expression(self, expression):
         if not issymbolic(expression):
             return expression
-        migration_bindings = self.context.get('migration_bindings')
-        if migration_bindings is None:
-            migration_bindings = {}
-        migrated_expression = self.constraints.migrate(expression, migration_bindings=migration_bindings)
-        self.context['migration_bindings'] = migration_bindings
+        migration_map = self.context.get('migration_map')
+        if migration_map is None:
+            migration_map = {}
+        migrated_expression = self.constraints.migrate(expression, migration_map=migration_map)
+        self.context['migration_map'] = migration_map
         return migrated_expression
 
     def is_feasible(self):

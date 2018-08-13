@@ -1181,7 +1181,7 @@ class ManticoreEVM(Manticore):
             m.finalize()
     '''
 
-    def make_symbolic_buffer(self, size, name='TXBUFFER'):
+    def make_symbolic_buffer(self, size, name=None):
         ''' Creates a symbolic buffer of size bytes to be used in transactions.
             You can operate on it normally and add constrains to manticore.constraints
             via manticore.constrain(constraint_expression)
@@ -1195,9 +1195,13 @@ class ManticoreEVM(Manticore):
                                 data=symbolic_data,
                                 value=100000 )
         '''
-        return self.constraints.new_array(index_bits=256, name=name, index_max=size, value_bits=8, taint=frozenset(), avoid_collisions=True)
+        avoid_collisions = False
+        if name is None:
+            name = 'TXBUFFER'
+            avoid_collisions = True
+        return self.constraints.new_array(index_bits=256, name=name, index_max=size, value_bits=8, taint=frozenset(), avoid_collisions=avoid_collisions)
 
-    def make_symbolic_value(self, nbits=256, name='TXVALUE'):
+    def make_symbolic_value(self, nbits=256, name=None):
         ''' Creates a symbolic value, normally a uint256, to be used in transactions.
             You can operate on it normally and add constrains to manticore.constraints
             via manticore.constrain(constraint_expression)
@@ -1213,15 +1217,23 @@ class ManticoreEVM(Manticore):
                                 value=symbolic_value )
 
         '''
-        return self.constraints.new_bitvec(nbits, name=name, avoid_collisions=True)
+        avoid_collisions = False
+        if name is None:
+            name = 'TXVALUE'
+            avoid_collisions = True
+        return self.constraints.new_bitvec(nbits, name=name, avoid_collisions=avoid_collisions)
 
-    def make_symbolic_address(self, name='TXADDR', select='both'):
+    def make_symbolic_address(self, name=None, select='both'):
         if select not in ('both', 'normal', 'contract'):
             raise EthereumError('Wrong selection type')
         if select in ('normal', 'contract'):
             # FIXME need to select contracts or normal accounts
             raise NotImplemented
-        symbolic_address = self.make_symbolic_value(name=name)
+        avoid_collisions = False
+        if name is None:
+            name = 'TXADDR'
+            avoid_collisions = True
+        return self.constraints.new_bitvec(160, name=name, avoid_collisions=avoid_collisions)
 
         constraint = symbolic_address == 0
         for contract_account_i in map(int, self._accounts.values()):
@@ -1234,15 +1246,8 @@ class ManticoreEVM(Manticore):
             self.constraints.add(constraint)
         else:
             for state in self.all_states:
-                state_constraints = state.constraints
-
-                migration_bindings = state.context.get('migration_bindings')
-                if migration_bindings is None:
-                    migration_bindings = {}
-                migrated_constraint = state_constraints.migrate(constraint, migration_bindings=migration_bindings)
+                migrated_constraint = state.migrate_expression(constraint)
                 state_constraints.add(migrated_constraint)
-
-                state.context['migration_bindings'] = migration_bindings
 
     @staticmethod
     def compile(source_code, contract_name=None, libraries=None, runtime=False, solc_bin=None, solc_remaps=[]):
@@ -1781,38 +1786,37 @@ class ManticoreEVM(Manticore):
         self._accounts[name] = EVMAccount(address, manticore=self, name=name)
         return self.accounts[name]
 
-    def __migrate_tx_expressions(self, state, caller, address, value, data):
+    def _migrate_tx_expressions(self, state, caller, address, value, data):
             # Copy global constraints into each state.
             # We should somehow remember what has been copied to each state
             # In a second transaction we should only add new constraints.
             # And actually only constraints related to whateverwe are using in
             # the tx. This is a FIXME
-            state_constraints = state.constraints
             global_constraints = self.constraints
 
-            migration_bindings = state.context.get('migration_bindings')
-            if migration_bindings is None:
-                migration_bindings = {}
+            # Normally users will be making these symbolic expressions by creating
+            # global symbolic variables via ManticoreEVM.make_.... and those 
+            # global expressions need to be imported into each state when a tx 
+            # actually happens
+
             if issymbolic(caller):
-                caller = state_constraints.migrate(caller, migration_bindings=migration_bindings)
+                caller = state.migrate_expression(caller)
 
             if issymbolic(address):
-                address = state_constraints.migrate(address, migration_bindings=migration_bindings)
+                address = state.migrate_expression(address)
 
             if issymbolic(value):
-                value = state_constraints.migrate(value, migration_bindings=migration_bindings)
+                value = state.migrate_expression(value)
 
             if issymbolic(data):
                 if isinstance(data, ArrayProxy):  # FIXME is this necesary here?
                     data = data.array
-                data = state_constraints.migrate(data, migration_bindings=migration_bindings)
+                data = state.migrate_expression(data)
                 if isinstance(data, Array):
                     data = ArrayProxy(data)
 
             for c in global_constraints:
-                migrated_constraint = state_constraints.migrate(c, migration_bindings=migration_bindings)
-                state.constrain(migrated_constraint)
-            state.context['migration_bindings'] = migration_bindings
+                state.constrain(c)
 
             return caller, address, value, data
 
@@ -1882,7 +1886,7 @@ class ManticoreEVM(Manticore):
                 raise EthereumError("This is bad. It should not be a pending transaction")
 
             # Migrate any expression to state specific constraint set
-            caller, address, value, data = self.__migrate_tx_expressions(state, caller, address, value, data)
+            caller, address, value, data = self._migrate_tx_expressions(state, caller, address, value, data)
 
             # Different states may CREATE a different set of accounts. Accounts
             # that were crated by a human have the same address in all states.
