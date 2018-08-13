@@ -1795,8 +1795,8 @@ class ManticoreEVM(Manticore):
             global_constraints = self.constraints
 
             # Normally users will be making these symbolic expressions by creating
-            # global symbolic variables via ManticoreEVM.make_.... and those 
-            # global expressions need to be imported into each state when a tx 
+            # global symbolic variables via ManticoreEVM.make_.... and those
+            # global expressions need to be imported into each state when a tx
             # actually happens
 
             if issymbolic(caller):

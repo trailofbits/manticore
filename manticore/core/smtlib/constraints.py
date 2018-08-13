@@ -220,8 +220,8 @@ class ConstraintSet(object):
         ''' Migrate an expression created for a different constraint set to self.
             Returns an expression that can be used with this constraintSet
 
-            All the foreign variables used in the expression are replaced by 
-            variables of this constraint set. If the variable was replaced before 
+            All the foreign variables used in the expression are replaced by
+            variables of this constraint set. If the variable was replaced before
             the replacement is taken from the provided migration map.
 
             The migration mapping is updated with new replacements.
@@ -238,7 +238,7 @@ class ConstraintSet(object):
             # make a migration map dict
             migration_map1 = {}
 
-            #this expression is composed with variables of both cs 
+            # this expression is composed with variables of both cs
             expression = var1 > var2
             migrated_expression = cs1.migrate(expression, migration_map1)
             cs1.add(migrated_expression)
@@ -271,7 +271,7 @@ class ConstraintSet(object):
             migrated_name = migration_map.get(old_name)
             native_var = self.get_variable(migrated_name)
             if native_var is not None:
-                  fat_migration_map[expression_variables[old_name]] = native_var
+                fat_migration_map[expression_variables[old_name]] = native_var
 
         # Make a new migrated variable for each unkonw variable in the expression
         for var in expression_variables.values():
