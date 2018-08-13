@@ -1178,10 +1178,10 @@ class LazySMemory(SMemory):
 
     def _map_deref_expr(self, map, address, size):
         return Operators.AND(
-            Operators.UGE(address, map.start),
-            Operators.ULT(address + size, map.end))
             # address >= map.start,
             # address + size < map.end)
+            Operators.UGE(address, map.start),
+            Operators.ULT(address + size, map.end))
 
     def _deref_can_succeed(self, map, address, size):
         deref_possible = self._map_deref_expr(map, address, size)
