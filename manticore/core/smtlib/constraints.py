@@ -282,7 +282,7 @@ class ConstraintSet(object):
                 continue
 
             # do nothing if there is already a migrated variable for it
-            if any(x is var for x in object_migration_map.values()):
+            if any(x is var for x in object_migration_map.keys()):
             # if var in object_migration_map:
                 continue
 
