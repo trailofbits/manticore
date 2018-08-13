@@ -17,16 +17,18 @@ class ConstraintSet(object):
         self._constraints = list()
         self._parent = None
         self._sid = 0
+        self._declarations = {}
         self._child = None
 
     def __reduce__(self):
-        return (self.__class__, (), {'_parent': self._parent, '_constraints': self._constraints, '_sid': self._sid})
+        return (self.__class__, (), {'_parent': self._parent, '_constraints': self._constraints, '_sid': self._sid, '_declarations': self._declarations})
 
     def __enter__(self):
         assert self._child is None
         self._child = self.__class__()
         self._child._parent = self
         self._child._sid = self._sid
+        self._child._declarations = dict(self._declarations)
         return self._child
 
     def __exit__(self, ty, value, traceback):
@@ -159,6 +161,27 @@ class ConstraintSet(object):
             constraint_str = translator.pop()
         return result
 
+    def _declare(self, var):
+        ''' Declare the variable `var` '''
+        if var.name in self._declarations:
+            raise ValueError('Variable already declared')
+        self._declarations[var.name] = var
+        return var
+
+    def get_declared_variables(self):
+        ''' Returns the variable expressions of this constraint set '''
+        return self._declarations.values()
+
+    def get_declared_names(self):
+        ''' Returns the names of the declared variables in of this constaraint set '''
+        return self._declarations.keys()
+
+    def get_variable(self, name):
+        ''' Returns the variable declared under name or None if it does not exists '''
+        if name not in self._declarations:
+            return None
+        return self._declarations[name]
+
     @property
     def declarations(self):
         declarations = GetDeclarations()
@@ -191,68 +214,156 @@ class ConstraintSet(object):
         ''' Returns a smtlib representation of the current state '''
         return self.to_string()
 
-    def _get_new_name(self, name='VAR'):
+    def _make_unique_name(self, name='VAR'):
         ''' Makes an uniq variable name'''
-        return '%s_%d' % (name, self._get_sid())
+        if name in self._declarations:
+            name = '%s_%d' % (name, self._get_sid())
+        return name
 
-    def migrate(self, expression, name=None, bindings=None):
-        ''' Migrate an expression created for a different constraint set
+    def migrate(self, expression, name_migration_map=None):
+        ''' Migrate an expression created for a different constraint set to self.
             Returns an expression that can be used with this constraintSet
-        '''
-        # Simply check there are no name overlappings
-        if bindings is None:
-            bindings = {}
-        variables = get_variables(expression)
-        for var in variables:
-            if name is None:
-                name = self._get_new_name(var.name + '_migrated')
 
-            if var in bindings:
+            All the foreign variables used in the expression are replaced by
+            variables of this constraint set. If the variable was replaced before
+            the replacement is taken from the provided migration map.
+
+            The migration mapping is updated with new replacements.
+
+            ```
+            from manticore.core.smtlib import *
+
+            cs1 = ConstraintSet()
+            cs2 = ConstraintSet()
+            var1 = cs1.new_bitvec(32, 'var')
+            var2 = cs2.new_bitvec(32, 'var')
+            cs1.add(Operators.ULT(var1, 3)) # var1 can be 0, 1, 2
+
+            # make a migration map dict
+            name_migration_map1 = {}
+
+            # this expression is composed with variables of both cs
+            expression = var1 > var2
+            migrated_expression = cs1.migrate(expression, name_migration_map1)
+            cs1.add(migrated_expression)
+
+
+            expression = var2 > 0
+            migrated_expression = cs1.migrate(expression, name_migration_map1)
+            cs1.add(migrated_expression)
+
+            print (cs1)
+            print (solver.check(cs1))
+            print (solver.get_all_values(cs1, var1)) # should only be [2]
+            ```
+
+            :param expression: the potentially foreign expression
+            :param name_migration_map: a name to name mapping of already migrated variables
+            :return: a migrated expresion where all the variables are fresh BoolVariable
+
+        '''
+        if name_migration_map is None:
+            name_migration_map = {}
+
+        #  name_migration_map -> object_migration_map
+        #  Based on the name mapping in name_migration_map build an object to
+        #  object mapping to be used in the replacing of variables
+        object_migration_map = {}
+        declared_names = self.get_declared_names()
+        expression_variables = dict([(x.name, x) for x in get_variables(expression)])
+        for expression_name, expression_var in expression_variables.items():
+            migrated_name = name_migration_map.get(expression_name)
+            native_var = self.get_variable(migrated_name)
+            if native_var is not None:
+                object_migration_map[expression_var] = native_var
+
+        # Make a new migrated variable for each unkonw variable in the expression
+        for var in expression_variables.values():
+
+            # do nothing if it is a known/declared variable
+            if any(x is var for x in self.get_declared_variables()):
                 continue
 
+            # do nothing if there is already a migrated variable for it
+            #if any(x is var for x in object_migration_map.values()):
+            if var in object_migration_map:
+                continue
+
+            # var needs migration use old_name_migrated if name already used
+            name = var.name
+            while name in self._declarations:
+                name = self._make_unique_name(var.name + '_migrated')
+            # Create and declare a new variable of given type
             if isinstance(var, Bool):
                 new_var = self.new_bool(name=name)
             elif isinstance(var, BitVec):
                 new_var = self.new_bitvec(var.size, name=name)
             elif isinstance(var, Array):
-                new_var = self.new_array(index_max=var.index_max, index_bits=var.index_bits, value_bits=var.value_bits, name=name)
+                new_var = self.new_array(index_max=var.index_max, index_bits=var.index_bits, value_bits=var.value_bits, name=name).array
             else:
-                raise NotImplemented("Unknown type {}".format(type(var)))
+                raise NotImplemented("Unknown expression type {} encountered during expression migration".format(type(var)))
+            # Update the var to var mapping
+            object_migration_map[var] = new_var
+            # Update the name to name mapping
+            name_migration_map[var.name] = new_var.name
 
-            bindings[var] = new_var
-
-        migrated_expression = replace(expression, bindings)
+        #  Actually replace each appearence of migrated variables by the new ones
+        migrated_expression = replace(expression, object_migration_map)
         return migrated_expression
 
-    def new_bool(self, name='B', taint=frozenset()):
+    def new_bool(self, name=None, taint=frozenset(), avoid_collisions=False):
         ''' Declares a free symbolic boolean in the constraint store
             :param name: try to assign name to internal variable representation,
                          if not uniq a numeric nonce will be appended
+            :param avoid_collisions: potentially avoid_collisions the variable to avoid name colisions if True
             :return: a fresh BoolVariable
         '''
-        name = self._get_new_name(name)
-        return BoolVariable(name, taint=taint)
+        if name is None:
+            name = 'B'
+            avoid_collisions = True
+        if avoid_collisions:
+            name = self._make_unique_name(name)
+        if not avoid_collisions and name in self._declarations:
+            raise ValueError("Name already used")
+        var = BoolVariable(name, taint=taint)
+        return self._declare(var)
 
-    def new_bitvec(self, size, name='V', taint=frozenset()):
+    def new_bitvec(self, size, name=None, taint=frozenset(), avoid_collisions=False):
         ''' Declares a free symbolic bitvector in the constraint store
             :param size: size in bits for the bitvector
             :param name: try to assign name to internal variable representation,
                          if not uniq a numeric nonce will be appended
+            :param avoid_collisions: potentially avoid_collisions the variable to avoid name colisions if True
             :return: a fresh BitVecVariable
         '''
         if not (size == 1 or size % 8 == 0):
             raise Exception('Invalid bitvec size %s' % size)
-        name = self._get_new_name(name)
-        return BitVecVariable(size, name, taint=taint)
+        if name is None:
+            name = 'BV'
+            avoid_collisions = True
+        if avoid_collisions:
+            name = self._make_unique_name(name)
+        if not avoid_collisions and name in self._declarations:
+            raise ValueError("Name already used")
+        var = BitVecVariable(size, name, taint=taint)
+        return self._declare(var)
 
-    def new_array(self, index_bits=32, name='A', index_max=None, value_bits=8, taint=frozenset()):
+    def new_array(self, index_bits=32, name=None, index_max=None, value_bits=8, taint=frozenset(), avoid_collisions=False):
         ''' Declares a free symbolic array of value_bits long bitvectors in the constraint store.
             :param index_bits: size in bits for the array indexes one of [32, 64]
             :param value_bits: size in bits for the array values
             :param name: try to assign name to internal variable representation,
                          if not uniq a numeric nonce will be appended
             :param index_max: upper limit for indexes on ths array (#FIXME)
+            :param avoid_collisions: potentially avoid_collisions the variable to avoid name colisions if True
             :return: a fresh ArrayProxy
         '''
-        name = self._get_new_name(name)
-        return ArrayProxy(ArrayVariable(index_bits, index_max, value_bits, name, taint=taint))
+        if name is None:
+            name = 'A'
+            avoid_collisions = True
+        if avoid_collisions:
+            name = self._make_unique_name(name)
+        if not avoid_collisions and name in self._declarations:
+            raise ValueError("Name already used")
+        var = self._declare(ArrayVariable(index_bits, index_max, value_bits, name, taint=taint))
+        return ArrayProxy(var)
