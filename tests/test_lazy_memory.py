@@ -6,6 +6,7 @@ import tempfile, os
 import gc, pickle
 import fcntl
 import resource
+from itertools import *
 import sys
 from manticore.core.memory import *
 from manticore.utils.helpers import issymbolic
@@ -47,6 +48,7 @@ class LazyMemoryTest(unittest.TestCase):
         cs.add(addr >= 0xffc)
         cs.add(addr <  0x1002)
 
+        # Ensure that all valid derefs are within mapped memory
         with cs as new_cs:
             new_cs.add(mem.valid_ptr(addr))
             vals = solver.get_all_values(new_cs, addr)
@@ -54,6 +56,7 @@ class LazyMemoryTest(unittest.TestCase):
             for v in vals:
                 self.assertTrue(0 <= v < 4095)
 
+        # Ensure that all invalid derefs are outside of mapped memory
         with cs as new_cs:
             new_cs.add(mem.invalid_ptr(addr))
             vals = solver.get_all_values(new_cs, addr)
@@ -65,34 +68,47 @@ class LazyMemoryTest(unittest.TestCase):
 
         self.assertIsInstance(val, Expression)
 
-
-    def test_lazysymbolic_r(self):
+    def test_lazysymbolic_basic_constrained_read(self):
         cs = ConstraintSet()
         mem = LazySMemory32(cs)
         sym = cs.new_bitvec(32)
-        val = cs.new_bitvec(8)
 
         cs.add(sym.uge(0xfff))
         cs.add(sym.ule(0x1010))
 
-        #start with no maps
-        self.assertEqual(len(mem.mappings()), 0)
-
+        # Make sure reading with no mappings raises an issue
         self.assertRaises(MemoryException, mem.__getitem__, 0x1000)
-        #self.assertIsInstance(mem[sym], InvalidAccessConstant)
-        #self.assertRaises(MemoryException, mem.__setitem__, 0x1000, '\x42')
 
-        #alloc/map a byte
-        #first = mem.mmap(0x1000, 0x1000, 'r')
+        first = mem.mmap(0x1000, 0x1000, 'rw')
 
-        #self.assertEqual(first, 0x1000)
-        #self.assertEqual(solver.get_value(cs, mem[0x1000]), 0)
-        # self.assertRaises(MemoryException, mem.__getitem__, sym)
-        # self.assertRaises(MemoryException, mem.__setitem__, 0x1000, '\x41')
-        # self.assertRaises(MemoryException, mem.__setitem__, 0x1000, val)
-        # self.assertRaises(MemoryException, mem.__setitem__, sym, '\x41')
-        # self.assertRaises(MemoryException, mem.__setitem__, sym, val)
+        self.assertEqual(first, 0x1000)
 
+        mem.write(0x1000, b'\x00')
+
+        self.assertEqual(solver.get_all_values(cs, mem[0x1000]), [0])
+
+    @unittest.skip("Disabled because it takes 4+ minutes; get_all_values() isn't returning all possible addresses")
+    def test_lazysymbolic_constrained_deref(self):
+        cs = ConstraintSet()
+        mem = LazySMemory32(cs)
+        sym = cs.new_bitvec(32)
+        Size = 0x1000
+
+        first = mem.mmap(0x1000, Size, 'rw')
+
+        # Fill with increasing bytes
+        mem.write(first, bytes(islice(cycle(range(256)), Size)))
+
+        vals = mem.read(sym, 4)
+        cs.add(vals[0] == 0x48)
+        cs.add(vals[1] == 0x49)
+
+        possible_addrs = solver.get_all_values(cs, sym)
+        for i in possible_addrs:
+            self.assertTrue((i & 0xff) == 0x48)
+
+        # There are 16 spans with 0x48 in [0x1000, 0x2000]
+        self.assertEqual(len(possible_addrs), 16)
 
 if __name__ == '__main__':
     unittest.main()
