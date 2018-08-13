@@ -1,4 +1,6 @@
 import unittest
+import os
+
 from manticore.utils.event import Eventful
 from manticore.platforms import linux
 from manticore.core.state import State
@@ -66,7 +68,8 @@ class FakePlatform(Eventful):
 class StateTest(unittest.TestCase):
     _multiprocess_can_split_ = True
     def setUp(self):
-        l = linux.Linux('/bin/ls')
+        dirname = os.path.dirname(__file__)
+        l = linux.Linux(os.path.join(dirname, 'binaries', 'basic_linux_amd64'))
         self.state = State(ConstraintSet(), l)
 
     def test_solve_one(self):

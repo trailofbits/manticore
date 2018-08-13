@@ -660,7 +660,7 @@ class EVM(Eventful):
         except ConcretizeStack as ex:
             #Revert the stack and gas so it looks like before executing the instruction
             self._push_arguments(arguments)
-            self._gast = old_gas
+            self._gas = old_gas
             pos = -ex.pos
 
             def setstate(state, value):
@@ -673,7 +673,7 @@ class EVM(Eventful):
         except StartTx:
             #Revert the stack and gas so it looks like before executing the instruction
             self._push_arguments(arguments)
-            self._gast = old_gas
+            self._gas = old_gas
             raise
 
         except EndTx as ex:
