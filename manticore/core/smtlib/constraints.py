@@ -162,18 +162,22 @@ class ConstraintSet(object):
         return result
 
     def _declare(self, var):
+        ''' Declare the variable `var` '''
         if var.name in self._declarations:
             raise ValueError('Variable already declared')
         self._declarations[var.name] = var
         return var
 
     def get_declared_variables(self):
+        ''' Returns the variable expressions of this constraint set '''
         return self._declarations.values()
 
     def get_declared_names(self):
+        ''' Returns the names of the declared variables in of this constaraint set '''
         return self._declarations.keys()
 
     def get_variable(self, name):
+        ''' Returns the variable declared under name or None if it does not exists '''
         if name not in self._declarations:
             return None
         return self._declarations[name]
@@ -216,7 +220,7 @@ class ConstraintSet(object):
             name = '%s_%d' % (name, self._get_sid())
         return name
 
-    def migrate(self, expression, migration_map=None):
+    def migrate(self, expression, name_migration_map=None):
         ''' Migrate an expression created for a different constraint set to self.
             Returns an expression that can be used with this constraintSet
 
@@ -236,16 +240,16 @@ class ConstraintSet(object):
             cs1.add(Operators.ULT(var1, 3)) # var1 can be 0, 1, 2
 
             # make a migration map dict
-            migration_map1 = {}
+            name_migration_map1 = {}
 
             # this expression is composed with variables of both cs
             expression = var1 > var2
-            migrated_expression = cs1.migrate(expression, migration_map1)
+            migrated_expression = cs1.migrate(expression, name_migration_map1)
             cs1.add(migrated_expression)
 
 
             expression = var2 > 0
-            migrated_expression = cs1.migrate(expression, migration_map1)
+            migrated_expression = cs1.migrate(expression, name_migration_map1)
             cs1.add(migrated_expression)
 
             print (cs1)
@@ -254,35 +258,35 @@ class ConstraintSet(object):
             ```
 
             :param expression: the potentially foreign expression
-            :param migration_map: a name to name mapping of already migrated variables
+            :param name_migration_map: a name to name mapping of already migrated variables
             :return: a migrated expresion where all the variables are fresh BoolVariable
 
         '''
-        if migration_map is None:
-            migration_map = {}
+        if name_migration_map is None:
+            name_migration_map = {}
 
-        #  migration_map -> fat_migration_map
-        #  Based on the name mapping in migration_map build an object to
+        #  name_migration_map -> object_migration_map
+        #  Based on the name mapping in name_migration_map build an object to
         #  object mapping to be used in the replacing of variables
-        fat_migration_map = {}
+        object_migration_map = {}
         declared_names = self.get_declared_names()
-        expression_variables = dict([(x.name, x) for x in get_variables(expression)])
-        for expression_name, expression_var in expression_variables.items():
-            migrated_name = migration_map.get(expression_name)
+        expression_variables = [(x.name, x) for x in get_variables(expression)]
+        for expression_name, expression_var in expression_variables:
+            migrated_name = name_migration_map.get(expression_name)
             native_var = self.get_variable(migrated_name)
             if native_var is not None:
-                fat_migration_map[expression_var] = native_var
+                object_migration_map[expression_var] = native_var
 
         # Make a new migrated variable for each unkonw variable in the expression
-        for var in expression_variables.values():
+        for var_name, var in expression_variables:
 
             # do nothing if it is a known/declared variable
             if any(x is var for x in self.get_declared_variables()):
                 continue
 
             # do nothing if there is already a migrated variable for it
-            #if any(x is var for x in fat_migration_map.values()):
-            if var in fat_migration_map:
+            #if any(x is var for x in object_migration_map.values()):
+            if var in object_migration_map:
                 continue
 
             # var needs migration use old_name_migrated if name already used
@@ -299,12 +303,12 @@ class ConstraintSet(object):
             else:
                 raise NotImplemented("Unknown expression type {} encountered during expression migration".format(type(var)))
             # Update the var to var mapping
-            fat_migration_map[var] = new_var
+            object_migration_map[var] = new_var
             # Update the name to name mapping
-            migration_map[var.name] = new_var.name
+            name_migration_map[var.name] = new_var.name
 
         #  Actually replace each appearence of migrated variables by the new ones
-        migrated_expression = replace(expression, fat_migration_map)
+        migrated_expression = replace(expression, object_migration_map)
         return migrated_expression
 
     def new_bool(self, name=None, taint=frozenset(), avoid_collisions=False):

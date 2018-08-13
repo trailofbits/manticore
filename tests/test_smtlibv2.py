@@ -409,6 +409,27 @@ class ExpressionTest(unittest.TestCase):
         x = replace(c, {b1:b2})
         self.assertEqual(translate_to_smtlib(x), '(bvadd #x00000064 VAR2)')
 
+    def testBasicMigration(self):
+        cs1 = ConstraintSet()
+        cs2 = ConstraintSet()
+        var1 = cs1.new_bitvec(32, 'var')
+        var2 = cs2.new_bitvec(32, 'var')
+        cs1.add(Operators.ULT(var1, 3)) # var1 can be 0, 1, 2
+
+        # make a migration map dict
+        migration_map1 = {}
+
+        # this expression is composed with variables of both cs
+        expression = var1 > var2
+        migrated_expression = cs1.migrate(expression, migration_map1)
+        cs1.add(migrated_expression)
+
+
+        expression = var2 > 0
+        migrated_expression = cs1.migrate(expression, migration_map1)
+        cs1.add(migrated_expression)
+
+        self.assertItemsEqual(solver.get_all_values(cs1, var1), [2]) # should only be [2]
 
     def test_ORD(self):
         cs = ConstraintSet()
