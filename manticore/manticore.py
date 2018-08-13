@@ -219,10 +219,18 @@ class Manticore(Eventful):
                         logger.warning("Plugin methods named '%s()' should start with 'on_', 'will_' or 'did_' on plugin %s",
                                        plugin_method_name, type(plugin).__name__)
 
+        plugin.on_register()
+
     def unregister_plugin(self, plugin):
         assert plugin in self.plugins, "Plugin instance not registered"
+        plugin.on_unregister()
         self.plugins.remove(plugin)
         plugin.manticore = None
+
+    def __del__(self):
+        plugins = list(self.plugins)
+        for plugin in plugins:
+            self.unregister_plugin(plugin)
 
     @classmethod
     def linux(cls, path, argv=None, envp=None, entry_symbol=None, symbolic_files=None, concrete_start='', **kwargs):

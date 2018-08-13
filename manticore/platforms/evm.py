@@ -684,13 +684,16 @@ class EVM(Eventful):
 
     #Execute an instruction from current pc
     def execute(self):
-        if issymbolic(self.pc) and not isinstance(self.pc, Constant):
-            expression = self.pc
+        pc = self.pc
+        if issymbolic(pc) and not isinstance(pc, Constant):
+            expression = pc
             taints = self.pc.taint
 
             def setstate(state, value):
-                state.platform.current_vm.pc = BitVecConstant(256, value, taint=taints)
-
+                if taints:
+                    state.platform.current_vm.pc = BitVecConstant(256, value, taint=taints)
+                else:
+                    state.platform.current_vm.pc = value
             raise Concretize("Concretice PC",
                              expression=expression,
                              setstate=setstate,
@@ -701,7 +704,6 @@ class EVM(Eventful):
             self._advance(result)
         except ConcretizeStack as ex:
             pos = -ex.pos
-
             def setstate(state, value):
                 self.stack[pos] = value
             raise Concretize("Concretice Stack Variable",
@@ -977,6 +979,7 @@ class EVM(Eventful):
     def CALLDATALOAD(self, offset):
         '''Get input data of current environment'''
         data_length = len(self.data)
+
         bytes = []
         for i in range(32):
             try:
@@ -1016,13 +1019,7 @@ class EVM(Eventful):
         self._consume(self.safe_mul(GCOPY, self.safe_add(size, 31) // 32))
         self._allocate(self.safe_add(mem_offset, size))
 
-        # slow debug check
-        #if issymbolic(size):
-        #    assert not solver.can_be_true(self.constraints, Operators.UGT(self.gas, old_gas))
-
         if issymbolic(size):
-            #self.constraints.add(size % 32 == 0)
-            #self.constraints.add(Operators.ULT(size, 32 * 10))
             raise ConcretizeStack(3, policy='SAMPLED')
 
         for i in range(size):
@@ -1158,7 +1155,7 @@ class EVM(Eventful):
             for taint in get_taints(self.pc):
                 value = taint_with(value, taint)
         self._allocate(address)
-        self._store(address, value, 1)
+        self._store(address, Operators.EXTRACT(value, 0, 8), 1)
 
     def SLOAD(self, offset):
         '''Load word from storage'''
@@ -1415,24 +1412,30 @@ class EVM(Eventful):
         #hd = ''  # str(self.memory)
         result = ['-' * 147]
         pc = self.pc
-        if isinstance(self.pc, Constant):
-            pc = self.pc.value
+        if isinstance(pc, Constant):
+            pc = pc.value
 
         if issymbolic(pc):
-            result.append('<Symbolic PC>')
-
+            result.append('<Symbolic PC> %s %r'%(translate_to_smtlib(pc), pc.taint))            
         else:
             result.append('0x%04x: %s %s %s\n' % (pc, self.instruction.name, self.instruction.has_operand and '0x%x' %
                                                   self.instruction.operand or '', self.instruction.description))
 
-        result.append('Stack                                                                      Memory')
+        args = {}
+        implementation = getattr(self, self.instruction.semantics, None)
+        if implementation is not None:
+            args = dict(enumerate(inspect.getfullargspec(implementation).args[1:self.instruction.pops+1]))
+
+        clmn = 80
+        result.append('Stack                                                                           Memory')
         sp = 0
         for i in list(reversed(self.stack))[:10]:
+            argname = args.get(sp, sp == 0 and 'top' or '')
             r = ''
             if issymbolic(i):
-                r = '%s %r' % (sp == 0 and 'top> ' or '     ', i)
+                r = '{:>12s} {:66s}'.format(argname, repr(i))
             else:
-                r = '%s 0x%064x' % (sp == 0 and 'top> ' or '     ', i)
+                r = '{:>12s} 0x{:064x}'.format(argname, i)
             sp += 1
 
             h = ''
@@ -1440,11 +1443,11 @@ class EVM(Eventful):
                 h = hd[sp - 1]
             except BaseException:
                 pass
-            r += ' ' * (75 - len(r)) + h
+            r += ' ' * (clmn - len(r)) + h
             result.append(r)
 
         for i in range(sp, len(hd)):
-            r = ' ' * 75 + hd[i]
+            r = ' ' * clmn + hd[i]
             result.append(r)
 
         result = [hex(self.address) + ": " + x for x in result]
@@ -1537,7 +1540,6 @@ class EVMWorld(Platform):
         return self._constraints
 
     def _open_transaction(self, sort, address, price, bytecode_or_data, caller, value, gas=2300):
-
         if self.depth > 0:
             origin = self.tx_origin()
         else:

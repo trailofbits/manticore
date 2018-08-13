@@ -49,6 +49,13 @@ class Plugin(object):
         self.manticore = None
         self.last_reg_state = {}
 
+    def on_register(self):
+        ''' Called by parent manticore on registration '''
+        pass
+    def on_unregister(self):
+        ''' Called be parent manticore on un-registration '''
+        pass
+
 
 def _dict_diff(d1, d2):
     '''

@@ -743,10 +743,7 @@ class SolidityMetadata(object):
         ''' Solidity source code snippet related to `asm_pos` evm bytecode offset.
             If runtime is False, initialization bytecode source map is used
         '''
-        if runtime:
-            srcmap = self.srcmap_runtime
-        else:
-            srcmap = self.srcmap
+        srcmap = self.get_srcmap(runtime)
 
         try:
             beg, size, _, _ = srcmap[asm_offset]
@@ -761,6 +758,14 @@ class SolidityMetadata(object):
             output += '    %s  %s\n' % (nl, l)
             nl += 1
         return output
+
+    def get_srcmap(self, runtime=True):
+        if runtime:
+            srcmap = self.srcmap_runtime
+        else:
+            srcmap = self.srcmap
+        return srcmap
+
 
     @property
     def signatures(self):
@@ -1503,7 +1508,7 @@ class ManticoreEVM(Manticore):
         ''' IDs of the running states'''
         with self.locked_context('ethereum') as context:
             if self.initial_state is not None:
-                return tuple(context['_saved_states']) + (-1,)
+                return  (-1,) + tuple(context['_saved_states'])
             else:
                 return tuple(context['_saved_states'])
 
@@ -1946,7 +1951,6 @@ class ManticoreEVM(Manticore):
         return address
 
     def multi_tx_analysis(self, solidity_filename, contract_name=None, tx_limit=None, tx_use_coverage=True, tx_account="attacker", args=None):
-
         owner_account = self.create_account(balance=1000, name='owner')
         attacker_account = self.create_account(balance=1000, name='attacker')
 
@@ -2188,7 +2192,7 @@ class ManticoreEVM(Manticore):
 
     def _did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
         ''' INTERNAL USE '''
-        logger.debug("%s", state.platform.current_vm)
+        #logger.debug("%s", state.platform.current_vm)
         #TODO move to a plugin
         at_init = state.platform.current_transaction.sort == 'CREATE'
         if at_init:
