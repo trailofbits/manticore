@@ -1147,6 +1147,11 @@ class EVMContract(EVMAccount):
                 def f(*args, signature: Optional[str]=None, caller=None, value=0, **kwargs):
                     try:
                         if signature:
+                            if f'{name}{signature}' not in {h[0] for names in self._hashes.values() for h in names}:
+                                raise EthereumError(
+                                    f'Function: `{name}` has no such signature`\n'
+                                    f'Known signatures: {[x[0][len(name):] for x in self._hashes[name]]}')
+
                             tx_data = ABI.function_call(f'{name}{signature}', *args)
                         else:
                             if len(self._hashes[name]) > 1:
