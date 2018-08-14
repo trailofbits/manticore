@@ -277,13 +277,13 @@ class ConstraintSet(object):
         for var_name, var in expression_variables:
 
             # do nothing if it is a known/declared variable
-            if any(x is var for x in self.get_declared_variables()):
             # if var in self.get_declared_variables():
+            if any(x is var for x in self.get_declared_variables()):
                 continue
 
             # do nothing if there is already a migrated variable for it
-            if any(x is var for x in object_migration_map.keys()):
             # if var in object_migration_map:
+            if any(x is var for x in object_migration_map.keys()):
                 continue
 
             # var needs migration use old_name_migrated if name already used
