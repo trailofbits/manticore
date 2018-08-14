@@ -291,16 +291,17 @@ class ConstraintSet(object):
             # expression_var was not found in the local declared variables nor
             # any variable with the dsame name was previously migrated
             # lets make a new uniq internal name for it
-            name = expression_var.name
-            if name in self._declarations:
-                name = self._make_unique_name(expression_var.name + '_migrated')
+            migrated_name = expression_var.name
+            if migrated_name in self._declarations:
+                migrated_name = self._make_unique_name(expression_var.name + '_migrated')
             # Create and declare a new variable of given type
             if isinstance(expression_var, Bool):
-                new_var = self.new_bool(name=name)
+                new_var = self.new_bool(name=migrated_name)
             elif isinstance(expression_var, BitVec):
-                new_var = self.new_bitvec(expression_var.size, name=name)
+                new_var = self.new_bitvec(expression_var.size, name=migrated_name)
             elif isinstance(expression_var, Array):
-                new_var = self.new_array(index_max=expression_var.index_max, index_bits=expression_var.index_bits, value_bits=expression_var.value_bits, name=name).array
+                # Note that we are discarding the ArrayProxy encapsulation 
+                new_var = self.new_array(index_max=expression_var.index_max, index_bits=expression_var.index_bits, value_bits=expression_var.value_bits, name=migrated_name).array
             else:
                 raise NotImplemented("Unknown expression type {} encountered during expression migration".format(type(var)))
             # Update the var to var mapping
