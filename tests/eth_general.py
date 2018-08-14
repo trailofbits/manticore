@@ -418,7 +418,7 @@ class EthTests(unittest.TestCase):
         self.mevm=None
         shutil.rmtree(self.worksp)
 
-    def testIntegrationMigrate(self):
+    def test_migrate_integration(self):
         m = self.mevm
 
         contract_src='''

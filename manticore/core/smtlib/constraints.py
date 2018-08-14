@@ -213,7 +213,10 @@ class ConstraintSet(object):
 
     def _make_unique_name(self, name='VAR'):
         ''' Makes an uniq variable name'''
-        while name in self._declarations.keys():
+        # the while loop is necessary because appending the result of _get_sid()
+        # is not guaranteed to make a unique name on the first try; a colliding
+        # name could have been added previously
+        while name in self._declarations:
             name = '%s_%d' % (name, self._get_sid())
         return name
 
@@ -265,6 +268,8 @@ class ConstraintSet(object):
         #  name_migration_map -> object_migration_map
         #  Based on the name mapping in name_migration_map build an object to
         #  object mapping to be used in the replacing of variables
+        #  inv: object_migration_map's keys should ALWAYS be external/foreign 
+        #  expressions, and its values should ALWAYS be internal/local expressions
         object_migration_map = {}
 
         for expression_var in get_variables(expression):
