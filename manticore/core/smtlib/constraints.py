@@ -268,7 +268,7 @@ class ConstraintSet(object):
         #  name_migration_map -> object_migration_map
         #  Based on the name mapping in name_migration_map build an object to
         #  object mapping to be used in the replacing of variables
-        #  inv: object_migration_map's keys should ALWAYS be external/foreign 
+        #  inv: object_migration_map's keys should ALWAYS be external/foreign
         #  expressions, and its values should ALWAYS be internal/local expressions
         object_migration_map = {}
 
