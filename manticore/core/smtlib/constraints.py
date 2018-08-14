@@ -300,7 +300,7 @@ class ConstraintSet(object):
             elif isinstance(expression_var, BitVec):
                 new_var = self.new_bitvec(expression_var.size, name=migrated_name)
             elif isinstance(expression_var, Array):
-                # Note that we are discarding the ArrayProxy encapsulation 
+                # Note that we are discarding the ArrayProxy encapsulation
                 new_var = self.new_array(index_max=expression_var.index_max, index_bits=expression_var.index_bits, value_bits=expression_var.value_bits, name=migrated_name).array
             else:
                 raise NotImplemented("Unknown expression type {} encountered during expression migration".format(type(var)))
