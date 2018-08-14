@@ -266,43 +266,42 @@ class ConstraintSet(object):
         #  Based on the name mapping in name_migration_map build an object to
         #  object mapping to be used in the replacing of variables
         object_migration_map = {}
-        expression_variables = [(x.name, x) for x in get_variables(expression)]
-        for expression_name, expression_var in expression_variables:
-            migrated_name = name_migration_map.get(expression_name)
-            native_var = self.get_variable(migrated_name)
-            if native_var is not None:
+
+        for expression_var in get_variables(expression):
+
+            # do nothing if it is a known/declared variable object
+            if any(expression_var is x for x in self.get_declared_variables()):
+                continue
+
+            # If a variable with the same name was previously migrated
+            if expression_var.name in name_migration_map:
+                migrated_name = name_migration_map[expression_var.name]
+                native_var = self.get_variable(migrated_name)
+                if native_var is None:
+                    raise Exception("name_migration_map contains an unknown variable")
                 object_migration_map[expression_var] = native_var
-
-        # Make a new migrated variable for each unkonw variable in the expression
-        for var_name, var in expression_variables:
-
-            # do nothing if it is a known/declared variable
-            # if var in self.get_declared_variables():
-            if any(x is var for x in self.get_declared_variables()):
+                #continue if there is already a migrated variable for it
                 continue
 
-            # do nothing if there is already a migrated variable for it
-            # if var in object_migration_map:
-            if any(x is var for x in object_migration_map.keys()):
-                continue
-
-            # var needs migration use old_name_migrated if name already used
-            name = var.name
+            # expression_var was not found in the local declared variables nor
+            # any variable with the dsame name was previously migrated
+            # lets make a new uniq internal name for it
+            name = expression_var.name
             if name in self._declarations:
-                name = self._make_unique_name(var.name + '_migrated')
+                name = self._make_unique_name(expression_var.name + '_migrated')
             # Create and declare a new variable of given type
-            if isinstance(var, Bool):
+            if isinstance(expression_var, Bool):
                 new_var = self.new_bool(name=name)
-            elif isinstance(var, BitVec):
-                new_var = self.new_bitvec(var.size, name=name)
-            elif isinstance(var, Array):
-                new_var = self.new_array(index_max=var.index_max, index_bits=var.index_bits, value_bits=var.value_bits, name=name).array
+            elif isinstance(expression_var, BitVec):
+                new_var = self.new_bitvec(expression_var.size, name=name)
+            elif isinstance(expression_var, Array):
+                new_var = self.new_array(index_max=expression_var.index_max, index_bits=expression_var.index_bits, value_bits=expression_var.value_bits, name=name).array
             else:
                 raise NotImplemented("Unknown expression type {} encountered during expression migration".format(type(var)))
             # Update the var to var mapping
-            object_migration_map[var] = new_var
+            object_migration_map[expression_var] = new_var
             # Update the name to name mapping
-            name_migration_map[var.name] = new_var.name
+            name_migration_map[expression_var.name] = new_var.name
 
         #  Actually replace each appearence of migrated variables by the new ones
         migrated_expression = replace(expression, object_migration_map)
