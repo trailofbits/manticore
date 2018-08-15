@@ -820,6 +820,7 @@ class SolidityMetadata(object):
         else:
             arguments = (calldata,)
 
+        arguments = '({})'.format(', '.join(map(str, arguments)))
         return_value = None
         if returndata:
             ret_types = self.get_func_return_types(function_id)
