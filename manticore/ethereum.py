@@ -806,6 +806,8 @@ class SolidityMetadata(object):
     def parse_tx(self, calldata, returndata=None):
         if not isinstance(calldata, (bytes, bytearray)):
             raise ValueError("calldata must be a concrete array")
+        calldata = bytes(calldata)
+        returndata = bytes(returndata)
         function_id = calldata[:4]
         signature = self.get_func_signature(function_id)
         function_name = self.get_func_name(function_id)
