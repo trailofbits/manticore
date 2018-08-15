@@ -803,6 +803,24 @@ class SolidityMetadata(object):
     def hashes(self):
         return tuple(map(self.get_hash, self._functions)) + (b'\x00\x00\x00\x00',)
 
+    def parse_tx(self, calldata, returndata=None):
+        if not isinstance(calldata, (bytes, bytearray)):
+            raise ValueError("calldata must be a concrete array")
+        function_id = calldata[:4]
+        signature = self.get_func_signature(function_id)
+        function_name = self.get_func_name(function_id)
+        if signature:
+            _, arguments = ABI.deserialize(signature, calldata)
+        else:
+            arguments = (calldata,)
+
+        return_value = None
+        if returndata:
+            ret_types = self.get_func_return_types(function_id)
+            return_value = ABI.deserialize(ret_types, returndata)  # function return
+            return f'{function_name}{arguments} -> {return_value}'
+        else:
+            return f'{function_name}{arguments}'
 
 class ABI(object):
     '''
