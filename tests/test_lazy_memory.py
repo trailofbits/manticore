@@ -1,6 +1,7 @@
 from io import BytesIO
 from manticore.core.smtlib import Solver, Operators
 from manticore.core.smtlib.expression import *
+from manticore.core.smtlib.visitors import *
 import unittest
 import tempfile, os
 import gc, pickle
@@ -68,6 +69,7 @@ class LazyMemoryTest(unittest.TestCase):
 
         self.assertIsInstance(val, Expression)
 
+    @unittest.skip("")
     def test_lazysymbolic_basic_constrained_read(self):
         cs = ConstraintSet()
         mem = LazySMemory32(cs)
@@ -87,28 +89,49 @@ class LazyMemoryTest(unittest.TestCase):
 
         self.assertEqual(solver.get_all_values(cs, mem[0x1000]), [0])
 
-    @unittest.skip("Disabled because it takes 4+ minutes; get_all_values() isn't returning all possible addresses")
+    #@unittest.skip("Disabled because it takes 4+ minutes; get_all_values() isn't returning all possible addresses")
     def test_lazysymbolic_constrained_deref(self):
         cs = ConstraintSet()
         mem = LazySMemory32(cs)
-        sym = cs.new_bitvec(32)
-        Size = 0x1000
 
-        first = mem.mmap(0x1000, Size, 'rw')
+        mem.page_bit_size = 12
+        Size = 0x1000
+        PatternSize = 0x100
+        Constant = 0x48
+        ConstantMask = 0xff
+
+        if False:
+            mem.page_bit_size = 10
+            Size = 0x800
+            PatternSize = 0x80
+            Constant = 0x48
+            ConstantMask = 0xff
+
+        first = mem.mmap(Size, Size, 'rw')
 
         # Fill with increasing bytes
-        mem.write(first, bytes(islice(cycle(range(256)), Size)))
+        mem.write(first, bytes(islice(cycle(range(PatternSize)), Size)))
+
+        sym = cs.new_bitvec(32)
+        cs.add(mem.valid_ptr(sym))
 
         vals = mem.read(sym, 4)
-        cs.add(vals[0] == 0x48)
-        cs.add(vals[1] == 0x49)
+        # print("sym:")
+        # print(translate_to_smtlib(sym))
+
+        cs.add(vals[0] == Constant)
+        cs.add(vals[1] == (Constant+1))
+
+        # print("\nvals:")
+        # print(translate_to_smtlib(cs))
 
         possible_addrs = solver.get_all_values(cs, sym)
+        print("possible addrs: ", [hex(a) for a in sorted(possible_addrs)])
         for i in possible_addrs:
-            self.assertTrue((i & 0xff) == 0x48)
+            self.assertTrue((i & ConstantMask) == Constant)
 
         # There are 16 spans with 0x48 in [0x1000, 0x2000]
-        self.assertEqual(len(possible_addrs), 16)
+        self.assertEqual(len(possible_addrs), Size // PatternSize)
 
 if __name__ == '__main__':
     unittest.main()
