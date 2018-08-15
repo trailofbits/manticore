@@ -194,13 +194,13 @@ class FilterFunctions(Plugin):
 
             if self._include:
                 # constraint the input so it can take only the interesting values
-                constraint = reduce(Operators.OR, [tx.data[:4] == binascii.unhexlify(x) for x in selected_functions])
+                constraint = reduce(Operators.OR, [tx.data[:4] == x for x in selected_functions])
                 state.constrain(constraint)
             else:
                 #Avoid all not seleted hashes
                 for func_hsh in md.hashes:
                     if func_hsh in selected_functions:
-                        constraint = Operators.NOT(tx.data[:4] == binascii.unhexlify(func_hsh))
+                        constraint = Operators.NOT(tx.data[:4] == func_hsh)
                         state.constrain(constraint)
 
 

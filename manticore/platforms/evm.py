@@ -1011,16 +1011,13 @@ class EVM(Eventful):
         self.constraints.add(Operators.ULT(result, 1 << 256))
         return result
 
+    @concretized_args(size='SAMPLED')
     def CALLDATACOPY(self, mem_offset, data_offset, size):
         '''Copy input data in current environment to memory'''
         GCOPY = 3             # cost to copy one 32 byte word
-        old_gas = self.gas
-
+ 
         self._consume(self.safe_mul(GCOPY, self.safe_add(size, 31) // 32))
         self._allocate(self.safe_add(mem_offset, size))
-
-        if issymbolic(size):
-            raise ConcretizeStack(3, policy='SAMPLED')
 
         for i in range(size):
             try:
