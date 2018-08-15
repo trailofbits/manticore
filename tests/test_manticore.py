@@ -3,11 +3,19 @@ import os
 
 from manticore import Manticore
 
+
 class ManticoreTest(unittest.TestCase):
     _multiprocess_can_split_ = True
+
     def setUp(self):
         dirname = os.path.dirname(__file__)
         self.m = Manticore(os.path.join(dirname, 'binaries', 'arguments_linux_amd64'))
+
+    def test_profiling_data(self):
+        self.m.run(should_profile=True)
+        profile_path = os.path.join(self.m.workspace, 'profiling.bin')
+        self.assertTrue(os.path.exists(profile_path))
+        self.assertTrue(os.path.getsize(profile_path) > 0)
 
     def test_add_hook(self):
         def tmp(state):
