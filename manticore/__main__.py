@@ -1,7 +1,12 @@
+import copy
+import os
 
 import sys
 import logging
 import argparse
+from configparser import ConfigParser, NoSectionError
+from manticore import config
+import manticore.config
 
 from . import Manticore
 from .utils import log
@@ -20,46 +25,54 @@ def parse_arguments():
             raise argparse.ArgumentTypeError("Argument must be positive")
         return ivalue
 
-    parser = argparse.ArgumentParser(description='Symbolic execution tool')
-    parser.add_argument('--assertions', type=str, default=None,
-                        help=argparse.SUPPRESS)
-    parser.add_argument('--buffer', type=str,
-                        help=argparse.SUPPRESS)
-    parser.add_argument('--context', type=str, default=None,
-                        help=argparse.SUPPRESS)
-    parser.add_argument('--coverage', type=str, default=None,
-                        help='where to write the coverage data')
+    conf_parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        add_help=False
+    )
+    conf_parser.add_argument("--config",
+                             help="Specify config file", metavar="FILE")
+    args, remaining_argv = conf_parser.parse_known_args()
+    defaults = copy.deepcopy(config.defaults)
+    defaults.update(dict(config._config(path=args.config).items('settings')))
+
+    parser = argparse.ArgumentParser(parents=[conf_parser], description='Symbolic execution tool')
+    parser.set_defaults(**defaults)
+
+    parser.add_argument('--cache-dict-max-size', type=int, help=argparse.SUPPRESS)
+    parser.add_argument('--cache-dict-flush-perc', type=int, help=argparse.SUPPRESS)
+    parser.add_argument('--assertions', type=str, help=argparse.SUPPRESS)
+    parser.add_argument('--buffer', type=str, help=argparse.SUPPRESS)
+    parser.add_argument('--context', type=str, help=argparse.SUPPRESS)
+    parser.add_argument('--coverage', type=str, help='where to write the coverage data')
     parser.add_argument('--data', type=str, default='',
                         help='Initial concrete concrete_data for the input symbolic buffer')
-    parser.add_argument('--env', type=str, nargs=1, default=[], action='append',
+    parser.add_argument('--env', type=str, nargs=1, action='append',
                         help='Add an environment variable. Use "+" for symbolic bytes. (VARNAME=++++)')
     #TODO allow entry as an address
     #parser.add_argument('--entry', type=str, default=None,
     #                    help='address as entry point')
-    parser.add_argument('--entrysymbol', type=str, default=None,
-                        help='symbol as entry point')
-    parser.add_argument('--file', type=str, default=[], action='append', dest='files',
+    parser.add_argument('--entrysymbol', type=str, help='symbol as entry point')
+    parser.add_argument('--file', type=str, action='append', dest='files',
                         help='Specify symbolic input file, \'+\' marks symbolic bytes')
-    parser.add_argument('--names', type=str, default=None,
-                        help=argparse.SUPPRESS)
-    parser.add_argument('--offset', type=int, default=16,
-                        help=argparse.SUPPRESS)
+    parser.add_argument('--names', type=str, help=argparse.SUPPRESS)
+    parser.add_argument('--offset', type=int, help=argparse.SUPPRESS)
     # FIXME (theo) Add some documentation on the different search policy options
-    parser.add_argument('--policy', type=str, default='random',
+    parser.add_argument('--policy', type=str,
                         help=("Search policy. random|adhoc|uncovered|dicount"
                               "|icount|syscount|depth. (use + (max) or - (min)"
                               " to specify order. e.g. +random)"))
     parser.add_argument('--profile', action='store_true',
                         help='Enable profiling mode.')
-    parser.add_argument('--procs', type=int, default=1,
-                        help='Number of parallel processes to spawn')
+    parser.add_argument('--procs', type=int, help='Number of parallel processes to spawn')
+    parser.add_argument('--solver-timeout', type=int, help='timeout for solver in milliseconds')
     parser.add_argument('argv', type=str, nargs='+',
                         help="Path to program, and arguments ('+' in arguments indicates symbolic byte).")
-    parser.add_argument('--timeout', type=int, default=0,
+    parser.add_argument('--timeout', type=int,
                         help='Timeout. Abort exploration aftr TIMEOUT seconds')
-    parser.add_argument('-v', action='count', default=1,
+    parser.add_argument('-v', action='count',
                         help='Specify verbosity level from -v to -vvvv')
-    parser.add_argument('--workspace', type=str, default=None,
+    parser.add_argument('--workspace', type=str,
                         help=("A folder name for temporaries and results."
                               "(default mcore_?????)"))
     parser.add_argument('--version', action='version', version='Manticore 0.2.0',
@@ -70,7 +83,7 @@ def parse_arguments():
     parser.add_argument('--txnocoverage', action='store_true',
                         help='Do not use coverage as stopping criteria (Ethereum only)')
 
-    parser.add_argument('--txaccount', type=str, default="attacker",
+    parser.add_argument('--txaccount', type=str,
                         help='Account used as caller in the symbolic transactions, either "attacker" or "owner" (Ethereum only)')
 
     parser.add_argument('--contract', type=str,
@@ -100,7 +113,10 @@ def parse_arguments():
     parser.add_argument('--avoid-constant', action='store_true',
                         help='Avoid exploring constant functions for human transactions (Ethereum only)')
 
-    parsed = parser.parse_args(sys.argv[1:])
+    parsed = parser.parse_args(remaining_argv)
+    defaults.update(parsed.__dict__)
+    config.settings.update(defaults)
+    parsed = argparse.Namespace(**defaults)
     if parsed.procs <= 0:
         parsed.procs = 1
 

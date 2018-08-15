@@ -1,5 +1,11 @@
 [settings]
+procs=6
+solver_timeout=240000
 # solver_timeout = 240000                   # Z3 solver soft timeout in milliseconds
-# cache_dict_max_size = 150000				# constant_folder / arithmetic simplifier max cache size
-# cache_dict_flush_perc = 25				# constant_folder / arithmetic simplifier flush percentage (clear out x% of the cache)
+
+# constant_folder / arithmetic simplifier max cache size
+# cache_dict_max_size = 110000
+
+# constant_folder / arithmetic simplifier flush percentage (clear out x% of the cache)
+# cache_dict_flush_perc = 25
 

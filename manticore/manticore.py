@@ -6,8 +6,10 @@ import functools
 import cProfile
 import pstats
 import itertools
+from configparser import ConfigParser
 from multiprocessing import Process
 from contextlib import contextmanager
+from manticore import config as global_config
 
 from threading import Timer
 
@@ -130,6 +132,11 @@ class Manticore(Eventful):
     _published_events = {'start_run', 'finish_run'}
 
     def __init__(self, path_or_state, argv=None, workspace_url=None, policy='random', **kwargs):
+
+        # force loading global configs if not already initialized (CLI will initialize)
+        if not hasattr(global_config, 'settings'):
+            global_config._config()
+
         super().__init__()
 
         if isinstance(workspace_url, str):
@@ -535,6 +542,13 @@ class Manticore(Eventful):
         testcase_id = self._output.save_testcase(state, name, message)
         logger.info("Generated testcase No. {} - {}".format(testcase_id, message))
 
+    def _produce_config_data(self):
+        config = ConfigParser()
+        x = {k: str(v) for k, v in global_config.settings.items() if k in global_config.defaults.keys() and global_config.defaults[k] != v}
+        config['settings'] = x
+        with self._output.save_stream('manticorerc') as rc:
+            config.write(rc)
+
     def _produce_profiling_data(self):
         class PstatsFormatted:
             def __init__(self, d):
@@ -579,7 +593,7 @@ class Manticore(Eventful):
         assert not self.running
         # Copy back the shared context
         self._context = dict(self._executor._shared_context)
-
+        self._produce_config_data()
         if profiling:
             self._produce_profiling_data()
 

@@ -15,7 +15,7 @@
 # You can add new constraints. A new constraint may change the state from {None, sat} to {sat, unsat, unknown}
 from abc import ABCMeta, abstractmethod
 from subprocess import PIPE, Popen, check_output
-from manticore.config import settings
+from manticore import config as global_config
 from . import operators as Operators
 from .expression import *
 from .constraints import *
@@ -27,6 +27,8 @@ from .visitors import *
 from ...utils.helpers import issymbolic, istainted, taint_with, get_taints, memoized
 import io
 import collections
+
+global settings
 
 logger = logging.getLogger(__name__)
 
@@ -130,8 +132,7 @@ class Z3Solver(Solver):
         super().__init__()
         self._proc = None
 
-        self._command = \
-            f'z3 -t:{settings.getint("settings", "solver_timeout", fallback=240000)} -memory:16384 -smt2 -in'
+        self._command = 'z3 -t:240000 -memory:16384 -smt2 -in'
         self._init = ['(set-logic QF_AUFBV)', '(set-option :global-decls false)']
         self._get_value_fmt = (re.compile('\(\((?P<expr>(.*))\ #x(?P<value>([0-9a-fA-F]*))\)\)'), 16)
 
