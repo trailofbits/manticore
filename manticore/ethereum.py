@@ -1309,7 +1309,7 @@ class ManticoreEVM(Manticore):
         else:
             for state in self.all_states:
                 migrated_constraint = state.migrate_expression(constraint)
-                state_constraints.add(migrated_constraint)
+                state.constrain(migrated_constraint)
 
     @staticmethod
     def compile(source_code, contract_name=None, libraries=None, runtime=False, solc_bin=None, solc_remaps=[]):
