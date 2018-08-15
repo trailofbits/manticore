@@ -804,8 +804,12 @@ class SolidityMetadata(object):
         return tuple(map(self.get_hash, self._functions)) + (b'\x00\x00\x00\x00',)
 
     def parse_tx(self, calldata, returndata=None):
+        if returndata is None:
+            returndata = bytes()
         if not isinstance(calldata, (bytes, bytearray)):
             raise ValueError("calldata must be a concrete array")
+        if not isinstance(returndata, (bytes, bytearray)):
+            raise ValueError("returndata must be a concrete array")
         calldata = bytes(calldata)
         returndata = bytes(returndata)
         function_id = calldata[:4]
