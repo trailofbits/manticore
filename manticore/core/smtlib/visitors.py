@@ -1,4 +1,5 @@
 from manticore.utils.helpers import CacheDict
+from manticore.config import settings
 from .expression import *
 from functools import lru_cache
 import logging
@@ -337,13 +338,14 @@ class ConstantFolderSimplifier(Visitor):
         return expression
 
 
-constant_folder_simplifier_cache = CacheDict(max_size=150000, flush_perc=25)
+cf_simplifier_cache = CacheDict(max_size=settings.getint('settings', 'cache_dict_max_size', fallback=150000),
+                                flush_perc=settings.getint('settings', 'cache_dict_flush_perc', fallback=25))
 
 
 @lru_cache(maxsize=128)
 def constant_folder(expression):
-    global constant_folder_simplifier_cache
-    simp = ConstantFolderSimplifier(cache=constant_folder_simplifier_cache)
+    global cf_simplifier_cache
+    simp = ConstantFolderSimplifier(cache=cf_simplifier_cache)
     simp.visit(expression, use_fixed_point=True)
     return simp.result
 
@@ -532,7 +534,8 @@ class ArithmeticSimplifier(Visitor):
         return expression
 
 
-arithmetic_simplifier_cache = CacheDict(max_size=150000, flush_perc=25)
+arithmetic_simplifier_cache = CacheDict(max_size=settings.getint('settings', 'cache_dict_max_size', fallback=150000),
+                                        flush_perc=settings.getint('settings', 'cache_dict_flush_perc', fallback=25))
 
 
 @lru_cache(maxsize=128)
