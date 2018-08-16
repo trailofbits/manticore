@@ -269,7 +269,7 @@ class ConstraintSet(object):
                 if isinstance(foreign_var, Bool):
                     new_var = self.new_bool(name=migrated_name)
                 elif isinstance(foreign_var, BitVec):
-                    new_var = self.new_bitvec(expression_var.size, name=migrated_name)
+                    new_var = self.new_bitvec(foreign_var.size, name=migrated_name)
                 elif isinstance(foreign_var, Array):
                     # Note that we are discarding the ArrayProxy encapsulation
                     new_var = self.new_array(index_max=foreign_var.index_max, index_bits=foreign_var.index_bits, value_bits=foreign_var.value_bits, name=migrated_name).array
