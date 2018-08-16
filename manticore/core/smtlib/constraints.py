@@ -224,7 +224,7 @@ class ConstraintSet(object):
         ''' True if expression_var is declared in this constraint set '''
         if not isinstance(expression_var, Variable):
             raise ValueError("Expression must be a Variable")
-        return any(expression_var is x for x in self.get_declared_variables()):
+        return any(expression_var is x for x in self.get_declared_variables())
 
     def migrate(self, expression, name_migration_map=None):
         ''' Migrate an expression created for a different constraint set to self.
@@ -237,9 +237,8 @@ class ConstraintSet(object):
             The migration mapping is updated with new replacements.
 
             :param expression: the potentially foreign expression
-
             :param name_migration_map: mapping of already migrated variables. maps from string name of foreign variable to its currently existing migrated string name. this is updated during this migration.
-            :return: a migrated expresion where all the variables are fresh BoolVariable. name_migration_map is updated
+            :return: a migrated expresion where all the variables are local. name_migration_map is updated
 
         '''
         if name_migration_map is None:
@@ -252,7 +251,6 @@ class ConstraintSet(object):
         #  expressions, and its values should ALWAYS be internal/local expressions
         object_migration_map = {}
 
-
         #List of foreign vars used in expression
         foreign_vars = itertools.filterfalse(self.is_declared, get_variables(expression))
         for foreign_var in foreign_vars:
@@ -262,9 +260,7 @@ class ConstraintSet(object):
                 native_var = self.get_variable(migrated_name)
                 assert native_var is not None, "name_migration_map contains a variable that does not exist in this ConstraintSet"
                 object_migration_map[foreign_var] = native_var
-                #continue if there is already a migrated variable for it
             else:
-
                 # foreign_var was not found in the local declared variables nor
                 # any variable with the same name was previously migrated
                 # lets make a new uniq internal name for it
