@@ -766,7 +766,6 @@ class SolidityMetadata(object):
             srcmap = self.srcmap
         return srcmap
 
-
     @property
     def signatures(self):
         return dict(((self.get_hash(f), f) for f in self._functions))
@@ -828,6 +827,7 @@ class SolidityMetadata(object):
             return f'{function_name}{arguments} -> {return_value}'
         else:
             return f'{function_name}{arguments}'
+
 
 class ABI(object):
     '''
