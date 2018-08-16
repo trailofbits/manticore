@@ -18,7 +18,6 @@ from subprocess import PIPE, Popen, check_output
 from . import operators as Operators
 from .expression import *
 from .constraints import *
-import sys
 import logging
 import re
 import shlex
@@ -130,7 +129,7 @@ class Z3Solver(Solver):
         super().__init__()
         self._proc = None
 
-        self._command = 'z3 -t:960000 -memory:16384 -smt2 -in'
+        self._command = 'z3 -t:240000 -memory:16384 -smt2 -in'
         self._init = ['(set-logic QF_AUFBV)', '(set-option :global-decls false)']
         self._get_value_fmt = (re.compile('\(\((?P<expr>(.*))\ #x(?P<value>([0-9a-fA-F]*))\)\)'), 16)
 
@@ -142,15 +141,9 @@ class Z3Solver(Solver):
         self.support_maximize = False
         self.support_minimize = False
         self.support_reset = True
-        self.support_parallel = False
         logger.debug('Z3 version: %s', self.version)
 
-        if self.version >= Version(4, 8, 0):
-            self.support_maximize = False
-            self.support_minimize = False
-            self.support_reset = True
-            self.support_parallel = True
-        elif self.version >= Version(4, 5, 0):
+        if self.version >= Version(4, 5, 0):
             self.support_maximize = False
             self.support_minimize = False
             self.support_reset = False
@@ -283,7 +276,6 @@ class Z3Solver(Solver):
     # UTILS: check-sat get-value
     def _check(self):
         ''' Check the satisfiability of the current state '''
-
         logger.debug("Solver.check() ")
         start = time.time()
         self._send('(check-sat)')
@@ -311,7 +303,6 @@ class Z3Solver(Solver):
         ''' Ask the solver for one possible assignment for val using current set
             of constraints.
             The current set of assertions must be sat.
-
             :param val: an expression or symbol '''
         if not issymbolic(expression):
             return expression
@@ -365,31 +356,23 @@ class Z3Solver(Solver):
         assert isinstance(constraints, ConstraintSet)
         assert isinstance(expression, Expression)
 
-        result = set()
+        with constraints as temp_cs:
+            if isinstance(expression, Bool):
+                var = temp_cs.new_bool()
+            elif isinstance(expression, BitVec):
+                var = temp_cs.new_bitvec(expression.size)
+            else:
+                raise NotImplementedError("get_all_values only implemented for Bool and BitVec")
 
-        while True:
-            with constraints as temp_cs:
-                if isinstance(expression, Bool):
-                    var = temp_cs.new_bool()
-                elif isinstance(expression, BitVec):
-                    var = temp_cs.new_bitvec(expression.size)
-                else:
-                    raise NotImplementedError("get_all_values only implemented for Bool and BitVec")
+            temp_cs.add(var == expression)
+            self._reset(temp_cs.to_string(related_to=var))
 
-                temp_cs.add(var == expression)
-
-                self._reset(temp_cs.to_string())#related_to=var))
-
-                for v in sorted(result):
-                    self._assert(var != v)
-                    # temp_cs.add(var != v)
-
-                now = time.time()
-                if self._check() != 'sat':
-                    break
-
+            result = []
+            val = None
+            while self._check() == 'sat':
                 value = self._getvalue(var)
-                result.add(value)
+                result.append(value)
+                self._assert(var != value)
 
                 if len(result) >= maxcnt:
                     if silent:
@@ -401,7 +384,7 @@ class Z3Solver(Solver):
                     else:
                         raise TooManySolutions(result)
 
-        return result
+            return result
 
     #@memoized
     def optimize(self, constraints, x, goal, M=10000):

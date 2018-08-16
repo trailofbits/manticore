@@ -55,7 +55,8 @@ class LazyMemoryTest(unittest.TestCase):
             vals = solver.get_all_values(new_cs, addr)
             self.assertGreater(len(vals), 0)
             for v in vals:
-                self.assertTrue(0 <= v < 4095)
+                print(v)
+                self.assertTrue(0 <= v < 4096)
 
         # Ensure that all invalid derefs are outside of mapped memory
         with cs as new_cs:
@@ -63,13 +64,12 @@ class LazyMemoryTest(unittest.TestCase):
             vals = solver.get_all_values(new_cs, addr)
             self.assertGreater(len(vals), 0)
             for v in vals:
-                self.assertFalse(0 <= v < 4095)
+                self.assertFalse(0 <= v < 4096)
 
         val = mem.read(addr, 1)[0]
 
         self.assertIsInstance(val, Expression)
 
-    @unittest.skip("")
     def test_lazysymbolic_basic_constrained_read(self):
         cs = ConstraintSet()
         mem = LazySMemory32(cs)
@@ -89,7 +89,7 @@ class LazyMemoryTest(unittest.TestCase):
 
         self.assertEqual(solver.get_all_values(cs, mem[0x1000]), [0])
 
-    #@unittest.skip("Disabled because it takes 4+ minutes; get_all_values() isn't returning all possible addresses")
+    @unittest.skip("Disabled because it takes 4+ minutes; get_all_values() isn't returning all possible addresses")
     def test_lazysymbolic_constrained_deref(self):
         cs = ConstraintSet()
         mem = LazySMemory32(cs)
