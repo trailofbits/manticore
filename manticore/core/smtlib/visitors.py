@@ -704,6 +704,8 @@ class Replace(Visitor):
 
 
 def replace(expression, bindings):
+    if not bindings:
+        return expression
     visitor = Replace(bindings)
     visitor.visit(expression, use_fixed_point=True)
     result_expression = visitor.result

@@ -1,10 +1,15 @@
 import functools
 import collections
-import re
 import logging
-from collections import OrderedDict
+import pickle
+import re
+import sys
 
+from collections import OrderedDict
 from ..core.smtlib import Expression, BitVecConstant
+
+
+logger = logging.getLogger(__name__)
 
 
 def issymbolic(value):
@@ -72,38 +77,6 @@ def taint_with(arg, taint, value_bits=256, index_bits=256):
     return arg
 
 
-class memoized(object):
-    '''Decorator. Caches a function's return value each time it is called.
-    If called later with the same arguments, the cached value is returned
-    (not reevaluated).
-    '''
-
-    def __init__(self, func):
-        self.func = func
-        self.cache = {}
-
-    def __call__(self, *args, **kwargs):
-        key = args + tuple(sorted(kwargs.items()))
-        if not isinstance(key, collections.Hashable):
-            # uncacheable. a list, for instance.
-            # better to not cache than blow up.
-            return self.func(*args, **kwargs)
-        if key in self.cache:
-            return self.cache[key]
-        else:
-            value = self.func(*args, **kwargs)
-            self.cache[key] = value
-            return value
-
-    def __repr__(self):
-        '''Return the function's docstring.'''
-        return self.func.__doc__
-
-    def __get__(self, obj, objtype):
-        '''Support instance methods.'''
-        return functools.partial(self.__call__, obj)
-
-
 class CacheDict(OrderedDict):
     def __init__(self, *args, max_size=30000, flush_perc=30, **kwargs):
         self._max_size = max_size
@@ -137,3 +110,42 @@ class CacheDict(OrderedDict):
         for i in range(purge_count):
             self.popitem(last=False)
         self._hits -= purge_count
+
+
+class StateSerializer(object):
+    """
+    StateSerializer can serialize and deserialize :class:`~manticore.core.state.State` objects from and to
+    stream-like objects.
+    """
+
+    def __init__(self):
+        pass
+
+    def serialize(self, state, f):
+        raise NotImplementedError
+
+    def deserialize(self, f):
+        raise NotImplementedError
+
+
+class PickleSerializer(StateSerializer):
+    DEFAULT_RECURSION: int = 0x100000  # 1M
+    MAX_RECURSION: int = 0x1000000  # 16.7M
+
+    def __init__(self):
+        super().__init__()
+        sys.setrecursionlimit(PickleSerializer.DEFAULT_RECURSION)
+
+    def serialize(self, state, f):
+        try:
+            f.write(pickle.dumps(state, 2))
+        except RuntimeError:
+            new_limit = sys.getrecursionlimit() * 2
+            if new_limit > PickleSerializer.MAX_RECURSION:
+                raise Exception(f'PickleSerializer recursion limit surpassed {PickleSerializer.MAX_RECURSION}, aborting')
+            logger.info(f'Recursion soft limit {sys.getrecursionlimit()} hit, increasing')
+            sys.setrecursionlimit(new_limit)
+            self.serialize(state, f)
+
+    def deserialize(self, f):
+        return pickle.load(f)

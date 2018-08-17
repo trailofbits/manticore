@@ -1,3 +1,4 @@
 [run]
-source = .
-omit = tests/*
+source = manticore
+omit =
+	*__init__.py

@@ -578,11 +578,11 @@ class Manticore(Eventful):
 
     def _finish_run(self, profiling=False):
         assert not self.running
-        # Copy back the shared context
-        self._context = dict(self._executor._shared_context)
-
         if profiling:
             self._produce_profiling_data()
+
+        # Copy back the shared context
+        self._context = dict(self._executor._shared_context)
 
         self._publish('did_finish_run')
 

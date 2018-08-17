@@ -3,7 +3,7 @@ import random
 import copy
 import inspect
 from functools import wraps
-from ..utils.helpers import issymbolic, memoized, get_taints, taint_with, istainted
+from ..utils.helpers import issymbolic, get_taints, taint_with, istainted
 from ..platforms.platform import *
 from ..core.smtlib import solver, BitVec, Array, Operators, Constant, ArrayVariable, BitVecConstant, translate_to_smtlib
 from ..core.state import Concretize, TerminateState
@@ -346,13 +346,13 @@ class EVM(Eventful):
         super().__init__(**kwargs)
         if data is not None and not issymbolic(data):
             data_size = len(data)
-            data_symbolic = constraints.new_array(index_bits=256, value_bits=8, index_max=data_size, name='DATA')
+            data_symbolic = constraints.new_array(index_bits=256, value_bits=8, index_max=data_size, name='DATA_{:x}'.format(address), avoid_collisions=True)
             data_symbolic[0:data_size] = data
             data = data_symbolic
 
         if bytecode is not None and not issymbolic(bytecode):
             bytecode_size = len(bytecode)
-            bytecode_symbolic = constraints.new_array(index_bits=256, value_bits=8, index_max=bytecode_size, name='BYTECODE')
+            bytecode_symbolic = constraints.new_array(index_bits=256, value_bits=8, index_max=bytecode_size, name='BYTECODE_{:x}'.format(address), avoid_collisions=True)
             bytecode_symbolic[0:bytecode_size] = bytecode
             bytecode = bytecode_symbolic
 
@@ -361,7 +361,7 @@ class EVM(Eventful):
         #if len(bytecode) == 0:
         #    raise EVMException("Need code")
         self._constraints = constraints
-        self.memory = constraints.new_array(index_bits=256, value_bits=8, name='EMPTY_MEMORY')
+        self.memory = constraints.new_array(index_bits=256, value_bits=8, name='EMPTY_MEMORY_{:x}'.format(address), avoid_collisions=True)
         self.address = address
         self.caller = caller  # address of the account that is directly responsible for this execution
         self.data = data
@@ -1569,6 +1569,7 @@ class EVMWorld(Platform):
             self._logs = logs
             self.send_funds(tx.address, tx.caller, tx.value)
 
+        self.increase_nonce(tx.caller)
         tx.set_result(result, data)
         self._transactions.append(tx)
 
@@ -1749,6 +1750,14 @@ class EVMWorld(Platform):
         """ Private auxiliar function to replace the storage """
         self._world_state[address]['storage'] = storage
 
+    def get_nonce(self, address):
+        if address not in self._world_state:
+            return None
+        return self._world_state[address]['nonce']
+
+    def increase_nonce(self, address):
+        return self._world_state[address]['nonce'] += 1
+
     def set_balance(self, address, value):
         self._world_state[int(address)]['balance'] = value
 
@@ -1844,6 +1853,9 @@ class EVMWorld(Platform):
 
     def new_address(self, sender=None, nonce=None):
         ''' Create a fresh 160bit address '''
+        if sender is not None and nonce is None:
+            nonce = self.get_nonce(sender)
+
         new_address = self._new_address(sender, nonce)
         if sender is None and new_address in self:
             return self.new_address(sender, nonce)
@@ -1872,35 +1884,37 @@ class EVMWorld(Platform):
         except EndTx as ex:
             self._close_transaction(ex.result, ex.data, rollback=ex.is_rollback())
 
-    def create_account(self, address=None, balance=0, code='', storage=None, nonce=None, sender=None):
-        '''Create an account
+    def create_account(self, address=None, balance=0, code=None, storage=None, nonce=None):
+        '''Low level create an account. No transaction is done.
             :param address: the address of the account, if known. If omitted, a new address will be generated as closely to the Yellow Paper as possible.
             :param balance: the initial balance of the account in Wei
             :param code: the runtime code of the account, if a contract
             :param storage: storage array
             :param nonce: the nonce for the account; contracts should have a nonce greater than or equal to 1
-            :param sender: the creator of this account, if it is a contract
         '''
         if code is None:
             code = bytearray()
 
-        if sender is None:
-            if nonce is None:
+        # nonce default to initial nonce
+        if nonce is None:
+            # As per EIP 161, contract accounts are initialized with a nonce of 1
+            if not code:
                 nonce = 0
             else:
-                # As per EIP 161, contract accounts are initialized with a nonce of 1
                 nonce = 1
 
-        if storage is None:
-            storage = self.constraints.new_array(index_bits=256, value_bits=256, name='STORAGE')
+        if not isinstance(address, int):
+            raise EthereumError('You must provide an address')
 
-        if address is None:
-            address = self.new_address(sender = sender, nonce=nonce)
         if address in self.accounts:
             # FIXME account may have been created via selfdestruct destinatary
             # or CALL and may contain some ether already. Though if it was a
             # selfdestroyed address it can not be reused
             raise EthereumError('The account already exists')
+
+        if storage is None:
+            storage = self.constraints.new_array(index_bits=256, value_bits=256, name='STORAGE_{:x}'.format(address))
+
         self._world_state[address] = {}
         self._world_state[address]['nonce'] = nonce
         self._world_state[address]['balance'] = balance
@@ -1910,6 +1924,11 @@ class EVMWorld(Platform):
 
     def create_contract(self, price=0, address=None, caller=None, balance=0, init=None):
         '''
+            Create a contract account. Sends a transaction to initialize the contract
+            :param address: the address of the new account, if known. If omitted, a new address will be generated as closely to the Yellow Paper as possible.
+            :param balance: the initial balance of the account in Wei
+            :param init: the initialization code of the contract
+
         The way that the Solidity compiler expects the constructor arguments to
         be passed is by appending the arguments to the byte code produced by the
         Solidity compiler. The arguments are formatted as defined in the Ethereum
@@ -1918,7 +1937,7 @@ class EVMWorld(Platform):
         This is done when the byte code in the init byte array is actually run
         on the network.
         '''
-        address = self.create_account(address, sender = caller)
+        address = self.create_account(self.create_address(caller))
         self.start_transaction('CREATE', address, price, init, caller, balance)
         self._process_pending_transaction()
         return address
@@ -2023,14 +2042,12 @@ class EVMWorld(Platform):
         # Fork on enough funds
         if not failed:
             src_balance = self.get_balance(caller)
-            enough_balance = src_balance >= value
-            if issymbolic(enough_balance):
-                self.constraints.add(src_balance + value >= src_balance)
+            enough_balance = Operators.UGE(src_balance, value)
             enough_balance_solutions = solver.get_all_values(self._constraints, enough_balance)
 
             if set(enough_balance_solutions) == {True, False}:
                 raise Concretize('Forking on available funds',
-                                 expression=src_balance < value,
+                                 expression=Operators.ULT(src_balance, value),
                                  setstate=lambda a, b: None,
                                  policy='ALL')
             failed = set(enough_balance_solutions) == {False}
