@@ -1549,7 +1549,7 @@ class ManticoreEVM(Manticore):
         ''' IDs of the running states'''
         with self.locked_context('ethereum') as context:
             if self.initial_state is not None:
-                return  (-1,) + tuple(context['_saved_states'])
+                return (-1,) + tuple(context['_saved_states'])
             else:
                 return tuple(context['_saved_states'])
 

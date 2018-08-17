@@ -704,6 +704,7 @@ class EVM(Eventful):
             self._advance(result)
         except ConcretizeStack as ex:
             pos = -ex.pos
+
             def setstate(state, value):
                 self.stack[pos] = value
             raise Concretize("Concretice Stack Variable",
@@ -1015,7 +1016,6 @@ class EVM(Eventful):
     def CALLDATACOPY(self, mem_offset, data_offset, size):
         '''Copy input data in current environment to memory'''
         GCOPY = 3             # cost to copy one 32 byte word
- 
         self._consume(self.safe_mul(GCOPY, self.safe_add(size, 31) // 32))
         self._allocate(self.safe_add(mem_offset, size))
 
@@ -1413,15 +1413,15 @@ class EVM(Eventful):
             pc = pc.value
 
         if issymbolic(pc):
-            result.append('<Symbolic PC> %s %r'%(translate_to_smtlib(pc), pc.taint))            
+            result.append('<Symbolic PC> {:s} {}'.format((translate_to_smtlib(pc), pc.taint)))
         else:
-            result.append('0x%04x: %s %s %s\n' % (pc, self.instruction.name, self.instruction.has_operand and '0x%x' %
-                                                  self.instruction.operand or '', self.instruction.description))
+            result.append('0x%04x: {:s} {:s} {:s}\n'.format((pc, self.instruction.name, self.instruction.has_operand and '0x{:x}'.format(
+                                                  self.instruction.operand) or '', self.instruction.description)))
 
         args = {}
         implementation = getattr(self, self.instruction.semantics, None)
         if implementation is not None:
-            args = dict(enumerate(inspect.getfullargspec(implementation).args[1:self.instruction.pops+1]))
+            args = dict(enumerate(inspect.getfullargspec(implementation).args[1:self.instruction.pops + 1]))
 
         clmn = 80
         result.append('Stack                                                                           Memory')

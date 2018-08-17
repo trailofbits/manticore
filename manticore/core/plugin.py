@@ -52,6 +52,7 @@ class Plugin(object):
     def on_register(self):
         ''' Called by parent manticore on registration '''
         pass
+
     def on_unregister(self):
         ''' Called be parent manticore on un-registration '''
         pass
