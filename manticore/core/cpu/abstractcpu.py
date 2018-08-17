@@ -763,6 +763,8 @@ class Cpu(Eventful):
             if not self.memory.access_ok(address, 'x'):
                 break
 
+            # import ipdb
+            # ipdb.set_trace()
             c = self.memory[address]
 
             if issymbolic(c):

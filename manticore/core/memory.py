@@ -273,6 +273,10 @@ class AnonMap(Map):
         assert not isinstance(index, slice) or \
             len(value) == index.stop - index.start
         index = self._get_offset(index)
+
+        if issymbolic(value[0]) and isinstance(self._data, bytearray):
+            self._data = [Operators.ORD(b) for b in self._data]  # completely convert everything to a list if we need to store some symbolic data, just copying fpse
+
         if isinstance(index, slice):
             if not isinstance(value[0], int):
                 value = [Operators.ORD(n) for n in value]
@@ -283,7 +287,8 @@ class AnonMap(Map):
     def __getitem__(self, index):
         index = self._get_offset(index)
         if isinstance(index, slice):
-            return [bytes([i]) for i in self._data[index]]
+            # return [bytes([i]) for i in self._data[index]]
+            return [Operators.CHR(i) for i in self._data[index]]
         return bytes([self._data[index]])
 
 
@@ -1117,16 +1122,19 @@ class LazySMemory(SMemory):
     '''
 
     def __reduce__(self):
-        return (self.__class__, (self.constraints, self._symbols, self._maps), {'backing_array': self.bigarray })
+        return (self.__class__, (self.constraints, self._symbols, self._maps), {'backing_array': self.bigarray, 'backed_by_symbolic_store': self.backed_by_symbolic_store })
 
     def __setstate__(self, state):
         self.bigarray = state['backing_array']
+        self.backed_by_symbolic_store = state['backed_by_symbolic_store']
 
     def __init__(self, constraints, *args, **kwargs):
         super(LazySMemory, self).__init__(constraints, *args, **kwargs)
         # self.bigarray = ArrayMap(0, 2**32 - 1, 'rwx', 32, name='bigarray')
         # self.bigarray = ArrayMap(0, 2**32 - 1, 'rwx', 32, name='bigarray')
         self.bigarray = constraints.new_array(index_bits=self.memory_bit_size)
+        self.backed_by_symbolic_store = set()
+
 
     def mmap(self, addr, size, perms, name=None, **kwargs):
         assert isinstance(addr, int)
@@ -1176,7 +1184,7 @@ class LazySMemory(SMemory):
         fdata = fdata.ljust(size, b'\0')
 
         for i in range(size):
-            self.bigarray[addr + i:addr + i + 1] = chr(fdata[i])
+            Memory.write(self, addr+i, chr(fdata[i]), force=True)
 
         # original
         # towrite = min(size, len(fdata[offset:]))
@@ -1210,83 +1218,164 @@ class LazySMemory(SMemory):
                     found = m
             return found
 
+    def _import_concrete_memory(self, accessmin, accessmax):
+        # for each address in this range need to read from concrete and write to symbolic
+        # it's possible that there will be invliad/unmapped addresses in this range. need to skip to next map if so
+        # also need to mark all of these addresses as now in the symbolic store
+
+        # assert 0
+        curr_addr = accessmin
+
+        while curr_addr <= accessmax:
+            if curr_addr not in self.backed_by_symbolic_store:
+                try:
+                    # self.bigarray[curr_addr] = super().__getitem__(addr)
+                    self.bigarray[curr_addr] = Memory.read(self, curr_addr, 1)[0]
+                    self.backed_by_symbolic_store.add(curr_addr)
+                except: # in case of invalid mapping
+                    curr_addr = (curr_addr + 0x1000) & ~0xfff
+                    continue
+
+            curr_addr += 1
+
+
     def read(self, address, size, force=False):
-        def _constrain_to_maps(cs, mappings, where):
-            # maps = state.cpu.memory.mappings()
-            maps = mappings
+        # def _constrain_to_maps(cs, mappings, where):
+        #     # maps = state.cpu.memory.mappings()
+        #     maps = mappings
+        #
+        #     from manticore.core.smtlib.operators import UGE, ULT, OR
+        #
+        #     cons = []
+        #     print(maps)
+        #     for map in maps:
+        #         print(33)
+        #         start, end = map[:2]
+        #
+        #         startcons = UGE(where, start)
+        #         endcons = ULT(where, end)
+        #
+        #         c = startcons & endcons
+        #         cons.append(c)
+        #
+        #         logger.info('map', hex(start), hex(end))
+        #
+        #     if len(cons) > 1:
+        #         big = OR(*cons)
+        #     else:
+        #         big = cons[0]
+        #
+        #     cs.add(big)
+        #     # state.constrain(big)
 
-            from manticore.core.smtlib.operators import UGE, ULT, OR
+        addrs_to_access = []
+        for i in range(size):
+            addrs_to_access.append(address + i)
 
-            cons = []
-            print(maps)
-            for map in maps:
-                print(33)
-                start, end = map[:2]
+        addrmin, addrmax = solver.minmax(self.constraints, address)
+        accessmin = addrmin
+        accessmax = addrmax + size - 1
 
-                startcons = UGE(where, start)
-                endcons = ULT(where, end)
+        if issymbolic(addrs_to_access[0]):
+            self._import_concrete_memory(accessmin, accessmax)
 
-                c = startcons & endcons
-                cons.append(c)
-
-                logger.info('map', hex(start), hex(end))
-
-            if len(cons) > 1:
-                big = OR(*cons)
+        retvals = []
+        i = size
+        for addr in addrs_to_access:
+            i -= 1
+            if issymbolic(addr) or addr in self.backed_by_symbolic_store:
+                retvals.append(self.bigarray[addr])
             else:
-                big = cons[0]
+                # retvals.append(Memory.__getitem__(self, a
+                retvals.append(Memory.read(self, addr, 1)[0])
 
-            cs.add(big)
-            # state.constrain(big)
+        return retvals
+
+
 
         # print 'address', address, 'size', size
-        if issymbolic(address):
-            # TODO FIXME what to do here? constrain to maps and continue?
-            # don't constrain to maps because then we can't distinguish later if a solution isn't SAT because of maps
-            # or because of the actual code
-
-            # sym access, constrain to maps and continue
-            pass
-            # _constrain_to_maps(self.constraints, self.mappings(), address)
-        else:
-            if not self.access_ok(slice(address, address + size), 'r', force):
-                raise InvalidMemoryAccess(address, 'r')
-
-        page_offset = address
-        # print 'mem read', hex(address), size
-        ret = self.bigarray[page_offset:page_offset + size]
-        # print 'got the ret', ret
-        return ret
-
-        # m = self.map_containing(address)
-        # if isinstance(m, ArrayMap):
-        #     page_offset = address - m.start
-        #     return m[page_offset:page_offset + size]
+        # if issymbolic(address) or address in self.backed_by_symbolic_store:
+        #     # TODO FIXME what to do here? constrain to maps and continue?
+        #     # don't constrain to maps because then we can't distinguish later if a solution isn't SAT because of maps
+        #     # or because of the actual code
+        #
+        #     # sym access, constrain to maps and continue
+        #     pass
+        #     # _constrain_to_maps(self.constraints, self.mappings(), address)
+        #
+        #
+        #     # need to import the concrete memory
+        #     # import concrete memory (addr min, addr max)
+        #     '''
+        #
+        #         for addr in min to max:
+        #             self.bigarray[addr] = concrete_store[addr]
+        #             backed_by_symbolic_store.add(addr)
+        #
+        #
+        #     '''
+        #     #
+        #     # self._import_concrete_memory()
+        #
+        #     page_offset = address
+        #     ret = self.bigarray[page_offset:page_offset + size]
+        #     return ret
+        #
+        #
+        #
         # else:
-        #     return super(SMemory, self).read(address, size, force)
+        #     if not self.access_ok(slice(address, address + size), 'r', force):
+        #         raise InvalidMemoryAccess(address, 'r')
+
+        # page_offset = address
+        # ret = self.bigarray[page_offset:page_offset + size]
+        # return ret
+
 
     def write(self, address, value, force=False):
-        if issymbolic(address):
-            # TODO FIXME what do we do here?
-            pass
+
+        size = len(value)
+
+        addrs_to_access = []
+        for i in range(size):
+            addrs_to_access.append(address + i)
+
+        symbolic_write = issymbolic(addrs_to_access[0])
+
+
+        if symbolic_write:
+            addrmin, addrmax = solver.minmax(self.constraints, address)
+            accessmin = addrmin
+            accessmax = addrmax + size - 1
+
+            self._import_concrete_memory(accessmin, accessmax)
+
+            for addr, byte in zip(addrs_to_access, value) :
+                self.bigarray[addr] = Operators.ORD(byte)
+
+
         else:
-            if not self.access_ok(slice(address, address + len(value)), 'w', force):
-                raise InvalidMemoryAccess(address, 'w')
+            for addr, byte in zip(addrs_to_access, value) :
+                self.backed_by_symbolic_store.discard(addr)
+                Memory.write(self, addr, [byte])
 
-        page_offset = address
-        # print 'mem write', hex(address), value
-        from ..core.smtlib import pretty_print
-        # print 'pre write', pretty_print(self.bigarray.array)
-        self.bigarray[page_offset:page_offset + len(value)] = value
-        # print 'post write', pretty_print(self.bigarray.array)
-        return
 
-        # m = self.map_containing(address)
-        # if isinstance(m, ArrayMap):
-        #     page_offset = address - m.start
-        #     m[page_offset:page_offset + len(value)] = value
+        # if issymbolic(address):
+        #     # TODO FIXME what do we do here?
+        #     pass
         # else:
-        #     return super(SMemory, self).write(address, value, force)
+        #     if not self.access_ok(slice(address, address + len(value)), 'w', force):
+        #         raise InvalidMemoryAccess(address, 'w')
+        #
+        # page_offset = address
+        # if issymbolic(address):
+        #     ## import concrete memory
+        #
+        #     self.bigarray[page_offset:page_offset + len(value)] = value
+        # else:
+        #     # write at concrete address, can do write and discard elements from backing_store thing
+        #     super().write(address, value, force)
+
 
 
 
