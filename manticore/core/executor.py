@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+
 import os
 import random
 import logging
@@ -19,10 +19,6 @@ from contextlib import contextmanager
 def mgr_init():
     signal.signal(signal.SIGINT, signal.SIG_IGN)
 
-
-manager = SyncManager()
-manager.start(mgr_init)
-
 logger = logging.getLogger(__name__)
 
 
@@ -42,7 +38,7 @@ class Policy(object):
     ''' Base class for prioritization of state search '''
 
     def __init__(self, executor, *args, **kwargs):
-        super(Policy, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._executor = executor
         self._executor.subscribe('did_enqueue_state', self._add_state_callback)
 
@@ -80,7 +76,7 @@ class Policy(object):
 
 class Random(Policy):
     def __init__(self, executor, *args, **kwargs):
-        super(Random, self).__init__(executor, *args, **kwargs)
+        super().__init__(executor, *args, **kwargs)
         random.seed(1337)  # For repeatable results
 
     def choice(self, state_ids):
@@ -89,7 +85,7 @@ class Random(Policy):
 
 class Uncovered(Policy):
     def __init__(self, executor, *args, **kwargs):
-        super(Uncovered, self).__init__(executor, *args, **kwargs)
+        super().__init__(executor, *args, **kwargs)
         # hook on the necesary executor signals
         # on callbacks save data in executor.context['policy']
         self._executor.subscribe('will_load_state', self._register)
@@ -122,7 +118,7 @@ class Uncovered(Policy):
 
 class BranchLimited(Policy):
     def __init__(self, executor, *args, **kwargs):
-        super(BranchLimited, self).__init__(executor, *args, **kwargs)
+        super().__init__(executor, *args, **kwargs)
         self._executor.subscribe('will_load_state', self._register)
         self._limit = kwargs.get('limit', 5)
 
@@ -169,31 +165,35 @@ class Executor(Eventful):
     _published_events = {'enqueue_state', 'generate_testcase', 'fork_state', 'load_state', 'terminate_state'}
 
     def __init__(self, initial=None, store=None, policy='random', context=None, **kwargs):
-        super(Executor, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         # Signals / Callbacks handlers will be invoked potentially at different
         # worker processes. State provides a local context to save data.
 
         self.subscribe('did_load_state', self._register_state_callbacks)
 
+        # This is the global manager that will handle all shared memory access among workers
+        self.manager = SyncManager()
+        self.manager.start(lambda: signal.signal(signal.SIGINT, signal.SIG_IGN))
+
         # The main executor lock. Acquire this for accessing shared objects
-        self._lock = manager.Condition(manager.RLock())
+        self._lock = self.manager.Condition()
 
         # Shutdown Event
-        self._shutdown = manager.Event()
+        self._shutdown = self.manager.Event()
 
         # States on storage. Shared dict state name ->  state stats
-        self._states = manager.list()
+        self._states = self.manager.list()
 
         # Number of currently running workers. Initially no running workers
-        self._running = manager.Value('i', 0)
+        self._running = self.manager.Value('i', 0)
 
         self._workspace = Workspace(self._lock, store)
 
         # Executor wide shared context
         if context is None:
             context = {}
-        self._shared_context = manager.dict(context)
+        self._shared_context = self.manager.dict(context)
 
         # scheduling priority policy (wip)
         # Set policy
@@ -210,6 +210,9 @@ class Executor(Eventful):
         else:
             if initial is not None:
                 self.add(initial)
+
+    def __del__(self):
+        self.manager.shutdown()
 
     @contextmanager
     def locked_context(self, key=None, default=dict):
@@ -486,6 +489,7 @@ class Executor(Eventful):
                         current_state = None
 
                     except SolverException as e:
+                        # raise
                         import traceback
                         trace = traceback.format_exc()
                         logger.error("Exception: %s\n%s", str(e), trace)
@@ -498,6 +502,7 @@ class Executor(Eventful):
                         current_state = None
 
                 except (Exception, AssertionError) as e:
+                    # raise
                     import traceback
                     trace = traceback.format_exc()
                     logger.error("Exception: %s\n%s", str(e), trace)

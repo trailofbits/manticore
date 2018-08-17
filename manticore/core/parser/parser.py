@@ -1,4 +1,4 @@
-from __future__ import print_function
+
 # Minimal INTEL assembler expression calculator
 import ply.yacc as yacc
 import copy
@@ -167,7 +167,7 @@ sizes = copy.copy(default_sizes_32)
 
 def p_expression_div(p):
     'expression : expression DIVIDE expression'
-    p[0] = p[1] / p[3]
+    p[0] = p[1] // p[3]
 
 
 def p_expression_mul(p):
@@ -340,7 +340,7 @@ def parse(expression, read_memory=None, read_register=None, get_descriptor=None,
 if __name__ == '__main__':
     while True:
         try:
-            s = raw_input('calc > ')
+            s = input('calc > ')
         except EOFError:
             break
         if not s:

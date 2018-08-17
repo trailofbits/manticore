@@ -37,7 +37,7 @@ def instruction(body):
             if issymbolic(should_execute):
                 # Let's remember next time we get here we should not do this again
                 cpu._at_symbolic_conditional = True
-                i_size = cpu.address_bit_size / 8
+                i_size = cpu.address_bit_size // 8
                 cpu.PC = Operators.ITEBV(cpu.address_bit_size, should_execute, cpu.PC - i_size,
                                          cpu.PC)
                 return
@@ -55,7 +55,7 @@ def instruction(body):
 
 class Armv7Operand(Operand):
     def __init__(self, cpu, op, **kwargs):
-        super(Armv7Operand, self).__init__(cpu, op, **kwargs)
+        super().__init__(cpu, op, **kwargs)
 
     @property
     def type(self):
@@ -204,14 +204,14 @@ class Armv7RegisterFile(RegisterFile):
         ARM Register file abstraction. GPRs use ints for read/write. APSR
         flags allow writes of bool/{1, 0} but always read bools.
         """
-        super(Armv7RegisterFile, self).__init__({'SB': 'R9',
-                                                 'SL': 'R10',
-                                                 'FP': 'R11',
-                                                 'IP': 'R12',
-                                                 'STACK': 'R13',
-                                                 'SP': 'R13',
-                                                 'LR': 'R14',
-                                                 'PC': 'R15'})
+        super().__init__({'SB': 'R9',
+                          'SL': 'R10',
+                          'FP': 'R11',
+                          'IP': 'R12',
+                          'STACK': 'R13',
+                          'SP': 'R13',
+                          'LR': 'R14',
+                          'PC': 'R15'})
         self._regs = {}
         # 32 bit registers
         for reg_name in ('R0', 'R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8',
@@ -290,7 +290,7 @@ class Armv7RegisterFile(RegisterFile):
 
     @property
     def all_registers(self):
-        return super(Armv7RegisterFile, self).all_registers + \
+        return super().all_registers + \
             ('R0', 'R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8', 'R9', 'R10', 'R11', 'R12', 'R13', 'R14', 'R15',
                 'D0', 'D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'D8', 'D9', 'D10', 'D11', 'D12', 'D13', 'D14', 'D15',
                 'D16', 'D17', 'D18', 'D19', 'D20', 'D21', 'D22', 'D23', 'D24', 'D25', 'D26', 'D27', 'D28', 'D29',
@@ -360,10 +360,10 @@ class Armv7Cpu(Cpu):
         self._last_flags = {'C': 0, 'V': 0, 'N': 0, 'Z': 0, 'GE': 0}
         self._at_symbolic_conditional = False
         self._mode = cs.CS_MODE_ARM
-        super(Armv7Cpu, self).__init__(Armv7RegisterFile(), memory)
+        super().__init__(Armv7RegisterFile(), memory)
 
     def __getstate__(self):
-        state = super(Armv7Cpu, self).__getstate__()
+        state = super().__getstate__()
         state['_last_flags'] = self._last_flags
         state['at_symbolic_conditional'] = self._at_symbolic_conditional
         state['_it_conditional'] = self._it_conditional
@@ -375,7 +375,7 @@ class Armv7Cpu(Cpu):
         self._at_symbolic_conditional = state['at_symbolic_conditional']
         self._it_conditional = state['_it_conditional']
         self._mode = state['_mode']
-        super(Armv7Cpu, self).__setstate__(state)
+        super().__setstate__(state)
 
     @property
     def mode(self):
@@ -426,7 +426,7 @@ class Armv7Cpu(Cpu):
             instr2 commits all in _last_flags
             now overflow=1 even though it should still be 0
         """
-        unupdated_flags = self._last_flags.viewkeys() - flags.viewkeys()
+        unupdated_flags = self._last_flags.keys() - flags.keys()
         for flag in unupdated_flags:
             flag_name = 'APSR_{}'.format(flag)
             self._last_flags[flag] = self.regfile.read(flag_name)
@@ -436,7 +436,7 @@ class Armv7Cpu(Cpu):
         # XXX: capstone incorrectly sets .update_flags for adc
         if self.instruction.mnemonic == 'adc':
             return
-        for flag, val in self._last_flags.iteritems():
+        for flag, val in self._last_flags.items():
             flag_name = 'APSR_{}'.format(flag)
             self.regfile.write(flag_name, val)
 
@@ -477,12 +477,12 @@ class Armv7Cpu(Cpu):
 
     # TODO add to abstract cpu, and potentially remove stacksub/add from it?
     def stack_push(self, data, nbytes=None):
-        if isinstance(data, (int, long)):
-            nbytes = nbytes or self.address_bit_size / 8
+        if isinstance(data, int):
+            nbytes = nbytes or self.address_bit_size // 8
             self.SP -= nbytes
             self.write_int(self.SP, data, nbytes * 8)
         elif isinstance(data, BitVec):
-            self.SP -= data.size / 8
+            self.SP -= data.size // 8
             self.write_int(self.SP, data, data.size)
         elif isinstance(data, str):
             self.SP -= len(data)
@@ -992,7 +992,7 @@ class Armv7Cpu(Cpu):
     @instruction
     def POP(cpu, *regs):
         for reg in regs:
-            val = cpu.stack_pop(cpu.address_bit_size / 8)
+            val = cpu.stack_pop(cpu.address_bit_size // 8)
             if reg.reg in ('PC', 'R15'):
                 cpu._set_mode_by_val(val)
                 val = val & ~0x1
@@ -1012,7 +1012,7 @@ class Armv7Cpu(Cpu):
         msb = cpu.address_bit_size - 1
         result = 32
 
-        for pos in xrange(cpu.address_bit_size):
+        for pos in range(cpu.address_bit_size):
             cond = Operators.EXTRACT(value, pos, 1) == 1
             result = Operators.ITEBV(cpu.address_bit_size, cond, msb - pos, result)
 
@@ -1042,14 +1042,14 @@ class Armv7Cpu(Cpu):
         """
         address = base.read()
         if insn_id == cs.arm.ARM_INS_LDMIB:
-            address += cpu.address_bit_size / 8
+            address += cpu.address_bit_size // 8
 
         for reg in regs:
             reg.write(cpu.read_int(address, cpu.address_bit_size))
-            address += reg.size / 8
+            address += reg.size // 8
 
         if insn_id == cs.arm.ARM_INS_LDMIB:
-            address -= reg.size / 8
+            address -= reg.size // 8
 
         if cpu.instruction.writeback:
             base.writeback(address)
@@ -1244,7 +1244,7 @@ class Armv7Cpu(Cpu):
     def _VSTM(cpu, address, *regs):
         for reg in regs:
             cpu.write_int(address, reg.read(), reg.size)
-            address += reg.size / 8
+            address += reg.size // 8
 
         return address
 
@@ -1256,7 +1256,7 @@ class Armv7Cpu(Cpu):
 
     @instruction
     def VSTMDB(cpu, base, *regs):
-        address = base.read() - (cpu.address_bit_size / 8) * len(regs)
+        address = base.read() - cpu.address_bit_size // 8 * len(regs)
         updated_address = cpu._VSTM(address, *regs)
         if cpu.instruction.writeback:
             base.writeback(updated_address)

@@ -52,11 +52,3 @@ EVM
    :members:
 .. autoclass:: manticore.ethereum.ManticoreEVM
    :members:
-
-EVM Assembler
--------------
-.. autoclass:: manticore.platforms.evm::EVMAsm.Instruction
-    :members: 
-.. autoclass:: manticore.platforms.evm.EVMAsm
-    :members: 
-

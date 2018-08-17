@@ -15,6 +15,11 @@ class ExpressionTest(unittest.TestCase):
         self.solver = Z3Solver()
 
 
+    def assertItemsEqual(self, a, b):
+        # Required for Python3 compatibility
+        self.assertEqual(sorted(a), sorted(b))
+
+
     def tearDown(self):
         del self.solver
 
@@ -182,7 +187,7 @@ class ExpressionTest(unittest.TestCase):
         self.assertTrue(self.solver.can_be_true(cs, array.select(1001) == ord('B')))
 
         #name is correctly proxied
-        self.assertEqual(array.name, name + "_1")
+        self.assertEqual(array.name, name)
 
         with cs as temp_cs:
             #but if it is 'B' ...
@@ -231,7 +236,7 @@ class ExpressionTest(unittest.TestCase):
         self.assertFalse(self.solver.check(cs))
 
     def testBasicArrayConcatSlice(self):
-        hw = bytearray('Hello world!')
+        hw = bytearray(b'Hello world!')
         cs =  ConstraintSet()
         #make array of 32->8 bits
         array = cs.new_array(32, index_max=12)
@@ -245,11 +250,11 @@ class ExpressionTest(unittest.TestCase):
 
         self.assertTrue(self.solver.must_be_true(cs, array.read(6,6) == hw[6:12]))
 
-        self.assertTrue(self.solver.must_be_true(cs, bytearray('Hello ')+array.read(6,6) == hw))
+        self.assertTrue(self.solver.must_be_true(cs, bytearray(b'Hello ')+array.read(6,6) == hw))
 
-        self.assertTrue(self.solver.must_be_true(cs, bytearray('Hello ')+array.read(6,5) + bytearray('!') == hw))
+        self.assertTrue(self.solver.must_be_true(cs, bytearray(b'Hello ')+array.read(6,5) + bytearray(b'!') == hw))
 
-        self.assertTrue(self.solver.must_be_true(cs, array.read(0,1) + bytearray('ello ') + array.read(6,5) + bytearray('!') == hw))
+        self.assertTrue(self.solver.must_be_true(cs, array.read(0,1) + bytearray(b'ello ') + array.read(6,5) + bytearray(b'!') == hw))
 
         self.assertTrue(len(array[1:2]) == 1)
 
@@ -323,8 +328,8 @@ class ExpressionTest(unittest.TestCase):
         self.assertEqual(self.solver.minmax(cs, a), (101,199))
 
     def testBool_nonzero(self):
-        self.assertTrue(BoolConstant(True).__nonzero__())
-        self.assertFalse(BoolConstant(False).__nonzero__())
+        self.assertTrue(BoolConstant(True).__bool__())
+        self.assertFalse(BoolConstant(False).__bool__())
 
     def test_visitors(self):
         cs = ConstraintSet()
@@ -339,13 +344,14 @@ class ExpressionTest(unittest.TestCase):
 
         self.assertEqual(get_depth(cond), 3)
         self.assertEqual(get_depth(arr[a+1]), 4)
-        self.assertEqual(translate_to_smtlib(arr[a+1]), '(select (store (store MEM_1 #x00000000 #x61) #x00000001 #x62) (bvadd VAR_2 #x00000001))' )
+        self.assertEqual(translate_to_smtlib(arr[a+1]), '(select (store (store MEM #x00000000 #x61) #x00000001 #x62) (bvadd VAR #x00000001))' )
 
         arr[3] = arr[a+1]
         aux = arr[a+Operators.ZEXTEND(arr[a],32)]
 
         self.assertEqual(get_depth(aux), 9)
-        self.assertEqual(translate_to_smtlib(aux) ,'(select (store (store (store MEM_1 #x00000000 #x61) #x00000001 #x62) #x00000003 (select (store (store MEM_1 #x00000000 #x61) #x00000001 #x62) (bvadd VAR_2 #x00000001))) (bvadd VAR_2 ((_ zero_extend 24) (select (store (store (store MEM_1 #x00000000 #x61) #x00000001 #x62) #x00000003 (select (store (store MEM_1 #x00000000 #x61) #x00000001 #x62) (bvadd VAR_2 #x00000001))) VAR_2))))')
+        self.maxDiff = 1500
+        self.assertEqual(translate_to_smtlib(aux) ,'(select (store (store (store MEM #x00000000 #x61) #x00000001 #x62) #x00000003 (select (store (store MEM #x00000000 #x61) #x00000001 #x62) (bvadd VAR #x00000001))) (bvadd VAR ((_ zero_extend 24) (select (store (store (store MEM #x00000000 #x61) #x00000001 #x62) #x00000003 (select (store (store MEM #x00000000 #x61) #x00000001 #x62) (bvadd VAR #x00000001))) VAR))))')
 
         values = arr[0:2]
         self.assertEqual(len(values), 2)
@@ -372,8 +378,8 @@ class ExpressionTest(unittest.TestCase):
         a = cs.new_bitvec(32, name='VARA')
         b = cs.new_bitvec(32, name='VARB')
         c = a*2+b
-        self.assertEqual( translate_to_smtlib(c), '(bvadd (bvmul VARA_2 #x00000002) VARB_3)')
-        self.assertEqual( translate_to_smtlib((c+4)-4), '(bvsub (bvadd (bvadd (bvmul VARA_2 #x00000002) VARB_3) #x00000004) #x00000004)')
+        self.assertEqual( translate_to_smtlib(c), '(bvadd (bvmul VARA #x00000002) VARB)')
+        self.assertEqual( translate_to_smtlib((c+4)-4), '(bvsub (bvadd (bvadd (bvmul VARA #x00000002) VARB) #x00000004) #x00000004)')
 
         d = c+4
         s = arithmetic_simplify(d-c)
@@ -387,10 +393,10 @@ class ExpressionTest(unittest.TestCase):
         exp &= 1
         exp |= 0
         self.assertEqual(get_depth(exp), 4)
-        self.assertEqual(translate_to_smtlib(exp), '(bvor (bvand (bvor V_1 #x00000000) #x00000001) #x00000000)')
+        self.assertEqual(translate_to_smtlib(exp), '(bvor (bvand (bvor BV #x00000000) #x00000001) #x00000000)')
         exp = arithmetic_simplify(exp)
         self.assertTrue(get_depth(exp) < 4)
-        self.assertEqual(translate_to_smtlib(exp), '(bvand V_1 #x00000001)')
+        self.assertEqual(translate_to_smtlib(exp), '(bvand BV #x00000001)')
 
     def testBasicReplace(self):
         ''' Add '''
@@ -403,6 +409,27 @@ class ExpressionTest(unittest.TestCase):
         x = replace(c, {b1:b2})
         self.assertEqual(translate_to_smtlib(x), '(bvadd #x00000064 VAR2)')
 
+    def testBasicMigration(self):
+        cs1 = ConstraintSet()
+        cs2 = ConstraintSet()
+        var1 = cs1.new_bitvec(32, 'var')
+        var2 = cs2.new_bitvec(32, 'var')
+        cs1.add(Operators.ULT(var1, 3)) # var1 can be 0, 1, 2
+
+        # make a migration map dict
+        migration_map1 = {}
+
+        # this expression is composed with variables of both cs
+        expression = var1 > var2
+        migrated_expression = cs1.migrate(expression, migration_map1)
+        cs1.add(migrated_expression)
+
+
+        expression = var2 > 0
+        migrated_expression = cs1.migrate(expression, migration_map1)
+        cs1.add(migrated_expression)
+
+        self.assertItemsEqual(solver.get_all_values(cs1, var1), [2]) # should only be [2]
 
     def test_ORD(self):
         cs = ConstraintSet()
@@ -530,7 +557,7 @@ class ExpressionTest(unittest.TestCase):
         cs.add(b == 0x86) #-122
         cs.add(c == 0x11) #17
         cs.add(a == Operators.SDIV(b, c))
-        cs.add(d == b/c)
+        cs.add(d == b // c)
         cs.add(a == d)
 
         self.assertTrue(solver.check(cs))
@@ -539,7 +566,7 @@ class ExpressionTest(unittest.TestCase):
 
     def test_SAR(self):
         A = 0xbadf00d
-        for B in xrange(32):
+        for B in range(32):
             cs = ConstraintSet()
             a = cs.new_bitvec(32)
             b = cs.new_bitvec(32)
@@ -789,33 +816,14 @@ class ExpressionTest(unittest.TestCase):
         self.assertTrue(solver.check(cs))
         self.assertEqual(solver.get_value(cs, a), -7&0xFF)
 
-import importlib
-class Z3Test(unittest.TestCase):
-    def setUp(self):
-        #Manual mock for check_output
-        self.module = importlib.import_module('manticore.core.smtlib.solver')
-        self.module.check_output = lambda *args, **kwargs: self.version
-        self.z3 = self.module.Z3Solver
-
     def test_check_solver_min(self):
-        self.version = 'Z3 version 4.4.1'
-        self.assertTrue(self.z3._solver_version() == Version(major=4, minor=4, patch=1))
+        self.solver._received_version = '(:version "4.4.1")'
+        self.assertTrue(self.solver._solver_version() == Version(major=4, minor=4, patch=1))
 
     def test_check_solver_newer(self):
-        self.version = 'Z3 version 4.5.0'
-        self.assertTrue(self.z3._solver_version() > Version(major=4, minor=4, patch=1))
+        self.solver._received_version = '(:version "4.5.0")'
+        self.assertTrue(self.solver._solver_version() > Version(major=4, minor=4, patch=1))
 
-    def test_check_solver_optimize(self):
-        self.version = 'Z3 version 4.5.0'
-        solver = self.z3()
-        self.assertTrue(solver.support_maximize)
-        self.assertTrue(solver.support_minimize)
-
-    def test_check_solver_optimize(self):
-        self.version = 'Z3 version 4.4.0'
-        solver = self.z3()
-        self.assertFalse(solver.support_maximize)
-        self.assertFalse(solver.support_minimize)
 
 if __name__ == '__main__':
     unittest.main()

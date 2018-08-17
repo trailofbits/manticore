@@ -4,11 +4,22 @@ os:
   - linux
 language: python
 python:
-  - 2.7.13
+  - 3.6.5
+
+stages:
+  - prepare
+  - test
+  - submit
 
 env:
   global:
     - CC_TEST_REPORTER_ID=db72f1ed59628c16eb0c00cbcd629c4c71f68aa1892ef42d18c7c2b8326f460a
+    - JOB_COUNT=2 # Two jobs generate test coverage
+    - PYTHONWARNINGS="ignore::ResourceWarning" # Ignore unclosed file warnings
+  matrix:
+    - TEST_TYPE=examples
+    - TEST_TYPE=tests
+    - TEST_TYPE=eth
 
 branches:
   only:
@@ -18,19 +29,31 @@ branches:
 cache:
   pip: true
   directories:
-  - $HOME/virtualenv/python2.7.13/lib/python2.7/site-packages
-  - $HOME/virtualenv/python2.7.13/bin/
+  - $HOME/virtualenv/python3.6.5/lib/python3.6/site-packages
+  - $HOME/virtualenv/python3.6.5/bin/
+
+jobs:
+  include:
+    - stage: prepare
+      env: TEST_TYPE=env
+      script:
+        - ./cc-test-reporter before-build
+      after_success:
+    - stage: submit
+      env: TEST_TYPE=env
+      script:
+        - true
+      after_script:
+        - aws s3 sync "s3://manticore-testdata/coverage/$TRAVIS_COMMIT" coverage/ 
+        - ./cc-test-reporter sum-coverage --output - --parts $JOB_COUNT coverage/codeclimate.*.json | ./cc-test-reporter upload-coverage --input -
 
 install:
-  - scripts/travis_install.sh
-
-before_script:
-  - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
-  - chmod +x ./cc-test-reporter
-  - ./cc-test-reporter before-build
+  - scripts/travis_install.sh $TEST_TYPE
 
 script:
-  - scripts/travis_test.sh
+  - scripts/travis_test.sh $TEST_TYPE
 
-after_script:
-  - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT
+after_success:
+  - ./cc-test-reporter format-coverage -t coverage.py -o "coverage/codeclimate.$TEST_TYPE.json"
+  - aws s3 sync coverage/ "s3://manticore-testdata/coverage/$TRAVIS_COMMIT"
+

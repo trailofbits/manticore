@@ -1,4 +1,4 @@
-import StringIO
+import io
 import errno
 import fcntl
 import logging
@@ -7,12 +7,15 @@ import random
 import struct
 import ctypes
 import socket
+import binascii
 
+from typing import Union, List, TypeVar, Iterable, ByteString, Sequence, Generic, cast, Collection
 # Remove in favor of binary.py
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 from elftools.elf.descriptions import describe_symbol_type
 
+from manticore.core.smtlib import Expression
 from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeArgument
 from ..core.cpu.cpufactory import CpuFactory
 from ..core.memory import SMemory32, SMemory64, Memory32, Memory64
@@ -20,10 +23,13 @@ from ..core.smtlib import Operators, ConstraintSet, SolverException, solver
 from ..core.cpu.arm import *
 from ..core.executor import TerminateState
 from ..platforms.platform import Platform, SyscallNotImplemented
-from ..utils.helpers import issymbolic, is_binja_disassembler
+from ..utils.helpers import issymbolic
 from . import linux_syscalls
 
 logger = logging.getLogger(__name__)
+
+T = TypeVar('T')
+MixedSymbolicBuffer = Union[List[Union[bytes, Expression]], bytes]
 
 
 class RestartSyscall(Exception):
@@ -41,7 +47,7 @@ class EnvironmentError(RuntimeError):
 class FdError(Exception):
     def __init__(self, message='', err=errno.EBADF):
         self.err = err
-        super(FdError, self).__init__(message)
+        super().__init__(message)
 
 
 def perms_from_elf(elf_flags):
@@ -53,7 +59,7 @@ def perms_from_protflags(prot_flags):
 
 
 def mode_from_flags(file_flags):
-    return {os.O_RDWR: 'r+', os.O_RDONLY: 'r', os.O_WRONLY: 'w'}[file_flags & 7]
+    return {os.O_RDWR: 'rb+', os.O_RDONLY: 'rb', os.O_WRONLY: 'wb'}[file_flags & 7]
 
 
 class File(object):
@@ -61,14 +67,16 @@ class File(object):
         # TODO: assert file is seekable otherwise we should save what was
         # read/write to the state
         mode = mode_from_flags(flags)
-        self.file = file(path, mode)
+        self.file = open(path, mode)
 
     def __getstate__(self):
-        state = {}
-        state['name'] = self.name
-        state['mode'] = self.mode
+        state = {
+            'name': self.name,
+            'mode': self.mode,
+            'closed': self.closed
+        }
         try:
-            state['pos'] = self.tell()
+            state['pos'] = None if self.closed else self.tell()
         except IOError:
             # This is to handle special files like /dev/tty
             state['pos'] = None
@@ -77,8 +85,15 @@ class File(object):
     def __setstate__(self, state):
         name = state['name']
         mode = state['mode']
+        closed = state['closed']
         pos = state['pos']
-        self.file = file(name, mode)
+        try:
+            self.file = open(name, mode)
+            if closed:
+                self.file.close()
+        except IOError:
+            # If the file can't be opened anymore, should not typically happen
+            self.file = None
         if pos is not None:
             self.seek(pos)
 
@@ -89,6 +104,10 @@ class File(object):
     @property
     def mode(self):
         return self.file.mode
+
+    @property
+    def closed(self):
+        return self.file.closed
 
     def stat(self):
         return os.fstat(self.fileno())
@@ -104,8 +123,7 @@ class File(object):
         return self.file.seek(*args)
 
     def write(self, buf):
-        for c in buf:
-            self.file.write(c)
+        return self.file.write(buf)
 
     def read(self, *args):
         return self.file.read(*args)
@@ -188,7 +206,7 @@ class SymbolicFile(File):
         :param max_size: Maximum amount of bytes of the symbolic file
         :param str wildcard: Wildcard to be used in symbolic file
         '''
-        super(SymbolicFile, self).__init__(path, mode)
+        super().__init__(path, mode)
 
         # read the concrete data using the parent the read() form the File class
         data = self.file.read()
@@ -219,7 +237,7 @@ class SymbolicFile(File):
                          self.name)
 
     def __getstate__(self):
-        state = super(SymbolicFile, self).__getstate__()
+        state = super().__getstate__()
         state['array'] = self.array
         state['pos'] = self.pos
         state['max_size'] = self.max_size
@@ -229,7 +247,7 @@ class SymbolicFile(File):
         self.pos = state['pos']
         self.max_size = state['max_size']
         self.array = state['array']
-        super(SymbolicFile, self).__setstate__(state)
+        super().__setstate__(state)
 
     def tell(self):
         '''
@@ -246,7 +264,7 @@ class SymbolicFile(File):
         :rtype: int
         :return: the file offset.
         '''
-        assert isinstance(offset, (int, long))
+        assert isinstance(offset, int)
         assert whence in (os.SEEK_SET, os.SEEK_CUR, os.SEEK_END)
 
         new_position = 0
@@ -274,7 +292,7 @@ class SymbolicFile(File):
             return []
         else:
             size = min(count, self.max_size - self.pos)
-            ret = [self.array[i] for i in xrange(self.pos, self.pos + size)]
+            ret = [self.array[i] for i in range(self.pos, self.pos + size)]
             self.pos += size
             return ret
 
@@ -283,7 +301,7 @@ class SymbolicFile(File):
         Writes the symbolic bytes in C{data} onto the file.
         '''
         size = min(len(data), self.max_size - self.pos)
-        for i in xrange(self.pos, self.pos + size):
+        for i in range(self.pos, self.pos + size):
             self.array[i] = data[i - self.pos]
 
 
@@ -341,7 +359,7 @@ class Socket(object):
     def receive(self, size):
         rx_bytes = min(size, len(self.buffer))
         ret = []
-        for i in xrange(rx_bytes):
+        for i in range(rx_bytes):
             ret.append(self.buffer.pop())
         return ret
 
@@ -381,7 +399,7 @@ class Linux(Platform):
         :ivar files: List of active file descriptors
         :type files: list[Socket] or list[File]
         '''
-        super(Linux, self).__init__(path=program, **kwargs)
+        super().__init__(path=program, **kwargs)
 
         self.program = program
         self.clocks = 0
@@ -400,7 +418,7 @@ class Linux(Platform):
         }
 
         if program is not None:
-            self.elf = ELFFile(file(program))
+            self.elf = ELFFile(open(program, 'rb'))
             # FIXME (theo) self.arch is actually mode as initialized in the CPUs,
             # make things consistent and perhaps utilize a global mapping for this
             self.arch = {'x86': 'i386', 'x64': 'amd64', 'ARM': 'armv7'}[self.elf.get_machine_arch()]
@@ -491,13 +509,13 @@ class Linux(Platform):
         nprocs = len(self.procs)
         nfiles = len(self.files)
         assert nprocs > 0
-        self.running = range(nprocs)
+        self.running = list(range(nprocs))
 
         # Each process can wait for one timeout
         self.timers = [None] * nprocs
         # each fd has a waitlist
-        self.rwait = [set() for _ in xrange(nfiles)]
-        self.twait = [set() for _ in xrange(nfiles)]
+        self.rwait = [set() for _ in range(nfiles)]
+        self.twait = [set() for _ in range(nfiles)]
 
         # Install event forwarders
         for proc in self.procs:
@@ -513,18 +531,18 @@ class Linux(Platform):
         return self.procs[self._current]
 
     def __getstate__(self):
-        state = super(Linux, self).__getstate__()
+        state = super().__getstate__()
         state['clocks'] = self.clocks
         state['input'] = self.input.buffer
         state['output'] = self.output.buffer
 
         # Store the type of file descriptor and the respective contents
         state_files = []
-        for file_ in self.files:
-            if isinstance(file_, Socket):
-                state_files.append(('Socket', file_.buffer))
+        for fd in self.files:
+            if isinstance(fd, Socket):
+                state_files.append(('Socket', fd.buffer))
             else:
-                state_files.append(('File', file_))
+                state_files.append(('File', fd))
         state['files'] = state_files
         state['closed_files'] = self._closed_files
         state['rlimits'] = self._rlimits
@@ -559,7 +577,7 @@ class Linux(Platform):
         :todo: some asserts
         :todo: fix deps? (last line)
         """
-        super(Linux, self).__setstate__(state)
+        super().__setstate__(state)
 
         self.input = Socket()
         self.input.buffer = state['input']
@@ -619,10 +637,10 @@ class Linux(Platform):
         https://www.kernel.org/doc/Documentation/arm/kernel_user_helpers.txt
         '''
 
-        page_data = bytearray('\xf1\xde\xfd\xe7' * 1024)
+        page_data = bytearray(b'\xf1\xde\xfd\xe7' * 1024)
 
         # Extracted from a RPi2
-        preamble = (
+        preamble = binascii.unhexlify(
             'ff0300ea' +
             '650400ea' +
             'f0ff9fe5' +
@@ -631,13 +649,13 @@ class Linux(Platform):
             '810400ea' +
             '000400ea' +
             '870400ea'
-        ).decode('hex')
+        )
 
         # XXX(yan): The following implementations of cmpxchg and cmpxchg64 were
         # handwritten to not use any exclusive instructions (e.g. ldrexd) or
         # locking. For actual implementations, refer to
         # arch/arm64/kernel/kuser32.S in the Linux source code.
-        __kuser_cmpxchg64 = (
+        __kuser_cmpxchg64 = binascii.unhexlify(
             '30002de9' +  # push    {r4, r5}
             '08c09de5' +  # ldr     ip, [sp, #8]
             '30009ce8' +  # ldm     ip, {r4, r5}
@@ -648,32 +666,32 @@ class Linux(Platform):
             '0c008c08' +  # stmeq   ip, {r2, r3}
             '3000bde8' +  # pop     {r4, r5}
             '1eff2fe1'   # bx      lr
-        ).decode('hex')
+        )
 
-        __kuser_dmb = (
+        __kuser_dmb = binascii.unhexlify(
             '5bf07ff5' +  # dmb ish
             '1eff2fe1'   # bx lr
-        ).decode('hex')
+        )
 
-        __kuser_cmpxchg = (
+        __kuser_cmpxchg = binascii.unhexlify(
             '003092e5' +  # ldr     r3, [r2]
             '000053e1' +  # cmp     r3, r0
             '0000a003' +  # moveq   r0, #0
             '00108205' +  # streq   r1, [r2]
             '0100a013' +  # movne   r0, #1
             '1eff2fe1'   # bx      lr
-        ).decode('hex')
+        )
 
         # Map a TLS segment
         self._arm_tls_memory = self.current.memory.mmap(None, 4, 'rw ')
 
-        __kuser_get_tls = (
+        __kuser_get_tls = binascii.unhexlify(
             '04009FE5' +  # ldr r0, [pc, #4]
             '010090e8' +  # ldm r0, {r0}
             '1eff2fe1'   # bx lr
-        ).decode('hex') + struct.pack('<I', self._arm_tls_memory)
+        ) + struct.pack('<I', self._arm_tls_memory)
 
-        tls_area = '\x00' * 12
+        tls_area = b'\x00' * 12
 
         version = struct.pack('<I', 5)
 
@@ -694,7 +712,7 @@ class Linux(Platform):
     def load_vdso(self, bits):
         # load vdso #TODO or #IGNORE
         vdso_top = {32: 0x7fff0000, 64: 0x7fff00007fff0000}[bits]
-        vdso_size = len(file('vdso%2d.dump' % bits).read())
+        vdso_size = len(open('vdso%2d.dump' % bits).read())
         vdso_addr = self.memory.mmapFile(self.memory._floor(vdso_top - vdso_size),
                                          vdso_size,
                                          'r x',
@@ -1141,14 +1159,10 @@ class Linux(Platform):
         else:
             return self.files[fd]
 
-    def _transform_write_data(self, data):
+    def _transform_write_data(self, data: T) -> T:
         '''
         Implement in subclass to transform data written by write(2)/writev(2)
-
         Nop by default.
-        :param list data: Anything being written to a file descriptor
-        :rtype list
-        :return: Transformed data
         '''
         return data
 
@@ -1236,7 +1250,7 @@ class Linux(Platform):
         return 0
 
     def sys_read(self, fd, buf, count):
-        data = ''
+        data: bytes = bytes()
         if count != 0:
             # TODO check count bytes from buf
             if buf not in self.current.memory:  # or not  self.current.memory.isValid(buf+count):
@@ -1268,7 +1282,7 @@ class Linux(Platform):
                     EBADF      fd is not a valid file descriptor or is not open.
                     EFAULT     buf or tx_bytes points to an invalid address.
         '''
-        data = []
+        data: bytes = bytes()
         cpu = self.current
         if count != 0:
             try:
@@ -1287,16 +1301,16 @@ class Linux(Platform):
                 self.wait([], [fd], None)
                 raise RestartSyscall()
 
-            data = cpu.read_bytes(buf, count)
-            data = self._transform_write_data(data)
+            data: MixedSymbolicBuffer = cpu.read_bytes(buf, count)
+            data: bytes = self._transform_write_data(data)
             write_fd.write(data)
 
-            for line in ''.join([str(x) for x in data]).split('\n'):
+            for line in data.split(b'\n'):
                 logger.debug("WRITE(%d, 0x%08x, %d) -> <%.48r>",
                              fd,
                              buf,
                              count,
-                             line)
+                             line.decode('latin-1'))  # latin-1 encoding will happily decode any byte (0x00-0xff)
             self.syscall_trace.append(("_write", fd, data))
             self.signal_transmit(fd)
 
@@ -1319,10 +1333,10 @@ class Linux(Platform):
             -  C{0} if the calling process can access the file in the desired mode.
             - C{-1} if the calling process can not access the file in the desired mode.
         '''
-        filename = ""
-        for i in xrange(0, 255):
+        filename = b''
+        for i in range(0, 255):
             c = Operators.CHR(self.current.read_int(buf + i, 8))
-            if c == '\x00':
+            if c == b'\x00':
                 break
             filename += c
 
@@ -1445,7 +1459,7 @@ class Linux(Platform):
         '''
 
         filename = self.current.read_string(buf)
-        dirfd = self._to_signed_dword(dirfd)
+        dirfd = ctypes.c_int32(dirfd).value
 
         if os.path.isabs(filename) or dirfd == self.FCNTL_FDCWD:
             return self.sys_open(buf, flags, mode)
@@ -1793,7 +1807,7 @@ class Linux(Platform):
         ptrsize = cpu.address_bit_size
         sizeof_iovec = 2 * (ptrsize // 8)
         total = 0
-        for i in xrange(0, count):
+        for i in range(0, count):
             buf = cpu.read_int(iov + i * sizeof_iovec, ptrsize)
             size = cpu.read_int(iov + i * sizeof_iovec + (sizeof_iovec // 2),
                                 ptrsize)
@@ -1824,13 +1838,11 @@ class Linux(Platform):
             logger.error("writev: Not a valid file descriptor ({})".format(fd))
             return -e.err
 
-        for i in xrange(0, count):
+        for i in range(0, count):
             buf = cpu.read_int(iov + i * sizeof_iovec, ptrsize)
             size = cpu.read_int(iov + i * sizeof_iovec + (sizeof_iovec // 2), ptrsize)
 
-            data = ""
-            for j in xrange(0, size):
-                data += Operators.CHR(cpu.read_int(buf + j, 8))
+            data = [Operators.CHR(cpu.read_int(buf + i, 8)) for i in range(size)]
             data = self._transform_write_data(data)
             write_fd.write(data)
             self.syscall_trace.append(("_write", fd, data))
@@ -1853,7 +1865,7 @@ class Linux(Platform):
         assert flags == 0x51  # TODO: fix
         self.current.GS = 0x63
         self.current.set_descriptor(self.current.GS, pointer, 0x4000, 'rw')
-        self.current.write_int(user_info, (0x63 - 3) / 8, 32)
+        self.current.write_int(user_info, (0x63 - 3) // 8, 32)
         return 0
 
     def sys_getpriority(self, which, who):
@@ -2099,7 +2111,7 @@ class Linux(Platform):
             logger.debug("None running checking if there is some process waiting for a timeout")
             if all([x is None for x in self.timers]):
                 raise Deadlock()
-            self.clocks = min(filter(lambda x: x is not None, self.timers)) + 1
+            self.clocks = min(x for x in self.timers if x is not None) + 1
             self.check_timers()
             assert len(self.running) != 0, "DEADLOCK!"
             self._current = self.running[0]
@@ -2195,7 +2207,7 @@ class Linux(Platform):
         ''' Awake process if timer has expired '''
         if self._current is None:
             # Advance the clocks. Go to future!!
-            advance = min([self.clocks] + filter(lambda x: x is not None, self.timers)) + 1
+            advance = min([self.clocks] + [x for x in self.timers if x is not None]) + 1
             logger.debug("Advancing the clock from %d to %d", self.clocks, advance)
             self.clocks = advance
         for procid in range(len(self.timers)):
@@ -2255,7 +2267,7 @@ class Linux(Platform):
 
         # From linux/arch/x86/include/uapi/asm/stat.h
         # Numerous fields are native width-wide
-        nw = self.current.address_bit_size / 8
+        nw = self.current.address_bit_size // 8
 
         bufstat = add(nw, stat.st_dev)     # long st_dev
         bufstat += add(nw, stat.st_ino)     # long st_ino
@@ -2403,11 +2415,8 @@ class Linux(Platform):
         # Establish segment registers for x86 architectures
         if self.arch in {'i386', 'amd64'}:
             x86_defaults = {'CS': 0x23, 'SS': 0x2b, 'DS': 0x2b, 'ES': 0x2b}
-            for reg, val in x86_defaults.iteritems():
+            for reg, val in x86_defaults.items():
                 self.current.regfile.write(reg, val)
-
-        if is_binja_disassembler(self.disasm):
-            cpu = self.current.initialize_disassembler(self.program)
 
     @staticmethod
     def _interp_total_size(interp):
@@ -2418,7 +2427,7 @@ class Linux(Platform):
         :return: total load size of interpreter, not aligned
         :rtype: int
         '''
-        load_segs = filter(lambda x: x.header.p_type == 'PT_LOAD', interp.iter_segments())
+        load_segs = [x for x in interp.iter_segments() if x.header.p_type == 'PT_LOAD']
         last = load_segs[-1]
         return last.header.p_vaddr + last.header.p_memsz
 
@@ -2446,20 +2455,13 @@ class SLinux(Linux):
         self._constraints = ConstraintSet()
         self.random = 0
         self.symbolic_files = symbolic_files
-        super(SLinux, self).__init__(programs,
-                                     argv=argv,
-                                     envp=envp,
-                                     disasm=disasm)
+        super().__init__(programs, argv=argv, envp=envp, disasm=disasm)
 
     def _mk_proc(self, arch):
         if arch in {'i386', 'armv7'}:
             mem = SMemory32(self.constraints)
         else:
             mem = SMemory64(self.constraints)
-
-        if is_binja_disassembler(self.disasm):
-            from ..core.cpu.binja import BinjaCpu
-            return BinjaCpu(mem)
 
         cpu = CpuFactory.get_cpu(mem, arch)
         return cpu
@@ -2486,7 +2488,7 @@ class SLinux(Linux):
 
     # marshaling/pickle
     def __getstate__(self):
-        state = super(SLinux, self).__getstate__()
+        state = super().__getstate__()
         state['constraints'] = self.constraints
         state['random'] = self.random
         state['symbolic_files'] = self.symbolic_files
@@ -2496,30 +2498,30 @@ class SLinux(Linux):
         self._constraints = state['constraints']
         self.random = state['random']
         self.symbolic_files = state['symbolic_files']
-        super(SLinux, self).__setstate__(state)
+        super().__setstate__(state)
 
     def _sys_open_get_file(self, filename, flags):
         if filename in self.symbolic_files:
             logger.debug("%s file is considered symbolic", filename)
             f = SymbolicFile(self.constraints, filename, flags)
         else:
-            f = super(SLinux, self)._sys_open_get_file(filename, flags)
+            f = super()._sys_open_get_file(filename, flags)
 
         return f
 
-    def _transform_write_data(self, data):
-        bytes_concretized = 0
-        concrete_data = []
+    def _transform_write_data(self, data: MixedSymbolicBuffer) -> bytes:
+        bytes_concretized: int = 0
+        concrete_data: bytes = bytes()
         for c in data:
             if issymbolic(c):
                 bytes_concretized += 1
-                c = chr(solver.get_value(self.constraints, c))
-            concrete_data.append(c)
+                c = bytes([solver.get_value(self.constraints, c)])
+            concrete_data += cast(bytes, c)
 
         if bytes_concretized > 0:
             logger.debug("Concretized {} written bytes.".format(bytes_concretized))
 
-        return super(SLinux, self)._transform_write_data(concrete_data)
+        return super()._transform_write_data(concrete_data)
 
     # Dispatchers...
 
@@ -2528,7 +2530,7 @@ class SLinux(Linux):
             error_code = solver.get_value(self.constraints, error_code)
             return self._exit("Program finished with exit status: {} (*)".format(ctypes.c_int32(error_code).value))
         else:
-            return super(SLinux, self).sys_exit_group(error_code)
+            return super().sys_exit_group(error_code)
 
     def sys_read(self, fd, buf, count):
         if issymbolic(fd):
@@ -2543,7 +2545,7 @@ class SLinux(Linux):
             logger.debug("Ask to read a symbolic number of bytes ")
             raise ConcretizeArgument(self, 2)
 
-        return super(SLinux, self).sys_read(fd, buf, count)
+        return super().sys_read(fd, buf, count)
 
     def sys_write(self, fd, buf, count):
         if issymbolic(fd):
@@ -2558,7 +2560,7 @@ class SLinux(Linux):
             logger.debug("Ask to write a symbolic number of bytes ")
             raise ConcretizeArgument(self, 2)
 
-        return super(SLinux, self).sys_write(fd, buf, count)
+        return super().sys_write(fd, buf, count)
 
     def sys_recv(self, sockfd, buf, count, flags):
         if issymbolic(sockfd):
@@ -2577,13 +2579,13 @@ class SLinux(Linux):
             logger.debug("Submitted a symbolic flags")
             raise ConcretizeArgument(self, 3)
 
-        return super(SLinux, self).sys_recv(sockfd, buf, count, flags)
+        return super().sys_recv(sockfd, buf, count, flags)
 
     def sys_accept(self, sockfd, addr, addrlen, flags):
         # TODO(yan): Transmit some symbolic bytes as soon as we start.
         # Remove this hack once no longer needed.
 
-        fd = super(SLinux, self).sys_accept(sockfd, addr, addrlen, flags)
+        fd = super().sys_accept(sockfd, addr, addrlen, flags)
         if fd < 0:
             return fd
         sock = self._get_fd(fd)
@@ -2613,7 +2615,7 @@ class SLinux(Linux):
             self.symbolic_files.append(path)
             buf = self.current.memory.mmap(None, 1024, 'rw ', data_init=path)
 
-        rv = super(SLinux, self).sys_open(buf, flags, mode)
+        rv = super().sys_open(buf, flags, mode)
 
         if symbolic_path:
             self.current.memory.munmap(buf, 1024)
@@ -2641,7 +2643,7 @@ class SLinux(Linux):
             logger.debug("Ask to read to a symbolic buffer")
             raise ConcretizeArgument(self, 1)
 
-        return super(SLinux, self).sys_openat(dirfd, buf, flags, mode)
+        return super().sys_openat(dirfd, buf, flags, mode)
 
     def sys_getrandom(self, buf, size, flags):
         '''
@@ -2666,24 +2668,30 @@ class SLinux(Linux):
             logger.debug("sys_getrandom: Passed symbolic flags")
             raise ConcretizeArgument(self, 2)
 
-        return super(SLinux, self).sys_getrandom(buf, size, flags)
+        return super().sys_getrandom(buf, size, flags)
 
     def generate_workspace_files(self):
         def solve_to_fd(data, fd):
+            def make_chr(c):
+                if isinstance(c, int):
+                    return bytes([c])
+                elif isinstance(c, str):
+                    return c.encode()
+                return c
             try:
                 for c in data:
                     if issymbolic(c):
-                        c = chr(solver.get_value(self.constraints, c))
-                    fd.write(c)
+                        c = solver.get_value(self.constraints, c)
+                    fd.write(make_chr(c))
             except SolverException:
                 fd.write('{SolverException}')
 
-        out = StringIO.StringIO()
-        inn = StringIO.StringIO()
-        err = StringIO.StringIO()
-        net = StringIO.StringIO()
-        argIO = StringIO.StringIO()
-        envIO = StringIO.StringIO()
+        out = io.BytesIO()
+        inn = io.BytesIO()
+        err = io.BytesIO()
+        net = io.BytesIO()
+        argIO = io.BytesIO()
+        envIO = io.BytesIO()
 
         for name, fd, data in self.syscall_trace:
             if name in ('_transmit', '_write'):
@@ -2698,11 +2706,11 @@ class SLinux(Linux):
 
         for a in self.argv:
             solve_to_fd(a, argIO)
-            argIO.write("\n")
+            argIO.write(b"\n")
 
         for e in self.envp:
             solve_to_fd(e, envIO)
-            envIO.write("\n")
+            envIO.write(b"\n")
 
         ret = {
             'syscalls': repr(self.syscall_trace),
@@ -2717,7 +2725,7 @@ class SLinux(Linux):
         for f in self.files + self._closed_files:
             if not isinstance(f, SymbolicFile):
                 continue
-            fdata = StringIO.StringIO()
+            fdata = io.BytesIO()
             solve_to_fd(f.array, fdata)
             ret[f.name] = fdata.getvalue()
 
