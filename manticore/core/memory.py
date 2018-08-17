@@ -1234,9 +1234,8 @@ class LazySMemory(SMemory):
 
     def valid_ptr(self, address, size):
         """
-
-        :param address:
-        :return:
+        Generate a constraint expression to constrain the memory access described by `address` and `size` into valid
+        maps.
         """
         assert issymbolic(address)
 
