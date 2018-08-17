@@ -7,7 +7,7 @@ from ..core.memory import SMemory32, Memory32
 from ..core.smtlib import *
 from ..core.executor import TerminateState
 from ..utils.helpers import issymbolic
-from ..binary import CGCElf
+from manticore.binary import CGCElf
 from ..platforms.platform import Platform
 import logging
 import random
