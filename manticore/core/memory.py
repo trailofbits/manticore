@@ -1181,7 +1181,7 @@ class LazySMemory(SMemory):
             # address >= map.start,
             # address + size < map.end)
             Operators.UGE(address, map.start),
-            Operators.ULT(address, map.end))
+            Operators.ULT(address+size-1, map.end))
 
     def _deref_can_succeed(self, map, address, size):
         deref_possible = self._map_deref_expr(map, address, size)
@@ -1232,10 +1232,15 @@ class LazySMemory(SMemory):
                     found = m
             return found
 
-    def valid_ptr(self, address):
+    def valid_ptr(self, address, size):
+        """
+
+        :param address:
+        :return:
+        """
         assert issymbolic(address)
 
-        expressions = [self._map_deref_expr(m, address, 1) for m in self._maps]
+        expressions = [self._map_deref_expr(m, address, size) for m in self._maps]
         valid = functools.reduce(Operators.OR, expressions)
 
         return valid
