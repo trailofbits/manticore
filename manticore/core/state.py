@@ -181,6 +181,7 @@ class State(Eventful):
 
         :param manticore.core.smtlib.Bool constraint: Constraint to add
         '''
+        constraint = self.migrate_expression(constraint)
         self._constraints.add(constraint)
 
     def abandon(self):
@@ -204,9 +205,13 @@ class State(Eventful):
 
         :return: :class:`~manticore.core.smtlib.expression.Expression` representing the buffer.
         '''
-        label = options.get('label', 'buffer')
+        label = options.get('label')
+        avoid_collisions = False
+        if label is None:
+            label = 'buffer'
+            avoid_collisions = True
         taint = options.get('taint', frozenset())
-        expr = self._constraints.new_array(name=label, index_max=nbytes, value_bits=8, taint=taint)
+        expr = self._constraints.new_array(name=label, index_max=nbytes, value_bits=8, taint=taint, avoid_collisions=avoid_collisions)
         self._input_symbols.append(expr)
 
         if options.get('cstring', False):
@@ -215,7 +220,7 @@ class State(Eventful):
 
         return expr
 
-    def new_symbolic_value(self, nbits, label='val', taint=frozenset()):
+    def new_symbolic_value(self, nbits, label=None, taint=frozenset()):
         '''Create and return a symbolic value that is `nbits` bits wide. Assign
         the value to a register or write it into the address space to introduce
         it into the program state.
@@ -227,46 +232,14 @@ class State(Eventful):
         :return: :class:`~manticore.core.smtlib.expression.Expression` representing the value
         '''
         assert nbits in (1, 4, 8, 16, 32, 64, 128, 256)
-        expr = self._constraints.new_bitvec(nbits, name=label, taint=taint)
+        avoid_collisions = False
+        if label is None:
+            label = 'val'
+            avoid_collisions = True
+
+        expr = self._constraints.new_bitvec(nbits, name=label, taint=taint, avoid_collisions=avoid_collisions)
         self._input_symbols.append(expr)
         return expr
-
-    def symbolicate_buffer(self, data, label='INPUT', wildcard='+', string=False, taint=frozenset()):
-        '''Mark parts of a buffer as symbolic (demarked by the wildcard byte)
-
-        :param str data: The string to symbolicate. If no wildcard bytes are provided,
-                this is the identity function on the first argument.
-        :param str label: The label to assign to the value
-        :param str wildcard: The byte that is considered a wildcard
-        :param bool string: Ensure bytes returned can not be NULL
-        :param taint: Taint identifier of the symbolicated data
-        :type taint: tuple or frozenset
-
-        :return: If data does not contain any wildcard bytes, data itself. Otherwise,
-            a list of values derived from data. Non-wildcard bytes are kept as
-            is, wildcard bytes are replaced by Expression objects.
-        '''
-        if wildcard in data:
-            size = len(data)
-            symb = self._constraints.new_array(name=label, index_max=size, taint=taint)
-            self._input_symbols.append(symb)
-
-            tmp = []
-            for i in range(size):
-                if data[i] == wildcard:
-                    tmp.append(symb[i])
-                else:
-                    tmp.append(data[i])
-
-            data = tmp
-
-        if string:
-            for b in data:
-                if issymbolic(b):
-                    self._constraints.add(b != 0)
-                else:
-                    assert b != 0
-        return data
 
     def concretize(self, symbolic, policy, maxcount=5):
         ''' This finds a set of solutions for symbolic using policy.
@@ -299,10 +272,25 @@ class State(Eventful):
         from .smtlib import solver
         return solver
 
+    def migrate_expression(self, expression):
+        if not issymbolic(expression):
+            return expression
+        migration_map = self.context.get('migration_map')
+        if migration_map is None:
+            migration_map = {}
+        migrated_expression = self.constraints.migrate(expression, name_migration_map=migration_map)
+        self.context['migration_map'] = migration_map
+        return migrated_expression
+
+    def is_feasible(self):
+        return self.can_be_true(True)
+
     def can_be_true(self, expr):
+        expr = self.migrate_expression(expr)
         return self._solver.can_be_true(self._constraints, expr)
 
     def must_be_true(self, expr):
+        expr = self.migrate_expression(expr)
         return not self._solver.can_be_true(self._constraints, expr == False)
 
     def solve_one(self, expr):
@@ -314,6 +302,7 @@ class State(Eventful):
         :return: Concrete value
         :rtype: int
         '''
+        expr = self.migrate_expression(expr)
         value = self._solver.get_value(self._constraints, expr)
         #Include forgiveness here
         if isinstance(value, tuple):
@@ -336,6 +325,7 @@ class State(Eventful):
         :return: Concrete value
         :rtype: list[int]
         '''
+        expr = self.migrate_expression(expr)
         return self._solver.get_all_values(self._constraints, expr, nsolves, silent=True)
 
     def solve_max(self, expr):
@@ -349,6 +339,7 @@ class State(Eventful):
         '''
         if isinstance(expr, int):
             return expr
+        expr = self.migrate_expression(expr)
         return self._solver.max(self._constraints, expr)
 
     def solve_min(self, expr):
@@ -362,8 +353,11 @@ class State(Eventful):
         '''
         if isinstance(expr, int):
             return expr
+        expr = self.migrate_expression(expr)
         return self._solver.min(self._constraints, expr)
 
+    ################################################################################################
+    # The following should be moved to specific class StatePosix?
     def solve_buffer(self, addr, nbytes):
         '''
         Reads `nbytes` of symbolic data from a buffer in memory at `addr` and attempts to
@@ -396,8 +390,43 @@ class State(Eventful):
         '''
         self._platform.invoke_model(model, prefix_args=(self,))
 
-    ################################################################################################
-    # The following should be moved to specific class StatePosix?
+    def symbolicate_buffer(self, data, label='INPUT', wildcard='+', string=False, taint=frozenset()):
+        '''Mark parts of a buffer as symbolic (demarked by the wildcard byte)
+
+        :param str data: The string to symbolicate. If no wildcard bytes are provided,
+                this is the identity function on the first argument.
+        :param str label: The label to assign to the value
+        :param str wildcard: The byte that is considered a wildcard
+        :param bool string: Ensure bytes returned can not be NULL
+        :param taint: Taint identifier of the symbolicated data
+        :type taint: tuple or frozenset
+
+        :return: If data does not contain any wildcard bytes, data itself. Otherwise,
+            a list of values derived from data. Non-wildcard bytes are kept as
+            is, wildcard bytes are replaced by Expression objects.
+        '''
+        if wildcard in data:
+            size = len(data)
+            symb = self._constraints.new_array(name=label, index_max=size, taint=taint, avoid_collisions=True)
+            self._input_symbols.append(symb)
+
+            tmp = []
+            for i in range(size):
+                if data[i] == wildcard:
+                    tmp.append(symb[i])
+                else:
+                    tmp.append(data[i])
+
+            data = tmp
+
+        if string:
+            for b in data:
+                if issymbolic(b):
+                    self._constraints.add(b != 0)
+                else:
+                    assert b != 0
+        return data
+
     @property
     def cpu(self):
         return self._platform.current
