@@ -1,4 +1,4 @@
-
+import itertools
 from .expression import BitVecVariable, BoolVariable, ArrayVariable, Array, Bool, BitVec, BoolConstant, ArrayProxy, BoolEq, Variable, Constant
 from .visitors import GetDeclarations, TranslatorSmtlib, get_variables, simplify, replace, translate_to_smtlib
 import logging
@@ -172,18 +172,13 @@ class ConstraintSet(object):
         ''' Returns the variable expressions of this constraint set '''
         return self._declarations.values()
 
-    def get_declared_names(self):
-        ''' Returns the names of the declared variables in of this constaraint set '''
-        return self._declarations.keys()
-
     def get_variable(self, name):
         ''' Returns the variable declared under name or None if it does not exists '''
-        if name not in self._declarations:
-            return None
-        return self._declarations[name]
+        return self._declarations.get(name)
 
     @property
     def declarations(self):
+        ''' Returns the variable expressions of this constraint set '''
         declarations = GetDeclarations()
         for a in self.constraints:
             try:
@@ -216,9 +211,18 @@ class ConstraintSet(object):
 
     def _make_unique_name(self, name='VAR'):
         ''' Makes an uniq variable name'''
-        if name in self._declarations:
+        # the while loop is necessary because appending the result of _get_sid()
+        # is not guaranteed to make a unique name on the first try; a colliding
+        # name could have been added previously
+        while name in self._declarations:
             name = '%s_%d' % (name, self._get_sid())
         return name
+
+    def is_declared(self, expression_var):
+        ''' True if expression_var is declared in this constraint set '''
+        if not isinstance(expression_var, Variable):
+            raise ValueError("Expression must be a Variable")
+        return any(expression_var is x for x in self.get_declared_variables())
 
     def migrate(self, expression, name_migration_map=None):
         ''' Migrate an expression created for a different constraint set to self.
@@ -230,36 +234,9 @@ class ConstraintSet(object):
 
             The migration mapping is updated with new replacements.
 
-            ```
-            from manticore.core.smtlib import *
-
-            cs1 = ConstraintSet()
-            cs2 = ConstraintSet()
-            var1 = cs1.new_bitvec(32, 'var')
-            var2 = cs2.new_bitvec(32, 'var')
-            cs1.add(Operators.ULT(var1, 3)) # var1 can be 0, 1, 2
-
-            # make a migration map dict
-            name_migration_map1 = {}
-
-            # this expression is composed with variables of both cs
-            expression = var1 > var2
-            migrated_expression = cs1.migrate(expression, name_migration_map1)
-            cs1.add(migrated_expression)
-
-
-            expression = var2 > 0
-            migrated_expression = cs1.migrate(expression, name_migration_map1)
-            cs1.add(migrated_expression)
-
-            print (cs1)
-            print (solver.check(cs1))
-            print (solver.get_all_values(cs1, var1)) # should only be [2]
-            ```
-
             :param expression: the potentially foreign expression
-            :param name_migration_map: a name to name mapping of already migrated variables
-            :return: a migrated expresion where all the variables are fresh BoolVariable
+            :param name_migration_map: mapping of already migrated variables. maps from string name of foreign variable to its currently existing migrated string name. this is updated during this migration.
+            :return: a migrated expresion where all the variables are local. name_migration_map is updated
 
         '''
         if name_migration_map is None:
@@ -268,44 +245,40 @@ class ConstraintSet(object):
         #  name_migration_map -> object_migration_map
         #  Based on the name mapping in name_migration_map build an object to
         #  object mapping to be used in the replacing of variables
+        #  inv: object_migration_map's keys should ALWAYS be external/foreign
+        #  expressions, and its values should ALWAYS be internal/local expressions
         object_migration_map = {}
-        declared_names = self.get_declared_names()
-        expression_variables = dict([(x.name, x) for x in get_variables(expression)])
-        for expression_name, expression_var in expression_variables.items():
-            migrated_name = name_migration_map.get(expression_name)
-            native_var = self.get_variable(migrated_name)
-            if native_var is not None:
-                object_migration_map[expression_var] = native_var
 
-        # Make a new migrated variable for each unkonw variable in the expression
-        for var in expression_variables.values():
-
-            # do nothing if it is a known/declared variable
-            if any(x is var for x in self.get_declared_variables()):
-                continue
-
-            # do nothing if there is already a migrated variable for it
-            #if any(x is var for x in object_migration_map.values()):
-            if var in object_migration_map:
-                continue
-
-            # var needs migration use old_name_migrated if name already used
-            name = var.name
-            while name in self._declarations:
-                name = self._make_unique_name(var.name + '_migrated')
-            # Create and declare a new variable of given type
-            if isinstance(var, Bool):
-                new_var = self.new_bool(name=name)
-            elif isinstance(var, BitVec):
-                new_var = self.new_bitvec(var.size, name=name)
-            elif isinstance(var, Array):
-                new_var = self.new_array(index_max=var.index_max, index_bits=var.index_bits, value_bits=var.value_bits, name=name).array
+        #List of foreign vars used in expression
+        foreign_vars = itertools.filterfalse(self.is_declared, get_variables(expression))
+        for foreign_var in foreign_vars:
+            # If a variable with the same name was previously migrated
+            if foreign_var.name in name_migration_map:
+                migrated_name = name_migration_map[foreign_var.name]
+                native_var = self.get_variable(migrated_name)
+                assert native_var is not None, "name_migration_map contains a variable that does not exist in this ConstraintSet"
+                object_migration_map[foreign_var] = native_var
             else:
-                raise NotImplemented("Unknown expression type {} encountered during expression migration".format(type(var)))
-            # Update the var to var mapping
-            object_migration_map[var] = new_var
-            # Update the name to name mapping
-            name_migration_map[var.name] = new_var.name
+                # foreign_var was not found in the local declared variables nor
+                # any variable with the same name was previously migrated
+                # lets make a new uniq internal name for it
+                migrated_name = foreign_var.name
+                if migrated_name in self._declarations:
+                    migrated_name = self._make_unique_name(foreign_var.name + '_migrated')
+                # Create and declare a new variable of given type
+                if isinstance(foreign_var, Bool):
+                    new_var = self.new_bool(name=migrated_name)
+                elif isinstance(foreign_var, BitVec):
+                    new_var = self.new_bitvec(foreign_var.size, name=migrated_name)
+                elif isinstance(foreign_var, Array):
+                    # Note that we are discarding the ArrayProxy encapsulation
+                    new_var = self.new_array(index_max=foreign_var.index_max, index_bits=foreign_var.index_bits, value_bits=foreign_var.value_bits, name=migrated_name).array
+                else:
+                    raise NotImplemented("Unknown expression type {} encountered during expression migration".format(type(var)))
+                # Update the var to var mapping
+                object_migration_map[foreign_var] = new_var
+                # Update the name to name mapping
+                name_migration_map[foreign_var.name] = new_var.name
 
         #  Actually replace each appearence of migrated variables by the new ones
         migrated_expression = replace(expression, object_migration_map)

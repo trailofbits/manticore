@@ -27,6 +27,7 @@ class ModelTest(unittest.TestCase):
     stack_top = state.cpu.RSP
 
     def _clear_constraints(self):
+        self.state.context['migration_map']=None
         self.state._constraints = ConstraintSet()
 
     def tearDown(self):
