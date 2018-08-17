@@ -521,62 +521,6 @@ class DetectUnusedRetVal(Detector):
                 self._remove_retval_taint(state, used_taint)
 
 
-class DetectUnusedRetVal(Detector):
-    '''
-        Detects unused return value from internal transactions
-    '''
-
-    @property
-    def _stack_name(self):
-        return '{:s}.stack'.format(self.name)
-
-    def _add_retval_taint(self, state, taint):
-        list_of_taints = state.context[self._stack_name][-1]
-        list_of_taints.add(taint)
-        state.context[self._stack_name][-1] = list_of_taints
-
-    def _remove_retval_taint(self, state, taint):
-        list_of_taints = state.context[self._stack_name][-1]
-        if taint in list_of_taints:
-            list_of_taints.remove(taint)
-            state.context[self._stack_name][-1] = list_of_taints
-
-    def _get_retval_taints(self, state):
-        return state.context[self._stack_name][-1]
-
-    def will_open_transaction_callback(self, state, tx):
-        # Reset reading log on new human transactions
-        if tx.is_human():
-            state.context[self._stack_name] = []
-        state.context[self._stack_name].append(set())
-
-    def did_close_transaction_callback(self, state, tx):
-        world = state.platform
-        # Check that all retvals where used in control flow
-        for taint in self._get_retval_taints(state):
-            id_val = taint[7:]
-            address, pc, finding, at_init, condition = self._get_location(state, id_val)
-            if state.can_be_true(condition):
-                self.add_finding(state, address, pc, finding, at_init)
-
-        state.context[self._stack_name].pop()
-
-    def did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
-        world = state.platform
-        current_vm = world.current_vm
-        mnemonic = instruction.semantics
-        if instruction.is_starttx:
-            # A transactional instruction just returned add a taint to result
-            # and add that taint to the set
-            id_val = self._save_current_location(state, "Returned value at {:s} instruction is not used".format(mnemonic))
-            taint = "RETVAL_{:s}".format(id_val)
-            current_vm.change_last_result(taint_with(result, taint))
-            self._add_retval_taint(state, taint)
-        elif mnemonic == 'JUMPI':
-            dest, cond = arguments
-            for used_taint in get_taints(cond, "RETVAL_.*"):
-                self._remove_retval_taint(state, used_taint)
-
 
 class DetectUninitializedMemory(Detector):
     '''
