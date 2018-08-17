@@ -23,7 +23,7 @@ import re
 import shlex
 import time
 from .visitors import *
-from ...utils.helpers import issymbolic, istainted, taint_with, get_taints, memoized
+from ...utils.helpers import issymbolic, istainted, taint_with, get_taints
 import io
 import collections
 

@@ -21,11 +21,6 @@ import shutil
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# FIXME(tim), increase the stack size and recursion limit to avoid using iterpickle (too lazy to fix it)
-maxlim = 0x100000
-resource.setrlimit(resource.RLIMIT_STACK, [0x100 * maxlim, resource.RLIM_INFINITY])
-sys.setrecursionlimit(0x100000)
-
 # FIXME(mark): Remove these two lines when logging works for ManticoreEVM
 from manticore.utils.log import init_logging
 

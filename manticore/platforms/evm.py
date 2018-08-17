@@ -4,7 +4,7 @@ import random
 import copy
 import inspect
 from functools import wraps
-from ..utils.helpers import issymbolic, memoized, get_taints, taint_with, istainted
+from ..utils.helpers import issymbolic, get_taints, taint_with, istainted
 from ..platforms.platform import *
 from ..core.smtlib import solver, BitVec, Array, Operators, Constant, ArrayVariable, BitVecConstant, translate_to_smtlib
 from ..core.state import Concretize, TerminateState
