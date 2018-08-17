@@ -44,6 +44,7 @@ class LazyMemoryTest(unittest.TestCase):
         mem.mmap(0, 4096, 'rwx', name='map')
 
         addr = cs.new_bitvec(32)
+        size = 1
 
         # constrain on a boundary
         cs.add(addr >= 0xffc)
@@ -51,7 +52,7 @@ class LazyMemoryTest(unittest.TestCase):
 
         # Ensure that all valid derefs are within mapped memory
         with cs as new_cs:
-            new_cs.add(mem.valid_ptr(addr))
+            new_cs.add(mem.valid_ptr(addr, size))
             vals = solver.get_all_values(new_cs, addr)
             self.assertGreater(len(vals), 0)
             for v in vals:
@@ -60,7 +61,7 @@ class LazyMemoryTest(unittest.TestCase):
 
         # Ensure that all invalid derefs are outside of mapped memory
         with cs as new_cs:
-            new_cs.add(mem.invalid_ptr(addr))
+            new_cs.add(mem.invalid_ptr(addr, size))
             vals = solver.get_all_values(new_cs, addr)
             self.assertGreater(len(vals), 0)
             for v in vals:
