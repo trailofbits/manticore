@@ -1415,8 +1415,8 @@ class EVM(Eventful):
         if issymbolic(pc):
             result.append('<Symbolic PC> {:s} {}'.format((translate_to_smtlib(pc), pc.taint)))
         else:
-            result.append('0x%04x: {:s} {:s} {:s}\n'.format((pc, self.instruction.name, self.instruction.has_operand and '0x{:x}'.format(
-                                                  self.instruction.operand) or '', self.instruction.description)))
+            operands_str = self.instruction.has_operand and '0x{:x}'.format(self.instruction.operand) or ''
+            result.append('0x%04x: {:s} {:s} {:s}\n'.format((pc, self.instruction.name, operands_str, self.instruction.description)))
 
         args = {}
         implementation = getattr(self, self.instruction.semantics, None)
