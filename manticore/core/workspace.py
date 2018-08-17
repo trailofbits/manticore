@@ -1,9 +1,7 @@
 import os
-import resource
 import sys
 import glob
 import signal
-import pickle
 import logging
 import tempfile
 import io
@@ -11,8 +9,8 @@ import io
 from contextlib import contextmanager
 from multiprocessing.managers import SyncManager
 
+from manticore.utils.helpers import PickleSerializer
 from .smtlib import solver
-from .smtlib.solver import SolverException
 from .state import State
 
 logger = logging.getLogger(__name__)
@@ -26,41 +24,6 @@ def manager():
         _manager = SyncManager()
         _manager.start(lambda: signal.signal(signal.SIGINT, signal.SIG_IGN))
     return _manager
-
-
-class StateSerializer(object):
-    """
-    StateSerializer can serialize and deserialize :class:`~manticore.core.state.State` objects from and to
-    stream-like objects.
-    """
-
-    def __init__(self):
-        pass
-
-    def serialize(self, state, f):
-        raise NotImplementedError
-
-    def deserialize(self, f):
-        raise NotImplementedError
-
-
-class PickleSerializer(StateSerializer):
-    def serialize(self, state, f):
-        # TODO: port iterpickle to Python3 or alternatively switch to a more sensible usage of the following code
-        # currently this is just a hack and will increase memory usage drastically
-        maxlim = 0x100000
-        resource.setrlimit(resource.RLIMIT_STACK, [0x100 * maxlim, resource.RLIM_INFINITY])
-        sys.setrecursionlimit(0x100000)
-        try:
-            f.write(pickle.dumps(state, 2))
-        except RuntimeError:
-            # recursion exceeded. try a slower, iterative solution
-            from ..utils import iterpickle
-            logger.debug("Using iterpickle to dump state")
-            f.write(iterpickle.dumps(state, 2))
-
-    def deserialize(self, f):
-        return pickle.load(f)
 
 
 class Store(object):
