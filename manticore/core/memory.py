@@ -289,7 +289,8 @@ class AnonMap(Map):
         if isinstance(index, slice):
             # return [bytes([i]) for i in self._data[index]]
             return [Operators.CHR(i) for i in self._data[index]]
-        return bytes([self._data[index]])
+        return Operators.CHR(self._data[index])
+        # return bytes([self._data[index]])
 
 
 class ArrayMap(Map):
@@ -1389,11 +1390,8 @@ class LazySMemory(SMemory):
         raw = struct.pack('<Q', data_to_find)
 
         for map in self.maps:
-            start = map.start
-            end = map.end
-
-            curr_ptr = start
-            while curr_ptr < end:
+            curr_ptr = map.start
+            while curr_ptr < map.end:
                 curr_byte = map[curr_ptr]
 
                 # TODO: for the moment we just treat symbolic bytes as bytes that don't match. for our simple test
@@ -1405,7 +1403,8 @@ class LazySMemory(SMemory):
                         if curr_ptr + offset >= map.end:  # FIXME: slid off the end of the map in the middle of checking. can't support scanning across map boundaries
                             break
 
-                        if ord(map[curr_ptr + offset]) != c:
+                        byte = map[curr_ptr + offset]
+                        if issymbolic(byte) or ord(byte) != c:
                             break
 
                         offset += 1
