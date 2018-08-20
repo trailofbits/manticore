@@ -428,3 +428,48 @@ class State(Eventful):
         :param str message: Longer description
         """
         self._publish('will_generate_testcase', name, message)
+
+    def scan_mem(self, data_to_find):
+        """
+
+        :param state:
+        :param int data_to_find:
+        :return:
+        """
+        ret = []
+
+        mem = self.cpu.memory
+
+        import struct
+        raw = struct.pack('<I', data_to_find)
+
+        for map in mem.maps:
+            start = map.start
+            end = map.end
+
+            curr_ptr = start
+            while curr_ptr < end:
+                curr_byte = map[curr_ptr]
+
+                # TODO: for the moment we just treat symbolic bytes as bytes that don't match. for our simple test
+                # cases right now, the bytes we're interested in scanning for will all just be there concretely
+                if not issymbolic(curr_byte) and ord(curr_byte) == raw[0]:
+                    offset = 1
+
+                    for c in raw[1:]:
+                        if curr_ptr + offset >= map.end:  # FIXME: slid off the end of the map in the middle of checking. can't support scanning across map boundaries
+                            break
+
+                        if ord(map[curr_ptr + offset]) != c:
+                            break
+
+                        offset += 1
+                    else:
+                        ret.append(curr_ptr)
+
+                    # We /might/ in some cases, be able to bump the curr pointer past the end of the data, but what
+                    # if there is an overlapping one that matches? So we just bump by one.
+
+                curr_ptr += 1
+
+        return ret
