@@ -441,7 +441,7 @@ class State(Eventful):
         mem = self.cpu.memory
 
         import struct
-        raw = struct.pack('<I', data_to_find)
+        raw = struct.pack('<Q', data_to_find)
 
         for map in mem.maps:
             start = map.start
