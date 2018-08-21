@@ -202,6 +202,10 @@ class FilterFunctions(Plugin):
                         constraint = Operators.NOT(tx.data[:4] == binascii.unhexlify(func_hsh))
                         state.constrain(constraint)
 
+class DetectSelfdestruct(Detector):
+    def will_evm_execute_instruction_callback(self, state, instruction, arguments):
+        if instruction.semantics == 'SELFDESTRUCT':
+            self.add_finding_here(state, 'Reachable SELFDESTRUCT')
 
 class DetectInvalid(Detector):
     def __init__(self, only_human=True, **kwargs):
