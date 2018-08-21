@@ -109,6 +109,10 @@ for state in m.running_states:
 * Ubuntu 18.04 is strongly recommended.
 * Ethereum smart contract analysis requires the [`solc`](https://github.com/ethereum/solidity) program in your `$PATH`.
 
+## Getting Help
+
+Feel free to stop by our [Slack channel](https://empirehacking.slack.com/messages/C3PTWK7UM) for help on using or extending Manticore.
+
 ## Quickstart
 
 Install and try Manticore in a few shell commands (see an [asciinema](https://asciinema.org/a/567nko3eh2yzit099s0nq4e8z)):
