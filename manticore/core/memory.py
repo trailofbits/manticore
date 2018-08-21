@@ -1409,14 +1409,15 @@ class LazySMemory(SMemory):
 
                         offset += 1
                     else:
-                        ret.append(curr_ptr)
+                        yield curr_ptr
+                        # ret.append(curr_ptr)
 
                     # We /might/ in some cases, be able to bump the curr pointer past the end of the data, but what
                     # if there is an overlapping one that matches? So we just bump by one.
 
                 curr_ptr += 1
 
-        return ret
+        # return ret
 
 
 
