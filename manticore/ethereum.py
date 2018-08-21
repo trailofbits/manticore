@@ -2079,9 +2079,9 @@ class ManticoreEVM(Manticore):
         #Human tx that ends in this wont modify the storage so finalize and
         # generate a testcase. FIXME This should be configurable as REVERT and
         # THROWit actually changes the balance and nonce? of some accounts
-        if tx.result in {'REVERT', 'THROW', 'TXERROR'}:
+        if tx.result in {'SELFDESTRUCT', 'REVERT', 'THROW', 'TXERROR'}:
             self.save(state, final=True)
-        elif tx.result in {'SELFDESTRUCT', 'RETURN', 'STOP'}:
+        elif tx.result in {'RETURN', 'STOP'}:
             # if not a revert we save the state for further transactioning
             self.save(state)  # Add to running states
         else:
