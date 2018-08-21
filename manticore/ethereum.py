@@ -1105,12 +1105,15 @@ class EVMContract(EVMAccount):
     def add_function(self, signature):
         func_id = binascii.hexlify(ABI.function_selector(signature))
         func_name = str(signature.split('(')[0])
-        if func_name.startswith('_') or func_name in {'add_function', 'address', 'name'}:
-            raise EthereumError("Sorry function name is used by the python wrapping")
+        if func_name.startswith('_'):
+            # TODO(mark): is this actually true? is there anything actually wrong with a solidity name beginning w/ an underscore?
+            raise EthereumError("Function name ({}) begins with underscore, internally reserved".format(func_name))
+        if func_name in {'add_function', 'address', 'name'}:
+            raise EthereumError("Function name ({}) is internally reserved".format(func_name))
         if func_name in self._hashes:
-            raise EthereumError("A function with that name is already defined")
+            raise EthereumError("Function name ({}) name is already defined".format(func_name))
         if func_id in {func_id for _, func_id in self._hashes.values()}:
-            raise EthereumError("A function with the same hash is already defined")
+            raise EthereumError("A function with the same hash as {} is already defined".format(func_name))
         self._hashes[func_name] = signature, func_id
 
     def _null_func(self):
