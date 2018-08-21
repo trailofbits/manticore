@@ -6,6 +6,7 @@ import unittest
 import os
 import sys
 import resource
+import re
 
 from manticore.platforms import evm
 from manticore.core.plugin import Plugin
@@ -542,7 +543,8 @@ class EthTests(unittest.TestCase):
 
     def test_end_instruction_trace(self):
         """
-        Make sure that the trace files are correct, and include the end instructions
+        Make sure that the trace files are correct, and include the end instructions.
+        Also, make sure we produce a valid function call in trace.
         """
         class TestPlugin(Plugin):
             """
@@ -600,8 +602,31 @@ class EthTests(unittest.TestCase):
         for pc in p.context['rt']:
             self.assertIn(pc, all_rt_traces)
 
+        # Make sure the function call is correctly produced
 
+        # Extract all valid function names, and make sure we have at least one
+        existing_functions = []
+        with open(filename, 'r') as src:
+            for line in src:
+                m = re.match(r'\s*function (\w+).*', line)
+                if m:
+                    existing_functions.append(m.group(1))
 
+        self.assertGreater(len(existing_functions), 0)
+
+        tx = next(f for f in listdir if f.endswith('0.tx'))
+        with open(os.path.join(worksp, tx), 'r') as tx_f:
+            lines = tx_f.readlines()
+
+            # implicitly assert the following doesn't throw
+            header_idx = lines.index('Function call:\n')
+            func_call_summary = lines[header_idx + 1]
+
+            for f in existing_functions:
+                if func_call_summary.startswith(f):
+                    break
+            else:
+                self.fail('Could not find a function call summary in workspace output')
 
     def test_graceful_handle_no_alive_states(self):
         """
