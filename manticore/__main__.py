@@ -94,6 +94,9 @@ def parse_arguments():
     parser.add_argument('--detect-unused-retval', action='store_true',
                         help='Enable detection of not used internal transaction return value')
 
+    parser.add_argument('--detect-selfdestruct', action='store_true',
+                        help='Enable detection of reachable selfdestruct instructions')
+
     parser.add_argument('--detect-all', action='store_true',
                         help='Enable all detector heuristics (Ethereum only)')
 
@@ -113,7 +116,7 @@ def parse_arguments():
 
 
 def ethereum_cli(args):
-    from .ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, DetectUninitializedStorage, DetectUninitializedMemory, FilterFunctions, DetectReentrancy, DetectUnusedRetVal
+    from .ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, DetectUninitializedStorage, DetectUninitializedMemory, FilterFunctions, DetectReentrancy, DetectUnusedRetVal, DetectSelfdestruct
     log.init_logging()
 
     m = ManticoreEVM(procs=args.procs, workspace_url=args.workspace)
@@ -130,6 +133,8 @@ def ethereum_cli(args):
         m.register_detector(DetectReentrancy())
     if args.detect_all or args.detect_unused_retval:
         m.register_detector(DetectUnusedRetVal())
+    if args.detect_all or args.detect_selfdestruct:
+        m.register_detector(DetectSelfdestruct())
 
     if args.avoid_constant:
         # avoid all human level tx that has no effect on the storage
