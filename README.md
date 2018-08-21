@@ -25,14 +25,26 @@ Manticore is a symbolic execution tool for analysis of binaries and smart contra
 
 Manticore can analyze the following types of programs:
 
-- Linux ELF binaries (x86, x86_64 and ARMv7)
 - Ethereum smart contracts (EVM bytecode)
+- Linux ELF binaries (x86, x86_64 and ARMv7)
+
+Manticore includes a symbolic Ethereum Virtual Machine (EVM) and a convenient interface for automated compilation and analysis of Solidity. It integrates with [Ethersplay](https://github.com/trailofbits/ethersplay), Trail of Bits’ visual disassembler for EVM bytecode, for analysis visualization.
 
 ## Usage
 
 ### CLI
 
-Manticore has a command line interface which can be used to easily symbolically execute a supported program. Analysis results will be placed into a new directory beginning with `mcore_`.
+Manticore has a command line interface which can be used to easily symbolically execute a supported program or smart contract. Analysis results will be placed into a new directory beginning with `mcore_`.
+
+Use the CLI to explore possible states in Ethereum smart contracts. Manticore includes _detectors_ which flag certain conditions, including known vulnerable code, as it explores possible states. Solidity smart contracts must have a `.sol` extension for analysis by Manticore. See a [demo](https://asciinema.org/a/154012).
+
+```
+$ manticore ./path/to/contract.sol  # runs, and creates a mcore_* directory with analysis results
+$ manticore --detect-reentrancy ./path/to/contract.sol  # Above, but with reentrancy detection enabled
+$ manticore --detect-all ./path/to/contract.sol  # Above, but with all detectors enabled
+```
+
+The command line can also be used to simply explore a Linux binary:
 
 ```
 $ manticore ./path/to/binary        # runs, and creates a mcore_* directory with analysis results
@@ -42,40 +54,7 @@ $ manticore ./path/to/binary ++ ++  # use two symbolic strings of length two as 
 
 ### API
 
-Manticore has a Python programming interface which can be used to implement custom analyses.
-
-```python
-# example Manticore script
-from manticore import Manticore
-
-hook_pc = 0x400ca0
-
-m = Manticore('./path/to/binary')
-
-@m.hook(hook_pc)
-def hook(state):
-  cpu = state.cpu
-  print('eax', cpu.EAX)
-  print(cpu.read_int(cpu.ESP))
-
-  m.terminate()  # tell Manticore to stop
-
-m.run()
-```
-
-### Ethereum
-
-Manticore includes a symbolic Ethereum Virtual Machine (EVM) and a convenient interface for automated compilation and analysis of Solidity. It integrates with [Ethersplay](https://github.com/trailofbits/ethersplay), Trail of Bits’ visual disassembler for EVM bytecode, for analysis visualization. As with binaries, Manticore offers a simple command line interface and a Python API for analysis of EVM bytecode.
-
-Use the CLI to explore possible states in Ethereum smart contracts. Manticore includes _detectors_ which flag certain conditions, including known vulnerable code, as it explores possible states. Solidity smart contracts must have a `.sol` extension for analysis by Manticore. See a demo: https://asciinema.org/a/154012
-
-```
-$ manticore ./path/to/contract.sol  # runs, and creates a mcore_* directory with analysis results
-$ manticore --detect-reentrancy ./path/to/contract.sol  # Above, but with reentrancy detection enabled
-$ manticore --detect-all ./path/to/contract.sol  # Above, but with all detectors enabled
-```
-
-Manticore is capable of detailed verification of arbitrary properties of smart contracts via its Python API. Set starting conditions, identify symbolic transactions, then review discovered states to ensure invariants for your contract hold.
+Manticore has a Python programming interface which can be used to implement custom analyses and is capable of detailed verification of arbitrary properties of smart contracts via its Python API. Set starting conditions, identify symbolic transactions, then review discovered states to ensure invariants for your contract hold.
 
 ```python
 from manticore.ethereum import ManticoreEVM
@@ -101,6 +80,28 @@ for state in m.running_states:
     print("can bar be 1? {}".format(state.can_be_true(bar==1)))
     print("can bar be 200? {}".format(state.can_be_true(bar==200)))
 
+```
+
+It is also possible to use the API to create custom analysis tools for Linux binaries.
+
+
+```python
+# example Manticore script
+from manticore import Manticore
+
+hook_pc = 0x400ca0
+
+m = Manticore('./path/to/binary')
+
+@m.hook(hook_pc)
+def hook(state):
+  cpu = state.cpu
+  print('eax', cpu.EAX)
+  print(cpu.read_int(cpu.ESP))
+
+  m.terminate()  # tell Manticore to stop
+
+m.run()
 ```
 
 ## Requirements
