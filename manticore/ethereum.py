@@ -79,6 +79,7 @@ class Detector(Plugin):
             gf.add((address, pc, finding, at_init))
         #Fixme for ever broken logger
         logger.warning(finding)
+        print (finding) # @@@
 
     def add_finding_here(self, state, finding, condition=True):
         '''
@@ -519,6 +520,37 @@ class DetectUnusedRetVal(Detector):
             dest, cond = arguments
             for used_taint in get_taints(cond, "RETVAL_.*"):
                 self._remove_retval_taint(state, used_taint)
+
+class DetectDelegatecall(Detector):
+    '''
+        Detects DELEGATECALLs to controlled addresses and or with controlled function id.
+        This detector finds and reports on any delegatecall instruction any the following propositions are hold:
+            * the destination address can be controlled by the caller
+            * the first 4 bytes of the calldata are controlled by the caller
+    '''
+
+    def will_evm_execute_instruction_callback(self, state, instruction, arguments):
+        world = state.platform
+        mnemonic = instruction.semantics
+        current_vm = world.current_vm
+        if mnemonic == 'DELEGATECALL':
+            print ("DELEGATECALL", arguments)
+            gas, address, in_offset, in_size, out_offset, out_size = arguments
+            if issymbolic(address):
+                print ("DDELEGATECALL, address is sy,bolic")
+                possible_addresses = state.solve_n(address, 2)
+                if len(possible_addresses) > 1:
+                    self.add_finding_here(state, "DellegateCall to controlled address ({:x}, {:x})".format(*possible_addresses))
+
+            calldata = world.current_vm.read_buffer(in_offset, in_size)
+            func_id = calldata[:4]
+            if issymbolic(func_id):
+                possible_func_id = state.solve_n(func_id, 2)
+                print ("possible func_id", possible_func_id)
+                if len(possible_func_id) > 1:
+                    self.add_finding_here(state, "DellegateCall to user function ({:x}, {:x})".format(*possible_func_id))
+
+
 
 
 
@@ -1390,6 +1422,7 @@ class ManticoreEVM(Manticore):
                 output, warnings = ManticoreEVM._run_solc(temp, solc_bin, solc_remaps)
         elif isinstance(source_code, io.IOBase):
             output, warnings = ManticoreEVM._run_solc(source_code, solc_bin, solc_remaps)
+            source_code.seek(0)
             source_code = source_code.read()
         else:
             raise TypeError
@@ -2403,35 +2436,36 @@ class ManticoreEVM(Manticore):
                 metadata = self.get_metadata(tx.address)
                 if tx.sort == 'CALL':
                     if metadata is not None:
-                        function_id = state.solve_one(tx.data[:4])  # hope there is enough data
+                        calldata = state.solve_one(tx.data)
+                        is_calldata_symbolic = issymbolic(tx.data)
+
+                        function_id = calldata[:4]  # hope there is enough data
                         signature = metadata.get_func_signature(function_id)
                         function_name = metadata.get_func_name(function_id)
                         if signature:
-                            _, arguments = ABI.deserialize(signature, tx.data)
+                            _, arguments = ABI.deserialize(signature, calldata)
                         else:
-                            arguments = (tx.data,)
+                            arguments = (calldata,)
 
                         return_data = None
                         if tx.result == 'RETURN':
                             ret_types = metadata.get_func_return_types(function_id)
-                            return_data = ABI.deserialize(ret_types, tx.return_data)  # function return
+                            return_data = state.solve_one(tx.return_data)
+                            return_values = ABI.deserialize(ret_types, return_data)  # function return
+                            is_return_symbolic = issymbolic(tx.return_data)
 
                         tx_summary.write('\n')
                         tx_summary.write("Function call:\n")
                         tx_summary.write("%s(" % function_name)
-                        tx_summary.write(','.join(map(repr, map(state.solve_one, arguments))))
-                        is_argument_symbolic = any(map(issymbolic, arguments))
-                        is_something_symbolic = is_something_symbolic or is_argument_symbolic
-                        tx_summary.write(') -> %s %s\n' % (tx.result, flagged(is_argument_symbolic)))
+                        tx_summary.write(','.join(map(repr, arguments)))
+                        tx_summary.write(') -> %s %s\n' % (tx.result, flagged(is_calldata_symbolic)))
 
                         if return_data is not None:
-                            is_return_symbolic = any(map(issymbolic, return_data))
-                            return_values = tuple(map(state.solve_one, return_data))
                             if len(return_values) == 1:
                                 return_values = return_values[0]
 
                             tx_summary.write('return: %r %s\n' % (return_values, flagged(is_return_symbolic)))
-                            is_something_symbolic = is_something_symbolic or is_return_symbolic
+                        is_something_symbolic = is_calldata_symbolic or is_return_symbolic
 
                 tx_summary.write('\n\n')
 

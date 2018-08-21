@@ -252,17 +252,35 @@ def concretized_args(**policies):
                 index = spec.args.index(arg)
                 if not issymbolic(args[index]):
                     continue
-                if not policy:
-                    raise ConcretizeStack(index)
+                if policy is None:
+                    policy = 'MINMAX'
+                
+                value = args[index]
+                world = args[0].world
                 if policy == "ACCOUNTS":
                     #special handler for EVM only policy
-                    address = args[index]
-                    world = args[0].world
-                    cond = world._constraint_to_accounts(address, ty='both', include_zero=True)
+                    cond = world._constraint_to_accounts(value, ty='both', include_zero=True)
                     world.constraints.add(cond)
                     policy = 'ALL'
+                elif policy == "OFFSET":
+                    #special handler for EVM only policy
+                    cond = value == 32
+                    for x in [128, 192]:
+                        cond = Operators.OR(cond, value == x)
+                    #world.constraints.add(cond)
+                    policy = 'SAMPLED'
+                elif policy == "SIZE":
+                    #special handler for EVM only policy
+                    cond = value == 1
+                    for x in [2, 5, 10]:
+                        cond = Operators.OR(cond, value == x)
+                    #world.constraints.add(cond)
+                    policy = 'ALL'
+                    policy = 'SAMPLED'
+  
                 raise ConcretizeStack(index, policy=policy)
             return func(*args, **kwargs)
+        wrapper.__signature__ = inspect.signature(func)
         return wrapper
     return concretizer
 
@@ -547,33 +565,42 @@ class EVM(Eventful):
             if (fee.size != 512):
                 raise EthereumError("Fees should be 512 bit long")
 
+        assert issymbolic(fee) or fee >= 0
         self.constraints.add(Operators.UGE(fee, 0))
-        self.constraints.add(Operators.ULE(fee, self._gas))
-
+        config.out_of_gas = None
         #FIXME add configurable checks here
-        if config.out_of_gas is not None:
-            if config.out_of_gas == 0:
-                #default to OOG exception if possible
-                if solver.can_be_true(self.constraints, self._gas < fee):
-                    self.constraints.add(Operators.UGT(fee, self.gas))
-                    logger.debug("Not enough gas for instruction")
-                    raise NotEnoughGas()
-            elif config.out_of_gas == 1:
-                #default to enough gas if possible
-                if solver.can_be_true(self.constraints, self._gas > fee):
-                    self.constraints.add(Operators.UGT(self.gas, fee))
+
+        if not issymbolic(self._gas) and not issymbolic(fee):
+            if self._gas < fee:
+                logger.debug("Not enough gas for instruction")
+                raise NotEnoughGas()
+        else:
+            if config.out_of_gas is not None:
+                if config.out_of_gas == 0:
+                    #default to OOG exception if possible
+                    if solver.can_be_true(self.constraints, Operators.ULT(self.gas, fee)):
+                        self.constraints.add(Operators.UGT(fee, self.gas))
+                        logger.debug("Not enough gas for instruction")
+                        raise NotEnoughGas()
+                elif config.out_of_gas == 1:
+                    #default to enough gas if possible
+                    if solver.can_be_true(self.constraints, Operators.UGT(self.gas, fee)):
+                        self.constraints.add(Operators.UGT(self.gas, fee))
+                    else:
+                        
+                        logger.debug("Not enough gas for instruction")
+                        raise NotEnoughGas()
                 else:
-                    logger.debug("Not enough gas for instruction")
-                    raise NotEnoughGas()
-            else:
-                #fork on both options
-                if len(solver.get_all_values(self.constraints, self._gas > fee)) == 2:
-                    raise Concretize("Concretice gas fee",
-                                     expression=self._gas > fee,
-                                     setstate=None,
-                                     policy='ALL')
+                    #fork on both options
+                    if len(solver.get_all_values(self.constraints, Operators.UGT(self._gas, fee))) == 2:
+                        raise Concretize("Concretice gas fee",
+                                         expression=self._gas > fee,
+                                         setstate=None,
+                                         policy='ALL')
+
 
         self._gas -= fee
+        assert issymbolic(self._gas) or self._gas >= 0
 
     def _indemnify(self, fee):
         self._gas += fee
@@ -703,8 +730,8 @@ class EVM(Eventful):
             result = self._handler(*arguments)
             self._advance(result)
         except ConcretizeStack as ex:
+            self._rollback()
             pos = -ex.pos
-
             def setstate(state, value):
                 self.stack[pos] = value
             raise Concretize("Concretice Stack Variable",
@@ -922,7 +949,7 @@ class EVM(Eventful):
             data = bytes(concrete_data)
         return data
 
-    @concretized_args(size='SAMPLED')
+    @concretized_args(size='SIZE')
     def SHA3(self, start, size):
         '''Compute Keccak-256 hash'''
         GSHA3WORD = 6         # Cost of SHA3 per word
@@ -977,6 +1004,7 @@ class EVM(Eventful):
         '''Get deposited value by the instruction/transaction responsible for this execution'''
         return self.value
 
+    @concretized_args(offset='OFFSET')
     def CALLDATALOAD(self, offset):
         '''Get input data of current environment'''
         data_length = len(self.data)
@@ -1012,13 +1040,12 @@ class EVM(Eventful):
         self.constraints.add(Operators.ULT(result, 1 << 256))
         return result
 
-    @concretized_args(size='SAMPLED')
+    @concretized_args(data_offset='OFFSET', size='SIZE')
     def CALLDATACOPY(self, mem_offset, data_offset, size):
         '''Copy input data in current environment to memory'''
         GCOPY = 3             # cost to copy one 32 byte word
         self._consume(self.safe_mul(GCOPY, self.safe_add(size, 31) // 32))
         self._allocate(self.safe_add(mem_offset, size))
-
         for i in range(size):
             try:
                 c = Operators.ITEBV(8, data_offset + i < len(self.data), Operators.ORD(self.data[data_offset + i]), 0)
@@ -1251,7 +1278,7 @@ class EVM(Eventful):
         return address
 
     @transact
-    @concretized_args(address='ACCOUNTS', gas='MINMAX', in_offset='SAMPLED', in_size='SAMPLED')
+    @concretized_args(address='ACCOUNTS', gas='MINMAX', in_offset='SAMPLED', in_size='SIZE')
     def CALL(self, gas, address, value, in_offset, in_size, out_offset, out_size):
         '''Message-call into an account'''
         self.world.start_transaction('CALL',
@@ -1273,7 +1300,7 @@ class EVM(Eventful):
         return self.world.last_transaction.return_value
 
     @transact
-    @concretized_args(in_offset='SAMPLED', in_size='SAMPLED')
+    @concretized_args(in_offset='SAMPLED', in_size='SIZE')
     def CALLCODE(self, gas, _ignored_, value, in_offset, in_size, out_offset, out_size):
         '''Message-call into this account with alternative account's code'''
         self.world.start_transaction('CALL',
@@ -1300,7 +1327,7 @@ class EVM(Eventful):
         raise EndTx('RETURN', data)
 
     @transact
-    @concretized_args(in_offset='SAMPLED', in_size='SAMPLED')
+    @concretized_args(in_offset='SAMPLED', in_size='SIZE')
     def DELEGATECALL(self, gas, address, in_offset, in_size, out_offset, out_size):
         '''Message-call into an account'''
         self.world.start_transaction('DELEGATECALL',
@@ -1322,7 +1349,7 @@ class EVM(Eventful):
         return self.world.last_transaction.return_value
 
     @transact
-    @concretized_args(in_offset='SAMPLED', in_size='SAMPLED')
+    @concretized_args(in_offset='SAMPLED', in_size='SIZE')
     def STATICCALL(self, gas, address, in_offset, in_size, out_offset, out_size):
         '''Message-call into an account'''
         self.world.start_transaction('STATICCALL',
@@ -1416,13 +1443,13 @@ class EVM(Eventful):
             result.append('<Symbolic PC> {:s} {}'.format((translate_to_smtlib(pc), pc.taint)))
         else:
             operands_str = self.instruction.has_operand and '0x{:x}'.format(self.instruction.operand) or ''
-            result.append('0x%04x: {:s} {:s} {:s}\n'.format((pc, self.instruction.name, operands_str, self.instruction.description)))
+            result.append('0x{:04x}: {:s} {:s} {:s}\n'.format(pc, self.instruction.name, operands_str, self.instruction.description))
 
         args = {}
         implementation = getattr(self, self.instruction.semantics, None)
         if implementation is not None:
             args = dict(enumerate(inspect.getfullargspec(implementation).args[1:self.instruction.pops + 1]))
-
+        print (implementation, args, inspect.getfullargspec(implementation))
         clmn = 80
         result.append('Stack                                                                           Memory')
         sp = 0
