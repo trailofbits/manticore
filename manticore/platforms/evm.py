@@ -1427,7 +1427,7 @@ class EVM(Eventful):
         result.append('Stack                                                                           Memory')
         sp = 0
         for i in list(reversed(self.stack))[:10]:
-            argname = args.get(sp, sp == 0 and 'top' or '')
+            argname = args.get(sp, 'top' if sp == 0 else '')
             r = ''
             if issymbolic(i):
                 r = '{:>12s} {:66s}'.format(argname, repr(i))
@@ -1830,7 +1830,7 @@ class EVMWorld(Platform):
         # We are not maintaining an actual -block-chain- so we just generate
         # some hashes for each virtual block
         value = sha3.keccak_256(repr(block_number) + 'NONCE').hexdigest()
-        value = int('0x' + value, 0)
+        value = int(value, 16)
 
         if force_recent:
             # 0 is left on the stack if the looked for block number is greater or equal
