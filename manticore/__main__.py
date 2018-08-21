@@ -116,7 +116,7 @@ def ethereum_cli(args):
     from .ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, DetectUninitializedStorage, DetectUninitializedMemory, FilterFunctions, DetectReentrancy, DetectUnusedRetVal
     log.init_logging()
 
-    m = ManticoreEVM(procs=args.procs)
+    m = ManticoreEVM(procs=args.procs, workspace_url=args.workspace)
 
     if args.detect_all or args.detect_invalid:
         m.register_detector(DetectInvalid())
