@@ -757,8 +757,7 @@ class SolidityMetadata(object):
         else:
             arguments = (calldata,)
 
-        arguments_str = ', '.join(map(str, arguments)) 
-
+        arguments_str = ', '.join(map(str, arguments))
         return_value = None
         if returndata:
             ret_types = self.get_func_return_types(function_id)
