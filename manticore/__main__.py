@@ -103,6 +103,9 @@ def parse_arguments():
     parser.add_argument('--avoid-constant', action='store_true',
                         help='Avoid exploring constant functions for human transactions (Ethereum only)')
 
+    parser.add_argument('--limit-loops', action='store_true',
+                        help='Avoid exploring constant functions for human transactions (Ethereum only)')
+
     parsed = parser.parse_args(sys.argv[1:])
     if parsed.procs <= 0:
         parsed.procs = 1
@@ -116,7 +119,7 @@ def parse_arguments():
 
 
 def ethereum_cli(args):
-    from .ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, DetectUninitializedStorage, DetectUninitializedMemory, FilterFunctions, DetectReentrancy, DetectUnusedRetVal, DetectSelfdestruct
+    from .ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, DetectUninitializedStorage, DetectUninitializedMemory, FilterFunctions, DetectReentrancy, DetectUnusedRetVal, DetectSelfdestruct, LoopDepthLimiter
     log.init_logging()
 
     m = ManticoreEVM(procs=args.procs, workspace_url=args.workspace)
@@ -136,6 +139,9 @@ def ethereum_cli(args):
     if args.detect_all or args.detect_selfdestruct:
         m.register_detector(DetectSelfdestruct())
 
+
+    if args.limit_loops:
+        m.register_plugin(LoopDepthLimiter())
     if args.avoid_constant:
         # avoid all human level tx that has no effect on the storage
         filter_nohuman_constants = FilterFunctions(regexp=r".*", depth='human', mutability='constant', include=False)
