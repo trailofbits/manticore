@@ -126,6 +126,7 @@ class FilterFunctions(Plugin):
                         constraint = Operators.NOT(tx.data[:4] == binascii.unhexlify(func_hsh))
                         state.constrain(constraint)
 
+
 class LoopDepthLimiter(Plugin):
     ''' This just abort explorations too deep '''
 
@@ -137,7 +138,7 @@ class LoopDepthLimiter(Plugin):
         world = state.platform
         with self.manticore.locked_context('seen_rep', dict) as reps:
             item = (world.current_transaction.sort == 'CREATE', world.current_transaction.address, pc)
-            if not item in reps:
+            if item not in reps:
                 reps[item] = 0
             reps[item] += 1
             if reps[item] > 2:
@@ -229,11 +230,11 @@ class Detector(Plugin):
         return self.manticore.get_metadata(address).get_source_for(pc)
 
 
-
 class DetectSelfdestruct(Detector):
     def will_evm_execute_instruction_callback(self, state, instruction, arguments):
         if instruction.semantics == 'SELFDESTRUCT':
             self.add_finding_here(state, 'Reachable SELFDESTRUCT')
+
 
 class DetectInvalid(Detector):
     def __init__(self, only_human=True, **kwargs):

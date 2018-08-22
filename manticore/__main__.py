@@ -139,7 +139,6 @@ def ethereum_cli(args):
     if args.detect_all or args.detect_selfdestruct:
         m.register_detector(DetectSelfdestruct())
 
-
     if args.limit_loops:
         m.register_plugin(LoopDepthLimiter())
     if args.avoid_constant:
