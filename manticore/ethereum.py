@@ -1,3 +1,5 @@
+from typing import Optional
+
 from . import abitypes
 import uuid
 import numbers
@@ -1144,10 +1146,11 @@ class EVMContract(EVMAccount):
         if func_name in {'add_function', 'address', 'name'}:
             raise EthereumError("Function name ({}) is internally reserved".format(func_name))
         if func_name in self._hashes:
-            raise EthereumError("Function name ({}) name is already defined".format(func_name))
-        if func_id in {func_id for _, func_id in self._hashes.values()}:
+            self._hashes[func_name].append((signature, func_id))
+            return
+        if func_id in {h[1] for names in self._hashes.values() for h in names}:
             raise EthereumError("A function with the same hash as {} is already defined".format(func_name))
-        self._hashes[func_name] = signature, func_id
+        self._hashes[func_name] = [(signature, func_id)]
 
     def _null_func(self):
         pass
@@ -1176,12 +1179,30 @@ class EVMContract(EVMAccount):
         if not name.startswith('_'):
             self._init_hashes()
             if self._hashes is not None and name in self._hashes.keys():
-                def f(*args, **kwargs):
-                    caller = kwargs.get('caller', None)
-                    value = kwargs.get('value', 0)
-                    tx_data = ABI.function_call(str(self._hashes[name][0]), *args)
+                def f(*args, signature: Optional[str]=None, caller=None, value=0, **kwargs):
+                    try:
+                        if signature:
+                            if f'{name}{signature}' not in {h[0] for names in self._hashes.values() for h in names}:
+                                raise EthereumError(
+                                    f'Function: `{name}` has no such signature`\n'
+                                    f'Known signatures: {[x[0][len(name):] for x in self._hashes[name]]}')
+
+                            tx_data = ABI.function_call(f'{name}{signature}', *args)
+                        else:
+                            if len(self._hashes[name]) > 1:
+                                sig = self._hashes[name][0][0][len(name):]
+                                raise EthereumError(
+                                    f'Function: `{name}` has multiple signatures but `signature` is not '
+                                    f'defined! Example: `account.{name}(..., signature="{sig}")`\n'
+                                    f'Known signatures: {[x[0][len(name):] for x in self._hashes[name]]}')
+
+                            tx_data = ABI.function_call(str(self._hashes[name][0][0]), *args)
+                    except KeyError as e:
+                        raise e
+
                     if caller is None:
                         caller = self._default_caller
+
                     self._manticore.transaction(caller=caller,
                                                 address=self._address,
                                                 value=value,

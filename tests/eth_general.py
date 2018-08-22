@@ -382,6 +382,62 @@ class EthTests(unittest.TestCase):
         self.mevm=None
         shutil.rmtree(self.worksp)
 
+    def test_invalid_function_signature(self):
+        source_code = '''
+        contract Test{
+
+            function ret(uint256) returns(uint256){
+                return 1;
+            }
+
+        }
+        '''
+        user_account = self.mevm.create_account(balance=1000)
+        contract_account = self.mevm.solidity_create_contract(source_code, owner=user_account)
+        with self.assertRaises(EthereumError) as ctx:
+            contract_account.ret(self.mevm.make_symbolic_value(), signature='(uint8)')
+        self.assertTrue(str(ctx.exception))
+
+    def test_function_name_collision(self):
+        source_code = '''
+        contract Test{
+
+            function ret(uint) returns(uint){
+                return 1;
+            }
+
+            function ret(uint,uint) returns(uint){
+                return 2;
+            }
+
+        }
+        '''
+        user_account = self.mevm.create_account(balance=1000)
+        contract_account = self.mevm.solidity_create_contract(source_code, owner=user_account)
+        with self.assertRaises(EthereumError):
+            contract_account.ret(self.mevm.make_symbolic_value())
+
+    def test_function_name_with_signature(self):
+        source_code = '''
+        contract Test{
+
+            function ret(uint) returns(uint){
+                return 1;
+            }
+
+            function ret(uint,uint) returns(uint){
+                return 2;
+            }
+
+        }
+        '''
+        user_account = self.mevm.create_account(balance=1000)
+        contract_account = self.mevm.solidity_create_contract(source_code, owner=user_account)
+        contract_account.ret(self.mevm.make_symbolic_value(), self.mevm.make_symbolic_value(),
+                             signature='(uint256,uint256)')
+        z = list(self.mevm.all_states)[0].solve_one(self.mevm.transactions()[1].return_data)
+        self.assertEqual(ABI.deserialize('(uint256)', z)[0], 2)
+
     def test_migrate_integration(self):
         m = self.mevm
 
