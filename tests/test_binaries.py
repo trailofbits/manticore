@@ -46,7 +46,7 @@ class IntegrationTest(unittest.TestCase):
         # Remove the directory after the test
         shutil.rmtree(self.test_dir)
 
-    def _loadVisitedSet(self, visited):
+    def _load_visited_set(self, visited):
         self.assertTrue(os.path.exists(visited))
 
         with open(visited, 'r') as f:
@@ -74,7 +74,7 @@ class IntegrationTest(unittest.TestCase):
 
         subprocess.check_call(command, stdout=subprocess.PIPE)
 
-    def _runWithTimeout(self, procargs, logfile, timeout=1200):
+    def _run_with_timeout(self, procargs, logfile, timeout=1200):
 
         with open(os.path.join(os.pardir, logfile), "w") as output:
             po = subprocess.Popen(procargs, stdout=output)
@@ -89,19 +89,26 @@ class IntegrationTest(unittest.TestCase):
             self.assertTrue(secs_used < timeout)
             sys.stderr.write("\n")
 
-    def testTimeout(self):
+    def test_timeout(self):
         filename = os.path.abspath(os.path.join(DIRPATH, 'binaries', 'arguments_linux_amd64'))
         self.assertTrue(filename.startswith(os.getcwd()))
         filename = filename[len(os.getcwd()) + 1:]
         workspace = os.path.join(self.test_dir, 'workspace')
         t = time.time()
-        with open(os.path.join(os.pardir, self.test_dir, 'output.log'), "w") as output:
-            subprocess.check_call(['python', '-m', 'manticore',
-                                   '--workspace', workspace,
-                                   '--timeout', '1',
-                                   '--procs', '4',
-                                   filename,
-                                   '+++++++++'], stdout=output)
+
+        output = subprocess.check_output(['python', '-m', 'manticore',
+                                          '--workspace', workspace,
+                                          '--timeout', '1',
+                                          '--procs', '4',
+                                          filename,
+                                          '+++++++++'])
+        expected_output_regex = (
+            b'.*m.manticore:INFO: Loading program .*tests/binaries/arguments_linux_amd64\n'
+            b'.*m.manticore:INFO: Results in /tmp/[a-z0-9_]+/workspace\n'
+            b'.*m.manticore:INFO: Total time: [0-9]+.[0-9]+\n'
+        )
+
+        self.assertRegex(output, expected_output_regex)
 
         self.assertTrue(time.time() - t < 20)
 
@@ -123,7 +130,7 @@ class IntegrationTest(unittest.TestCase):
         for line in testcase_info:
             self.assertIn('Generated testcase', line)
 
-    def testArgumentsAssertionsAux(self, binname, refname):
+    def _test_arguments_assertions_aux(self, binname, refname, testcases_number):
         filename = os.path.abspath(os.path.join(DIRPATH, 'binaries', binname))
         self.assertTrue(filename.startswith(os.getcwd()))
         filename = filename[len(os.getcwd()) + 1:]
@@ -133,36 +140,49 @@ class IntegrationTest(unittest.TestCase):
         with open(assertions, 'w') as f:
             f.write('0x0000000000401003 ZF == 1')
 
-        with open('%s/output.log' % self.test_dir, "w") as output:
-            subprocess.check_call(['python', '-m', 'manticore',
-                                   '--workspace', workspace,
-                                   '--proc', '4',
-                                   '--assertions', assertions,
-                                   filename,
-                                   '+++++++++'], stdout=output)
-        actual = self._loadVisitedSet(os.path.join(DIRPATH, workspace, 'visited.txt'))
-        expected = self._loadVisitedSet(os.path.join(DIRPATH, 'reference', refname))
+        output = subprocess.check_output(['python', '-m', 'manticore',
+                                          '--workspace', workspace,
+                                          '--proc', '4',
+                                          '--assertions', assertions,
+                                          filename,
+                                          '+++++++++'])
+
+        expected_output_regex = b'.*m.manticore:INFO: Loading program .*tests/binaries/%s\n' % bytes(binname, 'utf-8')
+
+        expected_output_regex += b'.*m.manticore:INFO: Generated testcase No. [0-9][0-9]? -' \
+                                 b' Program finished with exit status: [01]\n' * testcases_number
+
+        expected_output_regex += b'.*m.manticore:INFO: Results in /tmp/[a-z0-9_]+/workspace\n'
+        expected_output_regex += b'.*m.manticore:INFO: Total time: [0-9]+.[0-9]+\n'
+
+        self.assertRegex(output, expected_output_regex)
+
+        actual = self._load_visited_set(os.path.join(DIRPATH, workspace, 'visited.txt'))
+        expected = self._load_visited_set(os.path.join(DIRPATH, 'reference', refname))
+
         self.assertGreaterEqual(actual, expected)
 
-    def testArgumentsAssertions(self):
-        self.testArgumentsAssertionsAux('arguments_linux_amd64', 'arguments_linux_amd64_visited.txt')
+    def test_arguments_assertions_amd64(self):
+        self._test_arguments_assertions_aux('arguments_linux_amd64', 'arguments_linux_amd64_visited.txt',
+                                            testcases_number=1)
 
-    def testArgumentsAssertionsArmv7(self):
-        self.testArgumentsAssertionsAux('arguments_linux_armv7', 'arguments_linux_armv7_visited.txt')
+    def test_arguments_assertions_armv7(self):
+        self._test_arguments_assertions_aux('arguments_linux_armv7', 'arguments_linux_armv7_visited.txt',
+                                            testcases_number=19)
 
-    def testDecree(self):
+    def test_decree(self):
         filename = os.path.abspath(os.path.join(DIRPATH, 'binaries', 'cadet_decree_x86'))
         self.assertTrue(filename.startswith(os.getcwd()))
         filename = filename[len(os.getcwd()) + 1:]
         workspace = os.path.join(self.test_dir, 'workspace')
-        self._runWithTimeout(['python', '-m', 'manticore',
+        self._run_with_timeout(['python', '-m', 'manticore',
                               '--workspace', workspace,
                               '--timeout', '20',
                               '--proc', '4',
                               '--policy', 'uncovered',
-                              filename], os.path.join(self.test_dir, 'output.log'))
+                                filename], os.path.join(self.test_dir, 'output.log'))
 
-        actual = self._loadVisitedSet(os.path.join(DIRPATH, workspace, 'visited.txt'))
+        actual = self._load_visited_set(os.path.join(DIRPATH, workspace, 'visited.txt'))
         self.assertTrue(len(actual) > 100)
 
     def test_eth_regressions(self):
@@ -199,6 +219,15 @@ class IntegrationTest(unittest.TestCase):
 
         output = subprocess.check_output(['python', '-m', 'manticore', '--workspace', workspace, filename])
 
+        expected_output_regex = (
+            b'.*m.manticore:INFO: Loading program .*tests/binaries/brk_static_amd64\n'
+            b'.*m.manticore:INFO: Generated testcase No. 0 - Program finished with exit status: 0\n'
+            b'.*m.manticore:INFO: Results in /tmp/[a-z0-9_]+/workspace\n'
+            b'.*m.manticore:INFO: Total time: [0-9]+.[0-9]+\n'
+        )
+
+        self.assertRegex(output, expected_output_regex)
+
         with open(os.path.join(workspace, "test_00000000.stdout")) as f:
             self.assertIn("Message", f.read())
         with open(os.path.join(workspace, "test_00000001.stdout")) as f:
@@ -234,6 +263,15 @@ class IntegrationTest(unittest.TestCase):
         workspace = f'{self.test_dir}/workspace'
 
         output = subprocess.check_output(['python', '-m', 'manticore', '--workspace', workspace, filename])
+
+        expected_output_regex = (
+            b'.*m.manticore:INFO: Loading program .+/tests/binaries/brk_static_amd64\n'
+            b'.*m.manticore:INFO: Generated testcase No. 0 - Program finished with exit status: 0\n'
+            b'.*m.manticore:INFO: Results in /tmp/[a-z0-9_]+/workspace\n'
+            b'.*m.manticore:INFO: Total time: [0-9]+.[0-9]+\n'
+        )
+
+        self.assertRegex(output, expected_output_regex)
 
         with open(os.path.join(workspace, "test_00000000.messages")) as f:
             self.assertIn("finished with exit status: 0", f.read())
