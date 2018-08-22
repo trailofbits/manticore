@@ -1,17 +1,12 @@
-import io
-import unittest
-import sys
-import shutil
-import tempfile
 import os
-import hashlib
+import shutil
 import subprocess
+import sys
+import tempfile
 import time
-from manticore.binary import Elf, CGCElf
+import unittest
 
-#logging.basicConfig(filename = "test.log",
-#                format = "%(asctime)s: %(name)s:%(levelname)s: %(message)s",
-#                level = logging.DEBUG)
+from manticore.binary import Elf, CGCElf
 
 DIRPATH = os.path.dirname(__file__)
 
@@ -42,6 +37,7 @@ class TestBinaryPackage(unittest.TestCase):
 
 class IntegrationTest(unittest.TestCase):
     _multiprocess_can_split_ = True
+
     def setUp(self):
         # Create a temporary directory
         self.test_dir = tempfile.mkdtemp()
@@ -51,9 +47,10 @@ class IntegrationTest(unittest.TestCase):
         shutil.rmtree(self.test_dir)
 
     def _loadVisitedSet(self, visited):
-
         self.assertTrue(os.path.exists(visited))
-        vitems = open(visited, 'r').read().splitlines()
+
+        with open(visited, 'r') as f:
+            vitems = f.read().splitlines()
 
         vitems = [int(x[2:], 16) for x in vitems]
 
@@ -95,18 +92,18 @@ class IntegrationTest(unittest.TestCase):
     def testTimeout(self):
         filename = os.path.abspath(os.path.join(DIRPATH, 'binaries', 'arguments_linux_amd64'))
         self.assertTrue(filename.startswith(os.getcwd()))
-        filename = filename[len(os.getcwd())+1:]
+        filename = filename[len(os.getcwd()) + 1:]
         workspace = os.path.join(self.test_dir, 'workspace')
         t = time.time()
         with open(os.path.join(os.pardir, self.test_dir, 'output.log'), "w") as output:
             subprocess.check_call(['python', '-m', 'manticore',
-                                '--workspace', workspace,
-                                '--timeout', '1',
-                                '--procs', '4',
-                                filename,
-                                '+++++++++'], stdout=output)
+                                   '--workspace', workspace,
+                                   '--timeout', '1',
+                                   '--procs', '4',
+                                   filename,
+                                   '+++++++++'], stdout=output)
 
-        self.assertTrue(time.time()-t < 20)
+        self.assertTrue(time.time() - t < 20)
 
     def test_logger_verbosity(self):
         """
@@ -129,14 +126,14 @@ class IntegrationTest(unittest.TestCase):
     def testArgumentsAssertionsAux(self, binname, refname):
         filename = os.path.abspath(os.path.join(DIRPATH, 'binaries', binname))
         self.assertTrue(filename.startswith(os.getcwd()))
-        filename = filename[len(os.getcwd())+1:]
-        workspace = '%s/workspace'%self.test_dir
-        assertions = '%s/assertions.txt'%self.test_dir
+        filename = filename[len(os.getcwd()) + 1:]
+        workspace = '%s/workspace' % self.test_dir
+        assertions = '%s/assertions.txt' % self.test_dir
 
-        with open(assertions,'w') as f:
+        with open(assertions, 'w') as f:
             f.write('0x0000000000401003 ZF == 1')
 
-        with open('%s/output.log'%self.test_dir, "w") as output:
+        with open('%s/output.log' % self.test_dir, "w") as output:
             subprocess.check_call(['python', '-m', 'manticore',
                                    '--workspace', workspace,
                                    '--proc', '4',
@@ -156,17 +153,17 @@ class IntegrationTest(unittest.TestCase):
     def testDecree(self):
         filename = os.path.abspath(os.path.join(DIRPATH, 'binaries', 'cadet_decree_x86'))
         self.assertTrue(filename.startswith(os.getcwd()))
-        filename = filename[len(os.getcwd())+1:]
+        filename = filename[len(os.getcwd()) + 1:]
         workspace = os.path.join(self.test_dir, 'workspace')
         self._runWithTimeout(['python', '-m', 'manticore',
-                    '--workspace', workspace,
-                    '--timeout', '20',
-                    '--proc', '4',
-                    '--policy', 'uncovered',
-                    filename], os.path.join(self.test_dir, 'output.log'))
+                              '--workspace', workspace,
+                              '--timeout', '20',
+                              '--proc', '4',
+                              '--policy', 'uncovered',
+                              filename], os.path.join(self.test_dir, 'output.log'))
 
         actual = self._loadVisitedSet(os.path.join(DIRPATH, workspace, 'visited.txt'))
-        self.assertTrue(len(actual) > 100 )
+        self.assertTrue(len(actual) > 100)
 
     def test_eth_regressions(self):
         issues = [
@@ -244,4 +241,3 @@ class IntegrationTest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-
