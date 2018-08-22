@@ -106,3 +106,37 @@ class EthSelfdestruct(unittest.TestCase):
     def test_selfdestruct_true_neg1(self):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, set())
+
+
+class EthIntegerOverflow(unittest.TestCase):
+    def setUp(self):
+        self.io = DetectIntegerOverflow()
+        self.state = make_mock_evm_state()
+
+    def test_mul_no_overflow(self):
+        """
+        Regression test added for issue 714, where we were using the ADD ovf check for MUL
+        """
+        arguments = [1 << 248, self.state.new_symbolic_value(256)]
+        self.state.constrain(operators.ULT(arguments[1], 256))
+
+        cond = self.io._unsigned_mul_overflow(self.state, *arguments)
+        check = self.state.can_be_true(cond)
+        self.assertFalse(check)
+
+    def test_mul_overflow0(self):
+        arguments = [1 << 249, self.state.new_symbolic_value(256)]
+        self.state.constrain(operators.ULT(arguments[1], 256))
+
+        cond = self.io._unsigned_mul_overflow(self.state, *arguments)
+        check = self.state.can_be_true(cond)
+        self.assertTrue(check)
+
+    def test_mul_overflow1(self):
+        arguments = [1 << 255, self.state.new_symbolic_value(256)]
+
+        cond = self.io._unsigned_mul_overflow(self.state, *arguments)
+        check = self.state.can_be_true(cond)
+        self.assertTrue(check)
+
+
