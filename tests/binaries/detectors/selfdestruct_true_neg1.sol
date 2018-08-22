@@ -1,6 +1,6 @@
 /*
-   Example contract - True Negative
-   The selfdestruct is not reachable by non-owner and there is no way to set
+   Example contract - True Negative, Potential False Positive
+   The selfdestruct is not reachable by non-creator and there is no way to set
    yourself as the owner.
 
    This should NOT report a finding.
@@ -16,9 +16,8 @@ contract DetectThis {
     assert(msg.sender == owner);
     _;
   }
-
-  constructor () public {
-    owner = msg.sender;
+  function fakeSetOwner() { // writes to owner memory, but not exploitably
+    owner = 2;
   }
 
   function kill() public onlyOwner {

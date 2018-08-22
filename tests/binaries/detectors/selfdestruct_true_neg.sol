@@ -1,5 +1,5 @@
 /*
-   Example contract - Potential False Positive
+   Example contract - True Negative
    The selfdestruct is not reachable by non-creator and there is no way to set
    yourself as the owner.
 
@@ -16,8 +16,9 @@ contract DetectThis {
     assert(msg.sender == owner);
     _;
   }
-  function fakeSetOwner() { // writes to owner memory, but not exploitably
-    owner = 2;
+
+  constructor () public {
+    owner = msg.sender;
   }
 
   function kill() public onlyOwner {
