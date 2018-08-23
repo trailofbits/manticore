@@ -237,6 +237,23 @@ class DetectSelfdestruct(Detector):
         if instruction.semantics == 'SELFDESTRUCT':
             self.add_finding_here(state, 'Reachable SELFDESTRUCT')
 
+class DetectEtherLeak(Detector):
+    def will_evm_execute_instruction_callback(self, state, instruction, arguments):
+        if instruction.semantics == 'CALL':
+            dest_address = arguments[1]
+            sent_value = arguments[2]
+            msg_sender = state.platform.current_vm.caller
+
+            # If nothing can be transferred out, we don't care
+            if not state.can_be_true(sent_value > 0):
+                return
+
+            if msg_sender == dest_address:
+                self.add_finding_here(state, "Ether leak to sender")
+            # TODO if dest_address is from an argument
+
+            # print('address', dest_address, 'caller', msg_sender, msg_sender == dest_address, 'value', sent_value, 'v gt z', state.can_be_true(sent_value > 0))
+
 
 class DetectInvalid(Detector):
     def __init__(self, only_human=True, **kwargs):
