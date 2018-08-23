@@ -14,7 +14,7 @@ class Expression(object):
         self._taint = frozenset(taint)
 
     def __repr__(self):
-        return '<{:s} at {:x}{:s}>'.format(type(self).__name__, id(self), self.taint and '-T' or '')
+        return f'<{type(self).__name__:s} at {id(self):x}{self.taint and "-T" or "":s}>'
 
     @property
     def is_tainted(self):
@@ -47,7 +47,7 @@ class Variable(Expression):
         return self
 
     def __repr__(self):
-        return '<{:s}({:s}) at {:x}>'.format(type(self).__name__, self.name, id(self))
+        return f'<{type(self).__name__:s}({self.name:s}) at {id(self):x}>'
 
 
 class Constant(Expression):
@@ -643,7 +643,7 @@ class Array(Expression):
 
     def write(self, offset, buf):
         if not isinstance(buf, (Array, bytearray)):
-            raise TypeError('Array or bytearray expected got {:s}'.format(type(buf)))
+            raise TypeError(f'Array or bytearray expected got {type(buf):s}')
         arr = self
         for i, val in enumerate(buf):
             arr = arr.store(offset + i, val)
@@ -720,14 +720,14 @@ class Array(Expression):
 
     def __add__(self, other):
         if not isinstance(other, (Array, bytearray)):
-            raise TypeError("can't concat Array to {}".format(type(other)))
+            raise TypeError(f"can't concat Array to {type(other)}")
         if isinstance(other, Array):
             if self.index_bits != other.index_bits or self.value_bits != other.value_bits:
                 raise ValueError('Array sizes do not match for concatenation')
 
         from manticore.core.smtlib.visitors import simplify
         #FIXME This should be related to a constrainSet
-        new_arr = ArrayProxy(ArrayVariable(self.index_bits, self.index_max + len(other), self.value_bits, 'concatenation{}'.format(uuid.uuid1())))
+        new_arr = ArrayProxy(ArrayVariable(self.index_bits, self.index_max + len(other), self.value_bits, f'concatenation{uuid.uuid1()}'))
         for index in range(self.index_max):
             new_arr[index] = simplify(self[index])
         for index in range(len(other)):
@@ -736,14 +736,14 @@ class Array(Expression):
 
     def __radd__(self, other):
         if not isinstance(other, (Array, bytearray)):
-            raise TypeError("can't concat Array to {}".format(type(other)))
+            raise TypeError(f"can't concat Array to {type(other)}")
         if isinstance(other, Array):
             if self.index_bits != other.index_bits or self.value_bits != other.value_bits:
                 raise ValueError('Array sizes do not match for concatenation')
 
         from manticore.core.smtlib.visitors import simplify
         #FIXME This should be related to a constrainSet
-        new_arr = ArrayProxy(ArrayVariable(self.index_bits, self.index_max + len(other), self.value_bits, 'concatenation{}'.format(uuid.uuid1())))
+        new_arr = ArrayProxy(ArrayVariable(self.index_bits, self.index_max + len(other), self.value_bits, f'concatenation{uuid.uuid1()}'))
         for index in range(len(other)):
             new_arr[index] = simplify(other[index])
         for index in range(self.index_max):

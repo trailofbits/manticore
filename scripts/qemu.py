@@ -82,7 +82,7 @@ def start(arch, argv, port=1234, va_size=0xc0000000, stack_size=0x20000):
 
     stats = parse_mmu_debug_output(mmu_debug_output)
     for m in stats['maps']:
-        start,  end, size, perms = m
+        start, end, size, perms = m
         print('{:x}-{:x}, {}, {}'.format(*m))
 
 def correspond(text):

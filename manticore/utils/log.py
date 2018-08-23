@@ -16,11 +16,11 @@ class ContextFilter(logging.Filter):
         '''
         components = name.split('.')
         prefix = '.'.join(c[0] for c in components[:-1])
-        return '{}.{}'.format(prefix, components[-1])
+        return f'{prefix}.{components[-1]}'
 
     def filter(self, record):
         if hasattr(self, 'stateid') and isinstance(self.stateid, int):
-            record.stateid = '[%d]' % self.stateid
+            record.stateid = f'[{self.stateid}]'
         else:
             record.stateid = ''
 

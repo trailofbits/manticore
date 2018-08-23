@@ -7,14 +7,14 @@ def display(results):
         print("  " + line)
 
 def benchmark(program):
-    print("[*] Benchmarking program \"{}\"".format(program))
+    print(f"[*] Benchmarking program \"{program}\"")
 
     m = Manticore(program)
     m.run(should_profile=True)
 
     results = m._executor.dump_stats()
     if results is None:
-        print("[*] Failed to collect stats for program {}".format(program))
+        print(f"[*] Failed to collect stats for program {program}")
         return
 
     display(results)
@@ -24,7 +24,7 @@ if __name__ == "__main__":
     args = argv[1:]
 
     if len(args) == 0:
-        print("usage: python {} PROGRAM1 PROGRAM2...".format(argv[0]))
+        print(f"usage: python {argv[0]} PROGRAM1 PROGRAM2...")
         exit()
 
     first_program = args[0]

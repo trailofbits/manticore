@@ -278,7 +278,7 @@ class ConstraintSet(object):
                     # Note that we are discarding the ArrayProxy encapsulation
                     new_var = self.new_array(index_max=foreign_var.index_max, index_bits=foreign_var.index_bits, value_bits=foreign_var.value_bits, name=migrated_name).array
                 else:
-                    raise NotImplemented("Unknown expression type {} encountered during expression migration".format(type(var)))
+                    raise NotImplemented(f"Unknown expression type {type(var)} encountered during expression migration")
                 # Update the var to var mapping
                 object_migration_map[foreign_var] = new_var
                 # Update the name to name mapping

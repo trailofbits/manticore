@@ -246,7 +246,7 @@ class Z3Solver(Solver):
         logger.debug('>%s', cmd)
         try:
             self._proc.stdout.flush()
-            self._proc.stdin.write('{}\n'.format(cmd))
+            self._proc.stdin.write(f'{cmd}\n')
         except IOError as e:
             raise SolverException(str(e))
 
@@ -270,7 +270,7 @@ class Z3Solver(Solver):
         buf = ''.join(bufl).strip()
         logger.debug('<%s', buf)
         if '(error' in bufl[0]:
-            raise Exception("Error in smtlib: {}".format(bufl[0]))
+            raise Exception(f"Error in smtlib: {bufl[0]}")
         return buf
 
     # UTILS: check-sat get-value
@@ -404,7 +404,7 @@ class Z3Solver(Solver):
             self._reset(temp_cs.to_string(related_to=X))
             self._send(aux.declaration)
 
-            if getattr(self, 'support_{}'.format(goal)):
+            if getattr(self, f'support_{goal}'):
                 self._push()
                 try:
                     self._assert(operation(X, aux))

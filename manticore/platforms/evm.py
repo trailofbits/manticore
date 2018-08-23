@@ -107,7 +107,7 @@ class Transaction(object):
         return (self.__class__, (self.sort, self.address, self.price, self.data, self.caller, self.value, self.gas, self.depth, self.result, self.return_data))
 
     def __str__(self):
-        return 'Transaction({:s}, from=0x{:x}, to=0x{:x}, value={!r}, depth={:d}, data={!r}, result={!r}..)'.format(self.sort, self.caller, self.address, self.value, self.depth, self.data, self.result)
+        return f'Transaction({self.sort:s}, from=0x{self.caller:x}, to=0x{self.address:x}, value={self.value!r}, depth={self.depth:d}, data={self.data!r}, result={self.result!r}..)'
 
 
 # Exceptions...
@@ -128,7 +128,7 @@ class ConcretizeStack(EVMException):
     '''
 
     def __init__(self, pos, expression=None, policy='MINMAX'):
-        self.message = "Concretizing evm stack item {}".format(pos)
+        self.message = f"Concretizing evm stack item {pos}"
         self.pos = pos
         self.expression = expression
         self.policy = policy
@@ -346,13 +346,13 @@ class EVM(Eventful):
         super().__init__(**kwargs)
         if data is not None and not issymbolic(data):
             data_size = len(data)
-            data_symbolic = constraints.new_array(index_bits=256, value_bits=8, index_max=data_size, name='DATA_{:x}'.format(address), avoid_collisions=True)
+            data_symbolic = constraints.new_array(index_bits=256, value_bits=8, index_max=data_size, name=f'DATA_{address:x}', avoid_collisions=True)
             data_symbolic[0:data_size] = data
             data = data_symbolic
 
         if bytecode is not None and not issymbolic(bytecode):
             bytecode_size = len(bytecode)
-            bytecode_symbolic = constraints.new_array(index_bits=256, value_bits=8, index_max=bytecode_size, name='BYTECODE_{:x}'.format(address), avoid_collisions=True)
+            bytecode_symbolic = constraints.new_array(index_bits=256, value_bits=8, index_max=bytecode_size, name=f'BYTECODE_{address:x}', avoid_collisions=True)
             bytecode_symbolic[0:bytecode_size] = bytecode
             bytecode = bytecode_symbolic
 
@@ -361,7 +361,7 @@ class EVM(Eventful):
         #if len(bytecode) == 0:
         #    raise EVMException("Need code")
         self._constraints = constraints
-        self.memory = constraints.new_array(index_bits=256, value_bits=8, name='EMPTY_MEMORY_{:x}'.format(address), avoid_collisions=True)
+        self.memory = constraints.new_array(index_bits=256, value_bits=8, name=f'EMPTY_MEMORY_{address:x}', avoid_collisions=True)
         self.address = address
         self.caller = caller  # address of the account that is directly responsible for this execution
         self.data = data
@@ -1871,7 +1871,7 @@ class EVMWorld(Platform):
             # selfdestroyed address it can not be reused
             raise EthereumError('The account already exists')
         if storage is None:
-            storage = self.constraints.new_array(index_bits=256, value_bits=256, name='STORAGE_{:x}'.format(address))
+            storage = self.constraints.new_array(index_bits=256, value_bits=256, name=f'STORAGE_{address:x}')
         if code is None:
             code = bytearray()
         self._world_state[address] = {}

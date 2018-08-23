@@ -134,12 +134,12 @@ class Translator(Visitor):
         assert expression.__class__.__mro__[-1] is object
         for cls in expression.__class__.__mro__:
             sort = cls.__name__
-            methodname = 'visit_{:s}'.format(sort)
+            methodname = f'visit_{sort:s}'
             if hasattr(self, methodname):
                 value = getattr(self, methodname)(expression, *args)
                 if value is not None:
                     return value
-        raise Exception("No translation for this {}".format(expression))
+        raise Exception(f"No translation for this {expression}")
 
 
 class GetDeclarations(Visitor):

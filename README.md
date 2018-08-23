@@ -98,8 +98,8 @@ bar=m.make_symbolic_value()
 contract_account.foo(bar)
 
 for state in m.running_states:
-    print("can bar be 1? {}".format(state.can_be_true(bar==1)))
-    print("can bar be 200? {}".format(state.can_be_true(bar==200)))
+    print(f"can bar be 1? {state.can_be_true(bar==1)}")
+    print(f"can bar be 200? {state.can_be_true(bar==200)}")
 
 ```
 

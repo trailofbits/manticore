@@ -178,7 +178,7 @@ class IntegrationTest(unittest.TestCase):
         ]
 
         for issue in issues:
-            self._simple_cli_run('{}.sol'.format(issue['number']),
+            self._simple_cli_run(f'{issue['number']}.sol',
                                  contract=issue['contract'], tx_limit=issue['txlimit'])
 
     def test_eth_705(self):

@@ -61,7 +61,7 @@ def rep(old_method):
             counter_name = {16: 'CX', 32: 'ECX', 64: 'RCX'}[cpu.instruction.addr_size * 8]
             count = cpu.read_register(counter_name)
             if issymbolic(count):
-                raise ConcretizeRegister(cpu, counter_name, "Concretizing {} on REP instruction".format(counter_name), policy='SAMPLED')
+                raise ConcretizeRegister(cpu, counter_name, f"Concretizing {counter_name} on REP instruction", policy='SAMPLED')
 
             FLAG = count != 0
 
@@ -90,7 +90,7 @@ def repe(old_method):
             counter_name = {16: 'CX', 32: 'ECX', 64: 'RCX'}[cpu.instruction.addr_size * 8]
             count = cpu.read_register(counter_name)
             if issymbolic(count):
-                raise ConcretizeRegister(cpu, counter_name, "Concretizing {} on REP instruction".format(counter_name), policy='SAMPLED')
+                raise ConcretizeRegister(cpu, counter_name, f"Concretizing {counter_name} on REP instruction", policy='SAMPLED')
 
             FLAG = count != 0
 
@@ -4077,7 +4077,7 @@ class X86Cpu(Cpu):
             value = cpu.read_int(addr + base, 8)
             cpu.CF = Operators.EXTRACT(value, pos, 1) == 1
         else:
-            raise NotImplementedError("Unknown operand for BT: {}".format(dest.type))
+            raise NotImplementedError(f"Unknown operand for BT: {dest.type}")
 
     @instruction
     def BTC(cpu, dest, src):
@@ -4107,7 +4107,7 @@ class X86Cpu(Cpu):
             value = value ^ (1 << pos)
             cpu.write_int(addr, value, 8)
         else:
-            raise NotImplementedError("Unknown operand for BTC: {}".format(dest.type))
+            raise NotImplementedError(f"Unknown operand for BTC: {dest.type}")
 
     @instruction
     def BTR(cpu, dest, src):
@@ -4137,7 +4137,7 @@ class X86Cpu(Cpu):
             value = value & ~(1 << pos)
             cpu.write_int(addr, value, 8)
         else:
-            raise NotImplementedError("Unknown operand for BTR: {}".format(dest.type))
+            raise NotImplementedError(f"Unknown operand for BTR: {dest.type}")
 
     @instruction
     def BTS(cpu, dest, src):
@@ -4169,7 +4169,7 @@ class X86Cpu(Cpu):
             value = value | (1 << pos)
             cpu.write_int(addr, value, 8)
         else:
-            raise NotImplementedError("Unknown operand for BTS: {}".format(dest.type))
+            raise NotImplementedError(f"Unknown operand for BTS: {dest.type}")
 
     @instruction
     def POPCNT(cpu, dest, src):
