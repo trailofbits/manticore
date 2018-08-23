@@ -570,6 +570,42 @@ class DetectUninitializedStorage(Detector):
         state.context.setdefault('{:s}.initialized_storage'.format(self.name), set()).add((address, offset))
 
 
+class DetectMultipleSends(Detector):
+    '''
+    Detects multiple sends to the same address within a transaction
+    '''
+    def did_evm_execute_instruction_callback(self, state, instruction, arguments, result_ref):
+        mnemonic = instruction.semantics
+        #if mnemonic == 'CALL':
+            #calls = state.context.get(f'{self.name}.calls', {})
+            #gas, dest, *rest = arguments
+            #if dest in calls:
+                #pass
+                ##print(f"!!! {id(state)} Multiple calls to same addr!")
+            #else:
+                #state.context.setdefault(f'{self.name}.calls', {})[dest] = rest
+#
+    def will_open_transaction_callback(self, state, tx):
+        pass
+        #if tx.is_human():
+        #print(f"    open tx: state: {state}, tx: {tx}")
+
+
+    def did_close_transaction_callback(self, state, tx):
+        world = state.platform
+        #if tx.is_human:
+            #print(f"Closing tx: \n\t{state}\t{tx}")
+        #for tx in world.transactions:
+            #print(f"  {tx}")
+        #print("\n")
+
+    def will_terminate_state_callback(self, state, stateid, e):
+        world = state.platform
+        print(f"Terminated! {repr(e)[:80]}")
+        for tx in world.transactions:
+            print(f"  {tx}")
+
+
 def calculate_coverage(runtime_bytecode, seen):
     ''' Calculates what percentage of runtime_bytecode has been seen '''
     count, total = 0, 0
