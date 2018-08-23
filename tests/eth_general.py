@@ -160,9 +160,9 @@ class EthAbiTests(unittest.TestCase):
         self.assertTrue(solver.must_be_true(cs, my_ser[0] == operators.EXTRACT(x, 256 - 8, 8)))
 
     def test_address0(self):
-        data = '{}\x01\x55{}'.format('\0'*11, '\0'*19)
+        data = f'{}\x01\x55{}'.format('\0' * 11, '\0' * 19)
         parsed = ABI.deserialize('address', data)
-        self.assertEqual(parsed, 0x55 << (8 * 19) )
+        self.assertEqual(parsed, 0x55 << (8 * 19))
 
     def test_mult_dyn_types(self):
         d = [
@@ -268,11 +268,11 @@ class EthAbiTests(unittest.TestCase):
         self.assertEqual(parsed, 2**256 - 1)
 
         for i in range(8, 257, 8):
-            parsed = ABI.deserialize('uint{}'.format(i), data)
+            parsed = ABI.deserialize(f'uint{i}', data)
             self.assertEqual(parsed, 2**i - 1)
 
     def test_empty_types(self):
-        name, args = ABI.deserialize('func()', '\0'*32)
+        name, args = ABI.deserialize('func()', '\0' * 32)
         self.assertEqual(name, b'\x00\x00\x00\x00')
         self.assertEqual(args, tuple())
 

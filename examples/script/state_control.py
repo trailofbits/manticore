@@ -35,6 +35,6 @@ if __name__ == '__main__':
         print("Abandoning state at PC: ", hex(state.cpu.PC))
         state.abandon()
 
-    print("Adding hook to: {:x}".format(to_abandon))
+    print(f"Adding hook to: {to_abandon:x}")
 
     m.run()

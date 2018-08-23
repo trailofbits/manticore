@@ -16,7 +16,7 @@ from ...utils.emulate import UnicornEmulator
 from ...utils.event import Eventful
 
 logger = logging.getLogger(__name__)
-register_logger = logging.getLogger('{}.registers'.format(__name__))
+register_logger = logging.getLogger(f'{__name__}.registers')
 
 ###################################################################################
 # Exceptions
@@ -74,7 +74,7 @@ class ConcretizeRegister(CpuException):
     '''
 
     def __init__(self, cpu, reg_name, message=None, policy='MINMAX'):
-        self.message = message if message else "Concretizing {}".format(reg_name)
+        self.message = message if message else f"Concretizing {reg_name}"
 
         self.cpu = cpu
         self.reg_name = reg_name
@@ -405,20 +405,20 @@ class SyscallAbi(Abi):
 
             args = []
             for arg in self._last_arguments:
-                arg_s = "0x{:x}".format(arg)
+                arg_s = f"0x{arg:x}"
                 if self._cpu.memory.access_ok(arg, 'r'):
                     try:
                         s = self._cpu.read_string(arg, max_arg_expansion)
-                        arg_s = '({})'.format(s.rstrip()) if s else arg_s
+                        arg_s = f'({s.rstrip()})' if s else arg_s
                     except UnicodeDecodeError:
                         pass
                 args.append(arg_s)
 
             args_s = ', '.join(args)
 
-            ret_s = '{}'.format(ret)
+            ret_s = f'{ret}'
             if ret > min_hex_expansion:
-                ret_s = ret_s + '(0x{:x})'.format(ret)
+                ret_s = ret_s + f'(0x{ret:x})'
 
             platform_logger.debug('%s(%s) -> %s', model.__func__.__name__, repr(args_s), ret_s)
 

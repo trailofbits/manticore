@@ -23,7 +23,7 @@ class MemoryException(Exception):
         self.address = address
         self.message = message
         if address is not None and not issymbolic(address):
-            self.message += ' <{:x}>'.format(address)
+            self.message += f' <{address:x}>'
 
     def __str__(self):
         return self.message
@@ -36,7 +36,7 @@ class ConcretizeMemory(MemoryException):
 
     def __init__(self, mem, address, size, message=None, policy='MINMAX'):
         if message is None:
-            self.message = "Concretizing memory address {} size {}".format(address, size)
+            self.message = f"Concretizing memory address {address} size {size}"
         else:
             self.message = message
         self.mem = mem
@@ -50,7 +50,7 @@ class InvalidMemoryAccess(MemoryException):
 
     def __init__(self, address, mode):
         assert mode in 'rwx'
-        suffix = ' (mode:{})'.format(mode)
+        suffix = f' (mode:{mode})'
         message = self._message + suffix
         super(InvalidMemoryAccess, self, ).__init__(message, address)
         self.mode = mode

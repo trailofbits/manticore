@@ -1112,7 +1112,7 @@ class Linux(Platform):
         elif arch_width == 64:
             sdword = ctypes.c_int64(dword).value
         else:
-            raise EnvironmentError("Corrupted internal CPU state (arch width is {})".format(arch_width))
+            raise EnvironmentError(f"Corrupted internal CPU state (arch width is {arch_width})")
         return sdword
 
     def _open(self, f):
@@ -1143,7 +1143,7 @@ class Linux(Platform):
             self._closed_files.append(self.files[fd])  # Keep track for SymbolicFile testcase generation
             self.files[fd] = None
         except IndexError:
-            raise FdError("Bad file descriptor ({})".format(fd))
+            raise FdError(f"Bad file descriptor ({fd})")
 
     def _dup(self, fd):
         '''
@@ -1727,10 +1727,10 @@ class Linux(Platform):
             # FIXME Check if file should be symbolic input and do as with fd0
             result = cpu.memory.mmapFile(address, size, perms, self.files[fd].name, offset)
 
-        actually_mapped = '0x{:016x}'.format(result)
+        actually_mapped = f'0x{result:016x}'
         if address is None or result != address:
             address = address or 0
-            actually_mapped += ' [requested: 0x{:016x}]'.format(address)
+            actually_mapped += f' [requested: 0x{address:016x}]'
 
         if flags & 0x10 != 0 and result != address:
             cpu.memory.munmap(result, size)
@@ -1843,7 +1843,7 @@ class Linux(Platform):
         try:
             write_fd = self._get_fd(fd)
         except FdError as e:
-            logger.error("writev: Not a valid file descriptor ({})".format(fd))
+            logger.error(f"writev: Not a valid file descriptor ({fd})")
             return -e.err
 
         for i in range(0, count):
@@ -1915,7 +1915,7 @@ class Linux(Platform):
         Exits all threads in a process
         :raises Exception: 'Finished'
         '''
-        return self._exit("Program finished with exit status: {}".format(ctypes.c_int32(error_code).value))
+        return self._exit(f"Program finished with exit status: {ctypes.c_int32(error_code).value}")
 
     def sys_ptrace(self, request, pid, addr, data):
         return 0
@@ -2084,7 +2084,7 @@ class Linux(Platform):
             if name is not None:
                 raise SyscallNotImplemented(index, name)
             else:
-                raise Exception("Bad syscall index, {}".format(index))
+                raise Exception(f"Bad syscall index, {index}")
 
         return self._syscall_abi.invoke(implementation)
 
@@ -2527,7 +2527,7 @@ class SLinux(Linux):
             concrete_data += cast(bytes, c)
 
         if bytes_concretized > 0:
-            logger.debug("Concretized {} written bytes.".format(bytes_concretized))
+            logger.debug(f"Concretized {bytes_concretized} written bytes.")
 
         return super()._transform_write_data(concrete_data)
 
@@ -2536,7 +2536,7 @@ class SLinux(Linux):
     def sys_exit_group(self, error_code):
         if issymbolic(error_code):
             error_code = solver.get_value(self.constraints, error_code)
-            return self._exit("Program finished with exit status: {} (*)".format(ctypes.c_int32(error_code).value))
+            return self._exit(f"Program finished with exit status: {ctypes.c_int32(error_code).value} (*)")
         else:
             return super().sys_exit_group(error_code)
 

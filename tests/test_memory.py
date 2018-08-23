@@ -1290,7 +1290,7 @@ class MemoryTest(unittest.TestCase):
         self.assertEqual(mem[addr], b'a')
 
         mem.mprotect(addr, size, 'w')
-        with self.assertRaisesRegex(InvalidMemoryAccess, 'Invalid memory access \(mode:.\) <{:x}>'.format(addr)):
+        with self.assertRaisesRegex(InvalidMemoryAccess, f'Invalid memory access \(mode:.\) <{addr:x}>'):
             _ = mem[addr]
 
 
@@ -1361,7 +1361,7 @@ class MemoryTest(unittest.TestCase):
         addr = mem.mmap(None, size, 'wx')
         mem[addr] = 'a'
         mem.mprotect(addr, size, 'r')
-        with self.assertRaisesRegex(InvalidMemoryAccess, 'Invalid memory access \(mode:w\) <{:x}>'.format(addr)):
+        with self.assertRaisesRegex(InvalidMemoryAccess, f'Invalid memory access \(mode:w\) <{addr:x}>'):
             mem[addr] = 'a'
 
     def testmprotecNoReadthenOkRead(self):
@@ -1375,7 +1375,7 @@ class MemoryTest(unittest.TestCase):
         addr = mem.mmap(None, size, 'wx')
         mem[addr] = 'a'
 
-        with self.assertRaisesRegex(InvalidMemoryAccess, 'Invalid memory access \(mode:r\) <{:x}>'.format(addr)):
+        with self.assertRaisesRegex(InvalidMemoryAccess, f'Invalid memory access \(mode:r\) <{addr:x}>'):
             _ = mem[addr]
 
         mem.mprotect(addr, size, 'r')

@@ -25,13 +25,13 @@ def start(arch, argv, port=1234, _prompt='(gdb) '):
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.STDOUT)
     except OSError:
-        msg = "'{}' binary not found in PATH (needed for tracing)".format(gdb)
+        msg = f"'{gdb}' binary not found in PATH (needed for tracing)"
         raise RuntimeError(msg)
 
     drain()
-    # correspond('set architecture {}\n'.format(arch))
-    correspond('file {}\n'.format(argv[0]))
-    correspond('target remote :{}\n'.format(port))
+    # correspond(f'set architecture {arch}\n')
+    correspond(f'file {argv[0]}\n')
+    correspond(f'target remote :{port}\n')
     correspond('set pagination off\n')
 
 
@@ -109,7 +109,7 @@ def getStack():
 
 
 def setByte(addr, val):
-    cmdstr = 'set {{char}}{} = {}'.format(addr, ord(val))
+    cmdstr = f'set {{char}}{addr} = {ord(val)}'
     correspond(cmdstr + '\n')
 
 
@@ -118,7 +118,7 @@ def getByte(m):
     mask = {'i386': 0xffffffff,
             'armv7': 0xffffffff,
             'amd64': 0xffffffffffffffff}[arch]
-    return int(correspond("x/1bx %d\n" % (m & mask)).split("\t")[-1].split("\n")[0][2:], 16)
+    return int(correspond(f"x/1bx {m & mask}\n").split("\t")[-1].split("\n")[0][2:], 16)
 
 
 def get_entry():

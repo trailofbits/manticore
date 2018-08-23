@@ -231,13 +231,13 @@ class LinuxTest(unittest.TestCase):
 
         # should error with ENOENT
         this_file = os.path.realpath(__file__)
-        path = platform.current.push_bytes('{}\x00'.format(this_file))
+        path = platform.current.push_bytes(f'{this_file}\x00')
         fd = platform.sys_chroot(path)
         self.assertEqual(fd, -errno.ENOTDIR)
 
         # valid dir, but should always fail with EPERM
         this_dir = os.path.dirname(this_file)
-        path = platform.current.push_bytes('{}\x00'.format(this_dir))
+        path = platform.current.push_bytes(f'{this_dir}\x00')
         fd = platform.sys_chroot(path)
         self.assertEqual(fd, -errno.EPERM)
 

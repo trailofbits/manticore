@@ -220,7 +220,7 @@ for test_name in sorted(test_dic.keys()):
 
 
     pc_reg = 'RIP' if 'RIP' in test['pre']['registers'] else 'EIP'
-    print("""
+    print(f"""
         done = False
         while not done:
             try:
@@ -231,38 +231,34 @@ for test_name in sorted(test_dic.keys()):
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, '{PC}', {PC_VAL})""".format(
-                        PC=pc_reg,
-                        PC_VAL=hex(test['pre']['registers'][pc_reg])))
-    print("""
+                setattr(cpu, '{pc_reg}', {test['pre']['registers'][pc_reg]:x})""")
+    frame_base = 'RBP' if 'RBP' in test['pre']['registers'] else 'EBP'
+    print(f"""
             except ConcretizeMemory as e:
-                symbol = getattr(cpu, '{FRAME_BASE}')
+                symbol = getattr(cpu, '{frame_base}')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
-                    setattr(cpu, '{FRAME_BASE}', values[0])
+                    setattr(cpu, '{frame_base}', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, '{PC}', {PC_VAL})""".format(
-                        FRAME_BASE='RBP' if 'RBP' in test['pre']['registers'] else 'EBP',
-                        PC=pc_reg,
-                        PC_VAL=hex(test['pre']['registers'][pc_reg])))
+                setattr(cpu, '{pc_reg}', {test['pre']['registers'][pc_reg]:x})""")
 
 
     print("""
         condition = True""")
 
     for addr, byte in test['pos']['memory'].items():
-        print("""        condition = Operators.AND(condition, cpu.read_int(0x%x, 8)== ord(%r))"""%(addr, byte))
+        print(f"""        condition = Operators.AND(condition, cpu.read_int(0x{addr:x}, 8)== ord({byte!r}))""")
     for reg_name, value in test['pos']['registers'].items():
         if isFlag(reg_name):
-            print("""        condition = Operators.AND(condition, cpu.%s == %r)"""%(reg_name, value))
+            print(f"""        condition = Operators.AND(condition, cpu.{reg_name} == {value!r})""")
         else:
-            print("""        condition = Operators.AND(condition, cpu.%s == 0x%x)"""%(reg_name, value))
+            print(f"""        condition = Operators.AND(condition, cpu.{reg_name} == 0x{value:x})""")
 
 
     print("""
