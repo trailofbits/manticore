@@ -6,6 +6,7 @@ import unittest
 import os
 import sys
 import resource
+import re
 
 from manticore.platforms import evm
 from manticore.core.plugin import Plugin
@@ -43,38 +44,6 @@ class EthDetectorsIntegrationTest(unittest.TestCase):
         self.assertIn('Unsigned integer overflow at SUB instruction', all_findings)
         self.assertIn('Unsigned integer overflow at ADD instruction', all_findings)
         self.assertIn('Unsigned integer overflow at MUL instruction', all_findings)
-
-
-class EthDetectorsTest(unittest.TestCase):
-    def setUp(self):
-        self.io = DetectIntegerOverflow()
-        self.state = make_mock_evm_state()
-
-    def test_mul_no_overflow(self):
-        """
-        Regression test added for issue 714, where we were using the ADD ovf check for MUL
-        """
-        arguments = [1 << 248, self.state.new_symbolic_value(256)]
-        self.state.constrain(operators.ULT(arguments[1], 256))
-
-        cond = self.io._unsigned_mul_overflow(self.state, *arguments)
-        check = self.state.can_be_true(cond)
-        self.assertFalse(check)
-
-    def test_mul_overflow0(self):
-        arguments = [1 << 249, self.state.new_symbolic_value(256)]
-        self.state.constrain(operators.ULT(arguments[1], 256))
-
-        cond = self.io._unsigned_mul_overflow(self.state, *arguments)
-        check = self.state.can_be_true(cond)
-        self.assertTrue(check)
-
-    def test_mul_overflow1(self):
-        arguments = [1 << 255, self.state.new_symbolic_value(256)]
-
-        cond = self.io._unsigned_mul_overflow(self.state, *arguments)
-        check = self.state.can_be_true(cond)
-        self.assertTrue(check)
 
 
 class EthAbiTests(unittest.TestCase):
@@ -433,6 +402,62 @@ class EthTests(unittest.TestCase):
         self.mevm=None
         shutil.rmtree(self.worksp)
 
+    def test_invalid_function_signature(self):
+        source_code = '''
+        contract Test{
+
+            function ret(uint256) returns(uint256){
+                return 1;
+            }
+
+        }
+        '''
+        user_account = self.mevm.create_account(balance=1000)
+        contract_account = self.mevm.solidity_create_contract(source_code, owner=user_account)
+        with self.assertRaises(EthereumError) as ctx:
+            contract_account.ret(self.mevm.make_symbolic_value(), signature='(uint8)')
+        self.assertTrue(str(ctx.exception))
+
+    def test_function_name_collision(self):
+        source_code = '''
+        contract Test{
+
+            function ret(uint) returns(uint){
+                return 1;
+            }
+
+            function ret(uint,uint) returns(uint){
+                return 2;
+            }
+
+        }
+        '''
+        user_account = self.mevm.create_account(balance=1000)
+        contract_account = self.mevm.solidity_create_contract(source_code, owner=user_account)
+        with self.assertRaises(EthereumError):
+            contract_account.ret(self.mevm.make_symbolic_value())
+
+    def test_function_name_with_signature(self):
+        source_code = '''
+        contract Test{
+
+            function ret(uint) returns(uint){
+                return 1;
+            }
+
+            function ret(uint,uint) returns(uint){
+                return 2;
+            }
+
+        }
+        '''
+        user_account = self.mevm.create_account(balance=1000)
+        contract_account = self.mevm.solidity_create_contract(source_code, owner=user_account)
+        contract_account.ret(self.mevm.make_symbolic_value(), self.mevm.make_symbolic_value(),
+                             signature='(uint256,uint256)')
+        z = list(self.mevm.all_states)[0].solve_one(self.mevm.transactions()[1].return_data)
+        self.assertEqual(ABI.deserialize('(uint256)', z)[0], 2)
+
     def test_migrate_integration(self):
         m = self.mevm
 
@@ -562,7 +587,8 @@ class EthTests(unittest.TestCase):
 
     def test_end_instruction_trace(self):
         """
-        Make sure that the trace files are correct, and include the end instructions
+        Make sure that the trace files are correct, and include the end instructions.
+        Also, make sure we produce a valid function call in trace.
         """
         class TestPlugin(Plugin):
             """
@@ -620,8 +646,31 @@ class EthTests(unittest.TestCase):
         for pc in p.context['rt']:
             self.assertIn(pc, all_rt_traces)
 
+        # Make sure the function call is correctly produced
 
+        # Extract all valid function names, and make sure we have at least one
+        existing_functions = []
+        with open(filename, 'r') as src:
+            for line in src:
+                m = re.match(r'\s*function (\w+).*', line)
+                if m:
+                    existing_functions.append(m.group(1))
 
+        self.assertGreater(len(existing_functions), 0)
+
+        tx = next(f for f in listdir if f.endswith('0.tx'))
+        with open(os.path.join(worksp, tx), 'r') as tx_f:
+            lines = tx_f.readlines()
+
+            # implicitly assert the following doesn't throw
+            header_idx = lines.index('Function call:\n')
+            func_call_summary = lines[header_idx + 1]
+
+            for f in existing_functions:
+                if func_call_summary.startswith(f):
+                    break
+            else:
+                self.fail('Could not find a function call summary in workspace output')
 
     def test_graceful_handle_no_alive_states(self):
         """

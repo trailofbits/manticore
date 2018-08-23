@@ -9,14 +9,10 @@ import tempfile
 import unittest
 import os
 
-from manticore.core.plugin import Plugin
-from manticore.core.smtlib import ConstraintSet, operators
-from manticore.core.smtlib.expression import BitVec
-from manticore.core.smtlib import solver
-from manticore.core.state import State
-from manticore.ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, Detector, NoAliveStates, ABI, EthereumError, DetectReentrancy, DetectUnusedRetVal
-from manticore.platforms.evm import EVMWorld, ConcretizeStack, concretized_args, Return, Stop
-from manticore.core.smtlib.visitors import pretty_print, translate_to_smtlib, simplify, to_constant
+from manticore.core.smtlib import operators
+from .eth_general import make_mock_evm_state
+from manticore.ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, Detector, NoAliveStates, ABI, \
+    EthereumError, DetectReentrancy, DetectUnusedRetVal, DetectSelfdestruct, LoopDepthLimiter, DetectDelegatecall
 
 import shutil
 
@@ -24,18 +20,21 @@ THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # FIXME(mark): Remove these two lines when logging works for ManticoreEVM
 from manticore.utils.log import init_logging, set_verbosity
+
 init_logging()
 set_verbosity(0)
 
-class EthRetVal(unittest.TestCase):
-    """ https://consensys.net/diligence/evm-analyzer-benchmark-suite/ """
+
+class DetectorTester(unittest.TestCase):
+    detector = None
+
     def setUp(self):
         self.mevm = ManticoreEVM()
         self.mevm.verbosity(0)
         self.worksp = self.mevm.workspace
 
     def tearDown(self):
-        self.mevm=None
+        self.mevm = None
         shutil.rmtree(self.worksp)
 
     def _test(self, name, should_find):
@@ -46,12 +45,15 @@ class EthRetVal(unittest.TestCase):
 
         filename = os.path.join(THIS_DIR, 'binaries', 'detectors', '{}.sol'.format(name))
 
-        self.mevm.register_detector(DetectUnusedRetVal())
+        self.mevm.register_detector(self.detector())
         mevm.multi_tx_analysis(filename, contract_name='DetectThis', args=(mevm.make_symbolic_value(),))
 
         expected_findings = set(((c, d) for b, c, d in should_find))
         actual_findings = set(((c, d) for a, b, c, d in mevm.global_findings))
         self.assertEqual(expected_findings, actual_findings)
+
+class EthRetVal(DetectorTester):
+    detector = DetectUnusedRetVal
 
     def test_retval_ok(self):
         name = inspect.currentframe().f_code.co_name[5:]
@@ -68,4 +70,86 @@ class EthRetVal(unittest.TestCase):
     def test_retval_lunatic(self):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, set())
+
+
+class EthSelfdestruct(DetectorTester):
+    detector = DetectSelfdestruct
+
+    def test_selfdestruct_true_pos(self):
+        name = inspect.currentframe().f_code.co_name[5:]
+        self._test(name, {(307, 'Reachable SELFDESTRUCT', False)})
+
+    def test_selfdestruct_true_pos1(self):
+        self.mevm.register_plugin(LoopDepthLimiter())
+        name = inspect.currentframe().f_code.co_name[5:]
+        self._test(name, {(307, 'Reachable SELFDESTRUCT', False)})
+
+    def test_selfdestruct_true_neg(self):
+        name = inspect.currentframe().f_code.co_name[5:]
+        self._test(name, set())
+
+    def test_selfdestruct_true_neg1(self):
+        name = inspect.currentframe().f_code.co_name[5:]
+        self._test(name, set())
+
+
+class EthIntegerOverflow(unittest.TestCase):
+    def setUp(self):
+        self.io = DetectIntegerOverflow()
+        self.state = make_mock_evm_state()
+
+    def test_mul_no_overflow(self):
+        """
+        Regression test added for issue 714, where we were using the ADD ovf check for MUL
+        """
+        arguments = [1 << 248, self.state.new_symbolic_value(256)]
+        self.state.constrain(operators.ULT(arguments[1], 256))
+
+        cond = self.io._unsigned_mul_overflow(self.state, *arguments)
+        check = self.state.can_be_true(cond)
+        self.assertFalse(check)
+
+    def test_mul_overflow0(self):
+        arguments = [1 << 249, self.state.new_symbolic_value(256)]
+        self.state.constrain(operators.ULT(arguments[1], 256))
+
+        cond = self.io._unsigned_mul_overflow(self.state, *arguments)
+        check = self.state.can_be_true(cond)
+        self.assertTrue(check)
+
+    def test_mul_overflow1(self):
+        arguments = [1 << 255, self.state.new_symbolic_value(256)]
+
+        cond = self.io._unsigned_mul_overflow(self.state, *arguments)
+        check = self.state.can_be_true(cond)
+        self.assertTrue(check)
+
+
+class EthDelegatecall(DetectorTester):
+    """ Test the detecion of funny delegatecalls """
+    detector = DetectDelegatecall
+
+    def test_delegatecall_ok(self):
+        name = inspect.currentframe().f_code.co_name[5:]
+        self._test(name, set())
+
+    def test_delegatecall_ok1(self):
+        name = inspect.currentframe().f_code.co_name[5:]
+        self._test(name, set())
+
+    def test_delegatecall_ok2(self):
+        name = inspect.currentframe().f_code.co_name[5:]
+        self._test(name, set())
+
+    unittest.skip("Too slow for this modern times")
+    def test_delegatecall_ok3(self):
+        name = inspect.currentframe().f_code.co_name[5:]
+        self._test(name, set())
+
+    def test_delegatecall_not_ok(self):
+        self.mevm.register_plugin(LoopDepthLimiter())
+        name = inspect.currentframe().f_code.co_name[5:]
+        self._test(name, {(179, 'Dellegatecall to user controlled function', False), (179, 'Dellegatecall to user controlled address', False)})
+
+
 
