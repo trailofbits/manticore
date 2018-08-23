@@ -533,11 +533,14 @@ class DetectDelegatecall(Detector):
         world = state.platform
         mnemonic = instruction.semantics
         current_vm = world.current_vm
+        # If it executed a DELEGATECALL
+        # TODO: Check the transaction was success
+        # if blockchain.last_transaction.return_value:
+        # TODO: check if any of the potential target addresses has code
+        # if not any( world.get_code, possible_addresses):
         if mnemonic == 'DELEGATECALL':
-            print ("DELEGATECALL", arguments)
             gas, address, in_offset, in_size, out_offset, out_size = arguments
             if issymbolic(address):
-                print ("DDELEGATECALL, address is sy,bolic")
                 possible_addresses = state.solve_n(address, 2)
                 if len(possible_addresses) > 1:
                     self.add_finding_here(state, "DellegateCall to controlled address ({:x}, {:x})".format(*possible_addresses))
@@ -545,13 +548,10 @@ class DetectDelegatecall(Detector):
             calldata = world.current_vm.read_buffer(in_offset, in_size)
             func_id = calldata[:4]
             if issymbolic(func_id):
-                possible_func_id = state.solve_n(func_id, 2)
-                print ("possible func_id", possible_func_id)
-                if len(possible_func_id) > 1:
-                    self.add_finding_here(state, "DellegateCall to user function ({:x}, {:x})".format(*possible_func_id))
-
-
-
+                possible_func_ids = state.solve_n(func_id, 2)
+                if len(possible_func_ids) > 1:
+                    possible_func_ids = map(asciibin.hexlify, possible_func_ids)
+                    self.add_finding_here(state, "DellegateCall to user function ({:s}, {:s})".format(*possible_func_ids))
 
 
 class DetectUninitializedMemory(Detector):
@@ -580,7 +580,6 @@ class DetectUninitializedStorage(Detector):
     '''
         Detects uses of uninitialized storage
     '''
-
     def did_evm_read_storage_callback(self, state, address, offset, value):
         if not state.can_be_true(value != 0):
             # Not initialized memory should be zero
@@ -1488,7 +1487,7 @@ class ManticoreEVM(Manticore):
         # Make the constraint store
         constraints = ConstraintSet()
         # make the ethereum world state
-        world = evm.EVMWorld(constraints)
+        world = evm.EVMWorld(constraints, initial_timestamp = 1524785992)
         initial_state = State(constraints, world)
         super().__init__(initial_state, **kwargs)
 
@@ -1994,6 +1993,46 @@ class ManticoreEVM(Manticore):
             self.finalize()
             return
 
+        import curses
+        from curses.textpad import Textbox, rectangle
+        class PrintLine(Plugin):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.stdscr = curses.initscr()
+
+            def on_register(self):
+                self.manticore.verbosity(0)
+                curses.noecho()
+                self.stdscr.clear()
+
+            def on_unregister(self):
+                curses.endwin()
+
+            def will_evm_execute_instruction_callback(self, state, instruction, arguments):
+                world = state.platform
+                pc = world.current_vm.pc
+                address = world.current_transaction.address
+                md = self.manticore.get_metadata(address)
+                if md is None:
+                    return
+                src = md.source_code
+                beg, size, _, _ = md.get_srcmap(pc)[pc]
+
+                pos = 0
+                for n, l in enumerate(src.split('\n')):
+                    if pos <= beg+size and pos+len(l)>=beg:
+                        hl = curses.A_STANDOUT
+                    else:
+                        hl = curses.A_NORMAL
+
+                    self.stdscr.addstr(n, 5, '{:>2d} {}'.format(n, l), hl)
+                    pos+=len(l)+1
+
+
+                self.stdscr.refresh()
+
+        #self.register_plugin(PrintLine())
+
         prev_coverage = 0
         current_coverage = 0
         tx_no = 0
@@ -2123,6 +2162,16 @@ class ManticoreEVM(Manticore):
 
                 results.append((key, value))
                 known_hashes_cond = Operators.OR(cond, known_hashes_cond)
+
+
+            # adding a single random example so we can explore further
+            if not results:
+                data_concrete = state.solve_one(data)
+                s = sha3.keccak_256(data_concrete)
+                data_hash = int(s.hexdigest(), 16) 
+                results.append((data_concrete, data_hash))
+                known_hashes_cond = data_concrete == data
+                known_sha3.append((data_concrete, data_hash))
 
             not_known_hashes_cond = Operators.NOT(known_hashes_cond)
 

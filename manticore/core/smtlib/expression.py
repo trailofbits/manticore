@@ -568,7 +568,6 @@ class Array(Expression):
         self._index_bits = index_bits
         self._index_max = index_max
         self._value_bits = value_bits
-        self._concrete_cache = {}
         super().__init__(*operands, **kwargs)
         assert type(self) is not Array, 'Abstract class'
 
@@ -637,17 +636,10 @@ class Array(Expression):
 
     def select(self, index):
         index = self.cast_index(index)
-        if isinstance(index, Constant) and index.value in self._concrete_cache:
-            return self._concrete_cache[index.value]
         return ArraySelect(self, index)
 
     def store(self, index, value):
-        new_array = ArrayStore(self, self.cast_index(index), self.cast_value(value))
-        if isinstance(index, Constant):
-            new_array._concrete_cache = self._concrete_cache
-            new_array._concrete_cache[index.value] = value
-            self._concrete_cache = {}
-        return new_array
+        return ArrayStore(self, self.cast_index(index), self.cast_value(value))
 
     def write(self, offset, buf):
         if not isinstance(buf, (Array, bytearray)):

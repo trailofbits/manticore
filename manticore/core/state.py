@@ -109,18 +109,14 @@ class State(Eventful):
         self.forward_events_from(self._platform)
 
     # Fixme(felipe) change for with "state.cow_copy() as st_temp":.
+    # This need to change. this is the center of ALL the problems. re. CoW
     def __enter__(self):
         assert self._child is None
         self._platform.constraints = None
-        try:
-            new_state = State(self._constraints.__enter__(), copy.deepcopy(self._platform))
-        except RecursionError:
-            increase_recursion()
-            new_state = State(self._constraints.__enter__(), copy.deepcopy(self._platform))
-
+        new_state = State(self._constraints.__enter__(), self._platform)
         self.platform.constraints = new_state.constraints
         new_state._input_symbols = list(self._input_symbols)
-        new_state._context = copy.deepcopy(self._context)
+        new_state._context = copy.copy(self._context)
         self._child = new_state
         assert new_state.platform.constraints is new_state.constraints
 

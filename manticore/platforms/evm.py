@@ -390,6 +390,13 @@ class EVM(Eventful):
         self._on_transaction = False  # for @transact
         self._checkpoint_data = None
 
+        # Used calldata size
+        min_size = 0
+        max_size = len(self.data)
+        self._used_calldata_size = 0
+        self._calldata_size = len(self.data) #self.constraints.new_bitvec(256, name='CALLDATASIZE', avoid_collisions=True)
+        self.constraints.add(Operators.ULE(self._calldata_size, len(self.data)))
+
     @property
     def bytecode(self):
         return self._bytecode
@@ -425,6 +432,8 @@ class EVM(Eventful):
         state['logs'] = self.logs
         state['_on_transaction'] = self._on_transaction
         state['_checkpoint_data'] = self._checkpoint_data
+        state['_used_calldata_size'] = self._used_calldata_size
+        state['_calldata_size'] = self._calldata_size
         return state
 
     def __setstate__(self, state):
@@ -444,9 +453,14 @@ class EVM(Eventful):
         self.stack = state['stack']
         self._allocated = state['allocated']
         self.suicides = state['suicides']
+        self._used_calldata_size = state['_used_calldata_size']
+        self._calldata_size = state['_calldata_size']
+
         super().__setstate__(state)
 
-    def _allocate(self, address):
+
+    def _get_memfee(self, address, size=1):
+        address = self.safe_add(address, size)
         allocated = self.allocated
         GMEMORY = 3
         GQUADRATICMEMDENOM = 512  # 1 gas per 512 quadwords
@@ -457,10 +471,12 @@ class EVM(Eventful):
         new_totalfee = self.safe_mul(new_size, GMEMORY) + Operators.UDIV(self.safe_mul(new_size, new_size), GQUADRATICMEMDENOM)
         memfee = new_totalfee - old_totalfee
         flag = Operators.UGT(new_totalfee, old_totalfee)
-        self._consume(Operators.ITEBV(512, flag, memfee, 0))
+        return Operators.ITEBV(512, flag, memfee, 0)
 
-        address_c = Operators.UDIV(self.safe_add(address, 31), 32) * 32
-        self._allocated = Operators.ITEBV(512, flag, Operators.ZEXTEND(address_c, 512), Operators.ZEXTEND(allocated, 512))
+    def _allocate(self, address):
+        self._consume(self._get_memfee(address))
+        address_c = Operators.ZEXTEND(Operators.UDIV(self.safe_add(address, 31), 32) * 32, 512)
+        self._allocated = Operators.ITEBV(512, address_c > self._allocated, address_c, self.allocated)
 
     @property
     def allocated(self):
@@ -725,6 +741,7 @@ class EVM(Eventful):
                              expression=expression,
                              setstate=setstate,
                              policy='ALL')
+        #print (self)
         try:
             last_pc, last_gas, instruction, arguments = self._checkpoint()
             result = self._handler(*arguments)
@@ -775,6 +792,21 @@ class EVM(Eventful):
         self.memory.write_BE(offset, value, size)
         for i in range(size):
             self._publish('did_evm_write_memory', offset + i, Operators.EXTRACT(value, (size - i - 1) * 8, 8))
+
+    def safe_add(self, a, b):
+        a = Operators.ZEXTEND(a, 512)
+        b = Operators.ZEXTEND(b, 512)
+        result = a + b
+        self.constraints.add(Operators.ULT(result, 1 << 256))
+        return result
+
+    def safe_mul(self, a, b):
+        a = Operators.ZEXTEND(a, 512)
+        b = Operators.ZEXTEND(b, 512)
+        result = a * b
+        self.constraints.add(Operators.ULT(result, 1 << 256))
+        return result
+
     ############################################################################
     #INSTRUCTIONS
 
@@ -864,13 +896,13 @@ class EVM(Eventful):
         '''
         # fixme integer bitvec
         EXP_SUPPLEMENTAL_GAS = 50   # cost of EXP exponent per byte
-
         def nbytes(e):
+            result = 32
             for i in range(32):
-                if e >> (i * 8) == 0:
-                    return i
-            return 32
+                result = Operators.ITEBV(512, Operators.EXTRACT(e, i, 8) == 0, i, result)
+            return result
         self._consume(EXP_SUPPLEMENTAL_GAS * nbytes(exponent))
+
         return pow(base, exponent, TT256)
 
     def SIGNEXTEND(self, size, value):
@@ -941,7 +973,7 @@ class EVM(Eventful):
                 concrete_data.append(simplified.value)
             else:
                 #simplify by solving. probably means that we need to improve simplification
-                solutions = solver.get_all_values(self.constraints, data[i], 2, silent=True)
+                solutions = solver.get_all_values(self.constraints, simplified, 2, silent=True)
                 if len(solutions) != 1:
                     break
                 concrete_data.append(solutions[0])
@@ -957,13 +989,13 @@ class EVM(Eventful):
         # calculate hash on it/ maybe remember in some structure where that hash came from
         # http://gavwood.com/paper.pdf
         self._consume(GSHA3WORD * (ceil32(size) // 32))
-        data = self.try_simplify_to_constant(self.read_buffer(start, size))
+        data = self.read_buffer(start, size)
+        data = self.try_simplify_to_constant(data)
 
         if issymbolic(data):
             known_sha3 = {}
             # Broadcast the signal
             self._publish('on_symbolic_sha3', data, known_sha3)  # This updates the local copy of sha3 with the pairs we need to explore
-
             value = 0  # never used
             known_hashes_cond = False
             for key, hsh in known_sha3.items():
@@ -1004,9 +1036,16 @@ class EVM(Eventful):
         '''Get deposited value by the instruction/transaction responsible for this execution'''
         return self.value
 
-    @concretized_args(offset='OFFSET')
     def CALLDATALOAD(self, offset):
         '''Get input data of current environment'''
+
+        if issymbolic(offset):
+            if solver.can_be_true(self._constraints, offset==self._used_calldata_size):
+                self.constraints.add(offset==self._used_calldata_size)
+            raise ConcretizeStack(1, policy='SAMPLED')
+
+        self._use_calldata(offset+32)
+
         data_length = len(self.data)
 
         bytes = []
@@ -1020,31 +1059,41 @@ class EVM(Eventful):
             bytes.append(c)
         return Operators.CONCAT(256, *bytes)
 
+    def _use_calldata(self, n):
+        assert not issymbolic(n)
+        max_size = len(self.data)
+        min_size = self._used_calldata_size
+        self._used_calldata_size = Operators.ITEBV(256, min_size + n > max_size, max_size, min_size + n)
+
     def CALLDATASIZE(self):
         '''Get size of input data in current environment'''
-        return len(self.data)
+        return self._calldata_size
 
-    def safe_add(self, a, b):
-        a = Operators.ZEXTEND(a, 512)
-        b = Operators.ZEXTEND(b, 512)
-        result = a + b
-        self.constraints.add(Operators.UGE(result, 0))
-        self.constraints.add(Operators.ULT(result, 1 << 256))
-        return result
-
-    def safe_mul(self, a, b):
-        a = Operators.ZEXTEND(a, 512)
-        b = Operators.ZEXTEND(b, 512)
-        result = a * b
-        self.constraints.add(Operators.UGE(result, 0))
-        self.constraints.add(Operators.ULT(result, 1 << 256))
-        return result
-
-    @concretized_args(data_offset='OFFSET', size='SIZE')
+    #@concretized_args(size='SIZE')
     def CALLDATACOPY(self, mem_offset, data_offset, size):
         '''Copy input data in current environment to memory'''
+
+        if issymbolic(size):
+            if solver.can_be_true(self._constraints, size <= len(self.data) + 32):
+                self.constraints.add(size <= len(self.data) + 32)
+            raise ConcretizeStack(3, policy='SAMPLED')
+            
+
+        if issymbolic(data_offset):
+            if solver.can_be_true(self._constraints, data_offset==self._used_calldata_size):
+                self.constraints.add(data_offset==self._used_calldata_size)
+            raise ConcretizeStack(2, policy='SAMPLED')
+
+
+
         GCOPY = 3             # cost to copy one 32 byte word
-        self._consume(self.safe_mul(GCOPY, self.safe_add(size, 31) // 32))
+        self._use_calldata(data_offset + size)
+        copyfee = self.safe_mul(GCOPY, self.safe_add(size, 31) // 32)
+        memfee = self._get_memfee(mem_offset, size)
+
+        self._consume(copyfee)
+        self._consume(memfee)
+
         self._allocate(self.safe_add(mem_offset, size))
         for i in range(size):
             try:
@@ -1058,6 +1107,7 @@ class EVM(Eventful):
         '''Get size of code running in current environment'''
         return len(self.bytecode)
 
+    @concretized_args(code_offset='SAMPLED', size='SIZE')
     def CODECOPY(self, mem_offset, code_offset, size):
         '''Copy code running in current environment to memory'''
 
@@ -1070,21 +1120,20 @@ class EVM(Eventful):
 
         for i in range(max_size):
             if issymbolic(i < size):
-                default = Operators.ITEBV(256, i < size, 0, self._load(mem_offset + i))  # Fixme. unnecessary memory read
+                default = Operators.ITEBV(8, i < size, 0, self._load(mem_offset + i, 1))  # Fixme. unnecessary memory read
             else:
                 if i < size:
                     default = 0
                 else:
-                    default = self._load(mem_offset + i)
+                    default = self._load(mem_offset + i, 1)
 
             if issymbolic(code_offset):
-                value = Operators.ITEBV(256, code_offset + i >= len(self.bytecode), default, self.bytecode[code_offset + i])
+                value = Operators.ITEBV(8, code_offset + i >= len(self.bytecode), default, self.bytecode[code_offset + i])
             else:
                 if code_offset + i >= len(self.bytecode):
                     value = default
                 else:
                     value = self.bytecode[code_offset + i]
-
             self._store(mem_offset + i, value)
         self._publish('did_evm_read_code', code_offset, size)
 
@@ -1449,7 +1498,6 @@ class EVM(Eventful):
         implementation = getattr(self, self.instruction.semantics, None)
         if implementation is not None:
             args = dict(enumerate(inspect.getfullargspec(implementation).args[1:self.instruction.pops + 1]))
-        print (implementation, args, inspect.getfullargspec(implementation))
         clmn = 80
         result.append('Stack                                                                           Memory')
         sp = 0

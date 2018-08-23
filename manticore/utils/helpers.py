@@ -136,9 +136,8 @@ DEFAULT_RECURSION: int = 0x10000  # 1M
 MAX_RECURSION: int = 0x1000000  # 16.7M
 
 
-current_recursion = sys.getrecursionlimit()
 def get_recursion(self):
-    return current_recursion
+    return sys.getrecursionlimit()
 
 def set_recursion(max_rec):
     resource.setrlimit(resource.RLIMIT_STACK, [0x100 * max_rec, resource.RLIM_INFINITY])
@@ -146,12 +145,10 @@ def set_recursion(max_rec):
     current_recursion = max_rec
 
 def increase_recursion():
+    current_recursion = sys.getrecursionlimit()
     set_recursion(current_recursion * 2)
 
-if current_recursion < DEFAULT_RECURSION:
-    set_recursion(DEFAULT_RECURSION)
-else:
-    set_recursion(current_recursion)
+
 
 class PickleSerializer(StateSerializer):
     def __init__(self):
@@ -161,7 +158,7 @@ class PickleSerializer(StateSerializer):
         try:
             f.write(pickle.dumps(state, 4))
         except RuntimeError:
-            self.recursion = self.recursion * 2
+            increase_recursion()
             self.serialize(state, f)
 
     def deserialize(self, f):
