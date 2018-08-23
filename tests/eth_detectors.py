@@ -87,7 +87,6 @@ class EthSelfdestruct(unittest.TestCase):
         self.mevm.register_detector(DetectSelfdestruct())
         mevm.multi_tx_analysis(filename, contract_name='DetectThis', args=(mevm.make_symbolic_value(),))
 
-        print(mevm.global_findings)
         expected_findings = set((c, d) for b, c, d in should_find)
         actual_findings = set(((c, d) for a, b, c, d in mevm.global_findings))
         self.assertEqual(expected_findings, actual_findings)
