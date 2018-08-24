@@ -112,6 +112,10 @@ class EthEtherLeak(EthDetectorTest):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, set())
 
+    def test_etherleak_true_neg3(self):
+        name = inspect.currentframe().f_code.co_name[5:]
+        self._test(name, set())
+
     def test_etherleak_true_pos_argument(self):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, {(0x1c5, "Reachable ether leak to sender via argument", False)})
