@@ -2387,6 +2387,16 @@ class ManticoreEVM(Manticore):
                     return_data = state.solve_one(tx.return_data)
                     tx_summary.write("Return_data: %s %s\n" % (binascii.hexlify(return_data), flagged(issymbolic(tx.return_data))))
                 metadata = self.get_metadata(tx.address)
+                if tx.sort == 'CREATE':
+                    if metadata is not None:
+                        args_data = tx.data[len(metadata._init_bytecode):]
+                        arguments = ABI.deserialize(metadata.get_constructor_arguments(), state.solve_one(args_data))
+                        is_argument_symbolic = any(map(issymbolic, arguments))
+                        tx_summary.write('Function call:\n')
+                        tx_summary.write("Constructor(")
+                        tx_summary.write(','.join(map(repr, map(state.solve_one, arguments))))
+                        tx_summary.write(') -> %s %s\n' % (tx.result, flagged(is_argument_symbolic)))
+
                 if tx.sort == 'CALL':
                     if metadata is not None:
                         function_id = tx.data[:4]  # hope there is enough data
