@@ -241,6 +241,7 @@ class DetectSelfdestruct(Detector):
         if instruction.semantics == 'SELFDESTRUCT':
             self.add_finding_here(state, 'Reachable SELFDESTRUCT')
 
+
 class DetectEtherLeak(Detector):
     def will_evm_execute_instruction_callback(self, state, instruction, arguments):
         if instruction.semantics == 'CALL':
