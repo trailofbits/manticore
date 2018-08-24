@@ -162,8 +162,8 @@ class FilterFunctions(Plugin):
         world = state.platform
         tx_cnt = len(world.all_transactions)
         # Constrain input only once per tx, per plugin
-        if state.context.get('constrained%d' % id(self), 0) != tx_cnt:
-            state.context['constrained%d' % id(self)] = tx_cnt
+        if state.context.get(f'constrained{id(self)}', 0) != tx_cnt:
+            state.context[f'constrained{id(self)}'] = tx_cnt
 
             if self._depth == 'human' and not tx.is_human:
                 return
@@ -595,7 +595,7 @@ class SolidityMetadata(object):
         self._init_bytecode = init_bytecode
         self._runtime_bytecode = runtime_bytecode
         self._hashes = hashes
-        self.abi = {item.get('name', '{fallback}'): item for item in abi}
+        self.abi = {item.get('name', f'{{fallback}}'): item for item in abi}
         self.warnings = warnings
         self.srcmap_runtime = self.__build_source_map(self.runtime_bytecode, srcmap_runtime)
         self.srcmap = self.__build_source_map(self.init_bytecode, srcmap)
@@ -702,7 +702,7 @@ class SolidityMetadata(object):
         nl = self.source_code[:beg].count('\n')
         snippet = self.source_code[beg:beg + size]
         for l in snippet.split('\n'):
-            output += '    %s  %s\n' % (nl, l)
+            output += f'    {nl}  {l}\n'
             nl += 1
         return output
 
@@ -717,14 +717,14 @@ class SolidityMetadata(object):
 
     def get_func_argument_types(self, hsh):
         abi = self.get_abi(hsh)
-        return '(' + ','.join(x['type'] for x in abi.get('inputs', [])) + ')'
+        return f'({",".join(x["type"] for x in abi.get("inputs", []))})'
 
     def get_func_return_types(self, hsh):
         abi = self.get_abi(hsh)
-        return '(' + ','.join(x['type'] for x in abi.get('outputs', [])) + ')'
+        return f'({",".join(x["type"] for x in abi.get("outputs", []))})'
 
     def get_func_name(self, hsh):
-        signature = self.signatures.get(hsh, '{fallback}()')
+        signature = self.signatures.get(hsh, f'{{fallback}}()')
         return signature.split('(')[0]
 
     def get_func_signature(self, hsh):
@@ -736,7 +736,7 @@ class SolidityMetadata(object):
 
     @property
     def functions(self):
-        return tuple(self.signatures.values()) + ('{fallback}()',)
+        return tuple(self.signatures.values()) + (f'{{fallback}}()',)
 
     @property
     def hashes(self):
@@ -1303,9 +1303,9 @@ class ManticoreEVM(Manticore):
                 except KeyError:
                     raise DependencyError([lib_name])
                 for pos in pos_lst:
-                    hex_contract_lst[pos:pos + 40] = '%040x' % int(lib_address)
+                    hex_contract_lst[pos:pos + 40] = f'{int(lib_address):040x}'
             hex_contract = ''.join(hex_contract_lst)
-        return bytearray(binascii.unhexlify(hex_contract))
+        return bytearray.fromhex(hex_contract)
 
     @staticmethod
     def _run_solc(source_file, solc_bin=None, solc_remaps=[]):
@@ -1661,7 +1661,7 @@ class ManticoreEVM(Manticore):
                     contract_account = self.create_contract(owner=owner, init=md._init_bytecode)
 
                 if contract_account is None:
-                    raise EthereumError("Failed to build contract %s" % contract_name_i)
+                    raise EthereumError(f'Failed to build contract {contract_name_i}')
                 self.metadata[int(contract_account)] = md
 
                 deps[contract_name_i] = contract_account
@@ -1859,7 +1859,7 @@ class ManticoreEVM(Manticore):
             caller = int(caller)
         #Defaults, call data is empty
         if data is None:
-            data = bytearray(b"")
+            data = bytearray()
         if isinstance(data, (str, bytes)):
             data = bytearray(data)
         if not isinstance(data, (bytearray, Array)):
@@ -1955,7 +1955,7 @@ class ManticoreEVM(Manticore):
         tx_no = 0
         while (current_coverage < 100 or not tx_use_coverage) and not self.is_shutdown():
             try:
-                logger.info("Starting symbolic transaction: %d", tx_no)
+                logger.info(f'Starting symbolic transaction: {tx_no}')
 
                 # run_symbolic_tx
                 symbolic_data = self.make_symbolic_buffer(320)
@@ -1964,7 +1964,7 @@ class ManticoreEVM(Manticore):
                                  address=contract_account,
                                  data=symbolic_data,
                                  value=symbolic_value)
-                logger.info("%d alive states, %d terminated states", self.count_running_states(), self.count_terminated_states())
+                logger.info(f"{self.count_running_states()} alive states, {self.count_terminated_states()} terminated states")
             except NoAliveStates:
                 break
 
@@ -2127,7 +2127,7 @@ class ManticoreEVM(Manticore):
 
     def _did_evm_execute_instruction_callback(self, state, instruction, arguments, result_ref):
         ''' INTERNAL USE '''
-        logger.debug("%s", state.platform.current_vm)
+        logger.debug(f'{state.platform.current_vm}'')
         #TODO move to a plugin
         at_init = state.platform.current_transaction.sort == 'CREATE'
         if at_init:
@@ -2270,7 +2270,7 @@ class ManticoreEVM(Manticore):
                 is_balance_symbolic = issymbolic(balance)
                 is_something_symbolic = is_something_symbolic or is_balance_symbolic
                 balance = state.solve_one(balance)
-                summary.write(f"Balance: {balance} {flagged(is_balance_symbolic)}\n"
+                summary.write(f"Balance: {balance} {flagged(is_balance_symbolic)}\n")
                 from .core.smtlib.visitors import translate_to_smtlib
 
                 storage = blockchain.get_storage(account_address)
@@ -2297,14 +2297,14 @@ class ManticoreEVM(Manticore):
                     for i in all_used_indexes:
                         value = storage.get(i)
                         is_storage_symbolic = issymbolic(value)
-                        summary.write("storage[%x] = %x %s\n" % (state.solve_one(i), state.solve_one(value), flagged(is_storage_symbolic)))
+                        summary.write(f'storage[{state.solve_one(i):x}] = {state.solve_one(value):x} {flagged(is_storage_symbolic)}\n')
                 '''if blockchain.has_storage(account_address):
                     summary.write("Storage:\n")
                     for offset, value in blockchain.get_storage_items(account_address):
                         is_storage_symbolic = issymbolic(offset) or issymbolic(value)
                         offset = state.solve_one(offset)
                         value = state.solve_one(value)
-                        summary.write("\t%032x -> %032x %s\n" % (offset, value, flagged(is_storage_symbolic)))
+                        summary.write(f"\t{offset:032x} -> {value:032x} {flagged(is_storage_symbolic)}\n")
                         is_something_symbolic = is_something_symbolic or is_storage_symbolic
                 '''
 
@@ -2313,15 +2313,15 @@ class ManticoreEVM(Manticore):
                     summary.write("Code:\n")
                     fcode = io.BytesIO(runtime_code)
                     for chunk in iter(lambda: fcode.read(32), b''):
-                        summary.write('\t%s\n' % binascii.hexlify(chunk))
+                        summary.write(f'\t{chunk.hex()}\n')
                     runtime_trace = set((pc for contract, pc, at_init in state.context['evm.trace'] if address == contract and not at_init))
-                    summary.write("Coverage %d%% (on this state)\n" % calculate_coverage(runtime_code, runtime_trace))  # coverage % for address in this account/state
+                    summary.write(f'Coverage {calculate_coverage(runtime_code, runtime_trace)}%% (on this state)\n')  # coverage % for address in this account/state
                 summary.write("\n")
 
             if blockchain._sha3:
                 summary.write("Known hashes:\n")
                 for key, value in blockchain._sha3.items():
-                    summary.write('%s::%x\n' % (binascii.hexlify(key.encode()).decode(), value))
+                    summary.write(f'{binascii.hexlify(key.encode()).decode()}::{value:x}\n')
 
             if is_something_symbolic:
                 summary.write('\n\n(*) Example solution given. Value is symbolic and may take other values\n')
@@ -2330,23 +2330,23 @@ class ManticoreEVM(Manticore):
         with testcase.open_stream('tx') as tx_summary:
             is_something_symbolic = False
             for tx in blockchain.human_transactions:  # external transactions
-                tx_summary.write("Transactions Nr. %d\n" % blockchain.transactions.index(tx))
+                tx_summary.write(f"Transactions Nr. {blockchain.transactions.index(tx)}\n")
 
                 # The result if any RETURN or REVERT
-                tx_summary.write("Type: %s (%d)\n" % (tx.sort, tx.depth))
+                tx_summary.write(f"Type: {tx.sort} ({tx.depth})\n")
                 caller_solution = state.solve_one(tx.caller)
                 caller_name = self.account_name(caller_solution)
-                tx_summary.write("From: %s(0x%x) %s\n" % (caller_name, caller_solution, flagged(issymbolic(tx.caller))))
+                tx_summary.write(f"From: {caller_name}(0x{caller_solution:x}) {flagged(issymbolic(tx.caller))}\n")
                 address_solution = state.solve_one(tx.address)
                 address_name = self.account_name(address_solution)
-                tx_summary.write("To: %s(0x%x) %s\n" % (address_name, address_solution, flagged(issymbolic(tx.address))))
-                tx_summary.write("Value: %d %s\n" % (state.solve_one(tx.value), flagged(issymbolic(tx.value))))
-                tx_summary.write("Gas used: %d %s\n" % (state.solve_one(tx.gas), flagged(issymbolic(tx.gas))))
+                tx_summary.write(f"To: {address_name}(0x{address_solution:x}) {flagged(issymbolic(tx.address))}\n")
+                tx_summary.write(f"Value: {state.solve_one(tx.value)} {flagged(issymbolic(tx.value))}\n")
+                tx_summary.write(f"Gas used: {state.solve_one(tx.gas)} {flagged(issymbolic(tx.gas))}\n")
                 tx_data = state.solve_one(tx.data)
-                tx_summary.write("Data: %s %s\n" % (binascii.hexlify(tx_data), flagged(issymbolic(tx.data))))
+                tx_summary.write(f"Data: {binascii.hexlify(tx_data)} {flagged(issymbolic(tx.data))}\n")
                 if tx.return_data is not None:
                     return_data = state.solve_one(tx.return_data)
-                    tx_summary.write("Return_data: %s %s\n" % (binascii.hexlify(return_data), flagged(issymbolic(tx.return_data))))
+                    tx_summary.write(f"Return_data: {binascii.hexlify(return_data)} {flagged(issymbolic(tx.return_data))}\n")
                 metadata = self.get_metadata(tx.address)
                 if tx.sort == 'CALL':
                     if metadata is not None:
@@ -2366,11 +2366,11 @@ class ManticoreEVM(Manticore):
 
                         tx_summary.write('\n')
                         tx_summary.write("Function call:\n")
-                        tx_summary.write("%s(" % state.solve_one(function_name))
+                        tx_summary.write(f"{state.solve_one(function_name)}(")
                         tx_summary.write(','.join(map(repr, map(state.solve_one, arguments))))
                         is_argument_symbolic = any(map(issymbolic, arguments))
                         is_something_symbolic = is_something_symbolic or is_argument_symbolic
-                        tx_summary.write(') -> %s %s\n' % (tx.result, flagged(is_argument_symbolic)))
+                        tx_summary.write(f') -> {tx.result} {flagged(is_argument_symbolic)}\n')
 
                         if return_data is not None:
                             is_return_symbolic = any(map(issymbolic, return_data))
@@ -2378,7 +2378,7 @@ class ManticoreEVM(Manticore):
                             if len(return_values) == 1:
                                 return_values = return_values[0]
 
-                            tx_summary.write('return: %r %s\n' % (return_values, flagged(is_return_symbolic)))
+                            tx_summary.write(f'return: {return_values!r} {flagged(is_return_symbolic)}\n')
                             is_something_symbolic = is_something_symbolic or is_return_symbolic
 
                 tx_summary.write('\n\n')
@@ -2395,11 +2395,11 @@ class ManticoreEVM(Manticore):
                 solved_memlog = state.solve_one(log_item.memlog)
                 printable_bytes = ''.join([c for c in map(chr, solved_memlog) if c in string.printable])
 
-                logs_summary.write("Address: %x\n" % log_item.address)
-                logs_summary.write("Memlog: %s (%s) %s\n" % (binascii.hexlify(solved_memlog), printable_bytes, flagged(is_log_symbolic)))
+                logs_summary.write(f"Address: {log_item.address:x}\n" % )
+                logs_summary.write(f"Memlog: {binascii.hexlify(solved_memlog)} ({printable_bytes}) {flagged(is_log_symbolic)}\n")
                 logs_summary.write("Topics:\n")
                 for i, topic in enumerate(log_item.topics):
-                    logs_summary.write("\t%d) %x %s" % (i, state.solve_one(topic), flagged(issymbolic(topic))))
+                    logs_summary.write(f"\t{i}) {state.solve_one(topic):x} {flagged(issymbolic(topic))}")
 
         with testcase.open_stream('constraints') as smt_summary:
             smt_summary.write(str(state.constraints))
@@ -2440,12 +2440,12 @@ class ManticoreEVM(Manticore):
         Terminate and generate testcases for all currently alive states (contract states that cleanly executed
         to a STOP or RETURN in the last symbolic transaction).
         """
-        logger.debug("Finalizing %d states.", self.count_states())
+        logger.debug(f"Finalizing {self.count_states()} states.")
 
         def finalizer(state_id):
             state_id = self._terminate_state_id(state_id)
             st = self.load(state_id)
-            logger.debug("Generating testcase for state_id %d", state_id)
+            logger.debug(f"Generating testcase for state_id {state_id}")
             self._generate_testcase_callback(st, 'test', '')
 
         def worker_finalize(q):
@@ -2477,9 +2477,9 @@ class ManticoreEVM(Manticore):
         if len(self.global_findings):
             with self._output.save_stream('global.findings') as global_findings:
                 for address, pc, finding, at_init in self.global_findings:
-                    global_findings.write('- %s -\n' % finding)
-                    global_findings.write('  Contract: %s\n' % address)
-                    global_findings.write('  EVM Program counter: %s%s\n' % (pc, at_init and " (at constructor)" or ""))
+                    global_findings.write(f'- {finding} -\n')
+                    global_findings.write(f'  Contract: {address}\n')
+                    global_findings.write(f'  EVM Program counter: {pc}{at_init and " (at constructor)" or ""}\n')
 
                     md = self.get_metadata(address)
                     if md is not None:

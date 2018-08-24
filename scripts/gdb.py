@@ -50,18 +50,18 @@ def getR(reg):
     reg = "$" + reg
     if "XMM" in reg:
         reg = reg + ".uint128"
-        val = correspond('p %s\n' % reg.lower()).split("=")[-1].split("\n")[0]
+        val = correspond(f'p {reg.lower()}\n').split("=")[-1].split("\n")[0]
         if "0x" in val:
             return int(val.split("0x")[-1], 16)
         else:
             return int(val)
     if "FLAG" in reg:
         reg = "(unsigned) " + reg
-    if reg in ['$R%dB' % i for i in range(16)]:
+    if reg in [f'$R{i}B' for i in range(16)]:
         reg = reg[:-1] + "&0xff"
-    if reg in ['$R%dW' % i for i in range(16)]:
+    if reg in [f'$R{i}W' for i in range(16)]:
         reg = reg[:-1] + "&0xffff"
-    val = correspond('p /x %s\n' % reg.lower())
+    val = correspond(f'p /x {reg.lower()}\n')
     val = val.split("0x")[-1]
     return int(val.split("\n")[0], 16)
 
@@ -83,7 +83,7 @@ def getCanonicalRegisters():
 
 
 def setR(reg, value):
-    correspond('set $%s = %s\n' % (reg.lower(), int(value)))
+    correspond(f'set ${reg.lower()} = {int(value)}\n')
 
 
 def stepi():
@@ -93,7 +93,7 @@ def stepi():
 
 def getM(m):
     try:
-        return int(correspond('x/xg %s\n' % m).strip().split('\t')[-1], 0)
+        return int(correspond(f'x/xg {m}\n').strip().split('\t')[-1], 0)
     except Exception as e:
         raise e
         return 0
@@ -104,7 +104,7 @@ def getPid():
 
 
 def getStack():
-    maps = open("/proc/%s/maps" % correspond('info proc\n').split("\n")[0].split(" ")[-1]).read().split("\n")
+    maps = open(f"/proc/{correspond('info proc\n').split('\n')[0].split(' ')[-1]}/maps").read().split("\n")
     i, o = [int(x, 16) for x in maps[-3].split(" ")[0].split('-')]
 
 
