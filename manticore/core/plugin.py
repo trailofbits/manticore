@@ -106,19 +106,19 @@ class ExtendedTracer(Plugin):
         if self.current_pc == where:
             return
 
-        #print 'will_read_memory %x %r, current_pc %x'%(where, size, self.current_pc)
+        # print(f'will_read_memory {where:x} {size!r}, current_pc {self.current_pc:x}')
 
     def did_read_memory_callback(self, state, where, value, size):
         if self.current_pc == where:
             return
 
-        #print 'did_read_memory %x %r %r, current_pc %x'%(where, value, size, self.current_pc)
+        # print(f'did_read_memory {where:x} {value!r} {size!r}, current_pc {self.current_pc:x}')
 
     def will_write_memory_callback(self, state, where, value, size):
         if self.current_pc == where:
             return
 
-        #print 'will_write_memory %x %r %r, current_pc %x'%(where, value, size, self.current_pc)
+        # print(f'will_write_memory {where:x} {value!r} {size!r}, current_pc {self.current_pc:x}')
 
     def did_write_memory_callback(self, state, where, value, size):
         if self.current_pc == where:

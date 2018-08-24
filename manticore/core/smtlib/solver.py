@@ -297,7 +297,7 @@ class Z3Solver(Solver):
         ''' Auxiliary method to send an assert '''
         assert isinstance(expression, Bool)
         smtlib = translate_to_smtlib(expression)
-        self._send('(assert %s)' % smtlib)
+        self._send(f'(assert {smtlib})')
 
     def _getvalue(self, expression):
         ''' Ask the solver for one possible assignment for val using current set
@@ -308,7 +308,7 @@ class Z3Solver(Solver):
             return expression
         assert isinstance(expression, Variable)
 
-        self._send('(get-value (%s))' % expression.name)
+        self._send(f'(get-value ({expression.name}))')
         ret = self._recv()
         assert ret.startswith('((') and ret.endswith('))'), ret
 
@@ -408,7 +408,7 @@ class Z3Solver(Solver):
                 self._push()
                 try:
                     self._assert(operation(X, aux))
-                    self._send('(%s %s)' % (goal, aux.name))
+                    self._send(f'({goal} {aux.name})')
                     self._send('(check-sat)')
                     _status = self._recv()
                     if _status not in ('sat', 'unsat', 'unknown'):
@@ -477,7 +477,7 @@ class Z3Solver(Solver):
                     raise SolverException('Model is not available')
 
                 for i in range(expression.index_max):
-                    self._send('(get-value (%s))' % var[i].name)
+                    self._send(f'(get-value ({var[i].name}))')
                     ret = self._recv()
                     assert ret.startswith('((') and ret.endswith('))')
                     pattern, base = self._get_value_fmt
@@ -493,10 +493,10 @@ class Z3Solver(Solver):
         if self._check() != 'sat':
             raise SolverException('Model is not available')
 
-        self._send('(get-value (%s))' % var.name)
+        self._send(f'(get-value ({var.name}))')
         ret = self._recv()
         if not (ret.startswith('((') and ret.endswith('))')):
-            raise SolverException('SMTLIB error parsing response: %s' % ret)
+            raise SolverException(f'SMTLIB error parsing response: {ret}')
 
         if isinstance(expression, Bool):
             return {'true': True, 'false': False}[ret[2:-2].split(' ')[1]]

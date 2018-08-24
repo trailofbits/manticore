@@ -531,7 +531,7 @@ class EthTests(unittest.TestCase):
             user_accounts.append(m.create_account())
         self.assertEqual(len(m.accounts), 12)
         for i in range(10):
-            self.assertEqual(m.accounts['normal{:d}'.format(i)], user_accounts[i])
+            self.assertEqual(m.accounts[f'normal{i}'], user_accounts[i])
 
     def test_regression_internal_tx(self):
         m = self.mevm

@@ -58,7 +58,7 @@ class Visitor(object):
         assert expression.__class__.__mro__[-1] is object
         for cls in expression.__class__.__mro__:
             sort = cls.__name__
-            methodname = 'visit_%s' % sort
+            methodname = f'visit_{sort}'
             if hasattr(self, methodname):
                 value = getattr(self, methodname)(expression, *args)
                 if value is not None:
@@ -188,7 +188,7 @@ class PrettyPrinter(Visitor):
         self.depth = depth
 
     def _print(self, s, e=None):
-        self.output += ' ' * self.indent + str(s)  # + '(%016x)'%hash(e)
+        self.output += f'{"":{self.indent}s}{s}'  # + f'({hash(e):016x})'
         self.output += '\n'
 
     def visit(self, expression):
@@ -208,7 +208,7 @@ class PrettyPrinter(Visitor):
         assert expression.__class__.__mro__[-1] is object
         for cls in expression.__class__.__mro__:
             sort = cls.__name__
-            methodname = 'visit_%s' % sort
+            methodname = f'visit_{sort}'
             method = getattr(self, methodname, None)
             if method is not None:
                 method(expression, *args)
@@ -227,7 +227,7 @@ class PrettyPrinter(Visitor):
         return ''
 
     def visit_BitVecExtract(self, expression):
-        self._print(expression.__class__.__name__ + '{%d:%d}' % (expression.begining, expression.end), expression)
+        self._print(f'{expression.__class__.__name__}{{{expression.begining}:{expression.end}}}', expression)
         self.indent += 2
         if self.depth is None or self.indent < self.depth * 2:
             for o in expression.operands:
@@ -587,7 +587,7 @@ class TranslatorSmtlib(Translator):
             return self._bindings_cache[smtlib]
 
         TranslatorSmtlib.unique += 1
-        name = 'a_%d' % TranslatorSmtlib.unique
+        name = f'a_{TranslatorSmtlib.unique}'
 
         self._bindings.append((name, expression, smtlib))
 
@@ -643,9 +643,9 @@ class TranslatorSmtlib(Translator):
     def visit_BitVecConstant(self, expression):
         assert isinstance(expression, BitVecConstant)
         if expression.size == 1:
-            return '#' + bin(expression.value & expression.mask)[1:]
+            return f'#{bin(expression.value & expression.mask)[1:]}'
         else:
-            return '#x%0*x' % (int(expression.size / 4), expression.value & expression.mask)
+            return f'#x{int(expression.size / 4):0{expression.value & expression.mask}x}'
 
     def visit_BoolConstant(self, expression):
         return expression.value and 'true' or 'false'
@@ -657,7 +657,7 @@ class TranslatorSmtlib(Translator):
         array_smt, index_smt = operands
         if isinstance(expression.array, ArrayStore):
             array_smt = self._add_binding(expression.array, array_smt)
-        return '(select %s %s)' % (array_smt, index_smt)
+        return f'(select {array_smt} {index_smt})'
 
     def visit_Operation(self, expression, *operands):
         operation = self.translation_table[type(expression)]
@@ -667,7 +667,7 @@ class TranslatorSmtlib(Translator):
             operation = operation % (expression.end, expression.begining)
 
         operands = [self._add_binding(*x) for x in zip(expression.operands, operands)]
-        return '(%s %s)' % (operation, ' '.join(operands))
+        return f'({operation} {" ".join(operands)})'
 
     @property
     def results(self):
@@ -678,7 +678,7 @@ class TranslatorSmtlib(Translator):
         output = super().result
         if self.use_bindings:
             for name, expr, smtlib in reversed(self._bindings):
-                output = '( let ((%s %s)) %s )' % (name, smtlib, output)
+                output = f'( let (({name} {smtlib})) {output} )'
         return output
 
 

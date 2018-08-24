@@ -622,7 +622,7 @@ class EVM(Eventful):
         current = self.instruction
         implementation = getattr(self, current.semantics, None)
         if implementation is None:
-            raise TerminateState("Instruction not implemented %s" % current.semantics, testcase=True)
+            raise TerminateState(f"Instruction not implemented {current.semantics}", testcase=True)
         return implementation(*arguments)
 
     #Execute an instruction from current pc
@@ -1365,10 +1365,10 @@ class EVM(Eventful):
                     if issymbolic(x):
                         return '.'
                     else:
-                        return "%s" % ((x <= 127 and FILTER[x]) or '.')
+                        return f'{((x <= 127 and FILTER[x]) or ".")}'
 
                 printable = ''.join([p1(x) for x in chars])
-                lines.append("%04x  %-*s  %s" % (c, length * 3, hex, printable))
+                lines.append(f"{c:04x}  {hex:{length * 3}s}  {printable}")
             return lines
 
         m = []
@@ -1392,17 +1392,16 @@ class EVM(Eventful):
             result.append('<Symbolic PC>')
 
         else:
-            result.append('0x%04x: %s %s %s\n' % (pc, self.instruction.name, self.instruction.has_operand and '0x%x' %
-                                                  self.instruction.operand or '', self.instruction.description))
+            result.append(f'0x{pc:04x}: {self.instruction.name} {f"0x{self.instruction.operand:x}" if self.instruction.has_operand else ""} {self.instruction.description}\n')
 
-        result.append('Stack                                                                      Memory')
+        result.append(f'Stack{"Memory":>76s}')
         sp = 0
         for i in list(reversed(self.stack))[:10]:
             r = ''
             if issymbolic(i):
-                r = '%s %r' % (sp == 0 and 'top> ' or '     ', i)
+                r = f'{"top>" if sp == 0 else "":5s} {i!r}'
             else:
-                r = '%s 0x%064x' % (sp == 0 and 'top> ' or '     ', i)
+                r = f'{"top>" if sp == 0 else "":5s} 0x{i:064x}'
             sp += 1
 
             h = ''
@@ -1410,14 +1409,14 @@ class EVM(Eventful):
                 h = hd[sp - 1]
             except BaseException:
                 pass
-            r += ' ' * (75 - len(r)) + h
+            r += f'{"":{75 - len(r)}s}{h}'
             result.append(r)
 
         for i in range(sp, len(hd)):
-            r = ' ' * 75 + hd[i]
+            r = f'{"":75s}{hd[i]}'
             result.append(r)
 
-        result = [hex(self.address) + ": " + x for x in result]
+        result = [f'0x{self.address:x}: {x}' for x in result]
         return '\n'.join(result)
 
 ################################################################################
@@ -1514,7 +1513,7 @@ class EVMWorld(Platform):
         return key in self.accounts
 
     def __str__(self):
-        return "WORLD:" + str(self._world_state)
+        return f"WORLD:{self._world_state}"
 
     @property
     def logs(self):
@@ -1818,8 +1817,8 @@ class EVMWorld(Platform):
 
         # We are not maintaining an actual -block-chain- so we just generate
         # some hashes for each virtual block
-        value = sha3.keccak_256(repr(block_number) + 'NONCE').hexdigest()
-        value = int('0x' + value, 0)
+        value = sha3.keccak_256(f'{block_number!r}NONCE').hexdigest()
+        value = int(f'0x{value}', 0)
 
         if force_recent:
             # 0 is left on the stack if the looked for block number is greater or equal
@@ -2033,7 +2032,7 @@ class EVMWorld(Platform):
             return cond
 
         assert any(map(issymbolic, data))
-        logger.info("SHA3 Searching over %d known hashes", len(self._sha3))
+        logger.info(f"SHA3 Searching over {len(self._sha3)} known hashes")
         logger.info("SHA3 TODO save this state for future explorations with more known hashes")
         # Broadcast the signal
         self._publish('on_symbolic_sha3', data, list(self._sha3.items()))

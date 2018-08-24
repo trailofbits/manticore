@@ -31,7 +31,7 @@ Usage:
 
 if __name__ == '__main__':
     if len(sys.argv) < 3:
-        sys.stderr.write("Usage: %s [binary] [address]\n"%(sys.argv[0],))
+        sys.stderr.write(f"Usage: {sys.argv[0]} [binary] [address]\n")
         sys.exit(2)
 
     # Passing a parameter to state_explore binary disables reading the value

@@ -87,7 +87,7 @@ class ConcretizeArgument(CpuException):
     '''
 
     def __init__(self, cpu, argnum, policy='MINMAX'):
-        self.message = "Concretizing argument #%d." % (argnum,)
+        self.message = f"Concretizing argument #{argnum}."
         self.cpu = cpu
         self.policy = policy
         self.argnum = argnum
@@ -888,9 +888,7 @@ class Cpu(Eventful):
     def render_instruction(self, insn=None):
         try:
             insn = self.instruction
-            return "INSTRUCTION: 0x%016x:\t%s\t%s" % (insn.address,
-                                                      insn.mnemonic,
-                                                      insn.op_str)
+            return f"INSTRUCTION: 0x{insn.address:016x}:\t{insn.mnemonic}\t{insn.op_str}"
         except Exception as e:
             return "{can't decode instruction}"
 
@@ -900,12 +898,12 @@ class Cpu(Eventful):
         value = self.read_register(reg_name)
 
         if issymbolic(value):
-            aux = "%3s: " % reg_name + "%16s" % value
+            aux = f"{reg_name:3s}: {value:16s}"
             result += aux
         elif isinstance(value, int):
-            result += "%3s: 0x%016x" % (reg_name, value)
+            result += f"{reg_name:3s}: 0x{value:016x}"
         else:
-            result += "%3s: %r" % (reg_name, value)
+            result += f"{reg_name:3s}: {value!r}"
         return result
 
     def render_registers(self):
@@ -923,7 +921,7 @@ class Cpu(Eventful):
         :rtype: str
         :return: name and current value for all the registers.
         '''
-        result = self.render_instruction() + "\n"
+        result = f'{self.render_instruction()}\n'
         result += '\n'.join(self.render_registers())
         return result
 
