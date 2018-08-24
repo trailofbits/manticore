@@ -556,7 +556,7 @@ class AMD64RegFile(RegisterFile):
     def write(self, name, value):
         name = self._alias(name)
         if name in ('ST0', 'ST1', 'ST2', 'ST3', 'ST4', 'ST5', 'ST6', 'ST7'):
-            name = f'FP{((self.read('TOP') + int(name[2])) & 7)}'
+            name = f'FP{((self.read("TOP") + int(name[2])) & 7)}'
 
         # Special EFLAGS/RFLAGS case
         if 'FLAGS' in name:

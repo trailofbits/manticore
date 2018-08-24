@@ -158,11 +158,11 @@ class Detector(Plugin):
         return self.__class__.__name__.split('.')[-1]
 
     def get_findings(self, state):
-        return state.context.setdefault('{:s}.findings'.format(self.name), set())
+        return state.context.setdefault(f'{self.name:s}.findings', set())
 
     @contextmanager
     def locked_global_findings(self):
-        with self.manticore.locked_context('{:s}.global_findings'.format(self.name), set) as global_findings:
+        with self.manticore.locked_context(f'{self.name}.global_findings', set) as global_findings:
             yield global_findings
 
     @property
@@ -219,14 +219,14 @@ class Detector(Plugin):
         at_init = state.platform.current_transaction.sort == 'CREATE'
         location = (address, pc, finding, at_init, condition)
         hash_id = hashlib.sha1(str(location).encode()).hexdigest()
-        state.context.setdefault('{:s}.locations'.format(self.name), {})[hash_id] = location
+        state.context.setdefault(f'{self.name}.locations', {})[hash_id] = location
         return hash_id
 
     def _get_location(self, state, hash_id):
         ''' Get previously saved location
             A location is composed of: address, pc, finding, at_init, condition
         '''
-        return state.context.setdefault('{:s}.locations'.format(self.name), {})[hash_id]
+        return state.context.setdefault(f'{self.name}.locations', {})[hash_id]
 
     def _get_src(self, address, pc):
         return self.manticore.get_metadata(address).get_source_for(pc)
@@ -1142,14 +1142,14 @@ class EVMContract(EVMAccount):
         func_name = str(signature.split('(')[0])
         if func_name.startswith('_'):
             # TODO(mark): is this actually true? is there anything actually wrong with a solidity name beginning w/ an underscore?
-            raise EthereumError("Function name ({}) begins with underscore, internally reserved".format(func_name))
+            raise EthereumError(f"Function name ({func_name}) begins with underscore, internally reserved")
         if func_name in {'add_function', 'address', 'name'}:
-            raise EthereumError("Function name ({}) is internally reserved".format(func_name))
+            raise EthereumError(f"Function name ({func_name}) is internally reserved")
         if func_name in self._hashes:
             self._hashes[func_name].append((signature, func_id))
             return
         if func_id in {h[1] for names in self._hashes.values() for h in names}:
-            raise EthereumError("A function with the same hash as {} is already defined".format(func_name))
+            raise EthereumError(f"A function with the same hash as {func_name} is already defined")
         self._hashes[func_name] = [(signature, func_id)]
 
     def _null_func(self):

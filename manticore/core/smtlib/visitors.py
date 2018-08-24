@@ -645,7 +645,7 @@ class TranslatorSmtlib(Translator):
         if expression.size == 1:
             return f'#{bin(expression.value & expression.mask)[1:]}'
         else:
-            return f'#x{int(expression.size / 4):0{expression.value & expression.mask}x}'
+            return f'#x{expression.value & expression.mask:0{expression.size // 4}x}'
 
     def visit_BoolConstant(self, expression):
         return expression.value and 'true' or 'false'

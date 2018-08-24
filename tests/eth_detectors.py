@@ -82,7 +82,7 @@ class EthSelfdestruct(unittest.TestCase):
     def _test(self, name, should_find):
         mevm = self.mevm
 
-        filename = os.path.join(THIS_DIR, 'binaries', 'detectors', '{}.sol'.format(name))
+        filename = os.path.join(THIS_DIR, 'binaries', 'detectors', f'{name}.sol')
 
         self.mevm.register_detector(DetectSelfdestruct())
         mevm.multi_tx_analysis(filename, contract_name='DetectThis', args=(mevm.make_symbolic_value(),))
