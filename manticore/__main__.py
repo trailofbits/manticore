@@ -112,6 +112,9 @@ def parse_arguments():
     parser.add_argument('--limit-loops', action='store_true',
                         help='Avoid exploring constant functions for human transactions (Ethereum only)')
 
+    parser.add_argument('--no-testcases', action='store_true',
+                        help='Do not generate testcases for discovered states when analysis finishes (Ethereum only)')
+
     parsed = parser.parse_args(sys.argv[1:])
     if parsed.procs <= 0:
         parsed.procs = 1
@@ -159,7 +162,9 @@ def ethereum_cli(args):
     m.multi_tx_analysis(args.argv[0], contract_name=args.contract, tx_limit=args.txlimit, tx_use_coverage=not args.txnocoverage, tx_send_ether=not args.txnoether, tx_account=args.txaccount)
 
     #TODO unregister all plugins
-    m.finalize()
+
+    if not args.no_testcases:
+        m.finalize()
 
 
 def main():
