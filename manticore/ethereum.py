@@ -44,85 +44,9 @@ class NoAliveStates(EthereumError):
     pass
 
 
-################ Detectors ####################
-class Detector(Plugin):
-    @property
-    def name(self):
-        return self.__class__.__name__.split('.')[-1]
-
-    def get_findings(self, state):
-        return state.context.setdefault(f'{self.name}.findings', set())
-
-    @contextmanager
-    def locked_global_findings(self):
-        with self.manticore.locked_context(f'{self.name}.global_findings', set) as global_findings:
-            yield global_findings
-
-    @property
-    def global_findings(self):
-        with self.locked_global_findings() as global_findings:
-            return global_findings
-
-    def add_finding(self, state, address, pc, finding, at_init, constraint=True):
-        '''
-        Logs a finding at specified contract and assembler line.
-        :param state: current state
-        :param address: contract address of the finding
-        :param pc: program counter of the finding
-        :param at_init: true if executing the constructor
-        :param finding: textual description of the finding
-        :param constraint: finding is considered reproducible only when constraint is True
-        '''
-
-        if not isinstance(pc, int):
-            raise ValueError("PC must be a number")
-        self.get_findings(state).add((address, pc, finding, at_init, constraint))
-        with self.locked_global_findings() as gf:
-            gf.add((address, pc, finding, at_init))
-        #Fixme for ever broken logger
-        logger.warning(finding)
-
-    def add_finding_here(self, state, finding, constraint=True):
-        '''
-        Logs a finding in current contract and assembler line.
-        :param state: current state
-        :param finding: textual description of the finding
-        :param constraint: finding is considered reproducible only when constraint is True
-        '''
-        address = state.platform.current_vm.address
-        pc = state.platform.current_vm.pc
-        if isinstance(pc, Constant):
-            pc = pc.value
-        if not isinstance(pc, int):
-            raise ValueError("PC must be a number")
-        at_init = state.platform.current_transaction.sort == 'CREATE'
-        self.add_finding(state, address, pc, finding, at_init, constraint)
-
-    def _save_current_location(self, state, finding, condition=True):
-        '''
-        Save current location in the internal locations list and returns a textual id for it.
-        This is used to save locations that could later be promoted to a finding if other conditions hold
-        See _get_location()
-        :param state: current state
-        :param finding: textual description of the finding
-        :param condition: general purpose constraint
-        '''
-        address = state.platform.current_vm.address
-        pc = state.platform.current_vm.pc
-        at_init = state.platform.current_transaction.sort == 'CREATE'
-        location = (address, pc, finding, at_init, condition)
-        hash_id = hashlib.sha1(str(location).encode()).hexdigest()
-        state.context.setdefault(f'{self.name}.locations', {})[hash_id] = location
-        return hash_id
-
-    def _get_location(self, state, hash_id):
-        ''' Get previously saved location
-            A location is composed of: address, pc, finding, at_init, condition
-        '''
-        return state.context.setdefault(f'{self.name}.locations', {})[hash_id]
-
-    def _get_src(self, address, pc):
-        return self.manticore.get_metadata(address).get_source_for(pc)
+#
+# Plugins
+#
 
 
 class FilterFunctions(Plugin):
@@ -205,6 +129,115 @@ class FilterFunctions(Plugin):
                         state.constrain(constraint)
 
 
+class LoopDepthLimiter(Plugin):
+    ''' This just abort explorations too deep '''
+
+    def will_start_run_callback(self, *args):
+        with self.manticore.locked_context('seen_rep', dict) as reps:
+            reps.clear()
+
+    def will_execute_instruction_callback(self, state, pc, insn):
+        world = state.platform
+        with self.manticore.locked_context('seen_rep', dict) as reps:
+            item = (world.current_transaction.sort == 'CREATE', world.current_transaction.address, pc)
+            if item not in reps:
+                reps[item] = 0
+            reps[item] += 1
+            if reps[item] > 2:
+                state.abandon()
+
+
+#
+# Detectors
+#
+
+
+class Detector(Plugin):
+    @property
+    def name(self):
+        return self.__class__.__name__.split('.')[-1]
+
+    def get_findings(self, state):
+        return state.context.setdefault('{:s}.findings'.format(self.name), set())
+
+    @contextmanager
+    def locked_global_findings(self):
+        with self.manticore.locked_context('{:s}.global_findings'.format(self.name), set) as global_findings:
+            yield global_findings
+
+    @property
+    def global_findings(self):
+        with self.locked_global_findings() as global_findings:
+            return global_findings
+
+    def add_finding(self, state, address, pc, finding, at_init, constraint=True):
+        '''
+        Logs a finding at specified contract and assembler line.
+        :param state: current state
+        :param address: contract address of the finding
+        :param pc: program counter of the finding
+        :param at_init: true if executing the constructor
+        :param finding: textual description of the finding
+        :param constraint: finding is considered reproducible only when constraint is True
+        '''
+
+        if not isinstance(pc, int):
+            raise ValueError("PC must be a number")
+        self.get_findings(state).add((address, pc, finding, at_init, constraint))
+        with self.locked_global_findings() as gf:
+            gf.add((address, pc, finding, at_init))
+        #Fixme for ever broken logger
+        logger.warning(finding)
+
+    def add_finding_here(self, state, finding, constraint=True):
+        '''
+        Logs a finding in current contract and assembler line.
+        :param state: current state
+        :param finding: textual description of the finding
+        :param constraint: finding is considered reproducible only when constraint is True
+        '''
+        address = state.platform.current_vm.address
+        pc = state.platform.current_vm.pc
+        if isinstance(pc, Constant):
+            pc = pc.value
+        if not isinstance(pc, int):
+            raise ValueError("PC must be a number")
+        at_init = state.platform.current_transaction.sort == 'CREATE'
+        self.add_finding(state, address, pc, finding, at_init, constraint)
+
+    def _save_current_location(self, state, finding, condition=True):
+        '''
+        Save current location in the internal locations list and returns a textual id for it.
+        This is used to save locations that could later be promoted to a finding if other conditions hold
+        See _get_location()
+        :param state: current state
+        :param finding: textual description of the finding
+        :param condition: general purpose constraint
+        '''
+        address = state.platform.current_vm.address
+        pc = state.platform.current_vm.pc
+        at_init = state.platform.current_transaction.sort == 'CREATE'
+        location = (address, pc, finding, at_init, condition)
+        hash_id = hashlib.sha1(str(location).encode()).hexdigest()
+        state.context.setdefault('{:s}.locations'.format(self.name), {})[hash_id] = location
+        return hash_id
+
+    def _get_location(self, state, hash_id):
+        ''' Get previously saved location
+            A location is composed of: address, pc, finding, at_init, condition
+        '''
+        return state.context.setdefault('{:s}.locations'.format(self.name), {})[hash_id]
+
+    def _get_src(self, address, pc):
+        return self.manticore.get_metadata(address).get_source_for(pc)
+
+
+class DetectSelfdestruct(Detector):
+    def will_evm_execute_instruction_callback(self, state, instruction, arguments):
+        if instruction.semantics == 'SELFDESTRUCT':
+            self.add_finding_here(state, 'Reachable SELFDESTRUCT')
+
+
 class DetectInvalid(Detector):
     def __init__(self, only_human=True, **kwargs):
         """
@@ -273,7 +306,7 @@ class DetectReentrancy(Detector):
             pc = pc.value
         assert isinstance(pc, int)
         at_init = world.current_transaction.sort == 'CREATE'
-        location = (address, pc, "Reentrancy muti-million ether bug", at_init)
+        location = (address, pc, "Reentrancy multi-million ether bug", at_init)
         locations[location] = set(state.context[self._read_storage_name])
         state.context[name] = locations
 
@@ -1107,13 +1140,16 @@ class EVMContract(EVMAccount):
     def add_function(self, signature):
         func_id = binascii.hexlify(ABI.function_selector(signature))
         func_name = str(signature.split('(')[0])
-        if func_name.startswith('_') or func_name in {'add_function', 'address', 'name'}:
-            raise EthereumError("Sorry function name is used by the python wrapping")
+        if func_name.startswith('_'):
+            # TODO(mark): is this actually true? is there anything actually wrong with a solidity name beginning w/ an underscore?
+            raise EthereumError("Function name ({}) begins with underscore, internally reserved".format(func_name))
+        if func_name in {'add_function', 'address', 'name'}:
+            raise EthereumError("Function name ({}) is internally reserved".format(func_name))
         if func_name in self._hashes:
             self._hashes[func_name].append((signature, func_id))
             return
         if func_id in {h[1] for names in self._hashes.values() for h in names}:
-            raise EthereumError("A function with the same hash is already defined")
+            raise EthereumError("A function with the same hash as {} is already defined".format(func_name))
         self._hashes[func_name] = [(signature, func_id)]
 
     def _null_func(self):
@@ -2100,9 +2136,9 @@ class ManticoreEVM(Manticore):
         #Human tx that ends in this wont modify the storage so finalize and
         # generate a testcase. FIXME This should be configurable as REVERT and
         # THROWit actually changes the balance and nonce? of some accounts
-        if tx.result in {'REVERT', 'THROW', 'TXERROR'}:
+        if tx.result in {'SELFDESTRUCT', 'REVERT', 'THROW', 'TXERROR'}:
             self.save(state, final=True)
-        elif tx.result in {'SELFDESTRUCT', 'RETURN', 'STOP'}:
+        elif tx.result in {'RETURN', 'STOP'}:
             # if not a revert we save the state for further transactioning
             self.save(state)  # Add to running states
         else:
@@ -2187,7 +2223,7 @@ class ManticoreEVM(Manticore):
         at_init = world.current_transaction.sort == 'CREATE'
         output = io.StringIO()
         output.write(f'Contract: 0x{address:x}\n')
-        output.write(f'EVM Program counter: {pc}{at_init and " (at constructor)" or ""}\n')
+        output.write(f'EVM Program counter: 0x{pc:x}{" (at constructor)" if at_init else ""}\n')
         md = self.get_metadata(address)
         if md is not None:
             src = md.get_source_for(pc, runtime=not at_init)
@@ -2229,7 +2265,7 @@ class ManticoreEVM(Manticore):
                 for address, pc, finding, at_init, constraint in local_findings:
                     findings.write(f'- {finding} -\n')
                     findings.write(f'  Contract: 0x{address:x}\n')
-                    findings.write(f'  EVM Program counter: {pc}{at_init and " (at constructor)" or ""}\n')
+                    findings.write(f'  EVM Program counter: 0x{pc:x}{" (at constructor)" if at_init else ""}\n')
                     md = self.get_metadata(address)
                     if md is not None:
                         src = md.get_source_for(pc, runtime=not at_init)
@@ -2477,9 +2513,10 @@ class ManticoreEVM(Manticore):
         if len(self.global_findings):
             with self._output.save_stream('global.findings') as global_findings:
                 for address, pc, finding, at_init in self.global_findings:
+
                     global_findings.write(f'- {finding} -\n')
                     global_findings.write(f'  Contract: {address}\n')
-                    global_findings.write(f'  EVM Program counter: {pc}{at_init and " (at constructor)" or ""}\n')
+                    global_findings.write(f'  EVM Program counter: 0x{pc:x}{" (at constructor)" if at_init else ""}\n')
 
                     md = self.get_metadata(address)
                     if md is not None:
