@@ -650,9 +650,6 @@ class DetectMultipleSends(Detector):
 
             state.context[f'{self.name}.calls'].update({dest_address})
 
-            return
-
-
 
 def calculate_coverage(runtime_bytecode, seen):
     ''' Calculates what percentage of runtime_bytecode has been seen '''
