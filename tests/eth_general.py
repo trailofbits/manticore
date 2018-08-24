@@ -647,7 +647,7 @@ class EthTests(unittest.TestCase):
             func_call_summary = lines[header_idx + 1]
 
             for f in existing_functions:
-                if func_call_summary.startswith(f):
+                if func_call_summary.startswith(f) or func_call_summary.startswith("Constructor"):
                     break
             else:
                 self.fail('Could not find a function call summary in workspace output')
