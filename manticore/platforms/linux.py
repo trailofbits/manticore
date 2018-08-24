@@ -1302,7 +1302,7 @@ class Linux(Platform):
 
             for line in data.split(b'\n'):
                 line = line.decode('latin-1')  # latin-1 encoding will happily decode any byte (0x00-0xff)
-                logger.debug(f"WRITE({fd}, 0x{buf:08x}, {count}) -> <{repr(line):48s}>")  
+                logger.debug(f"WRITE({fd}, 0x{buf:08x}, {count}) -> <{repr(line):48s}>")
             self.syscall_trace.append(("_write", fd, data))
             self.signal_transmit(fd)
 
