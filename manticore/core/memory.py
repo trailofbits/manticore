@@ -1237,8 +1237,9 @@ class LazySMemory(SMemory):
 
             curr_addr += 1
 
-    def _constrain_to_maps(self, mappings, where):
-        maps = mappings
+    # currently unused
+    def _constrain_to_maps(self, where, size):
+        maps = self.mappings()
 
         from manticore.core.smtlib.operators import UGE, ULT, OR
 
@@ -1247,7 +1248,7 @@ class LazySMemory(SMemory):
             start, end = map[:2]
 
             start_cons = UGE(where, start)
-            end_cons = ULT(where, end)
+            end_cons = ULT(where+size-1, end)
 
             c = start_cons & end_cons
             constraints.append(c)
@@ -1262,6 +1263,8 @@ class LazySMemory(SMemory):
         self.constraints.add(final_constraint)
 
     def read(self, address, size, force=False):
+
+        # if address is symbolic, self._constrain_to_maps(address, size) ? ?
 
         addrs_to_access = []
         for i in range(size):
