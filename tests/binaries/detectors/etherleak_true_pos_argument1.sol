@@ -30,8 +30,8 @@ contract DetectThis {
     map[key] = value;
   }
 
-  function withdrawfunds(address attacker) onlyOwner {
-    attacker.transfer(this.balance);
+  function withdrawfunds(address input_address) onlyOwner {
+    input_address.transfer(this.balance);
   }
 
 }

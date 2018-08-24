@@ -20,9 +20,9 @@ contract DetectThis {
     owner = msg.sender;
   }
 
-  function withdrawfunds(address attacker) onlyOwner {
-    if (attacker != msg.sender) {
-        attacker.transfer(this.balance);
+  function withdrawfunds(address input_address) onlyOwner {
+    if (input_address != msg.sender) {
+        input_address.transfer(this.balance);
     }
   }
 
