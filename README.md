@@ -28,8 +28,6 @@ Manticore can analyze the following types of programs:
 - Ethereum smart contracts (EVM bytecode)
 - Linux ELF binaries (x86, x86_64 and ARMv7)
 
-Manticore includes a symbolic Ethereum Virtual Machine (EVM) and a convenient interface for automated compilation and analysis of Solidity. It integrates with [Ethersplay](https://github.com/trailofbits/ethersplay), Trail of Bits’ visual disassembler for EVM bytecode, for analysis visualization.
-
 ## Usage
 
 ### CLI
