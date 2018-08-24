@@ -2395,7 +2395,7 @@ class ManticoreEVM(Manticore):
                 solved_memlog = state.solve_one(log_item.memlog)
                 printable_bytes = ''.join([c for c in map(chr, solved_memlog) if c in string.printable])
 
-                logs_summary.write(f"Address: {log_item.address:x}\n" % )
+                logs_summary.write(f"Address: {log_item.address:x}\n")
                 logs_summary.write(f"Memlog: {binascii.hexlify(solved_memlog)} ({printable_bytes}) {flagged(is_log_symbolic)}\n")
                 logs_summary.write("Topics:\n")
                 for i, topic in enumerate(log_item.topics):

@@ -585,7 +585,7 @@ class AMD64RegFile(RegisterFile):
     def read(self, name):
         name = self._alias(name)
         if name in ('ST0', 'ST1', 'ST2', 'ST3', 'ST4', 'ST5', 'ST6', 'ST7'):
-            name = f'FP{((self.read('TOP') + int(name[2])) & 7)}' % 
+            name = f'FP{((self.read('TOP') + int(name[2])) & 7)}'
         if name in self._cache:
             return self._cache[name]
         if 'FLAGS' in name:
