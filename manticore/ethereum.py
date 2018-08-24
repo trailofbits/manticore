@@ -347,7 +347,7 @@ class DetectReentrancy(Detector):
         return '{:s}.read_storage'.format(self.name)
 
     def will_open_transaction_callback(self, state, tx):
-        # reset reading log on new human transactions
+        # Reset reading log on new human transactions
         if tx.is_human():
             state.context[self._read_storage_name] = set()
             state.context['{:s}.locations'.format(self.name)] = dict()
