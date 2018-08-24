@@ -314,12 +314,10 @@ class DetectReentrancy2(Detector):
         if instruction.semantics == 'CALL':
             gas = arguments[0]
             dest_address = arguments[1]
-            sent_value = arguments[2]
             msg_sender = state.platform.current_vm.caller
 
-            if not gas > 2300:
+            if not state.can_be_true(gas > 2300):
                 return
-
 
             pc = state.platform.current_vm.pc
 
@@ -328,13 +326,6 @@ class DetectReentrancy2(Detector):
             # or concretely the sender's address
             if issymbolic(dest_address):
                 state.context.get(self.LOCS, []).append(pc)
-                # # We assume dest_address is symbolic because it came from symbolic tx data (user input argument)
-                # if state.can_be_true(msg_sender == dest_address):
-                #     self.add_finding_here(state, "Reachable ether leak to sender via argument")
-                # else:
-                #     # This might be a false positive if the dest_address can't actually be solved to anything
-                #     # useful/exploitable
-                #     self.add_finding_here(state, "Reachable ether leak to user controlled address via argument")
             else:
                 if msg_sender == dest_address:
                     state.context.get(self.LOCS, []).append(pc)
@@ -342,20 +333,28 @@ class DetectReentrancy2(Detector):
 
     def did_evm_write_storage_callback(self, state, address, offset, value):
         locs = state.context.get(self.LOCS, [])
-        if locs:
-            # need to check if any of the loc pcs is in the current trace
-            # this means that we reached an external call etc, and now we are doing a state modification
-            # address, pc, init
-            trace = state.context.get('evm.trace', [])
-            for calllocpc in locs:
-                for address, pc, init in trace:
-                    if calllocpc == pc:
-                        # a call loc was in the trace, that's it. fire the warning.
-                        addr = state.platform.current_vm.address
-                        self.add_finding(state, addr, calllocpc, 'reentr', False)
-                        # TODO the at init False is wrong
+        # if we're here and locs has stuff in it. by definition this state has
+        # encountered a dangerous call and is now at a write.
+        for callpc in locs:
+            addr = state.platform.current_vm.address
+            self.add_finding(state, addr, callpc, 'reentr', False)
 
-
+        #
+        #
+        # if locs:
+        #     # need to check if any of the loc pcs is in the current trace
+        #     # this means that we reached an external call etc, and now we are doing a state modification
+        #     # address, pc, init
+        #     trace = state.context.get('evm.trace', [])
+        #     for calllocpc in locs:
+        #         for address, pc, init in trace:
+        #             if calllocpc == pc:
+        #                 # a call loc was in the trace, that's it. fire the warning.
+        #                 addr = state.platform.current_vm.address
+        #                 self.add_finding(state, addr, calllocpc, 'reentr', False)
+        #                 # TODO the at init False is wrong
+        #
+        #
 
 
 
