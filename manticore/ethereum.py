@@ -248,9 +248,16 @@ class DetectEtherLeak(Detector):
             if not state.can_be_true(sent_value > 0):
                 return
 
-            if msg_sender == dest_address:
-                self.add_finding_here(state, "Reachable ether leak to sender")
-            # TODO if dest_address is from an argument
+            if issymbolic(dest_address):
+                if state.can_be_true(msg_sender == dest_address)
+                    self.add_finding_here(state, "Reachable ether leak to sender")
+                else:
+                    # If dest_address is symbolic, but can't be set to the msg sender, we assume it's
+                    # symbolic because it came from the tx data (user input)
+                    self.add_finding_here(state, "Reachable ether leak to user controlled address")
+            else:
+                if msg_sender == dest_address:
+                    self.add_finding_here(state, "Reachable ether leak to sender")
 
             # print('address', dest_address, 'caller', msg_sender, msg_sender == dest_address, 'value', sent_value, 'v gt z', state.can_be_true(sent_value > 0))
 
