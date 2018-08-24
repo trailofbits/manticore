@@ -165,6 +165,9 @@ class MockZ3Stdout:
     def readline(self, *args, **kwargs):
         return '(:version "4.5.1")\n'
 
+    def flush(self, *args, **kwargs):
+        return
+
 class MockPopen:
     def __init__(self, *args, **kwargs):
         self.stdout = MockZ3Stdout()
