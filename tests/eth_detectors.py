@@ -114,25 +114,25 @@ class EthEtherLeak(EthDetectorTest):
 
     def test_etherleak_true_pos_argument(self):
         name = inspect.currentframe().f_code.co_name[5:]
-        self._test(name, {(555555555555555555, "Reachable ether leak to sender via argument", False)})
+        self._test(name, {(0x1c5, "Reachable ether leak to sender via argument", False)})
 
     def test_etherleak_true_pos_argument1(self):
         self.mevm.register_plugin(LoopDepthLimiter(5))
         name = inspect.currentframe().f_code.co_name[5:]
-        self._test(name, {(555555555555555555, "Reachable ether leak to sender via argument", False)})
+        self._test(name, {(0x1c5, "Reachable ether leak to sender via argument", False)})
 
     def test_etherleak_true_pos_argument2(self):
         name = inspect.currentframe().f_code.co_name[5:]
-        self._test(name, {(555555555555555555, "Reachable ether leak to user controlled address via argument", False)})
+        self._test(name, {(0x1c5, "Reachable ether leak to user controlled address via argument", False)})
 
     def test_etherleak_true_pos_msgsender(self):
         name = inspect.currentframe().f_code.co_name[5:]
-        self._test(name, {(555555555555555555, "Reachable ether leak to sender", False)})
+        self._test(name, {(0x1c5, "Reachable ether leak to sender", False)})
 
     def test_etherleak_true_pos_msgsender1(self):
         self.mevm.register_plugin(LoopDepthLimiter(5))
         name = inspect.currentframe().f_code.co_name[5:]
-        self._test(name, {(555555555555555555, "Reachable ether leak to sender", False)})
+        self._test(name, {(0x1c5, "Reachable ether leak to sender", False)})
 
 
 class EthIntegerOverflow(unittest.TestCase):
