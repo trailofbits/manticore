@@ -71,7 +71,7 @@ def parse_arguments():
                         help='Do not use coverage as stopping criteria (Ethereum only)')
 
     parser.add_argument('--txnoether', action='store_true',
-                        help='Do not send ether to contract (Ethereum only)')
+                        help='Do not attempt to send ether to contract (Ethereum only)')
 
     parser.add_argument('--txaccount', type=str, default="attacker",
                         help='Account used as caller in the symbolic transactions, either "attacker" or "owner" (Ethereum only)')
