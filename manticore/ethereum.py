@@ -287,6 +287,80 @@ class DetectInvalid(Detector):
             if not self._only_human or state.platform.current_transaction.depth == 0:
                 self.add_finding_here(state, "INVALID instruction")
 
+class DetectReentrancy2(Detector):
+    """
+    call to controlled address
+        msg.sender address
+        symbolic address
+    with enough gase
+
+    sstors that happen after that call.
+
+
+    record a trace of all instructions that execute in the transaction
+    or just have a flag?
+        have_seen_external_call
+
+    hook call
+    """
+    LOCS = 'xx.call_locs'
+
+    def will_open_transaction_callback(self, state, tx):
+        # reset reading log on new human transactions
+        if tx.is_human():
+            state.context[self.LOCS] = []
+
+    def will_evm_execute_instruction_callback(self, state, instruction, arguments):
+        if instruction.semantics == 'CALL':
+            gas = arguments[0]
+            dest_address = arguments[1]
+            sent_value = arguments[2]
+            msg_sender = state.platform.current_vm.caller
+
+            if not gas > 2300:
+                return
+
+
+            pc = state.platform.current_vm.pc
+
+            # flag any external call that's going to a symbolic (potentially user controlled)?
+            # potentially bc, it could solve to only 1 address, it could solve to nothing userful
+            # or concretely the sender's address
+            if issymbolic(dest_address):
+                state.context.get(self.LOCS, []).append(pc)
+                # # We assume dest_address is symbolic because it came from symbolic tx data (user input argument)
+                # if state.can_be_true(msg_sender == dest_address):
+                #     self.add_finding_here(state, "Reachable ether leak to sender via argument")
+                # else:
+                #     # This might be a false positive if the dest_address can't actually be solved to anything
+                #     # useful/exploitable
+                #     self.add_finding_here(state, "Reachable ether leak to user controlled address via argument")
+            else:
+                if msg_sender == dest_address:
+                    state.context.get(self.LOCS, []).append(pc)
+                    # self.add_finding_here(state, "Reachable ether leak to sender")
+
+    def did_evm_write_storage_callback(self, state, address, offset, value):
+        locs = state.context.get(self.LOCS, [])
+        if locs:
+            # need to check if any of the loc pcs is in the current trace
+            # this means that we reached an external call etc, and now we are doing a state modification
+            # address, pc, init
+            trace = state.context.get('evm.trace', [])
+            for calllocpc in locs:
+                for address, pc, init in trace:
+                    if calllocpc == pc:
+                        # a call loc was in the trace, that's it. fire the warning.
+                        addr = state.platform.current_vm.address
+                        self.add_finding(state, addr, calllocpc, 'reentr', False)
+                        # TODO the at init False is wrong
+
+
+
+
+
+
+
 
 class DetectReentrancy(Detector):
     '''
@@ -306,7 +380,7 @@ class DetectReentrancy(Detector):
         return '{:s}.read_storage'.format(self.name)
 
     def will_open_transaction_callback(self, state, tx):
-        # Reset reading log on new human transactions
+        # reset reading log on new human transactions
         if tx.is_human():
             state.context[self._read_storage_name] = set()
             state.context['{:s}.locations'.format(self.name)] = dict()
