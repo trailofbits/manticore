@@ -2,7 +2,7 @@ import os
 from setuptools import setup, find_packages
 
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
-on_rtd = 1
+on_rtd = 0
 
 
 def rtd_dependent_deps():
