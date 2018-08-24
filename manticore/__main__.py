@@ -70,6 +70,9 @@ def parse_arguments():
     parser.add_argument('--txnocoverage', action='store_true',
                         help='Do not use coverage as stopping criteria (Ethereum only)')
 
+    parser.add_argument('--txnoether', action='store_true',
+                        help='Do not attempt to send ether to contract (Ethereum only)')
+
     parser.add_argument('--txaccount', type=str, default="attacker",
                         help='Account used as caller in the symbolic transactions, either "attacker" or "owner" (Ethereum only)')
 
@@ -148,7 +151,7 @@ def ethereum_cli(args):
 
     logger.info("Beginning analysis")
 
-    m.multi_tx_analysis(args.argv[0], contract_name=args.contract, tx_limit=args.txlimit, tx_use_coverage=not args.txnocoverage, tx_account=args.txaccount)
+    m.multi_tx_analysis(args.argv[0], contract_name=args.contract, tx_limit=args.txlimit, tx_use_coverage=not args.txnocoverage, tx_send_ether=not args.txnoether, tx_account=args.txaccount)
 
     #TODO unregister all plugins
     m.finalize()
