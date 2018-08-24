@@ -103,6 +103,9 @@ def parse_arguments():
     parser.add_argument('--detect-etherleak', action='store_true',
                         help='Enable detection of reachable ether send/leak to sender or arbitrary address')
 
+    parser.add_argument('--detect-multiplesends', action='store_true',
+                        help='Enable detection of instances of multiple sends to the same address')
+
     parser.add_argument('--detect-all', action='store_true',
                         help='Enable all detector heuristics (Ethereum only)')
 
@@ -146,8 +149,8 @@ def ethereum_cli(args):
         m.register_detector(DetectSelfdestruct())
     if args.detect_all or args.detect_etherleak:
         m.register_detector(DetectEtherLeak())
-
-    m.register_detector(DetectMultipleSends())
+    if args.detect_all or args.detect_multiplesends:
+        m.register_detector(DetectMultipleSends())
 
     if args.limit_loops:
         m.register_plugin(LoopDepthLimiter())
