@@ -21,9 +21,6 @@ contract DetectThis {
     owner = msg.sender;
   }
 
-  function () payable { // makes it possible for contract to have balance > 0
-  }
-
   function withdrawfunds() onlyOwner {
     msg.sender.transfer(this.balance);
   }
