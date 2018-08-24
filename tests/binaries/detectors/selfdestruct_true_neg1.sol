@@ -16,7 +16,7 @@ contract DetectThis {
     assert(msg.sender == owner);
     _;
   }
-  function fakeSetOwner() { // writes to owner memory, but not exploitably
+  function fakeSetOwner() { // writes to owner storage, but not exploitably
     owner = 2;
   }
 

@@ -132,6 +132,10 @@ class FilterFunctions(Plugin):
 class LoopDepthLimiter(Plugin):
     ''' This just abort explorations too deep '''
 
+    def __init__(self, loop_count_threshold=5, **kwargs):
+        super().__init__(**kwargs)
+        self.loop_count_threshold = loop_count_threshold
+
     def will_start_run_callback(self, *args):
         with self.manticore.locked_context('seen_rep', dict) as reps:
             reps.clear()
@@ -143,7 +147,7 @@ class LoopDepthLimiter(Plugin):
             if item not in reps:
                 reps[item] = 0
             reps[item] += 1
-            if reps[item] > 2:
+            if reps[item] > self.loop_count_threshold:
                 state.abandon()
 
 
@@ -236,6 +240,41 @@ class DetectSelfdestruct(Detector):
     def will_evm_execute_instruction_callback(self, state, instruction, arguments):
         if instruction.semantics == 'SELFDESTRUCT':
             self.add_finding_here(state, 'Reachable SELFDESTRUCT')
+
+
+class DetectEtherLeak(Detector):
+    def will_evm_execute_instruction_callback(self, state, instruction, arguments):
+        if instruction.semantics == 'CALL':
+            dest_address = arguments[1]
+            sent_value = arguments[2]
+            msg_sender = state.platform.current_vm.caller
+
+            # If nothing can be transferred out, we don't care
+            if not state.can_be_true(sent_value > 0):
+                return
+
+            if issymbolic(dest_address):
+
+                # We assume dest_address is symbolic because it came from symbolic tx data (user input argument)
+                if state.can_be_true(msg_sender == dest_address):
+                    self.add_finding_here(state, "Reachable ether leak to sender via argument")
+                else:
+                    # ok it can't go to the sender, but can it go to arbitrary addresses? (> 1 other address?)
+                    possible_destinations = state.solve_n(dest_address, 2)
+                    if len(possible_destinations) > 1:
+                        # This might be a false positive if the dest_address can't actually be solved to anything
+                        # useful/exploitable, even though it can be solved to more than 1 thing
+                        self.add_finding_here(state, "Reachable ether leak to user controlled address via argument")
+                    else:
+                        # it's symbolic but effectively concrete here. can really only be 1 thing
+                        # what do we do here? should we report a finding, or just ignore it
+                        # if we get to this point the destination address can only be one thing that's not the
+                        # msg.sender
+
+
+            else:
+                if msg_sender == dest_address:
+                    self.add_finding_here(state, "Reachable ether leak to sender")
 
 
 class DetectInvalid(Detector):
