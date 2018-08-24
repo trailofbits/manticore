@@ -156,10 +156,12 @@ texinfo_documents = [
 # -- Custom
 
 # mock z3 existence so readthedocs will not error out when
-# generating docs
+# generating docs. for some reason during dep install it
+# tries to build z3, something related to the `python setup.py --force`
 
 import subprocess
 from io import StringIO
+
 
 class MockZ3Stdout:
     def readline(self, *args, **kwargs):
@@ -168,19 +170,11 @@ class MockZ3Stdout:
     def flush(self, *args, **kwargs):
         return
 
+
 class MockPopen:
     def __init__(self, *args, **kwargs):
         self.stdout = MockZ3Stdout()
         self.stdin = StringIO()
 
+
 subprocess.Popen = MockPopen
-
-# saved_check_output = subprocess.check_output
-# def z3_mock_check_output(*args, **kwargs):
-#     if args and 'z3' in args[0]:
-#         return 'Z3 Version 4.4.2'
-#
-#     return saved_check_output(*args, **kwargs)
-#
-# subprocess.check_output = z3_mock_check_output
-
