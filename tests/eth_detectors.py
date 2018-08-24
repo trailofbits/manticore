@@ -84,7 +84,7 @@ class EthSelfdestruct(EthDetectorTest):
         self._test(name, {(307, 'Reachable SELFDESTRUCT', False)})
 
     def test_selfdestruct_true_pos1(self):
-        self.mevm.register_plugin(LoopDepthLimiter())
+        self.mevm.register_plugin(LoopDepthLimiter(2))
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, {(307, 'Reachable SELFDESTRUCT', False)})
 
@@ -117,7 +117,7 @@ class EthEtherLeak(EthDetectorTest):
         self._test(name, {(555555555555555555, "Reachable ether leak to sender via argument", False)})
 
     def test_etherleak_true_pos_argument1(self):
-        self.mevm.register_plugin(LoopDepthLimiter())
+        self.mevm.register_plugin(LoopDepthLimiter(5))
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, {(555555555555555555, "Reachable ether leak to sender via argument", False)})
 
@@ -130,7 +130,7 @@ class EthEtherLeak(EthDetectorTest):
         self._test(name, {(555555555555555555, "Reachable ether leak to sender", False)})
 
     def test_etherleak_true_pos_msgsender1(self):
-        self.mevm.register_plugin(LoopDepthLimiter())
+        self.mevm.register_plugin(LoopDepthLimiter(5))
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, {(555555555555555555, "Reachable ether leak to sender", False)})
 

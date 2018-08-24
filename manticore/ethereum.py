@@ -132,6 +132,10 @@ class FilterFunctions(Plugin):
 class LoopDepthLimiter(Plugin):
     ''' This just abort explorations too deep '''
 
+    def __init__(self, loop_count_threshold=5, **kwargs):
+        super().__init__(**kwargs)
+        self.loop_count_threshold = loop_count_threshold
+
     def will_start_run_callback(self, *args):
         with self.manticore.locked_context('seen_rep', dict) as reps:
             reps.clear()
@@ -143,7 +147,7 @@ class LoopDepthLimiter(Plugin):
             if item not in reps:
                 reps[item] = 0
             reps[item] += 1
-            if reps[item] > 2:
+            if reps[item] > self.loop_count_threshold:
                 state.abandon()
 
 
