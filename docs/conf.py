@@ -155,9 +155,15 @@ texinfo_documents = [
 
 # -- Custom
 
-# mock z3 existence so readthedocs will not error out when
-# generating docs. for some reason during dep install it
-# tries to build z3, something related to the `python setup.py --force`
+# our setup.py does not install z3-solver when on rtd because
+# for some reason z3 it built during the dep install process,
+# and rtd ooms. something related to `python setup.py --force`
+
+# so because z3-solver is not installed as a dep, but
+# rtd still does `import manticore`, we need to mock the environment
+# enough to make manticore importable. specifically, we need to mock
+# things so a Z3Solver can be constructed.
+
 
 import subprocess
 from io import StringIO
