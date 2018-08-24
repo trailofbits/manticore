@@ -1224,13 +1224,11 @@ class LazySMemory(SMemory):
         # it's possible that there will be invliad/unmapped addresses in this range. need to skip to next map if so
         # also need to mark all of these addresses as now in the symbolic store
 
-        # assert 0
         curr_addr = accessmin
 
         while curr_addr <= accessmax:
             if curr_addr not in self.backed_by_symbolic_store:
                 try:
-                    # self.bigarray[curr_addr] = super().__getitem__(addr)
                     self.bigarray[curr_addr] = Memory.read(self, curr_addr, 1)[0]
                     self.backed_by_symbolic_store.add(curr_addr)
                 except: # in case of invalid mapping
@@ -1292,47 +1290,6 @@ class LazySMemory(SMemory):
 
         return retvals
 
-
-
-        # print 'address', address, 'size', size
-        # if issymbolic(address) or address in self.backed_by_symbolic_store:
-        #     # TODO FIXME what to do here? constrain to maps and continue?
-        #     # don't constrain to maps because then we can't distinguish later if a solution isn't SAT because of maps
-        #     # or because of the actual code
-        #
-        #     # sym access, constrain to maps and continue
-        #     pass
-        #     # _constrain_to_maps(self.constraints, self.mappings(), address)
-        #
-        #
-        #     # need to import the concrete memory
-        #     # import concrete memory (addr min, addr max)
-        #     '''
-        #
-        #         for addr in min to max:
-        #             self.bigarray[addr] = concrete_store[addr]
-        #             backed_by_symbolic_store.add(addr)
-        #
-        #
-        #     '''
-        #     #
-        #     # self._import_concrete_memory()
-        #
-        #     page_offset = address
-        #     ret = self.bigarray[page_offset:page_offset + size]
-        #     return ret
-        #
-        #
-        #
-        # else:
-        #     if not self.access_ok(slice(address, address + size), 'r', force):
-        #         raise InvalidMemoryAccess(address, 'r')
-
-        # page_offset = address
-        # ret = self.bigarray[page_offset:page_offset + size]
-        # return ret
-
-
     def write(self, address, value, force=False):
 
         size = len(value)
@@ -1360,23 +1317,6 @@ class LazySMemory(SMemory):
                 self.backed_by_symbolic_store.discard(addr)
                 Memory.write(self, addr, [byte])
 
-
-        # if issymbolic(address):
-        #     # TODO FIXME what do we do here?
-        #     pass
-        # else:
-        #     if not self.access_ok(slice(address, address + len(value)), 'w', force):
-        #         raise InvalidMemoryAccess(address, 'w')
-        #
-        # page_offset = address
-        # if issymbolic(address):
-        #     ## import concrete memory
-        #
-        #     self.bigarray[page_offset:page_offset + len(value)] = value
-        # else:
-        #     # write at concrete address, can do write and discard elements from backing_store thing
-        #     super().write(address, value, force)
-
     def scan_mem(self, data_to_find):
         """
 
@@ -1384,8 +1324,6 @@ class LazySMemory(SMemory):
         :param int data_to_find:
         :return:
         """
-        ret = []
-
         import struct
         raw = struct.pack('<Q', data_to_find)
 
@@ -1400,7 +1338,8 @@ class LazySMemory(SMemory):
                     offset = 1
 
                     for c in raw[1:]:
-                        if curr_ptr + offset >= map.end:  # FIXME: slid off the end of the map in the middle of checking. can't support scanning across map boundaries
+                        # FIXME: slid off the end of the map in the middle of checking. can't support scanning across map boundaries
+                        if curr_ptr + offset >= map.end:
                             break
 
                         byte = map[curr_ptr + offset]
@@ -1410,16 +1349,11 @@ class LazySMemory(SMemory):
                         offset += 1
                     else:
                         yield curr_ptr
-                        # ret.append(curr_ptr)
 
                     # We /might/ in some cases, be able to bump the curr pointer past the end of the data, but what
                     # if there is an overlapping one that matches? So we just bump by one.
 
                 curr_ptr += 1
-
-        # return ret
-
-
 
 
 class Memory32(Memory):
