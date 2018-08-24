@@ -21,17 +21,13 @@ contract DetectThis {
     _;
   }
     
-  function set(uint256 key, uint256 value) public { // you can use this to overwrite owner
+  function set(uint256 key, uint256 value) public payable { // you can use this to overwrite owner // makes it possible for contract to have balance > 0
     // Expand dynamic array as needed
     if (map.length <= key) {
       map.length = key + 1;
     }
 
     map[key] = value;
-  }
-
-
-  function () payable { // makes it possible for contract to have balance > 0
   }
 
   function withdrawfunds(address attacker) onlyOwner {

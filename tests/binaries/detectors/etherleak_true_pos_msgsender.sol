@@ -16,11 +16,8 @@ contract DetectThis {
     _;
   }
 
-  function fakeconstructor() {
+  function fakeconstructor() payable { // makes it possible for contract to have balance > 0
     owner = msg.sender;
-  }
-
-  function () payable { // makes it possible for contract to have balance > 0
   }
 
   function withdrawfunds() onlyOwner {
