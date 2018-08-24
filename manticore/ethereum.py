@@ -249,7 +249,7 @@ class DetectEtherLeak(Detector):
                 return
 
             if msg_sender == dest_address:
-                self.add_finding_here(state, "Ether leak to sender")
+                self.add_finding_here(state, "Reachable ether leak to sender")
             # TODO if dest_address is from an argument
 
             # print('address', dest_address, 'caller', msg_sender, msg_sender == dest_address, 'value', sent_value, 'v gt z', state.can_be_true(sent_value > 0))
