@@ -70,6 +70,9 @@ def parse_arguments():
     parser.add_argument('--txnocoverage', action='store_true',
                         help='Do not use coverage as stopping criteria (Ethereum only)')
 
+    parser.add_argument('--txnoether', action='store_true',
+                        help='Do not attempt to send ether to contract (Ethereum only)')
+
     parser.add_argument('--txaccount', type=str, default="attacker",
                         help='Account used as caller in the symbolic transactions, either "attacker" or "owner" (Ethereum only)')
 
@@ -97,6 +100,9 @@ def parse_arguments():
     parser.add_argument('--detect-selfdestruct', action='store_true',
                         help='Enable detection of reachable selfdestruct instructions')
 
+    parser.add_argument('--detect-etherleak', action='store_true',
+                        help='Enable detection of reachable ether send/leak to sender or arbitrary address')
+
     parser.add_argument('--detect-all', action='store_true',
                         help='Enable all detector heuristics (Ethereum only)')
 
@@ -119,7 +125,7 @@ def parse_arguments():
 
 
 def ethereum_cli(args):
-    from .ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, DetectUninitializedStorage, DetectUninitializedMemory, FilterFunctions, DetectReentrancy, DetectUnusedRetVal, DetectSelfdestruct, LoopDepthLimiter, DetectMultipleSends
+    from .ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, DetectUninitializedStorage, DetectUninitializedMemory, FilterFunctions, DetectReentrancy, DetectUnusedRetVal, DetectSelfdestruct, LoopDepthLimiter, DetectEtherLeak, DetectMultipleSends
     log.init_logging()
 
     m = ManticoreEVM(procs=args.procs, workspace_url=args.workspace)
@@ -138,6 +144,8 @@ def ethereum_cli(args):
         m.register_detector(DetectUnusedRetVal())
     if args.detect_all or args.detect_selfdestruct:
         m.register_detector(DetectSelfdestruct())
+    if args.detect_all or args.detect_etherleak:
+        m.register_detector(DetectEtherLeak())
 
     m.register_detector(DetectMultipleSends())
 
@@ -150,7 +158,7 @@ def ethereum_cli(args):
 
     logger.info("Beginning analysis")
 
-    m.multi_tx_analysis(args.argv[0], contract_name=args.contract, tx_limit=args.txlimit, tx_use_coverage=not args.txnocoverage, tx_account=args.txaccount)
+    m.multi_tx_analysis(args.argv[0], contract_name=args.contract, tx_limit=args.txlimit, tx_use_coverage=not args.txnocoverage, tx_send_ether=not args.txnoether, tx_account=args.txaccount)
 
     #TODO unregister all plugins
     m.finalize()

@@ -132,6 +132,10 @@ class FilterFunctions(Plugin):
 class LoopDepthLimiter(Plugin):
     ''' This just abort explorations too deep '''
 
+    def __init__(self, loop_count_threshold=5, **kwargs):
+        super().__init__(**kwargs)
+        self.loop_count_threshold = loop_count_threshold
+
     def will_start_run_callback(self, *args):
         with self.manticore.locked_context('seen_rep', dict) as reps:
             reps.clear()
@@ -143,7 +147,7 @@ class LoopDepthLimiter(Plugin):
             if item not in reps:
                 reps[item] = 0
             reps[item] += 1
-            if reps[item] > 2:
+            if reps[item] > self.loop_count_threshold:
                 state.abandon()
 
 
@@ -236,6 +240,30 @@ class DetectSelfdestruct(Detector):
     def will_evm_execute_instruction_callback(self, state, instruction, arguments):
         if instruction.semantics == 'SELFDESTRUCT':
             self.add_finding_here(state, 'Reachable SELFDESTRUCT')
+
+
+class DetectEtherLeak(Detector):
+    def will_evm_execute_instruction_callback(self, state, instruction, arguments):
+        if instruction.semantics == 'CALL':
+            dest_address = arguments[1]
+            sent_value = arguments[2]
+            msg_sender = state.platform.current_vm.caller
+
+            # If nothing can be transferred out, we don't care
+            if not state.can_be_true(sent_value > 0):
+                return
+
+            if issymbolic(dest_address):
+                # We assume dest_address is symbolic because it came from symbolic tx data (user input argument)
+                if state.can_be_true(msg_sender == dest_address):
+                    self.add_finding_here(state, "Reachable ether leak to sender via argument")
+                else:
+                    # This might be a false positive if the dest_address can't actually be solved to anything
+                    # useful/exploitable
+                    self.add_finding_here(state, "Reachable ether leak to user controlled address via argument")
+            else:
+                if msg_sender == dest_address:
+                    self.add_finding_here(state, "Reachable ether leak to sender")
 
 
 class DetectInvalid(Detector):
@@ -1997,7 +2025,7 @@ class ManticoreEVM(Manticore):
 
         return address
 
-    def multi_tx_analysis(self, solidity_filename, contract_name=None, tx_limit=None, tx_use_coverage=True, tx_account="attacker", args=None):
+    def multi_tx_analysis(self, solidity_filename, contract_name=None, tx_limit=None, tx_use_coverage=True, tx_send_ether=True, tx_account="attacker", args=None):
 
         owner_account = self.create_account(balance=1000, name='owner')
         attacker_account = self.create_account(balance=1000, name='attacker')
@@ -2031,11 +2059,14 @@ class ManticoreEVM(Manticore):
 
                 # run_symbolic_tx
                 symbolic_data = self.make_symbolic_buffer(320)
-                symbolic_value = self.make_symbolic_value()
+                if tx_send_ether:
+                    value = self.make_symbolic_value()
+                else:
+                    value = 0
                 self.transaction(caller=tx_account[min(tx_no, len(tx_account) - 1)],
                                  address=contract_account,
                                  data=symbolic_data,
-                                 value=symbolic_value)
+                                 value=value)
                 logger.info("%d alive states, %d terminated states", self.count_running_states(), self.count_terminated_states())
             except NoAliveStates:
                 break
