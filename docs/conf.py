@@ -159,11 +159,18 @@ texinfo_documents = [
 # generating docs
 
 import subprocess
+from io import StringIO
 
-def null(*args, **kwargs):
-    pass
+class MockZ3Stdout:
+    def readline(self, *args, **kwargs):
+        return '(:version "4.5.1")\n'
 
-subprocess.Popen = null
+class MockPopen:
+    def __init__(self, *args, **kwargs):
+        self.stdout = MockZ3Stdout()
+        self.stdin = StringIO()
+
+subprocess.Popen = MockPopen
 
 # saved_check_output = subprocess.check_output
 # def z3_mock_check_output(*args, **kwargs):
