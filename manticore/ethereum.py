@@ -635,36 +635,23 @@ class DetectMultipleSends(Detector):
     '''
     Detects multiple sends to the same address within a transaction
     '''
-    def did_evm_execute_instruction_callback(self, state, instruction, arguments, result_ref):
-        mnemonic = instruction.semantics
-        #if mnemonic == 'CALL':
-            #calls = state.context.get(f'{self.name}.calls', {})
-            #gas, dest, *rest = arguments
-            #if dest in calls:
-                #pass
-                ##print(f"!!! {id(state)} Multiple calls to same addr!")
-            #else:
-                #state.context.setdefault(f'{self.name}.calls', {})[dest] = rest
-#
-    def will_open_transaction_callback(self, state, tx):
-        pass
-        #if tx.is_human():
-        #print(f"    open tx: state: {state}, tx: {tx}")
+    def will_evm_execute_instruction_callback(self, state, instruction, arguments):
+        if instruction.semantics == 'CALL':
+            _, dest_address, sent_value, *rest = arguments
 
+            if not state.can_be_true(sent_value > 0):
+                return
 
-    def did_close_transaction_callback(self, state, tx):
-        world = state.platform
-        #if tx.is_human:
-            #print(f"Closing tx: \n\t{state}\t{tx}")
-        #for tx in world.transactions:
-            #print(f"  {tx}")
-        #print("\n")
+            destinations = state.context.setdefault(f'{self.name}.calls', set())
 
-    def will_terminate_state_callback(self, state, stateid, e):
-        world = state.platform
-        print(f"Terminated! {repr(e)[:80]}")
-        for tx in world.transactions:
-            print(f"  {tx}")
+            for i, seen_dest in enumerate(destinations):
+                if state.can_be_true(dest_address == seen_dest):
+                    self.add_finding_here(state, f"Multiple sends to potentially the same address")
+
+            state.context[f'{self.name}.calls'].update({dest_address})
+
+            return
+
 
 
 def calculate_coverage(runtime_bytecode, seen):
