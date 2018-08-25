@@ -57,27 +57,27 @@ Manticore has a Python programming interface which can be used to implement cust
 ```python
 from manticore.ethereum import ManticoreEVM
 contract_src="""
-contract Contract {
-    function foo(uint value) public returns (uint){
-        if(value==1) revert();
-        return value+1;
+contract Adder {
+    function incremented(uint value) public returns (uint){
+        if (value == 1)
+            revert();
+        return value + 1;
     }
 }
 """
 m = ManticoreEVM()
 
-user_account=m.create_account(balance=1000)
-contract_account=m.solidity_create_contract(contract_src,
-                                            owner=user_account,
-                                            balance=0)
-bar=m.make_symbolic_value()
+user_account = m.create_account(balance=1000)
+contract_account = m.solidity_create_contract(contract_src,
+                                              owner=user_account,
+                                              balance=0)
+value = m.make_symbolic_value()
 
-contract_account.foo(bar)
+contract_account.incremented(value)
 
 for state in m.running_states:
-    print("can bar be 1? {}".format(state.can_be_true(bar==1)))
-    print("can bar be 200? {}".format(state.can_be_true(bar==200)))
-
+    print(f"can value be 1? {state.can_be_true(value == 1)}")
+    print(f"can value be 200? {state.can_be_true(value == 200)}")
 ```
 
 It is also possible to use the API to create custom analysis tools for Linux binaries.
