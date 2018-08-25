@@ -108,9 +108,6 @@ m.run()
 * Ubuntu 18.04 is strongly recommended.
 * Ethereum smart contract analysis requires the [`solc`](https://github.com/ethereum/solidity) program in your `$PATH`.
 
-## Getting Help
-
-Feel free to stop by our [Slack channel](https://empirehacking.slack.com/messages/C3PTWK7UM) for help on using or extending Manticore.
 
 ## Quickstart
 
@@ -203,7 +200,10 @@ Once installed, the `manticore` CLI tool and Python API will be available.
 
 For installing a development version of Manticore, see our [wiki](https://github.com/trailofbits/manticore/wiki/Hacking-on-Manticore).
 
-## Documentation
+## Getting Help
+
+Feel free to stop by our [Slack channel](https://empirehacking.slack.com/messages/C3PTWK7UM) for help on using or extending Manticore.
+
 
 Documentation is available in several places:
 
