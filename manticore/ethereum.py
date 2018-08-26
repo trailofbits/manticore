@@ -2127,7 +2127,7 @@ class ManticoreEVM(Manticore):
 
     def _did_evm_execute_instruction_callback(self, state, instruction, arguments, result_ref):
         ''' INTERNAL USE '''
-        logger.debug(f'{state.platform.current_vm}'')
+        logger.debug(f'{state.platform.current_vm}')
         #TODO move to a plugin
         at_init = state.platform.current_transaction.sort == 'CREATE'
         if at_init:
