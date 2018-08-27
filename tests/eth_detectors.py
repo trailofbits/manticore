@@ -97,7 +97,7 @@ class EthSelfdestruct(EthDetectorTest):
         self._test(name, set())
 
 
-class EthEtherLeak(EthDetectorTest):
+class EthExternalCallAndLeak(EthDetectorTest):
     DETECTOR_CLASS = DetectExternalCallAndLeak
 
     def test_etherleak_true_neg(self):
