@@ -12,7 +12,7 @@ import os
 from manticore.core.smtlib import operators
 from eth_general import make_mock_evm_state
 from manticore.ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, Detector, NoAliveStates, ABI, \
-    EthereumError, DetectReentrancy, DetectUnusedRetVal, DetectSelfdestruct, LoopDepthLimiter, DetectEtherLeak
+    EthereumError, DetectReentrancy, DetectUnusedRetVal, DetectSelfdestruct, LoopDepthLimiter, DetectExternalCallAndLeak
 
 import shutil
 
@@ -98,7 +98,7 @@ class EthSelfdestruct(EthDetectorTest):
 
 
 class EthEtherLeak(EthDetectorTest):
-    DETECTOR_CLASS = DetectEtherLeak
+    DETECTOR_CLASS = DetectExternalCallAndLeak
 
     def test_etherleak_true_neg(self):
         name = inspect.currentframe().f_code.co_name[5:]
