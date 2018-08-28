@@ -741,7 +741,6 @@ class EVM(Eventful):
                              expression=expression,
                              setstate=setstate,
                              policy='ALL')
-        #print (self)
         try:
             last_pc, last_gas, instruction, arguments = self._checkpoint()
             result = self._handler(*arguments)
