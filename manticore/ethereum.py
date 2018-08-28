@@ -310,14 +310,10 @@ class DetectReentrancy2(Detector):
             if not state.can_be_true(is_enough_gas):
                 return
 
-            # flag any external call that's going to a symbolic (potentially user controlled)?
-            # potentially bc, it could solve to only 1 address, it could solve to nothing userful
-            # or concretely the sender's address
-            if issymbolic(dest_address):
+            # flag any external call that's going to a symbolic/user controlled address, or that's going
+            # concretely to the sender's address
+            if issymbolic(dest_address) or msg_sender == dest_address:
                 state.context.get(self.LOCS, []).append((pc, is_enough_gas))
-            else:
-                if msg_sender == dest_address:
-                    state.context.get(self.LOCS, []).append((pc, is_enough_gas))
 
     def did_evm_write_storage_callback(self, state, address, offset, value):
         locs = state.context.get(self.LOCS, [])
