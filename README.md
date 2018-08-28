@@ -34,7 +34,7 @@ Manticore can analyze the following types of programs:
 
 Manticore has a command line interface which can be used to easily symbolically execute a supported program or smart contract. Analysis results will be placed into a new directory beginning with `mcore_`.
 
-Use the CLI to explore possible states in Ethereum smart contracts. Manticore includes _detectors_ which flag certain conditions, including known vulnerable code, as it explores possible states. Solidity smart contracts must have a `.sol` extension for analysis by Manticore. See a [demo](https://asciinema.org/a/154012).
+Use the CLI to explore possible states in Ethereum smart contracts. Manticore includes _detectors_ that flag potentially vulnerable code in discovered states. Solidity smart contracts must have a `.sol` extension for analysis by Manticore. See a [demo](https://asciinema.org/a/154012).
 
 ```
 $ manticore ./path/to/contract.sol  # runs, and creates a mcore_* directory with analysis results
@@ -52,7 +52,9 @@ $ manticore ./path/to/binary ++ ++  # use two symbolic strings of length two as 
 
 ### API
 
-Manticore has a Python programming interface which can be used to implement custom analyses. For Ethereum smart contracts, can be used for detailed verification of arbitrary contract properties. Set starting conditions, execute symbolic transactions, then review discovered states to ensure invariants for your contract hold.
+Manticore has a Python programming interface which can be used to implement custom analyses.
+
+For Ethereum smart contracts, can be used for detailed verification of arbitrary contract properties. Set starting conditions, execute symbolic transactions, then review discovered states to ensure invariants for your contract hold.
 
 ```python
 from manticore.ethereum import ManticoreEVM
