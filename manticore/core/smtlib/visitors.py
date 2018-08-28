@@ -657,7 +657,7 @@ class TranslatorSmtlib(Translator):
         array_smt, index_smt = operands
         if isinstance(expression.array, ArrayStore):
             array_smt = self._add_binding(expression.array, array_smt)
-        return '(select %s %s)' % (array_smt, index_smt)
+        return f'(select {array_smt} {index_smt})'
 
     def visit_Operation(self, expression, *operands):
         operation = self.translation_table[type(expression)]
@@ -667,7 +667,7 @@ class TranslatorSmtlib(Translator):
             operation = operation % (expression.end, expression.begining)
 
         operands = [self._add_binding(*x) for x in zip(expression.operands, operands)]
-        return '(%s %s)' % (operation, ' '.join(operands))
+        return f'({operation} {" ".join(operands)})'
 
     @property
     def results(self):
@@ -678,7 +678,7 @@ class TranslatorSmtlib(Translator):
         output = super().result
         if self.use_bindings:
             for name, expr, smtlib in reversed(self._bindings):
-                output = '( let ((%s %s)) %s )' % (name, smtlib, output)
+                output = f'( let (({name} {smtlib})) {output} )'
         return output
 
 

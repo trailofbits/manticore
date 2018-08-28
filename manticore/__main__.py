@@ -62,8 +62,11 @@ def parse_arguments():
     parser.add_argument('--workspace', type=str, default=None,
                         help=("A folder name for temporaries and results."
                               "(default mcore_?????)"))
+    parser.add_argument('--pure-symbolic', action='store_true',
+                        help='Treat all writable memory as symbolic')
     parser.add_argument('--version', action='version', version='Manticore 0.2.0',
                         help='Show program version information')
+
     parser.add_argument('--txlimit', type=positive,
                         help='Maximum number of symbolic transactions to run (positive integer) (Ethereum only)')
 
@@ -182,7 +185,9 @@ def main():
 
     env = {key: val for key, val in [env[0].split('=') for env in args.env]}
 
-    m = Manticore(args.argv[0], argv=args.argv[1:], env=env, entry_symbol=args.entrysymbol, workspace_url=args.workspace, policy=args.policy, concrete_start=args.data)
+    m = Manticore(args.argv[0], argv=args.argv[1:], env=env, entry_symbol=args.entrysymbol,
+                  workspace_url=args.workspace, policy=args.policy, concrete_start=args.data,
+                  pure_symbolic=args.pure_symbolic)
 
     # Default plugins for now.. FIXME REMOVE!
     m.register_plugin(InstructionCounter())

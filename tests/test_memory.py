@@ -1769,7 +1769,6 @@ class MemoryTest(unittest.TestCase):
         with self.assertRaises(InvalidSymbolicMemoryAccess):
             mem.read(addr2, 5)
 
-
 if __name__ == '__main__':
     unittest.main()
 

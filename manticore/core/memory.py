@@ -1,7 +1,9 @@
 from abc import ABCMeta, abstractmethod, abstractproperty
 from weakref import WeakValueDictionary
 from .smtlib import *
+from .smtlib.visitors import *
 import logging
+import functools
 from ..utils.mappings import mmap, munmap
 from ..utils.helpers import issymbolic
 
@@ -233,6 +235,11 @@ class Map(object, metaclass=ABCMeta):
         '''
 
 
+def _new_anonmap(cls, args, kwargs):
+    " Helper for __reduce__ for classes that include kwargs "
+    return cls(*args, **kwargs)
+
+
 class AnonMap(Map):
     ''' A concrete anonymous memory map '''
 
@@ -256,7 +263,9 @@ class AnonMap(Map):
                 self._data[0:len(data_init)] = [ord(s) for s in data_init]
 
     def __reduce__(self):
-        return (self.__class__, (self.start, len(self), self.perms, self._data, ))
+        args = (self.start, len(self), self.perms, self._data)
+        kwargs = {'name': self.name}
+        return _new_anonmap, (self.__class__, args, kwargs)
 
     def split(self, address):
         if address <= self.start:
@@ -285,6 +294,54 @@ class AnonMap(Map):
         if isinstance(index, slice):
             return [bytes([i]) for i in self._data[index]]
         return bytes([self._data[index]])
+
+
+class ArrayMap(Map):
+    def __init__(self, address, size, perms, index_bits, backing_array=None, name=None, data_init=None, **kwargs):
+        super(ArrayMap, self).__init__(address, size, perms)
+        if name is None:
+            name = 'ArrayMap_{:x}'.format(address)
+        if backing_array is not None:
+            self._array = backing_array
+        else:
+            self._array = expression.ArrayProxy(expression.ArrayVariable(index_bits, index_max=size, value_bits=8, name=name))
+
+        if data_init is not None:
+            assert len(data_init) <= size, 'More initial data than reserved memory'
+            # check that the values this slice points to are ints
+            if isinstance(data_init[0], int):
+                self._array[0:len(data_init)] = data_init
+            else:
+                self._array[0:len(data_init)] = [ord(s) for s in data_init]
+
+    def __reduce__(self):
+        return self.__class__, (self.start, len(self), self._perms, self._array.index_bits, self._array, self._array.name)
+
+    def __setitem__(self, key, value):
+        self._array[key] = value
+
+    def __getitem__(self, key):
+        return self._array[key]
+
+    def split(self, address):
+        if address <= self.start:
+            return None, self
+        if address >= self.end:
+            return self, None
+
+        assert self.start < address < self.end
+        index_bits, value_bits = self._array.index_bits, self._array.value_bits
+
+        left_size, right_size = address - self.start, self.end - address
+        left_name, right_name = ['{}_{:d}'.format(self._array.name, i) for i in range(2)]
+
+        head_arr = expression.ArrayProxy(expression.ArrayVariable(index_bits, left_size, value_bits, name=left_name))
+        tail_arr = expression.ArrayProxy(expression.ArrayVariable(index_bits, right_size, value_bits, name=right_name))
+
+        head = ArrayMap(self.start, left_size, self.perms, index_bits, head_arr, left_name)
+        tail = ArrayMap(address, right_size, self.perms, index_bits, tail_arr, right_name)
+
+        return head, tail
 
 
 class FileMap(Map):
@@ -619,6 +676,9 @@ class Memory(object, metaclass=ABCMeta):
         :rtype: int
 
         '''
+        return self._do_mmap(AnonMap, addr, size, perms, data_init=data_init, name=name)
+
+    def _do_mmap(self, map_cls, addr, size, perms, **kwargs):
         # If addr is NULL, the system determines where to allocate the region.
         assert addr is None or isinstance(addr, int), 'Address shall be concrete'
 
@@ -637,13 +697,13 @@ class Memory(object, metaclass=ABCMeta):
         for i in range(self._page(addr), self._page(addr + size)):
             assert i not in self._page2map, 'Map already used'
 
-        # Create the anonymous map
-        m = AnonMap(start=addr, size=size, perms=perms, data_init=data_init)
+        # Create the map
+        m = map_cls(start=addr, size=size, perms=perms, **kwargs)
 
         # Okay, ready to alloc
         self._add(m)
 
-        logger.debug('New memory map @%x size:%x', addr, size)
+        logger.debug('New %s memory map @%x size:%x', map_cls.__name__, addr, size)
         return addr
 
     def _add(self, m):
@@ -878,7 +938,8 @@ class Memory(object, metaclass=ABCMeta):
         if isinstance(index, slice):
             result = self.read(index.start, index.stop - index.start)
         else:
-            result = self.read(index, 1)[0]
+            result = self.read(index, 1)
+            result = result[0]
         return result
 
 
@@ -1071,6 +1132,137 @@ class SMemory(Memory):
         return solutions
 
 
+class InvalidAccessConstant(expression.BitVecConstant):
+    pass
+
+
+class SentinelMap(Map):
+    '''
+    A placeholder map that is only used for permissions checks, but should never be actually read from.
+    '''
+
+    def __reduce__(self):
+        return (self.__class__, (self.start, len(self), self.perms,))
+
+    def split(self, address):
+        if address <= self.start:
+            return None, self
+        if address >= self.end:
+            return self, None
+
+        head = SentinelMap(self.start, address - self.start, self.perms)
+        tail = SentinelMap(address, self.end - address, self.perms)
+
+        return head, tail
+
+    def __getitem__(self, *args, **kwargs):
+        raise InvalidMemoryAccess(0, 'r')
+
+    def __setitem__(self, *args, **kwargs):
+        raise InvalidMemoryAccess(0, 'w')
+
+
+class LazySMemory(SMemory):
+    '''
+    A fully symbolic memory.
+
+    Currently does not support cross-page reads/writes.
+    '''
+
+    def __init__(self, constraints, *args, **kwargs):
+        super(LazySMemory, self).__init__(constraints, *args, **kwargs)
+        self._backing_array = constraints.new_array(index_bits=self.memory_bit_size)
+
+    def mmap(self, addr, size, perms, name=None, **kwargs):
+        return self._do_mmap(SentinelMap, addr, size, perms, name=name)  # index_bits=self.memory_bit_size
+
+    def _map_deref_expr(self, map, address, size):
+        return Operators.AND(
+            # address >= map.start,
+            # address + size < map.end)
+            Operators.UGE(address, map.start),
+            Operators.ULT(address, map.end))
+
+    def _deref_can_succeed(self, map, address, size):
+        deref_possible = self._map_deref_expr(map, address, size)
+        if issymbolic(deref_possible):
+            return solver.can_be_true(self.constraints, deref_possible)
+        else:
+            return deref_possible
+
+    def _aggregate_read(self, address, size):
+        '''
+        :param Expression address:
+        :param size:
+        :return:
+        '''
+        assert issymbolic(address)
+        assert not issymbolic(size)
+
+        result = []
+        for offset in range(size):
+            deref_expression = InvalidAccessConstant(8, 0xff)
+            for m in self._maps:
+                within_map = self._map_deref_expr(m, address + offset, 1)
+                deref_expression = Operators.ITEBV(8, within_map,
+                                                   self._backing_array[address + offset],
+                                                   deref_expression)
+            result.append(deref_expression)
+
+        if len(result) == 0:
+            result = [InvalidAccessConstant(8, 0xff) for _ in range(size)]
+
+        return result
+
+    def map_containing(self, address):
+        """
+        :param address:
+        :return:
+        """
+        if not issymbolic(address):
+            return super(LazySMemory, self).map_containing(address)
+        else:
+            found = None
+            for m in self._maps:
+                if self._deref_can_succeed(m, address, 1):
+                    if not isinstance(m, ArrayMap):
+                        continue
+                    if found:
+                        raise InvalidMemoryAccess(address, 'r')
+                    found = m
+            return found
+
+    def valid_ptr(self, address):
+        assert issymbolic(address)
+
+        expressions = [self._map_deref_expr(m, address, 1) for m in self._maps]
+        valid = functools.reduce(Operators.OR, expressions)
+
+        return valid
+
+    def invalid_ptr(self, address):
+        return Operators.NOT(self.valid_ptr(address))
+
+    def read(self, address, size, force=False):
+        if not issymbolic(address):
+            if not self.access_ok(slice(address, address + size), 'r', force):
+                raise InvalidMemoryAccess(address, 'r')
+            # return self._backing_array[address:address + size]
+
+        # return self._aggregate_read(address, size)
+        return [self._backing_array[address + offset] for offset in range(size)]
+        # result = []
+        # for offset in range(size):
+        #    result.append(self._backing_array[address + offset])
+        # return result
+
+    def write(self, address, value, force=False):
+        if not issymbolic(address) and not self.access_ok(slice(address, address + len(value)), 'w', force):
+            raise InvalidMemoryAccess(address, 'w')
+
+        self._backing_array[address:address + len(value)] = value
+
+
 class Memory32(Memory):
     memory_bit_size = 32
     page_bit_size = 12
@@ -1092,5 +1284,15 @@ class SMemory32L(SMemory):
 
 
 class SMemory64(SMemory):
+    memory_bit_size = 64
+    page_bit_size = 12
+
+
+class LazySMemory32(LazySMemory):
+    memory_bit_size = 32
+    page_bit_size = 12
+
+
+class LazySMemory64(LazySMemory):
     memory_bit_size = 64
     page_bit_size = 12
