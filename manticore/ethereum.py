@@ -306,6 +306,10 @@ class DetectReentrancy2(Detector):
             msg_sender = state.platform.current_vm.caller
             pc = state.platform.current_vm.pc
 
+            dest_is_contract = bool(state.platform.get_code(dest_address))
+            if not dest_is_contract:
+                return
+
             is_enough_gas = Operators.UGT(gas, 2300)
             if not state.can_be_true(is_enough_gas):
                 return
