@@ -306,7 +306,7 @@ class DetectReentrancy2(Detector):
             msg_sender = state.platform.current_vm.caller
             pc = state.platform.current_vm.pc
 
-            if not state.can_be_true(gas > 2300):
+            if not state.can_be_true(Operators.UGT(gas, 2300)):
                 return
 
             # flag any external call that's going to a symbolic (potentially user controlled)?
