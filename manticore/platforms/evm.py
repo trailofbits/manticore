@@ -1473,11 +1473,11 @@ class EVMWorld(Platform):
 
         if initial_block_number is None:
             #assume initial symbolic block
-            initial_block_number = constraints.new_bitvec(256, "BLOCKNUMBER")
+            initial_block_number = constraints.new_bitvec(256, "BLOCKNUMBER", avoid_collisions=True)
         self._initial_block_number = initial_block_number
         if initial_timestamp is None:
             #1524785992; // Thu Apr 26 23:39:52 UTC 2018
-            initial_timestamp = constraints.new_bitvec(256, "TIMESTAMP")
+            initial_timestamp = constraints.new_bitvec(256, "TIMESTAMP", avoid_collisions=True)
             constraints.add(Operators.UGT(initial_timestamp, 1000000000))
             constraints.add(Operators.ULT(initial_timestamp, 3000000000))
         self._initial_timestamp = initial_timestamp
@@ -1882,7 +1882,7 @@ class EVMWorld(Platform):
             # selfdestroyed address it can not be reused
             raise EthereumError('The account already exists')
         if storage is None:
-            storage = self.constraints.new_array(index_bits=256, value_bits=256, name='STORAGE_{:x}'.format(address))
+            storage = self.constraints.new_array(index_bits=256, value_bits=256, name='STORAGE_{:x}'.format(address), avoid_collisions=True)
         if code is None:
             code = bytearray()
         self._world_state[address] = {}

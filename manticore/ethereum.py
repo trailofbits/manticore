@@ -1,3 +1,5 @@
+from typing import Optional
+
 from . import abitypes
 import uuid
 import numbers
@@ -42,7 +44,118 @@ class NoAliveStates(EthereumError):
     pass
 
 
-################ Detectors ####################
+#
+# Plugins
+#
+
+
+class FilterFunctions(Plugin):
+    def __init__(self, regexp=r'.*', mutability='both', depth='both', fallback=False, include=True, **kwargs):
+        """
+            Constrain input based on function metadata. Include or avoid functions selected by the specified criteria.
+
+            Examples:
+            #Do not explore any human transactions that end up calling a constant function
+            no_human_constant = FilterFunctions(depth='human', mutability='constant', include=False)
+
+            #At human tx depth only accept synthetic check functions
+            only_tests = FilterFunctions(regexp=r'mcore_.*', depth='human', include=False)
+
+            :param regexp: a regular expresion over the name of the function '.*' will match all functions
+            :param mutability: mutable, constant or both will match functions declared in the abi to be of such class
+            :param depth: match functions in internal transactions, in human initiated transactions or in both types
+            :param fallback: if True include the fallback function. Hash will be 00000000 for it
+            :param include: if False exclude the selected functions, if True include them
+        """
+        super().__init__(**kwargs)
+        depth = depth.lower()
+        if depth not in ('human', 'internal', 'both'):
+            raise ValueError
+        mutability = mutability.lower()
+        if mutability not in ('mutable', 'constant', 'both'):
+            raise ValueError
+
+        #fixme better names for member variables
+        self._regexp = regexp
+        self._mutability = mutability
+        self._depth = depth
+        self._fallback = fallback
+        self._include = include
+
+    def will_open_transaction_callback(self, state, tx):
+        world = state.platform
+        tx_cnt = len(world.all_transactions)
+        # Constrain input only once per tx, per plugin
+        if state.context.get('constrained%d' % id(self), 0) != tx_cnt:
+            state.context['constrained%d' % id(self)] = tx_cnt
+
+            if self._depth == 'human' and not tx.is_human:
+                return
+            if self._depth == 'internal' and tx.is_human:
+                return
+
+            #Get metadata if any for the targe addreess of current tx
+            md = self.manticore.get_metadata(tx.address)
+            if md is None:
+                return
+            #Lets compile  the list of interesting hashes
+            selected_functions = []
+
+            for func_hsh in md.hashes:
+                if func_hsh == '00000000':
+                    continue
+                abi = md.get_abi(func_hsh)
+                func_name = md.get_func_name(func_hsh)
+                if self._mutability == 'constant' and not abi.get('constant', False):
+                    continue
+                if self._mutability == 'mutable' and abi.get('constant', False):
+                    continue
+                if not re.match(self._regexp, func_name):
+                    continue
+                selected_functions.append(func_hsh)
+
+            if self._fallback:
+                selected_functions.append('00000000')
+
+            if self._include:
+                # constraint the input so it can take only the interesting values
+                constraint = reduce(Operators.OR, [tx.data[:4] == binascii.unhexlify(x) for x in selected_functions])
+                state.constrain(constraint)
+            else:
+                #Avoid all not seleted hashes
+                for func_hsh in md.hashes:
+                    if func_hsh in selected_functions:
+                        constraint = Operators.NOT(tx.data[:4] == binascii.unhexlify(func_hsh))
+                        state.constrain(constraint)
+
+
+class LoopDepthLimiter(Plugin):
+    ''' This just abort explorations too deep '''
+
+    def __init__(self, loop_count_threshold=5, **kwargs):
+        super().__init__(**kwargs)
+        self.loop_count_threshold = loop_count_threshold
+
+    def will_start_run_callback(self, *args):
+        with self.manticore.locked_context('seen_rep', dict) as reps:
+            reps.clear()
+
+    def will_execute_instruction_callback(self, state, pc, insn):
+        world = state.platform
+        with self.manticore.locked_context('seen_rep', dict) as reps:
+            item = (world.current_transaction.sort == 'CREATE', world.current_transaction.address, pc)
+            if item not in reps:
+                reps[item] = 0
+            reps[item] += 1
+            if reps[item] > self.loop_count_threshold:
+                state.abandon()
+
+
+#
+# Detectors
+#
+
+
 class Detector(Plugin):
     @property
     def name(self):
@@ -123,85 +236,34 @@ class Detector(Plugin):
         return self.manticore.get_metadata(address).get_source_for(pc)
 
 
-class FilterFunctions(Plugin):
-    def __init__(self, regexp=r'.*', mutability='both', depth='both', fallback=False, include=True, **kwargs):
-        """
-            Constrain input based on function metadata. Include or avoid functions selected by the specified criteria.
+class DetectSelfdestruct(Detector):
+    def will_evm_execute_instruction_callback(self, state, instruction, arguments):
+        if instruction.semantics == 'SELFDESTRUCT':
+            self.add_finding_here(state, 'Reachable SELFDESTRUCT')
 
-            Examples:
-            #Do not explore any human transactions that end up calling a constant function
-            no_human_constant = FilterFunctions(depth='human', mutability='constant', include=False)
 
-            #At human tx depth only accept synthetic check functions
-            only_tests = FilterFunctions(regexp=r'mcore_.*', depth='human', include=False)
+class DetectEtherLeak(Detector):
+    def will_evm_execute_instruction_callback(self, state, instruction, arguments):
+        if instruction.semantics == 'CALL':
+            dest_address = arguments[1]
+            sent_value = arguments[2]
+            msg_sender = state.platform.current_vm.caller
 
-            :param regexp: a regular expresion over the name of the function '.*' will match all functions
-            :param mutability: mutable, constant or both will match functions declared in the abi to be of such class
-            :param depth: match functions in internal transactions, in human initiated transactions or in both types
-            :param fallback: if True include the fallback function. Hash will be 00000000 for it
-            :param include: if False exclude the selected functions, if True include them
-        """
-        super().__init__(**kwargs)
-        depth = depth.lower()
-        if depth not in ('human', 'internal', 'both'):
-            raise ValueError
-        mutability = mutability.lower()
-        if mutability not in ('mutable', 'constant', 'both'):
-            raise ValueError
-
-        #fixme better names for member variables
-        self._regexp = regexp
-        self._mutability = mutability
-        self._depth = depth
-        self._fallback = fallback
-        self._include = include
-
-    def will_open_transaction_callback(self, state, tx):
-        world = state.platform
-        tx_cnt = len(world.all_transactions)
-        # Constrain input only once per tx, per plugin
-        if state.context.get('constrained%d' % id(self), 0) != tx_cnt:
-            state.context['constrained%d' % id(self)] = tx_cnt
-
-            if self._depth == 'human' and not tx.is_human:
-                return
-            if self._depth == 'internal' and tx.is_human:
+            # If nothing can be transferred out, we don't care
+            if not state.can_be_true(sent_value > 0):
                 return
 
-            #Get metadata if any for the targe addreess of current tx
-            md = self.manticore.get_metadata(tx.address)
-            if md is None:
-                return
-            #Lets compile  the list of interesting hashes
-            selected_functions = []
-
-            for func_hsh in md.hashes:
-                if func_hsh == '00000000':
-                    continue
-                abi = md.get_abi(func_hsh)
-                func_name = md.get_func_name(func_hsh)
-                if self._mutability == 'constant' and not abi.get('constant', False):
-                    continue
-                if self._mutability == 'mutable' and abi.get('constant', False):
-                    continue
-                if not re.match(self._regexp, func_name):
-                    continue
-                selected_functions.append(func_hsh)
-
-            if self._fallback:
-                selected_functions.append('00000000')
-
-            if self._include:
-                # constraint the input so it can take only the interesting values
-                constraint = reduce(Operators.OR, (tx.data[:4] == x for x in selected_functions))
-                state.constrain(constraint)
+            if issymbolic(dest_address):
+                # We assume dest_address is symbolic because it came from symbolic tx data (user input argument)
+                if state.can_be_true(msg_sender == dest_address):
+                    self.add_finding_here(state, "Reachable ether leak to sender via argument")
+                else:
+                    # This might be a false positive if the dest_address can't actually be solved to anything
+                    # useful/exploitable
+                    self.add_finding_here(state, "Reachable ether leak to user controlled address via argument")
             else:
-                #Avoid all not selected hashes
-                for func_hsh in md.hashes:
-                    if func_hsh in selected_functions:
-                        # Was constraint = Operators.NOT(tx.data[:4] == func_hsh)
-                        constraint = tx.data[:4] != func_hsh
-                        state.constrain(constraint)
+                if msg_sender == dest_address:
+                    self.add_finding_here(state, "Reachable ether leak to sender")
 
 
 class DetectInvalid(Detector):
@@ -272,7 +334,7 @@ class DetectReentrancy(Detector):
             pc = pc.value
         assert isinstance(pc, int)
         at_init = world.current_transaction.sort == 'CREATE'
-        location = (address, pc, "Reentrancy muti-million ether bug", at_init)
+        location = (address, pc, "Reentrancy multi-million ether bug", at_init)
         locations[location] = set(state.context[self._read_storage_name])
         state.context[name] = locations
 
@@ -1131,18 +1193,20 @@ class EVMContract(EVMAccount):
     def add_function(self, signature):
         func_id = ABI.function_selector(signature)
         func_name = str(signature.split('(')[0])
-        if func_name.startswith('_') or func_name in {'add_function', 'address', 'name'}:
-            raise EthereumError("Sorry function name is used by the python wrapping")
+        if func_name.startswith('__') or func_name in {'add_function', 'address', 'name'}:
+            # TODO(mark): is this actually true? is there anything actually wrong with a solidity name beginning w/ an underscore?
+            raise EthereumError("Function name ({}) is internally reserved".format(func_name))
         if func_name in self._hashes:
-            raise EthereumError("A function with that name is already defined")
-        if func_id in {func_id for _, func_id in self._hashes.values()}:
-            raise EthereumError("A function with the same hash is already defined")
-        self._hashes[func_name] = signature, func_id
+            self._hashes[func_name].append((signature, func_id))
+            return
+        if func_id in {h[1] for names in self._hashes.values() for h in names}:
+            raise EthereumError("A function with the same hash as {} is already defined".format(func_name))
+        self._hashes[func_name] = [(signature, func_id)]
 
-    def _null_func(self):
+    def __null_func(self):
         pass
 
-    def _init_hashes(self):
+    def __init_hashes(self):
         #initializes self._hashes lazy
         if self._hashes is None and self._manticore is not None:
             self._hashes = {}
@@ -1151,7 +1215,7 @@ class EVMContract(EVMAccount):
                 for signature in md.functions:
                     self.add_function(signature)
             # It was successful, no need to re-run. _init_hashes disabled
-            self._init_hashes = self._null_func
+            self.__init_hashes = self.__null_func
 
     def __getattribute__(self, name):
         """ If this is a contract account of which we know the functions hashes,
@@ -1164,14 +1228,32 @@ class EVMContract(EVMAccount):
 
         """
         if not name.startswith('_'):
-            self._init_hashes()
+            self.__init_hashes()
             if self._hashes is not None and name in self._hashes.keys():
-                def f(*args, **kwargs):
-                    caller = kwargs.get('caller', None)
-                    value = kwargs.get('value', 0)
-                    tx_data = ABI.function_call(str(self._hashes[name][0]), *args)
+                def f(*args, signature: Optional[str]=None, caller=None, value=0, **kwargs):
+                    try:
+                        if signature:
+                            if f'{name}{signature}' not in {h[0] for names in self._hashes.values() for h in names}:
+                                raise EthereumError(
+                                    f'Function: `{name}` has no such signature`\n'
+                                    f'Known signatures: {[x[0][len(name):] for x in self._hashes[name]]}')
+
+                            tx_data = ABI.function_call(f'{name}{signature}', *args)
+                        else:
+                            if len(self._hashes[name]) > 1:
+                                sig = self._hashes[name][0][0][len(name):]
+                                raise EthereumError(
+                                    f'Function: `{name}` has multiple signatures but `signature` is not '
+                                    f'defined! Example: `account.{name}(..., signature="{sig}")`\n'
+                                    f'Known signatures: {[x[0][len(name):] for x in self._hashes[name]]}')
+
+                            tx_data = ABI.function_call(str(self._hashes[name][0][0]), *args)
+                    except KeyError as e:
+                        raise e
+
                     if caller is None:
                         caller = self._default_caller
+
                     self._manticore.transaction(caller=caller,
                                                 address=self._address,
                                                 value=value,
@@ -1932,7 +2014,8 @@ class ManticoreEVM(Manticore):
 
         return address
 
-    def multi_tx_analysis(self, solidity_filename, contract_name=None, tx_limit=None, tx_use_coverage=True, tx_account="attacker", args=None):
+    def multi_tx_analysis(self, solidity_filename, contract_name=None, tx_limit=None, tx_use_coverage=True, tx_send_ether=True, tx_account="attacker", args=None):
+
         owner_account = self.create_account(balance=1000, name='owner')
         attacker_account = self.create_account(balance=1000, name='attacker')
 
@@ -1965,11 +2048,14 @@ class ManticoreEVM(Manticore):
 
                 # run_symbolic_tx
                 symbolic_data = self.make_symbolic_buffer(320)
-                symbolic_value = self.make_symbolic_value()
+                if tx_send_ether:
+                    value = self.make_symbolic_value()
+                else:
+                    value = 0
                 self.transaction(caller=tx_account[min(tx_no, len(tx_account) - 1)],
                                  address=contract_account,
                                  data=symbolic_data,
-                                 value=symbolic_value)
+                                 value=value)
                 logger.info("%d alive states, %d terminated states", self.count_running_states(), self.count_terminated_states())
             except NoAliveStates:
                 break
@@ -2147,9 +2233,9 @@ class ManticoreEVM(Manticore):
         #Human tx that ends in this wont modify the storage so finalize and
         # generate a testcase. FIXME This should be configurable as REVERT and
         # THROWit actually changes the balance and nonce? of some accounts
-        if tx.result in {'REVERT', 'THROW', 'TXERROR'}:
+        if tx.result in {'SELFDESTRUCT', 'REVERT', 'THROW', 'TXERROR'}:
             self.save(state, final=True)
-        elif tx.result in {'SELFDESTRUCT', 'RETURN', 'STOP'}:
+        elif tx.result in {'RETURN', 'STOP'}:
             # if not a revert we save the state for further transactioning
             self.save(state)  # Add to running states
         else:
@@ -2234,7 +2320,7 @@ class ManticoreEVM(Manticore):
         at_init = world.current_transaction.sort == 'CREATE'
         output = io.StringIO()
         output.write('Contract: 0x{:x}\n'.format(address))
-        output.write('EVM Program counter: {}{:s}\n'.format(pc, at_init and " (at constructor)" or ""))
+        output.write('EVM Program counter: 0x{:x}{:s}\n'.format(pc, at_init and " (at constructor)" or ""))
         md = self.get_metadata(address)
         if md is not None:
             src = md.get_source_for(pc, runtime=not at_init)
@@ -2276,7 +2362,7 @@ class ManticoreEVM(Manticore):
                 for address, pc, finding, at_init, constraint in local_findings:
                     findings.write('- %s -\n' % finding)
                     findings.write('  Contract: 0x%x\n' % address)
-                    findings.write('  EVM Program counter: %s%s\n' % (pc, at_init and " (at constructor)" or ""))
+                    findings.write('  EVM Program counter: 0x%x%s\n' % (pc, at_init and " (at constructor)" or ""))
                     md = self.get_metadata(address)
                     if md is not None:
                         src = md.get_source_for(pc, runtime=not at_init)
@@ -2396,6 +2482,16 @@ class ManticoreEVM(Manticore):
                     return_data = state.solve_one(tx.return_data)
                     tx_summary.write("Return_data: %s %s\n" % (binascii.hexlify(return_data), flagged(issymbolic(tx.return_data))))
                 metadata = self.get_metadata(tx.address)
+                if tx.sort == 'CREATE':
+                    if metadata is not None:
+                        args_data = tx.data[len(metadata._init_bytecode):]
+                        arguments = ABI.deserialize(metadata.get_constructor_arguments(), state.solve_one(args_data))
+                        is_argument_symbolic = any(map(issymbolic, arguments))
+                        tx_summary.write('Function call:\n')
+                        tx_summary.write("Constructor(")
+                        tx_summary.write(','.join(map(repr, map(state.solve_one, arguments))))
+                        tx_summary.write(') -> %s %s\n' % (tx.result, flagged(is_argument_symbolic)))
+
                 if tx.sort == 'CALL':
                     if metadata is not None:
                         function_id = state.solve_one(tx.data[:4])  # hope there is enough data
@@ -2526,7 +2622,7 @@ class ManticoreEVM(Manticore):
                 for address, pc, finding, at_init in self.global_findings:
                     global_findings.write('- %s -\n' % finding)
                     global_findings.write('  Contract: %s\n' % address)
-                    global_findings.write('  EVM Program counter: %s%s\n' % (pc, at_init and " (at constructor)" or ""))
+                    global_findings.write('  EVM Program counter: 0x%x%s\n' % (pc, at_init and " (at constructor)" or ""))
 
                     md = self.get_metadata(address)
                     if md is not None:
