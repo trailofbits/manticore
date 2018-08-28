@@ -119,13 +119,14 @@ class FilterFunctions(Plugin):
 
             if self._include:
                 # constraint the input so it can take only the interesting values
-                constraint = reduce(Operators.OR, [tx.data[:4] == binascii.unhexlify(x) for x in selected_functions])
+                constraint = reduce(Operators.OR, (tx.data[:4] == x for x in selected_functions))
                 state.constrain(constraint)
             else:
-                #Avoid all not seleted hashes
+                #Avoid all not selected hashes
                 for func_hsh in md.hashes:
                     if func_hsh in selected_functions:
-                        constraint = Operators.NOT(tx.data[:4] == binascii.unhexlify(func_hsh))
+                        # Was constraint = Operators.NOT(tx.data[:4] == func_hsh)
+                        constraint = tx.data[:4] != func_hsh
                         state.constrain(constraint)
 
 
@@ -175,7 +176,7 @@ class Detector(Plugin):
             return global_findings
 
     def add_finding(self, state, address, pc, finding, at_init, constraint=True):
-        """
+        '''
         Logs a finding at specified contract and assembler line.
         :param state: current state
         :param address: contract address of the finding
@@ -183,7 +184,7 @@ class Detector(Plugin):
         :param at_init: true if executing the constructor
         :param finding: textual description of the finding
         :param constraint: finding is considered reproducible only when constraint is True
-        """
+        '''
 
         if not isinstance(pc, int):
             raise ValueError("PC must be a number")
@@ -193,13 +194,13 @@ class Detector(Plugin):
         #Fixme for ever broken logger
         logger.warning(finding)
 
-    def add_finding_here(self, state, finding, condition=True):
-        """
+    def add_finding_here(self, state, finding, constraint=True):
+        '''
         Logs a finding in current contract and assembler line.
         :param state: current state
         :param finding: textual description of the finding
-        :param condition: finding is considered reproducible only when condition holds
-        """
+        :param constraint: finding is considered reproducible only when constraint is True
+        '''
         address = state.platform.current_vm.address
         pc = state.platform.current_vm.pc
         if isinstance(pc, Constant):
@@ -207,17 +208,17 @@ class Detector(Plugin):
         if not isinstance(pc, int):
             raise ValueError("PC must be a number")
         at_init = state.platform.current_transaction.sort == 'CREATE'
-        self.add_finding(state, address, pc, finding, at_init, condition)
+        self.add_finding(state, address, pc, finding, at_init, constraint)
 
     def _save_current_location(self, state, finding, condition=True):
-        """
+        '''
         Save current location in the internal locations list and returns a textual id for it.
-        This is used to save locations that could later be promoted to a finding if other condition holds
+        This is used to save locations that could later be promoted to a finding if other conditions hold
         See _get_location()
         :param state: current state
         :param finding: textual description of the finding
         :param condition: general purpose constraint
-        """
+        '''
         address = state.platform.current_vm.address
         pc = state.platform.current_vm.pc
         at_init = state.platform.current_transaction.sort == 'CREATE'
@@ -227,9 +228,9 @@ class Detector(Plugin):
         return hash_id
 
     def _get_location(self, state, hash_id):
-        """ Get previously saved location
+        ''' Get previously saved location
             A location is composed of: address, pc, finding, at_init, condition
-        """
+        '''
         return state.context.setdefault('{:s}.locations'.format(self.name), {})[hash_id]
 
     def _get_src(self, address, pc):
@@ -2015,7 +2016,6 @@ class ManticoreEVM(Manticore):
         return address
 
     def multi_tx_analysis(self, solidity_filename, contract_name=None, tx_limit=None, tx_use_coverage=True, tx_send_ether=True, tx_account="attacker", args=None):
-
         owner_account = self.create_account(balance=1000, name='owner')
         attacker_account = self.create_account(balance=1000, name='attacker')
 
