@@ -631,6 +631,26 @@ class DetectUninitializedStorage(Detector):
         state.context.setdefault('{:s}.initialized_storage'.format(self.name), set()).add((address, offset))
 
 
+class DetectMultipleSends(Detector):
+    '''
+    Detects multiple sends to the same address within a transaction
+    '''
+    def will_evm_execute_instruction_callback(self, state, instruction, arguments):
+        if instruction.semantics == 'CALL':
+            _, dest_address, sent_value, *rest = arguments
+
+            if not state.can_be_true(sent_value > 0):
+                return
+
+            destinations = state.context.setdefault(f'{self.name}.calls', set())
+
+            for i, seen_dest in enumerate(destinations):
+                if state.can_be_true(dest_address == seen_dest):
+                    self.add_finding_here(state, f"Multiple sends to potentially the same address")
+
+            state.context[f'{self.name}.calls'].update({dest_address})
+
+
 def calculate_coverage(runtime_bytecode, seen):
     ''' Calculates what percentage of runtime_bytecode has been seen '''
     count, total = 0, 0
