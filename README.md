@@ -52,7 +52,7 @@ $ manticore ./path/to/binary ++ ++  # use two symbolic strings of length two as 
 
 ### API
 
-Manticore has a Python programming interface which can be used to implement custom analyses and is capable of detailed verification of arbitrary properties of smart contracts via its Python API. Set starting conditions, identify symbolic transactions, then review discovered states to ensure invariants for your contract hold.
+Manticore has a Python programming interface which can be used to implement custom analyses. For Ethereum smart contracts, can be used for detailed verification of arbitrary contract properties. Set starting conditions, execute symbolic transactions, then review discovered states to ensure invariants for your contract hold.
 
 ```python
 from manticore.ethereum import ManticoreEVM
