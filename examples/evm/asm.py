@@ -6,7 +6,7 @@ import pyevmasm as ea
 from binascii import hexlify
 
 def printi(instruction):
-    print('Instruction: %s'% instruction)
+    print(f'Instruction: {instruction}')
     print('\tdescription:', instruction.description)
     print('\tgroup:', instruction.group)
     print('\taddress:', instruction.pc)
@@ -17,7 +17,7 @@ def printi(instruction):
     print('\tsemantics:', instruction.semantics)
     print('\tpops:', instruction.pops)
     print('\tpushes:', instruction.pushes)
-    print('\tbytes:', '0x'+hexlify(instruction.bytes).decode())
+    print(f'\tbytes: 0x'+hexlify(instruction.bytes).decode())
     print('\twrites to stack:', instruction.writes_to_stack)
     print('\treads from stack:', instruction.reads_from_stack)
     print('\twrites to memory:', instruction.writes_to_memory)

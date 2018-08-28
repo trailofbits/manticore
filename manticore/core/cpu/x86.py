@@ -61,7 +61,7 @@ def rep(old_method):
             counter_name = {16: 'CX', 32: 'ECX', 64: 'RCX'}[cpu.instruction.addr_size * 8]
             count = cpu.read_register(counter_name)
             if issymbolic(count):
-                raise ConcretizeRegister(cpu, counter_name, "Concretizing {} on REP instruction".format(counter_name), policy='SAMPLED')
+                raise ConcretizeRegister(cpu, counter_name, f"Concretizing {counter_name} on REP instruction", policy='SAMPLED')
 
             FLAG = count != 0
 
@@ -90,7 +90,7 @@ def repe(old_method):
             counter_name = {16: 'CX', 32: 'ECX', 64: 'RCX'}[cpu.instruction.addr_size * 8]
             count = cpu.read_register(counter_name)
             if issymbolic(count):
-                raise ConcretizeRegister(cpu, counter_name, "Concretizing {} on REP instruction".format(counter_name), policy='SAMPLED')
+                raise ConcretizeRegister(cpu, counter_name, f"Concretizing {counter_name} on REP instruction", policy='SAMPLED')
 
             FLAG = count != 0
 
@@ -556,7 +556,7 @@ class AMD64RegFile(RegisterFile):
     def write(self, name, value):
         name = self._alias(name)
         if name in ('ST0', 'ST1', 'ST2', 'ST3', 'ST4', 'ST5', 'ST6', 'ST7'):
-            name = 'FP%d' % ((self.read('TOP') + int(name[2])) & 7)
+            name = f'FP{((self.read("TOP") + int(name[2])) & 7)}'
 
         # Special EFLAGS/RFLAGS case
         if 'FLAGS' in name:
@@ -585,7 +585,7 @@ class AMD64RegFile(RegisterFile):
     def read(self, name):
         name = self._alias(name)
         if name in ('ST0', 'ST1', 'ST2', 'ST3', 'ST4', 'ST5', 'ST6', 'ST7'):
-            name = 'FP%d' % ((self.read('TOP') + int(name[2])) & 7)
+            name = f'FP{((self.read("TOP") + int(name[2])) & 7)}'
         if name in self._cache:
             return self._cache[name]
         if 'FLAGS' in name:
@@ -4077,7 +4077,7 @@ class X86Cpu(Cpu):
             value = cpu.read_int(addr + base, 8)
             cpu.CF = Operators.EXTRACT(value, pos, 1) == 1
         else:
-            raise NotImplementedError("Unknown operand for BT: {}".format(dest.type))
+            raise NotImplementedError(f"Unknown operand for BT: {dest.type}")
 
     @instruction
     def BTC(cpu, dest, src):
@@ -4107,7 +4107,7 @@ class X86Cpu(Cpu):
             value = value ^ (1 << pos)
             cpu.write_int(addr, value, 8)
         else:
-            raise NotImplementedError("Unknown operand for BTC: {}".format(dest.type))
+            raise NotImplementedError(f"Unknown operand for BTC: {dest.type}")
 
     @instruction
     def BTR(cpu, dest, src):
@@ -4137,7 +4137,7 @@ class X86Cpu(Cpu):
             value = value & ~(1 << pos)
             cpu.write_int(addr, value, 8)
         else:
-            raise NotImplementedError("Unknown operand for BTR: {}".format(dest.type))
+            raise NotImplementedError(f"Unknown operand for BTR: {dest.type}")
 
     @instruction
     def BTS(cpu, dest, src):
@@ -4169,7 +4169,7 @@ class X86Cpu(Cpu):
             value = value | (1 << pos)
             cpu.write_int(addr, value, 8)
         else:
-            raise NotImplementedError("Unknown operand for BTS: {}".format(dest.type))
+            raise NotImplementedError(f"Unknown operand for BTS: {dest.type}")
 
     @instruction
     def POPCNT(cpu, dest, src):
@@ -6054,7 +6054,7 @@ class AMD64Cpu(X86Cpu):
         result = ""
         try:
             instruction = self.instruction
-            result += "Instruction: 0x%016x:\t%s\t%s\n" % (instruction.address, instruction.mnemonic, instruction.op_str)
+            result += f"Instruction: 0x{instruction.address:016x}:\t{instruction.mnemonic}\t{instruction.op_str}\n"
         except BaseException:
             result += "{can't decode instruction }\n"
 
@@ -6062,36 +6062,29 @@ class AMD64Cpu(X86Cpu):
         for reg_name in regs:
             value = self.read_register(reg_name)
             if issymbolic(value):
-                result += "%3s: " % reg_name + CFAIL
-                result += visitors.pretty_print(value, depth=10)
-                result += CEND
+                result += f'{reg_name:3s}: {CFAIL}{visitors.pretty_print(value, depth=10)}{CEND}\n'
             else:
-                result += "%3s: 0x%016x" % (reg_name, value)
+                result += f"{reg_name:3s}: 0x{value:016x}\n"
             pos = 0
-            result += '\n'
 
         pos = 0
         for reg_name in ('CF', 'SF', 'ZF', 'OF', 'AF', 'PF', 'IF', 'DF'):
             value = self.read_register(reg_name)
             if issymbolic(value):
-                result += "%s:" % reg_name + CFAIL
-                #"%16s"%value+CEND
-                result += visitors.pretty_print(value, depth=10) + CEND
+                result += f'{reg_name}: {CFAIL}{visitors.pretty_print(value, depth=10)}{CEND}\n'
             else:
-                result += "%s: %1x" % (reg_name, value)
+                result += f'{reg_name}: {value:1x}\n'
 
             pos = 0
-            result += '\n'
 
         for reg_name in ['CS', 'DS', 'ES', 'SS', 'FS', 'GS']:
             base, size, ty = self.get_descriptor(self.read_register(reg_name))
-            result += '%s: %x, %x (%s)\n' % (reg_name, base, size, ty)
+            result += f'{reg_name}: {base:x}, {size:x} ({ty})\n'
 
         for reg_name in ['FP0', 'FP1', 'FP2', 'FP3', 'FP4', 'FP5', 'FP6', 'FP7', 'TOP']:
             value = getattr(self, reg_name)
-            result += "%3s: %r" % (reg_name, value)
+            result += f'{reg_name:3s}: {value!r}\n'
             pos = 0
-            result += '\n'
 
         return result
 
@@ -6164,7 +6157,7 @@ class I386Cpu(X86Cpu):
         result = ""
         try:
             instruction = self.instruction
-            result += "Instruction: 0x%016x:\t%s\t%s\n" % (instruction.address, instruction.mnemonic, instruction.op_str)
+            result += f"Instruction: 0x{instruction.address:016x}:\t{instruction.mnemonic}\t{instruction.op_str}\n"
         except BaseException:
             result += "{can't decode instruction }\n"
 
@@ -6172,35 +6165,29 @@ class I386Cpu(X86Cpu):
         for reg_name in regs:
             value = self.read_register(reg_name)
             if issymbolic(value):
-                result += "%3s: " % reg_name + CFAIL
-                result += visitors.pretty_print(value, depth=10) + CEND
+                result += f'{reg_name:3s}: {CFAIL}{visitors.pretty_print(value, depth=10)}{CEND}\n'
             else:
-                result += "%3s: 0x%016x" % (reg_name, value)
+                result += f'{reg_name:3s}: 0x{value:016x}\n'
             pos = 0
-            result += '\n'
 
         pos = 0
         for reg_name in ['CF', 'SF', 'ZF', 'OF', 'AF', 'PF', 'IF', 'DF']:
             value = self.read_register(reg_name)
             if issymbolic(value):
-                result += "%s:" % reg_name + CFAIL
-                #"%16s"%value+CEND
-                result += visitors.pretty_print(value, depth=10) + CEND
+                result += f'{reg_name}: {CFAIL}{visitors.pretty_print(value, depth=10)}{CEND}\n'
             else:
-                result += "%s: %1x" % (reg_name, value)
+                result += f'{reg_name}: {value:1x}\n'
 
             pos = 0
-            result += '\n'
 
         for reg_name in ['CS', 'DS', 'ES', 'SS', 'FS', 'GS']:
             base, size, ty = self.get_descriptor(self.read_register(reg_name))
-            result += '%s: %x, %x (%s)\n' % (reg_name, base, size, ty)
+            result += f'{reg_name}: {base:x}, {size:x} ({ty})\n'
 
         for reg_name in ['FP0', 'FP1', 'FP2', 'FP3', 'FP4', 'FP5', 'FP6', 'FP7', 'TOP']:
             value = getattr(self, reg_name)
-            result += "%3s: %r" % (reg_name, value)
+            result += f'{reg_name:3s}: {value!r}\n'
             pos = 0
-            result += '\n'
 
         return result
 

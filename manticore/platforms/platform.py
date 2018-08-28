@@ -11,7 +11,7 @@ class SyscallNotImplemented(OSException):
     '''
 
     def __init__(self, idx, name):
-        msg = 'Syscall index "{}" ({}) not implemented.'.format(idx, name)
+        msg = f'Syscall index "{idx}" ({name}) not implemented.'
         super().__init__(msg)
 
 
