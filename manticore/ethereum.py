@@ -306,27 +306,28 @@ class DetectReentrancy2(Detector):
             msg_sender = state.platform.current_vm.caller
             pc = state.platform.current_vm.pc
 
-            if not state.can_be_true(Operators.UGT(gas, 2300)):
+            is_enough_gas = Operators.UGT(gas, 2300)
+            if not state.can_be_true(is_enough_gas):
                 return
 
             # flag any external call that's going to a symbolic (potentially user controlled)?
             # potentially bc, it could solve to only 1 address, it could solve to nothing userful
             # or concretely the sender's address
             if issymbolic(dest_address):
-                state.context.get(self.LOCS, []).append(pc)
+                state.context.get(self.LOCS, []).append((pc, is_enough_gas))
             else:
                 if msg_sender == dest_address:
-                    state.context.get(self.LOCS, []).append(pc)
+                    state.context.get(self.LOCS, []).append((pc, is_enough_gas))
 
     def did_evm_write_storage_callback(self, state, address, offset, value):
         locs = state.context.get(self.LOCS, [])
 
         # if we're here and locs has stuff in it. by definition this state has
         # encountered a dangerous call and is now at a write.
-        for callpc in locs:
+        for callpc, gas_constraint in locs:
             addr = state.platform.current_vm.address
             at_init = state.platform.current_transaction.sort == 'CREATE'
-            self.add_finding(state, addr, callpc, 'Potential reentrancy vulnerability', at_init)
+            self.add_finding(state, addr, callpc, 'Potential reentrancy vulnerability', at_init, constraint=gas_constraint)
 
 
 class DetectReentrancy(Detector):
