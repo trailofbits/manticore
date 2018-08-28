@@ -76,8 +76,8 @@ value = m.make_symbolic_value()
 contract_account.incremented(value)
 
 for state in m.running_states:
-    print(f"can value be 1? {state.can_be_true(value == 1)}")
-    print(f"can value be 200? {state.can_be_true(value == 200)}")
+    print("can value be 1? {}".format(state.can_be_true(value == 1)))
+    print("can value be 200? {}".format(state.can_be_true(value == 200)))
 ```
 
 It is also possible to use the API to create custom analysis tools for Linux binaries.
