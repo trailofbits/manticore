@@ -254,7 +254,7 @@ class DetectExternalCallAndLeak(Detector):
             if issymbolic(dest_address):
                 # We assume dest_address is symbolic because it came from symbolic tx data (user input argument)
                 if state.can_be_true(msg_sender == dest_address):
-                    self.add_finding_here(state, f"Reachable {msg} to sender via argument")
+                    self.add_finding_here(state, f"Reachable {msg} to sender via argument", constraint=msg_sender == dest_address)
                 else:
                     # This might be a false positive if the dest_address can't actually be solved to anything
                     # useful/exploitable
