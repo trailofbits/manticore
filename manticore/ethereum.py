@@ -249,7 +249,7 @@ class DetectExternalCallAndLeak(Detector):
             sent_value = arguments[2]
             msg_sender = state.platform.current_vm.caller
 
-            msg = 'ether leak' if state.can_be_true(sent_value > 0) else 'external call'
+            msg = 'ether leak' if state.can_be_true(sent_value != 0) else 'external call'
 
             if issymbolic(dest_address):
                 # We assume dest_address is symbolic because it came from symbolic tx data (user input argument)
