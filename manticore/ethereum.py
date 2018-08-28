@@ -258,7 +258,7 @@ class DetectExternalCallAndLeak(Detector):
                 else:
                     # This might be a false positive if the dest_address can't actually be solved to anything
                     # useful/exploitable
-                    self.add_finding_here(state, f"Reachable {msg} to user controlled address via argument")
+                    self.add_finding_here(state, f"Reachable {msg} to user controlled address via argument", constraint=msg_sender != dest_address)
             else:
                 if msg_sender == dest_address:
                     self.add_finding_here(state, f"Reachable {msg} to sender")
