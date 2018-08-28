@@ -577,3 +577,111 @@ class DetectUninitializedStorage(Detector):
     def did_evm_write_storage_callback(self, state, address, offset, value):
         # concrete or symbolic write
         state.context.setdefault('{:s}.initialized_storage'.format(self.name), set()).add((address, offset))
+
+
+class DetectRaceCondition(Detector):
+    """Detects possible transaction race conditions (transaction order dependencies)"""
+    # At `setstoredaddress` in the `SSTORE` you taint the slot with 'taint_setstoredaddress'
+    # At `callstoredaddress` at the 'SLOAD' you read a value tainted with  'taint_setstoredaddress'
+    # (concrete or otherwise)
+    # at the `CALL` you check it taint(address) != 'taint_setstoredaddress'
+    # at the time of SSTORE or SLOAD the first 4 bytes in the CALLDATA must be constrained
+    # to a single solution / be concrete.
+    TAINT = 'written_storage_slots.'
+
+    def __init__(self, *a, **kw):
+        # Normally `add_finding_here` makes it unique reporting but
+        # we might try to report the same thing multiple times e.g. in consecutive instructions
+        # so we need to make our own 'unique findings' set too.
+        self.__findings = set()
+        import warnings
+        warnings.warn(
+            "The RaceCondition detector might not work properly for contracts that have only a fallback function. "
+            "See the detector's implementation and it's `_is_in_dispatcher` method for more information."
+        )
+        super().__init__(*a, **kw)
+
+    @staticmethod
+    def _is_in_dispatcher(state):
+        """
+        :param state: current state
+        :return: whether the current execution is in a dispatcher function or not
+
+        NOTE / TODO / FIXME: As this may produce false postives, this is not in the base `Detector` class.
+        It should be fixed at some point and moved there. See below.
+
+        The first 4 bytes of tx data is keccak256 hash of the function signature that is called by given tx.
+
+        All transactions start within Solidity dispatcher function: it takes passed hash and dispatches
+        the execution to given function based on it.
+
+        So: if we are in the dispatcher, *and contract have some functions* one of the first four tx data bytes
+        will effectively have more than one solutions.
+
+        BUT if contract have only a fallback function, we will think we are not in dispatcher function when being
+        in there. <--- because of that, we warn that the detector is not that stable for contracts with
+        only a fallback function.
+        """
+
+        # TODO / FIXME: Benchmark/check if doing it byte by byte and also returning the bytes is faster
+        return len(state.solve_n(state.platform.current_transaction.data[:4], 2)) > 1
+
+    def did_evm_write_storage_callback(self, state, storage_address, offset, value):
+        world = state.platform
+        curr_tx = world.current_transaction
+
+        if curr_tx.sort == 'CREATE' or self._is_in_dispatcher(state):
+            return
+
+        key = self.TAINT + str(offset)  # offset is storage index/slot
+
+        # Taint stored value so we will know if it is used later on
+        result = taint_with(value, key)
+        world.set_storage_data(storage_address, offset, result)
+
+        metadata = self.manticore.metadata[curr_tx.address]
+
+        func_sig = metadata.get_func_signature(state.solve_one(curr_tx.data[:4]))
+
+        # Save signature of function that tainted the value at given storage index
+        state.context.setdefault(key, set()).add(func_sig)
+
+    def did_evm_execute_instruction_callback(self, state, instruction, arguments, result_ref):
+        if self._is_in_dispatcher(state):
+            return
+
+        world = state.platform
+
+        # last_tx = world.last_transaction
+        curr_tx = world.current_transaction
+
+        # if last_tx is not None and curr_tx != last_tx and last_tx.sort != 'CREATE':
+        if curr_tx.sort != 'CREATE':
+            metadata = self.manticore.metadata[curr_tx.address]
+            curr_func = metadata.get_func_signature(state.solve_one(curr_tx.data[:4]))
+
+            for arg in arguments:
+                if istainted(arg):
+                    for taint in get_taints(arg, self.TAINT + '*'):
+                        storage_index = int(taint[taint.rindex('.') + 1:])
+
+                        prev_funcs = state.context[taint]
+
+                        for prev_func in prev_funcs:
+                            # if prev_func is None, it didn't have a signature (so it was a dispatcher function)
+                            if prev_func is None:
+                                continue
+
+                            msg = 'Potential race condition (transaction order dependency):\n'
+                            msg += f'Value has been stored in storage slot/index {storage_index} in transaction that ' \
+                                   f'called {prev_func} and is now used in transaction that calls {curr_func}.\n' \
+                                   f'An attacker seeing a transaction to {curr_func} could create a transaction ' \
+                                   f'to {prev_func} with high gas and win a race.'
+
+                            unique_key = (storage_index, prev_func, curr_func)
+                            if unique_key in self.__findings:
+                                continue
+
+                            self.__findings.add(unique_key)
+
+                            self.add_finding_here(state, msg)

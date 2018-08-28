@@ -1,5 +1,6 @@
 import logging
 from contextlib import contextmanager
+from typing import Optional
 
 from capstone import CS_GRP_JUMP
 
@@ -8,7 +9,7 @@ from ..utils.helpers import issymbolic
 logger = logging.getLogger(__name__)
 
 
-class Plugin(object):
+class Plugin:
     @contextmanager
     def locked_context(self, key=None, value_type=list):
         """
@@ -33,7 +34,8 @@ class Plugin(object):
         return self.manticore.context[plugin_context_name]
 
     def __init__(self):
-        self.manticore = None
+        from manticore import Manticore
+        self.manticore: Optional[Manticore] = None
         self.last_reg_state = {}
 
     def on_register(self):
