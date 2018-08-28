@@ -12,7 +12,8 @@ import os
 import pyevmasm as EVMAsm
 from . import Manticore
 from .manticore import ManticoreError
-from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, istainted, taint_with, get_taints, BitVec, Constant, operators, Array, ArrayVariable, ArrayProxy
+from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, istainted, taint_with, get_taints, BitVec, \
+    Constant, operators, Array, ArrayVariable, ArrayProxy
 from .platforms import evm
 from .core.state import State
 from .utils.helpers import istainted, issymbolic, PickleSerializer
@@ -27,6 +28,7 @@ import io
 from .core.plugin import Plugin
 from functools import reduce
 from contextlib import contextmanager
+
 logger = logging.getLogger(__name__)
 
 
@@ -160,6 +162,19 @@ class Detector(Plugin):
     @property
     def name(self):
         return self.__class__.__name__.split('.')[-1]
+
+    @staticmethod
+    def is_in_dispatcher(state):
+        """
+        :param state: current state
+        :return: whether the current execution is in a dispatcher function or not
+        """
+        # The first 4 bytes are keccak256 of the function signature that we call with a transaction
+        # The Solidity dispatcher function takes it and dispatches the execution based on that
+        # So: if we are in the dispatcher, one of the bytes will effectively have more than one solutions
+
+        # TODO / FIXME: Benchmark/check if doing it byte by byte and also returning the bytes is faster
+        return len(state.solve_n(state.platform.current_transaction.data[:4], 2)) > 1
 
     def get_findings(self, state):
         return state.context.setdefault('{:s}.findings'.format(self.name), set())
@@ -716,6 +731,86 @@ class DetectUninitializedStorage(Detector):
     def did_evm_write_storage_callback(self, state, address, offset, value):
         # concrete or symbolic write
         state.context.setdefault('{:s}.initialized_storage'.format(self.name), set()).add((address, offset))
+
+
+class DetectTransactionOrderDependence(Detector):
+    '''Detects possible transaction order dependence vulnerability'''
+
+
+    """
+    At `setstoredaddress` in the `SSTORE` you taint the slot with 'taint_setstoredaddress'
+    At `callstoredaddress` at the 'SLOAD' you read a value tainted with  'taint_setstoredaddress' (concrete or otherwise) 
+    at the `CALL` you check it taint(address) != 'taint_setstoredaddress'
+    
+    at the time of SSTORE or SLOAD the first 4 bytes in the CALLDATA must be constrained to a single solution / be concrete.
+    """
+    TAINT = 'written_storage_slots.'
+
+    def __init__(self, *a, **kw):
+        # Normally `add_finding_here` makes it unique reporting but
+        # we might try to report the same thing multiple times e.g. in consecutive instructions
+        # so we need to make our own 'unique' too.
+        self.__findings = set()
+        super().__init__(*a, **kw)
+
+    def did_evm_write_storage_callback(self, state, storage_address, offset, value):
+        world = state.platform
+        curr_tx = world.current_transaction
+
+        if curr_tx.sort != 'CREATE' and self.is_in_dispatcher(state):
+            return
+
+        key = self.TAINT + str(offset)  # offset is storage index/slot
+
+        # Taint stored value so we will know if it is used later on
+        result = taint_with(value, key)
+        world.set_storage_data(storage_address, offset, result)
+
+        metadata = self.manticore.metadata[curr_tx.address]
+
+        func_sig = metadata.get_func_signature(state.solve_one(curr_tx.data[:4]))
+
+        # Save signature of function that tainted the value at given storage index
+        state.context.setdefault(key, set()).add(func_sig)
+
+    def did_evm_execute_instruction_callback(self, state, instruction, arguments, result_ref):
+        if self.is_in_dispatcher(state):
+            return
+
+        world = state.platform
+
+        # last_tx = world.last_transaction
+        curr_tx = world.current_transaction
+
+        # if last_tx is not None and curr_tx != last_tx and last_tx.sort != 'CREATE':
+        if curr_tx.sort != 'CREATE':
+            metadata = self.manticore.metadata[curr_tx.address]
+            curr_func = metadata.get_func_signature(state.solve_one(curr_tx.data[:4]))
+
+            for arg in arguments:
+                if istainted(arg):
+                    for taint in get_taints(arg, self.TAINT + '*'):
+                        storage_index = int(taint[taint.rindex('.') + 1:])
+
+                        prev_funcs = state.context[taint]
+
+                        for prev_func in prev_funcs:
+                            # if prev_func is None, it didn't have a signature (so it was a dispatcher function)
+                            if prev_func is None:
+                                continue
+
+                            msg = 'Potential transaction order dependency:\n'
+                            msg += 'Value has been stored in storage slot/index %d in transaction that called %s and is now used in transaction that calls %s.\n'
+                            msg += 'An attacker seeing a transaction to %s could create a transaction to %s with high gas and win a race.'
+                            msg = msg % (storage_index, prev_func, curr_func, curr_func, prev_func)
+
+                            unique_key = (storage_index, prev_func, curr_func)
+                            if unique_key in self.__findings:
+                                continue
+
+                            self.__findings.add(unique_key)
+
+                            self.add_finding_here(state, msg)
 
 
 def calculate_coverage(runtime_bytecode, seen):
