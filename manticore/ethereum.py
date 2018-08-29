@@ -2172,12 +2172,12 @@ class ManticoreEVM(Manticore):
                 results.append((key, value))
                 known_hashes_cond = Operators.OR(cond, known_hashes_cond)
 
-            # adding a single random example so we can explore further in case 
+            # adding a single random example so we can explore further in case
             # there are not known sha3 pairs that match yet
             if not results:
                 data_concrete = state.solve_one(data)
                 s = sha3.keccak_256(data_concrete)
-                data_hash = int(s.hexdigest(), 16) 
+                data_hash = int(s.hexdigest(), 16)
                 results.append((data_concrete, data_hash))
                 known_hashes_cond = data_concrete == data
                 known_sha3.append((data_concrete, data_hash))
