@@ -12,7 +12,7 @@ import os
 from manticore.core.smtlib import operators
 from .eth_general import make_mock_evm_state
 from manticore.ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, Detector, NoAliveStates, ABI, \
-    EthereumError, DetectReentrancy, DetectUnusedRetVal, DetectSelfdestruct, LoopDepthLimiter, DetectDelegatecall
+    EthereumError, DetectReentrancy, DetectUnusedRetVal, DetectSelfdestruct, LoopDepthLimiter, DetectDelegatecall, DetectEtherLeak
 
 import shutil
 
@@ -25,8 +25,11 @@ init_logging()
 set_verbosity(0)
 
 
-class DetectorTester(unittest.TestCase):
-    detector = None
+class EthDetectorTest(unittest.TestCase):
+    """
+    Subclasses must assign this class variable to the class for the detector
+    """
+    DETECTOR_CLASS = None
 
     def setUp(self):
         self.mevm = ManticoreEVM()
@@ -45,15 +48,16 @@ class DetectorTester(unittest.TestCase):
 
         filename = os.path.join(THIS_DIR, 'binaries', 'detectors', '{}.sol'.format(name))
 
-        self.mevm.register_detector(self.detector())
+        self.mevm.register_detector(self.DETECTOR_CLASS())
         mevm.multi_tx_analysis(filename, contract_name='DetectThis', args=(mevm.make_symbolic_value(),))
 
         expected_findings = set(((c, d) for b, c, d in should_find))
         actual_findings = set(((c, d) for a, b, c, d in mevm.global_findings))
         self.assertEqual(expected_findings, actual_findings)
 
-class EthRetVal(DetectorTester):
-    detector = DetectUnusedRetVal
+class EthRetVal(EthDetectorTest):
+    """ https://consensys.net/diligence/evm-analyzer-benchmark-suite/ """
+    DETECTOR_CLASS = DetectUnusedRetVal
 
     def test_retval_ok(self):
         name = inspect.currentframe().f_code.co_name[5:]
@@ -61,7 +65,7 @@ class EthRetVal(DetectorTester):
 
     def test_retval_not_ok(self):
         name = inspect.currentframe().f_code.co_name[5:]
-        self._test(name, set([(337, 'Returned value at CALL instruction is not used', False)]))
+        self._test(name, {(337, 'Returned value at CALL instruction is not used', False)})
 
     def test_retval_crazy(self):
         name = inspect.currentframe().f_code.co_name[5:]
@@ -72,15 +76,15 @@ class EthRetVal(DetectorTester):
         self._test(name, set())
 
 
-class EthSelfdestruct(DetectorTester):
-    detector = DetectSelfdestruct
+class EthSelfdestruct(EthDetectorTest):
+    DETECTOR_CLASS = DetectSelfdestruct
 
     def test_selfdestruct_true_pos(self):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, {(307, 'Reachable SELFDESTRUCT', False)})
 
     def test_selfdestruct_true_pos1(self):
-        self.mevm.register_plugin(LoopDepthLimiter())
+        self.mevm.register_plugin(LoopDepthLimiter(2))
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, {(307, 'Reachable SELFDESTRUCT', False)})
 
@@ -91,22 +95,6 @@ class EthSelfdestruct(DetectorTester):
     def test_selfdestruct_true_neg1(self):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, set())
-
-
-class DetectEnvInstruction(EthDetectorTest):
-    DETECTOR_CLASS = DetectEnvInstruction
-
-    def test_envinstruction_origin(self):
-        name = inspect.currentframe().f_code.co_name[5:]
-        self._test(name, {})
-
-    def test_envinstruction_timestamp(self):
-        name = inspect.currentframe().f_code.co_name[5:]
-        self._test(name, {})
-
-    def test_envinstruction_coinbase(self):
-        name = inspect.currentframe().f_code.co_name[5:]
-        self._test(name, {})
 
 
 class EthEtherLeak(EthDetectorTest):
@@ -183,9 +171,9 @@ class EthIntegerOverflow(unittest.TestCase):
         self.assertTrue(check)
 
 
-class EthDelegatecall(DetectorTester):
+class EthDelegatecall(EthDetectorTest):
     """ Test the detecion of funny delegatecalls """
-    detector = DetectDelegatecall
+    DETECTOR_CLASS = DetectDelegatecall
 
     def test_delegatecall_ok(self):
         name = inspect.currentframe().f_code.co_name[5:]
@@ -210,7 +198,7 @@ class EthDelegatecall(DetectorTester):
         self._test(name, {(179, 'Dellegatecall to user controlled function', False), (179, 'Dellegatecall to user controlled address', False)})
 
     def test_delegatecall_not_ok1(self):
-        self.mevm.register_plugin(LoopDepthLimiter())
+        self.mevm.register_plugin(LoopDepthLimiter(loop_count_threshold=500))
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, {(179, 'Dellegatecall to user controlled function', False)})
 
