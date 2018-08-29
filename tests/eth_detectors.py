@@ -93,6 +93,64 @@ class EthSelfdestruct(DetectorTester):
         self._test(name, set())
 
 
+class DetectEnvInstruction(EthDetectorTest):
+    DETECTOR_CLASS = DetectEnvInstruction
+
+    def test_envinstruction_origin(self):
+        name = inspect.currentframe().f_code.co_name[5:]
+        self._test(name, {})
+
+    def test_envinstruction_timestamp(self):
+        name = inspect.currentframe().f_code.co_name[5:]
+        self._test(name, {})
+
+    def test_envinstruction_coinbase(self):
+        name = inspect.currentframe().f_code.co_name[5:]
+        self._test(name, {})
+
+
+class EthEtherLeak(EthDetectorTest):
+    DETECTOR_CLASS = DetectEtherLeak
+
+    def test_etherleak_true_neg(self):
+        name = inspect.currentframe().f_code.co_name[5:]
+        self._test(name, set())
+
+    def test_etherleak_true_neg1(self):
+        name = inspect.currentframe().f_code.co_name[5:]
+        self._test(name, set())
+
+    def test_etherleak_true_neg2(self):
+        name = inspect.currentframe().f_code.co_name[5:]
+        self._test(name, set())
+
+    def test_etherleak_true_neg3(self):
+        name = inspect.currentframe().f_code.co_name[5:]
+        self._test(name, set())
+
+    def test_etherleak_true_pos_argument(self):
+        name = inspect.currentframe().f_code.co_name[5:]
+        self._test(name, {(0x1c5, "Reachable ether leak to sender via argument", False)})
+
+    def test_etherleak_true_pos_argument1(self):
+        self.mevm.register_plugin(LoopDepthLimiter(5))
+        name = inspect.currentframe().f_code.co_name[5:]
+        self._test(name, {(0x1c5, "Reachable ether leak to sender via argument", False)})
+
+    def test_etherleak_true_pos_argument2(self):
+        name = inspect.currentframe().f_code.co_name[5:]
+        self._test(name, {(0x1c5, "Reachable ether leak to user controlled address via argument", False)})
+
+    def test_etherleak_true_pos_msgsender(self):
+        name = inspect.currentframe().f_code.co_name[5:]
+        self._test(name, {(0x1c5, "Reachable ether leak to sender", False)})
+
+    def test_etherleak_true_pos_msgsender1(self):
+        self.mevm.register_plugin(LoopDepthLimiter(5))
+        name = inspect.currentframe().f_code.co_name[5:]
+        self._test(name, {(0x1c5, "Reachable ether leak to sender", False)})
+
+
 class EthIntegerOverflow(unittest.TestCase):
     def setUp(self):
         self.io = DetectIntegerOverflow()
@@ -151,5 +209,9 @@ class EthDelegatecall(DetectorTester):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, {(179, 'Dellegatecall to user controlled function', False), (179, 'Dellegatecall to user controlled address', False)})
 
+    def test_delegatecall_not_ok1(self):
+        self.mevm.register_plugin(LoopDepthLimiter())
+        name = inspect.currentframe().f_code.co_name[5:]
+        self._test(name, {(179, 'Dellegatecall to user controlled function', False)})
 
 

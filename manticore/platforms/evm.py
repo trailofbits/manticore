@@ -581,39 +581,44 @@ class EVM(Eventful):
             if (fee.size != 512):
                 raise EthereumError("Fees should be 512 bit long")
 
-        assert issymbolic(fee) or fee >= 0
-        self.constraints.add(Operators.UGE(fee, 0))
-        config.out_of_gas = None
+        config.out_of_gas = 3
         #FIXME add configurable checks here
 
+
+        #Iff both are concrete values...
         if not issymbolic(self._gas) and not issymbolic(fee):
             if self._gas < fee:
                 logger.debug("Not enough gas for instruction")
                 raise NotEnoughGas()
         else:
-            if config.out_of_gas is not None:
-                if config.out_of_gas == 0:
-                    #default to OOG exception if possible
+                if config.out_of_gas is None:
+                    # do nothing. gas could go negative. 
+                    # memory could be accessed in great offsets
+                    pass
+                elif config.out_of_gas == 0:
+                    #explore only when OOG
                     if solver.can_be_true(self.constraints, Operators.ULT(self.gas, fee)):
                         self.constraints.add(Operators.UGT(fee, self.gas))
                         logger.debug("Not enough gas for instruction")
                         raise NotEnoughGas()
                 elif config.out_of_gas == 1:
-                    #default to enough gas if possible
+                    #explore only when there is enough gas if possible
                     if solver.can_be_true(self.constraints, Operators.UGT(self.gas, fee)):
                         self.constraints.add(Operators.UGT(self.gas, fee))
                     else:
-                        
                         logger.debug("Not enough gas for instruction")
                         raise NotEnoughGas()
                 else:
-                    #fork on both options
-                    if len(solver.get_all_values(self.constraints, Operators.UGT(self._gas, fee))) == 2:
+                    #explore both options / fork
+                    enough_gas_solutions = solver.get_all_values(self.constraints, Operators.UGT(self._gas, fee))
+                    if len(enough_gas_solutions) == 2:
                         raise Concretize("Concretice gas fee",
-                                         expression=self._gas > fee,
+                                         expression=Operators.UGT(self._gas, fee),
                                          setstate=None,
                                          policy='ALL')
-
+                    elif enough_gas_solutions[0] == False:
+                        logger.debug("Not enough gas for instruction")
+                        raise NotEnoughGas()
 
         self._gas -= fee
         assert issymbolic(self._gas) or self._gas >= 0
@@ -796,14 +801,24 @@ class EVM(Eventful):
         a = Operators.ZEXTEND(a, 512)
         b = Operators.ZEXTEND(b, 512)
         result = a + b
-        self.constraints.add(Operators.ULT(result, 1 << 256))
+        '''
+        if solver.can_be_true(self.constraints, Operators.ULT(result, 1 << 256)):
+            self.constraints.add(Operators.ULT(result, 1 << 256))
+        else:
+            raise ValueError("Integer overflow")
+        '''
         return result
 
     def safe_mul(self, a, b):
         a = Operators.ZEXTEND(a, 512)
         b = Operators.ZEXTEND(b, 512)
         result = a * b
-        self.constraints.add(Operators.ULT(result, 1 << 256))
+        '''
+        if solver.can_be_true(self.constraints, Operators.ULT(result, 1 << 256)):
+            self.constraints.add(Operators.ULT(result, 1 << 256))
+        else:
+            raise ValueError("Integer overflow")
+        '''
         return result
 
     ############################################################################
@@ -1082,7 +1097,6 @@ class EVM(Eventful):
             if solver.can_be_true(self._constraints, data_offset==self._used_calldata_size):
                 self.constraints.add(data_offset==self._used_calldata_size)
             raise ConcretizeStack(2, policy='SAMPLED')
-
 
 
         GCOPY = 3             # cost to copy one 32 byte word
@@ -2093,7 +2107,7 @@ class EVMWorld(Platform):
 
             if set(enough_balance_solutions) == {True, False}:
                 raise Concretize('Forking on available funds',
-                                 expression=Operators.ULT(src_balance, value),
+                                 expression=enough_balance, #Operators.ULT(src_balance, value),
                                  setstate=lambda a, b: None,
                                  policy='ALL')
             failed = set(enough_balance_solutions) == {False}

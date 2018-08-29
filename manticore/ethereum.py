@@ -237,6 +237,15 @@ class DetectSelfdestruct(Detector):
         if instruction.semantics == 'SELFDESTRUCT':
             self.add_finding_here(state, 'Reachable SELFDESTRUCT')
 
+class DetectEnvInstruction(Detector):
+    ''' Detect the usage of instructions that query environmental information:
+        ORIGIN, COINBASE, TIMESTAMP
+    '''
+
+    def will_evm_execute_instruction_callback(self, state, instruction, arguments):
+        if instruction.semantics in ( 'ORIGIN', 'COINBASE', 'TIMESTAMP'):
+            self.add_finding_here(state, 'Warning {instruction.semantics} instruction used' )
+
 
 class DetectInvalid(Detector):
     def __init__(self, only_human=True, **kwargs):
@@ -2448,7 +2457,6 @@ class ManticoreEVM(Manticore):
             # Accounts summary
             is_something_symbolic = False
             summary.write("%d accounts.\n" % len(blockchain.accounts))
-
             for account_address in blockchain.accounts:
                 is_account_address_symbolic = issymbolic(account_address)
                 account_address = state.solve_one(account_address)
@@ -2638,12 +2646,14 @@ class ManticoreEVM(Manticore):
             logger.debug("Generating testcase for state_id %d", state_id)
             self._generate_testcase_callback(st, 'test', '')
 
+
         def worker_finalize(q):
             try:
                 while True:
                     finalizer(q.get_nowait())
             except EmptyQueue:
                 pass
+
 
         q = Queue()
         for state_id in self._all_state_ids:
@@ -2653,15 +2663,18 @@ class ManticoreEVM(Manticore):
             else:
                 q.put(state_id)
 
-        report_workers = []
 
-        for _ in range(self._config_procs):
-            proc = Process(target=worker_finalize, args=(q,))
-            proc.start()
-            report_workers.append(proc)
+        if self._config_procs == 1:
+            worker_finalize(q)
+        else:
+            report_workers = []
+            for _ in range(self._config_procs):
+                proc = Process(target=worker_finalize, args=(q,))
+                proc.start()
+                report_workers.append(proc)
 
-        for proc in report_workers:
-            proc.join()
+            for proc in report_workers:
+                proc.join()
 
         #global summary
         if len(self.global_findings):
