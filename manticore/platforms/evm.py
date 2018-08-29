@@ -668,7 +668,7 @@ class EVM(Eventful):
     def change_last_result(self, result):
         last_pc, last_gas, last_instruction, last_arguments = self._checkpoint_data
 
-        # Check result (push)
+        # Check result (push)\
         if last_instruction.pushes > 1:
             assert len(result) == last_instruction.pushes
             for _ in range(last_instruction.pushes):
@@ -908,13 +908,13 @@ class EVM(Eventful):
 
     def try_simplify_to_constant(self, data):
         concrete_data = bytearray()
-        for i in range(len(data)):
-            simplified = simplify(data[i])
+        for c in data:
+            simplified = simplify(c)
             if isinstance(simplified, Constant):
                 concrete_data.append(simplified.value)
             else:
                 #simplify by solving. probably means that we need to improve simplification
-                solutions = solver.get_all_values(self.constraints, data[i], 2, silent=True)
+                solutions = solver.get_all_values(self.constraints, c, 2, silent=True)
                 if len(solutions) != 1:
                     break
                 concrete_data.append(solutions[0])
@@ -948,7 +948,7 @@ class EVM(Eventful):
             return value
 
         value = sha3.keccak_256(data).hexdigest()
-        value = int('0x' + value, 0)
+        value = int(value, 16)
         self._publish('on_concrete_sha3', data, value)
         logger.info("Found a concrete SHA3 example %r -> %x", data, value)
         return value
@@ -1894,7 +1894,7 @@ class EVMWorld(Platform):
         # adds hash of new address
         data = binascii.unhexlify('{:064x}{:064x}'.format(address, 0))
         value = sha3.keccak_256(data).hexdigest()
-        value = int('0x' + value, 0)
+        value = int(value, 16)
         self._publish('on_concrete_sha3', data, value)
 
         return address
