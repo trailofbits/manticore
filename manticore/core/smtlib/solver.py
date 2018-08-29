@@ -244,7 +244,6 @@ class Z3Solver(Solver):
             :param cmd: a SMTLIBv2 command (ex. (check-sat))
         '''
         logger.debug('>%s', cmd)
-        # print(cmd)
         try:
             self._proc.stdout.flush()
             self._proc.stdin.write('{}\n'.format(cmd))
@@ -270,7 +269,6 @@ class Z3Solver(Solver):
             right += r
         buf = ''.join(bufl).strip()
         logger.debug('<%s', buf)
-        # print(buf)
         if '(error' in bufl[0]:
             raise Exception("Error in smtlib: {}".format(bufl[0]))
         return buf
@@ -287,7 +285,7 @@ class Z3Solver(Solver):
             raise SolverException(_status)
         if consider_unknown_as_unsat:
             if _status == 'unknown':
-                logger.info('Found an unknown core, probably a solver timeout')
+                logger.warning('Found an unknown core, probably a solver timeout')
                 _status = 'unsat'
 
         if _status == 'unknown':
