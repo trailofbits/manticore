@@ -243,7 +243,7 @@ class DetectSelfdestruct(Detector):
 
 
 class DetectExternalCallAndLeak(Detector):
-    def did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
+    def will_evm_execute_instruction_callback(self, state, instruction, arguments):
         if instruction.semantics == 'CALL':
             dest_address = arguments[1]
             sent_value = arguments[2]
