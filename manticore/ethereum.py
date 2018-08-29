@@ -293,11 +293,13 @@ class DetectReentrancy2(Detector):
     alert if contract changes the state of storage after a call with >2300 gas to an external address
     """
 
-    LOCS = 'xx.call_locs'
+    @property
+    def _context_key(self):
+        return f'{self.name}.call_locations'
 
     def will_open_transaction_callback(self, state, tx):
         if tx.is_human():
-            state.context[self.LOCS] = []
+            state.context[self._context_key] = []
 
     def will_evm_execute_instruction_callback(self, state, instruction, arguments):
         if instruction.semantics == 'CALL':
@@ -313,10 +315,10 @@ class DetectReentrancy2(Detector):
             # flag any external call that's going to a symbolic/user controlled address, or that's going
             # concretely to the sender's address
             if issymbolic(dest_address) or msg_sender == dest_address:
-                state.context.get(self.LOCS, []).append((pc, is_enough_gas))
+                state.context.get(self._context_key, []).append((pc, is_enough_gas))
 
     def did_evm_write_storage_callback(self, state, address, offset, value):
-        locs = state.context.get(self.LOCS, [])
+        locs = state.context.get(self._context_key, [])
 
         # if we're here and locs has stuff in it. by definition this state has
         # encountered a dangerous call and is now at a write.
