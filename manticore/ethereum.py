@@ -236,6 +236,20 @@ class Detector(Plugin):
         return self.manticore.get_metadata(address).get_source_for(pc)
 
 
+class DetectEnvInstruction(Detector):
+    ''' Detect the usage of instructions that query environmental/block information:
+        BLOCKHASH, COINBASE, TIMESTAMP, NUMBER, DIFFICULTY, GASLIMIT, ORIGIN, GASPRICE
+        
+        Sometimes environmental information can be manipulated. Contracts should avoid 
+        using it. Unless special situations. Notably do programaticlly detect human transactions
+        `sender == origin`
+    '''
+
+    def will_evm_execute_instruction_callback(self, state, instruction, arguments):
+        if instruction.semantics in ('BLOCKHASH', 'COINBASE', 'TIMESTAMP',  'NUMBER', 'DIFFICULTY', 'GASLIMIT', 'ORIGIN', 'GASPRICE'):
+            self.add_finding_here(state, f'Warning {instruction.semantics} instruction used' )
+
+
 class DetectSelfdestruct(Detector):
     def will_evm_execute_instruction_callback(self, state, instruction, arguments):
         if instruction.semantics == 'SELFDESTRUCT':
