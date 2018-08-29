@@ -15,8 +15,7 @@ print("[+] EVM init assembler:")
 for instr in evm.EVMAsm.disassemble_all(init_bytecode[:-44]):
     print(hex(instr.pc), instr)
 
-contract_account = m.create_contract(owner=user_account,
-                                        init=init_bytecode)
+contract_account = m.create_contract(owner=user_account, init=init_bytecode)
 print("[+] Creating a contract account", contract_account)
 
 print("[+] Now the symbolic values")

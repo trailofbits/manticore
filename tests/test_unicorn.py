@@ -1,5 +1,6 @@
 import unittest
 import struct
+import os
 from functools import wraps
 
 from manticore.core.cpu.arm import Armv7Cpu as Cpu, Mask, Interruption
@@ -1318,7 +1319,8 @@ class UnicornConcretization(unittest.TestCase):
     def get_state(cls):
         if cls.cpu is None:
             constraints = ConstraintSet()
-            platform = linux.SLinux('/bin/ls')
+            dirname = os.path.dirname(__file__)
+            platform = linux.SLinux(os.path.join(dirname, 'binaries', 'basic_linux_amd64'))
             cls.state = State(constraints, platform)
             cls.cpu = platform._mk_proc('armv7')
         return (cls.cpu, cls.state)

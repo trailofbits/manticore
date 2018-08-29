@@ -11,7 +11,7 @@ class A(Eventful):
 class B(Eventful):
     _published_events = set(['eventB'])
     def __init__(self, child, **kwargs):
-        super(B, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.child = child
         self.forward_events_from(child)
 

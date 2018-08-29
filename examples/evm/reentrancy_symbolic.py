@@ -93,7 +93,6 @@ print("     user_account %x balance: %d"%  (user_account.address, m.get_balance(
 print("     contract_account %x balance: %d"%  (contract_account.address, m.get_balance(contract_account.address)))
 
 
-# FIXME: fixed in yolo_master
 print("[+] Setup the exploit")
 exploit_account.set_vulnerable_contract(contract_account)
 

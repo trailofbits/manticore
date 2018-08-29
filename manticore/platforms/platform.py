@@ -12,7 +12,7 @@ class SyscallNotImplemented(OSException):
 
     def __init__(self, idx, name):
         msg = 'Syscall index "{}" ({}) not implemented.'.format(idx, name)
-        super(SyscallNotImplemented, self).__init__(msg)
+        super().__init__(msg)
 
 
 class ConcretizeSyscallArgument(OSException):
@@ -20,7 +20,7 @@ class ConcretizeSyscallArgument(OSException):
         self.reg_num = reg_num
         self.message = message
         self.policy = policy
-        super(ConcretizeSyscallArgument, self).__init__(message)
+        super().__init__(message)
 
 
 class Platform(Eventful):
@@ -29,16 +29,16 @@ class Platform(Eventful):
     '''
 
     def __init__(self, path, **kwargs):
-        super(Platform, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     def invoke_model(self, model, prefix_args=None):
         self._function_abi.invoke(model, prefix_args)
 
     def __setstate__(self, state):
-        super(Platform, self).__setstate__(state)
+        super().__setstate__(state)
 
     def __getstate__(self):
-        state = super(Platform, self).__getstate__()
+        state = super().__getstate__()
         return state
 
     def generate_workspace_files(self):

@@ -35,7 +35,7 @@ checks:
   similar-code:
     enabled: true
     config:
-      threshold: 100
+      threshold: 210
   identical-code:
     enabled: true
     config:
@@ -45,6 +45,8 @@ plugins:
     enabled: true
     checks:
       E712:
+        enabled: false
+      E701:
         enabled: false
   sonar-python:
     enabled: false

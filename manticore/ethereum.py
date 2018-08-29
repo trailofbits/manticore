@@ -1,3 +1,5 @@
+from typing import Optional
+
 from . import abitypes
 import uuid
 import numbers
@@ -13,7 +15,7 @@ from .manticore import ManticoreError
 from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, istainted, taint_with, get_taints, BitVec, Constant, operators, Array, ArrayVariable, ArrayProxy
 from .platforms import evm
 from .core.state import State
-from .utils.helpers import istainted, issymbolic
+from .utils.helpers import istainted, issymbolic, PickleSerializer
 import tempfile
 from subprocess import Popen, PIPE, check_output
 from multiprocessing import Process, Queue
@@ -22,7 +24,6 @@ import sha3
 import json
 import logging
 import io
-import pickle
 from .core.plugin import Plugin
 from functools import reduce
 from contextlib import contextmanager
@@ -35,7 +36,7 @@ class EthereumError(ManticoreError):
 
 class DependencyError(EthereumError):
     def __init__(self, lib_names):
-        super(DependencyError, self).__init__("You must pre-load and provide libraries addresses{ libname:address, ...} for %r" % lib_names)
+        super().__init__("You must pre-load and provide libraries addresses{ libname:address, ...} for %r" % lib_names)
         self.lib_names = lib_names
 
 
@@ -43,57 +44,9 @@ class NoAliveStates(EthereumError):
     pass
 
 
-################ Detectors ####################
-class Detector(Plugin):
-    @property
-    def name(self):
-        return self.__class__.__name__.split('.')[-1]
-
-    def get_findings(self, state):
-        return state.context.setdefault('{:s}.findings'.format(self.name), set())
-
-    @contextmanager
-    def locked_global_findings(self):
-        with self.manticore.locked_context('{:s}.global_findings'.format(self.name), set) as global_findings:
-            yield global_findings
-
-    @property
-    def global_findings(self):
-        with self.locked_global_findings() as global_findings:
-            return global_findings
-
-    def add_finding(self, state, address, pc, finding, init):
-        if not isinstance(pc, int):
-            raise ValueError("PC must be a number")
-        self.get_findings(state).add((address, pc, finding, init))
-        with self.locked_global_findings() as gf:
-            gf.add((address, pc, finding, init))
-        #Fixme for ever broken logger
-        logger.warning(finding)
-
-    def add_finding_here(self, state, finding):
-        address = state.platform.current_vm.address
-        pc = state.platform.current_vm.pc
-        if isinstance(pc, Constant):
-            pc = pc.value
-        if not isinstance(pc, int):
-            raise ValueError("PC must be a number")
-        at_init = state.platform.current_transaction.sort == 'CREATE'
-        self.add_finding(state, address, pc, finding, at_init)
-
-    def _save_current_location(self, state, finding):
-        address = state.platform.current_vm.address
-        pc = state.platform.current_vm.pc
-        location = (address, pc, finding)
-        hash_id = hashlib.sha1(str(location)).hexdigest()
-        state.context.setdefault('{:s}.locations'.format(self.name), {})[hash_id] = location
-        return hash_id
-
-    def _get_location(self, state, hash_id):
-        return state.context.setdefault('{:s}.locations'.format(self.name), {})[hash_id]
-
-    def _get_src(self, address, pc):
-        return self.manticore.get_metadata(address).get_source_for(pc)
+#
+# Plugins
+#
 
 
 class FilterFunctions(Plugin):
@@ -114,7 +67,7 @@ class FilterFunctions(Plugin):
             :param fallback: if True include the fallback function. Hash will be 00000000 for it
             :param include: if False exclude the selected functions, if True include them
         """
-        super(FilterFunctions, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         depth = depth.lower()
         if depth not in ('human', 'internal', 'both'):
             raise ValueError
@@ -176,6 +129,143 @@ class FilterFunctions(Plugin):
                         state.constrain(constraint)
 
 
+class LoopDepthLimiter(Plugin):
+    ''' This just abort explorations too deep '''
+
+    def __init__(self, loop_count_threshold=5, **kwargs):
+        super().__init__(**kwargs)
+        self.loop_count_threshold = loop_count_threshold
+
+    def will_start_run_callback(self, *args):
+        with self.manticore.locked_context('seen_rep', dict) as reps:
+            reps.clear()
+
+    def will_execute_instruction_callback(self, state, pc, insn):
+        world = state.platform
+        with self.manticore.locked_context('seen_rep', dict) as reps:
+            item = (world.current_transaction.sort == 'CREATE', world.current_transaction.address, pc)
+            if item not in reps:
+                reps[item] = 0
+            reps[item] += 1
+            if reps[item] > self.loop_count_threshold:
+                state.abandon()
+
+
+#
+# Detectors
+#
+
+
+class Detector(Plugin):
+    @property
+    def name(self):
+        return self.__class__.__name__.split('.')[-1]
+
+    def get_findings(self, state):
+        return state.context.setdefault('{:s}.findings'.format(self.name), set())
+
+    @contextmanager
+    def locked_global_findings(self):
+        with self.manticore.locked_context('{:s}.global_findings'.format(self.name), set) as global_findings:
+            yield global_findings
+
+    @property
+    def global_findings(self):
+        with self.locked_global_findings() as global_findings:
+            return global_findings
+
+    def add_finding(self, state, address, pc, finding, at_init, constraint=True):
+        '''
+        Logs a finding at specified contract and assembler line.
+        :param state: current state
+        :param address: contract address of the finding
+        :param pc: program counter of the finding
+        :param at_init: true if executing the constructor
+        :param finding: textual description of the finding
+        :param constraint: finding is considered reproducible only when constraint is True
+        '''
+
+        if not isinstance(pc, int):
+            raise ValueError("PC must be a number")
+        self.get_findings(state).add((address, pc, finding, at_init, constraint))
+        with self.locked_global_findings() as gf:
+            gf.add((address, pc, finding, at_init))
+        #Fixme for ever broken logger
+        logger.warning(finding)
+
+    def add_finding_here(self, state, finding, constraint=True):
+        '''
+        Logs a finding in current contract and assembler line.
+        :param state: current state
+        :param finding: textual description of the finding
+        :param constraint: finding is considered reproducible only when constraint is True
+        '''
+        address = state.platform.current_vm.address
+        pc = state.platform.current_vm.pc
+        if isinstance(pc, Constant):
+            pc = pc.value
+        if not isinstance(pc, int):
+            raise ValueError("PC must be a number")
+        at_init = state.platform.current_transaction.sort == 'CREATE'
+        self.add_finding(state, address, pc, finding, at_init, constraint)
+
+    def _save_current_location(self, state, finding, condition=True):
+        '''
+        Save current location in the internal locations list and returns a textual id for it.
+        This is used to save locations that could later be promoted to a finding if other conditions hold
+        See _get_location()
+        :param state: current state
+        :param finding: textual description of the finding
+        :param condition: general purpose constraint
+        '''
+        address = state.platform.current_vm.address
+        pc = state.platform.current_vm.pc
+        at_init = state.platform.current_transaction.sort == 'CREATE'
+        location = (address, pc, finding, at_init, condition)
+        hash_id = hashlib.sha1(str(location).encode()).hexdigest()
+        state.context.setdefault('{:s}.locations'.format(self.name), {})[hash_id] = location
+        return hash_id
+
+    def _get_location(self, state, hash_id):
+        ''' Get previously saved location
+            A location is composed of: address, pc, finding, at_init, condition
+        '''
+        return state.context.setdefault('{:s}.locations'.format(self.name), {})[hash_id]
+
+    def _get_src(self, address, pc):
+        return self.manticore.get_metadata(address).get_source_for(pc)
+
+
+class DetectSelfdestruct(Detector):
+    def will_evm_execute_instruction_callback(self, state, instruction, arguments):
+        if instruction.semantics == 'SELFDESTRUCT':
+            self.add_finding_here(state, 'Reachable SELFDESTRUCT')
+
+
+class DetectEtherLeak(Detector):
+    def will_evm_execute_instruction_callback(self, state, instruction, arguments):
+        if instruction.semantics == 'CALL':
+            dest_address = arguments[1]
+            sent_value = arguments[2]
+            msg_sender = state.platform.current_vm.caller
+
+            # If nothing can be transferred out, we don't care
+            if not state.can_be_true(sent_value > 0):
+                return
+
+            if issymbolic(dest_address):
+                # We assume dest_address is symbolic because it came from symbolic tx data (user input argument)
+                if state.can_be_true(msg_sender == dest_address):
+                    self.add_finding_here(state, "Reachable ether leak to sender via argument")
+                else:
+                    # This might be a false positive if the dest_address can't actually be solved to anything
+                    # useful/exploitable
+                    self.add_finding_here(state, "Reachable ether leak to user controlled address via argument")
+            else:
+                if msg_sender == dest_address:
+                    self.add_finding_here(state, "Reachable ether leak to sender")
+
+
 class DetectInvalid(Detector):
     def __init__(self, only_human=True, **kwargs):
         """
@@ -187,7 +277,7 @@ class DetectInvalid(Detector):
 
         :param only_human: if True report only INVALID at depth 0 transactions
         """
-        super(DetectInvalid, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self._only_human = only_human
 
     def will_evm_execute_instruction_callback(self, state, instruction, arguments):
@@ -205,7 +295,7 @@ class DetectReentrancy(Detector):
     3) The storage slot of the SSTORE must be used in some path to control flow
     '''
     def __init__(self, addresses=None, **kwargs):
-        super(DetectReentrancy, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         # TODO Check addresses are normal accounts. Heuristics implemented here
         # assume target addresses wont execute code. i.e. won't detect a Reentrancy
         # attack in progess but only a potential attack
@@ -230,7 +320,7 @@ class DetectReentrancy(Detector):
                 # Check if gas was enough for a reentrancy attack
                 if tx.gas > 2300:
                     # Check if target address is attaker controlled
-                    if self._addresses is None and not world.get_code(tx.address) or tx.address in self._addresses:
+                    if self._addresses is None and not world.get_code(tx.address) or self._addresses is not None and tx.address in self._addresses:
                         #that's enough. Save current location and read list
                         self._save_location_and_reads(state)
 
@@ -242,9 +332,9 @@ class DetectReentrancy(Detector):
         pc = world.current_vm.pc
         if isinstance(pc, Constant):
             pc = pc.value
-        assert isinstance(pc, numbers.Integral)
+        assert isinstance(pc, int)
         at_init = world.current_transaction.sort == 'CREATE'
-        location = (address, pc, "Reentrancy muti-million ether bug", at_init)
+        location = (address, pc, "Reentrancy multi-million ether bug", at_init)
         locations[location] = set(state.context[self._read_storage_name])
         state.context[name] = locations
 
@@ -270,18 +360,6 @@ class DetectIntegerOverflow(Detector):
     '''
         Detects potential overflow and underflow conditions on ADD and SUB instructions.
     '''
-
-    def _save_current_location(self, state, finding, condition):
-        address = state.platform.current_vm.address
-        pc = state.platform.current_vm.pc
-        at_init = state.platform.current_transaction.sort == 'CREATE'
-        location = (address, pc, finding, at_init, condition)
-        hash_id = hashlib.sha1(str(location).encode()).hexdigest()
-        state.context.setdefault('{:s}.locations'.format(self.name), {})[hash_id] = location
-        return hash_id
-
-    def _get_location(self, state, hash_id):
-        return state.context.setdefault('{:s}.locations'.format(self.name), {})[hash_id]
 
     @staticmethod
     def _signed_sub_overflow(state, a, b):
@@ -400,14 +478,14 @@ class DetectIntegerOverflow(Detector):
     def _check_finding(self, state, what):
         if istainted(what, "SIGNED"):
             for taint in get_taints(what, "IOS_.*"):
-                loc = self._get_location(state, taint[4:])
-                if state.can_be_true(loc[-1]):
-                    self.add_finding(state, *loc[:-1])
+                address, pc, finding, at_init, condition = self._get_location(state, taint[4:])
+                if state.can_be_true(condition):
+                    self.add_finding(state, address, pc, finding, at_init)
         else:
             for taint in get_taints(what, "IOU_.*"):
-                loc = self._get_location(state, taint[4:])
-                if state.can_be_true(loc[-1]):
-                    self.add_finding(state, *loc[:-1])
+                address, pc, finding, at_init, condition = self._get_location(state, taint[4:])
+                if state.can_be_true(condition):
+                    self.add_finding(state, address, pc, finding, at_init)
 
     def did_evm_execute_instruction_callback(self, state, instruction, arguments, result_ref):
         result = result_ref.value
@@ -444,6 +522,66 @@ class DetectIntegerOverflow(Detector):
         if state.can_be_true(iou):
             id_val = self._save_current_location(state, "Unsigned integer overflow at %s instruction" % mnemonic, iou)
             result = taint_with(result, "IOU_{:s}".format(id_val))
+
+        result_ref.value = result
+
+
+class DetectUnusedRetVal(Detector):
+    '''
+        Detects unused return value from internal transactions
+    '''
+
+    @property
+    def _stack_name(self):
+        return '{:s}.stack'.format(self.name)
+
+    def _add_retval_taint(self, state, taint):
+        list_of_taints = state.context[self._stack_name][-1]
+        list_of_taints.add(taint)
+        state.context[self._stack_name][-1] = list_of_taints
+
+    def _remove_retval_taint(self, state, taint):
+        list_of_taints = state.context[self._stack_name][-1]
+        if taint in list_of_taints:
+            list_of_taints.remove(taint)
+            state.context[self._stack_name][-1] = list_of_taints
+
+    def _get_retval_taints(self, state):
+        return state.context[self._stack_name][-1]
+
+    def will_open_transaction_callback(self, state, tx):
+        # Reset reading log on new human transactions
+        if tx.is_human():
+            state.context[self._stack_name] = []
+        state.context[self._stack_name].append(set())
+
+    def did_close_transaction_callback(self, state, tx):
+        world = state.platform
+        # Check that all retvals where used in control flow
+        for taint in self._get_retval_taints(state):
+            id_val = taint[7:]
+            address, pc, finding, at_init, condition = self._get_location(state, id_val)
+            if state.can_be_true(condition):
+                self.add_finding(state, address, pc, finding, at_init)
+
+        state.context[self._stack_name].pop()
+
+    def did_evm_execute_instruction_callback(self, state, instruction, arguments, result_ref):
+        world = state.platform
+        result = result_ref.value
+        mnemonic = instruction.semantics
+        result = result_ref.value
+        if instruction.is_starttx:
+            # A transactional instruction just returned add a taint to result
+            # and add that taint to the set
+            id_val = self._save_current_location(state, "Returned value at {:s} instruction is not used".format(mnemonic))
+            taint = "RETVAL_{:s}".format(id_val)
+            result = taint_with(result, taint)
+            self._add_retval_taint(state, taint)
+        elif mnemonic == 'JUMPI':
+            dest, cond = arguments
+            for used_taint in get_taints(cond, "RETVAL_.*"):
+                self._remove_retval_taint(state, used_taint)
 
         result_ref.value = result
 
@@ -518,7 +656,7 @@ class SolidityMetadata(object):
         self._init_bytecode = init_bytecode
         self._runtime_bytecode = runtime_bytecode
         self._hashes = hashes
-        self.abi = dict([(item.get('name', '{fallback}'), item) for item in abi])
+        self.abi = {item.get('name', '{fallback}'): item for item in abi}
         self.warnings = warnings
         self.srcmap_runtime = self.__build_source_map(self.runtime_bytecode, srcmap_runtime)
         self.srcmap = self.__build_source_map(self.init_bytecode, srcmap)
@@ -585,7 +723,7 @@ class SolidityMetadata(object):
 
         for asm_pos, md in enumerate(srcmap):
             if len(md):
-                d = dict((p, k) for p, k in enumerate(md.split(':')) if k)
+                d = {p: k for p, k in enumerate(md.split(':')) if k}
 
                 byte_offset = int(d.get(0, byte_offset))
                 source_len = int(d.get(1, source_len))
@@ -622,7 +760,7 @@ class SolidityMetadata(object):
             return ''
 
         output = ''
-        nl = self.source_code.count('\n')
+        nl = self.source_code[:beg].count('\n')
         snippet = self.source_code[beg:beg + size]
         for l in snippet.split('\n'):
             output += '    %s  %s\n' % (nl, l)
@@ -631,7 +769,7 @@ class SolidityMetadata(object):
 
     @property
     def signatures(self):
-        return dict(((b, a) for (a, b) in self._hashes.items()))
+        return dict(((b.encode(), a) for (a, b) in self._hashes.items()))
 
     def get_abi(self, hsh):
         func_name = self.get_func_name(hsh)
@@ -752,11 +890,11 @@ class ABI(object):
             result = ABI._serialize_uint(value[0], 20)
             result += value[1] + bytearray('\0' * 8)
             assert len(result) == 32
-        elif ty[0] in ('tuple'):
+        elif ty[0] == 'tuple':
             sub_result, sub_dyn_result = ABI._serialize_tuple(ty[1], value, dyn_offset)
             result += sub_result
             dyn_result += sub_dyn_result
-        elif ty[0] in ('array'):
+        elif ty[0] == 'array':
             rep = ty[1]
             base_type = ty[2]
             sub_result, sub_dyn_result = ABI._serialize_array(rep, base_type, value, dyn_offset)
@@ -889,7 +1027,7 @@ class ABI(object):
         if size <= 0 and size > 32:
             raise ValueError
 
-        if not isinstance(value, (numbers.Integral, BitVec, EVMAccount)):
+        if not isinstance(value, (int, BitVec, EVMAccount)):
             raise ValueError
         if issymbolic(value):
             # FIXME This temporary array variable should be obtained from a specific constraint store
@@ -913,7 +1051,7 @@ class ABI(object):
         '''
         if size <= 0 and size > 32:
             raise ValueError
-        if not isinstance(value, (numbers.Integral, BitVec)):
+        if not isinstance(value, (int, BitVec)):
             raise ValueError
         if issymbolic(value):
             buf = ArrayVariable(index_bits=256, index_max=32, value_bits=8, name='temp{}'.format(uuid.uuid1()))
@@ -994,11 +1132,11 @@ class EVMAccount(object):
         self._name = name
 
     def __eq__(self, other):
-        if isinstance(other, numbers.Integral):
+        if isinstance(other, int):
             return self._address == other
         if isinstance(self, EVMAccount):
             return self._address == other._address
-        return super(EVMAccount, self).__eq__(other)
+        return super().__eq__(other)
 
     @property
     def name(self):
@@ -1023,20 +1161,24 @@ class EVMContract(EVMAccount):
             :param default_caller: the default caller address for any transaction
 
         '''
-        super(EVMContract, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self._default_caller = default_caller
         self._hashes = None
 
     def add_function(self, signature):
         func_id = binascii.hexlify(ABI.function_selector(signature))
         func_name = str(signature.split('(')[0])
-        if func_name.startswith('_') or func_name in {'add_function', 'address', 'name'}:
-            raise EthereumError("Sorry function name is used by the python wrapping")
+        if func_name.startswith('_'):
+            # TODO(mark): is this actually true? is there anything actually wrong with a solidity name beginning w/ an underscore?
+            raise EthereumError("Function name ({}) begins with underscore, internally reserved".format(func_name))
+        if func_name in {'add_function', 'address', 'name'}:
+            raise EthereumError("Function name ({}) is internally reserved".format(func_name))
         if func_name in self._hashes:
-            raise EthereumError("A function with that name is already defined")
-        if func_id in {func_id for _, func_id in self._hashes.values()}:
-            raise EthereumError("A function with the same hash is already defined")
-        self._hashes[func_name] = signature, func_id
+            self._hashes[func_name].append((signature, func_id))
+            return
+        if func_id in {h[1] for names in self._hashes.values() for h in names}:
+            raise EthereumError("A function with the same hash as {} is already defined".format(func_name))
+        self._hashes[func_name] = [(signature, func_id)]
 
     def _null_func(self):
         pass
@@ -1065,12 +1207,30 @@ class EVMContract(EVMAccount):
         if not name.startswith('_'):
             self._init_hashes()
             if self._hashes is not None and name in self._hashes.keys():
-                def f(*args, **kwargs):
-                    caller = kwargs.get('caller', None)
-                    value = kwargs.get('value', 0)
-                    tx_data = ABI.function_call(str(self._hashes[name][0]), *args)
+                def f(*args, signature: Optional[str]=None, caller=None, value=0, **kwargs):
+                    try:
+                        if signature:
+                            if f'{name}{signature}' not in {h[0] for names in self._hashes.values() for h in names}:
+                                raise EthereumError(
+                                    f'Function: `{name}` has no such signature`\n'
+                                    f'Known signatures: {[x[0][len(name):] for x in self._hashes[name]]}')
+
+                            tx_data = ABI.function_call(f'{name}{signature}', *args)
+                        else:
+                            if len(self._hashes[name]) > 1:
+                                sig = self._hashes[name][0][0][len(name):]
+                                raise EthereumError(
+                                    f'Function: `{name}` has multiple signatures but `signature` is not '
+                                    f'defined! Example: `account.{name}(..., signature="{sig}")`\n'
+                                    f'Known signatures: {[x[0][len(name):] for x in self._hashes[name]]}')
+
+                            tx_data = ABI.function_call(str(self._hashes[name][0][0]), *args)
+                    except KeyError as e:
+                        raise e
+
                     if caller is None:
                         caller = self._default_caller
+
                     self._manticore.transaction(caller=caller,
                                                 address=self._address,
                                                 value=value,
@@ -1105,7 +1265,7 @@ class ManticoreEVM(Manticore):
             m.finalize()
     '''
 
-    def make_symbolic_buffer(self, size, name='TXBUFFER'):
+    def make_symbolic_buffer(self, size, name=None):
         ''' Creates a symbolic buffer of size bytes to be used in transactions.
             You can operate on it normally and add constrains to manticore.constraints
             via manticore.constrain(constraint_expression)
@@ -1119,9 +1279,13 @@ class ManticoreEVM(Manticore):
                                 data=symbolic_data,
                                 value=100000 )
         '''
-        return self.constraints.new_array(index_bits=256, name=name, index_max=size, value_bits=8, taint=frozenset())
+        avoid_collisions = False
+        if name is None:
+            name = 'TXBUFFER'
+            avoid_collisions = True
+        return self.constraints.new_array(index_bits=256, name=name, index_max=size, value_bits=8, taint=frozenset(), avoid_collisions=avoid_collisions)
 
-    def make_symbolic_value(self, nbits=256, name='TXVALUE'):
+    def make_symbolic_value(self, nbits=256, name=None):
         ''' Creates a symbolic value, normally a uint256, to be used in transactions.
             You can operate on it normally and add constrains to manticore.constraints
             via manticore.constrain(constraint_expression)
@@ -1137,15 +1301,23 @@ class ManticoreEVM(Manticore):
                                 value=symbolic_value )
 
         '''
-        return self.constraints.new_bitvec(nbits, name=name)
+        avoid_collisions = False
+        if name is None:
+            name = 'TXVALUE'
+            avoid_collisions = True
+        return self.constraints.new_bitvec(nbits, name=name, avoid_collisions=avoid_collisions)
 
-    def make_symbolic_address(self, name='TXADDR', select='both'):
+    def make_symbolic_address(self, name=None, select='both'):
         if select not in ('both', 'normal', 'contract'):
             raise EthereumError('Wrong selection type')
         if select in ('normal', 'contract'):
             # FIXME need to select contracts or normal accounts
             raise NotImplemented
-        symbolic_address = self.make_symbolic_value(name=name)
+        avoid_collisions = False
+        if name is None:
+            name = 'TXADDR'
+            avoid_collisions = True
+        return self.constraints.new_bitvec(160, name=name, avoid_collisions=avoid_collisions)
 
         constraint = symbolic_address == 0
         for contract_account_i in map(int, self._accounts.values()):
@@ -1154,7 +1326,11 @@ class ManticoreEVM(Manticore):
         return symbolic_address
 
     def constrain(self, constraint):
-        self.constraints.add(constraint)
+        if self.count_states() == 0:
+            self.constraints.add(constraint)
+        else:
+            for state in self.all_states:
+                state.constrain(constraint)
 
     @staticmethod
     def compile(source_code, contract_name=None, libraries=None, runtime=False, solc_bin=None, solc_remaps=[]):
@@ -1191,7 +1367,7 @@ class ManticoreEVM(Manticore):
                 except KeyError:
                     raise DependencyError([lib_name])
                 for pos in pos_lst:
-                    hex_contract_lst[pos:pos + 40] = '%040x' % lib_address
+                    hex_contract_lst[pos:pos + 40] = '%040x' % int(lib_address)
             hex_contract = ''.join(hex_contract_lst)
         return bytearray(binascii.unhexlify(hex_contract))
 
@@ -1296,7 +1472,7 @@ class ManticoreEVM(Manticore):
         bytecode = ManticoreEVM._link(contract['bin'], libraries)
         srcmap = contract['srcmap'].split(';')
         srcmap_runtime = contract['srcmap-runtime'].split(';')
-        hashes = dict(((str(x), str(y)) for x, y in contract['hashes'].items()))
+        hashes = {str(x): str(y) for x, y in contract['hashes'].items()}
         abi = json.loads(contract['abi'])
         runtime = ManticoreEVM._link(contract['bin-runtime'], libraries)
         return name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
@@ -1322,12 +1498,12 @@ class ManticoreEVM(Manticore):
     def get_account(self, name):
         return self._accounts[name]
 
-    # TODO: FIXME: multiprocessing is broken, procs>1 results in erroneous results
-    def __init__(self, procs=1, **kwargs):
+    def __init__(self, procs=10, **kwargs):
         ''' A Manticore EVM manager
             :param int procs: number of workers to use in the exploration
         '''
         self._accounts = dict()
+        self._serializer = PickleSerializer()
 
         self._config_procs = procs
         # Make the constraint store
@@ -1335,7 +1511,7 @@ class ManticoreEVM(Manticore):
         # make the ethereum world state
         world = evm.EVMWorld(constraints)
         initial_state = State(constraints, world)
-        super(ManticoreEVM, self).__init__(initial_state, **kwargs)
+        super().__init__(initial_state, **kwargs)
 
         self.constraints = ConstraintSet()
         self.detectors = {}
@@ -1658,7 +1834,7 @@ class ManticoreEVM(Manticore):
             raise EthereumError("Name already used")
 
         #Balance check
-        if not isinstance(balance, numbers.Integral):
+        if not isinstance(balance, int):
             raise EthereumError("Balance invalid type")
 
         if isinstance(code, str):
@@ -1670,7 +1846,7 @@ class ManticoreEVM(Manticore):
         # Let just choose the address ourself. This is not yellow paper material
         if address is None:
             address = self.new_address()
-        if not isinstance(address, numbers.Integral):
+        if not isinstance(address, int):
             raise EthereumError("A concrete address is needed")
         assert address is not None
         if address in map(int, self.accounts.values()):
@@ -1694,36 +1870,38 @@ class ManticoreEVM(Manticore):
         self._accounts[name] = EVMAccount(address, manticore=self, name=name)
         return self.accounts[name]
 
-    def __migrate_expressions(self, state, global_constraints, caller, address, value, data):
+    def _migrate_tx_expressions(self, state, caller, address, value, data):
             # Copy global constraints into each state.
             # We should somehow remember what has been copied to each state
             # In a second transaction we should only add new constraints.
             # And actually only constraints related to whateverwe are using in
             # the tx. This is a FIXME
-            state_constraints = state.constraints
+            global_constraints = self.constraints
 
-            migration_bindings = state.context.get('migration_bindings')
-            if migration_bindings is None:
-                migration_bindings = {}
+            # Normally users will be making these symbolic expressions by creating
+            # global symbolic variables via ManticoreEVM.make_.... and those
+            # global expressions need to be imported into each state when a tx
+            # actually happens
 
             if issymbolic(caller):
-                caller = state_constraints.migrate(caller, bindings=migration_bindings)
+                caller = state.migrate_expression(caller)
+
             if issymbolic(address):
-                address = state_constraints.migrate(address, bindings=migration_bindings)
+                address = state.migrate_expression(address)
 
             if issymbolic(value):
-                value = state_constraints.migrate(value, bindings=migration_bindings)
+                value = state.migrate_expression(value)
+
             if issymbolic(data):
-                if isinstance(data, ArrayProxy):
+                if isinstance(data, ArrayProxy):  # FIXME is this necesary here?
                     data = data.array
-                data = state_constraints.migrate(data, bindings=migration_bindings)
+                data = state.migrate_expression(data)
                 if isinstance(data, Array):
                     data = ArrayProxy(data)
 
             for c in global_constraints:
-                migrated_constraint = state_constraints.migrate(c, bindings=migration_bindings)
-                state.constrain(migrated_constraint)
-            state.context['migration_bindings'] = migration_bindings
+                state.constrain(c)
+
             return caller, address, value, data
 
     def _transaction(self, sort, caller, value=0, address=None, data=None, price=1):
@@ -1746,22 +1924,22 @@ class ManticoreEVM(Manticore):
         #Defaults, call data is empty
         if data is None:
             data = bytearray(b"")
-        if isinstance(data, str):
+        if isinstance(data, (str, bytes)):
             data = bytearray(data)
         if not isinstance(data, (bytearray, Array)):
             raise EthereumError("code bad type")
 
         # Check types
-        if not isinstance(address, (numbers.Integral, BitVec)):
+        if not isinstance(address, (int, BitVec)):
             raise EthereumError("Caller invalid type")
 
-        if not isinstance(value, (numbers.Integral, BitVec)):
+        if not isinstance(value, (int, BitVec)):
             raise EthereumError("Value invalid type")
 
-        if not isinstance(address, (numbers.Integral, BitVec)):
+        if not isinstance(address, (int, BitVec)):
             raise EthereumError("address invalid type")
 
-        if not isinstance(price, numbers.Integral):
+        if not isinstance(price, int):
             raise EthereumError("Price invalid type")
 
         # Check argument consistency and set defaults ...
@@ -1792,7 +1970,7 @@ class ManticoreEVM(Manticore):
                 raise EthereumError("This is bad. It should not be a pending transaction")
 
             # Migrate any expression to state specific constraint set
-            caller, address, value, data = self.__migrate_expressions(state, self.constraints, caller, address, value, data)
+            caller, address, value, data = self._migrate_tx_expressions(state, caller, address, value, data)
 
             # Different states may CREATE a different set of accounts. Accounts
             # that were crated by a human have the same address in all states.
@@ -1811,7 +1989,7 @@ class ManticoreEVM(Manticore):
 
         return address
 
-    def multi_tx_analysis(self, solidity_filename, contract_name=None, tx_limit=None, tx_use_coverage=True, tx_account="attacker", args=None):
+    def multi_tx_analysis(self, solidity_filename, contract_name=None, tx_limit=None, tx_use_coverage=True, tx_send_ether=True, tx_account="attacker", args=None):
 
         owner_account = self.create_account(balance=1000, name='owner')
         attacker_account = self.create_account(balance=1000, name='attacker')
@@ -1845,11 +2023,14 @@ class ManticoreEVM(Manticore):
 
                 # run_symbolic_tx
                 symbolic_data = self.make_symbolic_buffer(320)
-                symbolic_value = self.make_symbolic_value()
+                if tx_send_ether:
+                    value = self.make_symbolic_value()
+                else:
+                    value = 0
                 self.transaction(caller=tx_account[min(tx_no, len(tx_account) - 1)],
                                  address=contract_account,
                                  data=symbolic_data,
-                                 value=symbolic_value)
+                                 value=value)
                 logger.info("%d alive states, %d terminated states", self.count_running_states(), self.count_terminated_states())
             except NoAliveStates:
                 break
@@ -1881,7 +2062,7 @@ class ManticoreEVM(Manticore):
 
         # A callback will use _pending_transaction and issue the transaction
         # in each state (see load_state_callback)
-        super(ManticoreEVM, self).run(**kwargs)
+        super().run(**kwargs)
 
         with self.locked_context('ethereum') as context:
             if len(context['_saved_states']) == 1:
@@ -1986,9 +2167,9 @@ class ManticoreEVM(Manticore):
         #Human tx that ends in this wont modify the storage so finalize and
         # generate a testcase. FIXME This should be configurable as REVERT and
         # THROWit actually changes the balance and nonce? of some accounts
-        if tx.result in {'REVERT', 'THROW', 'TXERROR'}:
+        if tx.result in {'SELFDESTRUCT', 'REVERT', 'THROW', 'TXERROR'}:
             self.save(state, final=True)
-        elif tx.result in {'SELFDESTRUCT', 'RETURN', 'STOP'}:
+        elif tx.result in {'RETURN', 'STOP'}:
             # if not a revert we save the state for further transactioning
             self.save(state)  # Add to running states
         else:
@@ -2073,7 +2254,7 @@ class ManticoreEVM(Manticore):
         at_init = world.current_transaction.sort == 'CREATE'
         output = io.StringIO()
         output.write('Contract: 0x{:x}\n'.format(address))
-        output.write('EVM Program counter: {}{:s}\n'.format(pc, at_init and " (at constructor)" or ""))
+        output.write('EVM Program counter: 0x{:x}{:s}\n'.format(pc, at_init and " (at constructor)" or ""))
         md = self.get_metadata(address)
         if md is not None:
             src = md.get_source_for(pc, runtime=not at_init)
@@ -2091,7 +2272,7 @@ class ManticoreEVM(Manticore):
         # workspace should not be responsible for formating the output
         # each object knows its secrets, each class should be able to report its
         # final state
-        #super(ManticoreEVM, self)._generate_testcase_callback(state, name, message)
+        #super()._generate_testcase_callback(state, name, message)
         # TODO(mark): Refactor ManticoreOutput to let the platform be more in control
         #  so this function can be fully ported to EVMWorld.generate_workspace_files.
         blockchain = state.platform
@@ -2106,16 +2287,16 @@ class ManticoreEVM(Manticore):
 
         local_findings = set()
         for detector in self.detectors.values():
-            for address, pc, finding, at_init in detector.get_findings(state):
+            for address, pc, finding, at_init, constraint in detector.get_findings(state):
                 if (address, pc, finding, at_init) not in local_findings:
-                    local_findings.add((address, pc, finding, at_init))
+                    local_findings.add((address, pc, finding, at_init, constraint))
 
         if len(local_findings):
             with testcase.open_stream('findings') as findings:
-                for address, pc, finding, at_init in local_findings:
+                for address, pc, finding, at_init, constraint in local_findings:
                     findings.write('- %s -\n' % finding)
                     findings.write('  Contract: 0x%x\n' % address)
-                    findings.write('  EVM Program counter: %s%s\n' % (pc, at_init and " (at constructor)" or ""))
+                    findings.write('  EVM Program counter: 0x%x%s\n' % (pc, at_init and " (at constructor)" or ""))
                     md = self.get_metadata(address)
                     if md is not None:
                         src = md.get_source_for(pc, runtime=not at_init)
@@ -2139,7 +2320,7 @@ class ManticoreEVM(Manticore):
                         summary.write('Last instruction at contract %x offset %x\n' % (address, offset))
                         source_code_snippet = metadata.get_source_for(offset, at_runtime)
                         if source_code_snippet:
-                            summary.write(source_code_snippet)
+                            summary.write('    '.join(source_code_snippet.splitlines(True)))
                         summary.write('\n')
 
             # Accounts summary
@@ -2234,6 +2415,16 @@ class ManticoreEVM(Manticore):
                     return_data = state.solve_one(tx.return_data)
                     tx_summary.write("Return_data: %s %s\n" % (binascii.hexlify(return_data), flagged(issymbolic(tx.return_data))))
                 metadata = self.get_metadata(tx.address)
+                if tx.sort == 'CREATE':
+                    if metadata is not None:
+                        args_data = tx.data[len(metadata._init_bytecode):]
+                        arguments = ABI.deserialize(metadata.get_constructor_arguments(), state.solve_one(args_data))
+                        is_argument_symbolic = any(map(issymbolic, arguments))
+                        tx_summary.write('Function call:\n')
+                        tx_summary.write("Constructor(")
+                        tx_summary.write(','.join(map(repr, map(state.solve_one, arguments))))
+                        tx_summary.write(') -> %s %s\n' % (tx.result, flagged(is_argument_symbolic)))
+
                 if tx.sort == 'CALL':
                     if metadata is not None:
                         function_id = tx.data[:4]  # hope there is enough data
@@ -2291,13 +2482,7 @@ class ManticoreEVM(Manticore):
             smt_summary.write(str(state.constraints))
 
         with testcase.open_stream('pkl', binary=True) as statef:
-            try:
-                statef.write(pickle.dumps(state, 2))
-            except RuntimeError:
-                # recursion exceeded. try a slower, iterative solution
-                from .utils import iterpickle
-                logger.debug("Using iterpickle to dump state")
-                statef.write(iterpickle.dumps(state, 2))
+            self._serializer.serialize(state, statef)
 
         trace = state.context.get('evm.trace')
         if trace:
@@ -2371,13 +2556,13 @@ class ManticoreEVM(Manticore):
                 for address, pc, finding, at_init in self.global_findings:
                     global_findings.write('- %s -\n' % finding)
                     global_findings.write('  Contract: %s\n' % address)
-                    global_findings.write('  EVM Program counter: %s%s\n' % (pc, at_init and " (at constructor)" or ""))
+                    global_findings.write('  EVM Program counter: 0x%x%s\n' % (pc, at_init and " (at constructor)" or ""))
 
                     md = self.get_metadata(address)
                     if md is not None:
-                        src = md.get_source_for(pc, runtime=not at_init)
+                        source_code_snippet = md.get_source_for(pc, runtime=not at_init)
                         global_findings.write('  Solidity snippet:\n')
-                        global_findings.write(src.replace('\n', '\n    ').strip())
+                        global_findings.write('    '.join(source_code_snippet.splitlines(True)))
                         global_findings.write('\n')
 
         with self._output.save_stream('global.summary') as global_summary:

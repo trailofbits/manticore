@@ -2,7 +2,47 @@
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
-## [Unreleased](https://github.com/trailofbits/manticore/compare/0.1.10...HEAD)
+## [Unreleased](https://github.com/trailofbits/manticore/compare/0.2.0...HEAD)
+
+## 0.2.0 - 2018-08-10
+
+In this release, the codebase has been ported to Python 3.6, which is a breaking change for API clients. Beginning with 0.2.0, client programs of Manticore must be compatible with Python 3.6.
+
+Thanks to our external contributors!
+
+- [ianklatzco](https://github.com/ianklatzco)
+- [devtty1er](https://github.com/devtty1er)
+- [catenacyber](https://github.com/catenacyber)
+
+### Added
+
+- Ethereum: More flexibility for Solidity compilation toolchains
+- Ethereum: Detectors for unused return value, reentrancy
+- Ethereum: Support for Solidity `bytesM` and `bytes` types
+- Ethereum: Beta API for preconstraining inputs (`ManticoreEVM.constrain`)
+- Improved performance for smtlib module
+- Ability to transparently operate on bytearray and symbolic buffer (ArrayProxy) types (e.g: concatenate, slice)
+
+### Changed
+
+- **Codebase has been entirely ported to Python 3.6+**
+- Ethereum: `ManticoreEVM.make_symbolic_value()` can be size adjustable
+- Ethereum: Ethereum ABI (`manticore.ethereum.ABI`) API refactor, including real Solidity prototype parser
+- Ethereum: Improved APIs for accessing transaction history
+- Ethereum: Significant internal refactor
+
+### Fixed
+
+- Linux: Bugs related to handling of closed files
+- Ethereum: Handling of symbolic callers/addresses
+- Ethereum: Handling of gas handling on CALL instructions
+- Various smtlib/expression fixes
+
+### Removed
+
+- Support for Python 2
+- EVM disassembler/assembler module (EVMAsm) has been removed and separately released as [pyevmasm](https://github.com/trailofbits/pyevmasm)
+- Experimental support for Binary Ninja IL emulation
 
 ## 0.1.10 - 2018-06-22
 
