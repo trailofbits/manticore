@@ -12,7 +12,8 @@ import os
 from manticore.core.smtlib import operators
 from eth_general import make_mock_evm_state
 from manticore.ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, Detector, NoAliveStates, ABI, \
-    EthereumError, DetectReentrancy, DetectUnusedRetVal, DetectSelfdestruct, LoopDepthLimiter, DetectExternalCallAndLeak
+    EthereumError, DetectReentrancy, DetectUnusedRetVal, DetectSelfdestruct, LoopDepthLimiter, DetectExternalCallAndLeak, \
+    DetectEnvInstruction
 
 import shutil
 
@@ -169,5 +170,13 @@ class EthIntegerOverflow(unittest.TestCase):
         cond = self.io._unsigned_mul_overflow(self.state, *arguments)
         check = self.state.can_be_true(cond)
         self.assertTrue(check)
+
+class DetectEnvInstruction(EthDetectorTest):
+    DETECTOR_CLASS = DetectEnvInstruction
+
+    def test_predictable_not_ok(self):
+        name = inspect.currentframe().f_code.co_name[5:]
+        self._test(name, {(174, 'Warning ORIGIN instruction used', False), (157, 'Warning DIFFICULTY instruction used', False), (129, 'Warning TIMESTAMP instruction used', False), (165, 'Warning NUMBER instruction used', False), (132, 'Warning COINBASE instruction used', False), (167, 'Warning BLOCKHASH instruction used', False), (160, 'Warning NUMBER instruction used', False), (199, 'Warning GASPRICE instruction used', False), (202, 'Warning GASLIMIT instruction used', False)})
+
 
 
