@@ -16,7 +16,7 @@ from manticore.core.smtlib import ConstraintSet, operators
 from manticore.core.smtlib.expression import BitVec
 from manticore.core.smtlib import solver
 from manticore.core.state import State
-from manticore.ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, Detector, NoAliveStates, ABI, EthereumError, DetectReentrancy
+from manticore.ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, Detector, NoAliveStates, ABI, EthereumError, DetectReentrancyAdvanced
 from manticore.platforms.evm import EVMWorld, ConcretizeStack, concretized_args, Return, Stop
 from manticore.core.smtlib.visitors import pretty_print, translate_to_smtlib, simplify, to_constant
 
@@ -48,7 +48,7 @@ class EthBenchmark(unittest.TestCase):
         mevm = self.mevm
         mevm.register_detector(DetectInvalid())
         mevm.register_detector(DetectIntegerOverflow())
-        mevm.register_detector(DetectReentrancy())
+        mevm.register_detector(DetectReentrancyAdvanced())
 
         filename = os.path.join(THIS_DIR, 'binaries', 'benchmark', '{}.sol'.format(name))
 

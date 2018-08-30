@@ -290,9 +290,11 @@ class DetectInvalid(Detector):
                 self.add_finding_here(state, "INVALID instruction")
 
 
-class DetectReentrancy2(Detector):
+class DetectReentrancySimple(Detector):
     """
-    alert if contract changes the state of storage after a call with >2300 gas to an external address
+    Simple detector for reentrancy bugs.
+    Alert if contract changes the state of storage (does a write) after a call with >2300 gas to a user controlled/symbolic
+    external address or the msg.sender address.
     """
 
     @property
@@ -330,9 +332,12 @@ class DetectReentrancy2(Detector):
             self.add_finding(state, addr, callpc, 'Potential reentrancy vulnerability', at_init, constraint=gas_constraint)
 
 
-class DetectReentrancy(Detector):
+class DetectReentrancyAdvanced(Detector):
     '''
-    1) A _successful_ call to a controlled address (An account controlled by the attacker). With enough gas.
+    Detector for reentrancy bugs.
+    Given an optional concrete list of attacker addresses, warn on the following conditions.
+
+    1) A _successful_ call to an attacker address (address in attacker list), or any human account address (if no list is given). With enough gas (>2300).
     2) A SSTORE after the execution of the CALL.
     3) The storage slot of the SSTORE must be used in some path to control flow
     '''
