@@ -1,6 +1,7 @@
 from abc import ABCMeta, abstractmethod, abstractproperty
 from weakref import WeakValueDictionary
 from .smtlib import *
+import functools
 import logging
 from ..utils.mappings import mmap, munmap
 from ..utils.helpers import issymbolic
@@ -1128,17 +1129,13 @@ class LazySMemory(SMemory):
         self.backed_by_symbolic_store = set()
 
     def __reduce__(self):
-        return (self.__class__, (self.constraints, self._symbols, self._maps), {'backing_array': self.backing_array, 'backed_by_symbolic_store': self.backed_by_symbolic_store})
+        return (self.__class__, (self.constraints, self._symbols, self._maps),
+                {'backing_array': self.backing_array,
+                 'backed_by_symbolic_store': self.backed_by_symbolic_store})
 
     def __setstate__(self, state):
         self.backing_array = state['backing_array']
         self.backed_by_symbolic_store = state['backed_by_symbolic_store']
-
-    def mmap(self, addr, size, perms, name=None, **kwargs):
-        assert isinstance(addr, int)
-        map = AnonMap(addr, size, perms, name=name)
-        self._add(map)
-        return addr
 
     def mmapFile(self, addr, size, perms, filename, offset=0):
         '''
@@ -1244,7 +1241,6 @@ class LazySMemory(SMemory):
         return addr_min, addr_max + size - 1
 
     def valid_ptr(self, address):
-        import functools
         assert issymbolic(address)
 
         expressions = [self._map_deref_expr(m, address, 1) for m in self._maps]
@@ -1278,9 +1274,7 @@ class LazySMemory(SMemory):
 
         size = len(value)
 
-        addrs_to_access = []
-        for i in range(size):
-            addrs_to_access.append(address + i)
+        addrs_to_access = [address + i for i in range(size)]
 
         if issymbolic(address):
             access_min, access_max = self._reachable_range(address, size)
@@ -1290,8 +1284,7 @@ class LazySMemory(SMemory):
             for addr, byte in zip(addrs_to_access, value):
                 self.backing_array[addr] = Operators.ORD(byte)
         else:
-            for addr, byte in zip(addrs_to_access, value):
-                self.backed_by_symbolic_store.discard(addr)
+            self.backed_by_symbolic_store -= set(addrs_to_access)
             Memory.write(self, address, value)
 
     def scan_mem(self, data_to_find):
