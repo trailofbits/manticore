@@ -685,7 +685,7 @@ class Memory(object, metaclass=ABCMeta):
             assert i not in self._page2map, 'Map already used'
 
         # Create the anonymous map
-        m = AnonMap(start=addr, size=size, perms=perms, data_init=data_init)
+        m = AnonMap(start=addr, size=size, perms=perms, data_init=data_init, name=name)
 
         # Okay, ready to alloc
         self._add(m)
