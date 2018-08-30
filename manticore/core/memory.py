@@ -1124,14 +1124,14 @@ class LazySMemory(SMemory):
 
     def __init__(self, constraints, *args, **kwargs):
         super(LazySMemory, self).__init__(constraints, *args, **kwargs)
-        self.bigarray = constraints.new_array(index_bits=self.memory_bit_size)
+        self.backing_array = constraints.new_array(index_bits=self.memory_bit_size)
         self.backed_by_symbolic_store = set()
 
     def __reduce__(self):
-        return (self.__class__, (self.constraints, self._symbols, self._maps), {'backing_array': self.bigarray, 'backed_by_symbolic_store': self.backed_by_symbolic_store })
+        return (self.__class__, (self.constraints, self._symbols, self._maps), {'backing_array': self.backing_array, 'backed_by_symbolic_store': self.backed_by_symbolic_store})
 
     def __setstate__(self, state):
-        self.bigarray = state['backing_array']
+        self.backing_array = state['backing_array']
         self.backed_by_symbolic_store = state['backed_by_symbolic_store']
 
     def mmap(self, addr, size, perms, name=None, **kwargs):
@@ -1222,21 +1222,15 @@ class LazySMemory(SMemory):
         :param int to_addr:
         :return:
         """
-
-        addr = from_addr
-
-        while addr <= to_addr:
+        for addr in range(from_addr, to_addr+1):
             if addr in self.backed_by_symbolic_store:
                 continue
 
-            if addr in self:
-                self.bigarray[addr] = Memory.read(self, addr, 1)[0]
-                self.backed_by_symbolic_store.add(addr)
-            else:
-                addr = (addr + 0x1000) & ~0xfff
+            if addr not in self:
                 continue
 
-            addr += 1
+            self.backing_array[addr] = Memory.read(self, addr, 1)[0]
+            self.backed_by_symbolic_store.add(addr)
 
     def _map_deref_expr(self, map, address, size):
         return Operators.AND(
@@ -1244,6 +1238,10 @@ class LazySMemory(SMemory):
             # address + size < map.end)
             Operators.UGE(address, map.start),
             Operators.ULT(address, map.end))
+
+    def _reachable_range(self, sym_address, size):
+        addr_min, addr_max = solver.minmax(self.constraints, sym_address)
+        return addr_min, addr_max + size - 1
 
     def valid_ptr(self, address):
         import functools
@@ -1257,49 +1255,19 @@ class LazySMemory(SMemory):
     def invalid_ptr(self, address):
         return Operators.NOT(self.valid_ptr(address))
 
-    # currently unused
-    def _constrain_to_maps(self, where, size):
-        maps = self.mappings()
-
-        from manticore.core.smtlib.operators import UGE, ULT, OR
-
-        constraints = []
-        for map in maps:
-            start, end = map[:2]
-
-            start_cons = UGE(where, start)
-            end_cons = ULT(where+size-1, end)
-
-            c = start_cons & end_cons
-            constraints.append(c)
-
-            logger.info('map', hex(start), hex(end))
-
-        if len(constraints) > 1:
-            final_constraint = OR(*constraints)
-        else:
-            final_constraint = constraints[0]
-
-        self.constraints.add(final_constraint)
-
     def read(self, address, size, force=False):
 
-        # if address is symbolic, self._constrain_to_maps(address, size) ? ?
+        # if address is symbolic, self.valid_ptr(address) ? ?
+        access_min, access_max = self._reachable_range(address, size)
 
-        addrs_to_access = [address + i for i in range(size)]
-
-        addr_min, addr_max = solver.minmax(self.constraints, address)
-
-        access_min = addr_min
-        access_max = addr_max + size - 1
-
-        if issymbolic(addrs_to_access[0]):
+        if issymbolic(address):
             self._import_concrete_memory(access_min, access_max)
 
         retvals = []
+        addrs_to_access = [address + i for i in range(size)]
         for addr in addrs_to_access:
             if issymbolic(addr) or addr in self.backed_by_symbolic_store:
-                val = self.bigarray[addr]
+                val = self.backing_array[addr]
             else:
                 val = Memory.read(self, addr, 1)[0]
             retvals.append(val)
@@ -1317,17 +1285,14 @@ class LazySMemory(SMemory):
         symbolic_write = issymbolic(address)
 
         if symbolic_write:
-            addr_min, addr_max = solver.minmax(self.constraints, address)
-
-            access_min = addr_min
-            access_max = addr_max + size - 1
+            access_min, access_max = self._reachable_range(address, size)
 
             self._import_concrete_memory(access_min, access_max)
 
-            for addr, byte in zip(addrs_to_access, value) :
-                self.bigarray[addr] = Operators.ORD(byte)
+            for addr, byte in zip(addrs_to_access, value):
+                self.backing_array[addr] = Operators.ORD(byte)
         else:
-            for addr, byte in zip(addrs_to_access, value) :
+            for addr, byte in zip(addrs_to_access, value):
                 self.backed_by_symbolic_store.discard(addr)
                 Memory.write(self, addr, [byte])
 
