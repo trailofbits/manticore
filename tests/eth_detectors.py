@@ -10,7 +10,7 @@ import unittest
 import os
 
 from manticore.core.smtlib import operators
-from .eth_general import make_mock_evm_state
+from eth_general import make_mock_evm_state
 from manticore.ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, Detector, NoAliveStates, ABI, \
     EthereumError, DetectReentrancy, DetectUnusedRetVal, DetectSelfdestruct, LoopDepthLimiter, DetectEtherLeak, \
     DetectEnvInstruction
