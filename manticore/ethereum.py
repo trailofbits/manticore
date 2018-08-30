@@ -239,15 +239,15 @@ class Detector(Plugin):
 class DetectEnvInstruction(Detector):
     ''' Detect the usage of instructions that query environmental/block information:
         BLOCKHASH, COINBASE, TIMESTAMP, NUMBER, DIFFICULTY, GASLIMIT, ORIGIN, GASPRICE
-        
-        Sometimes environmental information can be manipulated. Contracts should avoid 
+
+        Sometimes environmental information can be manipulated. Contracts should avoid
         using it. Unless special situations. Notably do programaticlly detect human transactions
         `sender == origin`
     '''
 
     def will_evm_execute_instruction_callback(self, state, instruction, arguments):
-        if instruction.semantics in ('BLOCKHASH', 'COINBASE', 'TIMESTAMP',  'NUMBER', 'DIFFICULTY', 'GASLIMIT', 'ORIGIN', 'GASPRICE'):
-            self.add_finding_here(state, f'Warning {instruction.semantics} instruction used' )
+        if instruction.semantics in ('BLOCKHASH', 'COINBASE', 'TIMESTAMP', 'NUMBER', 'DIFFICULTY', 'GASLIMIT', 'ORIGIN', 'GASPRICE'):
+            self.add_finding_here(state, f'Warning {instruction.semantics} instruction used')
 
 
 class DetectSelfdestruct(Detector):
