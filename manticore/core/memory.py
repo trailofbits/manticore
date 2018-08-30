@@ -1122,6 +1122,11 @@ class LazySMemory(SMemory):
     Currently does not support cross-page reads/writes.
     '''
 
+    def __init__(self, constraints, *args, **kwargs):
+        super(LazySMemory, self).__init__(constraints, *args, **kwargs)
+        self.bigarray = constraints.new_array(index_bits=self.memory_bit_size)
+        self.backed_by_symbolic_store = set()
+
     def __reduce__(self):
         return (self.__class__, (self.constraints, self._symbols, self._maps), {'backing_array': self.bigarray, 'backed_by_symbolic_store': self.backed_by_symbolic_store })
 
@@ -1129,17 +1134,9 @@ class LazySMemory(SMemory):
         self.bigarray = state['backing_array']
         self.backed_by_symbolic_store = state['backed_by_symbolic_store']
 
-    def __init__(self, constraints, *args, **kwargs):
-        super(LazySMemory, self).__init__(constraints, *args, **kwargs)
-        # self.bigarray = ArrayMap(0, 2**32 - 1, 'rwx', 32, name='bigarray')
-        # self.bigarray = ArrayMap(0, 2**32 - 1, 'rwx', 32, name='bigarray')
-        self.bigarray = constraints.new_array(index_bits=self.memory_bit_size)
-        self.backed_by_symbolic_store = set()
-
-
     def mmap(self, addr, size, perms, name=None, **kwargs):
         assert isinstance(addr, int)
-        map = AnonMap(addr, size, perms, name)
+        map = AnonMap(addr, size, perms, name=name)
         self._add(map)
         return addr
 
@@ -1195,14 +1192,16 @@ class LazySMemory(SMemory):
         if not issymbolic(address):
             return address >= map.start and address + size < map.end
         else:
-            constraint = Operators.AND(address >= map.start, address + size < map.end)  # FIXME is address + size < map.end a bug? address + size is first oob of the access. address + size <= map.end?
+            # FIXME is address + size < map.end a bug? address + size is first oob of the access. address + size <= map.end?
+            constraint = Operators.AND(address >= map.start, address + size < map.end)
             return solver.can_be_true(self.constraints, constraint)
 
     def map_containing(self, address):
         if not issymbolic(address):
             return super(LazySMemory, self).map_containing(address)
         else:
-            # ??? iterate through maps looking for the first ArrayMap that is accessible? but raise invalid if there is a second one? i don't understand
+            # ??? iterate through maps looking for the first ArrayMap that is accessible? but raise invalid if there
+            # is a second one? i don't understand
             found = None
             for m in self._maps:
                 if self._deref_can_succeed(m, address, 1):
@@ -1213,23 +1212,50 @@ class LazySMemory(SMemory):
                     found = m
             return found
 
-    def _import_concrete_memory(self, accessmin, accessmax):
-        # for each address in this range need to read from concrete and write to symbolic
-        # it's possible that there will be invliad/unmapped addresses in this range. need to skip to next map if so
-        # also need to mark all of these addresses as now in the symbolic store
+    def _import_concrete_memory(self, from_addr, to_addr):
+        """
+        for each address in this range need to read from concrete and write to symbolic
+        it's possible that there will be invalid/unmapped addresses in this range. need to skip to next map if so
+        also need to mark all of these addresses as now in the symbolic store
 
-        curr_addr = accessmin
+        :param int from_addr:
+        :param int to_addr:
+        :return:
+        """
 
-        while curr_addr <= accessmax:
-            if curr_addr not in self.backed_by_symbolic_store:
-                try:
-                    self.bigarray[curr_addr] = Memory.read(self, curr_addr, 1)[0]
-                    self.backed_by_symbolic_store.add(curr_addr)
-                except: # in case of invalid mapping
-                    curr_addr = (curr_addr + 0x1000) & ~0xfff
-                    continue
+        addr = from_addr
 
-            curr_addr += 1
+        while addr <= to_addr:
+            if addr in self.backed_by_symbolic_store:
+                continue
+
+            if addr in self:
+                self.bigarray[addr] = Memory.read(self, addr, 1)[0]
+                self.backed_by_symbolic_store.add(addr)
+            else:
+                addr = (addr + 0x1000) & ~0xfff
+                continue
+
+            addr += 1
+
+    def _map_deref_expr(self, map, address, size):
+        return Operators.AND(
+            # address >= map.start,
+            # address + size < map.end)
+            Operators.UGE(address, map.start),
+            Operators.ULT(address, map.end))
+
+    def valid_ptr(self, address):
+        import functools
+        assert issymbolic(address)
+
+        expressions = [self._map_deref_expr(m, address, 1) for m in self._maps]
+        valid = functools.reduce(Operators.OR, expressions)
+
+        return valid
+
+    def invalid_ptr(self, address):
+        return Operators.NOT(self.valid_ptr(address))
 
     # currently unused
     def _constrain_to_maps(self, where, size):
@@ -1260,11 +1286,10 @@ class LazySMemory(SMemory):
 
         # if address is symbolic, self._constrain_to_maps(address, size) ? ?
 
-        addrs_to_access = []
-        for i in range(size):
-            addrs_to_access.append(address + i)
+        addrs_to_access = [address + i for i in range(size)]
 
         addr_min, addr_max = solver.minmax(self.constraints, address)
+
         access_min = addr_min
         access_max = addr_max + size - 1
 
