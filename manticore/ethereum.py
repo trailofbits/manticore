@@ -185,6 +185,8 @@ class Detector(Plugin):
         :param constraint: finding is considered reproducible only when constraint is True
         '''
 
+        if isinstance(pc, Constant):
+            pc = pc.value
         if not isinstance(pc, int):
             raise ValueError("PC must be a number")
         self.get_findings(state).add((address, pc, finding, at_init, constraint))
