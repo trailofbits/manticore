@@ -1818,8 +1818,8 @@ class EVMWorld(Platform):
 
         # We are not maintaining an actual -block-chain- so we just generate
         # some hashes for each virtual block
-        value = sha3.keccak_256(repr(block_number) + 'NONCE').hexdigest()
-        value = int('0x' + value, 0)
+        value = sha3.keccak_256((repr(block_number) + 'NONCE').encode()).hexdigest()
+        value = int(value, 16)
 
         if force_recent:
             # 0 is left on the stack if the looked for block number is greater or equal

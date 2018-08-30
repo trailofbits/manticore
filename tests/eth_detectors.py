@@ -97,8 +97,8 @@ class EthSelfdestruct(EthDetectorTest):
         self._test(name, set())
 
 
-class EthEtherLeak(EthDetectorTest):
-    DETECTOR_CLASS = DetectEtherLeak
+class EthExternalCallAndLeak(EthDetectorTest):
+    DETECTOR_CLASS = DetectExternalCallAndLeak
 
     def test_etherleak_true_neg(self):
         name = inspect.currentframe().f_code.co_name[5:]
@@ -110,11 +110,11 @@ class EthEtherLeak(EthDetectorTest):
 
     def test_etherleak_true_neg2(self):
         name = inspect.currentframe().f_code.co_name[5:]
-        self._test(name, set())
+        self._test(name, {(0x1c5, "Reachable external call to sender", False)})
 
     def test_etherleak_true_neg3(self):
         name = inspect.currentframe().f_code.co_name[5:]
-        self._test(name, set())
+        self._test(name, {(0x1c5, "Reachable external call to sender", False)})
 
     def test_etherleak_true_pos_argument(self):
         name = inspect.currentframe().f_code.co_name[5:]
@@ -131,12 +131,12 @@ class EthEtherLeak(EthDetectorTest):
 
     def test_etherleak_true_pos_msgsender(self):
         name = inspect.currentframe().f_code.co_name[5:]
-        self._test(name, {(0x1c5, "Reachable ether leak to sender", False)})
+        self._test(name, {(0x1c5, "Reachable external call to sender", False), (0x1c5, "Reachable ether leak to sender", False)})
 
     def test_etherleak_true_pos_msgsender1(self):
         self.mevm.register_plugin(LoopDepthLimiter(5))
         name = inspect.currentframe().f_code.co_name[5:]
-        self._test(name, {(0x1c5, "Reachable ether leak to sender", False)})
+        self._test(name, {(0x1c5, "Reachable external call to sender", False), (0x1c5, "Reachable ether leak to sender", False)})
 
 
 class EthIntegerOverflow(unittest.TestCase):
@@ -169,5 +169,13 @@ class EthIntegerOverflow(unittest.TestCase):
         cond = self.io._unsigned_mul_overflow(self.state, *arguments)
         check = self.state.can_be_true(cond)
         self.assertTrue(check)
+
+class DetectEnvInstruction(EthDetectorTest):
+    DETECTOR_CLASS = DetectEnvInstruction
+
+    def test_predictable_not_ok(self):
+        name = inspect.currentframe().f_code.co_name[5:]
+        self._test(name, {(174, 'Warning ORIGIN instruction used', False), (157, 'Warning DIFFICULTY instruction used', False), (129, 'Warning TIMESTAMP instruction used', False), (165, 'Warning NUMBER instruction used', False), (132, 'Warning COINBASE instruction used', False), (167, 'Warning BLOCKHASH instruction used', False), (160, 'Warning NUMBER instruction used', False), (199, 'Warning GASPRICE instruction used', False), (202, 'Warning GASLIMIT instruction used', False)})
+
 
 
