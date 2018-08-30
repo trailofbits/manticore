@@ -1282,9 +1282,7 @@ class LazySMemory(SMemory):
         for i in range(size):
             addrs_to_access.append(address + i)
 
-        symbolic_write = issymbolic(address)
-
-        if symbolic_write:
+        if issymbolic(address):
             access_min, access_max = self._reachable_range(address, size)
 
             self._import_concrete_memory(access_min, access_max)
@@ -1294,7 +1292,7 @@ class LazySMemory(SMemory):
         else:
             for addr, byte in zip(addrs_to_access, value):
                 self.backed_by_symbolic_store.discard(addr)
-                Memory.write(self, addr, [byte])
+            Memory.write(self, address, value)
 
     def scan_mem(self, data_to_find):
         """
