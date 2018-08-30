@@ -241,7 +241,7 @@ class DetectEnvInstruction(Detector):
         BLOCKHASH, COINBASE, TIMESTAMP, NUMBER, DIFFICULTY, GASLIMIT, ORIGIN, GASPRICE
 
         Sometimes environmental information can be manipulated. Contracts should avoid
-        using it. Unless special situations. Notably do programaticlly detect human transactions
+        using it. Unless special situations. Notably to programatically detect human transactions
         `sender == origin`
     '''
 
