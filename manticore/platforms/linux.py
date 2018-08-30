@@ -9,11 +9,13 @@ import ctypes
 import socket
 import binascii
 
+from typing import Union, List, TypeVar, Iterable, ByteString, Sequence, Generic, cast, Collection
 # Remove in favor of binary.py
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 from elftools.elf.descriptions import describe_symbol_type
 
+from manticore.core.smtlib import Expression
 from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeArgument
 from ..core.cpu.cpufactory import CpuFactory
 from ..core.memory import LazySMemory32, LazySMemory64, SMemory32, SMemory64, Memory32, Memory64
@@ -21,10 +23,13 @@ from ..core.smtlib import Operators, ConstraintSet, SolverException, solver
 from ..core.cpu.arm import *
 from ..core.executor import TerminateState
 from ..platforms.platform import Platform, SyscallNotImplemented
-from ..utils.helpers import issymbolic, is_binja_disassembler
+from ..utils.helpers import issymbolic
 from . import linux_syscalls
 
 logger = logging.getLogger(__name__)
+
+T = TypeVar('T')
+MixedSymbolicBuffer = Union[List[Union[bytes, Expression]], bytes]
 
 
 class RestartSyscall(Exception):
@@ -42,7 +47,7 @@ class EnvironmentError(RuntimeError):
 class FdError(Exception):
     def __init__(self, message='', err=errno.EBADF):
         self.err = err
-        super(FdError, self).__init__(message)
+        super().__init__(message)
 
 
 def perms_from_elf(elf_flags):
@@ -54,7 +59,7 @@ def perms_from_protflags(prot_flags):
 
 
 def mode_from_flags(file_flags):
-    return {os.O_RDWR: 'r+', os.O_RDONLY: 'r', os.O_WRONLY: 'w'}[file_flags & 7]
+    return {os.O_RDWR: 'rb+', os.O_RDONLY: 'rb', os.O_WRONLY: 'wb'}[file_flags & 7]
 
 
 class File(object):
@@ -65,11 +70,13 @@ class File(object):
         self.file = open(path, mode)
 
     def __getstate__(self):
-        state = {}
-        state['name'] = self.name
-        state['mode'] = self.mode
+        state = {
+            'name': self.name,
+            'mode': self.mode,
+            'closed': self.closed
+        }
         try:
-            state['pos'] = self.tell()
+            state['pos'] = None if self.closed else self.tell()
         except IOError:
             # This is to handle special files like /dev/tty
             state['pos'] = None
@@ -78,8 +85,15 @@ class File(object):
     def __setstate__(self, state):
         name = state['name']
         mode = state['mode']
+        closed = state['closed']
         pos = state['pos']
-        self.file = open(name, mode)
+        try:
+            self.file = open(name, mode)
+            if closed:
+                self.file.close()
+        except IOError:
+            # If the file can't be opened anymore, should not typically happen
+            self.file = None
         if pos is not None:
             self.seek(pos)
 
@@ -90,6 +104,10 @@ class File(object):
     @property
     def mode(self):
         return self.file.mode
+
+    @property
+    def closed(self):
+        return self.file.closed
 
     def stat(self):
         return os.fstat(self.fileno())
@@ -105,8 +123,7 @@ class File(object):
         return self.file.seek(*args)
 
     def write(self, buf):
-        for c in buf:
-            self.file.write(c)
+        return self.file.write(buf)
 
     def read(self, *args):
         return self.file.read(*args)
@@ -189,7 +206,7 @@ class SymbolicFile(File):
         :param max_size: Maximum amount of bytes of the symbolic file
         :param str wildcard: Wildcard to be used in symbolic file
         '''
-        super(SymbolicFile, self).__init__(path, mode)
+        super().__init__(path, mode)
 
         # read the concrete data using the parent the read() form the File class
         data = self.file.read()
@@ -220,7 +237,7 @@ class SymbolicFile(File):
                          self.name)
 
     def __getstate__(self):
-        state = super(SymbolicFile, self).__getstate__()
+        state = super().__getstate__()
         state['array'] = self.array
         state['pos'] = self.pos
         state['max_size'] = self.max_size
@@ -230,7 +247,7 @@ class SymbolicFile(File):
         self.pos = state['pos']
         self.max_size = state['max_size']
         self.array = state['array']
-        super(SymbolicFile, self).__setstate__(state)
+        super().__setstate__(state)
 
     def tell(self):
         '''
@@ -382,7 +399,7 @@ class Linux(Platform):
         :ivar files: List of active file descriptors
         :type files: list[Socket] or list[File]
         '''
-        super(Linux, self).__init__(path=program, **kwargs)
+        super().__init__(path=program, **kwargs)
 
         self.program = program
         self.clocks = 0
@@ -514,7 +531,7 @@ class Linux(Platform):
         return self.procs[self._current]
 
     def __getstate__(self):
-        state = super(Linux, self).__getstate__()
+        state = super().__getstate__()
         state['clocks'] = self.clocks
         state['input'] = self.input.buffer
         state['output'] = self.output.buffer
@@ -560,7 +577,7 @@ class Linux(Platform):
         :todo: some asserts
         :todo: fix deps? (last line)
         """
-        super(Linux, self).__setstate__(state)
+        super().__setstate__(state)
 
         self.input = Socket()
         self.input.buffer = state['input']
@@ -754,7 +771,7 @@ class Linux(Platform):
                 logger.debug("\t\t%s", repr(e))
 
         logger.debug("\tAuxv:")
-        for name, val in list(auxv.items()):
+        for name, val in auxv.items():
             logger.debug("\t\t%s: %s", name, hex(val))
 
         # We save the argument and environment pointers
@@ -773,7 +790,7 @@ class Linux(Platform):
         # Put all auxv strings into the string stack area.
         # And replace the value be its pointer
 
-        for name, value in list(auxv.items()):
+        for name, value in auxv.items():
             if hasattr(value, '__len__'):
                 cpu.push_bytes(value)
                 auxv[name] = cpu.STACK
@@ -810,7 +827,7 @@ class Linux(Platform):
         # AT_NULL
         cpu.push_int(0)
         cpu.push_int(0)
-        for name, val in list(auxv.items()):
+        for name, val in auxv.items():
             cpu.push_int(val)
             cpu.push_int(auxvnames[name])
 
@@ -1142,14 +1159,10 @@ class Linux(Platform):
         else:
             return self.files[fd]
 
-    def _transform_write_data(self, data):
+    def _transform_write_data(self, data: T) -> T:
         '''
         Implement in subclass to transform data written by write(2)/writev(2)
-
         Nop by default.
-        :param list data: Anything being written to a file descriptor
-        :rtype list
-        :return: Transformed data
         '''
         return data
 
@@ -1237,7 +1250,7 @@ class Linux(Platform):
         return 0
 
     def sys_read(self, fd, buf, count):
-        data = ''
+        data: bytes = bytes()
         if count != 0:
             # TODO check count bytes from buf
             if buf not in self.current.memory:  # or not  self.current.memory.isValid(buf+count):
@@ -1269,7 +1282,7 @@ class Linux(Platform):
                     EBADF      fd is not a valid file descriptor or is not open.
                     EFAULT     buf or tx_bytes points to an invalid address.
         '''
-        data = []
+        data: bytes = bytes()
         cpu = self.current
         if count != 0:
             try:
@@ -1288,16 +1301,16 @@ class Linux(Platform):
                 self.wait([], [fd], None)
                 raise RestartSyscall()
 
-            data = cpu.read_bytes(buf, count)
-            data = self._transform_write_data(data)
+            data: MixedSymbolicBuffer = cpu.read_bytes(buf, count)
+            data: bytes = self._transform_write_data(data)
             write_fd.write(data)
 
-            for line in ''.join([str(x) for x in data]).split('\n'):
+            for line in data.split(b'\n'):
                 logger.debug("WRITE(%d, 0x%08x, %d) -> <%.48r>",
                              fd,
                              buf,
                              count,
-                             line)
+                             line.decode('latin-1'))  # latin-1 encoding will happily decode any byte (0x00-0xff)
             self.syscall_trace.append(("_write", fd, data))
             self.signal_transmit(fd)
 
@@ -1446,7 +1459,7 @@ class Linux(Platform):
         '''
 
         filename = self.current.read_string(buf)
-        dirfd = self._to_signed_dword(dirfd)
+        dirfd = ctypes.c_int32(dirfd).value
 
         if os.path.isabs(filename) or dirfd == self.FCNTL_FDCWD:
             return self.sys_open(buf, flags, mode)
@@ -1829,9 +1842,7 @@ class Linux(Platform):
             buf = cpu.read_int(iov + i * sizeof_iovec, ptrsize)
             size = cpu.read_int(iov + i * sizeof_iovec + (sizeof_iovec // 2), ptrsize)
 
-            data = ""
-            for j in range(0, size):
-                data += Operators.CHR(cpu.read_int(buf + j, 8))
+            data = [Operators.CHR(cpu.read_int(buf + i, 8)) for i in range(size)]
             data = self._transform_write_data(data)
             write_fd.write(data)
             self.syscall_trace.append(("_write", fd, data))
@@ -2407,9 +2418,6 @@ class Linux(Platform):
             for reg, val in x86_defaults.items():
                 self.current.regfile.write(reg, val)
 
-        if is_binja_disassembler(self.disasm):
-            cpu = self.current.initialize_disassembler(self.program)
-
     @staticmethod
     def _interp_total_size(interp):
         '''
@@ -2448,10 +2456,7 @@ class SLinux(Linux):
         self._pure_symbolic = pure_symbolic
         self.random = 0
         self.symbolic_files = symbolic_files
-        super(SLinux, self).__init__(programs,
-                                     argv=argv,
-                                     envp=envp,
-                                     disasm=disasm)
+        super().__init__(programs, argv=argv, envp=envp, disasm=disasm)
 
     def _mk_proc(self, arch):
         if arch in {'i386', 'armv7'}:
@@ -2464,10 +2469,6 @@ class SLinux(Linux):
                 mem = LazySMemory64(self.constraints)
             else:
                 mem = SMemory64(self.constraints)
-
-        if is_binja_disassembler(self.disasm):
-            from ..core.cpu.binja import BinjaCpu
-            return BinjaCpu(mem)
 
         cpu = CpuFactory.get_cpu(mem, arch)
         return cpu
@@ -2494,7 +2495,7 @@ class SLinux(Linux):
 
     # marshaling/pickle
     def __getstate__(self):
-        state = super(SLinux, self).__getstate__()
+        state = super().__getstate__()
         state['constraints'] = self.constraints
         state['random'] = self.random
         state['symbolic_files'] = self.symbolic_files
@@ -2504,30 +2505,30 @@ class SLinux(Linux):
         self._constraints = state['constraints']
         self.random = state['random']
         self.symbolic_files = state['symbolic_files']
-        super(SLinux, self).__setstate__(state)
+        super().__setstate__(state)
 
     def _sys_open_get_file(self, filename, flags):
         if filename in self.symbolic_files:
             logger.debug("%s file is considered symbolic", filename)
             f = SymbolicFile(self.constraints, filename, flags)
         else:
-            f = super(SLinux, self)._sys_open_get_file(filename, flags)
+            f = super()._sys_open_get_file(filename, flags)
 
         return f
 
-    def _transform_write_data(self, data):
-        bytes_concretized = 0
-        concrete_data = []
+    def _transform_write_data(self, data: MixedSymbolicBuffer) -> bytes:
+        bytes_concretized: int = 0
+        concrete_data: bytes = bytes()
         for c in data:
             if issymbolic(c):
                 bytes_concretized += 1
                 c = bytes([solver.get_value(self.constraints, c)])
-            concrete_data.append(c)
+            concrete_data += cast(bytes, c)
 
         if bytes_concretized > 0:
             logger.debug("Concretized {} written bytes.".format(bytes_concretized))
 
-        return super(SLinux, self)._transform_write_data(concrete_data)
+        return super()._transform_write_data(concrete_data)
 
     # Dispatchers...
 
@@ -2536,7 +2537,7 @@ class SLinux(Linux):
             error_code = solver.get_value(self.constraints, error_code)
             return self._exit("Program finished with exit status: {} (*)".format(ctypes.c_int32(error_code).value))
         else:
-            return super(SLinux, self).sys_exit_group(error_code)
+            return super().sys_exit_group(error_code)
 
     def sys_read(self, fd, buf, count):
         if issymbolic(fd):
@@ -2551,7 +2552,7 @@ class SLinux(Linux):
             logger.debug("Ask to read a symbolic number of bytes ")
             raise ConcretizeArgument(self, 2)
 
-        return super(SLinux, self).sys_read(fd, buf, count)
+        return super().sys_read(fd, buf, count)
 
     def sys_write(self, fd, buf, count):
         if issymbolic(fd):
@@ -2566,7 +2567,7 @@ class SLinux(Linux):
             logger.debug("Ask to write a symbolic number of bytes ")
             raise ConcretizeArgument(self, 2)
 
-        return super(SLinux, self).sys_write(fd, buf, count)
+        return super().sys_write(fd, buf, count)
 
     def sys_recv(self, sockfd, buf, count, flags):
         if issymbolic(sockfd):
@@ -2585,13 +2586,13 @@ class SLinux(Linux):
             logger.debug("Submitted a symbolic flags")
             raise ConcretizeArgument(self, 3)
 
-        return super(SLinux, self).sys_recv(sockfd, buf, count, flags)
+        return super().sys_recv(sockfd, buf, count, flags)
 
     def sys_accept(self, sockfd, addr, addrlen, flags):
         # TODO(yan): Transmit some symbolic bytes as soon as we start.
         # Remove this hack once no longer needed.
 
-        fd = super(SLinux, self).sys_accept(sockfd, addr, addrlen, flags)
+        fd = super().sys_accept(sockfd, addr, addrlen, flags)
         if fd < 0:
             return fd
         sock = self._get_fd(fd)
@@ -2621,7 +2622,7 @@ class SLinux(Linux):
             self.symbolic_files.append(path)
             buf = self.current.memory.mmap(None, 1024, 'rw ', data_init=path)
 
-        rv = super(SLinux, self).sys_open(buf, flags, mode)
+        rv = super().sys_open(buf, flags, mode)
 
         if symbolic_path:
             self.current.memory.munmap(buf, 1024)
@@ -2649,7 +2650,7 @@ class SLinux(Linux):
             logger.debug("Ask to read to a symbolic buffer")
             raise ConcretizeArgument(self, 1)
 
-        return super(SLinux, self).sys_openat(dirfd, buf, flags, mode)
+        return super().sys_openat(dirfd, buf, flags, mode)
 
     def sys_getrandom(self, buf, size, flags):
         '''
@@ -2674,7 +2675,7 @@ class SLinux(Linux):
             logger.debug("sys_getrandom: Passed symbolic flags")
             raise ConcretizeArgument(self, 2)
 
-        return super(SLinux, self).sys_getrandom(buf, size, flags)
+        return super().sys_getrandom(buf, size, flags)
 
     def generate_workspace_files(self):
         def solve_to_fd(data, fd):

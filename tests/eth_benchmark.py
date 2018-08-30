@@ -24,10 +24,6 @@ import shutil
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# FIXME(tim), increase the stack size and recursion limit to avoid using iterpickle (too lazy to fix it)
-maxlim = 0x100000
-resource.setrlimit(resource.RLIMIT_STACK, [0x100 * maxlim, resource.RLIM_INFINITY])
-sys.setrecursionlimit(0x100000)
 
 # FIXME(mark): Remove these two lines when logging works for ManticoreEVM
 from manticore.utils.log import init_logging, set_verbosity
@@ -64,25 +60,25 @@ class EthBenchmark(unittest.TestCase):
         self.assertEqual(expected_findings, actual_findings)
 
     def test_assert_minimal(self):
-        self._test('assert_minimal', set([(95, 'INVALID instruction', False)]))
+        self._test('assert_minimal', {(95, 'INVALID instruction', False)})
 
     def test_assert_constructor(self):
-        self._test('assert_constructor', set([(23, 'INVALID instruction', True)]))
+        self._test('assert_constructor', {(23, 'INVALID instruction', True)})
 
     def test_assert_multitx_1(self):
         self._test('assert_multitx_1', set())
 
     def test_assert_multitx_2(self):
-        self._test('assert_multitx_2', set([(150, 'INVALID instruction', False)]))
+        self._test('assert_multitx_2', {(150, 'INVALID instruction', False)})
 
     def test_integer_overflow_minimal(self):
-        self._test('integer_overflow_minimal', set([(163, 'Unsigned integer overflow at SUB instruction', False)]))
+        self._test('integer_overflow_minimal', {(163, 'Unsigned integer overflow at SUB instruction', False)})
 
     def test_integer_overflow_add(self):
-        self._test('integer_overflow_add', set([(163, 'Unsigned integer overflow at ADD instruction', False)]))
+        self._test('integer_overflow_add', {(163, 'Unsigned integer overflow at ADD instruction', False)})
 
     def test_integer_overflow_mul(self):
-        self._test('integer_overflow_mul', set([(163, 'Unsigned integer overflow at MUL instruction', False)]))
+        self._test('integer_overflow_mul', {(163, 'Unsigned integer overflow at MUL instruction', False)})
 
     def test_integer_overflow_path_1(self):
         self._test('integer_overflow_path_1', set())
@@ -94,19 +90,21 @@ class EthBenchmark(unittest.TestCase):
         self._test('integer_overflow_benign_2', set())
 
     def test_integer_overflow_multitx_onefunc_feasible(self):
-        self._test('integer_overflow_multitx_onefunc_feasible', set([(185, 'Unsigned integer overflow at SUB instruction', False)]))
+        self._test('integer_overflow_multitx_onefunc_feasible',
+                   {(185, 'Unsigned integer overflow at SUB instruction', False)})
 
     def test_integer_overflow_multitx_onefunc_infeasible(self):
         self._test('integer_overflow_multitx_onefunc_infeasible', set())
 
     def test_integer_overflow_multitx_multifunc_feasible(self):
-        self._test('integer_overflow_multitx_multifunc_feasible', set([(205, 'Unsigned integer overflow at SUB instruction', False)]))
+        self._test('integer_overflow_multitx_multifunc_feasible',
+                   {(205, 'Unsigned integer overflow at SUB instruction', False)})
 
     def test_integer_overflow_storageinvariant(self):
         self._test('integer_overflow_storageinvariant', set())
 
     def test_integer_overflow_mapping_sym_1(self):
-        self._test('integer_overflow_mapping_sym_1', set([(135, 'Unsigned integer overflow at SUB instruction', False)]))
+        self._test('integer_overflow_mapping_sym_1', {(135, 'Unsigned integer overflow at SUB instruction', False)})
 
     def test_integer_overflow_mapping_sym_2(self):
         self._test('integer_overflow_mapping_sym_2', set())
@@ -158,9 +156,9 @@ class EthBenchmark(unittest.TestCase):
 
     def test_reentrancy_dao(self):
         name = inspect.currentframe().f_code.co_name[5:]
-        self._test(name, set([(247, 'Reentrancy muti-million ether bug', False)]))
+        self._test(name, {(247, 'Reentrancy multi-million ether bug', False)})
 
-    @unittest.skip('too slow')
+    @unittest.skip('too slow')  #FIXME #TODO
     def test_eth_tx_order_dependence_multitx_1(self):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, set())

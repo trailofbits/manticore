@@ -41,7 +41,7 @@ class TraceReceiver(Plugin):
     def __init__(self, tracer):
         self._trace = None
         self._tracer = tracer
-        super(self.__class__, self).__init__()
+        super().__init__()
 
     @property
     def trace(self):

@@ -7,10 +7,36 @@ import os
 import hashlib
 import subprocess
 import time
+from manticore.binary import Elf, CGCElf
 
 #logging.basicConfig(filename = "test.log",
 #                format = "%(asctime)s: %(name)s:%(levelname)s: %(message)s",
 #                level = logging.DEBUG)
+
+
+class TestBinaryPackage(unittest.TestCase):
+    _multiprocess_can_split_ = True
+
+    def test_elf(self):
+        filename = os.path.join(os.path.dirname(__file__), 'binaries', 'basic_linux_amd64')
+        f = Elf(filename)
+        self.assertTrue(
+            [(4194304, 823262, 'r x', 'tests/binaries/basic_linux_amd64', 0, 823262),
+             (7118520, 16112, 'rw ', 'tests/binaries/basic_linux_amd64', 827064, 7320)],
+            list(f.maps())
+        )
+        self.assertTrue([('Running', {'EIP': 4196624})], list(f.threads()))
+        self.assertIsNone(f.getInterpreter())
+
+    def test_decree(self):
+        filename = os.path.join(os.path.dirname(__file__), 'binaries', 'cadet_decree_x86')
+        f = CGCElf(filename)
+        self.assertTrue(
+            [(134512640, 1478, 'r x', 'tests/binaries/cadet_decree_x86', 0, 1478)],
+            list(f.maps())
+        )
+        self.assertTrue([('Running', {'EIP': 134513708})], list(f.threads()))
+
 
 class IntegrationTest(unittest.TestCase):
     _multiprocess_can_split_ = True
@@ -148,8 +174,7 @@ class IntegrationTest(unittest.TestCase):
             {'number': 795, 'contract': None, 'txlimit': 1},
             {'number': 799, 'contract': 'C', 'txlimit': 1},
             {'number': 807, 'contract': 'C', 'txlimit': 1},
-            # TODO: fixme, broken in master and yolo_master
-            #{'number': 808, 'contract': 'C', 'txlimit': 1},
+            {'number': 808, 'contract': 'C', 'txlimit': 1},
         ]
 
         for issue in issues:

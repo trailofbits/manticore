@@ -3,7 +3,7 @@ import random
 import copy
 import inspect
 from functools import wraps
-from ..utils.helpers import issymbolic, memoized, get_taints, taint_with, istainted
+from ..utils.helpers import issymbolic, get_taints, taint_with, istainted
 from ..platforms.platform import *
 from ..core.smtlib import solver, BitVec, Array, Operators, Constant, ArrayVariable, BitVecConstant, translate_to_smtlib
 from ..core.state import Concretize, TerminateState
@@ -118,7 +118,7 @@ class EVMException(Exception):
 
 class Emulated(EVMException):
     def __init__(self, result):
-        super(Emulated, self).__init__("Emulated instruction")
+        super().__init__("Emulated instruction")
         self.result = result
 
 
@@ -173,63 +173,63 @@ class StackOverflow(EndTx):
     ''' Attemped to push more than 1024 items '''
 
     def __init__(self):
-        super(StackOverflow, self).__init__('THROW')
+        super().__init__('THROW')
 
 
 class StackUnderflow(EndTx):
     ''' Attemped to popo from an empty stack '''
 
     def __init__(self):
-        super(StackUnderflow, self).__init__('THROW')
+        super().__init__('THROW')
 
 
 class InvalidOpcode(EndTx):
     ''' Trying to execute invalid opcode '''
 
     def __init__(self):
-        super(InvalidOpcode, self).__init__('THROW')
+        super().__init__('THROW')
 
 
 class NotEnoughGas(EndTx):
     ''' Not enough gas for operation '''
 
     def __init__(self):
-        super(NotEnoughGas, self).__init__('THROW')
+        super().__init__('THROW')
 
 
 class Stop(EndTx):
     ''' Program reached a STOP instruction '''
 
     def __init__(self):
-        super(Stop, self).__init__('STOP')
+        super().__init__('STOP')
 
 
 class Return(EndTx):
     ''' Program reached a RETURN instruction '''
 
     def __init__(self, data=bytearray()):
-        super(Return, self).__init__('RETURN', data)
+        super().__init__('RETURN', data)
 
 
 class Revert(EndTx):
     ''' Program reached a REVERT instruction '''
 
     def __init__(self, data):
-        super(Revert, self).__init__('REVERT', data)
+        super().__init__('REVERT', data)
 
 
 class SelfDestruct(EndTx):
     ''' Program reached a SELFDESTRUCT instruction '''
 
     def __init__(self):
-        super(SelfDestruct, self).__init__('SELFDESTRUCT')
+        super().__init__('SELFDESTRUCT')
 
 
 class TXError(EndTx):
     ''' A failed Transaction '''
 
     def __init__(self):
-        super(TXError, self).__init__('TXERROR')
+        super().__init__('TXERROR')
 
 
 def concretized_args(**policies):
@@ -253,7 +253,7 @@ def concretized_args(**policies):
     def concretizer(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
-            spec = inspect.getargspec(func)
+            spec = inspect.getfullargspec(func)
             for arg, policy in policies.items():
                 assert arg in spec.args, "Concretizer argument not found in wrapped function."
                 # index is 0-indexed, but ConcretizeStack is 1-indexed. However, this is correct
@@ -343,16 +343,16 @@ class EVM(Eventful):
         :param gas: gas budget for this transaction
 
         '''
-        super(EVM, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         if data is not None and not issymbolic(data):
             data_size = len(data)
-            data_symbolic = constraints.new_array(index_bits=256, value_bits=8, index_max=data_size, name='DATA')
+            data_symbolic = constraints.new_array(index_bits=256, value_bits=8, index_max=data_size, name='DATA_{:x}'.format(address), avoid_collisions=True)
             data_symbolic[0:data_size] = data
             data = data_symbolic
 
         if bytecode is not None and not issymbolic(bytecode):
             bytecode_size = len(bytecode)
-            bytecode_symbolic = constraints.new_array(index_bits=256, value_bits=8, index_max=bytecode_size, name='BYTECODE')
+            bytecode_symbolic = constraints.new_array(index_bits=256, value_bits=8, index_max=bytecode_size, name='BYTECODE_{:x}'.format(address), avoid_collisions=True)
             bytecode_symbolic[0:bytecode_size] = bytecode
             bytecode = bytecode_symbolic
 
@@ -361,7 +361,7 @@ class EVM(Eventful):
         #if len(bytecode) == 0:
         #    raise EVMException("Need code")
         self._constraints = constraints
-        self.memory = constraints.new_array(index_bits=256, value_bits=8, name='EMPTY_MEMORY')
+        self.memory = constraints.new_array(index_bits=256, value_bits=8, name='EMPTY_MEMORY_{:x}'.format(address), avoid_collisions=True)
         self.address = address
         self.caller = caller  # address of the account that is directly responsible for this execution
         self.data = data
@@ -398,7 +398,7 @@ class EVM(Eventful):
         return self._gas
 
     def __getstate__(self):
-        state = super(EVM, self).__getstate__()
+        state = super().__getstate__()
         state['memory'] = self.memory
         state['world'] = self._world
         state['constraints'] = self.constraints
@@ -432,7 +432,7 @@ class EVM(Eventful):
         self.stack = state['stack']
         self._allocated = state['allocated']
         self.suicides = state['suicides']
-        super(EVM, self).__setstate__(state)
+        super().__setstate__(state)
 
     def _allocate(self, address):
         allocated = self.allocated
@@ -598,7 +598,6 @@ class EVM(Eventful):
             #    arguments[i] = simplify(arguments[i])
             if isinstance(arguments[i], Constant) and not arguments[i].taint:
                 arguments[i] = arguments[i].value
-
         return arguments
 
     def _push_arguments(self, arguments):
@@ -644,9 +643,9 @@ class EVM(Eventful):
             self._publish('will_decode_instruction', self.pc)
         last_pc = self.pc
         current = self.instruction
+
         if self._on_transaction is False:
             self._publish('will_execute_instruction', self.pc, current)
-
         #Need to consume before potential out of stack exception
         old_gas = self._gas
         self._consume(current.fee)
@@ -661,19 +660,20 @@ class EVM(Eventful):
         except ConcretizeStack as ex:
             #Revert the stack and gas so it looks like before executing the instruction
             self._push_arguments(arguments)
-            self._gast = old_gas
+            self._gas = old_gas
+            pos = -ex.pos
 
             def setstate(state, value):
-                self.stack[-ex.pos] = value
+                self.stack[pos] = value
 
             raise Concretize("Concretice Stack Variable",
-                             expression=self.stack[-ex.pos],
+                             expression=self.stack[pos],
                              setstate=setstate,
                              policy=ex.policy)
         except StartTx:
             #Revert the stack and gas so it looks like before executing the instruction
             self._push_arguments(arguments)
-            self._gast = old_gas
+            self._gas = old_gas
             raise
 
         except EndTx as ex:
@@ -684,11 +684,6 @@ class EVM(Eventful):
             self._publish('did_evm_execute_instruction', current, arguments, Ref(result))
             self._publish('did_execute_instruction', last_pc, self.pc, current)
             raise
-        except Emulated as e:
-            if not current.is_branch:
-                #advance pc pointer
-                self.pc += self.instruction.size
-            result = e.result
 
         if not current.is_branch:
             #advance pc pointer
@@ -1437,7 +1432,7 @@ class EVMWorld(Platform):
                          'open_transaction', 'close_transaction'}
 
     def __init__(self, constraints, storage=None, initial_block_number=None, initial_timestamp=None, **kwargs):
-        super(EVMWorld, self).__init__(path="NOPATH", **kwargs)
+        super().__init__(path="NOPATH", **kwargs)
         self._world_state = {} if storage is None else storage
         self._constraints = constraints
         self._callstack = []
@@ -1449,11 +1444,11 @@ class EVMWorld(Platform):
 
         if initial_block_number is None:
             #assume initial symbolic block
-            initial_block_number = constraints.new_bitvec(256, "BLOCKNUMBER")
+            initial_block_number = constraints.new_bitvec(256, "BLOCKNUMBER", avoid_collisions=True)
         self._initial_block_number = initial_block_number
         if initial_timestamp is None:
             #1524785992; // Thu Apr 26 23:39:52 UTC 2018
-            initial_timestamp = constraints.new_bitvec(256, "TIMESTAMP")
+            initial_timestamp = constraints.new_bitvec(256, "TIMESTAMP", avoid_collisions=True)
             constraints.add(Operators.UGT(initial_timestamp, 1000000000))
             constraints.add(Operators.ULT(initial_timestamp, 3000000000))
         self._initial_timestamp = initial_timestamp
@@ -1472,7 +1467,7 @@ class EVMWorld(Platform):
         '''
 
     def __getstate__(self):
-        state = super(EVMWorld, self).__getstate__()
+        state = super().__getstate__()
         state['sha3'] = self._sha3
         state['pending_transaction'] = self._pending_transaction
         state['logs'] = self._logs
@@ -1486,7 +1481,7 @@ class EVMWorld(Platform):
         return state
 
     def __setstate__(self, state):
-        super(EVMWorld, self).__setstate__(state)
+        super().__setstate__(state)
         self._constraints = state['constraints']
         self._sha3 = state['sha3']
         self._pending_transaction = state['pending_transaction']
@@ -1868,9 +1863,6 @@ class EVMWorld(Platform):
 
     def create_account(self, address=None, balance=0, code='', storage=None, nonce=0):
         ''' code is the runtime code '''
-        if storage is None:
-            storage = self.constraints.new_array(index_bits=256, value_bits=256, name='STORAGE')
-
         if address is None:
             address = self.new_address()
         if address in self.accounts:
@@ -1878,6 +1870,8 @@ class EVMWorld(Platform):
             # or CALL and may contain some ether already. Though if it was a
             # selfdestroyed address it can not be reused
             raise EthereumError('The account already exists')
+        if storage is None:
+            storage = self.constraints.new_array(index_bits=256, value_bits=256, name='STORAGE_{:x}'.format(address), avoid_collisions=True)
         if code is None:
             code = bytearray()
         self._world_state[address] = {}
@@ -2002,17 +1996,15 @@ class EVMWorld(Platform):
         # Fork on enough funds
         if not failed:
             src_balance = self.get_balance(caller)
-            enough_balance = src_balance >= value
-            if issymbolic(enough_balance):
-                self.constraints.add(src_balance + value >= src_balance)
+            enough_balance = Operators.UGE(src_balance, value)
             enough_balance_solutions = solver.get_all_values(self._constraints, enough_balance)
 
-            if set(enough_balance_solutions) == set([True, False]):
+            if set(enough_balance_solutions) == {True, False}:
                 raise Concretize('Forking on available funds',
-                                 expression=src_balance < value,
+                                 expression=Operators.ULT(src_balance, value),
                                  setstate=lambda a, b: None,
                                  policy='ALL')
-            failed = set(enough_balance_solutions) == set([False])
+            failed = set(enough_balance_solutions) == {False}
 
         #processed
         self._pending_transaction = None
