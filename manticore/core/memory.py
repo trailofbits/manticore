@@ -1297,13 +1297,12 @@ class LazySMemory(SMemory):
             self._import_concrete_memory(access_min, access_max)
 
         retvals = []
-        i = size
         for addr in addrs_to_access:
-            i -= 1
             if issymbolic(addr) or addr in self.backed_by_symbolic_store:
-                retvals.append(self.bigarray[addr])
+                val = self.bigarray[addr]
             else:
-                retvals.append(Memory.read(self, addr, 1)[0])
+                val = Memory.read(self, addr, 1)[0]
+            retvals.append(val)
 
         return retvals
 
@@ -1315,11 +1314,11 @@ class LazySMemory(SMemory):
         for i in range(size):
             addrs_to_access.append(address + i)
 
-        symbolic_write = issymbolic(addrs_to_access[0])
-
+        symbolic_write = issymbolic(address)
 
         if symbolic_write:
             addr_min, addr_max = solver.minmax(self.constraints, address)
+
             access_min = addr_min
             access_max = addr_max + size - 1
 
