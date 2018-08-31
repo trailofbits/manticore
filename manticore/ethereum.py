@@ -2228,7 +2228,7 @@ class ManticoreEVM(Manticore):
             if not results:
                 data_concrete = state.solve_one(data)
                 s = sha3.keccak_256(data_concrete)
-                data_hash = int(s.hexdigest(), 16) 
+                data_hash = int(s.hexdigest(), 16)
                 results.append((data_concrete, data_hash))
                 known_hashes_cond = data_concrete == data
                 known_sha3.append((data_concrete, data_hash))
