@@ -10,9 +10,9 @@ import unittest
 import os
 
 from manticore.core.smtlib import operators
-from .eth_general import make_mock_evm_state
+from eth_general import make_mock_evm_state
 from manticore.ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, Detector, NoAliveStates, ABI, \
-    EthereumError, DetectReentrancy, DetectReentrancyAdvanced, DetectUnusedRetVal, DetectSelfdestruct, LoopDepthLimiter, DetectDelegatecall, \
+    EthereumError, DetectReentrancySimple, DetectReentrancyAdvanced, DetectUnusedRetVal, DetectSelfdestruct, LoopDepthLimiter, DetectDelegatecall, \
     DetectEnvInstruction, DetectExternalCallAndLeak, DetectEnvInstruction
 
 import shutil
@@ -204,11 +204,11 @@ class EthDelegatecall(EthDetectorTest):
     def test_delegatecall_not_ok(self):
         self.mevm.register_plugin(LoopDepthLimiter())
         name = inspect.currentframe().f_code.co_name[5:]
-        self._test(name, {(179, 'Dellegatecall to user controlled function', False), (179, 'Dellegatecall to user controlled address', False)})
+        self._test(name, {(179, 'Delegatecall to user controlled function', False), (179, 'Delegatecall to user controlled address', False)})
 
     def test_delegatecall_not_ok1(self):
         self.mevm.register_plugin(LoopDepthLimiter(loop_count_threshold=500))
         name = inspect.currentframe().f_code.co_name[5:]
-        self._test(name, {(179, 'Dellegatecall to user controlled function', False)})
+        self._test(name, {(179, 'Delegatecall to user controlled function', False)})
 
 

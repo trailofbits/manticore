@@ -663,14 +663,14 @@ class DetectDelegatecall(Detector):
             if issymbolic(address):
                 possible_addresses = state.solve_n(address, 2)
                 if len(possible_addresses) > 1:
-                    self.add_finding_here(state, "Dellegatecall to user controlled address")
+                    self.add_finding_here(state, "Delegatecall to user controlled address")
 
             calldata = world.current_vm.read_buffer(in_offset, in_size)
             func_id = calldata[:4]
             if issymbolic(func_id):
                 possible_func_ids = state.solve_n(func_id, 2)
                 if len(possible_func_ids) > 1:
-                    self.add_finding_here(state, "Dellegatecall to user controlled function")
+                    self.add_finding_here(state, "Delegatecall to user controlled function")
 
 
 class DetectUninitializedMemory(Detector):
