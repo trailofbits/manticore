@@ -8,19 +8,6 @@ from ..utils.helpers import issymbolic
 logger = logging.getLogger(__name__)
 
 
-class Ref(object):
-    def __init__(self, value):
-        self._value = value
-
-    @property
-    def value(self):
-        return self._value
-
-    @value.setter
-    def value(self, value):
-        self._value = value
-
-
 class Plugin(object):
     @contextmanager
     def locked_context(self, key=None, value_type=list):
@@ -48,6 +35,14 @@ class Plugin(object):
     def __init__(self):
         self.manticore = None
         self.last_reg_state = {}
+
+    def on_register(self):
+        ''' Called by parent manticore on registration '''
+        pass
+
+    def on_unregister(self):
+        ''' Called be parent manticore on un-registration '''
+        pass
 
 
 def _dict_diff(d1, d2):

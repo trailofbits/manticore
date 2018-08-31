@@ -657,6 +657,7 @@ class TranslatorSmtlib(Translator):
         array_smt, index_smt = operands
         if isinstance(expression.array, ArrayStore):
             array_smt = self._add_binding(expression.array, array_smt)
+
         return '(select %s %s)' % (array_smt, index_smt)
 
     def visit_Operation(self, expression, *operands):

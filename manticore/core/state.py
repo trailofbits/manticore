@@ -109,10 +109,13 @@ class State(Eventful):
     # Fixme(felipe) change for with "state.cow_copy() as st_temp":.
     def __enter__(self):
         assert self._child is None
-        new_state = State(self._constraints.__enter__(), self._platform)
+        self._platform.constraints = None
+        new_state = State(self._constraints.__enter__(), copy.deepcopy(self._platform))
+        self.platform.constraints = new_state.constraints
         new_state._input_symbols = list(self._input_symbols)
         new_state._context = copy.deepcopy(self._context)
         self._child = new_state
+        assert new_state.platform.constraints is new_state.constraints
 
         # fixme NEW State won't inherit signals (pro: added signals to new_state wont affect parent)
         return new_state
@@ -120,6 +123,7 @@ class State(Eventful):
     def __exit__(self, ty, value, traceback):
         self._constraints.__exit__(ty, value, traceback)
         self._child = None
+        self.platform.constraints = self.constraints
 
     def execute(self):
         try:
@@ -174,7 +178,7 @@ class State(Eventful):
     @constraints.setter
     def constraints(self, constraints):
         self._constraints = constraints
-        self._platform._constraints = constraints
+        self.platform.constraints = constraints
 
     def constrain(self, constraint):
         '''Constrain state.
@@ -305,15 +309,8 @@ class State(Eventful):
         expr = self.migrate_expression(expr)
         value = self._solver.get_value(self._constraints, expr)
         #Include forgiveness here
-        if isinstance(value, tuple):
-            try:
-                return ''.join(map(chr, value))
-            except:
-                pass
-            try:
-                return ''.join(value)
-            except:
-                pass
+        if isinstance(value, bytearray):
+            value = bytes(value)
         return value
 
     def solve_n(self, expr, nsolves):

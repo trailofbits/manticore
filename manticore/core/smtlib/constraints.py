@@ -171,13 +171,13 @@ class ConstraintSet(object):
         self._declarations[var.name] = var
         return var
 
-    def get_variable(self, name):
-        ''' Returns the variable declared under name or None if it does not exists '''
-        return self._declarations.get(name)
-
     def get_declared_variables(self):
         ''' Returns the variable expressions of this constraint set '''
         return self._declarations.values()
+
+    def get_variable(self, name):
+        ''' Returns the variable declared under name or None if it does not exists '''
+        return self._declarations.get(name)
 
     @property
     def declarations(self):

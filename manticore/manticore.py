@@ -160,6 +160,8 @@ class Manticore(Eventful):
             self._initial_state = make_initial_state(path_or_state, argv=argv, **kwargs)
         elif isinstance(path_or_state, State):
             self._initial_state = path_or_state
+            #froward events from newly loaded object
+            self._executor.forward_events_from(self._initial_state, True)
         else:
             raise TypeError('path_or_state must be either a str or State, not {}'.format(type(path_or_state).__name__))
 
@@ -168,12 +170,12 @@ class Manticore(Eventful):
 
         self.plugins = set()
 
-        # Move the folowing into a plugin
+        # Move the folowing into a linux plugin
         self._assertions = {}
         self._coverage_file = None
         self.trace = None
 
-        # FIXME move the folowing to aplugin
+        # FIXME move the folowing to a plugin
         self.subscribe('will_generate_testcase', self._generate_testcase_callback)
         self.subscribe('did_finish_run', self._did_finish_run_callback)
 
@@ -217,10 +219,18 @@ class Manticore(Eventful):
                         logger.warning("Plugin methods named '%s()' should start with 'on_', 'will_' or 'did_' on plugin %s",
                                        plugin_method_name, type(plugin).__name__)
 
+        plugin.on_register()
+
     def unregister_plugin(self, plugin):
         assert plugin in self.plugins, "Plugin instance not registered"
+        plugin.on_unregister()
         self.plugins.remove(plugin)
         plugin.manticore = None
+
+    def __del__(self):
+        plugins = list(self.plugins)
+        for plugin in plugins:
+            self.unregister_plugin(plugin)
 
     @classmethod
     def linux(cls, path, argv=None, envp=None, entry_symbol=None, symbolic_files=None, concrete_start='', **kwargs):
@@ -290,7 +300,7 @@ class Manticore(Eventful):
     @property
     def context(self):
         ''' Convenient access to shared context '''
-        if not self.running:
+        if self._context is not None:
             return self._context
         else:
             logger.warning("Using shared context without a lock")
@@ -323,7 +333,7 @@ class Manticore(Eventful):
 
         @contextmanager
         def _real_context():
-            if not self.running:
+            if self._context is not None:
                 yield self._context
             else:
                 with self._executor.locked_context() as context:
@@ -566,7 +576,7 @@ class Manticore(Eventful):
                     marshal.dump(ps.stats, s)
 
     def _start_run(self):
-        assert not self.running
+        assert not self.running and self._context is not None
         self._publish('will_start_run', self._initial_state)
 
         if self._initial_state is not None:
@@ -575,6 +585,7 @@ class Manticore(Eventful):
 
         # Copy the local main context to the shared conext
         self._executor._shared_context.update(self._context)
+        self._context = None
 
     def _finish_run(self, profiling=False):
         assert not self.running
