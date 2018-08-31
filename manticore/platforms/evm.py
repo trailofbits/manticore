@@ -704,6 +704,7 @@ class EVM(Eventful):
         except ConcretizeStack as ex:
             self._rollback()
             pos = -ex.pos
+
             def setstate(state, value):
                 self.stack[pos] = value
             raise Concretize("Concretice Stack Variable",
