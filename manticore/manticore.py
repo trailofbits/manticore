@@ -53,7 +53,7 @@ def make_decree(program, concrete_start='', **kwargs):
     return initial_state
 
 
-def make_linux(program, argv=None, env=None, entry_symbol=None, symbolic_files=None, concrete_start=''):
+def make_linux(program, argv=None, env=None, entry_symbol=None, symbolic_files=None, concrete_start='', pure_symbolic=False):
     env = {} if env is None else env
     argv = [] if argv is None else argv
     env = ['%s=%s' % (k, v) for k, v in env.items()]
@@ -62,7 +62,8 @@ def make_linux(program, argv=None, env=None, entry_symbol=None, symbolic_files=N
 
     constraints = ConstraintSet()
     platform = linux.SLinux(program, argv=argv, envp=env,
-                            symbolic_files=symbolic_files)
+                            symbolic_files=symbolic_files,
+                            pure_symbolic=pure_symbolic)
     if entry_symbol is not None:
         entry_pc = platform._find_symbol(entry_symbol)
         if entry_pc is None:
@@ -77,6 +78,9 @@ def make_linux(program, argv=None, env=None, entry_symbol=None, symbolic_files=N
 
     if concrete_start != '':
         logger.info('Starting with concrete input: %s', concrete_start)
+
+    if pure_symbolic:
+        logger.warning("[EXPERIMENTAL] Using purely symbolic memory")
 
     for i, arg in enumerate(argv):
         argv[i] = initial_state.symbolicate_buffer(arg, label='ARGV%d' % (i + 1))
@@ -223,7 +227,7 @@ class Manticore(Eventful):
         plugin.manticore = None
 
     @classmethod
-    def linux(cls, path, argv=None, envp=None, entry_symbol=None, symbolic_files=None, concrete_start='', **kwargs):
+    def linux(cls, path, argv=None, envp=None, entry_symbol=None, symbolic_files=None, concrete_start='', pure_symbolic=False, **kwargs):
         """
         Constructor for Linux binary analysis.
 
@@ -237,12 +241,13 @@ class Manticore(Eventful):
         :param symbolic_files: Filenames to mark as having symbolic input
         :type symbolic_files: list[str]
         :param str concrete_start: Concrete stdin to use before symbolic inputt
+        :param bool pure_symbolic: Use a pure symbolic memory implementation
         :param kwargs: Forwarded to the Manticore constructor
         :return: Manticore instance, initialized with a Linux State
         :rtype: Manticore
         """
         try:
-            return cls(make_linux(path, argv, envp, entry_symbol, symbolic_files, concrete_start), **kwargs)
+            return cls(make_linux(path, argv, envp, entry_symbol, symbolic_files, concrete_start, pure_symbolic), **kwargs)
         except elftools.common.exceptions.ELFError:
             raise Exception('Invalid binary: {}'.format(path))
 

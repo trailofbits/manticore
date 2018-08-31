@@ -611,11 +611,12 @@ class Array(Expression):
         return index
 
     def cast_value(self, value):
-        if isinstance(value, str) and len(value) == 1:
+        if isinstance(value, (str, bytes)) and len(value) == 1:
             value = ord(value)
         if isinstance(value, int):
             return BitVecConstant(self.value_bits, value)
-        assert isinstance(value, BitVec) and value.size == self.value_bits
+        assert isinstance(value, BitVec)
+        assert value.size == self.value_bits
         return value
 
     def __len__(self):
@@ -894,8 +895,8 @@ class ArrayProxy(Array):
         if self.index_max is not None:
             from manticore.core.smtlib.visitors import simplify
             index = simplify(BitVecITE(self.index_bits, index < 0, self.index_max + index + 1, index))
-        if isinstance(index, Constant) and index.value in self._concrete_cache:
-            return self._concrete_cache[index.value]
+        # if isinstance(index, Constant) and index.value in self._concrete_cache:
+        #     return self._concrete_cache[index.value]
 
         return self._array.select(index)
 
@@ -906,8 +907,8 @@ class ArrayProxy(Array):
             value = self.cast_value(value)
         from manticore.core.smtlib.visitors import simplify
         index = simplify(index)
-        if isinstance(index, Constant):
-            self._concrete_cache[index.value] = value
+        # if isinstance(index, Constant):
+        #     self._concrete_cache[index.value] = value
         self.written.add(index)
         auxiliar = self._array.store(index, value)
         self._array = auxiliar

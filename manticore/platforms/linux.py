@@ -18,7 +18,7 @@ from elftools.elf.descriptions import describe_symbol_type
 from manticore.core.smtlib import Expression
 from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeArgument
 from ..core.cpu.cpufactory import CpuFactory
-from ..core.memory import SMemory32, SMemory64, Memory32, Memory64
+from ..core.memory import LazySMemory32, LazySMemory64, SMemory32, SMemory64, Memory32, Memory64
 from ..core.smtlib import Operators, ConstraintSet, SolverException, solver
 from ..core.cpu.arm import *
 from ..core.executor import TerminateState
@@ -2447,21 +2447,28 @@ class SLinux(Linux):
     """
 
     def __init__(self, programs, argv=None, envp=None, symbolic_files=None,
-                 disasm='capstone'):
+                 disasm='capstone', pure_symbolic=False):
         argv = [] if argv is None else argv
         envp = [] if envp is None else envp
         symbolic_files = [] if symbolic_files is None else symbolic_files
 
         self._constraints = ConstraintSet()
+        self._pure_symbolic = pure_symbolic
         self.random = 0
         self.symbolic_files = symbolic_files
         super().__init__(programs, argv=argv, envp=envp, disasm=disasm)
 
     def _mk_proc(self, arch):
         if arch in {'i386', 'armv7'}:
-            mem = SMemory32(self.constraints)
+            if self._pure_symbolic:
+                mem = LazySMemory32(self.constraints)
+            else:
+                mem = SMemory32(self.constraints)
         else:
-            mem = SMemory64(self.constraints)
+            if self._pure_symbolic:
+                mem = LazySMemory64(self.constraints)
+            else:
+                mem = SMemory64(self.constraints)
 
         cpu = CpuFactory.get_cpu(mem, arch)
         return cpu
