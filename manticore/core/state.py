@@ -279,8 +279,7 @@ class State(Eventful):
             vals = [self._solver.get_value(self._constraints, symbolic)]
         else:
             assert policy == 'ALL'
-            vals = solver.get_all_values(self._constraints, symbolic, maxcnt=maxcount,
-                                         silent=True)            
+            vals = solver.get_all_values(self._constraints, symbolic, maxcnt=maxcount, silent=True)
 
         return tuple(set(vals))
 
