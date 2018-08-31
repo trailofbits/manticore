@@ -77,7 +77,6 @@ class ConstraintSet(object):
             if not solver.check(self):
                 raise ValueError("Added an impossible constraint")
 
-
     def _get_sid(self):
         ''' Returns an unique id. '''
         assert self._child is None

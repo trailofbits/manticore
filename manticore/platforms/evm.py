@@ -253,7 +253,7 @@ def concretized_args(**policies):
                     continue
                 if policy is None:
                     policy = 'MINMAX'
-                
+
                 value = args[index]
                 world = args[0].world
                 if policy == "ACCOUNTS":
@@ -261,7 +261,7 @@ def concretized_args(**policies):
                     cond = world._constraint_to_accounts(value, ty='both', include_zero=True)
                     world.constraints.add(cond)
                     policy = 'ALL'
-  
+
                 raise ConcretizeStack(index, policy=policy)
             return func(*args, **kwargs)
         wrapper.__signature__ = inspect.signature(func)
@@ -378,7 +378,7 @@ class EVM(Eventful):
         min_size = 0
         max_size = len(self.data)
         self._used_calldata_size = 0
-        self._calldata_size = len(self.data) 
+        self._calldata_size = len(self.data)
 
     @property
     def bytecode(self):
@@ -440,7 +440,6 @@ class EVM(Eventful):
         self._calldata_size = state['_calldata_size']
 
         super().__setstate__(state)
-
 
     def _get_memfee(self, address, size=1):
         address = self.safe_add(address, size)
@@ -564,18 +563,17 @@ class EVM(Eventful):
             if (fee.size != 512):
                 raise EthereumError("Fees should be 512 bit long")
 
-        config.out_of_gas = 3
         #FIXME add configurable checks here
+        config.out_of_gas = 3
 
-
-        #Iff both are concrete values...
+        # Iff both are concrete values...
         if not issymbolic(self._gas) and not issymbolic(fee):
             if self._gas < fee:
                 logger.debug("Not enough gas for instruction")
                 raise NotEnoughGas()
         else:
                 if config.out_of_gas is None:
-                    # do nothing. gas could go negative. 
+                    # do nothing. gas could go negative.
                     # memory could be accessed in great offsets
                     pass
                 elif config.out_of_gas == 0:
@@ -736,6 +734,7 @@ class EVM(Eventful):
         except ConcretizeStack as ex:
             self._rollback()
             pos = -ex.pos
+
             def setstate(state, value):
                 self.stack[pos] = value
             raise Concretize("Concretice Stack Variable",
@@ -893,6 +892,7 @@ class EVM(Eventful):
         '''
         # fixme integer bitvec
         EXP_SUPPLEMENTAL_GAS = 50   # cost of EXP exponent per byte
+
         def nbytes(e):
             result = 32
             for i in range(32):
@@ -1036,11 +1036,11 @@ class EVM(Eventful):
         '''Get input data of current environment'''
 
         if issymbolic(offset):
-            if solver.can_be_true(self._constraints, offset==self._used_calldata_size):
-                self.constraints.add(offset==self._used_calldata_size)
+            if solver.can_be_true(self._constraints, offset == self._used_calldata_size):
+                self.constraints.add(offset == self._used_calldata_size)
             raise ConcretizeStack(1, policy='SAMPLED')
 
-        self._use_calldata(offset+32)
+        self._use_calldata(offset + 32)
 
         data_length = len(self.data)
 
@@ -1072,13 +1072,11 @@ class EVM(Eventful):
             if solver.can_be_true(self._constraints, size <= len(self.data) + 32):
                 self.constraints.add(size <= len(self.data) + 32)
             raise ConcretizeStack(3, policy='SAMPLED')
-            
 
         if issymbolic(data_offset):
-            if solver.can_be_true(self._constraints, data_offset==self._used_calldata_size):
-                self.constraints.add(data_offset==self._used_calldata_size)
+            if solver.can_be_true(self._constraints, data_offset == self._used_calldata_size):
+                self.constraints.add(data_offset == self._used_calldata_size)
             raise ConcretizeStack(2, policy='SAMPLED')
-
 
         GCOPY = 3             # cost to copy one 32 byte word
         self._use_calldata(data_offset + size)
@@ -2089,7 +2087,7 @@ class EVMWorld(Platform):
 
             if set(enough_balance_solutions) == {True, False}:
                 raise Concretize('Forking on available funds',
-                                 expression=enough_balance, #Operators.ULT(src_balance, value),
+                                 expression=enough_balance,
                                  setstate=lambda a, b: None,
                                  policy='ALL')
             failed = set(enough_balance_solutions) == {False}

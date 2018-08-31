@@ -402,7 +402,7 @@ class ArithmeticSimplifier(Visitor):
         end = expression.end
 
         # extract(sizeof(a), 0)(a)  ==> a
-        if begining == 0 and end + 1 == op.size: 
+        if begining == 0 and end + 1 == op.size:
             return op
         elif isinstance(op, BitVecConcat):
             new_operands = []
@@ -537,6 +537,7 @@ class ArithmeticSimplifier(Visitor):
 
 
 arithmetic_simplifier_cache = CacheDict(max_size=150000, flush_perc=25)
+
 
 @lru_cache(maxsize=128)
 def arithmetic_simplify(expression):

@@ -308,7 +308,6 @@ class Z3Solver(Solver):
             return expression
         assert isinstance(expression, Variable)
 
-
         if isinstance(expression, Array):
             result = bytearray()
             for c in expression:
@@ -329,7 +328,6 @@ class Z3Solver(Solver):
                 m = pattern.match(ret)
                 expr, value = m.group('expr'), m.group('value')
                 return int(value, base)
-                
 
         raise NotImplementedError("_getvalue only implemented for Bool and BitVec")
 

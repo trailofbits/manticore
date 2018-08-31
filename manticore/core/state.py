@@ -267,14 +267,14 @@ class State(Eventful):
                 if self._solver.can_be_true(self._constraints, symbolic == (m + M) // 2):
                     vals.append((m + M) // 2)
             if M - m > 100:
-                for i in (0,1,2,5,32,64,128,320):
-                    if self._solver.can_be_true(self._constraints, symbolic == m+i):
-                        vals.append(m+i)
+                for i in (0, 1, 2, 5, 32, 64, 128, 320):
+                    if self._solver.can_be_true(self._constraints, symbolic == m + i):
+                        vals.append(m + i)
                     if maxcount <= len(vals):
                         break
             if M - m > 1000 and maxcount > len(vals):
                 vals += self._solver.get_all_values(self._constraints, symbolic,
-                                                    maxcnt=maxcount-len(vals), silent=True)
+                                                    maxcnt=maxcount - len(vals), silent=True)
         elif policy == 'ONE':
             vals = [self._solver.get_value(self._constraints, symbolic)]
         else:

@@ -640,6 +640,7 @@ class DetectUnusedRetVal(Detector):
             for used_taint in get_taints(cond, "RETVAL_.*"):
                 self._remove_retval_taint(state, used_taint)
 
+
 class DetectDelegatecall(Detector):
     '''
         Detects DELEGATECALLs to controlled addresses and or with controlled function id.
@@ -1628,7 +1629,7 @@ class ManticoreEVM(Manticore):
         # Make the constraint store
         constraints = ConstraintSet()
         # make the ethereum world state
-        world = evm.EVMWorld(constraints, initial_timestamp = 1524785992)
+        world = evm.EVMWorld(constraints, initial_timestamp=1524785992)
         initial_state = State(constraints, world)
         super().__init__(initial_state, **kwargs)
 
@@ -2713,7 +2714,6 @@ class ManticoreEVM(Manticore):
                 finalizer(-1)
             else:
                 q.put(state_id)
-
 
         report_workers = []
         for _ in range(self._config_procs):

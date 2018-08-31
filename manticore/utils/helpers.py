@@ -4,6 +4,7 @@ import logging
 import pickle
 import re
 import sys
+import resource
 
 from collections import OrderedDict
 from ..core.smtlib import Expression, BitVecConstant
@@ -128,10 +129,6 @@ class StateSerializer(object):
         raise NotImplementedError
 
 
-
-
-import resource
-import sys
 DEFAULT_RECURSION: int = 0x10000  # 1M
 MAX_RECURSION: int = 0x1000000  # 16.7M
 
@@ -139,15 +136,16 @@ MAX_RECURSION: int = 0x1000000  # 16.7M
 def get_recursion(self):
     return sys.getrecursionlimit()
 
+
 def set_recursion(max_rec):
     resource.setrlimit(resource.RLIMIT_STACK, [0x100 * max_rec, resource.RLIM_INFINITY])
     sys.setrecursionlimit(max_rec)
     current_recursion = max_rec
 
+
 def increase_recursion():
     current_recursion = sys.getrecursionlimit()
     set_recursion(current_recursion * 2)
-
 
 
 class PickleSerializer(StateSerializer):
