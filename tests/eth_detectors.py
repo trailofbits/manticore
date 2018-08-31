@@ -12,7 +12,7 @@ import os
 from manticore.core.smtlib import operators
 from eth_general import make_mock_evm_state
 from manticore.ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, Detector, NoAliveStates, ABI, \
-    EthereumError, DetectReentrancyAdvanced, DetectUnusedRetVal, DetectSelfdestruct, LoopDepthLimiter, DetectEtherLeak
+    EthereumError, DetectReentrancyAdvanced, DetectUnusedRetVal, DetectSelfdestruct, LoopDepthLimiter, DetectExternalCallAndLeak
 
 import shutil
 
