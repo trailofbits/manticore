@@ -128,7 +128,7 @@ def parse_arguments():
 
 
 def ethereum_cli(args):
-    from .ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, DetectUninitializedStorage, DetectUninitializedMemory, FilterFunctions, DetectReentrancy, DetectUnusedRetVal, DetectSelfdestruct, LoopDepthLimiter, DetectExternalCallAndLeak
+    from .ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, DetectUninitializedStorage, DetectUninitializedMemory, FilterFunctions, DetectUnusedRetVal, DetectSelfdestruct, LoopDepthLimiter, DetectExternalCallAndLeak, DetectReentrancySimple
     log.init_logging()
 
     m = ManticoreEVM(procs=args.procs, workspace_url=args.workspace)
@@ -142,7 +142,7 @@ def ethereum_cli(args):
     if args.detect_all or args.detect_uninitialized_memory:
         m.register_detector(DetectUninitializedMemory())
     if args.detect_all or args.detect_reentrancy:
-        m.register_detector(DetectReentrancy())
+        m.register_detector(DetectReentrancySimple())
     if args.detect_all or args.detect_unused_retval:
         m.register_detector(DetectUnusedRetVal())
     if args.detect_all or args.detect_selfdestruct:
