@@ -254,9 +254,9 @@ def concretized_args(**policies):
                 if policy is None:
                     policy = 'MINMAX'
 
-                value = args[index]
-                world = args[0].world
                 if policy == "ACCOUNTS":
+                    value = args[index]
+                    world = args[0].world
                     #special handler for EVM only policy
                     cond = world._constraint_to_accounts(value, ty='both', include_zero=True)
                     world.constraints.add(cond)

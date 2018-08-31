@@ -1861,7 +1861,7 @@ class ManticoreEVM(Manticore):
             return None
         return contract_account
 
-    def create_contract(self, owner, balance=0, address=None, init=None, name=None):
+    def create_contract(self, owner, balance=0, address=None, init=None, name=None, gas=21000):
         """ Creates a contract
 
             :param owner: owner account (will be default caller in any transactions)
@@ -1871,6 +1871,7 @@ class ManticoreEVM(Manticore):
             :param int address: the address for the new contract (optional)
             :param str init: initializing evm bytecode and arguments
             :param str name: a uniq name for reference
+            :param gas: gas budget for the creation/inititialization of the contract
             :rtype: EVMAccount
         """
         if not self.count_running_states():
@@ -1891,7 +1892,7 @@ class ManticoreEVM(Manticore):
             # Account name already used
             raise EthereumError("Name already used")
 
-        self._transaction('CREATE', owner, balance, address, data=init)
+        self._transaction('CREATE', owner, balance, address, data=init, gaslimit=gas)
         # TODO detect failure in the constructor
 
         self._accounts[name] = EVMContract(address=address, manticore=self, default_caller=owner, name=name)
@@ -1929,7 +1930,7 @@ class ManticoreEVM(Manticore):
             :param gas: gas budget
             :raises NoAliveStates: if there are no alive states to execute
         """
-        self._transaction('CALL', caller, value=value, address=address, data=data)
+        self._transaction('CALL', caller, value=value, address=address, data=data, gaslimit=gas)
 
     def create_account(self, balance=0, address=None, code=None, name=None):
         """ Low level creates an account. This won't generate a transaction.
@@ -2027,7 +2028,7 @@ class ManticoreEVM(Manticore):
 
             return caller, address, value, data
 
-    def _transaction(self, sort, caller, value=0, address=None, data=None, gaslimit=21000, price=1):
+    def _transaction(self, sort, caller, value=0, address=None, data=None, gaslimit=0, price=1):
         """ Initiates a transaction
 
             :param caller: caller account
@@ -2154,7 +2155,7 @@ class ManticoreEVM(Manticore):
                                  address=contract_account,
                                  data=symbolic_data,
                                  value=value,
-                                 gas=210000)
+                                 gas=2100000)
                 logger.info("%d alive states, %d terminated states", self.count_running_states(), self.count_terminated_states())
             except NoAliveStates:
                 break
