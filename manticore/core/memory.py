@@ -928,6 +928,16 @@ class Memory(object, metaclass=ABCMeta):
             result = self.read(index, 1)[0]
         return result
 
+    def __iter__(self):
+        """
+        Iterate all valid addresses
+        :return:
+        """
+        for page_addr in sorted(self._page2map.keys()):
+            start = page_addr * self.page_size
+            end = start + self.page_size
+            for addr in range(start, end):
+                yield addr
 
 class SMemory(Memory):
     '''
