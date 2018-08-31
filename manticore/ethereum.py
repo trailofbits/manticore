@@ -258,6 +258,7 @@ class DetectSelfdestruct(Detector):
 
 class DetectExternalCallAndLeak(Detector):
     def will_evm_execute_instruction_callback(self, state, instruction, arguments):
+        #print ("DetectExternalCallAndLeak", str(state.platform.current_vm))
         if instruction.semantics == 'CALL':
             dest_address = arguments[1]
             sent_value = arguments[2]
@@ -1868,7 +1869,7 @@ class ManticoreEVM(Manticore):
             return self.new_address()
         return new_address
 
-    def transaction(self, caller, address, value, data):
+    def transaction(self, caller, address, value, data, gas=21000):
         """ Issue a symbolic transaction in all running states
 
             :param caller: the address of the account sending the transaction
@@ -1878,6 +1879,7 @@ class ManticoreEVM(Manticore):
             :param value: balance to be transfered on creation
             :type value: int or SValue
             :param data: initial data
+            :param gas: gas budget
             :raises NoAliveStates: if there are no alive states to execute
         """
         self._transaction('CALL', caller, value=value, address=address, data=data)
@@ -1978,8 +1980,8 @@ class ManticoreEVM(Manticore):
 
             return caller, address, value, data
 
-    def _transaction(self, sort, caller, value=0, address=None, data=None, price=1):
-        """ Creates a contract
+    def _transaction(self, sort, caller, value=0, address=None, data=None, gaslimit=21000, price=1):
+        """ Initiates a transaction
 
             :param caller: caller account
             :type caller: int or EVMAccount
@@ -1988,6 +1990,7 @@ class ManticoreEVM(Manticore):
             :param price: the price of gas for this transaction. Mostly unused.
             :type value: int or SValue
             :param str data: initializing evm bytecode and arguments or transaction call data
+            :param gaslimit: gas budget
             :rtype: EVMAccount
         """
         #Type Forgiveness
@@ -2055,7 +2058,7 @@ class ManticoreEVM(Manticore):
                     # Address already used
                     raise EthereumError("This is bad. Same address used for different contracts in different states")
 
-            state.context['_pending_transaction'] = (sort, caller, address, value, data, price)
+            state.context['_pending_transaction'] = (sort, caller, address, value, data, gaslimit, price)
 
         # run over potentially several states and
         # generating potentially several others
@@ -2103,7 +2106,8 @@ class ManticoreEVM(Manticore):
                 self.transaction(caller=tx_account[min(tx_no, len(tx_account) - 1)],
                                  address=contract_account,
                                  data=symbolic_data,
-                                 value=value)
+                                 value=value,
+                                 gas=210000)
                 logger.info("%d alive states, %d terminated states", self.count_running_states(), self.count_terminated_states())
             except NoAliveStates:
                 break
@@ -2307,14 +2311,14 @@ class ManticoreEVM(Manticore):
         if '_pending_transaction' not in state.context:
             return
         world = state.platform
-        ty, caller, address, value, data, price = state.context['_pending_transaction']
+        ty, caller, address, value, data, gaslimit, price = state.context['_pending_transaction']
         del state.context['_pending_transaction']
 
         if ty == 'CALL':
-            world.transaction(address=address, caller=caller, data=data, value=value, price=price)
+            world.transaction(address=address, caller=caller, data=data, value=value, price=price, gas=gaslimit)
         else:
             assert ty == 'CREATE'
-            world.create_contract(caller=caller, address=address, balance=value, init=data, price=price)
+            world.create_contract(caller=caller, address=address, balance=value, init=data, price=price, gas=gaslimit)
 
     def _did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
         """ INTERNAL USE """
@@ -2668,17 +2672,14 @@ class ManticoreEVM(Manticore):
                 q.put(state_id)
 
 
-        if self._config_procs == 1:
-            worker_finalize(q)
-        else:
-            report_workers = []
-            for _ in range(self._config_procs):
-                proc = Process(target=worker_finalize, args=(q,))
-                proc.start()
-                report_workers.append(proc)
+        report_workers = []
+        for _ in range(self._config_procs):
+            proc = Process(target=worker_finalize, args=(q,))
+            proc.start()
+            report_workers.append(proc)
 
-            for proc in report_workers:
-                proc.join()
+        for proc in report_workers:
+            proc.join()
 
         #global summary
         if len(self.global_findings):

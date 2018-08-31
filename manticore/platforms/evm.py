@@ -1976,7 +1976,7 @@ class EVMWorld(Platform):
 
         return address
 
-    def create_contract(self, price=0, address=None, caller=None, balance=0, init=None):
+    def create_contract(self, price=0, address=None, caller=None, balance=0, init=None, gas=2300):
         '''
         The way that the Solidity compiler expects the constructor arguments to
         be passed is by appending the arguments to the byte code produced by the
@@ -1987,12 +1987,12 @@ class EVMWorld(Platform):
         on the network.
         '''
         address = self.create_account(address)
-        self.start_transaction('CREATE', address, price, init, caller, balance)
+        self.start_transaction('CREATE', address, price, init, caller, balance, gas=gas)
         self._process_pending_transaction()
         return address
 
-    def transaction(self, address, price=0, data='', caller=None, value=0):
-        self.start_transaction('CALL', address, price=price, data=data, caller=caller, value=value)
+    def transaction(self, address, price=0, data='', caller=None, value=0, gas=2300):
+        self.start_transaction('CALL', address, price=price, data=data, caller=caller, value=value, gas=gas)
         self._process_pending_transaction()
 
     def start_transaction(self, sort, address, price=None, data=None, caller=None, value=0, gas=2300):
