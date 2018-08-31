@@ -378,8 +378,7 @@ class EVM(Eventful):
         min_size = 0
         max_size = len(self.data)
         self._used_calldata_size = 0
-        self._calldata_size = len(self.data) #self.constraints.new_bitvec(256, name='CALLDATASIZE', avoid_collisions=True)
-        self.constraints.add(Operators.ULE(self._calldata_size, len(self.data)))
+        self._calldata_size = len(self.data) 
 
     @property
     def bytecode(self):
@@ -671,12 +670,7 @@ class EVM(Eventful):
             pc = self.pc
             instruction = self.instruction
             old_gas = self.gas
-
-            # FIXME patch for pyevmasm
-            if instruction.semantics == 'PUSH':
-                self._consume(3)
-            else:
-                self._consume(instruction.fee)
+            self._consume(instruction.fee)
             arguments = self._pop_arguments()
             self._checkpoint_data = (pc, old_gas, instruction, arguments)
         return self._checkpoint_data
@@ -984,7 +978,7 @@ class EVM(Eventful):
             data = bytes(concrete_data)
         return data
 
-    @concretized_args(size='SIZE')
+    @concretized_args(size='SAMPLED')
     def SHA3(self, start, size):
         '''Compute Keccak-256 hash'''
         GSHA3WORD = 6         # Cost of SHA3 per word
@@ -992,19 +986,18 @@ class EVM(Eventful):
         # calculate hash on it/ maybe remember in some structure where that hash came from
         # http://gavwood.com/paper.pdf
         self._consume(GSHA3WORD * (ceil32(size) // 32))
-        data = self.read_buffer(start, size)
-        data = self.try_simplify_to_constant(data)
+        data = self.try_simplify_to_constant(self.read_buffer(start, size))
 
         if issymbolic(data):
             known_sha3 = {}
             # Broadcast the signal
             self._publish('on_symbolic_sha3', data, known_sha3)  # This updates the local copy of sha3 with the pairs we need to explore
+
             value = 0  # never used
             known_hashes_cond = False
             for key, hsh in known_sha3.items():
                 assert not issymbolic(key), "Saved sha3 data,hash pairs should be concrete"
                 cond = key == data
-
                 known_hashes_cond = Operators.OR(cond, known_hashes_cond)
                 value = Operators.ITEBV(256, cond, hsh, value)
             return value
@@ -1072,7 +1065,6 @@ class EVM(Eventful):
         '''Get size of input data in current environment'''
         return self._calldata_size
 
-    #@concretized_args(size='SIZE')
     def CALLDATACOPY(self, mem_offset, data_offset, size):
         '''Copy input data in current environment to memory'''
 
@@ -1500,6 +1492,7 @@ class EVM(Eventful):
         implementation = getattr(self, self.instruction.semantics, None)
         if implementation is not None:
             args = dict(enumerate(inspect.getfullargspec(implementation).args[1:self.instruction.pops + 1]))
+
         clmn = 80
         result.append('Stack                                                                           Memory')
         sp = 0

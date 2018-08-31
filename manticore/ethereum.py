@@ -185,6 +185,8 @@ class Detector(Plugin):
         :param constraint: finding is considered reproducible only when constraint is True
         '''
 
+        if isinstance(pc, Constant):
+            pc = pc.value
         if not isinstance(pc, int):
             raise ValueError("PC must be a number")
         self.get_findings(state).add((address, pc, finding, at_init, constraint))
@@ -300,9 +302,54 @@ class DetectInvalid(Detector):
                 self.add_finding_here(state, "INVALID instruction")
 
 
-class DetectReentrancy(Detector):
+class DetectReentrancySimple(Detector):
     """
-    1) A _successful_ call to a controlled address (An account controlled by the attacker). With enough gas.
+    Simple detector for reentrancy bugs.
+    Alert if contract changes the state of storage (does a write) after a call with >2300 gas to a user controlled/symbolic
+    external address or the msg.sender address.
+    """
+
+    @property
+    def _context_key(self):
+        return f'{self.name}.call_locations'
+
+    def will_open_transaction_callback(self, state, tx):
+        if tx.is_human():
+            state.context[self._context_key] = []
+
+    def will_evm_execute_instruction_callback(self, state, instruction, arguments):
+        if instruction.semantics == 'CALL':
+            gas = arguments[0]
+            dest_address = arguments[1]
+            msg_sender = state.platform.current_vm.caller
+            pc = state.platform.current_vm.pc
+
+            is_enough_gas = Operators.UGT(gas, 2300)
+            if not state.can_be_true(is_enough_gas):
+                return
+
+            # flag any external call that's going to a symbolic/user controlled address, or that's going
+            # concretely to the sender's address
+            if issymbolic(dest_address) or msg_sender == dest_address:
+                state.context.get(self._context_key, []).append((pc, is_enough_gas))
+
+    def did_evm_write_storage_callback(self, state, address, offset, value):
+        locs = state.context.get(self._context_key, [])
+
+        # if we're here and locs has stuff in it. by definition this state has
+        # encountered a dangerous call and is now at a write.
+        for callpc, gas_constraint in locs:
+            addr = state.platform.current_vm.address
+            at_init = state.platform.current_transaction.sort == 'CREATE'
+            self.add_finding(state, addr, callpc, 'Potential reentrancy vulnerability', at_init, constraint=gas_constraint)
+
+
+class DetectReentrancyAdvanced(Detector):
+    """
+    Detector for reentrancy bugs.
+    Given an optional concrete list of attacker addresses, warn on the following conditions.
+
+    1) A _successful_ call to an attacker address (address in attacker list), or any human account address (if no list is given). With enough gas (>2300).
     2) A SSTORE after the execution of the CALL.
     3) The storage slot of the SSTORE must be used in some path to control flow
     """
@@ -2232,7 +2279,6 @@ class ManticoreEVM(Manticore):
                 results.append((data_concrete, data_hash))
                 known_hashes_cond = data_concrete == data
                 known_sha3.append((data_concrete, data_hash))
-
             not_known_hashes_cond = Operators.NOT(known_hashes_cond)
 
             # We need to fork/save the state
