@@ -285,7 +285,6 @@ class Z3Solver(Solver):
             raise SolverException(_status)
         if consider_unknown_as_unsat:
             if _status == 'unknown':
-                import pdb; pdb.set_trace()
                 logger.warning('Found an unknown core, probably a solver timeout')
                 _status = 'unsat'
 

@@ -258,7 +258,6 @@ class DetectSelfdestruct(Detector):
 
 class DetectExternalCallAndLeak(Detector):
     def will_evm_execute_instruction_callback(self, state, instruction, arguments):
-        #print ("DetectExternalCallAndLeak", str(state.platform.current_vm))
         if instruction.semantics == 'CALL':
             dest_address = arguments[1]
             sent_value = arguments[2]
@@ -2654,14 +2653,12 @@ class ManticoreEVM(Manticore):
             logger.debug("Generating testcase for state_id %d", state_id)
             self._generate_testcase_callback(st, 'test', '')
 
-
         def worker_finalize(q):
             try:
                 while True:
                     finalizer(q.get_nowait())
             except EmptyQueue:
                 pass
-
 
         q = Queue()
         for state_id in self._all_state_ids:

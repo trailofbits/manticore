@@ -349,7 +349,7 @@ def constant_folder(expression):
 
 
 class ArithmeticSimplifier(Visitor):
-    def __init__(self, parent=None, arr_cache=None, **kw):
+    def __init__(self, parent=None, **kw):
         super().__init__(**kw)
 
     @staticmethod
@@ -508,8 +508,6 @@ class ArithmeticSimplifier(Visitor):
             elif right.value >= right.size:
                 return left
 
-
-
     def visit_ArraySelect(self, expression, *operands):
         ''' ArraySelect (ArrayStore((ArrayStore(x0,v0) ...),xn, vn), x0)
                 -> v0
@@ -539,7 +537,6 @@ class ArithmeticSimplifier(Visitor):
 
 
 arithmetic_simplifier_cache = CacheDict(max_size=150000, flush_perc=25)
-arr_cache = {}
 
 @lru_cache(maxsize=128)
 def arithmetic_simplify(expression):
