@@ -8,7 +8,6 @@ from ..utils.helpers import issymbolic, get_taints, taint_with, istainted
 from ..platforms.platform import *
 from ..core.smtlib import solver, BitVec, Array, Operators, Constant, ArrayVariable, BitVecConstant, translate_to_smtlib
 from ..core.state import Concretize, TerminateState
-from ..core.plugin import Ref
 from ..utils.event import Eventful
 from ..core.smtlib.visitors import simplify
 import pyevmasm as EVMAsm

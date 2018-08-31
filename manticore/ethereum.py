@@ -2196,7 +2196,7 @@ class ManticoreEVM(Manticore):
             context['_sha3_states'] = sha3_states
 
             if not state.can_be_true(known_hashes_cond):
-                raise state.abandon()
+                raise TerminateState("There is not matching sha3 pair, bailing out")
 
             #send knwon hashes to evm
             known_hashes.update(results)
@@ -2461,7 +2461,8 @@ class ManticoreEVM(Manticore):
                     summary.write("Coverage %d%% (on this state)\n" % calculate_coverage(runtime_code, runtime_trace))  # coverage % for address in this account/state
                 summary.write("\n")
 
-            with self.locked_context('known_sha3', set) as known_sha3:
+            with self.locked_context('ethereum') as context:
+                known_sha3 = context.get('_known_sha3', None)
                 if known_sha3:
                     summary.write("Known hashes:\n")
                     for key, value in known_sha3:
