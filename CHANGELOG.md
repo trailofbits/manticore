@@ -35,6 +35,7 @@ Thanks to our external contributors!
 
 - Ethereum: Support for overloaded solidity functions
 - Ethereum: Significantly improved ability to create symbolic variables and constraints at the global level
+- Ethereum: Improved gas support
 - State serialization improvements and fixes
 
 ## 0.2.0 - 2018-08-10
