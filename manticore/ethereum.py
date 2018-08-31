@@ -1192,7 +1192,12 @@ class EVMAccount(object):
 
 
 class EVMContract(EVMAccount):
-    """ An EVM account """
+    """ An EVM account
+
+        Note: The private methods of this class begin with a double underscore to
+        avoid function name collisions with Solidity functions that begin with
+        a single underscore
+    """
 
     def __init__(self, default_caller=None, **kwargs):
         """ Encapsulates a contract account.
