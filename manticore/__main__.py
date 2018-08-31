@@ -103,6 +103,9 @@ def parse_arguments():
     parser.add_argument('--detect-externalcall', action='store_true',
                         help='Enable detection of reachable external call or ether leak to sender or arbitrary address')
 
+    parser.add_argument('--detect-env-instr', action='store_true',
+                        help='Enable detection of use of potentially unsafe/manipulable instructions')
+
     parser.add_argument('--detect-all', action='store_true',
                         help='Enable all detector heuristics (Ethereum only)')
 
@@ -128,7 +131,7 @@ def parse_arguments():
 
 
 def ethereum_cli(args):
-    from .ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, DetectUninitializedStorage, DetectUninitializedMemory, FilterFunctions, DetectUnusedRetVal, DetectSelfdestruct, LoopDepthLimiter, DetectExternalCallAndLeak, DetectReentrancySimple
+    from .ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, DetectUninitializedStorage, DetectUninitializedMemory, FilterFunctions, DetectUnusedRetVal, DetectSelfdestruct, LoopDepthLimiter, DetectExternalCallAndLeak, DetectReentrancySimple, DetectEnvInstruction
     log.init_logging()
 
     m = ManticoreEVM(procs=args.procs, workspace_url=args.workspace)
@@ -149,6 +152,8 @@ def ethereum_cli(args):
         m.register_detector(DetectSelfdestruct())
     if args.detect_all or args.detect_externalcall:
         m.register_detector(DetectExternalCallAndLeak())
+    if args.detect_all or args.detect_env_instr:
+        m.register_detector(DetectEnvInstruction())
 
     if args.limit_loops:
         m.register_plugin(LoopDepthLimiter())
