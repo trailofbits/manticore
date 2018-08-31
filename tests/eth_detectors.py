@@ -29,7 +29,7 @@ class EthDetectorTest(unittest.TestCase):
     """
     Subclasses must assign this class variable to the class for the detector
     """
-    DETECTOR_CLASS = None
+|   DETECTOR_CLASS = None
 
     def setUp(self):
         self.mevm = ManticoreEVM()
@@ -56,7 +56,7 @@ class EthDetectorTest(unittest.TestCase):
         self.assertEqual(expected_findings, actual_findings)
 
 class EthRetVal(EthDetectorTest):
-    """ https://consensys.net/diligence/evm-analyzer-benchmark-suite/ """
+    """ Detect when a return value of a low level transaction instruction is ignored """
     DETECTOR_CLASS = DetectUnusedRetVal
 
     def test_retval_ok(self):

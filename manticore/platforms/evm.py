@@ -687,7 +687,12 @@ class EVM(Eventful):
             pc = self.pc
             instruction = self.instruction
             old_gas = self.gas
-            self._consume(instruction.fee)
+
+            # FIXME patch for pyevmasm
+            if instruction.semantics == 'PUSH':
+                self._consume(3)
+            else:
+                self._consume(instruction.fee)
             arguments = self._pop_arguments()
             self._checkpoint_data = (pc, old_gas, instruction, arguments)
         return self._checkpoint_data
@@ -1370,7 +1375,7 @@ class EVM(Eventful):
                                      data=self.read_buffer(in_offset, in_size),
                                      caller=self.address,
                                      value=value,
-                                     gas=self.gas)
+                                     gas=gas)
         raise StartTx()
 
     @CALLCODE.pos
@@ -1397,7 +1402,7 @@ class EVM(Eventful):
                                      data=self.read_buffer(in_offset, in_size),
                                      caller=self.address,
                                      value=0,
-                                     gas=self.gas)
+                                     gas=gas)
         raise StartTx()
 
     @DELEGATECALL.pos
@@ -1419,7 +1424,7 @@ class EVM(Eventful):
                                      data=self.read_buffer(in_offset, in_size),
                                      caller=self.address,
                                      value=0,
-                                     gas=self.gas)
+                                     gas=gas)
         raise StartTx()
 
     @STATICCALL.pos
@@ -1644,7 +1649,7 @@ class EVMWorld(Platform):
             address = tx.caller
             assert value == 0
 
-        vm = EVM(self._constraints, address, data, caller, value, bytecode, world=self)
+        vm = EVM(self._constraints, address, data, caller, value, bytecode, world=self, gas=gas)
 
         self._publish('will_open_transaction', tx)
         self._callstack.append((tx, self.logs, self.deleted_accounts, copy.copy(self.get_storage(address)), vm))
