@@ -30,7 +30,7 @@ class EthDetectorTest(unittest.TestCase):
     """
     Subclasses must assign this class variable to the class for the detector
     """
-|   DETECTOR_CLASS = None
+    DETECTOR_CLASS = None
 
     def setUp(self):
         self.mevm = ManticoreEVM()

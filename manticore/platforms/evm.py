@@ -261,21 +261,6 @@ def concretized_args(**policies):
                     cond = world._constraint_to_accounts(value, ty='both', include_zero=True)
                     world.constraints.add(cond)
                     policy = 'ALL'
-                elif policy == "OFFSET":
-                    #special handler for EVM only policy
-                    cond = value == 32
-                    for x in [128, 192]:
-                        cond = Operators.OR(cond, value == x)
-                    #world.constraints.add(cond)
-                    policy = 'SAMPLED'
-                elif policy == "SIZE":
-                    #special handler for EVM only policy
-                    cond = value == 1
-                    for x in [2, 5, 10]:
-                        cond = Operators.OR(cond, value == x)
-                    #world.constraints.add(cond)
-                    policy = 'ALL'
-                    policy = 'SAMPLED'
   
                 raise ConcretizeStack(index, policy=policy)
             return func(*args, **kwargs)

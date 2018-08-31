@@ -2087,46 +2087,6 @@ class ManticoreEVM(Manticore):
             self.finalize()
             return
 
-        import curses
-        from curses.textpad import Textbox, rectangle
-        class PrintLine(Plugin):
-            def __init__(self, *args, **kwargs):
-                super().__init__(*args, **kwargs)
-                self.stdscr = curses.initscr()
-
-            def on_register(self):
-                self.manticore.verbosity(0)
-                curses.noecho()
-                self.stdscr.clear()
-
-            def on_unregister(self):
-                curses.endwin()
-
-            def will_evm_execute_instruction_callback(self, state, instruction, arguments):
-                world = state.platform
-                pc = world.current_vm.pc
-                address = world.current_transaction.address
-                md = self.manticore.get_metadata(address)
-                if md is None:
-                    return
-                src = md.source_code
-                beg, size, _, _ = md.get_srcmap(pc)[pc]
-
-                pos = 0
-                for n, l in enumerate(src.split('\n')):
-                    if pos <= beg+size and pos+len(l)>=beg:
-                        hl = curses.A_STANDOUT
-                    else:
-                        hl = curses.A_NORMAL
-
-                    self.stdscr.addstr(n, 5, '{:>2d} {}'.format(n, l), hl)
-                    pos+=len(l)+1
-
-
-                self.stdscr.refresh()
-
-        #self.register_plugin(PrintLine())
-
         prev_coverage = 0
         current_coverage = 0
         tx_no = 0
