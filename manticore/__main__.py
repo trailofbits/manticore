@@ -103,8 +103,8 @@ def parse_arguments():
     parser.add_argument('--detect-selfdestruct', action='store_true',
                         help='Enable detection of reachable selfdestruct instructions')
 
-    parser.add_argument('--detect-etherleak', action='store_true',
-                        help='Enable detection of reachable ether send/leak to sender or arbitrary address')
+    parser.add_argument('--detect-externalcall', action='store_true',
+                        help='Enable detection of reachable external call or ether leak to sender or arbitrary address')
 
     parser.add_argument('--detect-all', action='store_true',
                         help='Enable all detector heuristics (Ethereum only)')
@@ -131,7 +131,7 @@ def parse_arguments():
 
 
 def ethereum_cli(args):
-    from .ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, DetectUninitializedStorage, DetectUninitializedMemory, FilterFunctions, DetectReentrancy, DetectUnusedRetVal, DetectSelfdestruct, LoopDepthLimiter, DetectDelegatecall, DetectEtherLeak
+    from .ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, DetectUninitializedStorage, DetectUninitializedMemory, FilterFunctions, DetectReentrancy, DetectUnusedRetVal, DetectSelfdestruct, LoopDepthLimiter, DetectDelegatecall, DetectExternalCallAndLeak
     log.init_logging()
 
     m = ManticoreEVM(procs=args.procs, workspace_url=args.workspace)
@@ -152,8 +152,8 @@ def ethereum_cli(args):
         m.register_detector(DetectDelegatecall())
     if args.detect_all or args.detect_selfdestruct:
         m.register_detector(DetectSelfdestruct())
-    if args.detect_all or args.detect_etherleak:
-        m.register_detector(DetectEtherLeak())
+    if args.detect_all or args.detect_externalcall:
+        m.register_detector(DetectExternalCallAndLeak())
 
     if args.limit_loops:
         m.register_plugin(LoopDepthLimiter())

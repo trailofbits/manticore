@@ -8,7 +8,6 @@ from ..utils.helpers import issymbolic, get_taints, taint_with, istainted
 from ..platforms.platform import *
 from ..core.smtlib import solver, BitVec, Array, Operators, Constant, ArrayVariable, BitVecConstant, translate_to_smtlib
 from ..core.state import Concretize, TerminateState
-from ..core.plugin import Ref
 from ..utils.event import Eventful
 from ..core.smtlib.visitors import simplify
 import pyevmasm as EVMAsm
@@ -721,7 +720,7 @@ class EVM(Eventful):
     def change_last_result(self, result):
         last_pc, last_gas, last_instruction, last_arguments = self._checkpoint_data
 
-        # Check result (push)
+        # Check result (push)\
         if last_instruction.pushes > 1:
             assert len(result) == last_instruction.pushes
             for _ in range(last_instruction.pushes):
@@ -986,8 +985,8 @@ class EVM(Eventful):
 
     def try_simplify_to_constant(self, data):
         concrete_data = bytearray()
-        for i in range(len(data)):
-            simplified = simplify(data[i])
+        for c in data:
+            simplified = simplify(c)
             if isinstance(simplified, Constant):
                 concrete_data.append(simplified.value)
             else:
@@ -1026,7 +1025,7 @@ class EVM(Eventful):
             return value
 
         value = sha3.keccak_256(data).hexdigest()
-        value = int('0x' + value, 0)
+        value = int(value, 16)
         self._publish('on_concrete_sha3', data, value)
         logger.info("Found a concrete SHA3 example %r -> %x", data, value)
         return value
@@ -1520,7 +1519,7 @@ class EVM(Eventful):
         result.append('Stack                                                                           Memory')
         sp = 0
         for i in list(reversed(self.stack))[:10]:
-            argname = args.get(sp, sp == 0 and 'top' or '')
+            argname = args.get(sp, 'top' if sp == 0 else '')
             r = ''
             if issymbolic(i):
                 r = '{:>12s} {:66s}'.format(argname, repr(i))
@@ -1922,8 +1921,8 @@ class EVMWorld(Platform):
 
         # We are not maintaining an actual -block-chain- so we just generate
         # some hashes for each virtual block
-        value = sha3.keccak_256(repr(block_number) + 'NONCE').hexdigest()
-        value = int('0x' + value, 0)
+        value = sha3.keccak_256((repr(block_number) + 'NONCE').encode()).hexdigest()
+        value = int(value, 16)
 
         if force_recent:
             # 0 is left on the stack if the looked for block number is greater or equal
@@ -1987,7 +1986,7 @@ class EVMWorld(Platform):
         # adds hash of new address
         data = binascii.unhexlify('{:064x}{:064x}'.format(address, 0))
         value = sha3.keccak_256(data).hexdigest()
-        value = int('0x' + value, 0)
+        value = int(value, 16)
         self._publish('on_concrete_sha3', data, value)
 
         return address

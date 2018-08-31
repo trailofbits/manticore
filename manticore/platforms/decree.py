@@ -153,7 +153,7 @@ class Decree(Platform):
 
     @property
     def PC(self):
-        return (self._current, self.procs[self._current].PC)
+        return self._current, self.procs[self._current].PC
 
     def __deepcopy__(self, memo):
         return self
