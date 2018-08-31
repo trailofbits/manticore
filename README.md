@@ -220,3 +220,7 @@ Documentation is available in several places:
 
   * The [manticore-examples](https://github.com/trailofbits/manticore-examples)
     repository has some more involved examples, for instance solving real CTF problems
+
+## License
+
+Manticore is licensed and distributed under the AGPLv3 license. Please [contact us](opensource@trailofbits.com) if you're looking for an exception to the terms.
