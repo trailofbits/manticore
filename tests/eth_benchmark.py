@@ -34,7 +34,7 @@ class EthBenchmark(unittest.TestCase):
     """ https://consensys.net/diligence/evm-analyzer-benchmark-suite/ """
     def setUp(self):
         self.mevm = ManticoreEVM()
-        self.mevm.verbosity(0)
+        self.mevm.verbosity(3)
         self.worksp = self.mevm.workspace
 
     def tearDown(self):

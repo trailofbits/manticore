@@ -184,17 +184,14 @@ class EthDelegatecall(EthDetectorTest):
     """ Test the detecion of funny delegatecalls """
     DETECTOR_CLASS = DetectDelegatecall
 
-    @unittest.skip("Too slow for this modern times")
     def test_delegatecall_ok(self):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, set())
 
-    @unittest.skip("Too slow for this modern times")
     def test_delegatecall_ok1(self):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, set())
 
-    @unittest.skip("Too slow for this modern times")
     def test_delegatecall_ok2(self):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, set())
@@ -204,7 +201,6 @@ class EthDelegatecall(EthDetectorTest):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, set())
 
-    @unittest.skip("Too slow for this modern times")
     def test_delegatecall_not_ok(self):
         self.mevm.register_plugin(LoopDepthLimiter())
         name = inspect.currentframe().f_code.co_name[5:]
