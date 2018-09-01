@@ -149,13 +149,23 @@ def increase_recursion():
 
 
 class PickleSerializer(StateSerializer):
+    DEFAULT_RECURSION: int = 0x10000  # 1M
+    MAX_RECURSION: int = 0x1000000  # 16.7M
     def __init__(self):
         super().__init__()
+        sys.setrecursionlimit(PickleSerializer.DEFAULT_RECURSION)
 
     def serialize(self, state, f):
         try:
-            f.write(pickle.dumps(state, 4))
+            f.write(pickle.dumps(state, 2))
         except RuntimeError:
+            new_limit = sys.getrecursionlimit() * 2
+             if new_limit > PickleSerializer.MAX_RECURSION:
+                 raise Exception(f'PickleSerializer recursion limit surpassed {PickleSerializer.MAX_RECURSION}, aborting')
+             logger.info(f'Recursion soft limit {sys.getrecursionlimit()} hit, increasing')
+             sys.setrecursionlimit(new_limit)
+
+
             raise
             increase_recursion()
             self.serialize(state, f)

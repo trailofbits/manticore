@@ -51,7 +51,6 @@ class ConstraintSet(object):
         :param check: Currently unused.
         :return:
         '''
-        # XXX(yan): check is an unused param
         if isinstance(constraint, bool):
             constraint = BoolConstant(constraint)
         assert isinstance(constraint, Bool)
