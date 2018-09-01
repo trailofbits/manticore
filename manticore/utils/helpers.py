@@ -129,22 +129,6 @@ class StateSerializer(object):
         raise NotImplementedError
 
 
-DEFAULT_RECURSION: int = 0x10000  # 1M
-MAX_RECURSION: int = 0x1000000  # 16.7M
-
-
-def set_recursion(max_rec):
-    resource.setrlimit(resource.RLIMIT_STACK, [0x100 * max_rec, resource.RLIM_INFINITY])
-    sys.setrecursionlimit(max_rec)
-    current_recursion = max_rec
-
-
-def increase_recursion():
-    new_limit = sys.getrecursionlimit() * 2
-    if new_limit > PickleSerializer.MAX_RECURSION:
-        raise Exception(f'PickleSerializer recursion limit surpassed {PickleSerializer.MAX_RECURSION}, aborting')
-    set_recursion(new_limit)
-
 
 class PickleSerializer(StateSerializer):
     DEFAULT_RECURSION: int = 0x10000  # 1M
@@ -162,8 +146,6 @@ class PickleSerializer(StateSerializer):
                 raise Exception(f'PickleSerializer recursion limit surpassed {PickleSerializer.MAX_RECURSION}, aborting')
             logger.info(f'Recursion soft limit {sys.getrecursionlimit()} hit, increasing')
             sys.setrecursionlimit(new_limit)
-            #raise
-            #increase_recursion()
             self.serialize(state, f)
 
     def deserialize(self, f):
