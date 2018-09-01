@@ -119,8 +119,8 @@ fi
 
 if [ "$should_run_eth_tests" = true ] ; then
     coverage erase
-    python -m unittest tests.eth_benchmark.EthBenchmark.test_assert_multitx_1 2>&1 >/dev/null | tee travis_tests.log
-    coverage run -m unittest discover -v --pattern eth*.py tests/ 2>&1 >/dev/null | tee travis_tests.log
+    #coverage run -m unittest discover -v --pattern eth*.py tests/ 2>&1 >/dev/null | tee travis_tests.log
+    coverage run -m unittest discover -v --pattern eth*.py tests/ 2>&1 |tee travis_tests.log
     DID_OK=$(tail -n1 travis_tests.log)
     if [[ "${DID_OK}" != OK* ]]; then
         echo "Some functionality tests failed :("
