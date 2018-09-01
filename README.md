@@ -117,7 +117,7 @@ Install and try Manticore in a few shell commands (see an [asciinema](https://as
 
 ```
 # Install system dependencies
-sudo apt-get update && sudo apt-get install python3 python-pip3 -y
+sudo apt-get update && sudo apt-get install python3 python3-pip -y
 
 # Install manticore and its dependencies
 sudo pip3 install manticore
@@ -173,23 +173,23 @@ Option 1: Perform a user install (requires `~/.local/bin` in your `PATH`).
 ```
 echo "PATH=\$PATH:~/.local/bin" >> ~/.profile
 source ~/.profile
-pip install --user manticore
+pip3 install --user manticore
 ```
 
 Option 2: Use a virtual environment (requires [virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/en/latest/) or [similar](https://virtualenv.pypa.io/en/stable/)).
 
 ```
-pip install virtualenvwrapper
+pip3 install virtualenvwrapper
 echo "source /usr/local/bin/virtualenvwrapper.sh" >> ~/.profile
 source ~/.profile
 mkvirtualenv manticore
-pip install manticore
+pip3 install manticore
 ```
 
 Option 3: Perform a system install.
 
 ```
-sudo pip install manticore
+sudo pip3 install manticore
 ```
 
 Option 4: Install via Docker.
