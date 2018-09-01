@@ -2,7 +2,42 @@
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
-## [Unreleased](https://github.com/trailofbits/manticore/compare/0.2.0...HEAD)
+## [Unreleased](https://github.com/trailofbits/manticore/compare/0.2.1...HEAD)
+
+## 0.2.1 - 2018-09-01
+
+In this release, the codebase has been relicensed under the AGPLv3 license.
+Please [contact us](opensource@trailofbits.com) if you're looking for an exception to these terms!
+
+Thanks to our external contributors!
+
+- [s0b0lev](https://github.com/s0b0lev)
+- [redyoshi49q](https://github.com/redyoshi49q)
+
+### Added
+ 
+- Full suite of Ethereum detectors
+    - Selfdestruct (`--detect-selfdestruct`): Warns if a selfdestruct instruction is reachable by the user
+    - Ether Leak (`--detect-externalcall`): Warns if there is a call to the user, or a user controlled address, and ether can be sent.
+    - External Call (`--detect-externalcall`): Warns if there is a call to the user, or a user controlled address.
+    - Reentrancy (`--detect-reentrancy`): Warns if there is a change of storage state after a call to the user, or a user controlled address, with >2300 gas. This is an alternate implementation enabled in the CLI. The previous implementation is still available for API use (`DetectReentrancyAdvanced`).
+    - Delegatecall (`--detect-delegatecall`): Warns if there is a delegatecall to a user controlled address, or to a user controlled function.
+    - Environmental Instructions (`--detect-env`): Warns if certain instructions are used that can be potentially manipulated. Instructions: BLOCKHASH, COINBASE, TIMESTAMP, NUMBER, DIFFICULTY, GASLIMIT, ORIGIN, GASPRICE.
+- New Ethereum command line flags
+    - `--no-testcases`: Do not generate testcases for discovered states
+    - `--txnoether`: Do not make the transaction value symbolic in executed transactions
+- SMTLIB: Advanced functionality for expression migration. Expressions from arbitrary constraint sets can be mixed to create arbitrary constraints, expressions are transparently migrated from constraint set to another, avoiding SMT naming collisions.
+ 
+### Changed
+
+- Command line interface uses new reentrancy detector based on detection of user controlled call addresses
+ 
+### Fixed
+
+- Ethereum: Support for overloaded solidity functions
+- Ethereum: Significantly improved ability to create symbolic variables and constraints at the global level
+- Ethereum: Improved gas support
+- State serialization improvements and fixes
 
 ## 0.2.0 - 2018-08-10
 
