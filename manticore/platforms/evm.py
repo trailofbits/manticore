@@ -251,7 +251,7 @@ def concretized_args(**policies):
                 index = spec.args.index(arg)
                 if not issymbolic(args[index]):
                     continue
-                if policy is None:
+                if not policy:
                     policy = 'MINMAX'
 
                 if policy == "ACCOUNTS":
