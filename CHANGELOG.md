@@ -2,9 +2,9 @@
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
-## [Unreleased](https://github.com/trailofbits/manticore/compare/0.2.1...HEAD)
+## [Unreleased](https://github.com/trailofbits/manticore/compare/0.2.1-berlin...HEAD)
 
-## 0.2.1 - 2018-09-01
+## 0.2.1-berlin - 2018-09-01
 
 In this release, the codebase has been relicensed under the AGPLv3 license.
 Please [contact us](opensource@trailofbits.com) if you're looking for an exception to these terms!
