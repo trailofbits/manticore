@@ -129,10 +129,10 @@ class StateSerializer(object):
         raise NotImplementedError
 
 
-
 class PickleSerializer(StateSerializer):
     DEFAULT_RECURSION: int = 0x10000  # 1M
     MAX_RECURSION: int = 0x1000000  # 16.7M
+
     def __init__(self):
         super().__init__()
         sys.setrecursionlimit(PickleSerializer.DEFAULT_RECURSION)
