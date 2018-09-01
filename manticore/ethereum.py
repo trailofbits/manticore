@@ -125,7 +125,6 @@ class FilterFunctions(Plugin):
                 #Avoid all not selected hashes
                 for func_hsh in md.hashes:
                     if func_hsh in selected_functions:
-                        # Was constraint = Operators.NOT(tx.data[:4] == func_hsh)
                         constraint = tx.data[:4] != func_hsh
                         state.constrain(constraint)
 
@@ -640,6 +639,38 @@ class DetectUnusedRetVal(Detector):
             dest, cond = arguments
             for used_taint in get_taints(cond, "RETVAL_.*"):
                 self._remove_retval_taint(state, used_taint)
+
+
+class DetectDelegatecall(Detector):
+    '''
+        Detects DELEGATECALLs to controlled addresses and or with controlled function id.
+        This detector finds and reports on any delegatecall instruction any the following propositions are hold:
+            * the destination address can be controlled by the caller
+            * the first 4 bytes of the calldata are controlled by the caller
+    '''
+
+    def will_evm_execute_instruction_callback(self, state, instruction, arguments):
+        world = state.platform
+        mnemonic = instruction.semantics
+        current_vm = world.current_vm
+        # If it executed a DELEGATECALL
+        # TODO: Check the transaction was success
+        # if blockchain.last_transaction.return_value:
+        # TODO: check if any of the potential target addresses has code
+        # if not any( world.get_code, possible_addresses):
+        if mnemonic == 'DELEGATECALL':
+            gas, address, in_offset, in_size, out_offset, out_size = arguments
+            if issymbolic(address):
+                possible_addresses = state.solve_n(address, 2)
+                if len(possible_addresses) > 1:
+                    self.add_finding_here(state, "Delegatecall to user controlled address")
+
+            calldata = world.current_vm.read_buffer(in_offset, in_size)
+            func_id = calldata[:4]
+            if issymbolic(func_id):
+                possible_func_ids = state.solve_n(func_id, 2)
+                if len(possible_func_ids) > 1:
+                    self.add_finding_here(state, "Delegatecall to user controlled function")
 
 
 class DetectUninitializedMemory(Detector):
@@ -1532,6 +1563,7 @@ class ManticoreEVM(Manticore):
                 output, warnings = ManticoreEVM._run_solc(temp, solc_bin, solc_remaps)
         elif isinstance(source_code, io.IOBase):
             output, warnings = ManticoreEVM._run_solc(source_code, solc_bin, solc_remaps)
+            source_code.seek(0)
             source_code = source_code.read()
         else:
             raise TypeError
@@ -1597,7 +1629,7 @@ class ManticoreEVM(Manticore):
         # Make the constraint store
         constraints = ConstraintSet()
         # make the ethereum world state
-        world = evm.EVMWorld(constraints)
+        world = evm.EVMWorld(constraints, initial_timestamp=1524785992)
         initial_state = State(constraints, world)
         super().__init__(initial_state, **kwargs)
 
@@ -1829,7 +1861,7 @@ class ManticoreEVM(Manticore):
             return None
         return contract_account
 
-    def create_contract(self, owner, balance=0, address=None, init=None, name=None):
+    def create_contract(self, owner, balance=0, address=None, init=None, name=None, gas=21000):
         """ Creates a contract
 
             :param owner: owner account (will be default caller in any transactions)
@@ -1839,6 +1871,7 @@ class ManticoreEVM(Manticore):
             :param int address: the address for the new contract (optional)
             :param str init: initializing evm bytecode and arguments
             :param str name: a uniq name for reference
+            :param gas: gas budget for the creation/inititialization of the contract
             :rtype: EVMAccount
         """
         if not self.count_running_states():
@@ -1859,7 +1892,7 @@ class ManticoreEVM(Manticore):
             # Account name already used
             raise EthereumError("Name already used")
 
-        self._transaction('CREATE', owner, balance, address, data=init)
+        self._transaction('CREATE', owner, balance, address, data=init, gaslimit=gas)
         # TODO detect failure in the constructor
 
         self._accounts[name] = EVMContract(address=address, manticore=self, default_caller=owner, name=name)
@@ -1884,7 +1917,7 @@ class ManticoreEVM(Manticore):
             return self.new_address()
         return new_address
 
-    def transaction(self, caller, address, value, data):
+    def transaction(self, caller, address, value, data, gas=21000):
         """ Issue a symbolic transaction in all running states
 
             :param caller: the address of the account sending the transaction
@@ -1894,9 +1927,10 @@ class ManticoreEVM(Manticore):
             :param value: balance to be transfered on creation
             :type value: int or SValue
             :param data: initial data
+            :param gas: gas budget
             :raises NoAliveStates: if there are no alive states to execute
         """
-        self._transaction('CALL', caller, value=value, address=address, data=data)
+        self._transaction('CALL', caller, value=value, address=address, data=data, gaslimit=gas)
 
     def create_account(self, balance=0, address=None, code=None, name=None):
         """ Low level creates an account. This won't generate a transaction.
@@ -1994,8 +2028,8 @@ class ManticoreEVM(Manticore):
 
             return caller, address, value, data
 
-    def _transaction(self, sort, caller, value=0, address=None, data=None, price=1):
-        """ Creates a contract
+    def _transaction(self, sort, caller, value=0, address=None, data=None, gaslimit=0, price=1):
+        """ Initiates a transaction
 
             :param caller: caller account
             :type caller: int or EVMAccount
@@ -2004,6 +2038,7 @@ class ManticoreEVM(Manticore):
             :param price: the price of gas for this transaction. Mostly unused.
             :type value: int or SValue
             :param str data: initializing evm bytecode and arguments or transaction call data
+            :param gaslimit: gas budget
             :rtype: EVMAccount
         """
         #Type Forgiveness
@@ -2071,7 +2106,7 @@ class ManticoreEVM(Manticore):
                     # Address already used
                     raise EthereumError("This is bad. Same address used for different contracts in different states")
 
-            state.context['_pending_transaction'] = (sort, caller, address, value, data, price)
+            state.context['_pending_transaction'] = (sort, caller, address, value, data, gaslimit, price)
 
         # run over potentially several states and
         # generating potentially several others
@@ -2119,7 +2154,8 @@ class ManticoreEVM(Manticore):
                 self.transaction(caller=tx_account[min(tx_no, len(tx_account) - 1)],
                                  address=contract_account,
                                  data=symbolic_data,
-                                 value=value)
+                                 value=value,
+                                 gas=2100000)
                 logger.info("%d alive states, %d terminated states", self.count_running_states(), self.count_terminated_states())
             except NoAliveStates:
                 break
@@ -2245,7 +2281,6 @@ class ManticoreEVM(Manticore):
                 results.append((data_concrete, data_hash))
                 known_hashes_cond = data_concrete == data
                 known_sha3.append((data_concrete, data_hash))
-
             not_known_hashes_cond = Operators.NOT(known_hashes_cond)
 
             # We need to fork/save the state
@@ -2323,14 +2358,14 @@ class ManticoreEVM(Manticore):
         if '_pending_transaction' not in state.context:
             return
         world = state.platform
-        ty, caller, address, value, data, price = state.context['_pending_transaction']
+        ty, caller, address, value, data, gaslimit, price = state.context['_pending_transaction']
         del state.context['_pending_transaction']
 
         if ty == 'CALL':
-            world.transaction(address=address, caller=caller, data=data, value=value, price=price)
+            world.transaction(address=address, caller=caller, data=data, value=value, price=price, gas=gaslimit)
         else:
             assert ty == 'CREATE'
-            world.create_contract(caller=caller, address=address, balance=value, init=data, price=price)
+            world.create_contract(caller=caller, address=address, balance=value, init=data, price=price, gas=gaslimit)
 
     def _did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
         """ INTERNAL USE """
@@ -2466,7 +2501,6 @@ class ManticoreEVM(Manticore):
             # Accounts summary
             is_something_symbolic = False
             summary.write("%d accounts.\n" % len(blockchain.accounts))
-
             for account_address in blockchain.accounts:
                 is_account_address_symbolic = issymbolic(account_address)
                 account_address = state.solve_one(account_address)
@@ -2569,35 +2603,36 @@ class ManticoreEVM(Manticore):
 
                 if tx.sort == 'CALL':
                     if metadata is not None:
-                        function_id = state.solve_one(tx.data[:4])  # hope there is enough data
+                        calldata = state.solve_one(tx.data)
+                        is_calldata_symbolic = issymbolic(tx.data)
+
+                        function_id = calldata[:4]  # hope there is enough data
                         signature = metadata.get_func_signature(function_id)
                         function_name = metadata.get_func_name(function_id)
                         if signature:
-                            _, arguments = ABI.deserialize(signature, tx.data)
+                            _, arguments = ABI.deserialize(signature, calldata)
                         else:
-                            arguments = (tx.data,)
+                            arguments = (calldata,)
 
                         return_data = None
                         if tx.result == 'RETURN':
                             ret_types = metadata.get_func_return_types(function_id)
-                            return_data = ABI.deserialize(ret_types, tx.return_data)  # function return
+                            return_data = state.solve_one(tx.return_data)
+                            return_values = ABI.deserialize(ret_types, return_data)  # function return
+                            is_return_symbolic = issymbolic(tx.return_data)
 
                         tx_summary.write('\n')
                         tx_summary.write("Function call:\n")
                         tx_summary.write("%s(" % function_name)
-                        tx_summary.write(','.join(map(repr, map(state.solve_one, arguments))))
-                        is_argument_symbolic = any(map(issymbolic, arguments))
-                        is_something_symbolic = is_something_symbolic or is_argument_symbolic
-                        tx_summary.write(') -> %s %s\n' % (tx.result, flagged(is_argument_symbolic)))
+                        tx_summary.write(','.join(map(repr, arguments)))
+                        tx_summary.write(') -> %s %s\n' % (tx.result, flagged(is_calldata_symbolic)))
 
                         if return_data is not None:
-                            is_return_symbolic = any(map(issymbolic, return_data))
-                            return_values = tuple(map(state.solve_one, return_data))
                             if len(return_values) == 1:
                                 return_values = return_values[0]
 
                             tx_summary.write('return: %r %s\n' % (return_values, flagged(is_return_symbolic)))
-                            is_something_symbolic = is_something_symbolic or is_return_symbolic
+                        is_something_symbolic = is_calldata_symbolic or is_return_symbolic
 
                 tx_summary.write('\n\n')
 
@@ -2682,7 +2717,6 @@ class ManticoreEVM(Manticore):
                 q.put(state_id)
 
         report_workers = []
-
         for _ in range(self._config_procs):
             proc = Process(target=worker_finalize, args=(q,))
             proc.start()

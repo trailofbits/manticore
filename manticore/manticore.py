@@ -533,7 +533,7 @@ class Manticore(Eventful):
         # Everything is good add it.
         state.constraints.add(assertion)
 
-    ##########################################################################
+    ############################################################################
     # Some are placeholders Remove FIXME
     # Any platform specific callback should go to a plugin
 

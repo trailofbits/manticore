@@ -635,7 +635,8 @@ class Array(Expression):
         return self._index_max
 
     def select(self, index):
-        return ArraySelect(self, self.cast_index(index))
+        index = self.cast_index(index)
+        return ArraySelect(self, index)
 
     def store(self, index, value):
         return ArrayStore(self, self.cast_index(index), self.cast_value(value))

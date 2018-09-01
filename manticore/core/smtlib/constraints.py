@@ -51,7 +51,6 @@ class ConstraintSet(object):
         :param check: Currently unused.
         :return:
         '''
-        # XXX(yan): check is an unused param
         if isinstance(constraint, bool):
             constraint = BoolConstant(constraint)
         assert isinstance(constraint, Bool)
@@ -71,6 +70,11 @@ class ConstraintSet(object):
                 return
 
         self._constraints.append(constraint)
+
+        if check:
+            from manticore.core.smtlib import solver
+            if not solver.check(self):
+                raise ValueError("Added an impossible constraint")
 
     def _get_sid(self):
         ''' Returns an unique id. '''

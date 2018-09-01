@@ -35,7 +35,9 @@ class Concretize(StateException):
     '''
     _ValidPolicies = ['MINMAX', 'ALL', 'SAMPLED', 'ONE']
 
-    def __init__(self, message, expression, setstate=None, policy='ALL', **kwargs):
+    def __init__(self, message, expression, setstate=None, policy=None, **kwargs):
+        if policy is None:
+            policy = 'ALL'
         if policy not in self._ValidPolicies:
             raise Exception("Policy (%s) must be one of: %s" % (policy, ', '.join(self._ValidPolicies),))
         self.expression = expression
@@ -107,13 +109,14 @@ class State(Eventful):
         self.forward_events_from(self._platform)
 
     # Fixme(felipe) change for with "state.cow_copy() as st_temp":.
+    # This need to change. this is the center of ALL the problems. re. CoW
     def __enter__(self):
         assert self._child is None
         self._platform.constraints = None
-        new_state = State(self._constraints.__enter__(), copy.deepcopy(self._platform))
+        new_state = State(self._constraints.__enter__(), self._platform)
         self.platform.constraints = new_state.constraints
         new_state._input_symbols = list(self._input_symbols)
-        new_state._context = copy.deepcopy(self._context)
+        new_state._context = copy.copy(self._context)
         self._child = new_state
         assert new_state.platform.constraints is new_state.constraints
 
@@ -245,7 +248,7 @@ class State(Eventful):
         self._input_symbols.append(expr)
         return expr
 
-    def concretize(self, symbolic, policy, maxcount=5):
+    def concretize(self, symbolic, policy, maxcount=7):
         ''' This finds a set of solutions for symbolic using policy.
             This raises TooManySolutions if more solutions than maxcount
         '''
@@ -253,6 +256,10 @@ class State(Eventful):
         vals = []
         if policy == 'MINMAX':
             vals = self._solver.minmax(self._constraints, symbolic)
+        elif policy == 'MAX':
+            vals = self._solver.max(self._constraints, symbolic)
+        elif policy == 'MIN':
+            vals = self._solver.min(self._constraints, symbolic)
         elif policy == 'SAMPLED':
             m, M = self._solver.minmax(self._constraints, symbolic)
             vals += [m, M]
@@ -260,14 +267,19 @@ class State(Eventful):
                 if self._solver.can_be_true(self._constraints, symbolic == (m + M) // 2):
                     vals.append((m + M) // 2)
             if M - m > 100:
+                for i in (0, 1, 2, 5, 32, 64, 128, 320):
+                    if self._solver.can_be_true(self._constraints, symbolic == m + i):
+                        vals.append(m + i)
+                    if maxcount <= len(vals):
+                        break
+            if M - m > 1000 and maxcount > len(vals):
                 vals += self._solver.get_all_values(self._constraints, symbolic,
-                                                    maxcnt=maxcount, silent=True)
+                                                    maxcnt=maxcount - len(vals), silent=True)
         elif policy == 'ONE':
             vals = [self._solver.get_value(self._constraints, symbolic)]
         else:
             assert policy == 'ALL'
-            vals = solver.get_all_values(self._constraints, symbolic, maxcnt=maxcount,
-                                         silent=False)
+            vals = solver.get_all_values(self._constraints, symbolic, maxcnt=maxcount, silent=True)
 
         return tuple(set(vals))
 

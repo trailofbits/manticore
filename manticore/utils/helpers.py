@@ -4,6 +4,7 @@ import logging
 import pickle
 import re
 import sys
+import resource
 
 from collections import OrderedDict
 from ..core.smtlib import Expression, BitVecConstant
@@ -129,7 +130,7 @@ class StateSerializer(object):
 
 
 class PickleSerializer(StateSerializer):
-    DEFAULT_RECURSION: int = 0x100000  # 1M
+    DEFAULT_RECURSION: int = 0x10000  # 1M
     MAX_RECURSION: int = 0x1000000  # 16.7M
 
     def __init__(self):

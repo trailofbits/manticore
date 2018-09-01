@@ -95,7 +95,10 @@ def parse_arguments():
                         help='Enable detection of reentrancy bug (Ethereum only)')
 
     parser.add_argument('--detect-unused-retval', action='store_true',
-                        help='Enable detection of not used internal transaction return value')
+                        help='Enable detection of not used internal transaction return value (Ethereum only)')
+
+    parser.add_argument('--detect-delegatecall', action='store_true',
+                        help='Enable detection of problematic uses of DELEGATECALL instruction (Ethereum only)')
 
     parser.add_argument('--detect-selfdestruct', action='store_true',
                         help='Enable detection of reachable selfdestruct instructions')
@@ -131,7 +134,8 @@ def parse_arguments():
 
 
 def ethereum_cli(args):
-    from .ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, DetectUninitializedStorage, DetectUninitializedMemory, FilterFunctions, DetectUnusedRetVal, DetectSelfdestruct, LoopDepthLimiter, DetectExternalCallAndLeak, DetectReentrancySimple, DetectEnvInstruction
+    from .ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, DetectUninitializedStorage, DetectUninitializedMemory, FilterFunctions, DetectReentrancySimple, DetectUnusedRetVal, DetectSelfdestruct, LoopDepthLimiter, DetectDelegatecall, DetectExternalCallAndLeak, DetectReentrancySimple, DetectEnvInstruction
+
     log.init_logging()
 
     m = ManticoreEVM(procs=args.procs, workspace_url=args.workspace)
@@ -148,6 +152,8 @@ def ethereum_cli(args):
         m.register_detector(DetectReentrancySimple())
     if args.detect_all or args.detect_unused_retval:
         m.register_detector(DetectUnusedRetVal())
+    if args.detect_all or args.detect_delegatecall:
+        m.register_detector(DetectDelegatecall())
     if args.detect_all or args.detect_selfdestruct:
         m.register_detector(DetectSelfdestruct())
     if args.detect_all or args.detect_externalcall:
