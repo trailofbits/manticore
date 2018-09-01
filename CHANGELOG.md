@@ -12,6 +12,7 @@ Please [contact us](opensource@trailofbits.com) if you're looking for an excepti
 Thanks to our external contributors!
 
 - [s0b0lev](https://github.com/s0b0lev)
+- [redyoshi49q](https://github.com/redyoshi49q)
 
 ### Added
  
