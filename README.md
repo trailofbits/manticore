@@ -179,11 +179,11 @@ pip3 install --user manticore
 Option 2: Use a virtual environment (requires [virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/en/latest/) or [similar](https://virtualenv.pypa.io/en/stable/)).
 
 ```
-pip3 install virtualenvwrapper
+sudo pip3 install virtualenvwrapper
 echo "source /usr/local/bin/virtualenvwrapper.sh" >> ~/.profile
 source ~/.profile
 mkvirtualenv manticore
-pip3 install manticore
+sudo ./manticore/bin/pip3 install manticore
 ```
 
 Option 3: Perform a system install.
