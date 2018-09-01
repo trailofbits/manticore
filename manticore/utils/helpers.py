@@ -156,6 +156,7 @@ class PickleSerializer(StateSerializer):
         try:
             f.write(pickle.dumps(state, 4))
         except RuntimeError:
+            raise
             increase_recursion()
             self.serialize(state, f)
 

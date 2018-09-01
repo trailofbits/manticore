@@ -1099,7 +1099,7 @@ class EVM(Eventful):
         '''Get size of code running in current environment'''
         return len(self.bytecode)
 
-    @concretized_args(code_offset='SAMPLED', size='SIZE')
+    @concretized_args(code_offset='SAMPLED', size='SAMPLED')
     def CODECOPY(self, mem_offset, code_offset, size):
         '''Copy code running in current environment to memory'''
 
@@ -1319,7 +1319,7 @@ class EVM(Eventful):
         return address
 
     @transact
-    @concretized_args(address='ACCOUNTS', gas='MINMAX', in_offset='SAMPLED', in_size='SIZE')
+    @concretized_args(address='ACCOUNTS', gas='MINMAX', in_offset='SAMPLED', in_size='SAMPLED')
     def CALL(self, gas, address, value, in_offset, in_size, out_offset, out_size):
         '''Message-call into an account'''
         self.world.start_transaction('CALL',
@@ -1341,7 +1341,7 @@ class EVM(Eventful):
         return self.world.last_transaction.return_value
 
     @transact
-    @concretized_args(in_offset='SAMPLED', in_size='SIZE')
+    @concretized_args(in_offset='SAMPLED', in_size='SAMPLED')
     def CALLCODE(self, gas, _ignored_, value, in_offset, in_size, out_offset, out_size):
         '''Message-call into this account with alternative account's code'''
         self.world.start_transaction('CALL',
@@ -1368,7 +1368,7 @@ class EVM(Eventful):
         raise EndTx('RETURN', data)
 
     @transact
-    @concretized_args(in_offset='SAMPLED', in_size='SIZE')
+    @concretized_args(in_offset='SAMPLED', in_size='SAMPLED')
     def DELEGATECALL(self, gas, address, in_offset, in_size, out_offset, out_size):
         '''Message-call into an account'''
         self.world.start_transaction('DELEGATECALL',
@@ -1390,7 +1390,7 @@ class EVM(Eventful):
         return self.world.last_transaction.return_value
 
     @transact
-    @concretized_args(in_offset='SAMPLED', in_size='SIZE')
+    @concretized_args(in_offset='SAMPLED', in_size='SAMPLED')
     def STATICCALL(self, gas, address, in_offset, in_size, out_offset, out_size):
         '''Message-call into an account'''
         self.world.start_transaction('STATICCALL',
