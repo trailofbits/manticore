@@ -2572,7 +2572,7 @@ class ManticoreEVM(Manticore):
         # Transactions
         def format_for_b(data):
             if (data[0:2] == "b'"):
-                return data[2:len(data)]
+                return data[2:len(data) - 1]
             else:
                 return data
 
