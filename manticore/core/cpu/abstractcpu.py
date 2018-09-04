@@ -14,6 +14,7 @@ from ..memory import ConcretizeMemory, InvalidMemoryAccess, LazySMemory
 from ...utils.helpers import issymbolic
 from ...utils.emulate import UnicornEmulator
 from ...utils.event import Eventful
+from ..smtlib import visitors
 
 # tmp imports
 import struct
@@ -770,7 +771,11 @@ class Cpu(Eventful):
             if issymbolic(c):
                 # In case of fully symbolic memory, eagerly get a valid ptr
                 if isinstance(self.memory, LazySMemory):
-                    c = struct.pack('B', solver.get_value(self.memory.constraints, c))
+                    try:
+                        vals = simplify_array_select(c)
+                        c = bytes([vals[0]])
+                    except visitors.ArraySelectSimplifier.ExpressionNotSimple:
+                        c = struct.pack('B', solver.get_value(self.memory.constraints, c))
                 else:
                     if isinstance(c, Constant):
                         c = bytes([c.value])
