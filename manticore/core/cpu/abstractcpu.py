@@ -770,9 +770,7 @@ class Cpu(Eventful):
             if issymbolic(c):
                 # In case of fully symbolic memory, eagerly get a valid ptr
                 if isinstance(self.memory, LazySMemory):
-                    with self.memory.constraints as new_cs:
-                        new_cs.add(self.memory.valid_ptr(c))
-                        c =  struct.pack('B', solver.get_value(new_cs, c))
+                    c = struct.pack('B', solver.get_value(self.memory.constraints, c))
                 else:
                     if isinstance(c, Constant):
                         c = bytes([c.value])
