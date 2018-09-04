@@ -768,9 +768,11 @@ class Cpu(Eventful):
             c = self.memory[address]
 
             if issymbolic(c):
-                xxx = solver.get_all_values(ConstraintSet(), c)[0]
+                # xxx = solver.get_all_values(ConstraintSet(), c)[0]
+                # xxx = solver.get_value(ConstraintSet(), c)
                 # print 'the bytes', xxx
-                c =  struct.pack('B', solver.get_all_values(ConstraintSet(), c)[0])
+                # c =  struct.pack('B', solver.get_all_values(ConstraintSet(), c)[0])
+                c =  struct.pack('B', solver.get_value(ConstraintSet(), c))
                 # assert isinstance(c, BitVec) and c.size == 8
                 # if isinstance(c, Constant):
                 #     c = bytes([c.value])
