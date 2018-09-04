@@ -1302,25 +1302,26 @@ class LazySMemory(SMemory):
     def scan_mem(self, data_to_find):
         """
 
-        :param state:
-        :param int data_to_find:
+        :param bytes data_to_find:
         :return:
         """
-        import struct
-        raw = struct.pack('<Q', data_to_find)
+
 
         for map in self.maps:
             curr_ptr = map.start
             while curr_ptr < map.end:
                 curr_byte = map[curr_ptr]
 
-                # TODO: for the moment we just treat symbolic bytes as bytes that don't match. for our simple test
-                # cases right now, the bytes we're interested in scanning for will all just be there concretely
+                # TODO: for the moment we just treat symbolic bytes as bytes that don't match.
+                # for our simple test cases right now, the bytes we're interested in scanning
+                # for will all just be there concretely
+
                 if not issymbolic(curr_byte) and ord(curr_byte) == raw[0]:
                     offset = 1
 
                     for c in raw[1:]:
-                        # FIXME: slid off the end of the map in the middle of checking. can't support scanning across map boundaries
+                        # FIXME: slid off the end of the map in the middle of checking.
+                        # can't support scanning across map boundaries
                         if curr_ptr + offset >= map.end:
                             break
 
