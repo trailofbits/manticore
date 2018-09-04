@@ -641,6 +641,29 @@ class DetectUnusedRetVal(Detector):
                 self._remove_retval_taint(state, used_taint)
 
 
+class DetectContractExistance(Detector):
+    """ Detects unused return value from internal transactions """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+
+    def did_close_transaction_callback(self, state, tx):
+        world = state.platform
+        # Check that all retvals were used in control flow
+        if tx.result:
+            code = world.get_code(tx.address)
+            #destinattion account has no code associated with it
+            if not code:
+                # But user send some calldata for processing. Probably a bug
+                if tx.data:
+                    self.add_finding_here(state, f"{tx.sort} with not empty calldata to and empty contract succeeded")
+                if tx.sort in {'DELEGATECALL', 'CALLCODE'}:  
+                    self.add_finding_here(state, f"{tx.sort} to and empty contract succeeded")
+            
+
+
+
 class DetectDelegatecall(Detector):
     '''
         Detects DELEGATECALLs to controlled addresses and or with controlled function id.

@@ -120,6 +120,9 @@ def parse_arguments():
 
     parser.add_argument('--no-testcases', action='store_true',
                         help='Do not generate testcases for discovered states when analysis finishes (Ethereum only)')
+    parser.add_argument('--detect-callunexistant', action='store_true',
+                        help='Detects attemps to call empty code')
+
 
     parsed = parser.parse_args(sys.argv[1:])
     if parsed.procs <= 0:
@@ -160,6 +163,8 @@ def ethereum_cli(args):
         m.register_detector(DetectExternalCallAndLeak())
     if args.detect_all or args.detect_env_instr:
         m.register_detector(DetectEnvInstruction())
+    if args.detect_all or args.detect_callunexistant:
+        m.register_detector(DetectContractExistance())
 
     if args.limit_loops:
         m.register_plugin(LoopDepthLimiter())
