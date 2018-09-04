@@ -159,6 +159,14 @@ class Map(object, metaclass=ABCMeta):
         '''
         return '<%s 0x%016x-0x%016x %s>' % (self.__class__.__name__, self.start, self.end, self.perms)
 
+    def __iter__(self):
+        """
+        Iterate all valid addresses
+        :return:
+        """
+        return iter(range(self._start, self._end))
+
+
     def __eq__(self, other):
         return self.start == other.start and \
             self.end == other.end and \
@@ -1312,37 +1320,24 @@ class LazySMemory(SMemory):
         :return:
         """
 
+        # TODO: for the moment we just treat symbolic bytes as bytes that don't match.
+        # for our simple test cases right now, the bytes we're interested in scanning
+        # for will all just be there concretely
+        # TODO: Can probably do something smarter here like BM, but unnecessary if we're
+        # looking for short strings.
 
-        for map in self.maps:
-            curr_ptr = map.start
-            while curr_ptr < map.end:
-                curr_byte = map[curr_ptr]
+        # Querying mem with an index returns [bytes]
+        if isinstance(data_to_find, bytes):
+            data_to_find = [bytes([c]) for c in data_to_find]
 
-                # TODO: for the moment we just treat symbolic bytes as bytes that don't match.
-                # for our simple test cases right now, the bytes we're interested in scanning
-                # for will all just be there concretely
+        for mapping in self.maps:
+            for addr in mapping: # range(map.start, map.end):
+                if addr + len(data_to_find) >= mapping.end:
+                    break
 
-                if not issymbolic(curr_byte) and ord(curr_byte) == raw[0]:
-                    offset = 1
-
-                    for c in raw[1:]:
-                        # FIXME: slid off the end of the map in the middle of checking.
-                        # can't support scanning across map boundaries
-                        if curr_ptr + offset >= map.end:
-                            break
-
-                        byte = map[curr_ptr + offset]
-                        if issymbolic(byte) or ord(byte) != c:
-                            break
-
-                        offset += 1
-                    else:
-                        yield curr_ptr
-
-                    # We /might/ in some cases, be able to bump the curr pointer past the end of the data, but what
-                    # if there is an overlapping one that matches? So we just bump by one.
-
-                curr_ptr += 1
+                candidate = mapping[addr:addr+len(data_to_find)]
+                if candidate == data_to_find: # implicitly check if values aren't symbolic
+                    yield addr
 
 
 class Memory32(Memory):
