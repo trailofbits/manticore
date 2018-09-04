@@ -1243,9 +1243,9 @@ class LazySMemory(SMemory):
 
         for m in self.maps:
             span = interval_intersection(m.start, m.end, from_addr, to_addr)
-
             if span is None:
                 continue
+
             start, stop = span
 
             for addr in range(start, stop):
@@ -1331,13 +1331,13 @@ class LazySMemory(SMemory):
             data_to_find = [bytes([c]) for c in data_to_find]
 
         for mapping in self.maps:
-            for addr in mapping: # range(map.start, map.end):
-                if addr + len(data_to_find) >= mapping.end:
+            for ptr in mapping:
+                if ptr + len(data_to_find) >= mapping.end:
                     break
 
-                candidate = mapping[addr:addr+len(data_to_find)]
-                if candidate == data_to_find: # implicitly check if values aren't symbolic
-                    yield addr
+                candidate = mapping[ptr:ptr+len(data_to_find)]
+                if candidate == data_to_find:  # implicitly check if values aren't symbolic
+                    yield ptr
 
 
 class Memory32(Memory):
