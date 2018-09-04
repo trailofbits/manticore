@@ -4,7 +4,7 @@ from .smtlib import *
 import functools
 import logging
 from ..utils.mappings import mmap, munmap
-from ..utils.helpers import issymbolic
+from ..utils.helpers import issymbolic, interval_intersection
 
 logger = logging.getLogger(__name__)
 
@@ -1231,15 +1231,21 @@ class LazySMemory(SMemory):
         :param int to_addr:
         :return:
         """
-        for addr in range(from_addr, to_addr+1):
-            if addr in self.backed_by_symbolic_store:
-                continue
+        logger.debug("Importing concrete memory: {:x} - {:x} ({} bytes)".format(from_addr, to_addr, to_addr - from_addr))
 
-            if addr not in self:
-                continue
+        for m in self.maps:
+            span = interval_intersection(m.start, m.end, from_addr, to_addr)
 
-            self.backing_array[addr] = Memory.read(self, addr, 1)[0]
-            self.backed_by_symbolic_store.add(addr)
+            if span is None:
+                continue
+            start, stop = span
+
+            for addr in range(start, stop):
+                if addr in self.backed_by_symbolic_store:
+                    continue
+
+                self.backing_array[addr] = Memory.read(self, addr, 1)[0]
+                self.backed_by_symbolic_store.add(addr)
 
     def _map_deref_expr(self, map, address, size):
         return Operators.AND(
