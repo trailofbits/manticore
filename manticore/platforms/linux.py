@@ -427,6 +427,13 @@ class Linux(Platform):
             self._init_std_fds()
             self._execve(program, argv, envp)
 
+    @property
+    def PC(self):
+        return (self._current, self.procs[self._current].PC)
+
+    def __deepcopy__(self, memo):
+        return self
+
     @classmethod
     def empty_platform(cls, arch):
         '''

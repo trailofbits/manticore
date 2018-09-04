@@ -412,7 +412,6 @@ class BitVecConstant(BitVec, Constant):
 
 class BitVecOperation(BitVec, Operation):
     def __init__(self, size, *operands, **kwargs):
-        #assert all(x.size == size for x in operands)
         super().__init__(size, *operands, **kwargs)
 
 
@@ -637,7 +636,8 @@ class Array(Expression):
         return self._index_max
 
     def select(self, index):
-        return ArraySelect(self, self.cast_index(index))
+        index = self.cast_index(index)
+        return ArraySelect(self, index)
 
     def store(self, index, value):
         return ArrayStore(self, self.cast_index(index), self.cast_value(value))
@@ -736,7 +736,7 @@ class Array(Expression):
         return new_arr
 
     def __radd__(self, other):
-        if not isinstance(other, (Array, bytearray)):
+        if not isinstance(other, (Array, bytearray, bytes)):
             raise TypeError("can't concat Array to {}".format(type(other)))
         if isinstance(other, Array):
             if self.index_bits != other.index_bits or self.value_bits != other.value_bits:
@@ -895,8 +895,8 @@ class ArrayProxy(Array):
         if self.index_max is not None:
             from manticore.core.smtlib.visitors import simplify
             index = simplify(BitVecITE(self.index_bits, index < 0, self.index_max + index + 1, index))
-        # if isinstance(index, Constant) and index.value in self._concrete_cache:
-        #     return self._concrete_cache[index.value]
+        if isinstance(index, Constant) and index.value in self._concrete_cache:
+            return self._concrete_cache[index.value]
 
         return self._array.select(index)
 

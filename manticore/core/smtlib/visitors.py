@@ -393,15 +393,18 @@ class ArithmeticSimplifier(Visitor):
             return BitVecITE(expression.size, *operands, taint=expression.taint)
 
     def visit_BitVecExtract(self, expression, *operands):
-        ''' extract(0,sizeof(a))(a)  ==> a
-            extract(0, 16 )( concat(a,b,c,d) ) => concat(c, d)
+        ''' extract(sizeof(a), 0)(a)  ==> a
+            extract(16, 0)( concat(a,b,c,d) ) => concat(c, d)
             extract(m,M)(and/or/xor a b ) => and/or/xor((extract(m,M) a) (extract(m,M) a)
         '''
         op = expression.operands[0]
         begining = expression.begining
         end = expression.end
 
-        if isinstance(op, BitVecConcat):
+        # extract(sizeof(a), 0)(a)  ==> a
+        if begining == 0 and end + 1 == op.size:
+            return op
+        elif isinstance(op, BitVecConcat):
             new_operands = []
             bitcount = 0
             for item in reversed(op.operands):
@@ -515,6 +518,7 @@ class ArithmeticSimplifier(Visitor):
 
         if isinstance(index, BitVecConstant):
             ival = index.value
+
             # props are slow and using them tight loops should be avoided, esp when they offer no additional validation
             # arr._operands[1] = arr.index, arr._operands[0] = arr.array
             while isinstance(arr, ArrayStore) and isinstance(arr._operands[1], BitVecConstant) and arr._operands[1]._value != ival:
@@ -657,6 +661,7 @@ class TranslatorSmtlib(Translator):
         array_smt, index_smt = operands
         if isinstance(expression.array, ArrayStore):
             array_smt = self._add_binding(expression.array, array_smt)
+
         return '(select %s %s)' % (array_smt, index_smt)
 
     def visit_Operation(self, expression, *operands):

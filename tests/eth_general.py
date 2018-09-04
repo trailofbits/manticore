@@ -1,4 +1,4 @@
-
+import binascii
 import shutil
 import struct
 import tempfile
@@ -52,6 +52,26 @@ class EthAbiTests(unittest.TestCase):
     @staticmethod
     def _pack_int_to_32(x):
         return b'\x00' * 28 + struct.pack('>I', x)
+
+    def test_parse_tx(self):
+        m = ManticoreEVM()
+        source_code = '''
+        contract C{
+            mapping(address => uint) balances;
+            function test1(address to, uint val){
+                balances[to] = val;
+            }
+        }
+        '''
+        user_account = m.create_account(balance=1000, name='user_account')
+        contract_account = m.solidity_create_contract(source_code, owner=user_account, name='contract_account')
+
+
+        calldata = binascii.unhexlify(b'9de4886f9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d')
+        returndata = b'' 
+        md = m.get_metadata(contract_account)
+        self.assertEqual(md.parse_tx(calldata, returndata), 'test1(899826498278242188854817720535123270925417291165, 71291600040229971300002528024956868756719167029433602173313100742126907268509)')
+
 
     def test_dyn_address(self):
         d = [

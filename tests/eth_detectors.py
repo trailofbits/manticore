@@ -12,7 +12,8 @@ import os
 from manticore.core.smtlib import operators
 from eth_general import make_mock_evm_state
 from manticore.ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, Detector, NoAliveStates, ABI, \
-    EthereumError, DetectReentrancy, DetectUnusedRetVal, DetectSelfdestruct, LoopDepthLimiter, DetectExternalCallAndLeak
+    EthereumError, DetectReentrancySimple, DetectReentrancyAdvanced, DetectUnusedRetVal, DetectSelfdestruct, LoopDepthLimiter, DetectDelegatecall, \
+    DetectEnvInstruction, DetectExternalCallAndLeak, DetectEnvInstruction
 
 import shutil
 
@@ -56,7 +57,7 @@ class EthDetectorTest(unittest.TestCase):
         self.assertEqual(expected_findings, actual_findings)
 
 class EthRetVal(EthDetectorTest):
-    """ https://consensys.net/diligence/evm-analyzer-benchmark-suite/ """
+    """ Detect when a return value of a low level transaction instruction is ignored """
     DETECTOR_CLASS = DetectUnusedRetVal
 
     def test_retval_ok(self):
@@ -169,5 +170,46 @@ class EthIntegerOverflow(unittest.TestCase):
         cond = self.io._unsigned_mul_overflow(self.state, *arguments)
         check = self.state.can_be_true(cond)
         self.assertTrue(check)
+
+class DetectEnvInstruction(EthDetectorTest):
+    DETECTOR_CLASS = DetectEnvInstruction
+
+    def test_predictable_not_ok(self):
+        name = inspect.currentframe().f_code.co_name[5:]
+        self._test(name, {(174, 'Warning ORIGIN instruction used', False), (157, 'Warning DIFFICULTY instruction used', False), (129, 'Warning TIMESTAMP instruction used', False), (165, 'Warning NUMBER instruction used', False), (132, 'Warning COINBASE instruction used', False), (167, 'Warning BLOCKHASH instruction used', False), (160, 'Warning NUMBER instruction used', False), (199, 'Warning GASPRICE instruction used', False), (202, 'Warning GASLIMIT instruction used', False)})
+
+
+
+class EthDelegatecall(EthDetectorTest):
+    """ Test the detecion of funny delegatecalls """
+    DETECTOR_CLASS = DetectDelegatecall
+
+    def test_delegatecall_ok(self):
+        name = inspect.currentframe().f_code.co_name[5:]
+        self._test(name, set())
+
+    def test_delegatecall_ok1(self):
+        name = inspect.currentframe().f_code.co_name[5:]
+        self._test(name, set())
+
+    def test_delegatecall_ok2(self):
+        name = inspect.currentframe().f_code.co_name[5:]
+        self._test(name, set())
+
+    @unittest.skip("Too slow for this modern times")
+    def test_delegatecall_ok3(self):
+        name = inspect.currentframe().f_code.co_name[5:]
+        self._test(name, set())
+
+    def test_delegatecall_not_ok(self):
+        self.mevm.register_plugin(LoopDepthLimiter())
+        name = inspect.currentframe().f_code.co_name[5:]
+        self._test(name, {(179, 'Delegatecall to user controlled function', False), (179, 'Delegatecall to user controlled address', False)})
+
+    @unittest.skip("Too slow for this modern times")
+    def test_delegatecall_not_ok1(self):
+        self.mevm.register_plugin(LoopDepthLimiter(loop_count_threshold=500))
+        name = inspect.currentframe().f_code.co_name[5:]
+        self._test(name, {(179, 'Delegatecall to user controlled function', False)})
 
 

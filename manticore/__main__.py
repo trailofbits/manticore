@@ -64,7 +64,7 @@ def parse_arguments():
                               "(default mcore_?????)"))
     parser.add_argument('--pure-symbolic', action='store_true',
                         help='Treat all writable memory as symbolic')
-    parser.add_argument('--version', action='version', version='Manticore 0.2.0',
+    parser.add_argument('--version', action='version', version='Manticore 0.2.1.1',
                         help='Show program version information')
     parser.add_argument('--txlimit', type=positive,
                         help='Maximum number of symbolic transactions to run (positive integer) (Ethereum only)')
@@ -97,13 +97,19 @@ def parse_arguments():
                         help='Enable detection of reentrancy bug (Ethereum only)')
 
     parser.add_argument('--detect-unused-retval', action='store_true',
-                        help='Enable detection of not used internal transaction return value')
+                        help='Enable detection of not used internal transaction return value (Ethereum only)')
+
+    parser.add_argument('--detect-delegatecall', action='store_true',
+                        help='Enable detection of problematic uses of DELEGATECALL instruction (Ethereum only)')
 
     parser.add_argument('--detect-selfdestruct', action='store_true',
                         help='Enable detection of reachable selfdestruct instructions')
 
     parser.add_argument('--detect-externalcall', action='store_true',
                         help='Enable detection of reachable external call or ether leak to sender or arbitrary address')
+
+    parser.add_argument('--detect-env-instr', action='store_true',
+                        help='Enable detection of use of potentially unsafe/manipulable instructions')
 
     parser.add_argument('--detect-all', action='store_true',
                         help='Enable all detector heuristics (Ethereum only)')
@@ -130,7 +136,8 @@ def parse_arguments():
 
 
 def ethereum_cli(args):
-    from .ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, DetectUninitializedStorage, DetectUninitializedMemory, FilterFunctions, DetectReentrancy, DetectUnusedRetVal, DetectSelfdestruct, LoopDepthLimiter, DetectExternalCallAndLeak
+    from .ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, DetectUninitializedStorage, DetectUninitializedMemory, FilterFunctions, DetectReentrancySimple, DetectUnusedRetVal, DetectSelfdestruct, LoopDepthLimiter, DetectDelegatecall, DetectExternalCallAndLeak, DetectReentrancySimple, DetectEnvInstruction
+
     log.init_logging()
 
     m = ManticoreEVM(procs=args.procs, workspace_url=args.workspace)
@@ -144,13 +151,17 @@ def ethereum_cli(args):
     if args.detect_all or args.detect_uninitialized_memory:
         m.register_detector(DetectUninitializedMemory())
     if args.detect_all or args.detect_reentrancy:
-        m.register_detector(DetectReentrancy())
+        m.register_detector(DetectReentrancySimple())
     if args.detect_all or args.detect_unused_retval:
         m.register_detector(DetectUnusedRetVal())
+    if args.detect_all or args.detect_delegatecall:
+        m.register_detector(DetectDelegatecall())
     if args.detect_all or args.detect_selfdestruct:
         m.register_detector(DetectSelfdestruct())
     if args.detect_all or args.detect_externalcall:
         m.register_detector(DetectExternalCallAndLeak())
+    if args.detect_all or args.detect_env_instr:
+        m.register_detector(DetectEnvInstruction())
 
     if args.limit_loops:
         m.register_plugin(LoopDepthLimiter())

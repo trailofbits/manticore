@@ -88,6 +88,8 @@ class Uncovered(Policy):
         super().__init__(executor, *args, **kwargs)
         # hook on the necesary executor signals
         # on callbacks save data in executor.context['policy']
+        with self._executor.locked_context() as ctx:
+            ctx['policy'] = {}
         self._executor.subscribe('will_load_state', self._register)
 
     def _register(self, *args):
@@ -101,7 +103,7 @@ class Uncovered(Policy):
 
     def summarize(self, state):
         ''' Save the last pc before storing the state '''
-        return state.cpu.PC
+        return state.platform.PC
 
     def choice(self, state_ids):
         # Use executor.context['uncovered'] = state_id -> stats
@@ -228,14 +230,6 @@ class Executor(Eventful):
         with self._lock:
             if key is None:
                 yield self._shared_context
-            elif '.' in key:
-                keys = key.split('.')
-                with self.locked_context('.'.join(keys[:-1])) as sub_context:
-                    sub_sub_context = sub_context.get(keys[-1], None)
-                    if sub_sub_context is None:
-                        sub_sub_context = default()
-                    yield sub_sub_context
-                    sub_context[keys[-1]] = sub_sub_context
             else:
                 sub_context = self._shared_context.get(key, None)
                 if sub_context is None:
@@ -286,7 +280,7 @@ class Executor(Eventful):
     def _notify_stop_run(self):
         # notify siblings we are about to stop this run()
         self._running.value -= 1
-        if self._running.value < 0:
+        if self._running is None or self._running.value < 0:
             raise SystemExit
         self._lock.notify_all()
 
