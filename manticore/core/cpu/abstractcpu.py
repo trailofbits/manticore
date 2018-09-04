@@ -35,7 +35,7 @@ class DecodeException(CpuException):
     Raised when trying to decode an unknown or invalid instruction '''
 
     def __init__(self, pc, bytes):
-        super().__init__("Error decoding instruction @%08x", pc)
+        super().__init__("Error decoding instruction @ 0x{:x}".format(pc))
         self.pc = pc
         self.bytes = bytes
 
