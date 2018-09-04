@@ -4595,6 +4595,17 @@ class X86Cpu(Cpu):
         dest.write(result)
 
     @instruction
+    def PMAXUB(cpu, dest, src):
+        dest_value = dest.read()
+        src_value = src.read()
+        result = 0
+        for pos in range(0, dest.size, 8):
+            itema = (dest_value >> pos) & 0xff
+            itemb = (src_value >> pos) & 0xff
+            result |= Operators.ITEBV(dest.size, itema > itemb, itema, itemb) << pos
+        dest.write(result)
+
+    @instruction
     def VPXOR(cpu, dest, arg0, arg1):
         res = dest.write(arg0.read() ^ arg1.read())
 
@@ -4881,6 +4892,66 @@ class X86Cpu(Cpu):
             res = Operators.ITEBV(op0.size, Operators.EXTRACT(arg0, i, 8) == Operators.EXTRACT(arg1, i, 8), res | (0xff << i), res)
             # if (arg0>>i)&0xff == (arg1>>i)&0xff:
             #    res = res | (0xff << i)
+        op0.write(res)
+
+    @instruction
+    def PCMPEQD(cpu, op0, op1):
+        arg0 = op0.read()
+        arg1 = op1.read()
+        res = 0
+
+        for i in range(0, op0.size, 32):
+            res = Operators.ITEBV(op0.size, Operators.EXTRACT(arg0, i, 32) == Operators.EXTRACT(arg1, i, 32), res | (0xffffffff << i), res)
+        op0.write(res)
+
+    @instruction
+    def PCMPGTD(cpu, op0, op1):
+        arg0 = op0.read()
+        arg1 = op1.read()
+        res = 0
+
+        for i in range(0, op0.size, 32):
+            res = Operators.ITEBV(op0.size, Operators.EXTRACT(arg0, i, 32) > Operators.EXTRACT(arg1, i, 32), res | (0xffffffff << i), res)
+        op0.write(res)
+
+    @instruction
+    def PADDD(cpu, op0, op1):
+        arg0 = op0.read()
+        arg1 = op1.read()
+        res = 0
+
+        for i in range(0, op0.size, 32):
+            res |= ((Operators.EXTRACT(arg0, i, 32) + Operators.EXTRACT(arg1, i, 32)) & 0xFFFFFFFF) << i
+        op0.write(res)
+
+    @instruction
+    def PADDQ(cpu, op0, op1):
+        arg0 = op0.read()
+        arg1 = op1.read()
+        res = 0
+
+        for i in range(0, op0.size, 64):
+            res |= ((Operators.EXTRACT(arg0, i, 64) + Operators.EXTRACT(arg1, i, 64)) & 0xFFFFFFFFFFFFFFFF) << i
+        op0.write(res)
+
+    @instruction
+    def PSLLD(cpu, op0, op1):
+        arg0 = op0.read()
+        arg1 = op1.read()
+        res = 0
+
+        for i in range(0, op0.size, 32):
+            res |= ((Operators.EXTRACT(arg0, i, 32) << arg1) & 0xFFFFFFFF) << i
+        op0.write(res)
+
+    @instruction
+    def PSLLQ(cpu, op0, op1):
+        arg0 = op0.read()
+        arg1 = op1.read()
+        res = 0
+
+        for i in range(0, op0.size, 64):
+            res |= ((Operators.EXTRACT(arg0, i, 64) << arg1) & 0xFFFFFFFFFFFFFFFF) << i
         op0.write(res)
 
     ############################################################################
