@@ -10,7 +10,7 @@ import unicorn
 
 from .disasm import init_disassembler
 from ..smtlib import BitVec, Operators, Constant
-from ..memory import ConcretizeMemory, InvalidMemoryAccess
+from ..memory import ConcretizeMemory, InvalidMemoryAccess, LazySMemory
 from ...utils.helpers import issymbolic
 from ...utils.emulate import UnicornEmulator
 from ...utils.event import Eventful
@@ -768,20 +768,25 @@ class Cpu(Eventful):
             c = self.memory[address]
 
             if issymbolic(c):
+                # In case of fully symbolic memory, eagerly get a valid ptr
+                if isinstance(self.memory, LazySMemory):
+                    with self.memory.constraints as new_cs:
+                        new_cs.add(self.memory.valid_ptr(c))
+                        c =  struct.pack('B', solver.get_value(new_cs, c))
+                else:
+                    if isinstance(c, Constant):
+                        c = bytes([c.value])
+                    else:
+                        logger.error('Concretize executable memory %r %r', c, text)
+                        raise ConcretizeMemory(self.memory,
+                                               address=pc,
+                                               size=8 * self.max_instr_width,
+                                               policy='INSTRUCTION')
                 # xxx = solver.get_all_values(ConstraintSet(), c)[0]
                 # xxx = solver.get_value(ConstraintSet(), c)
                 # print 'the bytes', xxx
                 # c =  struct.pack('B', solver.get_all_values(ConstraintSet(), c)[0])
-                c =  struct.pack('B', solver.get_value(ConstraintSet(), c))
                 # assert isinstance(c, BitVec) and c.size == 8
-                # if isinstance(c, Constant):
-                #     c = bytes([c.value])
-                # else:
-                #     logger.error('Concretize executable memory %r %r', c, text)
-                #     raise ConcretizeMemory(self.memory,
-                #                            address=pc,
-                #                            size=8 * self.max_instr_width,
-                #                            policy='INSTRUCTION')
             text += c
 
         #Pad potentially incomplete instruction with zeroes
