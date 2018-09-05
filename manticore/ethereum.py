@@ -1526,22 +1526,38 @@ class ManticoreEVM(Manticore):
         abs_filename = os.path.abspath(source_file.name)
         working_folder, filename = os.path.split(abs_filename)
 
-        solc_invocation = [
-            solc,
-        ]
-        solc_invocation.extend(solc_remaps)
-        solc_invocation.extend([
+        solc_invocation = [solc] + list(solc_remaps) + [
             '--combined-json', 'abi,srcmap,srcmap-runtime,bin,hashes,bin-runtime',
             '--allow-paths', '.',
             filename
-        ])
+        ]
 
         p = Popen(solc_invocation, stdout=PIPE, stderr=PIPE, cwd=working_folder)
         stdout, stderr = p.communicate()
+
+        stdout, stderr = stdout.decode(), stderr.decode()
+
+        # See #1123 - solc fails when run within snap
+        # and https://forum.snapcraft.io/t/interfaces-allow-access-tmp-directory/5129
+        if stdout == '' and '""%s"" is not found' % filename in stderr:
+            raise EthereumError(
+                'Solidity compilation failed with error: {}\n'
+                'Did you install solc from snap Linux universal packages?\n'
+                "If so, the problem occurs because of snap's sandbox which makes so the sandboxed process doesn't see "
+                "files in /tmp directory.\n"
+                '\n'
+                'Here are some solutions to this problem:\n'
+                '1) Remove solc from snap and install it different way\n'
+                '2) Reinstall solc from snap in developer mode, so there is no sandbox '
+                '(however you do it on your own risk)\n'
+                "3) Find a way to add /tmp to the solc's sandbox. If you do so, "
+                "send us a PR so we could add it here!".format(stderr)
+            )
+
         try:
-            return json.loads(stdout.decode()), stderr.decode()
+            return json.loads(stdout), stderr
         except ValueError:
-            raise EthereumError('Solidity compilation error:\n\n{}'.format(stderr.decode()))
+            raise EthereumError('Solidity compilation error:\n\n{}'.format(stderr))
 
     @staticmethod
     def _compile(source_code, contract_name, libraries=None, solc_bin=None, solc_remaps=[]):
