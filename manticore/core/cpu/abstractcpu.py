@@ -771,11 +771,20 @@ class Cpu(Eventful):
             if issymbolic(c):
                 # In case of fully symbolic memory, eagerly get a valid ptr
                 if isinstance(self.memory, LazySMemory):
-                    try:
-                        vals = simplify_array_select(c)
-                        c = bytes([vals[0]])
-                    except visitors.ArraySelectSimplifier.ExpressionNotSimple:
-                        c = struct.pack('B', solver.get_value(self.memory.constraints, c))
+                    # First, try to read it concretely if the address is concrete
+                    # We are assuming here that the instruction bits themselves will not be
+                    # changed since we're assuming a 'r_x' page.
+                    if not issymbolic(address) and address in self.memory:
+                        code_map = self.memory.map_containing(address)
+                        assert code_map is not None
+                        assert 'w' not in code_map.perms
+                        c = code_map[address]
+                    else:
+                        try:
+                            vals = simplify_array_select(c)
+                            c = bytes([vals[0]])
+                        except visitors.ArraySelectSimplifier.ExpressionNotSimple:
+                            c = struct.pack('B', solver.get_value(self.memory.constraints, c))
                 else:
                     if isinstance(c, Constant):
                         c = bytes([c.value])
