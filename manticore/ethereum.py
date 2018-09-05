@@ -2619,7 +2619,8 @@ class ManticoreEVM(Manticore):
                             ret_types = metadata.get_func_return_types(function_id)
                             return_data = state.solve_one(tx.return_data)
                             return_values = ABI.deserialize(ret_types, return_data)  # function return
-                            is_return_symbolic = issymbolic(tx.return_data)
+
+                        is_return_symbolic = issymbolic(tx.return_data)
 
                         tx_summary.write('\n')
                         tx_summary.write("Function call:\n")
