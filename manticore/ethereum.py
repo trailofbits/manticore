@@ -1090,7 +1090,9 @@ class ABI(object):
                 data = bytearray(data.encode())
             elif isinstance(data, bytes):
                 data = bytearray(data)
-            assert isinstance(data, (bytearray, Array))
+            
+            if not isinstance(data, (bytearray, Array)):
+                raise ValueError("Need Array or bytearray")
 
             m = re.match(r"(?P<name>[a-zA-Z_0-9]+)(?P<type>\(.*\))", type_spec)
             if m and m.group('name'):
@@ -2598,18 +2600,33 @@ class ManticoreEVM(Manticore):
                 # The result if any RETURN or REVERT
                 tx_summary.write("Type: %s (%d)\n" % (tx.sort, tx.depth))
                 caller_solution = state.solve_one(tx.caller)
+                state.constrain(tx.caller == caller_solution)
+
                 caller_name = self.account_name(caller_solution)
                 tx_summary.write("From: %s(0x%x) %s\n" % (caller_name, caller_solution, flagged(issymbolic(tx.caller))))
                 address_solution = state.solve_one(tx.address)
+                state.constrain(tx.address == address_solution)
+
+                caller_name = self.account_name(caller_solution)
                 address_name = self.account_name(address_solution)
                 tx_summary.write("To: %s(0x%x) %s\n" % (address_name, address_solution, flagged(issymbolic(tx.address))))
-                tx_summary.write("Value: %d %s\n" % (state.solve_one(tx.value), flagged(issymbolic(tx.value))))
-                tx_summary.write("Gas used: %d %s\n" % (state.solve_one(tx.gas), flagged(issymbolic(tx.gas))))
+                value_solution = state.solve_one(tx.value)
+                state.constrain(tx.value == value_solution)
+                tx_summary.write("Value: %d %s\n" % (value_solution, flagged(issymbolic(tx.value))))
+
+                gas_solution = state.solve_one(tx.gas)
+                state.constrain(tx.gas == gas_solution)
+                tx_summary.write("Gas used: %d %s\n" % (gas_solution, flagged(issymbolic(tx.gas))))
                 tx_data = state.solve_one(tx.data)
+                state.constrain(tx_data == tx.data)
+
                 tx_summary.write("Data: %s %s\n" % (binascii.hexlify(tx_data), flagged(issymbolic(tx.data))))
                 if tx.return_data is not None:
                     return_data = state.solve_one(tx.return_data)
+                    state.constrain(tx.return_data == return_data)
+ 
                     tx_summary.write("Return_data: %s %s\n" % (binascii.hexlify(return_data), flagged(issymbolic(tx.return_data))))
+
                 metadata = self.get_metadata(tx.address)
                 if tx.sort == 'CREATE':
                     if metadata is not None:
@@ -2623,7 +2640,7 @@ class ManticoreEVM(Manticore):
 
                 if tx.sort == 'CALL':
                     if metadata is not None:
-                        calldata = state.solve_one(tx.data)
+                        calldata = tx_data
                         is_calldata_symbolic = issymbolic(tx.data)
 
                         function_id = calldata[:4]  # hope there is enough data
@@ -2634,10 +2651,9 @@ class ManticoreEVM(Manticore):
                         else:
                             arguments = (calldata,)
 
-                        return_data = None
                         if tx.result == 'RETURN':
                             ret_types = metadata.get_func_return_types(function_id)
-                            return_data = state.solve_one(tx.return_data)
+                            #return_data = state.solve_one(tx.return_data)
                             return_values = ABI.deserialize(ret_types, return_data)  # function return
                             is_return_symbolic = issymbolic(tx.return_data)
 
@@ -2647,7 +2663,7 @@ class ManticoreEVM(Manticore):
                         tx_summary.write(','.join(map(repr, arguments)))
                         tx_summary.write(') -> %s %s\n' % (tx.result, flagged(is_calldata_symbolic)))
 
-                        if return_data is not None:
+                        if return_data is not None and tx.result == 'RETURN':
                             if len(return_values) == 1:
                                 return_values = return_values[0]
 
