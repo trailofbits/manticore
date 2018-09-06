@@ -124,6 +124,9 @@ def parse_arguments():
                         help='Detects attemps to call empty code')
 
 
+    parser.add_argument('--verbose-trace', action='store_true',
+                        help='Dump an extra vervose trace for each state (Ethereum only)')
+
     parsed = parser.parse_args(sys.argv[1:])
     if parsed.procs <= 0:
         parsed.procs = 1
@@ -137,7 +140,7 @@ def parse_arguments():
 
 
 def ethereum_cli(args):
-    from .ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, DetectUninitializedStorage, DetectUninitializedMemory, FilterFunctions, DetectReentrancySimple, DetectUnusedRetVal, DetectSelfdestruct, LoopDepthLimiter, DetectDelegatecall, DetectExternalCallAndLeak, DetectReentrancySimple, DetectEnvInstruction, DetectContractExistance
+    from .ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, DetectUninitializedStorage, DetectUninitializedMemory, FilterFunctions, DetectReentrancySimple, DetectUnusedRetVal, DetectSelfdestruct, LoopDepthLimiter, DetectDelegatecall, DetectExternalCallAndLeak, DetectReentrancySimple, DetectEnvInstruction, DetectContractExistance, VerboseTrace
 
     log.init_logging()
 
@@ -165,6 +168,10 @@ def ethereum_cli(args):
         m.register_detector(DetectEnvInstruction())
     if args.detect_all or args.detect_callunexistant:
         m.register_detector(DetectContractExistance())
+
+
+    if args.verbose_trace:
+        m.register_plugin(VerboseTrace())
 
     if args.limit_loops:
         m.register_plugin(LoopDepthLimiter())
