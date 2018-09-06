@@ -593,7 +593,7 @@ class EVM(Eventful):
                     #explore both options / fork
                     enough_gas_solutions = solver.get_all_values(self.constraints, Operators.UGT(self._gas, fee))
                     if len(enough_gas_solutions) == 2:
-                        raise Concretize("Concretice gas fee",
+                        raise Concretize("Concretize gas fee",
                                          expression=Operators.UGT(self._gas, fee),
                                          setstate=None,
                                          policy='ALL')
@@ -723,7 +723,7 @@ class EVM(Eventful):
                     state.platform.current_vm.pc = BitVecConstant(256, value, taint=taints)
                 else:
                     state.platform.current_vm.pc = value
-            raise Concretize("Concretice PC",
+            raise Concretize("Concretize PC",
                              expression=expression,
                              setstate=setstate,
                              policy='ALL')
@@ -737,7 +737,7 @@ class EVM(Eventful):
 
             def setstate(state, value):
                 self.stack[pos] = value
-            raise Concretize("Concretice Stack Variable",
+            raise Concretize("Concretize Stack Variable",
                              expression=self.stack[pos],
                              setstate=setstate,
                              policy=ex.policy)
