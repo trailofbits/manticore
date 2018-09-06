@@ -164,7 +164,6 @@ def ethereum_cli(args):
     if args.detect_all or args.detect_env_instr:
         m.register_detector(DetectEnvInstruction())
 
-
     if args.verbose_trace:
         m.register_plugin(VerboseTrace())
 

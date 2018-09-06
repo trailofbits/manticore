@@ -243,13 +243,13 @@ class VerboseTrace(Plugin):
         world = state.platform
         mnemonic = instruction.semantics
         current_vm = world.current_vm
-        str_trace = state.context.get('str_trace',[])
+        str_trace = state.context.get('str_trace', [])
         str_trace.append(str(current_vm))
         state.context['str_trace'] = str_trace
 
     def on_finalize(self, state, testcase):
         with testcase.open_stream('str_trace') as str_trace_f:
-            str_trace_f.write( '\n'.join(state.context.get('str_trace',[])))
+            str_trace_f.write('\n'.join(state.context.get('str_trace', [])))
 
 
 class DetectEnvInstruction(Detector):
