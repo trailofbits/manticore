@@ -31,10 +31,6 @@ def parse_arguments():
                         help='where to write the coverage data')
     parser.add_argument('--data', type=str, default='',
                         help='Initial concrete concrete_data for the input symbolic buffer')
-    # FIXME (theo) similarly to policy, add documentation here.
-    disas = ['capstone', 'binja-il']
-    parser.add_argument('--disasm', type=str, default='capstone', choices=disas,
-                        help=argparse.SUPPRESS)
     parser.add_argument('--env', type=str, nargs=1, default=[], action='append',
                         help='Add an environment variable. Use "+" for symbolic bytes. (VARNAME=++++)')
     #TODO allow entry as an address
@@ -68,13 +64,16 @@ def parse_arguments():
                               "(default mcore_?????)"))
     parser.add_argument('--pure-symbolic', action='store_true',
                         help='Treat all writable memory as symbolic')
-    parser.add_argument('--version', action='version', version='Manticore 0.1.10',
+    parser.add_argument('--version', action='version', version='Manticore 0.2.1.1',
                         help='Show program version information')
     parser.add_argument('--txlimit', type=positive,
                         help='Maximum number of symbolic transactions to run (positive integer) (Ethereum only)')
 
     parser.add_argument('--txnocoverage', action='store_true',
                         help='Do not use coverage as stopping criteria (Ethereum only)')
+
+    parser.add_argument('--txnoether', action='store_true',
+                        help='Do not attempt to send ether to contract (Ethereum only)')
 
     parser.add_argument('--txaccount', type=str, default="attacker",
                         help='Account used as caller in the symbolic transactions, either "attacker" or "owner" (Ethereum only)')
@@ -97,11 +96,32 @@ def parse_arguments():
     parser.add_argument('--detect-reentrancy', action='store_true',
                         help='Enable detection of reentrancy bug (Ethereum only)')
 
+    parser.add_argument('--detect-unused-retval', action='store_true',
+                        help='Enable detection of not used internal transaction return value (Ethereum only)')
+
+    parser.add_argument('--detect-delegatecall', action='store_true',
+                        help='Enable detection of problematic uses of DELEGATECALL instruction (Ethereum only)')
+
+    parser.add_argument('--detect-selfdestruct', action='store_true',
+                        help='Enable detection of reachable selfdestruct instructions')
+
+    parser.add_argument('--detect-externalcall', action='store_true',
+                        help='Enable detection of reachable external call or ether leak to sender or arbitrary address')
+
+    parser.add_argument('--detect-env-instr', action='store_true',
+                        help='Enable detection of use of potentially unsafe/manipulable instructions')
+
     parser.add_argument('--detect-all', action='store_true',
                         help='Enable all detector heuristics (Ethereum only)')
 
     parser.add_argument('--avoid-constant', action='store_true',
                         help='Avoid exploring constant functions for human transactions (Ethereum only)')
+
+    parser.add_argument('--limit-loops', action='store_true',
+                        help='Avoid exploring constant functions for human transactions (Ethereum only)')
+
+    parser.add_argument('--no-testcases', action='store_true',
+                        help='Do not generate testcases for discovered states when analysis finishes (Ethereum only)')
 
     parsed = parser.parse_args(sys.argv[1:])
     if parsed.procs <= 0:
@@ -116,10 +136,11 @@ def parse_arguments():
 
 
 def ethereum_cli(args):
-    from .ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, DetectUninitializedStorage, DetectUninitializedMemory, FilterFunctions, DetectReentrancy
+    from .ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, DetectUninitializedStorage, DetectUninitializedMemory, FilterFunctions, DetectReentrancySimple, DetectUnusedRetVal, DetectSelfdestruct, LoopDepthLimiter, DetectDelegatecall, DetectExternalCallAndLeak, DetectReentrancySimple, DetectEnvInstruction
+
     log.init_logging()
 
-    m = ManticoreEVM(procs=args.procs)
+    m = ManticoreEVM(procs=args.procs, workspace_url=args.workspace)
 
     if args.detect_all or args.detect_invalid:
         m.register_detector(DetectInvalid())
@@ -130,8 +151,20 @@ def ethereum_cli(args):
     if args.detect_all or args.detect_uninitialized_memory:
         m.register_detector(DetectUninitializedMemory())
     if args.detect_all or args.detect_reentrancy:
-        m.register_detector(DetectReentrancy())
+        m.register_detector(DetectReentrancySimple())
+    if args.detect_all or args.detect_unused_retval:
+        m.register_detector(DetectUnusedRetVal())
+    if args.detect_all or args.detect_delegatecall:
+        m.register_detector(DetectDelegatecall())
+    if args.detect_all or args.detect_selfdestruct:
+        m.register_detector(DetectSelfdestruct())
+    if args.detect_all or args.detect_externalcall:
+        m.register_detector(DetectExternalCallAndLeak())
+    if args.detect_all or args.detect_env_instr:
+        m.register_detector(DetectEnvInstruction())
 
+    if args.limit_loops:
+        m.register_plugin(LoopDepthLimiter())
     if args.avoid_constant:
         # avoid all human level tx that has no effect on the storage
         filter_nohuman_constants = FilterFunctions(regexp=r".*", depth='human', mutability='constant', include=False)
@@ -139,10 +172,12 @@ def ethereum_cli(args):
 
     logger.info("Beginning analysis")
 
-    m.multi_tx_analysis(args.argv[0], contract_name=args.contract, tx_limit=args.txlimit, tx_use_coverage=not args.txnocoverage, tx_account=args.txaccount)
+    m.multi_tx_analysis(args.argv[0], contract_name=args.contract, tx_limit=args.txlimit, tx_use_coverage=not args.txnocoverage, tx_send_ether=not args.txnoether, tx_account=args.txaccount)
 
     #TODO unregister all plugins
-    m.finalize()
+
+    if not args.no_testcases:
+        m.finalize()
 
 
 def main():
@@ -161,8 +196,8 @@ def main():
     env = {key: val for key, val in [env[0].split('=') for env in args.env]}
 
     m = Manticore(args.argv[0], argv=args.argv[1:], env=env, entry_symbol=args.entrysymbol,
-                  workspace_url=args.workspace, policy=args.policy, disasm=args.disasm,
-                  concrete_start=args.data, pure_symbolic=args.pure_symbolic)
+                  workspace_url=args.workspace, policy=args.policy, concrete_start=args.data,
+                  pure_symbolic=args.pure_symbolic)
 
     # Default plugins for now.. FIXME REMOVE!
     m.register_plugin(InstructionCounter())

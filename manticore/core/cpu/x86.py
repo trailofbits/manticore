@@ -433,7 +433,7 @@ class AMD64RegFile(RegisterFile):
                             'FPSW', 'FPCW', 'FPTAG')
 
     def __init__(self, *args, **kwargs):
-        super(AMD64RegFile, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self._registers = {}
         for reg in ('RAX', 'RCX', 'RDX', 'RBX', 'RSP', 'RBP', 'RSI', 'RDI',
@@ -540,7 +540,7 @@ class AMD64RegFile(RegisterFile):
             flags.append((self._registers[flag], offset))
 
         if any(issymbolic(flag) for flag, offset in flags):
-            res = reduce(operator.or_, list(map(make_symbolic, flags)))
+            res = reduce(operator.or_, map(make_symbolic, flags))
         else:
             res = 0
             for flag, offset in flags:
@@ -612,7 +612,7 @@ class AMD64Operand(Operand):
     ''' This class deals with capstone X86 operands '''
 
     def __init__(self, cpu, op, **kwargs):
-        super(AMD64Operand, self).__init__(cpu, op, **kwargs)
+        super().__init__(cpu, op, **kwargs)
 
     @property
     def type(self):
@@ -696,18 +696,18 @@ class X86Cpu(Cpu):
         :param regfile: regfile object for this CPU.
         :param memory: memory object for this CPU.
         '''
-        super(X86Cpu, self).__init__(regfile, memory, *args, **kwargs)
+        super().__init__(regfile, memory, *args, **kwargs)
         #Segments ('base', 'limit', 'perms', 'gatetype')
         self._segments = {}
 
     def __getstate__(self):
-        state = super(X86Cpu, self).__getstate__()
+        state = super().__getstate__()
         state['segments'] = self._segments
         return state
 
     def __setstate__(self, state):
         self._segments = state['segments']
-        super(X86Cpu, self).__setstate__(state)
+        super().__setstate__(state)
 
     # Segments
     def set_descriptor(self, selector, base, limit, perms):
@@ -5396,7 +5396,7 @@ class X86Cpu(Cpu):
         result = []
         value_a = dest.read()
         value_b = src.read()
-        for i in reversed(list(range(0, dest.size, 8))):
+        for i in reversed(range(0, dest.size, 8)):
             a = Operators.EXTRACT(value_a, i, 8)
             b = Operators.EXTRACT(value_b, i, 8)
             result.append((a - b) & 0xff)
@@ -5971,7 +5971,7 @@ class I386StdcallAbi(Abi):
     '''
 
     def __init__(self, cpu):
-        super(I386StdcallAbi, self).__init__(cpu)
+        super().__init__(cpu)
         self._arguments = 0
 
     def get_arguments(self):
@@ -6031,10 +6031,10 @@ class AMD64Cpu(X86Cpu):
         Builds a CPU model.
         :param memory: memory object for this CPU.
         '''
-        super(AMD64Cpu, self).__init__(AMD64RegFile(aliases={'PC': 'RIP', 'STACK': 'RSP', 'FRAME': 'RBP'},),
-                                       memory,
-                                       *args,
-                                       **kwargs)
+        super().__init__(AMD64RegFile(aliases={'PC': 'RIP', 'STACK': 'RSP', 'FRAME': 'RBP'}, ),
+                         memory,
+                         *args,
+                         **kwargs)
 
     def __str__(self):
         '''
@@ -6141,10 +6141,10 @@ class I386Cpu(X86Cpu):
         Builds a CPU model.
         :param memory: memory object for this CPU.
         '''
-        super(I386Cpu, self).__init__(AMD64RegFile({'PC': 'EIP', 'STACK': 'ESP', 'FRAME': 'EBP'}),
-                                      memory,
-                                      *args,
-                                      **kwargs)
+        super().__init__(AMD64RegFile({'PC': 'EIP', 'STACK': 'ESP', 'FRAME': 'EBP'}),
+                         memory,
+                         *args,
+                         **kwargs)
 
     def __str__(self):
         '''

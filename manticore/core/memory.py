@@ -1,9 +1,10 @@
 from abc import ABCMeta, abstractmethod, abstractproperty
 from weakref import WeakValueDictionary
 from .smtlib import *
+import functools
 import logging
 from ..utils.mappings import mmap, munmap
-from ..utils.helpers import issymbolic
+from ..utils.helpers import issymbolic, interval_intersection
 
 logger = logging.getLogger(__name__)
 
@@ -105,7 +106,7 @@ class Map(object, metaclass=ABCMeta):
         assert isinstance(start, int) and start >= 0, 'Invalid start address'
         assert isinstance(size, int) and size > 0, 'Invalid end address'
 
-        super(Map, self).__init__()
+        super().__init__()
         self._start = start
         self._end = start + size
         self._set_perms(perms)
@@ -157,6 +158,14 @@ class Map(object, metaclass=ABCMeta):
         :rtype: str
         '''
         return '<%s 0x%016x-0x%016x %s>' % (self.__class__.__name__, self.start, self.end, self.perms)
+
+    def __iter__(self):
+        """
+        Iterate all valid addresses
+        :return:
+        """
+        return iter(range(self._start, self._end))
+
 
     def __eq__(self, other):
         return self.start == other.start and \
@@ -236,7 +245,7 @@ class Map(object, metaclass=ABCMeta):
 class AnonMap(Map):
     ''' A concrete anonymous memory map '''
 
-    def __init__(self, start, size, perms, data_init=None, **kwargs):
+    def __init__(self, start, size, perms, data_init=None, name=None, **kwargs):
         '''
         Builds a concrete anonymous memory map.
 
@@ -245,7 +254,7 @@ class AnonMap(Map):
         :param perms: the access permissions of the map.
         :param data_init: the data to initialize the map.
         '''
-        super(AnonMap, self).__init__(start, size, perms, **kwargs)
+        super().__init__(start, size, perms, name, **kwargs)
         self._data = bytearray(size)
         if data_init is not None:
             assert len(data_init) <= size, 'More initial data than reserved memory'
@@ -256,7 +265,7 @@ class AnonMap(Map):
                 self._data[0:len(data_init)] = [ord(s) for s in data_init]
 
     def __reduce__(self):
-        return (self.__class__, (self.start, len(self), self.perms, self._data, ))
+        return (self.__class__,(self.start, len(self), self.perms, self._data, self.name))
 
     def split(self, address):
         if address <= self.start:
@@ -355,7 +364,7 @@ class FileMap(Map):
         :param offset: the offset into the file where to start the mapping. \
                 This offset must be a multiple of pagebitsize.
         '''
-        super(FileMap, self).__init__(addr, size, perms, **kwargs)
+        super().__init__(addr, size, perms, **kwargs)
         assert isinstance(offset, int)
         assert offset >= 0
         self._filename = filename
@@ -442,7 +451,7 @@ class COWMap(Map):
         if perms is None:
             perms = parent.perms
 
-        super(COWMap, self).__init__(parent.start + offset, size, perms, **kwargs)
+        super().__init__(parent.start + offset, size, perms, **kwargs)
         self._parent = parent
         self._parent.__setitem__ = False
         self._cow = {}
@@ -489,7 +498,7 @@ class Memory(object, metaclass=ABCMeta):
         '''
         Builds a memory manager.
         '''
-        super(Memory, self).__init__()
+        super().__init__()
         if maps is None:
             self._maps = set()
         else:
@@ -504,11 +513,13 @@ class Memory(object, metaclass=ABCMeta):
     def __reduce__(self):
         return (self.__class__, (self._maps, ))
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def memory_bit_size(self):
         return 32
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def page_bit_size(self):
         return 12
 
@@ -682,7 +693,7 @@ class Memory(object, metaclass=ABCMeta):
             assert i not in self._page2map, 'Map already used'
 
         # Create the anonymous map
-        m = AnonMap(start=addr, size=size, perms=perms, data_init=data_init)
+        m = AnonMap(start=addr, size=size, perms=perms, data_init=data_init, name=name)
 
         # Okay, ready to alloc
         self._add(m)
@@ -925,6 +936,16 @@ class Memory(object, metaclass=ABCMeta):
             result = self.read(index, 1)[0]
         return result
 
+    def __iter__(self):
+        """
+        Iterate all valid addresses
+        :return:
+        """
+        for page_addr in sorted(self._page2map.keys()):
+            start = page_addr * self.page_size
+            end = start + self.page_size
+            for addr in range(start, end):
+                yield addr
 
 class SMemory(Memory):
     '''
@@ -941,7 +962,7 @@ class SMemory(Memory):
         :param constraints:  a set of constraints
         :param symbols: Symbolic chunks
         '''
-        super(SMemory, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         assert isinstance(constraints, ConstraintSet)
         self._constraints = constraints
         if symbols is None:
@@ -982,7 +1003,7 @@ class SMemory(Memory):
                 break
             if addr in self._symbols:
                 del self._symbols[addr]
-        super(SMemory, self).munmap(start, size)
+        super().munmap(start, size)
 
     def read(self, address, size, force=False):
         '''
@@ -1048,7 +1069,7 @@ class SMemory(Memory):
                     assert len(result) == offset + 1
             return list(map(Operators.CHR, result))
         else:
-            result = list(map(Operators.ORD, super(SMemory, self).read(address, size, force)))
+            result = list(map(Operators.ORD, super().read(address, size, force)))
             for offset in range(size):
                 if address + offset in self._symbols:
                     for condition, value in self._symbols[address + offset]:
@@ -1087,7 +1108,7 @@ class SMemory(Memory):
                     # overwrite all previous items
                     if address + offset in self._symbols:
                         del self._symbols[address + offset]
-                    super(SMemory, self).write(address + offset, [value[offset]], force)
+                    super().write(address + offset, [value[offset]], force)
 
     def _try_get_solutions(self, address, size, access, max_solutions=0x1000, force=False):
         '''
@@ -1124,21 +1145,17 @@ class LazySMemory(SMemory):
 
     def __init__(self, constraints, *args, **kwargs):
         super(LazySMemory, self).__init__(constraints, *args, **kwargs)
-        self.bigarray = constraints.new_array(index_bits=self.memory_bit_size)
+        self.backing_array = constraints.new_array(index_bits=self.memory_bit_size)
         self.backed_by_symbolic_store = set()
 
     def __reduce__(self):
-        return (self.__class__, (self.constraints, self._symbols, self._maps), {'backing_array': self.bigarray, 'backed_by_symbolic_store': self.backed_by_symbolic_store })
+        return (self.__class__, (self.constraints, self._symbols, self._maps),
+                {'backing_array': self.backing_array,
+                 'backed_by_symbolic_store': self.backed_by_symbolic_store})
 
     def __setstate__(self, state):
-        self.bigarray = state['backing_array']
+        self.backing_array = state['backing_array']
         self.backed_by_symbolic_store = state['backed_by_symbolic_store']
-
-    def mmap(self, addr, size, perms, name=None, **kwargs):
-        assert isinstance(addr, int)
-        map = AnonMap(addr, size, perms, name=name)
-        self._add(map)
-        return addr
 
     def mmapFile(self, addr, size, perms, filename, offset=0):
         '''
@@ -1222,21 +1239,25 @@ class LazySMemory(SMemory):
         :param int to_addr:
         :return:
         """
+        logger.debug("Importing concrete memory: {:x} - {:x} ({} bytes)".format(from_addr, to_addr, to_addr - from_addr))
 
-        addr = from_addr
-
-        while addr <= to_addr:
-            if addr in self.backed_by_symbolic_store:
+        for m in self.maps:
+            span = interval_intersection(m.start, m.end, from_addr, to_addr)
+            if span is None:
                 continue
 
-            if addr in self:
-                self.bigarray[addr] = Memory.read(self, addr, 1)[0]
+            # Only writable maps should be reached by a symbolic write
+            if 'w' not in m.perms:
+                continue
+
+            start, stop = span
+
+            for addr in range(start, stop):
+                if addr in self.backed_by_symbolic_store:
+                    continue
+
+                self.backing_array[addr] = Memory.read(self, addr, 1)[0]
                 self.backed_by_symbolic_store.add(addr)
-            else:
-                addr = (addr + 0x1000) & ~0xfff
-                continue
-
-            addr += 1
 
     def _map_deref_expr(self, map, address, size):
         return Operators.AND(
@@ -1245,8 +1266,11 @@ class LazySMemory(SMemory):
             Operators.UGE(address, map.start),
             Operators.ULT(address, map.end))
 
+    def _reachable_range(self, sym_address, size):
+        addr_min, addr_max = solver.minmax(self.constraints, sym_address)
+        return addr_min, addr_max + size - 1
+
     def valid_ptr(self, address):
-        import functools
         assert issymbolic(address)
 
         expressions = [self._map_deref_expr(m, address, 1) for m in self._maps]
@@ -1257,53 +1281,22 @@ class LazySMemory(SMemory):
     def invalid_ptr(self, address):
         return Operators.NOT(self.valid_ptr(address))
 
-    # currently unused
-    def _constrain_to_maps(self, where, size):
-        maps = self.mappings()
-
-        from manticore.core.smtlib.operators import UGE, ULT, OR
-
-        constraints = []
-        for map in maps:
-            start, end = map[:2]
-
-            start_cons = UGE(where, start)
-            end_cons = ULT(where+size-1, end)
-
-            c = start_cons & end_cons
-            constraints.append(c)
-
-            logger.info('map', hex(start), hex(end))
-
-        if len(constraints) > 1:
-            final_constraint = OR(*constraints)
-        else:
-            final_constraint = constraints[0]
-
-        self.constraints.add(final_constraint)
-
     def read(self, address, size, force=False):
 
-        # if address is symbolic, self._constrain_to_maps(address, size) ? ?
+        # if address is symbolic, self.valid_ptr(address) ? ?
+        access_min, access_max = self._reachable_range(address, size)
 
-        addrs_to_access = [address + i for i in range(size)]
-
-        addr_min, addr_max = solver.minmax(self.constraints, address)
-
-        access_min = addr_min
-        access_max = addr_max + size - 1
-
-        if issymbolic(addrs_to_access[0]):
+        if issymbolic(address):
             self._import_concrete_memory(access_min, access_max)
 
         retvals = []
-        i = size
+        addrs_to_access = [address + i for i in range(size)]
         for addr in addrs_to_access:
-            i -= 1
             if issymbolic(addr) or addr in self.backed_by_symbolic_store:
-                retvals.append(self.bigarray[addr])
+                val = self.backing_array[addr]
             else:
-                retvals.append(Memory.read(self, addr, 1)[0])
+                val = Memory.read(self, addr, 1)[0]
+            retvals.append(val)
 
         return retvals
 
@@ -1311,64 +1304,44 @@ class LazySMemory(SMemory):
 
         size = len(value)
 
-        addrs_to_access = []
-        for i in range(size):
-            addrs_to_access.append(address + i)
+        addrs_to_access = [address + i for i in range(size)]
 
-        symbolic_write = issymbolic(addrs_to_access[0])
-
-
-        if symbolic_write:
-            addr_min, addr_max = solver.minmax(self.constraints, address)
-            access_min = addr_min
-            access_max = addr_max + size - 1
+        if issymbolic(address):
+            access_min, access_max = self._reachable_range(address, size)
 
             self._import_concrete_memory(access_min, access_max)
 
-            for addr, byte in zip(addrs_to_access, value) :
-                self.bigarray[addr] = Operators.ORD(byte)
+            for addr, byte in zip(addrs_to_access, value):
+                self.backing_array[addr] = Operators.ORD(byte)
         else:
-            for addr, byte in zip(addrs_to_access, value) :
-                self.backed_by_symbolic_store.discard(addr)
-                Memory.write(self, addr, [byte])
+            self.backed_by_symbolic_store -= set(addrs_to_access)
+            Memory.write(self, address, value)
 
     def scan_mem(self, data_to_find):
         """
 
-        :param state:
-        :param int data_to_find:
+        :param bytes data_to_find:
         :return:
         """
-        import struct
-        raw = struct.pack('<Q', data_to_find)
 
-        for map in self.maps:
-            curr_ptr = map.start
-            while curr_ptr < map.end:
-                curr_byte = map[curr_ptr]
+        # TODO: for the moment we just treat symbolic bytes as bytes that don't match.
+        # for our simple test cases right now, the bytes we're interested in scanning
+        # for will all just be there concretely
+        # TODO: Can probably do something smarter here like BM, but unnecessary if we're
+        # looking for short strings.
 
-                # TODO: for the moment we just treat symbolic bytes as bytes that don't match. for our simple test
-                # cases right now, the bytes we're interested in scanning for will all just be there concretely
-                if not issymbolic(curr_byte) and ord(curr_byte) == raw[0]:
-                    offset = 1
+        # Querying mem with an index returns [bytes]
+        if isinstance(data_to_find, bytes):
+            data_to_find = [bytes([c]) for c in data_to_find]
 
-                    for c in raw[1:]:
-                        # FIXME: slid off the end of the map in the middle of checking. can't support scanning across map boundaries
-                        if curr_ptr + offset >= map.end:
-                            break
+        for mapping in self.maps:
+            for ptr in mapping:
+                if ptr + len(data_to_find) >= mapping.end:
+                    break
 
-                        byte = map[curr_ptr + offset]
-                        if issymbolic(byte) or ord(byte) != c:
-                            break
-
-                        offset += 1
-                    else:
-                        yield curr_ptr
-
-                    # We /might/ in some cases, be able to bump the curr pointer past the end of the data, but what
-                    # if there is an overlapping one that matches? So we just bump by one.
-
-                curr_ptr += 1
+                candidate = mapping[ptr:ptr+len(data_to_find)]
+                if candidate == data_to_find:  # implicitly check if values aren't symbolic
+                    yield ptr
 
 
 class Memory32(Memory):

@@ -10,10 +10,11 @@ import unicorn
 
 from .disasm import init_disassembler
 from ..smtlib import BitVec, Operators, Constant
-from ..memory import ConcretizeMemory, InvalidMemoryAccess
+from ..memory import ConcretizeMemory, InvalidMemoryAccess, LazySMemory
 from ...utils.helpers import issymbolic
 from ...utils.emulate import UnicornEmulator
 from ...utils.event import Eventful
+from ..smtlib import visitors
 
 # tmp imports
 import struct
@@ -35,7 +36,7 @@ class DecodeException(CpuException):
     Raised when trying to decode an unknown or invalid instruction '''
 
     def __init__(self, pc, bytes):
-        super(DecodeException, self).__init__("Error decoding instruction @%08x", pc)
+        super().__init__("Error decoding instruction @ 0x{:x}".format(pc))
         self.pc = pc
         self.bytes = bytes
 
@@ -61,7 +62,7 @@ class Interruption(CpuException):
     ''' A software interrupt. '''
 
     def __init__(self, N):
-        super(Interruption, self).__init__("CPU Software Interruption %08x", N)
+        super().__init__("CPU Software Interruption %08x", N)
         self.N = N
 
 
@@ -69,7 +70,7 @@ class Syscall(CpuException):
     ''' '''
 
     def __init__(self):
-        super(Syscall, self).__init__("CPU Syscall")
+        super().__init__("CPU Syscall")
 
 
 class ConcretizeRegister(CpuException):
@@ -392,14 +393,14 @@ class SyscallAbi(Abi):
         raise NotImplementedError
 
     def get_argument_values(self, model, prefix_args):
-        self._last_arguments = super(SyscallAbi, self).get_argument_values(model, prefix_args)
+        self._last_arguments = super().get_argument_values(model, prefix_args)
         return self._last_arguments
 
     def invoke(self, model, prefix_args=None):
         # invoke() will call get_argument_values()
         self._last_arguments = ()
 
-        ret = super(SyscallAbi, self).invoke(model, prefix_args)
+        ret = super().invoke(model, prefix_args)
 
         if platform_logger.isEnabledFor(logging.DEBUG):
             # Try to expand strings up to max_arg_expansion
@@ -424,7 +425,7 @@ class SyscallAbi(Abi):
             if ret > min_hex_expansion:
                 ret_s = ret_s + '(0x{:x})'.format(ret)
 
-            platform_logger.debug('%s(%s) -> %s', model.__func__.__name__, args_s, ret_s)
+            platform_logger.debug('%s(%s) -> %s', model.__func__.__name__, repr(args_s), ret_s)
 
 ############################################################################
 # Abstract cpu encapsulating common cpu methods used by platforms and executor.
@@ -452,7 +453,7 @@ class Cpu(Eventful):
     def __init__(self, regfile, memory, **kwargs):
         assert isinstance(regfile, RegisterFile)
         self._disasm = kwargs.pop("disasm", 'capstone')
-        super(Cpu, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self._regfile = regfile
         self._memory = memory
         self._instruction_cache = {}
@@ -465,7 +466,7 @@ class Cpu(Eventful):
         assert 'PC' in self._regfile
 
     def __getstate__(self):
-        state = super(Cpu, self).__getstate__()
+        state = super().__getstate__()
         state['regfile'] = self._regfile
         state['memory'] = self._memory
         state['icount'] = self._icount
@@ -480,7 +481,7 @@ class Cpu(Eventful):
         self._icount = state['icount']
         self._last_pc = state['last_pc']
         self._disasm = state['disassembler']
-        super(Cpu, self).__setstate__(state)
+        super().__setstate__(state)
 
     @property
     def icount(self):
@@ -611,7 +612,7 @@ class Cpu(Eventful):
 
         data = self._memory.read(where, size // 8, force)
         assert (8 * len(data)) == size
-        value = Operators.CONCAT(size, *list(map(Operators.ORD, reversed(data))))
+        value = Operators.CONCAT(size, *map(Operators.ORD, reversed(data)))
 
         self._publish('did_read_memory', where, value, size)
         return value
@@ -768,18 +769,27 @@ class Cpu(Eventful):
             c = self.memory[address]
 
             if issymbolic(c):
-                xxx = solver.get_all_values(ConstraintSet(), c)[0]
+                # In case of fully symbolic memory, eagerly get a valid ptr
+                if isinstance(self.memory, LazySMemory):
+                    try:
+                        vals = simplify_array_select(c)
+                        c = bytes([vals[0]])
+                    except visitors.ArraySelectSimplifier.ExpressionNotSimple:
+                        c = struct.pack('B', solver.get_value(self.memory.constraints, c))
+                else:
+                    if isinstance(c, Constant):
+                        c = bytes([c.value])
+                    else:
+                        logger.error('Concretize executable memory %r %r', c, text)
+                        raise ConcretizeMemory(self.memory,
+                                               address=pc,
+                                               size=8 * self.max_instr_width,
+                                               policy='INSTRUCTION')
+                # xxx = solver.get_all_values(ConstraintSet(), c)[0]
+                # xxx = solver.get_value(ConstraintSet(), c)
                 # print 'the bytes', xxx
-                c =  struct.pack('B', solver.get_all_values(ConstraintSet(), c)[0])
+                # c =  struct.pack('B', solver.get_all_values(ConstraintSet(), c)[0])
                 # assert isinstance(c, BitVec) and c.size == 8
-                # if isinstance(c, Constant):
-                #     c = bytes([c.value])
-                # else:
-                #     logger.error('Concretize executable memory %r %r', c, text)
-                #     raise ConcretizeMemory(self.memory,
-                #                            address=pc,
-                #                            size=8 * self.max_instr_width,
-                #                            policy='INSTRUCTION')
             text += c
 
         #Pad potentially incomplete instruction with zeroes
@@ -922,8 +932,7 @@ class Cpu(Eventful):
         # backup, null, use, then restore the list.
         # will disabled_signals(self):
         #    return map(self.render_register, self._regfile.canonical_registers)
-        return list(map(self.render_register,
-                        sorted(self._regfile.canonical_registers)))
+        return map(self.render_register, sorted(self._regfile.canonical_registers))
 
     # Generic string representation
     def __str__(self):

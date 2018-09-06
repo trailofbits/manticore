@@ -1,6 +1,7 @@
 
 import os
 import errno
+import pickle
 import shutil
 import tempfile
 import unittest
@@ -13,11 +14,8 @@ from manticore.core.cpu.abstractcpu import ConcretizeRegister
 from binascii import hexlify
 
 class LinuxTest(unittest.TestCase):
-    '''
-    TODO(mark): these tests assumes /bin/ls is a dynamic x64 binary
-    '''
     _multiprocess_can_split_ = True
-    BIN_PATH = '/bin/ls'
+    BIN_PATH = os.path.join(os.path.dirname(__file__), 'binaries', 'basic_linux_amd64')
 
     def setUp(self):
         self.linux = linux.Linux(self.BIN_PATH)
@@ -63,10 +61,10 @@ class LinuxTest(unittest.TestCase):
 
         # binary should be first two
         first_map, second_map = mappings[:2]
-        first_map_name = first_map[4]
-        second_map_name = second_map[4]
-        self.assertEqual(first_map_name, '/bin/ls')
-        self.assertEqual(second_map_name, '/bin/ls')
+        first_map_name = os.path.basename(first_map[4])
+        second_map_name = os.path.basename(second_map[4])
+        self.assertEqual(first_map_name, 'basic_linux_amd64')
+        self.assertEqual(second_map_name, 'basic_linux_amd64')
 
     def test_syscall_fstat(self):
         nr_fstat64 = 197
@@ -245,7 +243,8 @@ class LinuxTest(unittest.TestCase):
 
     def test_symbolic_argv_envp(self):
 
-        self.m = Manticore.linux('tests/binaries/arguments_linux_amd64', argv=['+'],
+        dirname = os.path.dirname(__file__)
+        self.m = Manticore.linux(os.path.join(dirname, 'binaries', 'arguments_linux_amd64'), argv=['+'],
                                  envp={'TEST': '+'})
         state = self.m.initial_state
 
@@ -260,3 +259,11 @@ class LinuxTest(unittest.TestCase):
         self.assertEqual(mem[6], b'\0')
         self.assertTrue(issymbolic(mem[5]))
 
+    def test_serialize_state_with_closed_files(self):
+        # regression test: issue 954
+
+        platform = self.linux
+        filename = platform.current.push_bytes('/bin/true\x00')
+        fd = platform.sys_open(filename, os.O_RDONLY, 0o600)
+        platform.sys_close(fd)
+        pickle.dumps(platform)

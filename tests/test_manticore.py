@@ -1,11 +1,21 @@
 import unittest
+import os
 
 from manticore import Manticore
 
+
 class ManticoreTest(unittest.TestCase):
     _multiprocess_can_split_ = True
+
     def setUp(self):
-        self.m = Manticore('tests/binaries/arguments_linux_amd64')
+        dirname = os.path.dirname(__file__)
+        self.m = Manticore(os.path.join(dirname, 'binaries', 'arguments_linux_amd64'))
+
+    def test_profiling_data(self):
+        self.m.run(should_profile=True)
+        profile_path = os.path.join(self.m.workspace, 'profiling.bin')
+        self.assertTrue(os.path.exists(profile_path))
+        self.assertTrue(os.path.getsize(profile_path) > 0)
 
     def test_add_hook(self):
         def tmp(state):
@@ -51,8 +61,9 @@ class ManticoreTest(unittest.TestCase):
                 pass
 
     def test_integration_basic_stdin(self):
-        import os, struct
-        self.m = Manticore('tests/binaries/basic_linux_amd64')
+        import struct
+        dirname = os.path.dirname(__file__)
+        self.m = Manticore(os.path.join(dirname, 'binaries', 'basic_linux_amd64'))
         self.m.run()
         workspace = self.m._output.store.uri
         with open(os.path.join(workspace, 'test_00000000.stdin'), 'rb') as f:

@@ -3,7 +3,6 @@ import logging
 
 from .smtlib import solver, Bool
 from ..utils.helpers import issymbolic
-from ..utils.event import Eventful
 
 #import exceptions
 from .cpu.abstractcpu import ConcretizeRegister
@@ -21,7 +20,7 @@ class TerminateState(StateException):
     ''' Terminates current state exploration '''
 
     def __init__(self, message, testcase=False):
-        super(TerminateState, self).__init__(message)
+        super().__init__(message)
         self.testcase = testcase
 
 
@@ -36,14 +35,16 @@ class Concretize(StateException):
     '''
     _ValidPolicies = ['MINMAX', 'ALL', 'SAMPLED', 'ONE']
 
-    def __init__(self, message, expression, setstate=None, policy='ALL', **kwargs):
+    def __init__(self, message, expression, setstate=None, policy=None, **kwargs):
+        if policy is None:
+            policy = 'ALL'
         if policy not in self._ValidPolicies:
             raise Exception("Policy (%s) must be one of: %s" % (policy, ', '.join(self._ValidPolicies),))
         self.expression = expression
         self.setstate = setstate
         self.policy = policy
         self.message = "Concretize: %s (Policy: %s)" % (message, policy)
-        super(Concretize, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
 
 class ForkState(Concretize):
@@ -57,7 +58,7 @@ class ForkState(Concretize):
 
     def __init__(self, message, expression, **kwargs):
         assert isinstance(expression, Bool), 'Need a Bool to fork a state in two states'
-        super(ForkState, self).__init__(message, expression, policy='ALL', **kwargs)
+        super().__init__(message, expression, policy='ALL', **kwargs)
 
 
 class State(Eventful):
@@ -73,7 +74,7 @@ class State(Eventful):
     _published_events = {'generate_testcase'}
 
     def __init__(self, constraints, platform, **kwargs):
-        super(State, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self._platform = platform
         self._constraints = constraints
         self._platform.constraints = constraints
@@ -88,7 +89,7 @@ class State(Eventful):
         self._init_context()
 
     def __getstate__(self):
-        state = super(State, self).__getstate__()
+        state = super().__getstate__()
         state['platform'] = self._platform
         state['constraints'] = self._constraints
         state['input_symbols'] = self._input_symbols
@@ -97,7 +98,7 @@ class State(Eventful):
         return state
 
     def __setstate__(self, state):
-        super(State, self).__setstate__(state)
+        super().__setstate__(state)
         self._platform = state['platform']
         self._constraints = state['constraints']
         self._input_symbols = state['input_symbols']
@@ -108,12 +109,16 @@ class State(Eventful):
         self.forward_events_from(self._platform)
 
     # Fixme(felipe) change for with "state.cow_copy() as st_temp":.
+    # This need to change. this is the center of ALL the problems. re. CoW
     def __enter__(self):
         assert self._child is None
+        self._platform.constraints = None
         new_state = State(self._constraints.__enter__(), self._platform)
+        self.platform.constraints = new_state.constraints
         new_state._input_symbols = list(self._input_symbols)
-        new_state._context = copy.deepcopy(self._context)
+        new_state._context = copy.copy(self._context)
         self._child = new_state
+        assert new_state.platform.constraints is new_state.constraints
 
         # fixme NEW State won't inherit signals (pro: added signals to new_state wont affect parent)
         return new_state
@@ -121,6 +126,7 @@ class State(Eventful):
     def __exit__(self, ty, value, traceback):
         self._constraints.__exit__(ty, value, traceback)
         self._child = None
+        self.platform.constraints = self.constraints
 
     def execute(self):
         try:
@@ -175,13 +181,14 @@ class State(Eventful):
     @constraints.setter
     def constraints(self, constraints):
         self._constraints = constraints
-        self._platform._constraints = constraints
+        self.platform.constraints = constraints
 
     def constrain(self, constraint):
         '''Constrain state.
 
         :param manticore.core.smtlib.Bool constraint: Constraint to add
         '''
+        constraint = self.migrate_expression(constraint)
         self._constraints.add(constraint)
 
     def abandon(self):
@@ -205,9 +212,13 @@ class State(Eventful):
 
         :return: :class:`~manticore.core.smtlib.expression.Expression` representing the buffer.
         '''
-        label = options.get('label', 'buffer')
+        label = options.get('label')
+        avoid_collisions = False
+        if label is None:
+            label = 'buffer'
+            avoid_collisions = True
         taint = options.get('taint', frozenset())
-        expr = self._constraints.new_array(name=label, index_max=nbytes, value_bits=8, taint=taint)
+        expr = self._constraints.new_array(name=label, index_max=nbytes, value_bits=8, taint=taint, avoid_collisions=avoid_collisions)
         self._input_symbols.append(expr)
 
         if options.get('cstring', False):
@@ -216,7 +227,7 @@ class State(Eventful):
 
         return expr
 
-    def new_symbolic_value(self, nbits, label='val', taint=frozenset()):
+    def new_symbolic_value(self, nbits, label=None, taint=frozenset()):
         '''Create and return a symbolic value that is `nbits` bits wide. Assign
         the value to a register or write it into the address space to introduce
         it into the program state.
@@ -228,48 +239,16 @@ class State(Eventful):
         :return: :class:`~manticore.core.smtlib.expression.Expression` representing the value
         '''
         assert nbits in (1, 4, 8, 16, 32, 64, 128, 256)
-        expr = self._constraints.new_bitvec(nbits, name=label, taint=taint)
+        avoid_collisions = False
+        if label is None:
+            label = 'val'
+            avoid_collisions = True
+
+        expr = self._constraints.new_bitvec(nbits, name=label, taint=taint, avoid_collisions=avoid_collisions)
         self._input_symbols.append(expr)
         return expr
 
-    def symbolicate_buffer(self, data, label='INPUT', wildcard='+', string=False, taint=frozenset()):
-        '''Mark parts of a buffer as symbolic (demarked by the wildcard byte)
-
-        :param str data: The string to symbolicate. If no wildcard bytes are provided,
-                this is the identity function on the first argument.
-        :param str label: The label to assign to the value
-        :param str wildcard: The byte that is considered a wildcard
-        :param bool string: Ensure bytes returned can not be NULL
-        :param taint: Taint identifier of the symbolicated data
-        :type taint: tuple or frozenset
-
-        :return: If data does not contain any wildcard bytes, data itself. Otherwise,
-            a list of values derived from data. Non-wildcard bytes are kept as
-            is, wildcard bytes are replaced by Expression objects.
-        '''
-        if wildcard in data:
-            size = len(data)
-            symb = self._constraints.new_array(name=label, index_max=size, taint=taint)
-            self._input_symbols.append(symb)
-
-            tmp = []
-            for i in range(size):
-                if data[i] == wildcard:
-                    tmp.append(symb[i])
-                else:
-                    tmp.append(data[i])
-
-            data = tmp
-
-        if string:
-            for b in data:
-                if issymbolic(b):
-                    self._constraints.add(b != 0)
-                else:
-                    assert b != 0
-        return data
-
-    def concretize(self, symbolic, policy, maxcount=5):
+    def concretize(self, symbolic, policy, maxcount=7):
         ''' This finds a set of solutions for symbolic using policy.
             This raises TooManySolutions if more solutions than maxcount
         '''
@@ -277,6 +256,10 @@ class State(Eventful):
         vals = []
         if policy == 'MINMAX':
             vals = self._solver.minmax(self._constraints, symbolic)
+        elif policy == 'MAX':
+            vals = self._solver.max(self._constraints, symbolic)
+        elif policy == 'MIN':
+            vals = self._solver.min(self._constraints, symbolic)
         elif policy == 'SAMPLED':
             m, M = self._solver.minmax(self._constraints, symbolic)
             vals += [m, M]
@@ -284,14 +267,19 @@ class State(Eventful):
                 if self._solver.can_be_true(self._constraints, symbolic == (m + M) // 2):
                     vals.append((m + M) // 2)
             if M - m > 100:
+                for i in (0, 1, 2, 5, 32, 64, 128, 320):
+                    if self._solver.can_be_true(self._constraints, symbolic == m + i):
+                        vals.append(m + i)
+                    if maxcount <= len(vals):
+                        break
+            if M - m > 1000 and maxcount > len(vals):
                 vals += self._solver.get_all_values(self._constraints, symbolic,
-                                                    maxcnt=maxcount, silent=True)
+                                                    maxcnt=maxcount - len(vals), silent=True)
         elif policy == 'ONE':
             vals = [self._solver.get_value(self._constraints, symbolic)]
         else:
             assert policy == 'ALL'
-            vals = solver.get_all_values(self._constraints, symbolic, maxcnt=maxcount,
-                                         silent=False)
+            vals = solver.get_all_values(self._constraints, symbolic, maxcnt=maxcount, silent=True)
 
         return tuple(set(vals))
 
@@ -300,10 +288,25 @@ class State(Eventful):
         from .smtlib import solver
         return solver
 
+    def migrate_expression(self, expression):
+        if not issymbolic(expression):
+            return expression
+        migration_map = self.context.get('migration_map')
+        if migration_map is None:
+            migration_map = {}
+        migrated_expression = self.constraints.migrate(expression, name_migration_map=migration_map)
+        self.context['migration_map'] = migration_map
+        return migrated_expression
+
+    def is_feasible(self):
+        return self.can_be_true(True)
+
     def can_be_true(self, expr):
+        expr = self.migrate_expression(expr)
         return self._solver.can_be_true(self._constraints, expr)
 
     def must_be_true(self, expr):
+        expr = self.migrate_expression(expr)
         return not self._solver.can_be_true(self._constraints, expr == False)
 
     def solve_one(self, expr):
@@ -315,17 +318,11 @@ class State(Eventful):
         :return: Concrete value
         :rtype: int
         '''
+        expr = self.migrate_expression(expr)
         value = self._solver.get_value(self._constraints, expr)
         #Include forgiveness here
-        if isinstance(value, tuple):
-            try:
-                return ''.join(map(chr, value))
-            except:
-                pass
-            try:
-                return ''.join(value)
-            except:
-                pass
+        if isinstance(value, bytearray):
+            value = bytes(value)
         return value
 
     def solve_n(self, expr, nsolves):
@@ -337,6 +334,7 @@ class State(Eventful):
         :return: Concrete value
         :rtype: list[int]
         '''
+        expr = self.migrate_expression(expr)
         return self._solver.get_all_values(self._constraints, expr, nsolves, silent=True)
 
     def solve_max(self, expr):
@@ -350,6 +348,7 @@ class State(Eventful):
         '''
         if isinstance(expr, int):
             return expr
+        expr = self.migrate_expression(expr)
         return self._solver.max(self._constraints, expr)
 
     def solve_min(self, expr):
@@ -363,8 +362,11 @@ class State(Eventful):
         '''
         if isinstance(expr, int):
             return expr
+        expr = self.migrate_expression(expr)
         return self._solver.min(self._constraints, expr)
 
+    ################################################################################################
+    # The following should be moved to specific class StatePosix?
     def solve_buffer(self, addr, nbytes):
         '''
         Reads `nbytes` of symbolic data from a buffer in memory at `addr` and attempts to
@@ -397,8 +399,43 @@ class State(Eventful):
         '''
         self._platform.invoke_model(model, prefix_args=(self,))
 
-    ################################################################################################
-    # The following should be moved to specific class StatePosix?
+    def symbolicate_buffer(self, data, label='INPUT', wildcard='+', string=False, taint=frozenset()):
+        '''Mark parts of a buffer as symbolic (demarked by the wildcard byte)
+
+        :param str data: The string to symbolicate. If no wildcard bytes are provided,
+                this is the identity function on the first argument.
+        :param str label: The label to assign to the value
+        :param str wildcard: The byte that is considered a wildcard
+        :param bool string: Ensure bytes returned can not be NULL
+        :param taint: Taint identifier of the symbolicated data
+        :type taint: tuple or frozenset
+
+        :return: If data does not contain any wildcard bytes, data itself. Otherwise,
+            a list of values derived from data. Non-wildcard bytes are kept as
+            is, wildcard bytes are replaced by Expression objects.
+        '''
+        if wildcard in data:
+            size = len(data)
+            symb = self._constraints.new_array(name=label, index_max=size, taint=taint, avoid_collisions=True)
+            self._input_symbols.append(symb)
+
+            tmp = []
+            for i in range(size):
+                if data[i] == wildcard:
+                    tmp.append(symb[i])
+                else:
+                    tmp.append(data[i])
+
+            data = tmp
+
+        if string:
+            for b in data:
+                if issymbolic(b):
+                    self._constraints.add(b != 0)
+                else:
+                    assert b != 0
+        return data
+
     @property
     def cpu(self):
         return self._platform.current

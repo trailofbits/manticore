@@ -38,7 +38,7 @@ class Policy(object):
     ''' Base class for prioritization of state search '''
 
     def __init__(self, executor, *args, **kwargs):
-        super(Policy, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._executor = executor
         self._executor.subscribe('did_enqueue_state', self._add_state_callback)
 
@@ -76,7 +76,7 @@ class Policy(object):
 
 class Random(Policy):
     def __init__(self, executor, *args, **kwargs):
-        super(Random, self).__init__(executor, *args, **kwargs)
+        super().__init__(executor, *args, **kwargs)
         random.seed(1337)  # For repeatable results
 
     def choice(self, state_ids):
@@ -85,9 +85,11 @@ class Random(Policy):
 
 class Uncovered(Policy):
     def __init__(self, executor, *args, **kwargs):
-        super(Uncovered, self).__init__(executor, *args, **kwargs)
+        super().__init__(executor, *args, **kwargs)
         # hook on the necesary executor signals
         # on callbacks save data in executor.context['policy']
+        with self._executor.locked_context() as ctx:
+            ctx['policy'] = {}
         self._executor.subscribe('will_load_state', self._register)
 
     def _register(self, *args):
@@ -101,7 +103,7 @@ class Uncovered(Policy):
 
     def summarize(self, state):
         ''' Save the last pc before storing the state '''
-        return state.cpu.PC
+        return state.platform.PC
 
     def choice(self, state_ids):
         # Use executor.context['uncovered'] = state_id -> stats
@@ -118,7 +120,7 @@ class Uncovered(Policy):
 
 class BranchLimited(Policy):
     def __init__(self, executor, *args, **kwargs):
-        super(BranchLimited, self).__init__(executor, *args, **kwargs)
+        super().__init__(executor, *args, **kwargs)
         self._executor.subscribe('will_load_state', self._register)
         self._limit = kwargs.get('limit', 5)
 
@@ -141,7 +143,7 @@ class BranchLimited(Policy):
             visited = policy_ctx.get('visited', dict())
             summaries = policy_ctx.get('summaries', dict())
             lst = []
-            for id_, pc in list(summaries.items()):
+            for id_, pc in summaries.items():
                 cnt = visited.get(pc, 0)
                 if id_ not in state_ids:
                     continue
@@ -165,7 +167,7 @@ class Executor(Eventful):
     _published_events = {'enqueue_state', 'generate_testcase', 'fork_state', 'load_state', 'terminate_state'}
 
     def __init__(self, initial=None, store=None, policy='random', context=None, **kwargs):
-        super(Executor, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
         # Signals / Callbacks handlers will be invoked potentially at different
         # worker processes. State provides a local context to save data.
@@ -228,14 +230,6 @@ class Executor(Eventful):
         with self._lock:
             if key is None:
                 yield self._shared_context
-            elif '.' in key:
-                keys = key.split('.')
-                with self.locked_context('.'.join(keys[:-1])) as sub_context:
-                    sub_sub_context = sub_context.get(keys[-1], None)
-                    if sub_sub_context is None:
-                        sub_sub_context = default()
-                    yield sub_sub_context
-                    sub_context[keys[-1]] = sub_sub_context
             else:
                 sub_context = self._shared_context.get(key, None)
                 if sub_context is None:
@@ -286,7 +280,7 @@ class Executor(Eventful):
     def _notify_stop_run(self):
         # notify siblings we are about to stop this run()
         self._running.value -= 1
-        if self._running.value < 0:
+        if self._running is None or self._running.value < 0:
             raise SystemExit
         self._lock.notify_all()
 

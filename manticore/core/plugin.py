@@ -8,19 +8,6 @@ from ..utils.helpers import issymbolic
 logger = logging.getLogger(__name__)
 
 
-class Ref(object):
-    def __init__(self, value):
-        self._value = value
-
-    @property
-    def value(self):
-        return self._value
-
-    @value.setter
-    def value(self, value):
-        self._value = value
-
-
 class Plugin(object):
     @contextmanager
     def locked_context(self, key=None, value_type=list):
@@ -48,6 +35,14 @@ class Plugin(object):
     def __init__(self):
         self.manticore = None
         self.last_reg_state = {}
+
+    def on_register(self):
+        ''' Called by parent manticore on registration '''
+        pass
+
+    def on_unregister(self):
+        ''' Called be parent manticore on un-registration '''
+        pass
 
 
 def _dict_diff(d1, d2):
@@ -78,7 +73,7 @@ class ExtendedTracer(Plugin):
         '''
         Record a detailed execution trace
         '''
-        super(ExtendedTracer, self).__init__()
+        super().__init__()
         self.last_dict = {}
         self.current_pc = None
         self.context_key = 'e_trace'
@@ -141,7 +136,7 @@ class Follower(Plugin):
         self.last_instruction = None
         self.symbolic_ranges = []
         self.active = True
-        super(self.__class__, self).__init__()
+        super().__init__()
 
     def add_symbolic_range(self, pc_start, pc_end):
         self.symbolic_ranges.append((pc_start, pc_end))
@@ -216,7 +211,7 @@ class InstructionCounter(Plugin):
 
 class Visited(Plugin):
     def __init__(self, coverage_file='visited.txt'):
-        super(Visited, self).__init__()
+        super().__init__()
         self.coverage_file = coverage_file
 
     def will_terminate_state_callback(self, state, state_id, ex):
@@ -255,7 +250,7 @@ class ConcreteTraceFollower(Plugin):
         '''
         :param iterable source: Iterator producing instruction pointers to be followed
         '''
-        super(ConcreteTraceFollower, self).__init__()
+        super().__init__()
         self.source = source
 
     def will_start_run_callback(self, state):

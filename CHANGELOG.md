@@ -2,7 +2,82 @@
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
-## [Unreleased](https://github.com/trailofbits/manticore/compare/0.1.10...HEAD)
+## [Unreleased](https://github.com/trailofbits/manticore/compare/0.2.1.1...HEAD)
+
+## 0.2.1.1 - 2018-09-01
+
+In this release, the codebase has been relicensed under the AGPLv3 license.
+Please [contact us](opensource@trailofbits.com) if you're looking for an exception to these terms!
+
+Thanks to our external contributors!
+
+- [s0b0lev](https://github.com/s0b0lev)
+- [redyoshi49q](https://github.com/redyoshi49q)
+
+### Added
+ 
+- Full suite of Ethereum detectors
+    - Selfdestruct (`--detect-selfdestruct`): Warns if a selfdestruct instruction is reachable by the user
+    - Ether Leak (`--detect-externalcall`): Warns if there is a call to the user, or a user controlled address, and ether can be sent.
+    - External Call (`--detect-externalcall`): Warns if there is a call to the user, or a user controlled address.
+    - Reentrancy (`--detect-reentrancy`): Warns if there is a change of storage state after a call to the user, or a user controlled address, with >2300 gas. This is an alternate implementation enabled in the CLI. The previous implementation is still available for API use (`DetectReentrancyAdvanced`).
+    - Delegatecall (`--detect-delegatecall`): Warns if there is a delegatecall to a user controlled address, or to a user controlled function.
+    - Environmental Instructions (`--detect-env`): Warns if certain instructions are used that can be potentially manipulated. Instructions: BLOCKHASH, COINBASE, TIMESTAMP, NUMBER, DIFFICULTY, GASLIMIT, ORIGIN, GASPRICE.
+- New Ethereum command line flags
+    - `--no-testcases`: Do not generate testcases for discovered states
+    - `--txnoether`: Do not make the transaction value symbolic in executed transactions
+- SMTLIB: Advanced functionality for expression migration. Expressions from arbitrary constraint sets can be mixed to create arbitrary constraints, expressions are transparently migrated from constraint set to another, avoiding SMT naming collisions.
+ 
+### Changed
+
+- Command line interface uses new reentrancy detector based on detection of user controlled call addresses
+ 
+### Fixed
+
+- Ethereum: Support for overloaded solidity functions
+- Ethereum: Significantly improved ability to create symbolic variables and constraints at the global level
+- Ethereum: Improved gas support
+- State serialization improvements and fixes
+
+## 0.2.0 - 2018-08-10
+
+In this release, the codebase has been ported to Python 3.6, which is a breaking change for API clients. Beginning with 0.2.0, client programs of Manticore must be compatible with Python 3.6.
+
+Thanks to our external contributors!
+
+- [ianklatzco](https://github.com/ianklatzco)
+- [devtty1er](https://github.com/devtty1er)
+- [catenacyber](https://github.com/catenacyber)
+
+### Added
+
+- Ethereum: More flexibility for Solidity compilation toolchains
+- Ethereum: Detectors for unused return value, reentrancy
+- Ethereum: Support for Solidity `bytesM` and `bytes` types
+- Ethereum: Beta API for preconstraining inputs (`ManticoreEVM.constrain`)
+- Improved performance for smtlib module
+- Ability to transparently operate on bytearray and symbolic buffer (ArrayProxy) types (e.g: concatenate, slice)
+
+### Changed
+
+- **Codebase has been entirely ported to Python 3.6+**
+- Ethereum: `ManticoreEVM.make_symbolic_value()` can be size adjustable
+- Ethereum: Ethereum ABI (`manticore.ethereum.ABI`) API refactor, including real Solidity prototype parser
+- Ethereum: Improved APIs for accessing transaction history
+- Ethereum: Significant internal refactor
+
+### Fixed
+
+- Linux: Bugs related to handling of closed files
+- Ethereum: Handling of symbolic callers/addresses
+- Ethereum: Handling of gas handling on CALL instructions
+- Various smtlib/expression fixes
+
+### Removed
+
+- Support for Python 2
+- EVM disassembler/assembler module (EVMAsm) has been removed and separately released as [pyevmasm](https://github.com/trailofbits/pyevmasm)
+- Experimental support for Binary Ninja IL emulation
 
 ## 0.1.10 - 2018-06-22
 

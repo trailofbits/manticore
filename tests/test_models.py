@@ -1,4 +1,5 @@
 import unittest
+import os
 
 from manticore.core.smtlib import ConstraintSet, solver
 from manticore.core.state import State
@@ -20,11 +21,13 @@ class ModelMiscTest(unittest.TestCase):
 
 
 class ModelTest(unittest.TestCase):
-    l = linux.SLinux('/bin/ls')
+    dirname = os.path.dirname(__file__)
+    l = linux.SLinux(os.path.join(dirname, 'binaries', 'basic_linux_amd64'))
     state = State(ConstraintSet(), l)
     stack_top = state.cpu.RSP
 
     def _clear_constraints(self):
+        self.state.context['migration_map']=None
         self.state._constraints = ConstraintSet()
 
     def tearDown(self):
@@ -143,7 +146,7 @@ class StrlenTest(ModelTest):
         s = self._push_string(sy)
 
         ret = strlen(self.state, s)
-        self.assertItemsEqual(list(range(4)), solver.get_all_values(self.state.constraints, ret))
+        self.assertItemsEqual(range(4), solver.get_all_values(self.state.constraints, ret))
 
         self.state.constrain(sy[0] == 0)
         ret = strlen(self.state, s)
