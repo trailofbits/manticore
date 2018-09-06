@@ -465,4 +465,3 @@ class State(Eventful):
         :param str message: Longer description
         """
         self._publish('will_generate_testcase', name, message)
-

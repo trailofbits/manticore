@@ -166,7 +166,6 @@ class Map(object, metaclass=ABCMeta):
         """
         return iter(range(self._start, self._end))
 
-
     def __eq__(self, other):
         return self.start == other.start and \
             self.end == other.end and \
@@ -265,7 +264,7 @@ class AnonMap(Map):
                 self._data[0:len(data_init)] = [ord(s) for s in data_init]
 
     def __reduce__(self):
-        return (self.__class__,(self.start, len(self), self.perms, self._data, self.name))
+        return (self.__class__, (self.start, len(self), self.perms, self._data, self.name))
 
     def split(self, address):
         if address <= self.start:
@@ -947,6 +946,7 @@ class Memory(object, metaclass=ABCMeta):
             for addr in range(start, end):
                 yield addr
 
+
 class SMemory(Memory):
     '''
     The symbolic memory manager.
@@ -1339,7 +1339,7 @@ class LazySMemory(SMemory):
                 if ptr + len(data_to_find) >= mapping.end:
                     break
 
-                candidate = mapping[ptr:ptr+len(data_to_find)]
+                candidate = mapping[ptr:ptr + len(data_to_find)]
                 if candidate == data_to_find:  # implicitly check if values aren't symbolic
                     yield ptr
 
