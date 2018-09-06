@@ -1246,6 +1246,10 @@ class LazySMemory(SMemory):
             if span is None:
                 continue
 
+            # Only writable maps should be reached by a symbolic write
+            if 'w' not in m.perms:
+                continue
+
             start, stop = span
 
             for addr in range(start, stop):
