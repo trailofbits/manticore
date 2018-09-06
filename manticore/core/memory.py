@@ -245,7 +245,7 @@ class Map(object, metaclass=ABCMeta):
 class AnonMap(Map):
     ''' A concrete anonymous memory map '''
 
-    def __init__(self, start, size, perms, data_init=None, **kwargs):
+    def __init__(self, start, size, perms, data_init=None, name=None, **kwargs):
         '''
         Builds a concrete anonymous memory map.
 
@@ -254,7 +254,7 @@ class AnonMap(Map):
         :param perms: the access permissions of the map.
         :param data_init: the data to initialize the map.
         '''
-        super().__init__(start, size, perms, **kwargs)
+        super().__init__(start, size, perms, name, **kwargs)
         self._data = bytearray(size)
         if data_init is not None:
             assert len(data_init) <= size, 'More initial data than reserved memory'
@@ -265,7 +265,7 @@ class AnonMap(Map):
                 self._data[0:len(data_init)] = [ord(s) for s in data_init]
 
     def __reduce__(self):
-        return (self.__class__, (self.start, len(self), self.perms, self._data, ))
+        return (self.__class__,(self.start, len(self), self.perms, self._data, self.name))
 
     def split(self, address):
         if address <= self.start:
