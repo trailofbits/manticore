@@ -261,7 +261,6 @@ def concretized_args(**policies):
                     cond = world._constraint_to_accounts(value, ty='both', include_zero=True)
                     world.constraints.add(cond)
                     policy = 'ALL'
-
                 raise ConcretizeStack(index, policy=policy)
             return func(*args, **kwargs)
         wrapper.__signature__ = inspect.signature(func)
@@ -303,15 +302,24 @@ class EVM(Eventful):
             from types import MethodType
 
             #return different version depending on obj._pending_transaction
-            def _pre_func(my_obj, *args, **kwargs):
+            def _wrapped(my_obj, *args, **kwargs):
                 if my_obj._on_transaction:
                     my_obj._on_transaction = False
                     return self._pos(my_obj, *args, **kwargs)
                 else:
-                    my_obj._on_transaction = True
-                    return self._pre(my_obj, *args, **kwargs)
+                    try:
+                        return self._pre(my_obj, *args, **kwargs)
+                    except StartTx as e:
+                        # this has started a transaction. Save it in the state so 
+                        # on  next call it is resolved to the continuation
+                        my_obj._on_transaction = True
+                        raise
+            if obj._on_transaction:
+                _wrapped.__name__ = "_continuation_"
+            else:
+                _wrapped.__signature__ = inspect.signature(self._pre)
 
-            return MethodType(_pre_func, obj)
+            return MethodType(_wrapped, obj)
 
         def __set__(self, obj, value):
             raise AttributeError("can't set attribute")
@@ -1481,7 +1489,7 @@ class EVM(Eventful):
             pc = pc.value
 
         if issymbolic(pc):
-            result.append('<Symbolic PC> {:s} {}'.format((translate_to_smtlib(pc), pc.taint)))
+            result.append('<Symbolic PC> {} {}'.format(translate_to_smtlib(pc), pc.taint))
         else:
             operands_str = self.instruction.has_operand and '0x{:x}'.format(self.instruction.operand) or ''
             result.append('0x{:04x}: {:s} {:s} {:s}\n'.format(pc, self.instruction.name, operands_str, self.instruction.description))
@@ -1605,6 +1613,7 @@ class EVMWorld(Platform):
         return self._constraints
 
     def _open_transaction(self, sort, address, price, bytecode_or_data, caller, value, gas=2300):
+        assert self._pending_transaction is None
         if self.depth > 0:
             origin = self.tx_origin()
         else:
@@ -2030,6 +2039,7 @@ class EVMWorld(Platform):
         sort, address, price, data, caller, value, gas = self._pending_transaction
         if issymbolic(address):
             def set_address(state, solution):
+                assert world._pending_transaction is not None
                 world = state.platform
                 world._pending_transaction = sort, solution, price, data, caller, value, gas
             cond = self._constraint_to_accounts(address, ty='contract', include_zero=False)
@@ -2043,6 +2053,7 @@ class EVMWorld(Platform):
         sort, address, price, data, caller, value, gas = self._pending_transaction
         if issymbolic(caller):
             def set_caller(state, solution):
+                assert world._pending_transaction is not None
                 world = state.platform
                 world._pending_transaction = sort, address, price, data, solution, value, gas
             #Constraint it so it can range over all normal accounts
@@ -2077,7 +2088,7 @@ class EVMWorld(Platform):
             self.create_account(address=address)
 
         # Check depth
-        failed = self.depth > 1024
+        failed = self.depth >= 1024
 
         # Fork on enough funds
         if not failed:

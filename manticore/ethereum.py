@@ -647,11 +647,19 @@ class DetectContractExistance(Detector):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+    def will_evm_execute_instruction_callback(self, state, instruction, arguments):
+        world = state.platform
+        mnemonic = instruction.semantics
+        current_vm = world.current_vm
+        str_trace = state.context.get('str_trace',[])
+        str_trace.append(str(current_vm))
+        state.context['str_trace'] = str_trace
 
     def did_close_transaction_callback(self, state, tx):
         world = state.platform
         # Check that all retvals were used in control flow
-        if tx.result:
+        if not tx.is_human() and tx.return_value == 1:
+
             code = world.get_code(tx.address)
             #destinattion account has no code associated with it
             if not code:
@@ -662,7 +670,9 @@ class DetectContractExistance(Detector):
                     self.add_finding_here(state, f"{tx.sort} to and empty contract succeeded")
             
 
-
+    def on_finalize(self, state, testcase):
+        with testcase.open_stream('str_trace') as str_trace_f:
+            str_trace_f.write( '\n'.join(state.context.get('str_trace',[])))
 
 class DetectDelegatecall(Detector):
     '''
@@ -2483,6 +2493,13 @@ class ManticoreEVM(Manticore):
             message = message + last_tx.result
         logger.info("Generated testcase No. {} - {}".format(testcase.num, message))
 
+        for plugin in self.plugins:
+            try:
+                plugin.on_finalize(state, testcase)
+            except AttributeError:
+                pass
+
+
         local_findings = set()
         for detector in self.detectors.values():
             for address, pc, finding, at_init, constraint in detector.get_findings(state):
@@ -2595,8 +2612,9 @@ class ManticoreEVM(Manticore):
         # Transactions
         with testcase.open_stream('tx') as tx_summary:
             is_something_symbolic = False
-            for tx in blockchain.human_transactions:  # external transactions
-                tx_summary.write("Transactions Nr. %d\n" % blockchain.transactions.index(tx))
+            interesting_transactions = blockchain.all_transactions
+            for tx in interesting_transactions:  # external transactions
+                tx_summary.write("Transactions Nr. %d\n" % interesting_transactions.index(tx))
 
                 # The result if any RETURN or REVERT
                 tx_summary.write("Type: %s (%d)\n" % (tx.sort, tx.depth))
