@@ -241,7 +241,6 @@ class Detector(Plugin):
 class VerboseTrace(Plugin):
     def will_evm_execute_instruction_callback(self, state, instruction, arguments):
         world = state.platform
-        mnemonic = instruction.semantics
         current_vm = world.current_vm
         str_trace = state.context.get('str_trace', [])
         str_trace.append(str(current_vm))
@@ -2472,10 +2471,9 @@ class ManticoreEVM(Manticore):
 
         # call on_finalize for each plugin
         for plugin in self.plugins:
-            try:
-                plugin.on_finalize(state, testcase)
-            except AttributeError:
-                pass
+            on_finalize = getattr(plugin, 'on_finalize', None)
+            if on_finalize:
+                on_finalize(state, testcase)
 
         last_tx = blockchain.last_transaction
         if last_tx:
