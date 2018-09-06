@@ -238,6 +238,20 @@ class Detector(Plugin):
         return self.manticore.get_metadata(address).get_source_for(pc)
 
 
+class VerboseTrace(Plugin):
+    def will_evm_execute_instruction_callback(self, state, instruction, arguments):
+        world = state.platform
+        mnemonic = instruction.semantics
+        current_vm = world.current_vm
+        str_trace = state.context.get('str_trace',[])
+        str_trace.append(str(current_vm))
+        state.context['str_trace'] = str_trace
+
+    def on_finalize(self, state, testcase):
+        with testcase.open_stream('str_trace') as str_trace_f:
+            str_trace_f.write( '\n'.join(state.context.get('str_trace',[])))
+
+
 class DetectEnvInstruction(Detector):
     ''' Detect the usage of instructions that query environmental/block information:
         BLOCKHASH, COINBASE, TIMESTAMP, NUMBER, DIFFICULTY, GASLIMIT, ORIGIN, GASPRICE
@@ -2455,6 +2469,14 @@ class ManticoreEVM(Manticore):
         def flagged(flag):
             return '(*)' if flag else ''
         testcase = self._output.testcase(name.replace(' ', '_'))
+
+        # call on_finalize for each plugin
+        for plugin in self.plugins:
+            try:
+                plugin.on_finalize(state, testcase)
+            except AttributeError:
+                pass
+
         last_tx = blockchain.last_transaction
         if last_tx:
             message = message + last_tx.result
