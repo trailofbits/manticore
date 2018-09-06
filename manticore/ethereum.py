@@ -1543,14 +1543,12 @@ class ManticoreEVM(Manticore):
             raise EthereumError(
                 'Solidity compilation failed with error: {}\n'
                 'Did you install solc from snap Linux universal packages?\n'
-                "If so, the problem occurs because of snap's sandbox which makes so the sandboxed process doesn't see "
-                "files in /tmp directory.\n"
+                "If so, the problem is likely due to snap's sandbox restricting access to /tmp\n"
                 '\n'
-                'Here are some solutions to this problem:\n'
-                '1) Remove solc from snap and install it different way\n'
-                '2) Reinstall solc from snap in developer mode, so there is no sandbox '
-                '(however you do it on your own risk)\n'
-                "3) Find a way to add /tmp to the solc's sandbox. If you do so, "
+                'Here are some potential solutions:\n'
+                ' 1) Remove solc from snap and install it different way\n'
+                ' 2) Reinstall solc from snap in developer mode, so there is no sandbox\n'
+                " 3) Find a way to add /tmp to the solc's sandbox. If you do, "
                 "send us a PR so we could add it here!".format(stderr)
             )
 
