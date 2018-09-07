@@ -2,16 +2,46 @@ from cmd import Cmd
 from os import listdir
 import re
 
+from manticore.core.plugin import Plugin
 from manticore.ethereum import ManticoreEVM, evm, Operators, ABI
+from manticore.core.state import TerminateState
+
+class Breakpoint(TerminateState):
+    def __init__(self):
+        super().__init__("Breakpoint")
+
 class ManticoreDebugger(Cmd):
     intro = ''' A eth debugger '''
     prompt = 'mdb> '
     def __init__(self):
+        super().__init__()
         self.m = ManticoreEVM()
+
+        self.m._executor.subscribe('will_evm_execute_instruction', self.will_evm_execute_instruction_callback)
+        self.m.subscribe('will_execute_evm_instruction', self.will_evm_execute_instruction_callback)
         self.user_account = self.m.create_account(balance=1000, name='user_account')
         self.owner_account = self.m.create_account(balance=1000, name='owner_account')
         self.current_account = self.user_account
-        super().__init__()
+        self.breakpoints = set()  # (address, evmoffset)
+        self.current_position = None # (address, evmoffset)
+
+
+    def will_evm_execute_instruction_callback(self, state, instruction, arguments):
+        world = state.platform
+        mnemonic = instruction.semantics
+        current_vm = world.current_vm
+        if (current_vm.address,  current_vm.pc) in self.breakpoints:
+            
+            print ("breakpoint", current_vm)
+            raise Breakpoint()
+
+
+    def do_where(self, inp):
+        address, offset = self.current_position
+        print ("Your are at contract", self.m.account_name(address))
+        print ("PC:", offset)
+        metadata = self.m.get_metadata(blockchain.last_transaction.address)
+        print (metadata.get_source_for(offset, runtime=True))
 
     def do_show(self, inp):
         ''' Show current world state '''
@@ -22,13 +52,35 @@ class ManticoreDebugger(Cmd):
                 print ("Address: %s (0x%x)" % (self.m.account_name(account_address), account_address))
                 print ("Balance: ", blockchain.get_balance(account_address))
                 print ("Storage: - not implemented -\n")
+        print ("Breakpoints:", self.breakpoints)
         return False
+    def _get_account(self, inp):
+        state = self._get_state()
+        blockchain = state.platform
+        for account_address in blockchain.accounts:
+            account_name = self.m.account_name(account_address)
+            if account_name == inp:
+                return account_address
+            try:
+                if account_address == int(inp):
+                    return account_address
+            except:
+                pass
+
+    def do_breakpoint(self, inp):
+        m = re.search(r'(\w+)(.+)', inp)
+        if m:
+            contract = self._get_account(m.group(1))
+            if not contract:
+                return
+            offset = int(m.group(2), 0)
+        self.breakpoints.add((contract, offset))
+        print ("breakpoint set")
 
     def do_exit(self, inp):
         ''' Exit debugger '''
         print("Bye")
         return True 
-
 
     def do_whoami(self, inp):
         """ Print current user """
@@ -92,15 +144,17 @@ class ManticoreDebugger(Cmd):
 
     def do_call(self, inp):
         ''' make a tx 
-            call pretty_name.function_name(3876, 87683)
+            call pretty_name function_name 3876 87683 
         '''
-        m = re.search(r'(\w+)\.(\w+)\((.*)\)', inp)
+        print (inp)
+        m = re.search(r'(\w+) (\w+)(.*)', inp)
         if m:
             contract_name = m.group(1)
             function_name = m.group(2)
-            args = map(lambda x: int(x, 0), m.group(3).split(','))
+            print(m.group(3))
+            args = map(lambda x: int(x, 0), m.group(3).strip().split(' '))
         else:
-            print ("error")
+            print ("error", m)
             return False
 
         account = self.m.get_account(contract_name)
@@ -125,7 +179,6 @@ class ManticoreDebugger(Cmd):
 
     def complete_call(self, text, line, begidx, endidx):
         count = len(re.findall("[a-zA-Z_.]+", line[:begidx]))
-        print ("CALL", count )
         blockchain = self._get_state().platform
         if count == 1:
             if not line[begidx:endidx]:
@@ -171,7 +224,5 @@ class ManticoreDebugger(Cmd):
                         result_funcs.append(func_name)
                 return result_funcs
         return []
-
-
 
 ManticoreDebugger().cmdloop()
