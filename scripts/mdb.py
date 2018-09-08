@@ -5,6 +5,8 @@ import re
 from manticore.core.plugin import Plugin
 from manticore.ethereum import ManticoreEVM, evm, Operators, ABI
 from manticore.core.state import TerminateState
+import pyevmasm as EVMAsm
+
 
 class Breakpoint(TerminateState):
     def __init__(self):
@@ -16,17 +18,17 @@ class ManticoreDebugger(Cmd):
     def __init__(self):
         super().__init__()
         self.m = ManticoreEVM()
-
+        # Fixme make this a Plugin
         self.m._executor.subscribe('will_evm_execute_instruction', self.will_evm_execute_instruction_callback)
-        self.m.subscribe('will_execute_evm_instruction', self.will_evm_execute_instruction_callback)
         self.user_account = self.m.create_account(balance=1000, name='user_account')
         self.owner_account = self.m.create_account(balance=1000, name='owner_account')
         self.current_account = self.user_account
-        self.breakpoints = set()  # (address, evmoffset)
+        self.breakpoints = set() # (address, evmoffset)
         self.current_position = None # (address, evmoffset)
 
 
     def will_evm_execute_instruction_callback(self, state, instruction, arguments):
+        ''' Internal breakpoint callback '''
         world = state.platform
         mnemonic = instruction.semantics
         current_vm = world.current_vm
@@ -36,11 +38,31 @@ class ManticoreDebugger(Cmd):
             raise Breakpoint()
 
 
+    def _get_account(self, inp):
+        state = self._get_state()
+        blockchain = state.platform
+        for account_address in blockchain.accounts:
+            account_name = self.m.account_name(account_address)
+            if account_name == inp:
+                return account_address
+            try:
+                if account_address == int(inp):
+                    return account_address
+            except:
+                pass
+
+
+    def _get_state(self):
+        for state in self.m.all_states:
+            return state
+
+    # Commands 
     def do_where(self, inp):
+        ''' Print the transaction call and evm call stack '''
         address, offset = self.current_position
+        metadata = self.m.get_metadata(blockchain.last_transaction.address)
         print ("Your are at contract", self.m.account_name(address))
         print ("PC:", offset)
-        metadata = self.m.get_metadata(blockchain.last_transaction.address)
         print (metadata.get_source_for(offset, runtime=True))
 
     def do_show(self, inp):
@@ -54,18 +76,6 @@ class ManticoreDebugger(Cmd):
                 print ("Storage: - not implemented -\n")
         print ("Breakpoints:", self.breakpoints)
         return False
-    def _get_account(self, inp):
-        state = self._get_state()
-        blockchain = state.platform
-        for account_address in blockchain.accounts:
-            account_name = self.m.account_name(account_address)
-            if account_name == inp:
-                return account_address
-            try:
-                if account_address == int(inp):
-                    return account_address
-            except:
-                pass
 
     def do_breakpoint(self, inp):
         m = re.search(r'(\w+)(.+)', inp)
@@ -99,7 +109,6 @@ class ManticoreDebugger(Cmd):
                 break
         return False
 
-
     def do_create(self, inp):
         ''' Create contract 
             create somecontract.sol ContractName2 [(args ...)]
@@ -126,32 +135,14 @@ class ManticoreDebugger(Cmd):
             contract_account = self.m.solidity_create_contract(source_code, owner=self.current_account, name=contract_name)
         print (contract_account, contract_name)
 
-
-    def complete_create(self, text, line, begidx, endidx):
-        count = len(re.findall("[a-zA-Z_.]+", line[:begidx]))
-        if count == 1:
-            if line[begidx:endidx]:
-                return [i for i in listdir() if i.startswith(line[begidx:endidx])]
-            else:
-                return [i for i in listdir() if i.endswith('.sol')]
-        else:
-            filename = re.findall("([\w+.]+)", line)[1]
-            with open(filename) as f:
-                source_code = f.read()
-                return re.findall("contract +(\w+)", source_code)
-        return []
-
-
     def do_call(self, inp):
         ''' make a tx 
             call pretty_name function_name 3876 87683 
         '''
-        print (inp)
         m = re.search(r'(\w+) (\w+)(.*)', inp)
         if m:
             contract_name = m.group(1)
             function_name = m.group(2)
-            print(m.group(3))
             args = map(lambda x: int(x, 0), m.group(3).strip().split(' '))
         else:
             print ("error", m)
@@ -170,59 +161,103 @@ class ManticoreDebugger(Cmd):
                 function_name = metadata.get_func_name(function_id)
                 ret_types = metadata.get_func_return_types(function_id)
                 return_values = ABI.deserialize(ret_types, return_data)  # function return
-                print ("\t -> ", repr(return_values))
+                print ("return: ", repr(return_values))
         return False
 
-    def _get_state(self):
-        for state in self.m.all_states:
-            return state
+    def do_list(self, inp):
+        m = re.search(r'(\w+)', inp)
+        if m:
+            contract_name = m.group(1)
+        else:
+            print ("error", m)
+            return False
 
-    def complete_call(self, text, line, begidx, endidx):
-        count = len(re.findall("[a-zA-Z_.]+", line[:begidx]))
+        target_account_address = self.m.get_account(contract_name)
+        md = self.m.get_metadata(target_account_address)
+        if md:
+            bytecode = md.runtime_bytecode
+        else:    
+            blockchain = self._get_state().platform
+            bytecode = blockchain.get_code(account_address)
+        
+        for i in EVMAsm.disassemble_all(bytecode):
+            print (hex(i.pc), i)
+
+
+    # Complete logic
+    def _complete_account(self, stem):
         blockchain = self._get_state().platform
-        if count == 1:
-            if not line[begidx:endidx]:
-                accounts = []
-                for account_address in blockchain.accounts:
-                    if not blockchain.get_code(account_address):
-                        continue
 
-                    account_name = self.m.account_name(account_address)
-                    if account_name:
-                        accounts.append(account_name)
-                    else:
-                        accounts.append(str(account_address))
-                return accounts
+        accounts = []
+        for account_address in blockchain.accounts:
+            if not blockchain.get_code(account_address):
+                continue
+            account_name = self.m.account_name(account_address)
+            if account_name.startswith(stem):
+                accounts.append(account_name)
             else:
-                accounts = []
-                for account_address in blockchain.accounts:
-                    if not blockchain.get_code(account_address):
-                        continue
-                    account_name = self.m.account_name(account_address)
-                    if account_name.startswith(line[begidx:endidx]):
-                        accounts.append(account_name)
-                    else:
-                        if str(account_address).startswith(line[begidx:endidx]):
-                            accounts.append(str(account_address))
-                return accounts
-        elif count ==  2:
-            target_account_str = re.findall("([\w+.]+)", line)[1]
-            state = self._get_state()
-            blockchain = state.platform
-            md = None
-            for account_address in blockchain.accounts:
-                if target_account_str == self.m.account_name(account_address) or target_account_str == str(account_address):
-                    md = self.m.get_metadata(account_address)
-            if md is not None:
-                result_funcs = []
-                for func_name in  md.functions:
-                    try:
-                        func_name = func_name.split('(')[0]
-                    except:
-                        pass
-                    if func_name.startswith(line[begidx:endidx]):
-                        result_funcs.append(func_name)
-                return result_funcs
+                accounts.append(str(account_address))
+        return accounts
+
+    def _complete_function_names(self, contract_name):
+        state = self._get_state()
+        blockchain = state.platform
+        target_account_address = self.m.get_account(contract_name)
+        md = self.m.get_metadata(target_account_address)
+        result_funcs = []
+
+        if md is not None:
+            for func_name in  md.functions:
+                try:
+                    func_name = func_name.split('(')[0]
+                except:
+                    pass
+                if func_name.startswith(line[begidx:endidx]):
+                    result_funcs.append(func_name)
+        return result_funcs
+
+    def complete_create(self, text, line, begidx, endidx):
+        count = len(re.findall("[a-zA-Z_.]+", line[:begidx]))
+        if count == 1:
+            if line[begidx:endidx]:
+                return [i for i in listdir() if i.startswith(line[begidx:endidx])]
+            else:
+                return [i for i in listdir() if i.endswith('.sol')]
+        else:
+            filename = re.findall("([\w+.]+)", line)[1]
+            with open(filename) as f:
+                source_code = f.read()
+                return re.findall("contract +(\w+)", source_code)
         return []
 
+    def complete_call(self, text, line, begidx, endidx):
+        try:
+            blockchain = self._get_state().platform
+
+            count = len(re.findall("[a-zA-Z_.]+", line[:begidx]))
+            if count == 1:
+                return self._complete_account(line[begidx:endidx])
+            elif count ==  2:
+                contract_name = re.findall("([\w+.]+)", line)[1]
+                return self._complete_function_names(contract_name)
+            return []
+        except Exception as e:
+            print(e)
+
+    def complete_breakpoint(self, text, line, begidx, endidx):
+        count = len(re.findall("[a-zA-Z_.]+", line[:begidx]))
+        if count == 1:
+            return self._complete_account(line[begidx:endidx])
+        elif count ==  2:
+            #line number
+            return []
+
+    def complete_list(self, text, line, begidx, endidx):
+        count = len(re.findall("[a-zA-Z_.]+", line[:begidx]))
+        if count == 1:
+            return self._complete_account(line[begidx:endidx])
+
+
+
 ManticoreDebugger().cmdloop()
+
