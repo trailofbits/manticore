@@ -28,7 +28,7 @@ def parse_arguments():
     parser.add_argument('--context', type=str, default=None,
                         help=argparse.SUPPRESS)
     parser.add_argument('--coverage', type=str, default=None,
-                        help='where to write the coverage data')
+                        help='Where to write the coverage data')
     parser.add_argument('--data', type=str, default='',
                         help='Initial concrete concrete_data for the input symbolic buffer')
     parser.add_argument('--env', type=str, nargs=1, default=[], action='append',
@@ -37,7 +37,7 @@ def parse_arguments():
     #parser.add_argument('--entry', type=str, default=None,
     #                    help='address as entry point')
     parser.add_argument('--entrysymbol', type=str, default=None,
-                        help='symbol as entry point')
+                        help='Symbol as entry point')
     parser.add_argument('--file', type=str, default=[], action='append', dest='files',
                         help='Specify symbolic input file, \'+\' marks symbolic bytes')
     parser.add_argument('--names', type=str, default=None,
@@ -56,7 +56,7 @@ def parse_arguments():
     parser.add_argument('argv', type=str, nargs='+',
                         help="Path to program, and arguments ('+' in arguments indicates symbolic byte).")
     parser.add_argument('--timeout', type=int, default=0,
-                        help='Timeout. Abort exploration aftr TIMEOUT seconds')
+                        help='Timeout. Abort exploration after TIMEOUT seconds')
     parser.add_argument('-v', action='count', default=1,
                         help='Specify verbosity level from -v to -vvvv')
     parser.add_argument('--workspace', type=str, default=None,
