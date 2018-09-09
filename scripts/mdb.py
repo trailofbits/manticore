@@ -29,7 +29,6 @@ class ManticoreDebugger(Cmd):
         self.m._initial_state = state'''
         if isinstance(e, Breakpoint):
             assert (len(self.m._running_state_ids)<=1)
-            print ("AT TERMINATE STATE")
             # save the state to secondary storage
             #new_state_id = self.m._executor._workspace.save_state(state)
 
