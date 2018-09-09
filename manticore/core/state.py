@@ -24,6 +24,11 @@ class TerminateState(StateException):
         self.testcase = testcase
 
 
+class Breakpoint(TerminateState):
+    def __init__(self):
+        super().__init__("Breakpoint")
+
+
 class Concretize(StateException):
     ''' Base class for all exceptions that trigger the concretization
         of a symbolic expression

@@ -15,7 +15,7 @@ from . import Manticore
 from .manticore import ManticoreError
 from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, istainted, taint_with, get_taints, BitVec, Constant, operators, Array, ArrayVariable, ArrayProxy
 from .platforms import evm
-from .core.state import State
+from .core.state import State, Breakpoint
 from .utils.helpers import istainted, issymbolic, PickleSerializer
 import tempfile
 from subprocess import Popen, PIPE, check_output
@@ -1632,6 +1632,10 @@ class ManticoreEVM(Manticore):
         return {name: account for name, account in self._accounts.items() if isinstance(account, EVMContract)}
 
     def get_account(self, name):
+        if isinstance(name, int):
+            for name, account in self._accounts.items():
+                if account.address == name:
+                    return account 
         return self._accounts[name]
 
     def __init__(self, procs=10, **kwargs):
@@ -1668,6 +1672,7 @@ class ManticoreEVM(Manticore):
         self._executor.subscribe('on_symbolic_sha3', self._on_symbolic_sha3_callback)
         self._executor.subscribe('on_concrete_sha3', self._on_concrete_sha3_callback)
 
+
     @property
     def world(self):
         """ The world instance or None if there is more than one state """
@@ -1682,7 +1687,7 @@ class ManticoreEVM(Manticore):
     def _running_state_ids(self):
         """ IDs of the running states"""
         with self.locked_context('ethereum') as context:
-            if self.initial_state is not None:
+            if self._initial_state is not None:
                 return (-1,) + tuple(context['_saved_states'])
             else:
                 return tuple(context['_saved_states'])
@@ -1756,6 +1761,7 @@ class ManticoreEVM(Manticore):
             assert state_id == -1
             state_id = self.save(self._initial_state, final=True)
             self._initial_state = None
+
         return state_id
 
     def _revive_state_id(self, state_id):
@@ -2238,6 +2244,7 @@ class ManticoreEVM(Manticore):
                 else:
                     # Keep it on a private list
                     context['_saved_states'].add(state_id)
+
         return state_id
 
     def load(self, state_id=None):
@@ -2256,7 +2263,7 @@ class ManticoreEVM(Manticore):
                 raise EthereumError("More than one state running, you must specify state id.")
 
         if state_id == -1:
-            state = self.initial_state
+            state = self._initial_state
         else:
             state = self._executor._workspace.load_state(state_id, delete=False)
             #froward events from newly loaded object
@@ -2371,6 +2378,7 @@ class ManticoreEVM(Manticore):
         """ INTERNAL USE
             When a state was just loaded from stoage we do the pending transaction
         """
+        # If there is not a pending transaction just keep doing what you are doing
         if '_pending_transaction' not in state.context:
             return
         world = state.platform

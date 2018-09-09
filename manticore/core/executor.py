@@ -166,7 +166,7 @@ class Executor(Eventful):
 
     _published_events = {'enqueue_state', 'generate_testcase', 'fork_state', 'load_state', 'terminate_state'}
 
-    def __init__(self, initial=None, store=None, policy='random', context=None, **kwargs):
+    def __init__(self, store=None, policy='random', context=None, **kwargs):
         super().__init__(**kwargs)
 
         # Signals / Callbacks handlers will be invoked potentially at different
@@ -205,13 +205,6 @@ class Executor(Eventful):
                     }
         self._policy = policies[policy](self)
         assert isinstance(self._policy, Policy)
-
-        if self.load_workspace():
-            if initial is not None:
-                logger.error("Ignoring initial state")
-        else:
-            if initial is not None:
-                self.add(initial)
 
     def __del__(self):
         self.manager.shutdown()
