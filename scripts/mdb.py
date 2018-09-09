@@ -9,7 +9,7 @@ import pyevmasm as EVMAsm
 
 
 class ManticoreDebugger(Cmd):
-    intro = ''' A eth debugger '''
+    intro = '''Awesome eth debugger '''
     prompt = 'mdb> '
     def __init__(self):
         super().__init__()
