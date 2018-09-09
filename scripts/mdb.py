@@ -16,7 +16,7 @@ class ManticoreDebugger(Cmd):
         self.m = ManticoreEVM(procs=1)
         # Fixme make this a Plugin
         self.m._executor.subscribe('will_evm_execute_instruction', self.will_evm_execute_instruction_callback)
-        #self.m._executor.subscribe('will_terminate_state', self._terminate_state_callback)
+        self.m._executor.subscribe('will_terminate_state', self._terminate_state_callback)
         self.user_account = self.m.create_account(balance=1000, name='user_account')
         self.owner_account = self.m.create_account(balance=1000, name='owner_account')
         self.current_account = self.user_account
@@ -30,10 +30,19 @@ class ManticoreDebugger(Cmd):
         if isinstance(e, Breakpoint):
             assert (len(self.m._running_state_ids)<=1)
             print ("AT TERMINATE STATE")
-            with self.m.locked_context('ethereum') as context:
+            # save the state to secondary storage
+            #new_state_id = self.m._executor._workspace.save_state(state)
+
+            #with self.m.locked_context('ethereum') as context:
+                    # Keep it on a private list
+            #        context['_saved_states'].add(new_state_id)
+
+            #self.m.save(state)  # Add to running states
+
+            '''with self.m.locked_context('ethereum') as context:
                 new_state_id = self.m._executor._workspace.save_state(state)
                 context['_saved_states'] = set((new_state_id,))
-                context['_final_states'] = set()
+                context['_final_states'] = set()'''
 
     def will_evm_execute_instruction_callback(self, state, instruction, arguments):
         ''' Internal breakpoint callback '''
@@ -52,7 +61,7 @@ class ManticoreDebugger(Cmd):
         try:
             return self.m.get_account(inp).address
         except:
-            return self.m.get_account(int(inp)).address
+            return self.m.get_account(int(inp, 0)).address
 
     def _get_state(self):
         for state in self.m.all_states:
@@ -73,24 +82,27 @@ class ManticoreDebugger(Cmd):
 
 
     # Commands 
+    def do_continue(self, inp):
+        self.m.run()
+        self._print_last_tx_result()
+
     def do_step(self, inp):
-        state = self._get_state()
-        blockchain = state.platform
-        if blockchain.current_transaction:
-            try:
-                # notify siblings we have a state to play with
-                self.stepping=True
-                blockchain.execute()
-                print (current_vm)
+        ''' step 1 instruction '''
+        for state in self.m.all_states:
+            blockchain = state.platform
+            if blockchain.current_transaction:
+                try:
+                    # notify siblings we have a state to play with
+                    self.stepping=True
+                    blockchain.execute()
+                    print (blockchain.current_vm)
 
-            except Exception as e:
-                print (e)
-                self._print_last_tx_result()
-                return
-            finally:
-                self.stepping = False
-
-        print ("DONE", blockchain.current_transaction)
+                except Exception as e:
+                    print (e)
+                    self._print_last_tx_result()
+                    return
+                finally:
+                    self.stepping = False
     
     def do_where(self, inp):
         ''' Print the transaction call and evm call stack '''
@@ -188,7 +200,8 @@ class ManticoreDebugger(Cmd):
         '''
         state = self._get_state()
         blockchain = state.platform
-        blockchain.current_transaction
+        if blockchain.current_transaction:
+            print ("already an ongoing tx. continue,  step")
 
         m = re.search(r'(\w+) (\w+)(.*)', inp)
         if m:
@@ -206,7 +219,8 @@ class ManticoreDebugger(Cmd):
             result = getattr(account, function_name)(*args)
             self._print_last_tx_result()
         except Exception as e:
-            import traceback; traceback.print_stack()
+            import traceback
+            traceback.print_exc()
             import pdb; pdb.set_trace()
             print ("EEE", e)
             pass

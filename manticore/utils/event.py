@@ -75,7 +75,6 @@ class Eventful(object, metaclass=EventsGatherMetaclass):
         ''' It wont get serialized by design, user is responsible to reconnect'''
         self._signals = dict()
         self._forwards = WeakKeyDictionary()
-        return True
 
     def __getstate__(self):
         return {}

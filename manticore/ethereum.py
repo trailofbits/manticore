@@ -2211,12 +2211,7 @@ class ManticoreEVM(Manticore):
         # in each state (see load_state_callback)
         super().run(**kwargs)
 
-        with self.locked_context('ethereum') as context:
-            if len(context['_saved_states']) == 1:
-                self._initial_state = self._executor._workspace.load_state(context['_saved_states'].pop(), delete=True)
-                context['_saved_states'] = set()
-                assert self._running_state_ids == (-1,)
-
+        
     def save(self, state, state_id=None, final=False):
         """ Save a state in secondary storage and add it to running or final lists
 
@@ -2337,6 +2332,13 @@ class ManticoreEVM(Manticore):
             Every time a state finishes executing last transaction we save it in
             our private list
         """
+        if isinstance(e, Breakpoint):
+            assert (len(self._running_state_ids)<=1)
+            # save the state to secondary storage
+            self.save(state)  # Add to running states
+            return 
+
+
         if str(e) == 'Abandoned state':
             #do nothing
             return

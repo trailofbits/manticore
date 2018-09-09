@@ -139,7 +139,7 @@ class PickleSerializer(StateSerializer):
 
     def serialize(self, state, f):
         try:
-            f.write(pickle.dumps(state, 2))
+            f.write(pickle.dumps(state, 4))
         except RuntimeError:
             new_limit = sys.getrecursionlimit() * 2
             if new_limit > PickleSerializer.MAX_RECURSION:
