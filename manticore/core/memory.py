@@ -1199,7 +1199,7 @@ class LazySMemory(SMemory):
         fdata = fdata.ljust(size, b'\0')
 
         for i in range(size):
-            Memory.write(self, addr+i, chr(fdata[i]), force=True)
+            Memory.write(self, addr + i, chr(fdata[i]), force=True)
 
         logger.debug('New file-memory map @%x size:%x', addr, size)
 
