@@ -1292,13 +1292,10 @@ class LazySMemory(SMemory):
 
             if issymbolic(addr):
                 from_array = True
-            else:
-                if addr in self.backed_by_symbolic_store:
-                    m = self.map_containing(addr)
-                    if m and 'w' not in m.perms:
-                        from_array = False
-                    else:
-                        from_array = True
+            elif addr in self.backed_by_symbolic_store:
+                m = self.map_containing(addr)
+                if not m or 'w' in m.perms:
+                    from_array = True
 
             if from_array:
                 val = self.backing_array[addr]
