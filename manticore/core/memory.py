@@ -1246,10 +1246,6 @@ class LazySMemory(SMemory):
             if span is None:
                 continue
 
-            # Only writable maps should be reached by a symbolic write
-            if 'w' not in m.perms:
-                continue
-
             start, stop = span
 
             for addr in range(start, stop):
@@ -1292,10 +1288,23 @@ class LazySMemory(SMemory):
         retvals = []
         addrs_to_access = [address + i for i in range(size)]
         for addr in addrs_to_access:
-            if issymbolic(addr) or addr in self.backed_by_symbolic_store:
+            from_array = False
+
+            if issymbolic(addr):
+                from_array = True
+            else:
+                if addr in self.backed_by_symbolic_store:
+                    m = self.map_containing(addr)
+                    if m and 'w' not in m.perms:
+                        from_array = False
+                    else:
+                        from_array = True
+
+            if from_array:
                 val = self.backing_array[addr]
             else:
                 val = Memory.read(self, addr, 1)[0]
+
             retvals.append(val)
 
         return retvals
