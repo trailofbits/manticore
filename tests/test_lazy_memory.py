@@ -89,6 +89,101 @@ class LazyMemoryTest(unittest.TestCase):
 
         self.assertEqual(solver.get_all_values(cs, mem[0x1000]), [b'\x00'])
 
+
+    def test_arraymap(self):
+        m = ArrayMap(0x1000, 0x1000, 'rwx', 32)
+        head, tail = m.split(0x1800)
+
+        self.assertEqual(head.start, 0x1000)
+        self.assertEqual(tail.start, 0x1800)
+
+        self.assertEqual(len(head), 0x800)
+        self.assertEqual(len(tail), 0x800)
+
+        self.assertEquals(head.perms, m.perms)
+        self.assertEquals(tail.perms, m.perms)
+
+        reduced = m.__reduce__()
+        self.assertIs(reduced[0], ArrayMap)
+
+        sel = m[0x1]
+        self.assertIsInstance(sel, ArraySelect)
+
+        pre_array = m._array.array
+        m[0x1] = 1
+        post_array = m._array.array
+        self.assertIsNot(pre_array, post_array)
+
+
+    def test_lazysymbolic_mmapfile(self):
+        mem = LazySMemory32(ConstraintSet())
+
+	#start with no maps
+        self.assertEqual(len(mem.mappings()), 0)
+        
+        rwx_file = tempfile.NamedTemporaryFile('w+b', delete=False)
+        rwx_file.file.write(b'a'*0x1001)
+        rwx_file.close()
+        
+        addr_a = mem.mmapFile(0, 0x1000, 'rwx', rwx_file.name)
+        
+        self.assertEqual(len(mem.mappings()), 1)
+        
+        self.assertEqual(mem[addr_a], b'a')
+        self.assertEqual(mem[addr_a+0x1000//2], b'a')
+        self.assertEqual(mem[addr_a+(0x1000-1)], b'a')
+        self.assertRaises(MemoryException, mem.__getitem__, addr_a+(0x1000))
+        
+        rwx_file = tempfile.NamedTemporaryFile('w+b', delete=False)
+        rwx_file.file.write(b'b'*0x1001)
+        rwx_file.close()
+        
+        addr_b = mem.mmapFile(0, 0x1000, 'rw', rwx_file.name)
+        
+        self.assertEqual(len(mem.mappings()), 2)
+        
+        self.assertEqual(mem[addr_b], b'b')
+        self.assertEqual(mem[addr_b+(0x1000//2)], b'b')
+        self.assertEqual(mem[addr_b+(0x1000-1)], b'b')
+        
+        
+        rwx_file = tempfile.NamedTemporaryFile('w+b', delete=False)
+        rwx_file.file.write(b'c'*0x1001)
+        rwx_file.close()
+        
+        addr_c = mem.mmapFile(0, 0x1000, 'rx', rwx_file.name)
+        
+        self.assertEqual(len(mem.mappings()), 3)
+        
+        self.assertEqual(mem[addr_c], b'c')
+        self.assertEqual(mem[addr_c+(0x1000//2)], b'c')
+        self.assertEqual(mem[addr_c+(0x1000-1)], b'c')
+        
+        rwx_file = tempfile.NamedTemporaryFile('w+b', delete=False)
+        rwx_file.file.write(b'd'*0x1001)
+        rwx_file.close()
+        
+        addr_d = mem.mmapFile(0, 0x1000, 'r', rwx_file.name)
+        
+        self.assertEqual(len(mem.mappings()), 4)
+        
+        self.assertEqual(mem[addr_d], b'd')
+        self.assertEqual(mem[addr_d+(0x1000//2)], b'd')
+        self.assertEqual(mem[addr_d+(0x1000-1)], b'd')
+        
+        rwx_file = tempfile.NamedTemporaryFile('w+b', delete=False)
+        rwx_file.file.write(b'e'*0x1001)
+        rwx_file.close()
+        
+        addr_e = mem.mmapFile(0, 0x1000, 'w', rwx_file.name)
+        
+        self.assertEqual(len(mem.mappings()), 5)
+        
+        self.assertRaises(MemoryException, mem.__getitem__, addr_e)
+        self.assertRaises(MemoryException, mem.__getitem__, addr_e+(0x1000//2))
+        self.assertRaises(MemoryException, mem.__getitem__, addr_e+(0x1000-1))
+
+
     @unittest.skip("Disabled because it takes 4+ minutes; get_all_values() isn't returning all possible addresses")
     def test_lazysymbolic_constrained_deref(self):
         cs = ConstraintSet()
