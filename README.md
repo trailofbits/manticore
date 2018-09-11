@@ -223,4 +223,4 @@ Documentation is available in several places:
 
 ## License
 
-Manticore is licensed and distributed under the AGPLv3 license. [Contact us](opensource@trailofbits.com) if you're looking for an exception to the terms.
+Manticore is licensed and distributed under the AGPLv3 license. [Contact us](mailto:opensource@trailofbits.com) if you're looking for an exception to the terms.
