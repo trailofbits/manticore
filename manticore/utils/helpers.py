@@ -1,3 +1,4 @@
+import copy
 import functools
 import collections
 import logging
@@ -64,7 +65,7 @@ def get_taints(arg, taint=None):
 
 def taint_with(arg, taint, value_bits=256, index_bits=256):
     '''
-    Helper to taint a value, TODO / FIXME: this should not taint in place.
+    Helper to taint a value.
     :param arg: a value or Expression
     :param taint: a regular expression matching a taint value (eg. 'IMPORTANT.*'). If None this functions check for any taint value.
     '''
@@ -78,6 +79,7 @@ def taint_with(arg, taint, value_bits=256, index_bits=256):
             raise ValueError("type not supported")
 
     else:
+        arg = copy.copy(arg)
         arg._taint |= tainted_fset
 
     return arg
