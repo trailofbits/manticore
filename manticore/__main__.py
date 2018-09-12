@@ -94,6 +94,9 @@ def parse_arguments():
     parser.add_argument('--detect-reentrancy', action='store_true',
                         help='Enable detection of reentrancy bug (Ethereum only)')
 
+    parser.add_argument('--detect-reentrancy-advanced', action='store_true',
+                        help='Enable detection of reentrancy bug -- this detector is better used via API (Ethereum only)')
+
     parser.add_argument('--detect-unused-retval', action='store_true',
                         help='Enable detection of not used internal transaction return value (Ethereum only)')
 
