@@ -151,6 +151,8 @@ class Manticore(Eventful):
         self._executor = Executor(store=self._output.store, policy=policy)
         self._workers = []
 
+        self.plugins = set()
+
         # Link Executor events to default callbacks in manticore object
         self.forward_events_from(self._executor)
 
@@ -167,8 +169,6 @@ class Manticore(Eventful):
 
         if not isinstance(self._initial_state, State):
             raise TypeError("Manticore must be intialized with either a State or a path to a binary")
-
-        self.plugins = set()
 
         # Move the folowing into a linux plugin
         self._assertions = {}
