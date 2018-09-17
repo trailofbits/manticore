@@ -9,11 +9,15 @@ import io
 from contextlib import contextmanager
 from multiprocessing.managers import SyncManager
 
+from manticore.utils import config
 from manticore.utils.helpers import PickleSerializer
 from .smtlib import solver
 from .state import State
 
 logger = logging.getLogger(__name__)
+
+consts = config.get_group('workspace')
+consts.add('prefix', default='mcore_', description="The prefix to use for output and worksapce directories")
 
 _manager = None
 
@@ -168,7 +172,7 @@ class FilesystemStore(Store):
         :param uri: The path to on-disk workspace, or None.
         """
         if not uri:
-            uri = os.path.abspath(tempfile.mkdtemp(prefix="mcore_", dir='./'))
+            uri = os.path.abspath(tempfile.mkdtemp(prefix=consts.prefix, dir='./'))
 
         if os.path.exists(uri):
             assert os.path.isdir(uri), 'Store must be a directory'

@@ -24,11 +24,16 @@ import shlex
 import time
 from .visitors import *
 from ...utils.helpers import issymbolic, istainted, taint_with, get_taints
+from ...utils import config
 import io
 import collections
 
 logger = logging.getLogger(__name__)
 
+consts = config.get_group('smt')
+consts.add('timeout', default=240, description='Timeout, in seconds, for each Z3 invocation')
+consts.add('memory', default=16384, description='Max memory for Z3 to use (in Megabytes)')
+consts.add('maxsolutions', default=10000, description='Maximum solutions to provide when solving for all values')
 
 class Z3NotFoundError(EnvironmentError):
     pass
@@ -129,7 +134,7 @@ class Z3Solver(Solver):
         super().__init__()
         self._proc = None
 
-        self._command = 'z3 -t:240000 -memory:16384 -smt2 -in'
+        self._command = f'z3 -t:{consts.timeout*1000} -memory:{consts.memory} -smt2 -in'
         self._init = ['(set-logic QF_AUFBV)', '(set-option :global-decls false)']
         self._get_value_fmt = (re.compile('\(\((?P<expr>(.*))\ #x(?P<value>([0-9a-fA-F]*))\)\)'), 16)
 
@@ -359,12 +364,15 @@ class Z3Solver(Solver):
 
     # get-all-values min max minmax
     #@memoized
-    def get_all_values(self, constraints, expression, maxcnt=30000, silent=False):
+    def get_all_values(self, constraints, expression, maxcnt=None, silent=False):
         ''' Returns a list with all the possible values for the symbol x'''
         if not isinstance(expression, Expression):
             return [expression]
         assert isinstance(constraints, ConstraintSet)
         assert isinstance(expression, Expression)
+
+        if maxcnt is None:
+            maxcnt = consts.maxsolutions
 
         with constraints as temp_cs:
             if isinstance(expression, Bool):

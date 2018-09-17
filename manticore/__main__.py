@@ -4,13 +4,32 @@ import logging
 import argparse
 
 from . import Manticore
-from .utils import log
+from .utils import log, config
 
 # XXX(yan): This would normally be __name__, but then logger output will be pre-
 # pended by 'm.__main__: ', which is not very pleasing. hard-coding to 'main'
 logger = logging.getLogger('manticore.main')
 
-sys.setrecursionlimit(10000)
+consts = config.get_group('main')
+consts.add('recursionlimit', default=10000, 
+           description="Value to set for Python recursion limit")
+
+sys.setrecursionlimit(consts.recursionlimit)
+
+
+def update_non_defaults(args, parser):
+    """
+    Create entries in the config from all arguments that were actually passed on the command line
+    """
+    # First, load a local config file, if passed
+    config.load_overrides(args.config)
+
+    opts = config.get_group('cli')
+    for k in vars(args):
+        default = parser.get_default(k)
+        set_val = getattr(args, k)
+        if default is not set_val:
+            opts.update(k, default=set_val)
 
 
 def parse_arguments():
@@ -121,9 +140,21 @@ def parse_arguments():
     parser.add_argument('--no-testcases', action='store_true',
                         help='Do not generate testcases for discovered states when analysis finishes (Ethereum only)')
 
+    parser.add_argument('--config', type=str,
+                        help='Manticore config file (.ini) to use. (default config file pattern is: ./[.]m[anti]core.ini)')
+
+    parser.add_argument('--config-print', action='store_true',
+            help='Print internal options that are configurable from an ini file and exit')
+
     parsed = parser.parse_args(sys.argv[1:])
     if parsed.procs <= 0:
         parsed.procs = 1
+
+    update_non_defaults(parsed, parser)
+
+    if parsed.config_print:
+        print(config.describe_options())
+        raise SystemExit
 
     if parsed.policy.startswith('min'):
         parsed.policy = '-' + parsed.policy[3:]

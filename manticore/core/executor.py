@@ -6,6 +6,7 @@ import signal
 
 from ..utils.nointerrupt import WithKeyboardInterruptAs
 from ..utils.event import Eventful
+from ..utils import config
 from .smtlib import Z3Solver, Expression, SolverException
 from .state import Concretize, TerminateState
 
@@ -15,9 +16,13 @@ from contextlib import contextmanager
 
 # This is the single global manager that will handle all shared memory among workers
 
+consts = config.get_group('executor')
+consts.add('seed', default=1337, description='The seed to use when randomly selecting states')
+
 
 def mgr_init():
     signal.signal(signal.SIGINT, signal.SIG_IGN)
+
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +82,7 @@ class Policy(object):
 class Random(Policy):
     def __init__(self, executor, *args, **kwargs):
         super().__init__(executor, *args, **kwargs)
-        random.seed(1337)  # For repeatable results
+        random.seed(consts.seed)  # For repeatable results
 
     def choice(self, state_ids):
         return random.choice(state_ids)
