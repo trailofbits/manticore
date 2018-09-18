@@ -31,11 +31,11 @@ def process_config_values(args, parser):
     for k in opts:
         setattr(args, k, getattr(opts, k))
 
+    # Place all command line args into the cli group (for saving in the workspace)
     for k in vars(args):
         default = parser.get_default(k)
         set_val = getattr(args, k)
         if default is not set_val:
-            print("Setting: ", k, set_val)
             opts.update(k, value=set_val)
 
 
@@ -229,7 +229,6 @@ def main():
         ethereum_cli(args)
         return
 
-    print(args.env)
     env = {key: val for key, val in [env[0].split('=') for env in args.env]}
 
     m = Manticore(args.argv[0], argv=args.argv[1:], env=env, entry_symbol=args.entrysymbol, workspace_url=args.workspace, policy=args.policy, concrete_start=args.data)
