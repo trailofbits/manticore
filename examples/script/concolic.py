@@ -214,7 +214,7 @@ def get_new_constrs_for_queue(oldcons, newcons):
         # candidate new constraint sets might not be sat because we blindly
         # permute the new constraints that the path uncovered and append them
         # back onto the original set. we do this without regard for how the
-        # permutation of the new constraints combines with the old constratins
+        # permutation of the new constraints combines with the old constraints
         # to affect the satisfiability of the whole
         if constraints_are_sat(candidate):
             ret.append(candidate)
@@ -243,7 +243,7 @@ def concrete_input_to_constraints(ci, prev=None):
     
     log("getting constraints from symbolic run")
     cons, datas = symbolic_run_get_cons(trc)
-    # hmmm ideally do some smart stuff so we don't have to check if the
+    # hmmm: ideally, do some smart stuff so we don't have to check if the
     # constraints are unsat. something like the compare the constraints set
     # which you used to generate the input, and the constraint set you got
     # from the symex. sounds pretty hard
@@ -268,8 +268,8 @@ def main():
     for each in to_queue:
         q.put(each)
 
-    # hmmm probably issues with the datas stuff here? probably need to store
-    # the datas in the q or something. what if there was a new read(2) deep in the program, changing the datas
+    # hmmm: probably issues with the datas stuff here? probably need to store
+    # the datas in the queue or something. what if there was a new read(2) deep in the program, changing the datas?
     while not q.empty():
         log('get constraint set from queue, queue size: {}'.format(q.qsize()))
         cons = q.get()

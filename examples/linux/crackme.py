@@ -9,7 +9,7 @@ password = 'SCRT'
 
 PROGRAM = ''
 PROGRAM += '''
-/* This program parses a commandline argument.
+/* This program parses a command line argument.
  *
  * Compile with :
  *   $ gcc -static -Os crackme.c -o crackme
@@ -17,7 +17,7 @@ PROGRAM += '''
  * Analyze it with:
  *   $ manticore crackme 
  *
- *   - By default manticore will consider all input of stdin symbolic
+ *   - By default, Manticore will consider all input of stdin to be symbolic
  *     It will explore all possible paths, eventually finding the SCRT key
  * 
  * Expected output:

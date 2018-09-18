@@ -61,7 +61,7 @@ class FilterFunctions(Plugin):
             #At human tx depth only accept synthetic check functions
             only_tests = FilterFunctions(regexp=r'mcore_.*', depth='human', include=False)
 
-            :param regexp: a regular expresion over the name of the function '.*' will match all functions
+            :param regexp: a regular expression over the name of the function '.*' will match all functions
             :param mutability: mutable, constant or both will match functions declared in the abi to be of such class
             :param depth: match functions in internal transactions, in human initiated transactions or in both types
             :param fallback: if True include the fallback function. Hash will be 00000000 for it
@@ -94,11 +94,11 @@ class FilterFunctions(Plugin):
             if self._depth == 'internal' and tx.is_human:
                 return
 
-            #Get metadata if any for the targe addreess of current tx
+            #Get metadata if any for the target address of current tx
             md = self.manticore.get_metadata(tx.address)
             if md is None:
                 return
-            #Lets compile  the list of interesting hashes
+            #Let's compile  the list of interesting hashes
             selected_functions = []
 
             for func_hsh in md.hashes:
@@ -118,7 +118,7 @@ class FilterFunctions(Plugin):
                 selected_functions.append('00000000')
 
             if self._include:
-                # constraint the input so it can take only the interesting values
+                # constrain the input so it can take only the interesting values
                 constraint = reduce(Operators.OR, (tx.data[:4] == x for x in selected_functions))
                 state.constrain(constraint)
             else:
@@ -130,7 +130,7 @@ class FilterFunctions(Plugin):
 
 
 class LoopDepthLimiter(Plugin):
-    ''' This just abort explorations too deep '''
+    ''' This just aborts explorations that are too deep '''
 
     def __init__(self, loop_count_threshold=5, **kwargs):
         super().__init__(**kwargs)
@@ -243,7 +243,8 @@ class DetectEnvInstruction(Detector):
         BLOCKHASH, COINBASE, TIMESTAMP, NUMBER, DIFFICULTY, GASLIMIT, ORIGIN, GASPRICE
 
         Sometimes environmental information can be manipulated. Contracts should avoid
-        using it. Unless special situations. Notably to programatically detect human transactions
+        using it except for special situations such as, notably, programmatically
+		detecting human transactions
         `sender == origin`
     '''
 
@@ -286,7 +287,7 @@ class DetectInvalid(Detector):
         Detects INVALID instructions.
 
         INVALID instructions are originally designated to signal exceptional code.
-        As in practice the INVALID instruction is used in different ways this
+        Since in practice the INVALID instruction is used in different ways, this
         detector may Generate a great deal of false positives.
 
         :param only_human: if True report only INVALID at depth 0 transactions
@@ -336,7 +337,7 @@ class DetectReentrancySimple(Detector):
     def did_evm_write_storage_callback(self, state, address, offset, value):
         locs = state.context.get(self._context_key, [])
 
-        # if we're here and locs has stuff in it. by definition this state has
+        # if we're here and locs has stuff in it, by definition this state has
         # encountered a dangerous call and is now at a write.
         for callpc, gas_constraint in locs:
             addr = state.platform.current_vm.address
@@ -349,7 +350,7 @@ class DetectReentrancyAdvanced(Detector):
     Detector for reentrancy bugs.
     Given an optional concrete list of attacker addresses, warn on the following conditions.
 
-    1) A _successful_ call to an attacker address (address in attacker list), or any human account address (if no list is given). With enough gas (>2300).
+    1) A _successful_ call to an attacker address (address in attacker list), or any human account address (if no list is given) with enough gas (>2300).
     2) A SSTORE after the execution of the CALL.
     3) The storage slot of the SSTORE must be used in some path to control flow
     """
@@ -357,7 +358,7 @@ class DetectReentrancyAdvanced(Detector):
         super().__init__(**kwargs)
         # TODO Check addresses are normal accounts. Heuristics implemented here
         # assume target addresses wont execute code. i.e. won't detect a Reentrancy
-        # attack in progess but only a potential attack
+        # attack in progress but only a potential attack
         self._addresses = addresses
 
     @property
@@ -378,7 +379,7 @@ class DetectReentrancyAdvanced(Detector):
             if tx.result:
                 # Check if gas was enough for a reentrancy attack
                 if tx.gas > 2300:
-                    # Check if target address is attaker controlled
+                    # Check if target address is attacker controlled
                     if self._addresses is None and not world.get_code(tx.address) or self._addresses is not None and tx.address in self._addresses:
                         #that's enough. Save current location and read list
                         self._save_location_and_reads(state)
@@ -562,13 +563,13 @@ class DetectIntegerOverflow(Detector):
             ios = self._signed_sub_overflow(state, *arguments)
             iou = self._unsigned_sub_overflow(state, *arguments)
         elif mnemonic == 'SSTORE':
-            # If an overflowded value is stored in the storage then it is a finding
+            # If an overflowed value is stored in the storage then it is a finding
             where, what = arguments
             self._check_finding(state, what)
         elif mnemonic == 'RETURN':
             world = state.platform
             if world.current_transaction.is_human():
-                # If an overflowded value is returned to a human
+                # If an overflowed value is returned to a human
                 offset, size = arguments
                 data = world.current_vm.read_buffer(offset, size)
                 self._check_finding(state, data)
@@ -643,8 +644,9 @@ class DetectUnusedRetVal(Detector):
 
 class DetectDelegatecall(Detector):
     '''
-        Detects DELEGATECALLs to controlled addresses and or with controlled function id.
-        This detector finds and reports on any delegatecall instruction any the following propositions are hold:
+        Detects DELEGATECALLs to controlled addresses and/or with controlled function id.
+        This detector finds and reports on any delegatecall instruction where any of the
+		following propositions hold:
             * the destination address can be controlled by the caller
             * the first 4 bytes of the calldata are controlled by the caller
     '''
@@ -1081,7 +1083,7 @@ class ABI(object):
 
             m = re.match(r"(?P<name>[a-zA-Z_0-9]+)(?P<type>\(.*\))", type_spec)
             if m and m.group('name'):
-                # Type has function name. Lets take the function id from the data
+                # Type has function name. Let's take the function id from the data
                 # This does not check that the encoded func_id is valid
                 # func_id = ABI.function_selector(type_spec)
                 result = (data[:4],)
@@ -1319,7 +1321,7 @@ class EVMContract(EVMAccount):
 
             Example use::
 
-                #call funtion `add` on contract_account with argument `1000`
+                #call function `add` on contract_account with argument `1000`
                 contract_account.add(1000)
 
         """
@@ -1386,7 +1388,7 @@ class ManticoreEVM(Manticore):
 
     def make_symbolic_buffer(self, size, name=None):
         """ Creates a symbolic buffer of size bytes to be used in transactions.
-            You can operate on it normally and add constrains to manticore.constraints
+            You can operate on it normally and add constraints to manticore.constraints
             via manticore.constrain(constraint_expression)
 
             Example use::
@@ -1406,7 +1408,7 @@ class ManticoreEVM(Manticore):
 
     def make_symbolic_value(self, nbits=256, name=None):
         """ Creates a symbolic value, normally a uint256, to be used in transactions.
-            You can operate on it normally and add constrains to manticore.constraints
+            You can operate on it normally and add constraints to manticore.constraints
             via manticore.constrain(constraint_expression)
 
             Example use::
@@ -1584,7 +1586,7 @@ class ManticoreEVM(Manticore):
 
         contracts = output.get('contracts', [])
         if len(contracts) != 1 and contract_name is None:
-            raise EthereumError('Solidity file must contain exactly one contract or you must use contract parameter to specify which one.')
+            raise EthereumError('Solidity file must contain exactly one contract or you must use a contract parameter to specify one.')
 
         name, contract = None, None
         if contract_name is None:
@@ -1757,7 +1759,7 @@ class ManticoreEVM(Manticore):
         return state_id
 
     def _revive_state_id(self, state_id):
-        """ Manually revice a states by state_id.
+        """ Manually revive a state by state_id.
             Moves the state from the final list into the running list
         """
 
@@ -1884,8 +1886,8 @@ class ManticoreEVM(Manticore):
             :type balance: int or SValue
             :param int address: the address for the new contract (optional)
             :param str init: initializing evm bytecode and arguments
-            :param str name: a uniq name for reference
-            :param gas: gas budget for the creation/inititialization of the contract
+            :param str name: a unique name for reference
+            :param gas: gas budget for the creation/initialization of the contract
             :rtype: EVMAccount
         """
         if not self.count_running_states():
@@ -1895,7 +1897,7 @@ class ManticoreEVM(Manticore):
             # Address already used
             raise EthereumError("Address already used")
 
-        # Let just choose the address ourself. This is not yellow paper material
+        # Let's just choose the address ourself. This is not yellow paper material
         if address is None:
             address = self.new_address()
 
@@ -1981,7 +1983,7 @@ class ManticoreEVM(Manticore):
             raise EthereumError("code bad type")
 
         # Address check
-        # Let just choose the address ourself. This is not yellow paper material
+        # Let's just choose the address ourself. This is not yellow paper material
         if address is None:
             address = self.new_address()
         if not isinstance(address, int):
@@ -1998,11 +2000,11 @@ class ManticoreEVM(Manticore):
             world = state.platform
 
             if '_pending_transaction' in state.context:
-                raise EthereumError("This is bad. It should not be a pending transaction")
+                raise EthereumError("This is bad. There should not be a pending transaction")
 
             if address in world.accounts:
                 # Address already used
-                raise EthereumError("This is bad. Same address used for different contracts in different states")
+                raise EthereumError("This is bad. Same address is used for different contracts in different states")
             world.create_account(address, balance, code=code, storage=None)
 
         self._accounts[name] = EVMAccount(address, manticore=self, name=name)
@@ -2012,7 +2014,7 @@ class ManticoreEVM(Manticore):
             # Copy global constraints into each state.
             # We should somehow remember what has been copied to each state
             # In a second transaction we should only add new constraints.
-            # And actually only constraints related to whateverwe are using in
+            # And actually only constraints related to whatever we are using in
             # the tx. This is a FIXME
             global_constraints = self.constraints
 
@@ -2031,7 +2033,7 @@ class ManticoreEVM(Manticore):
                 value = state.migrate_expression(value)
 
             if issymbolic(data):
-                if isinstance(data, ArrayProxy):  # FIXME is this necesary here?
+                if isinstance(data, ArrayProxy):  # FIXME is this necessary here?
                     data = data.array
                 data = state.migrate_expression(data)
                 if isinstance(data, Array):
@@ -2097,11 +2099,11 @@ class ManticoreEVM(Manticore):
         assert address is not None
         assert caller is not None
 
-        # Transactions (as everything else) needs at least one running state
+        # Transactions (like everything else) need at least one running state
         if not self.count_running_states():
             raise NoAliveStates
 
-        # To avoid going full crazy we maintain a global list of addresses
+        # To avoid going full crazy, we maintain a global list of addresses
         for state in self.running_states:
             world = state.platform
 
@@ -2118,7 +2120,7 @@ class ManticoreEVM(Manticore):
             if sort == 'CREATE':
                 if address in world.accounts:
                     # Address already used
-                    raise EthereumError("This is bad. Same address used for different contracts in different states")
+                    raise EthereumError("This is bad. Same address is used for different contracts in different states")
 
             state.context['_pending_transaction'] = (sort, caller, address, value, data, gaslimit, price)
 
@@ -2148,7 +2150,7 @@ class ManticoreEVM(Manticore):
             raise EthereumError('The account to perform the symbolic exploration of the contract should be "attacker", "owner" or "combo1"')
 
         if contract_account is None:
-            logger.info("Failed to create contract. Exception in constructor")
+            logger.info("Failed to create contract: exception in constructor")
             self.finalize()
             return
 
@@ -2174,7 +2176,7 @@ class ManticoreEVM(Manticore):
             except NoAliveStates:
                 break
 
-            # Check if the maximun number of tx was reached
+            # Check if the maximum number of tx was reached
             if tx_limit is not None and tx_no + 1 == tx_limit:
                 break
 
@@ -2193,7 +2195,7 @@ class ManticoreEVM(Manticore):
         """ Run any pending transaction on any running state """
         # Check if there is a pending transaction
         with self.locked_context('ethereum') as context:
-            # there is no states added to the executor queue
+            # there are no states added to the executor queue
             assert len(self._executor.list()) == 0
             for state_id in context['_saved_states']:
                 self._executor.put(state_id)
@@ -2251,7 +2253,7 @@ class ManticoreEVM(Manticore):
                 #Get the ID of the single running state
                 state_id = self._running_state_ids[0]
             else:
-                raise EthereumError("More than one state running, you must specify state id.")
+                raise EthereumError("More than one state running; you must specify a state id.")
 
         if state_id == -1:
             state = self.initial_state
@@ -2309,9 +2311,9 @@ class ManticoreEVM(Manticore):
             context['_sha3_states'] = sha3_states
 
             if not state.can_be_true(known_hashes_cond):
-                raise TerminateState("There is not matching sha3 pair, bailing out")
+                raise TerminateState("There is no matching sha3 pair, bailing out")
 
-            #send knwon hashes to evm
+            #send known hashes to evm
             known_hashes.update(results)
 
     def _on_concrete_sha3_callback(self, state, buf, value):
@@ -2325,7 +2327,7 @@ class ManticoreEVM(Manticore):
 
     def _terminate_state_callback(self, state, state_id, e):
         """ INTERNAL USE
-            Every time a state finishes executing last transaction we save it in
+            Every time a state finishes executing the last transaction, we save it in
             our private list
         """
         if str(e) == 'Abandoned state':
@@ -2336,13 +2338,13 @@ class ManticoreEVM(Manticore):
         e.testcase = False  # Do not generate a testcase file
 
         if not world.all_transactions:
-            logger.debug("Something was wrong. Search terminated in the middle of an ongoing tx")
+            logger.debug("Something went wrong: search terminated in the middle of an ongoing tx")
             self.save(state, final=True)
             return
 
         tx = world.all_transactions[-1]
 
-        #is we initiated the Tx we need process the outcome for now.
+        #we initiated the Tx; we need process the outcome for now.
         #Fixme incomplete.
         if tx.is_human():
             if tx.sort == 'CREATE':
@@ -2351,15 +2353,15 @@ class ManticoreEVM(Manticore):
                 else:
                     world.delete_account(tx.address)
         else:
-            logger.info("Manticore exception. State should be terminated only at the end of the human transaction")
+            logger.info("Manticore exception: state should be terminated only at the end of the human transaction")
 
         #Human tx that ends in this wont modify the storage so finalize and
         # generate a testcase. FIXME This should be configurable as REVERT and
-        # THROWit actually changes the balance and nonce? of some accounts
+        # THROW; it actually changes the balance and nonce? of some accounts
         if tx.result in {'SELFDESTRUCT', 'REVERT', 'THROW', 'TXERROR'}:
             self.save(state, final=True)
         elif tx.result in {'RETURN', 'STOP'}:
-            # if not a revert we save the state for further transactioning
+            # if not a revert, we save the state for further transactions
             self.save(state)  # Add to running states
         else:
             logger.debug("Exception in state. Discarding it")
@@ -2367,7 +2369,7 @@ class ManticoreEVM(Manticore):
     #Callbacks
     def _load_state_callback(self, state, state_id):
         """ INTERNAL USE
-            When a state was just loaded from stoage we do the pending transaction
+            If a state was just loaded from storage, we do the pending transaction
         """
         if '_pending_transaction' not in state.context:
             return
@@ -2459,7 +2461,7 @@ class ManticoreEVM(Manticore):
         :param message: Accompanying message
         """
         # workspace should not be responsible for formating the output
-        # each object knows its secrets, each class should be able to report its
+        # each object knows its secrets, and each class should be able to report its
         # final state
         #super()._generate_testcase_callback(state, name, message)
         # TODO(mark): Refactor ManticoreOutput to let the platform be more in control
@@ -2502,7 +2504,7 @@ class ManticoreEVM(Manticore):
                 address, offset, at_init = state.context['evm.trace'][-1]
                 assert at_runtime != at_init
 
-                #Last instruction if last tx vas valid
+                #Last instruction if last tx was valid
                 if str(state.context['last_exception']) != 'TXERROR':
                     metadata = self.get_metadata(blockchain.last_transaction.address)
                     if metadata is not None:
@@ -2587,7 +2589,7 @@ class ManticoreEVM(Manticore):
         with testcase.open_stream('tx') as tx_summary:
             is_something_symbolic = False
             for tx in blockchain.human_transactions:  # external transactions
-                tx_summary.write("Transactions Nr. %d\n" % blockchain.transactions.index(tx))
+                tx_summary.write("Transactions No. %d\n" % blockchain.transactions.index(tx))
 
                 # The result if any RETURN or REVERT
                 tx_summary.write("Type: %s (%d)\n" % (tx.sort, tx.depth))
