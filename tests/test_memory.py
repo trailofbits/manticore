@@ -392,7 +392,7 @@ class MemoryTest(unittest.TestCase):
         #start with no maps
         self.assertEqual(len(mem.mappings()), 0)
 
-        #alloc/map a litlle mem
+        #alloc/map a little mem
         addr = mem.mmap(None, 0x10, 'r')
         for c in range(0, 0x10):
             self.assertRaises(MemoryException, mem.__setitem__, addr+c, 'a')
@@ -429,7 +429,7 @@ class MemoryTest(unittest.TestCase):
         #Check the search gives basically any value as the mem is free
         self.assertEqual(mem._search(0x1000, 0x20000000), 0x20000000)
 
-        #alloc/map a litlle mem
+        #alloc/map a little mem
         size = 0x1000
         addr = mem.mmap(None, size, 'rwx')
 
@@ -462,10 +462,10 @@ class MemoryTest(unittest.TestCase):
         #start with no maps
         self.assertEqual(len(mem.mappings()), 0)
 
-        #Chack the search gives basically any value as the mem is free
+        #Check the search gives basically any value as the mem is free
         self.assertEqual(mem._search(0x1000, 0x20000000), 0x20000000)
 
-        #alloc/map a litlle mem
+        #alloc/map a little mem
         size = 0x1000
         addr = mem.mmap(None, 0x1000, 'r')
 
@@ -1198,13 +1198,13 @@ class MemoryTest(unittest.TestCase):
         cs.add(x>=addr)
         cs.add(x<addr+10)
 
-        #Well.. x is symbolic
+        #Well... x is symbolic
         self.assertTrue(issymbolic(x))
         #It shall be a solution
         self.assertTrue(solver.check(cs))
-        #if we ask for a possible solution (an x that comply with the constraints)
+        #if we ask for a possible solution (an x that complies with the constraints)
         sol = solver.get_value(cs, x)
-        #it should comply..
+        #it should comply...
         self.assertTrue(sol >= addr and sol<addr+10)
 
         #min and max value should be addr and addr+9
@@ -1214,15 +1214,15 @@ class MemoryTest(unittest.TestCase):
 
         #If we ask for all possible solutions...
         for val in solver.get_all_values(cs, x):
-            #any solution must comply..
+            #any solution must comply...
             self.assertTrue(sol >= addr and sol<addr+10)
 
-        #so now lets ask the memory for values pointed by addr
+        #so now let's ask the memory for values pointed by addr
         c = mem[x]
         for val in solver.get_all_values(cs, c):
             self.assertTrue(val>=100 and val<110)
 
-        #constraint the address a litle more
+        #constraint the address a little more
         cs.add(x<=addr)
         #It shall be a solution
         self.assertTrue(solver.check(cs))
@@ -1231,7 +1231,7 @@ class MemoryTest(unittest.TestCase):
         #it must be addr
         self.assertTrue(sol == addr)
 
-        #lets ask the memory for the value under that address
+        #let's ask the memory for the value under that address
         c = mem[x]
         sol = solver.get_value(cs, c)
         self.assertTrue(Operators.ORD(sol)==100)
@@ -1263,13 +1263,13 @@ class MemoryTest(unittest.TestCase):
         mem[addr+5] = Operators.CHR(v)
 
 
-        #mak a free symbol of 32 bits
+        #make a free symbol of 32 bits
         x = cs.new_bitvec(32)
         #constraint it to range into [addr, addr+10)
         cs.add(x>=addr)
         cs.add(x<addr+10)
 
-        #so now lets ask the memory for values pointed by addr
+        #so now let's ask the memory for values pointed by addr
         c = mem[x]
         for val in solver.get_all_values(cs, c,1000):
             self.assertTrue(val>=100 and val<110 or val >= Operators.ORD('A') and val <= Operators.ORD('Z'))
@@ -1297,7 +1297,7 @@ class MemoryTest(unittest.TestCase):
     def testmprotectFailSymbReading(self):
         cs = ConstraintSet()
 
-        #In the beggining the solver was 'sat' ...
+        #In the beginning the solver was 'sat' ...
         self.assertTrue(solver.check(cs))
 
 
@@ -1319,7 +1319,7 @@ class MemoryTest(unittest.TestCase):
         #And now just 2
         self.assertEqual(len(mem.mappings()), 2)
 
-        #lets write some chars at the beginning of each page
+        #let's write some chars at the beginning of each page
         mem[addr] = 'a'
         mem[addr+0x2000] = 'b'
 
@@ -1333,13 +1333,13 @@ class MemoryTest(unittest.TestCase):
         cs.add(x>=addr)
         cs.add(x<=addr+0x2000)
 
-        #Well.. x is symbolic
+        #Well... x is symbolic
         self.assertTrue(issymbolic(x))
         #It shall be a solution
         self.assertTrue(solver.check(cs))
-        #if we ask for a possible solution (an x that comply with the constraints)
+        #if we ask for a possible solution (an x that complies with the constraints)
         sol = solver.get_value(cs, x)
-        #it should comply..
+        #it should comply...
         self.assertTrue(sol >= addr and sol<=addr+0x2000)
         #print map(hex,sorted(solver.get_all_values(cs, x, 0x100000))),  map(hex,solver.minmax(cs, x)), mem[x]
 

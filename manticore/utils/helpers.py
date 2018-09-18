@@ -29,7 +29,7 @@ def istainted(arg, taint=None):
     '''
     Helper to determine whether an object if tainted.
     :param arg: a value or Expression
-    :param taint: a regular expression matching a taint value (eg. 'IMPORTANT.*'). If None this functions check for any taint value.
+    :param taint: a regular expression matching a taint value (eg. 'IMPORTANT.*'). If None, this function checks for any taint value.
     '''
 
     if not issymbolic(arg):
@@ -47,7 +47,7 @@ def get_taints(arg, taint=None):
     '''
     Helper to list an object taints.
     :param arg: a value or Expression
-    :param taint: a regular expression matching a taint value (eg. 'IMPORTANT.*'). If None this functions check for any taint value.
+    :param taint: a regular expression matching a taint value (eg. 'IMPORTANT.*'). If None, this function checks for any taint value.
     '''
 
     if not issymbolic(arg):
@@ -66,7 +66,7 @@ def taint_with(arg, taint, value_bits=256, index_bits=256):
     '''
     Helper to taint a value, Fixme this should not taint in place.
     :param arg: a value or Expression
-    :param taint: a regular expression matching a taint value (eg. 'IMPORTANT.*'). If None this functions check for any taint value.
+    :param taint: a regular expression matching a taint value (eg. 'IMPORTANT.*'). If None, this function checks for any taint value.
     '''
     if not issymbolic(arg):
         if isinstance(arg, int):

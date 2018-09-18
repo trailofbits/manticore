@@ -25,7 +25,7 @@ response if you ask in our [chat room](https://empireslacking.herokuapp.com/)
 ## Code
 
 Manticore uses the pull request contribution model. Please make an account on
-github, fork this repo, and submit code contributions via pull request. For
+Github, fork this repo, and submit code contributions via pull request. For
 more documentation, look [here](https://guides.github.com/activities/forking/).
 
 Some pull request guidelines:
