@@ -154,7 +154,7 @@ def parse_arguments():
 
     if parsed.config_print:
         print(config.describe_options())
-        raise SystemExit
+        sys.exit(0)
 
     if parsed.policy.startswith('min'):
         parsed.policy = '-' + parsed.policy[3:]
