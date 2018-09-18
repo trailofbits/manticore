@@ -171,18 +171,21 @@ def load_overrides(path=None):
 
     Default paths: ./mcore.ini, ./.mcore.ini, ./manticore.ini, ./.manticore.ini.
     """
-    possible_names = ['mcore.ini', 'manticore.ini']
-    names = [os.path.join('.', ''.join(x)) for x in product(['', '.'], possible_names)]
 
     if path is not None:
         names = [path]
+    else:
+        possible_names = ['mcore.ini', 'manticore.ini']
+        names = [os.path.join('.', ''.join(x)) for x in product(['', '.'], possible_names)]
 
     for name in names:
-        if os.path.exists(name):
-            logger.info(f'Reading configuration from {name}')
+        try:
             with open(name, 'r') as ini_f:
+                logger.info(f'Reading configuration from {name}')
                 parse_ini(ini_f)
             break
+        except FileNotFoundError:
+            pass
     else:
         if path is not None:
             raise FileNotFoundError(f"'{path}' not found for config overrides")
