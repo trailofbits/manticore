@@ -17,19 +17,26 @@ consts.add('recursionlimit', default=10000,
 sys.setrecursionlimit(consts.recursionlimit)
 
 
-def update_non_defaults(args, parser):
+def process_config_values(args, parser):
     """
-    Create entries in the config from all arguments that were actually passed on the command line
+    Bring in provided config values to the args parser, and import entries to the config
+    from all arguments that were actually passed on the command line
     """
     # First, load a local config file, if passed
     config.load_overrides(args.config)
 
     opts = config.get_group('cli')
+
+    # Bring in the options keys into args
+    for k in opts:
+        setattr(args, k, getattr(opts, k))
+
     for k in vars(args):
         default = parser.get_default(k)
         set_val = getattr(args, k)
         if default is not set_val:
-            opts.update(k, default=set_val)
+            print("Setting: ", k, set_val)
+            opts.update(k, value=set_val)
 
 
 def parse_arguments():
@@ -150,7 +157,7 @@ def parse_arguments():
     if parsed.procs <= 0:
         parsed.procs = 1
 
-    update_non_defaults(parsed, parser)
+    process_config_values(parsed, parser)
 
     if parsed.config_print:
         print(config.describe_options())
@@ -222,6 +229,7 @@ def main():
         ethereum_cli(args)
         return
 
+    print(args.env)
     env = {key: val for key, val in [env[0].split('=') for env in args.env]}
 
     m = Manticore(args.argv[0], argv=args.argv[1:], env=env, entry_symbol=args.entrysymbol, workspace_url=args.workspace, policy=args.policy, concrete_start=args.data)

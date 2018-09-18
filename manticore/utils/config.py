@@ -63,14 +63,16 @@ class _group:
         v = _var(description=description, default=default)
         self._vars[name] = v
 
-    def update(self, name: str, default=None, description: str=None):
+    def update(self, name: str, value=None, default=None, description: str=None):
         """
-        Like add, but can tolerate existing values.
+        Like add, but can tolerate existing values; also updates the value.
         """
         if name in self._vars:
             description = description or self._vars[name].description
+            default = default or self._vars[name].default
 
         v = _var(description=description, default=default, defined=False)
+        v.value = value
         self._vars[name] = v
 
     def get_description(self, name: str) -> str:
@@ -157,7 +159,7 @@ def parse_ini(f):
         for key, v in c.items(section_name):
             try:
                 val = ast.literal_eval(v)
-            except ValueError:
+            except (ValueError, SyntaxError):
                 val = v
 
             group.update(key)
