@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 consts = config.get_group('workspace')
 consts.add('prefix', default='mcore_', description="The prefix to use for output and workspace directories")
+consts.add('ws_dir', default='.', description="Location of where to create workspace directories")
 
 _manager = None
 
@@ -172,7 +173,7 @@ class FilesystemStore(Store):
         :param uri: The path to on-disk workspace, or None.
         """
         if not uri:
-            uri = os.path.abspath(tempfile.mkdtemp(prefix=consts.prefix, dir='./'))
+            uri = os.path.abspath(tempfile.mkdtemp(prefix=consts.prefix, dir=consts.ws_dir))
 
         if os.path.exists(uri):
             assert os.path.isdir(uri), 'Store must be a directory'
