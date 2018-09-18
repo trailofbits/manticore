@@ -101,7 +101,7 @@ class TraceVisualizer(object):
             op = xref.function.get_lifted_il_at(xref.address).operation
         except IndexError:
             w = "ManticoreTrace: Could not lookup " + hex(xref.address)
-            w += " address for funciton " + str(xref.function)
+            w += " address for function " + str(xref.function)
             log.log_warn(w)
             return
         if not (op == enums.LowLevelILOperation.LLIL_CALL or

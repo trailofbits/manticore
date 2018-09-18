@@ -103,7 +103,7 @@ def parse_arguments():
                         help='Account used as caller in the symbolic transactions, either "attacker" or "owner" (Ethereum only)')
 
     parser.add_argument('--contract', type=str,
-                        help='Contract name to analyze in case of multiple ones (Ethereum only)')
+                        help='Contract name to analyze in case of multiple contracts (Ethereum only)')
 
     parser.add_argument('--detect-overflow', action='store_true',
                         help='Enable integer overflow detection (Ethereum only)')
@@ -121,7 +121,7 @@ def parse_arguments():
                         help='Enable detection of reentrancy bug (Ethereum only)')
 
     parser.add_argument('--detect-unused-retval', action='store_true',
-                        help='Enable detection of not used internal transaction return value (Ethereum only)')
+                        help='Enable detection of unused internal transaction return value (Ethereum only)')
 
     parser.add_argument('--detect-delegatecall', action='store_true',
                         help='Enable detection of problematic uses of DELEGATECALL instruction (Ethereum only)')

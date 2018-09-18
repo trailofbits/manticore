@@ -195,7 +195,7 @@ class PrettyPrinter(Visitor):
         '''
         Overload Visitor.visit because:
         - We need a pre-order traversal
-        - We use a recursion as it makes eaiser to keep track of the indentation
+        - We use a recursion as it makes it easier to keep track of the indentation
 
         '''
         self._method(expression)
@@ -203,7 +203,7 @@ class PrettyPrinter(Visitor):
     def _method(self, expression, *args):
         '''
         Overload Visitor._method because we want to stop to iterate over the
-        visit_ functions as soon as a valide visit_ function is found
+        visit_ functions as soon as a valid visit_ function is found
         '''
         assert expression.__class__.__mro__[-1] is object
         for cls in expression.__class__.__mro__:
@@ -473,7 +473,7 @@ class ArithmeticSimplifier(Visitor):
         ''' ct & x => x & ct                move constants to the right
             a & 0 => 0                      remove zero
             a & 0xffffffff => a             remove full mask
-            (b & ct2) & ct => b & (ct&ct2)  ?
+            (b & ct2) & ct => b & (ct&ct2)  associative property
             (a & (b | c) => a&b | a&c       distribute over |
         '''
         left = expression.operands[0]
@@ -519,7 +519,7 @@ class ArithmeticSimplifier(Visitor):
         if isinstance(index, BitVecConstant):
             ival = index.value
 
-            # props are slow and using them tight loops should be avoided, esp when they offer no additional validation
+            # props are slow and using them in tight loops should be avoided, esp when they offer no additional validation
             # arr._operands[1] = arr.index, arr._operands[0] = arr.array
             while isinstance(arr, ArrayStore) and isinstance(arr._operands[1], BitVecConstant) and arr._operands[1]._value != ival:
                 arr = arr._operands[0]  # arr.array
@@ -694,7 +694,7 @@ def translate_to_smtlib(expression, **kwargs):
 
 
 class Replace(Visitor):
-    ''' Simple visitor to replaces expresions '''
+    ''' Simple visitor to replaces expressions '''
 
     def __init__(self, bindings=None, **kwargs):
         super().__init__(**kwargs)

@@ -43,7 +43,7 @@ class EthBenchmark(unittest.TestCase):
 
     def _test(self, name, should_find):
         """
-        Tests DetectInvalid over the consensys benchmark suit
+        Tests DetectInvalid over the consensys benchmark suite
         """
         mevm = self.mevm
         mevm.register_detector(DetectInvalid())

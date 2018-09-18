@@ -1,7 +1,7 @@
 from manticore.ethereum import ManticoreEVM, evm
 from binascii import unhexlify, hexlify
 ################ Script #######################
-# Bytecode only based analisys
+# Bytecode only based analysis
 # No solidity, no compiler, no metadata
 
 m = ManticoreEVM()

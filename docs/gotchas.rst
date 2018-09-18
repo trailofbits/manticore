@@ -34,4 +34,4 @@ Client code should use the :meth:`~manticore.Manticore.locked_context` API::
 "Random" Policy
 ---------------
 
-The `random` policy, which is the manticore default, is not actually random and is instead deterministically seeded. This means that running the same analysis twice should return the same results (and get stuck in the same places).
+The `random` policy, which is the Manticore default, is not actually random and is instead deterministically seeded. This means that running the same analysis twice should return the same results (and get stuck in the same places).

@@ -72,7 +72,7 @@ def post_mcore(state, last_instruction):
 
     # Synchronize qemu state to manticore's after a system call
     if last_instruction.mnemonic.lower() == 'svc':
-        # Syncronize all writes that have happened
+        # Synchronize all writes that have happened
         writes = state.cpu.memory.pop_record_writes()
         if writes:
             logger.debug("Got %d writes", len(writes))

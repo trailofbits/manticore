@@ -1,7 +1,7 @@
 Auto unittest generation
 ------------------------
 
-1) You need a Linux program that exercises a set of interestings intructions.
+1) You need a Linux program that exercises a set of interesting instructions.
 For instance try `make` in examples/linux.
 
 2) Run the tracer on your program. It is a gdb wrapper that will execute the program step by step
@@ -10,7 +10,7 @@ printing pre/pos information on each instruction:
 ```
 python make_dump.py ../../examples/linux/nostdlib32 > mytest.dump
 ```
-(Several dumps can be concatenated togheter)
+(Several dumps can be concatenated together)
 
 3) Generate the actual python unittest based on the dump.
 ```

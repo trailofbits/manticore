@@ -229,7 +229,7 @@ class MemoryStore(Store):
     """
     An in-memory (dict) Manticore workspace.
 
-    NOTE: This is mostly used for experimentation and testing funcionality.
+    NOTE: This is mostly used for experimentation and testing functionality.
     Can not be used with multiple workers!
     """
     store_type = 'mem'
@@ -369,7 +369,7 @@ class Workspace(object):
         Save a state to storage, return identifier.
 
         :param state: The state to save
-        :param int state_id: If not None force the state id potentially overwritting old states
+        :param int state_id: If not None force the state id potentially overwriting old states
         :return: New state id
         :rtype: int
         """
