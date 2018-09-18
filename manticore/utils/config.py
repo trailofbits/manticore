@@ -30,7 +30,8 @@ class ConfigError(Exception):
 
 
 class _var:
-    def __init__(self, default=None, description: str=None, defined: bool=True):
+    def __init__(self, name: str='', default=None, description: str=None, defined: bool=True):
+        self.name = name
         self.description = description
         self.value = default
         self.default = default
@@ -60,7 +61,7 @@ class _group:
         if name in self._vars:
             raise ConfigError("f{self.name}.{name} already defined.")
 
-        v = _var(description=description, default=default)
+        v = _var(name, description=description, default=default)
         self._vars[name] = v
 
     def update(self, name: str, value=None, default=None, description: str=None):
@@ -71,7 +72,7 @@ class _group:
             description = description or self._vars[name].description
             default = default or self._vars[name].default
 
-        v = _var(description=description, default=default, defined=False)
+        v = _var(name, description=description, default=default, defined=False)
         v.value = value
         self._vars[name] = v
 
@@ -84,8 +85,11 @@ class _group:
 
         return self._vars[name].description
 
-    def was_set(self, name: str) -> bool:
-        return self._vars[name].was_set
+    def updated_vars(self):
+        """
+        Return all vars that were explicitly set or updated with new values.
+        """
+        return filter(lambda x: x.was_set, self._vars.values())
 
     def _var_object(self, name: str) -> _var:
         return self._vars[name]
@@ -130,13 +134,12 @@ def save(f):
 
     c = configparser.ConfigParser()
     for group_name, group in _groups.items():
-        if not any(group.was_set(v) for v in group):
+        set_vars = list(group.updated_vars())
+        if not set_vars:
             continue
         c.add_section(group_name)
-        for var in group:
-            if not group.was_set(var):
-                continue
-            c.set(group_name, var, str(getattr(group, var)))
+        for var in set_vars:
+            c.set(group_name, var.name, str(var.value))
     c.write(f)
 
 
