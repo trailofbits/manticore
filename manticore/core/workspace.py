@@ -17,7 +17,7 @@ from .state import State
 logger = logging.getLogger(__name__)
 
 consts = config.get_group('workspace')
-consts.add('prefix', default='mcore_', description="The prefix to use for output and worksapce directories")
+consts.add('prefix', default='mcore_', description="The prefix to use for output and workspace directories")
 
 _manager = None
 
