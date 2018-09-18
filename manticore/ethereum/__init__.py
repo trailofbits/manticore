@@ -1961,7 +1961,7 @@ class ManticoreEVM(Manticore):
                 is_something_symbolic = is_something_symbolic or is_balance_symbolic
                 balance = state.solve_one(balance)
                 summary.write("Balance: %d %s\n" % (balance, flagged(is_balance_symbolic)))
-                from .core.smtlib.visitors import translate_to_smtlib
+                from ..core.smtlib.visitors import translate_to_smtlib
 
                 storage = blockchain.get_storage(account_address)
                 summary.write("Storage: %s\n" % translate_to_smtlib(storage, use_bindings=True))
