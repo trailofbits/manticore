@@ -25,7 +25,7 @@ _groups = {}
 logger = logging.getLogger(__name__)
 
 
-class ConfigError(RuntimeError):
+class ConfigError(Exception):
     pass
 
 
