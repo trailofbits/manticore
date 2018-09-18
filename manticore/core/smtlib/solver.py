@@ -34,6 +34,7 @@ consts = config.get_group('smt')
 consts.add('timeout', default=240, description='Timeout, in seconds, for each Z3 invocation')
 consts.add('memory', default=16384, description='Max memory for Z3 to use (in Megabytes)')
 consts.add('maxsolutions', default=10000, description='Maximum solutions to provide when solving for all values')
+consts.add('z3_bin', default='z3', description='Z3 binary to use')
 
 class Z3NotFoundError(EnvironmentError):
     pass
@@ -134,7 +135,7 @@ class Z3Solver(Solver):
         super().__init__()
         self._proc = None
 
-        self._command = f'z3 -t:{consts.timeout*1000} -memory:{consts.memory} -smt2 -in'
+        self._command = f'{consts.z3_bin} -t:{consts.timeout*1000} -memory:{consts.memory} -smt2 -in'
         self._init = ['(set-logic QF_AUFBV)', '(set-option :global-decls false)']
         self._get_value_fmt = (re.compile('\(\((?P<expr>(.*))\ #x(?P<value>([0-9a-fA-F]*))\)\)'), 16)
 
