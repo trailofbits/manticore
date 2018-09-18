@@ -1,21 +1,19 @@
 from typing import Optional
 
-from . import abitypes
+from .. import abitypes
 import uuid
-import numbers
 import random
-import hashlib
 import binascii
 import string
 import re
 import os
 import pyevmasm as EVMAsm
-from . import Manticore
-from .manticore import ManticoreError
-from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, istainted, taint_with, get_taints, BitVec, Constant, operators, Array, ArrayVariable, ArrayProxy
-from .platforms import evm
-from .core.state import State
-from .utils.helpers import istainted, issymbolic, PickleSerializer
+from .. import Manticore
+from ..manticore import ManticoreError
+from ..core.smtlib import ConstraintSet, Operators, solver, BitVec, Array, ArrayVariable, ArrayProxy
+from ..platforms import evm
+from ..core.state import State
+from ..utils.helpers import issymbolic, PickleSerializer
 import tempfile
 from subprocess import Popen, PIPE, check_output
 from multiprocessing import Process, Queue
@@ -24,9 +22,8 @@ import sha3
 import json
 import logging
 import io
-from .core.plugin import Plugin
+from ..core.plugin import Plugin
 from functools import reduce
-from contextlib import contextmanager
 
 from .detectors import Detector, DetectEnvInstruction, DetectExternalCallAndLeak, DetectReentrancySimple, DetectSelfdestruct, DetectUnusedRetVal, DetectDelegatecall, DetectIntegerOverflow, DetectInvalid, DetectReentrancyAdvanced, DetectUninitializedMemory, DetectUninitializedStorage
 
