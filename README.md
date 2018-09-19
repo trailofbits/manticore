@@ -119,7 +119,7 @@ Install and try Manticore in a few shell commands (see an [asciinema](https://as
 # Install system dependencies
 sudo apt-get update && sudo apt-get install python3 python3-pip -y
 
-# Install manticore and its dependencies
+# Install Manticore and its dependencies
 sudo pip3 install manticore
 
 # Download the examples
@@ -141,7 +141,7 @@ python3 count_instructions.py ../linux/helloworld
 You can also use Docker to quickly install and try Manticore:
 
 ```
-# Download manticore image
+# Download the Manticore image
 docker pull trailofbits/manticore
 
 # Download the examples
@@ -210,7 +210,7 @@ Feel free to stop by our [Slack channel](https://empirehacking.slack.com/message
 Documentation is available in several places:
 
   * The [wiki](https://github.com/trailofbits/manticore/wiki) contains some
-    basic information about getting started with manticore and contributing
+    basic information about getting started with Manticore and contributing
 
   * The [examples](examples) directory has some very minimal examples that
     showcase API features

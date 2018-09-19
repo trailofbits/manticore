@@ -51,7 +51,7 @@ OP_NAME_MAP = {
 
 
 ###############################################################################
-# Auxiliar decorators...
+# Auxiliary decorators...
 def rep(old_method):
     # This decorates REP instructions (STOS, LODS, MOVS, INS, OUTS)
     @wraps(old_method)
@@ -94,7 +94,7 @@ def repe(old_method):
 
             FLAG = count != 0
 
-            # Repeate!
+            # Repeat!
             if FLAG:
                 old_method(cpu, *args, **kw_args)
                 count = cpu.write_register(counter_name, count - 1)
@@ -723,7 +723,7 @@ class X86Cpu(Cpu):
     def _wrap_operands(self, operands):
         return [AMD64Operand(self, op) for op in operands]
 
-    # Auxiliar stack acess
+    # Auxiliary stack access
     def push(cpu, value, size):
         '''
         Writes a value in the stack.
@@ -1738,7 +1738,7 @@ class X86Cpu(Cpu):
         the length of the destination operand format. The CF and OF flags are
         set when significant bits are carried into the upper half of the
         result. The CF and OF flags are cleared when the result fits exactly in
-        the lower half of the result.The three forms of the IMUL instruction
+        the lower half of the result. The three forms of the IMUL instruction
         are similar in that the length of the product is calculated to twice
         the length of the operands. With the one-operand form, the product is
         stored exactly in the destination. With the two- and three- operand
@@ -1991,7 +1991,7 @@ class X86Cpu(Cpu):
         an immediate value is used as an operand, it is sign-extended to the
         length of the destination operand format.
         The SUB instruction does not distinguish between signed or unsigned
-        operands. Instedef SUBad, the processor evaluates the result for both
+        operands. Instead, the processor evaluates the result for both
         data types and sets the OF and CF flags to indicate a borrow in the
         signed or unsigned result, respectively. The SF flag indicates the sign
         of the signed result::
@@ -3688,7 +3688,7 @@ class X86Cpu(Cpu):
     @instruction
     def ROR(cpu, dest, src):
         '''
-        Rotates rigth (ROR).
+        Rotates right (ROR).
 
         Shifts (rotates) the bits of the first operand (destination operand) the number of bit positions specified in the
         second operand (count operand) and stores the result in the destination operand. The destination operand can be
@@ -3856,7 +3856,7 @@ class X86Cpu(Cpu):
 
         cpu.ZF = Operators.ITE(count != 0, res == 0, cpu.ZF)
         cpu.SF = Operators.ITE(count != 0, (res & SIGN_MASK) != 0, cpu.SF)
-        # OF is only defined for count == 1, but in practice (unit tests from real cpu) its calculated for count != 0
+        # OF is only defined for count == 1, but in practice (unit tests from real cpu) it's calculated for count != 0
         cpu.OF = Operators.ITE(count != 0, ((value >> (OperandSize - 1)) & 0x1) == 1, cpu.OF)
         cpu.PF = Operators.ITE(count != 0, cpu._calculate_parity_flag(res), cpu.PF)
 
@@ -5318,7 +5318,7 @@ class X86Cpu(Cpu):
         Calls to interrupt procedure.
 
         The INT n instruction generates a call to the interrupt or exception handler specified
-        with the destination operand. The INT n instruction is the  general mnemonic for executing
+        with the destination operand. The INT n instruction is the general mnemonic for executing
         a software-generated call to an interrupt handler. The INTO instruction is a special
         mnemonic for calling overflow exception (#OF), interrupt vector number 4. The overflow
         interrupt checks the OF flag in the EFLAGS register and calls the overflow interrupt handler

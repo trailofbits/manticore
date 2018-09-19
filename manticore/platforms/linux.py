@@ -64,8 +64,8 @@ def mode_from_flags(file_flags):
 
 class File(object):
     def __init__(self, path, flags):
-        # TODO: assert file is seekable otherwise we should save what was
-        # read/write to the state
+        # TODO: assert file is seekable; otherwise we should save what was
+        # read from/written to the state
         mode = mode_from_flags(flags)
         self.file = open(path, mode)
 
@@ -92,7 +92,7 @@ class File(object):
             if closed:
                 self.file.close()
         except IOError:
-            # If the file can't be opened anymore, should not typically happen
+            # If the file can't be opened anymore (should not typically happen)
             self.file = None
         if pos is not None:
             self.seek(pos)
@@ -113,7 +113,7 @@ class File(object):
         return os.fstat(self.fileno())
 
     def ioctl(self, request, argp):
-        # argp ignored..
+        # argp ignored...
         return fcntl.fcntl(self, request)
 
     def tell(self, *args):
@@ -227,7 +227,7 @@ class SymbolicFile(File):
                 symbols_cnt += 1
 
         if symbols_cnt > max_size:
-            logger.warning(("Found more wilcards in the file than free ",
+            logger.warning(("Found more wildcards in the file than free ",
                             "symbolic values allowed (%d > %d)"),
                            symbols_cnt,
                            max_size)
@@ -1265,7 +1265,7 @@ class Linux(Platform):
                 return -errno.EFAULT
 
             try:
-                # Read the data and put in tin memory
+                # Read the data and put it in memory
                 data = self._get_fd(fd).read(count)
             except FdError as e:
                 logger.info(("READ: Not valid file descriptor on read."
@@ -2041,7 +2041,7 @@ class Linux(Platform):
         The source of random (/dev/random or /dev/urandom) is decided based on
         the flags value.
 
-        Manticore's implementation simply fills a buffer with zeroes -- chosing
+        Manticore's implementation simply fills a buffer with zeroes -- choosing
         determinism over true randomness.
 
         :param buf: address of buffer to be filled with random bytes
@@ -2067,7 +2067,7 @@ class Linux(Platform):
 
         return size
 
-    # Distpatchers...
+    # Dispatchers...
     def syscall(self):
         '''
         Syscall dispatcher.
@@ -2181,9 +2181,9 @@ class Linux(Platform):
             self._current = procid
 
     def connections(self, fd):
-        """ File descriptors are connected to each other like pipes. Except
-        for 0,1,2. If you write to FD(N)  then that comes out from FD(N+1)
-        and vice-versa
+        """ File descriptors are connected to each other like pipes, except
+        for 0, 1, and 2. If you write to FD(N) for N >=3, then that comes
+		out from FD(N+1) and vice-versa
         """
         if fd in [0, 1, 2]:
             return None
@@ -2476,7 +2476,7 @@ class SLinux(Linux):
     def add_symbolic_file(self, symbolic_file):
         '''
         Add a symbolic file. Each '+' in the file will be considered
-        as symbolic, other char are concretized.
+        as symbolic; other chars are concretized.
         Symbolic files must have been defined before the call to `run()`.
 
         :param str symbolic_file: the name of the symbolic file
@@ -2631,7 +2631,7 @@ class SLinux(Linux):
 
     def sys_openat(self, dirfd, buf, flags, mode):
         '''
-        A version of openat that includes a symbolic path and symnbolic directory file descriptor
+        A version of openat that includes a symbolic path and symbolic directory file descriptor
 
         :param dirfd: directory file descriptor
         :param buf: address of zero-terminated pathname
