@@ -94,6 +94,9 @@ def parse_arguments():
     parser.add_argument('--detect-reentrancy', action='store_true',
                         help='Enable detection of reentrancy bug (Ethereum only)')
 
+    parser.add_argument('--detect-reentrancy-advanced', action='store_true',
+                        help='Enable detection of reentrancy bug -- this detector is better used via API (Ethereum only)')
+
     parser.add_argument('--detect-unused-retval', action='store_true',
                         help='Enable detection of unused internal transaction return value (Ethereum only)')
 
@@ -134,7 +137,7 @@ def parse_arguments():
 
 
 def ethereum_cli(args):
-    from .ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, DetectUninitializedStorage, DetectUninitializedMemory, FilterFunctions, DetectReentrancySimple, DetectUnusedRetVal, DetectSelfdestruct, LoopDepthLimiter, DetectDelegatecall, DetectExternalCallAndLeak, DetectReentrancySimple, DetectEnvInstruction
+    from .ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, DetectUninitializedStorage, DetectUninitializedMemory, FilterFunctions, DetectReentrancySimple, DetectUnusedRetVal, DetectSelfdestruct, LoopDepthLimiter, DetectDelegatecall, DetectExternalCallAndLeak, DetectReentrancyAdvanced, DetectEnvInstruction
 
     log.init_logging()
 
@@ -150,6 +153,8 @@ def ethereum_cli(args):
         m.register_detector(DetectUninitializedMemory())
     if args.detect_all or args.detect_reentrancy:
         m.register_detector(DetectReentrancySimple())
+    if args.detect_reentrancy_advanced:
+        m.register_detector(DetectReentrancyAdvanced())
     if args.detect_all or args.detect_unused_retval:
         m.register_detector(DetectUnusedRetVal())
     if args.detect_all or args.detect_delegatecall:
