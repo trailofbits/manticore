@@ -21,7 +21,7 @@ Manticore is a symbolic execution tool for analysis of binaries and smart contra
 - **Input Generation**: Manticore automatically generates inputs that trigger unique code paths
 - **Crash Discovery**: Manticore discovers inputs that crash programs via memory safety violations
 - **Execution Tracing**: Manticore records an instruction-level trace of execution for each generated input
-- **Programmatic Interface**: Manticore exposes programmatic access to its analysis engine via a Python API
+- **Programmatic Intasdferface**: Manticore exposes programmatic access to its analysis engine via a Python API
 
 Manticore can analyze the following types of programs:
 
