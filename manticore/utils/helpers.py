@@ -1,3 +1,4 @@
+import copy
 import functools
 import collections
 import logging
@@ -64,17 +65,23 @@ def get_taints(arg, taint=None):
 
 def taint_with(arg, taint, value_bits=256, index_bits=256):
     '''
-    Helper to taint a value, Fixme this should not taint in place.
+    Helper to taint a value.
     :param arg: a value or Expression
     :param taint: a regular expression matching a taint value (eg. 'IMPORTANT.*'). If None, this function checks for any taint value.
     '''
+    tainted_fset = frozenset((taint,))
+
     if not issymbolic(arg):
         if isinstance(arg, int):
             arg = BitVecConstant(value_bits, arg)
-    if not issymbolic(arg):
-        raise ValueError("type not supported")
-    #fixme we should make a copy and taint the copy
-    arg._taint = arg.taint | frozenset((taint,))
+            arg._taint = tainted_fset
+        else:
+            raise ValueError("type not supported")
+
+    else:
+        arg = copy.copy(arg)
+        arg._taint |= tainted_fset
+
     return arg
 
 
