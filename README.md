@@ -21,7 +21,7 @@ Manticore is a symbolic execution tool for analysis of binaries and smart contra
 - **Input Generation**: Manticore automatically generates inputs that trigger unique code paths
 - **Crash Discovery**: Manticore discovers inputs that crash programs via memory safety violations
 - **Execution Tracing**: Manticore records an instruction-level trace of execution for each generated input
-- **Programmatic Interface**: Manticore exposes programmatic access to its analysis engine via a Python API
+- **Programmatic Intasdferface**: Manticore exposes programmatic access to its analysis engine via a Python API
 
 Manticore can analyze the following types of programs:
 
@@ -52,7 +52,7 @@ $ manticore ./path/to/binary ++ ++  # use two symbolic strings of length two as 
 
 ### API
 
-Manticore has a Python programming interface which can be used to implement custom analyses.
+Manticorex has a Python programming interface which can be used to implement custom analyses.
 
 For Ethereum smart contracts, it can be used for detailed verification of arbitrary contract properties. Set starting conditions, execute symbolic transactions, then review discovered states to ensure invariants for your contract hold.
 
