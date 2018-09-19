@@ -1,5 +1,8 @@
 #!/bin/bash
 
+exit 1
+#crash
+
 RV=0
 
 set -o errexit
