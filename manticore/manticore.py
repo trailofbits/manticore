@@ -628,6 +628,7 @@ class Manticore(Eventful):
         a :func:`~hook`.
         '''
         self._executor.shutdown()
+        raise TerminateState('Terminated')
 
     def shutdown(self):
         '''
