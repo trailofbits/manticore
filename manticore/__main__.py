@@ -122,7 +122,7 @@ def parse_arguments():
                         help='Do not generate testcases for discovered states when analysis finishes (Ethereum only)')
 
     parser.add_argument('--verbose-trace', action='store_true',
-                        help='Dump an extra vervose trace for each state (Ethereum only)')
+                        help='Dump an extra verbose trace for each state (Ethereum only)')
 
     parsed = parser.parse_args(sys.argv[1:])
     if parsed.procs <= 0:
