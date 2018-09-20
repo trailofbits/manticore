@@ -1015,7 +1015,7 @@ class ManticoreEVM(Manticore):
             source_code.seek(0)
             source_code = source_code.read()
         else:
-            raise TypeError
+            raise TypeError(f'source code bad type: {type(source_code).__name__}')
 
         contracts = output.get('contracts', [])
         if len(contracts) != 1 and contract_name is None:
