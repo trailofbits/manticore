@@ -2587,10 +2587,10 @@ class ManticoreEVM(Manticore):
                 tx_summary.write("Value: %d %s\n" % (state.solve_one(tx.value), flagged(issymbolic(tx.value))))
                 tx_summary.write("Gas used: %d %s\n" % (state.solve_one(tx.gas), flagged(issymbolic(tx.gas))))
                 tx_data = state.solve_one(tx.data)
-                tx_summary.write("Data: 0x{0} {1}\n".format(binascii.hexlify(tx_data).decode('utf-8'), flagged(issymbolic(tx.data))))
+                tx_summary.write("Data: 0x{} {}\n".format(binascii.hexlify(tx_data).decode(), flagged(issymbolic(tx.data))))
                 if tx.return_data is not None:
                     return_data = state.solve_one(tx.return_data)
-                    tx_summary.write("Return_data: 0x{0} {1}\n".format(binascii.hexlify(return_data).decode('utf-8'), flagged(issymbolic(tx.return_data))))
+                    tx_summary.write("Return_data: 0x{} {}\n".format(binascii.hexlify(return_data).decode(), flagged(issymbolic(tx.return_data))))
                 metadata = self.get_metadata(tx.address)
                 if tx.sort == 'CREATE':
                     if metadata is not None:
@@ -2650,7 +2650,7 @@ class ManticoreEVM(Manticore):
                 printable_bytes = ''.join([c for c in map(chr, solved_memlog) if c in string.printable])
 
                 logs_summary.write("Address: %x\n" % log_item.address)
-                logs_summary.write("Memlog: %s (%s) %s\n" % (binascii.hexlify(solved_memlog).decode('utf-8'), printable_bytes, flagged(is_log_symbolic)))
+                logs_summary.write("Memlog: %s (%s) %s\n" % (binascii.hexlify(solved_memlog).decode(), printable_bytes, flagged(is_log_symbolic)))
                 logs_summary.write("Topics:\n")
                 for i, topic in enumerate(log_item.topics):
                     logs_summary.write("\t%d) %x %s" % (i, state.solve_one(topic), flagged(issymbolic(topic))))
