@@ -271,7 +271,7 @@ class UnicornEmulator(object):
             val = self._emu.reg_read(self._to_unicorn_id(reg))
             self._cpu.write_register(reg, val)
 
-        # Unicorn hack. On single step unicorn wont advance the PC register
+        # Unicorn hack. On single step, unicorn wont advance the PC register
         mu_pc = self.get_unicorn_pc()
         if saved_PC == mu_pc:
             self._cpu.PC = saved_PC + instruction.size

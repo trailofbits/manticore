@@ -21,7 +21,7 @@ class EVMTest_SUB(unittest.TestCase):
         except evm.NotEnoughGas:
             last_exception = "OOG"
         except evm.StackUnderflow:
-            last_exception = "INSUFICIENT STACK"
+            last_exception = "INSUFFICIENT STACK"
         except evm.InvalidOpcode:
             last_exception = "INVALID"
         except evm.SelfDestruct:

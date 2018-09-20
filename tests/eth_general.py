@@ -479,7 +479,7 @@ class EthTests(unittest.TestCase):
 
         #Some global expression `sym_add1` 
         sym_add1 = m.make_symbolic_value(name='sym_add1')
-        #Let's constraint it on the global fake constraintset
+        #Let's constrain it on the global fake constraintset
         m.constrain(sym_add1>0)
         m.constrain(sym_add1<10)
         #Symb tx 1
@@ -495,7 +495,7 @@ class EthTests(unittest.TestCase):
         #random concrete tx
         contract_account.sellerBalance(caller=attacker_account)
 
-        #anooother constraining on the global constraintset. Yet more running states could get unfeasible by this.
+        #another constraining on the global constraintset. Yet more running states could get unfeasible by this.
         m.constrain(sym_add1 > 8)
 
 

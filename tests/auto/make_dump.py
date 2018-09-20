@@ -117,7 +117,7 @@ gdb.correspond("run arg1 arg2 < /dev/urandom > /dev/null\n")
 gdb.correspond("d 1\n")
 #print gdb.get_maps()
 '''
-# Simulate no vdso (As when analized with symbemu)
+# Simulate no vdso (As when analyzed with symbemu)
 found = 0
 for i in range(75,120):
     if gdb.getM('$sp+sizeof(void*)*%d'%i) ==0x19 and gdb.getM('$sp+%d'%(i+2))==0x1f:
@@ -299,7 +299,7 @@ while True:
                     X86_REG_ESI: X86_REG_RSI,
                     X86_REG_RSI: X86_REG_INVALID, 
         }
-        #There is a capstone branch that should fix all this annoyances .. soon
+        #There is a capstone branch that should fix all these annoyances... soon
         #https://github.com/aquynh/capstone/tree/next
         used = set()
         for ri in reg_sizes.keys():
