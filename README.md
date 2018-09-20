@@ -113,7 +113,7 @@ m.run()
 
 ## Quickstart
 
-Install and try Manticore in a few shell commands (see an [asciinema](https://asciinema.org/a/567nko3eh2yzit099s0nq4e8z)):
+Install and try Manticore in a few shell commands:
 
 ```
 # Install system dependencies
