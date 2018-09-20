@@ -4,6 +4,7 @@ import random
 import logging
 import signal
 
+from ..manticore import ManticoreError
 from ..utils.nointerrupt import WithKeyboardInterruptAs
 from ..utils.event import Eventful
 from .smtlib import Z3Solver, Expression, SolverException
@@ -14,6 +15,10 @@ from multiprocessing.managers import SyncManager
 from contextlib import contextmanager
 
 # This is the single global manager that will handle all shared memory among workers
+
+
+class ExecutorError(ManticoreError):
+    pass
 
 
 def mgr_init():
@@ -379,7 +384,7 @@ class Executor(Eventful):
         solutions = state.concretize(expression, policy)
 
         if not solutions:
-            logger.info("Forking on unfeasible constraint set")
+            raise ExecutorError("Forking on unfeasible constraint set")
 
         if len(solutions) == 1:
             setstate(state, solutions[0])
