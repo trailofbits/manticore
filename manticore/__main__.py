@@ -11,7 +11,7 @@ from .utils import log, config
 logger = logging.getLogger('manticore.main')
 
 consts = config.get_group('main')
-consts.add('recursionlimit', default=10000, 
+consts.add('recursionlimit', default=10000,
            description="Value to set for Python recursion limit")
 
 sys.setrecursionlimit(consts.recursionlimit)
@@ -151,7 +151,7 @@ def parse_arguments():
                         help='Manticore config file (.ini) to use. (default config file pattern is: ./[.]m[anti]core.ini)')
 
     parser.add_argument('--config-print', action='store_true',
-            help='Print internal options that are configurable from an ini file and exit')
+                        help='Print internal options that are configurable from an ini file and exit')
 
     parsed = parser.parse_args(sys.argv[1:])
     if parsed.procs <= 0:

@@ -59,7 +59,7 @@ class _group:
 
         """
         if name in self._vars:
-            raise ConfigError("f{self.name}.{name} already defined.")
+            raise ConfigError(f"{self.name}.{name} already defined.")
 
         v = _var(name, description=description, default=default)
         self._vars[name] = v
@@ -81,7 +81,7 @@ class _group:
         Return the description, or a help string of variable identified by |name|.
         """
         if name not in self._vars:
-            raise ConfigError("f{self.name}.{name} not defined.")
+            raise ConfigError(f"{self.name}.{name} not defined.")
 
         return self._vars[name].description
 
@@ -152,7 +152,7 @@ def parse_ini(f):
 
     # This currently does some hacky ast parsing on the literals, but this is in service
     # of having a simpler, ini-style configuration without external dependencies, like
-    # a YAML parser, and ini files do not have typed values. 
+    # a YAML parser, and ini files do not have typed values.
 
     c = configparser.ConfigParser()
     c.read_file(f)
@@ -213,4 +213,3 @@ def describe_options():
             s.write(f"  {obj.description}\n")
 
     return s.getvalue()
-
