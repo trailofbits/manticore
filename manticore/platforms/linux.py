@@ -19,7 +19,8 @@ from manticore.core.smtlib import Expression
 from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeArgument
 from ..core.cpu.cpufactory import CpuFactory
 from ..core.memory import SMemory32, SMemory64, Memory32, Memory64
-from ..core.smtlib import Operators, ConstraintSet, SolverError, solver
+from ..core.smtlib import Operators, ConstraintSet, solver
+from ..exceptions import SolverError
 from ..core.cpu.arm import *
 from ..core.executor import TerminateState
 from ..platforms.platform import Platform, SyscallNotImplemented

@@ -20,6 +20,24 @@ class SmtlibError(ManticoreError):
     pass
 
 
+class Z3NotFoundError(SmtlibError):
+    pass
+
+
+class SolverError(Exception):
+    pass
+
+
+class SolverUnknown(SolverError):
+    pass
+
+
+class TooManySolutions(SolverError):
+    def __init__(self, solutions):
+        super().__init__("Max number of different solutions hit")
+        self.solutions = solutions
+
+
 # Ethereum
 
 

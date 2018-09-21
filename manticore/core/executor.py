@@ -4,10 +4,10 @@ import random
 import logging
 import signal
 
-from ..exceptions import ExecutorError
+from ..exceptions import ExecutorError, SolverError
 from ..utils.nointerrupt import WithKeyboardInterruptAs
 from ..utils.event import Eventful
-from .smtlib import Z3Solver, Expression, SolverError
+from .smtlib import Z3Solver, Expression
 from .state import Concretize, TerminateState
 
 from .workspace import Workspace
