@@ -14,6 +14,12 @@ class ExecutorError(ManticoreError):
     pass
 
 
+# Smtlib
+
+class SmtlibError(ManticoreError):
+    pass
+
+
 # Ethereum
 
 
