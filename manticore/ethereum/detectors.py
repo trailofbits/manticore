@@ -126,9 +126,16 @@ class DetectExternalCallAndLeak(Detector):
                 if state.can_be_true(msg_sender == dest_address):
                     self.add_finding_here(state, f"Reachable {msg} to sender via argument", constraint=msg_sender == dest_address)
                 else:
-                    # This might be a false positive if the dest_address can't actually be solved to anything
-                    # useful/exploitable
-                    self.add_finding_here(state, f"Reachable {msg} to user controlled address via argument", constraint=msg_sender != dest_address)
+                    # ok it can't go to the sender, but can it go to arbitrary addresses? (> 1 other address?)
+                    # we report nothing if it can't go to > 1 other addresses since that means the code constrained
+                    # to a specific address at some point, and that was probably intentional. attacker has basically
+                    # no control.
+
+                    possible_destinations = state.solve_n(dest_address, 2)
+                    if len(possible_destinations) > 1:
+                        # This might be a false positive if the dest_address can't actually be solved to anything
+                        # useful/exploitable, even though it can be solved to more than 1 thing
+                        self.add_finding_here(state, f"Reachable {msg} to user controlled address via argument", constraint=msg_sender != dest_address)
             else:
                 if msg_sender == dest_address:
                     self.add_finding_here(state, f"Reachable {msg} to sender")
