@@ -16,6 +16,8 @@
 # You can add new constraints. A new constraint may change the state from {None, sat} to {sat, unsat, unknown}
 from abc import ABCMeta, abstractmethod
 from subprocess import PIPE, Popen, check_output
+
+from ...exceptions import Z3NotFoundError, SolverException, SolverUnknown, TooManySolutions
 from . import operators as Operators
 from .expression import *
 from .constraints import *
@@ -36,24 +38,6 @@ consts.add('timeout', default=240, description='Timeout, in seconds, for each Z3
 consts.add('memory', default=16384, description='Max memory for Z3 to use (in Megabytes)')
 consts.add('maxsolutions', default=10000, description='Maximum solutions to provide when solving for all values')
 consts.add('z3_bin', default='z3', description='Z3 binary to use')
-
-class Z3NotFoundError(EnvironmentError):
-    pass
-
-
-class SolverException(Exception):
-    pass
-
-
-class SolverUnknown(SolverException):
-    pass
-
-
-class TooManySolutions(SolverException):
-    def __init__(self, solutions):
-        super().__init__("Max number of different solutions hit")
-        self.solutions = solutions
-
 
 class Solver(object, metaclass=ABCMeta):
     @abstractmethod

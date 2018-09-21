@@ -4,10 +4,11 @@ import random
 import logging
 import signal
 
+from ..exceptions import ExecutorError, SolverException
 from ..utils.nointerrupt import WithKeyboardInterruptAs
 from ..utils.event import Eventful
 from ..utils import config
-from .smtlib import Z3Solver, Expression, SolverException
+from .smtlib import Z3Solver, Expression
 from .state import Concretize, TerminateState
 
 from .workspace import Workspace
@@ -384,7 +385,7 @@ class Executor(Eventful):
         solutions = state.concretize(expression, policy)
 
         if not solutions:
-            logger.info("Forking on unfeasible constraint set")
+            raise ExecutorError("Forking on unfeasible constraint set")
 
         if len(solutions) == 1:
             setstate(state, solutions[0])
