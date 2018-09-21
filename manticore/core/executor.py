@@ -4,7 +4,7 @@ import random
 import logging
 import signal
 
-from ..exceptions import ExecutorError, SolverError
+from ..exceptions import ExecutorError, SolverException
 from ..utils.nointerrupt import WithKeyboardInterruptAs
 from ..utils.event import Eventful
 from .smtlib import Z3Solver, Expression
@@ -483,7 +483,7 @@ class Executor(Eventful):
                             self.generate_testcase(current_state, str(e))
                         current_state = None
 
-                    except SolverError as e:
+                    except SolverException as e:
                         # raise
                         import traceback
                         trace = traceback.format_exc()

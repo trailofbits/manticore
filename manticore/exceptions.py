@@ -24,15 +24,16 @@ class Z3NotFoundError(SmtlibError):
     pass
 
 
-class SolverError(SmtlibError):
+# TODO: rename to SolverError
+class SolverException(SmtlibError):
     pass
 
 
-class SolverUnknown(SolverError):
+class SolverUnknown(SolverException):
     pass
 
 
-class TooManySolutions(SolverError):
+class TooManySolutions(SolverException):
     def __init__(self, solutions):
         super().__init__("Max number of different solutions hit")
         self.solutions = solutions
