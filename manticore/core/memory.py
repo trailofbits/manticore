@@ -1,6 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from weakref import WeakValueDictionary
-from .smtlib import Operators, ConstraintSet, arithmetic_simplify, solver, TooManySolutions
+from .smtlib import Operators, ConstraintSet, arithmetic_simplify, solver, TooManySolutions, BitVec, BitVecConstant
 import logging
 from ..utils.mappings import mmap, munmap
 from ..utils.helpers import issymbolic
