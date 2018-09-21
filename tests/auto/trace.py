@@ -93,13 +93,13 @@ arch = gdb.correspond('')
 #guess arch
 arch = gdb.get_arch()
 
-#gues architecture from file
+#guess architecture from file
 entry = gdb.get_entry()
 gdb.correspond("b *0\n")
 gdb.correspond("run arg1 arg2 arg3 < /dev/urandom > /dev/null\n")
 gdb.correspond("d 1\n")
 
-# Simulate no vdso (As when analized with symbemu)
+# Simulate no vdso (As when analyzed with symbemu)
 found = 0
 for i in range(75,120):
     if gdb.getM('$sp+sizeof(void*)*%d'%i) ==0x19 and gdb.getM('$sp+%d'%(i+2))==0x1f:

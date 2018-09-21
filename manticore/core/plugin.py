@@ -293,7 +293,7 @@ class ExamplePlugin(Plugin):
         logger.info('did_execute_instruction %r %r %r %r', state, pc, target_pc, instruction)
 
     def will_start_run_callback(self, state):
-        ''' Called once at the begining of the run.
+        ''' Called once at the beginning of the run.
             state is the initial root state
         '''
         logger.info('will_start_run')

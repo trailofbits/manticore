@@ -277,7 +277,7 @@ Thanks to our external contributors to this release!
 ### Added
 
 - Support for Redis as a storage backend, plus an API for user-defined serializers and storage backends
-- "Events" which work as global signals for communication across manticore
+- "Events" which work as global signals for communication across Manticore
 - Support for using Binary Ninja for visualization
 - Executor now provides a global shared context
 - State now provides a local context

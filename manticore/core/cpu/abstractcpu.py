@@ -122,7 +122,7 @@ class Operand(object):
     def __init__(self, cpu, op):
         '''
         This encapsulates the arch-independent way to access instruction
-        operands and immediates based on the dissasembler operand descriptor in
+        operands and immediates based on the disassembler operand descriptor in
         use. This class knows how to browse an operand and get its details.
 
         It also knows how to access the specific Cpu to get the actual values

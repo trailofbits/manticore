@@ -181,7 +181,7 @@ class DetectEnvInstruction(EthDetectorTest):
 
 
 class EthDelegatecall(EthDetectorTest):
-    """ Test the detecion of funny delegatecalls """
+    """ Test the detection of funny delegatecalls """
     DETECTOR_CLASS = DetectDelegatecall
 
     def test_delegatecall_ok(self):

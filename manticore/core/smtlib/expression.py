@@ -71,7 +71,7 @@ class Operation(Expression):
         assert all(isinstance(x, Expression) for x in operands)
         self._operands = operands
 
-        # If taint was not forced by a keyword argument calculate default
+        # If taint was not forced by a keyword argument, calculate default
         if 'taint' not in kwargs:
             kwargs['taint'] = reduce(lambda x, y: x.union(y.taint), operands, frozenset())
 
@@ -595,7 +595,7 @@ class Array(Expression):
 
     def cast(self, possible_array):
         if isinstance(possible_array, bytearray):
-            # FIXME Ths should be related to a constrainSet
+            # FIXME This should be related to a constrainSet
             arr = ArrayVariable(self.index_bits, len(possible_array), 8)
             for pos, byte in enumerate(possible_array):
                 arr = arr.store(pos, byte)
@@ -853,7 +853,7 @@ class ArrayProxy(Array):
             self._array = array
             self._name = array.name
         else:
-            #arrayproxy for an prepopulated array
+            #arrayproxy for a prepopulated array
             super().__init__(array.index_bits, array.index_max, array.value_bits)
             self._name = array.underlying_variable.name
             self._array = array
@@ -911,8 +911,8 @@ class ArrayProxy(Array):
         # if isinstance(index, Constant):
         #     self._concrete_cache[index.value] = value
         self.written.add(index)
-        auxiliar = self._array.store(index, value)
-        self._array = auxiliar
+        auxiliary = self._array.store(index, value)
+        self._array = auxiliary
         return self
 
     def __getitem__(self, index):

@@ -1,7 +1,7 @@
 pragma solidity ^0.4.24;
 /*
 There is a fair use of lowlevel instruction delegatecall in the fallback function.
-It is effectivelly a CALL to `this.default_call` with a concrete data.
+It is effectively a CALL to `this.default_call` with a concrete data.
 The storage variable `addr` is initialized to `this` and can not be modified.
 */
 

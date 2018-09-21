@@ -155,6 +155,8 @@ class Manticore(Eventful):
         self._executor = Executor(store=self._output.store, policy=policy)
         self._workers = []
 
+        self.plugins = set()
+
         # Link Executor events to default callbacks in manticore object
         self.forward_events_from(self._executor)
 
@@ -170,16 +172,15 @@ class Manticore(Eventful):
             raise TypeError('path_or_state must be either a str or State, not {}'.format(type(path_or_state).__name__))
 
         if not isinstance(self._initial_state, State):
-            raise TypeError("Manticore must be intialized with either a State or a path to a binary")
+            raise TypeError("Manticore must be initialized with either a State or a path to a binary")
 
-        self.plugins = set()
+        # Move the following into a linux plugin
 
-        # Move the folowing into a linux plugin
         self._assertions = {}
         self._coverage_file = None
         self.trace = None
 
-        # FIXME move the folowing to a plugin
+        # FIXME move the following to a plugin
         self.subscribe('will_generate_testcase', self._generate_testcase_callback)
         self.subscribe('did_finish_run', self._did_finish_run_callback)
 
@@ -250,7 +251,7 @@ class Manticore(Eventful):
         :type envp: str
         :param symbolic_files: Filenames to mark as having symbolic input
         :type symbolic_files: list[str]
-        :param str concrete_start: Concrete stdin to use before symbolic inputt
+        :param str concrete_start: Concrete stdin to use before symbolic input
         :param bool pure_symbolic: Use a pure symbolic memory implementation
         :param kwargs: Forwarded to the Manticore constructor
         :return: Manticore instance, initialized with a Linux State
@@ -267,7 +268,7 @@ class Manticore(Eventful):
         Constructor for Decree binary analysis.
 
         :param str path: Path to binary to analyze
-        :param str concrete_start: Concrete stdin to use before symbolic inputt
+        :param str concrete_start: Concrete stdin to use before symbolic input
         :param kwargs: Forwarded to the Manticore constructor
         :return: Manticore instance, initialized with a Decree State
         :rtype: Manticore
@@ -366,7 +367,7 @@ class Manticore(Eventful):
 
     def enqueue(self, state):
         ''' Dynamically enqueue states. Users should typically not need to do this '''
-        assert not self.running, "Can't add state where running. Can we?"
+        assert not self.running, "Can't add state when running, can we?"
         self._executor.enqueue(state)
 
     ###########################################################################
@@ -588,7 +589,7 @@ class Manticore(Eventful):
             self.enqueue(self._initial_state)
             self._initial_state = None
 
-        # Copy the local main context to the shared conext
+        # Copy the local main context to the shared context
         self._executor._shared_context.update(self._context)
         self._context = None
 
