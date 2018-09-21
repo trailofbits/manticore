@@ -24,7 +24,7 @@ class Z3NotFoundError(SmtlibError):
     pass
 
 
-class SolverError(Exception):
+class SolverError(SmtlibError):
     pass
 
 
