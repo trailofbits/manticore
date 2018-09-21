@@ -18,14 +18,6 @@ from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 
 
-# this is here because of circular import issues, various modules imported below need it
-class ManticoreError(Exception):
-    """
-    Top level Exception object for custom exception hierarchy
-    """
-    pass
-
-
 from .core.executor import Executor
 from .core.state import State, TerminateState
 from .core.smtlib import solver, ConstraintSet
