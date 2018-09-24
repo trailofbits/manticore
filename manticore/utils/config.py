@@ -67,6 +67,12 @@ class _group:
     def update(self, name: str, value=None, default=None, description: str=None):
         """
         Like add, but can tolerate existing values; also updates the value.
+
+        Mostly used for setting fields from imported INI files and modified CLI flags.
+        In the above case, we set defined to False so that they're not printed when
+        describe_options() is called. That's desirable because we want describe_options
+        to produce a list of everything that was defined in module headers, not values
+        that were imported.
         """
         if name in self._vars:
             description = description or self._vars[name].description
@@ -198,6 +204,7 @@ def load_overrides(path=None):
 
 def describe_options():
     """
+    Print a summary of variables that have been 
     """
     global _groups
 

@@ -27,6 +27,9 @@ class ConfigTest(unittest.TestCase):
         self.assertEquals(g.runtime, 'def')
         self.assertEquals(g.get_description('runtime'), 'This value controls something')
 
+        with self.assertRaises(config.ConfigError):
+            g.get_description('nonexistent')
+
     def test_default_vars(self):
         g = config.get_group('test')
         g.add('val1', default='foo')
@@ -107,9 +110,33 @@ class ConfigTest(unittest.TestCase):
             g = config.get_group('group')
             self.assertEqual(g.var1, 'val1')
 
+        with self.assertRaises(FileNotFoundError):
+            config.load_overrides("a_hopefully_nonexistent_file.ini")
+
     def test_default_overrides(self):
         # no default ini to load
         config.load_overrides()
         self.assertEqual(len(config._groups), 0)
+
+    def test_save(self):
+        g = config.get_group('set_vars')
+        g.add('set', default='0')
+        g.set = 1
+
+        g = config.get_group('unset_vars')
+        g.add('unset', default='0')
+
+        s = io.StringIO()
+        config.save(s)
+        saved = s.getvalue()
+
+        self.assertIn('[set_vars]', saved)
+        self.assertNotIn('[unset_vars]', saved)
+
+        # Updating a var makes describe_options ignore it, as it's usually to print
+        # vars that have default values.
+        g.update('unset', 34)
+        described = config.describe_options()
+        self.assertNotIn('unset', described)
 
 
