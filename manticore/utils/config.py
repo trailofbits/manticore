@@ -204,7 +204,7 @@ def load_overrides(path=None):
 
 def describe_options():
     """
-    Print a summary of variables that have been 
+    Print a summary of variables that have been defined to be settable.
     """
     global _groups
 
