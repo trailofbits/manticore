@@ -1331,7 +1331,13 @@ class LazySMemory(SMemory):
                     break
 
                 candidate = mapping[ptr:ptr + len(data_to_find)]
-                if candidate == data_to_find:  # implicitly check if values aren't symbolic
+
+                # TODO: treat symbolic bytes as bytes that don't match. for our simple tests right now, the
+                # bytes will be there concretely
+                if issymbolic(candidate[0]):
+                    break
+
+                if candidate == data_to_find:
                     yield ptr
 
 
