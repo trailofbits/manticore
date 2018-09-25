@@ -15,11 +15,12 @@ from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 from elftools.elf.descriptions import describe_symbol_type
 
-from manticore.core.smtlib import Expression
+from ..core.smtlib import Expression
 from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeArgument
 from ..core.cpu.cpufactory import CpuFactory
 from ..core.memory import LazySMemory32, LazySMemory64, SMemory32, SMemory64, Memory32, Memory64
-from ..core.smtlib import Operators, ConstraintSet, SolverException, solver
+from ..core.smtlib import Operators, ConstraintSet, solver
+from ..exceptions import SolverException
 from ..core.cpu.arm import *
 from ..core.executor import TerminateState
 from ..platforms.platform import Platform, SyscallNotImplemented

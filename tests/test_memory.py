@@ -7,6 +7,7 @@ import fcntl
 import resource
 import sys
 from manticore.core.memory import *
+from manticore.core.smtlib import Expression
 from manticore.utils.helpers import issymbolic
 
 def isconcrete(value):

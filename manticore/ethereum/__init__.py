@@ -9,7 +9,7 @@ import re
 import os
 import pyevmasm as EVMAsm
 from .. import Manticore
-from ..manticore import ManticoreError
+from ..exceptions import EthereumError, DependencyError, NoAliveStates
 from ..core.smtlib import ConstraintSet, Operators, solver, BitVec, Array, ArrayVariable, ArrayProxy
 from ..platforms import evm
 from ..core.state import State
@@ -29,19 +29,6 @@ from .detectors import Detector, DetectEnvInstruction, DetectExternalCallAndLeak
 
 logger = logging.getLogger(__name__)
 
-
-class EthereumError(ManticoreError):
-    pass
-
-
-class DependencyError(EthereumError):
-    def __init__(self, lib_names):
-        super().__init__("You must pre-load and provide libraries addresses{ libname:address, ...} for %r" % lib_names)
-        self.lib_names = lib_names
-
-
-class NoAliveStates(EthereumError):
-    pass
 
 
 #

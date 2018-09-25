@@ -16,6 +16,8 @@
 # You can add new constraints. A new constraint may change the state from {None, sat} to {sat, unsat, unknown}
 from abc import ABCMeta, abstractmethod
 from subprocess import PIPE, Popen, check_output
+
+from ...exceptions import Z3NotFoundError, SolverException, SolverUnknown, TooManySolutions
 from . import operators as Operators
 from .expression import *
 from .constraints import *
@@ -29,24 +31,6 @@ import io
 import collections
 
 logger = logging.getLogger(__name__)
-
-
-class Z3NotFoundError(EnvironmentError):
-    pass
-
-
-class SolverException(Exception):
-    pass
-
-
-class SolverUnknown(SolverException):
-    pass
-
-
-class TooManySolutions(SolverException):
-    def __init__(self, solutions):
-        super().__init__("Max number of different solutions hit")
-        self.solutions = solutions
 
 
 class Solver(object, metaclass=ABCMeta):
