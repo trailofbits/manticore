@@ -1354,13 +1354,11 @@ class ManticoreEVM(Manticore):
             # The result if any RETURN or REVERT
             stream.write("Type: %s (%d)\n" % (sym_tx.sort, sym_tx.depth))
 
-            # caller_solution = state.solve_one(tx.caller)
             caller_solution = conc_tx.caller
 
             caller_name = self.account_name(caller_solution)
             stream.write("From: %s(0x%x) %s\n" % (caller_name, caller_solution, flagged(issymbolic(sym_tx.caller))))
 
-            # address_solution = state.solve_one(tx.address)
             address_solution = conc_tx.address
             address_name = self.account_name(address_solution)
 
@@ -1368,7 +1366,6 @@ class ManticoreEVM(Manticore):
             stream.write("Value: %d %s\n" % (conc_tx.value, flagged(issymbolic(sym_tx.value))))
             stream.write("Gas used: %d %s\n" % (conc_tx.gas, flagged(issymbolic(sym_tx.gas))))
 
-            # tx_data = state.solve_one(tx.data)
             tx_data = conc_tx.data
 
             stream.write("Data: 0x{} {}\n".format(binascii.hexlify(tx_data).decode(), flagged(issymbolic(sym_tx.data))))
@@ -1382,10 +1379,8 @@ class ManticoreEVM(Manticore):
             metadata = self.get_metadata(sym_tx.address)
             if sym_tx.sort == 'CREATE':
                 if metadata is not None:
-                    # args_data = sym_tx.data[len(metadata._init_bytecode):]
 
                     conc_args_data = conc_tx.data[len(metadata._init_bytecode):]
-                    # arguments = ABI.deserialize(metadata.get_constructor_arguments(), state.solve_one(args_data))
                     arguments = ABI.deserialize(metadata.get_constructor_arguments(), conc_args_data)
 
                     # TODO confirm: arguments should all be concrete?
@@ -1398,7 +1393,6 @@ class ManticoreEVM(Manticore):
 
             if sym_tx.sort == 'CALL':
                 if metadata is not None:
-                    # calldata = state.solve_one(sym_tx.data)
                     calldata = conc_tx.data
                     is_calldata_symbolic = issymbolic(sym_tx.data)
 
@@ -1413,7 +1407,6 @@ class ManticoreEVM(Manticore):
                     return_data = None
                     if sym_tx.result == 'RETURN':
                         ret_types = metadata.get_func_return_types(function_id)
-                        # return_data = state.solve_one(sym_tx.return_data)
                         return_data = conc_tx.return_data
                         return_values = ABI.deserialize(ret_types, return_data)  # function return
 
