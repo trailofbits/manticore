@@ -59,6 +59,20 @@ class Transaction(object):
         self.gas = gas
         self.set_result(result, return_data)
 
+    def concretize(self, state):
+        conc_caller = state.solve_one(self.caller)
+        conc_address = state.solve_one(self.address)
+        conc_value = state.solve_one(self.value)
+        conc_gas = state.solve_one(self.gas)
+        conc_data = state.solve_one(self.data)
+        conc_return_data = state.solve_one(self.return_data)
+
+        # is it ok if these are None and get solve_one'd?
+
+        return Transaction(self.sort, conc_address, self.price, conc_data, conc_caller, conc_value, conc_gas,
+                           depth=self.depth, result=self.result, return_data=bytearray(conc_return_data))
+
+
     @property
     def sort(self):
         return self._sort
@@ -95,7 +109,7 @@ class Transaction(object):
             raise EVMException('Invalid transaction result')
         if result in {'RETURN', 'REVERT'}:
             if not isinstance(return_data, (bytearray, Array)):
-                raise EVMException('Invalid transaction return_data')
+                raise EVMException('Invalid transaction return_data type:', type(return_data).__name__)
         elif result in {'STOP', 'THROW', 'SELFDESTRUCT'}:
             if return_data is None:
                 return_data = bytearray()

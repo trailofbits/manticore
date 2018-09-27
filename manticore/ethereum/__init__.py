@@ -1346,39 +1346,61 @@ class ManticoreEVM(Manticore):
         blockchain = state.platform
 
         is_something_symbolic = False
-        for tx in blockchain.human_transactions:  # external transactions
-            stream.write("Transactions No. %d\n" % blockchain.transactions.index(tx))
+        for sym_tx in blockchain.human_transactions:  # external transactions
+            stream.write("Transactions No. %d\n" % blockchain.transactions.index(sym_tx))
+
+            conc_tx = sym_tx.concretize(state)
 
             # The result if any RETURN or REVERT
-            stream.write("Type: %s (%d)\n" % (tx.sort, tx.depth))
-            caller_solution = state.solve_one(tx.caller)
+            stream.write("Type: %s (%d)\n" % (sym_tx.sort, sym_tx.depth))
+
+            # caller_solution = state.solve_one(tx.caller)
+            caller_solution = conc_tx.caller
+
             caller_name = self.account_name(caller_solution)
-            stream.write("From: %s(0x%x) %s\n" % (caller_name, caller_solution, flagged(issymbolic(tx.caller))))
-            address_solution = state.solve_one(tx.address)
+            stream.write("From: %s(0x%x) %s\n" % (caller_name, caller_solution, flagged(issymbolic(sym_tx.caller))))
+
+            # address_solution = state.solve_one(tx.address)
+            address_solution = conc_tx.address
             address_name = self.account_name(address_solution)
-            stream.write("To: %s(0x%x) %s\n" % (address_name, address_solution, flagged(issymbolic(tx.address))))
-            stream.write("Value: %d %s\n" % (state.solve_one(tx.value), flagged(issymbolic(tx.value))))
-            stream.write("Gas used: %d %s\n" % (state.solve_one(tx.gas), flagged(issymbolic(tx.gas))))
-            tx_data = state.solve_one(tx.data)
-            stream.write("Data: 0x{} {}\n".format(binascii.hexlify(tx_data).decode(), flagged(issymbolic(tx.data))))
-            if tx.return_data is not None:
-                return_data = state.solve_one(tx.return_data)
-                stream.write("Return_data: 0x{} {}\n".format(binascii.hexlify(return_data).decode(), flagged(issymbolic(tx.return_data))))
-            metadata = self.get_metadata(tx.address)
-            if tx.sort == 'CREATE':
+
+            stream.write("To: %s(0x%x) %s\n" % (address_name, address_solution, flagged(issymbolic(sym_tx.address))))
+            stream.write("Value: %d %s\n" % (conc_tx.value, flagged(issymbolic(sym_tx.value))))
+            stream.write("Gas used: %d %s\n" % (conc_tx.gas, flagged(issymbolic(sym_tx.gas))))
+
+            # tx_data = state.solve_one(tx.data)
+            tx_data = conc_tx.data
+
+            stream.write("Data: 0x{} {}\n".format(binascii.hexlify(tx_data).decode(), flagged(issymbolic(sym_tx.data))))
+
+            if sym_tx.return_data is not None:
+                # return_data = state.solve_one(tx.return_data)
+                return_data = conc_tx.return_data
+
+                stream.write("Return_data: 0x{} {}\n".format(binascii.hexlify(return_data).decode(), flagged(issymbolic(sym_tx.return_data))))
+
+            metadata = self.get_metadata(sym_tx.address)
+            if sym_tx.sort == 'CREATE':
                 if metadata is not None:
-                    args_data = tx.data[len(metadata._init_bytecode):]
-                    arguments = ABI.deserialize(metadata.get_constructor_arguments(), state.solve_one(args_data))
-                    is_argument_symbolic = any(map(issymbolic, arguments))
+                    # args_data = sym_tx.data[len(metadata._init_bytecode):]
+
+                    conc_args_data = conc_tx.data[len(metadata._init_bytecode):]
+                    # arguments = ABI.deserialize(metadata.get_constructor_arguments(), state.solve_one(args_data))
+                    arguments = ABI.deserialize(metadata.get_constructor_arguments(), conc_args_data)
+
+                    # TODO confirm: arguments should all be concrete?
+
+                    is_argument_symbolic = any(map(issymbolic, arguments))  # is this redundant since arguments are all concrete?
                     stream.write('Function call:\n')
                     stream.write("Constructor(")
-                    stream.write(','.join(map(repr, map(state.solve_one, arguments))))
-                    stream.write(') -> %s %s\n' % (tx.result, flagged(is_argument_symbolic)))
+                    stream.write(','.join(map(repr, map(state.solve_one, arguments))))  # is this redundant since arguments are all concrete?
+                    stream.write(') -> %s %s\n' % (sym_tx.result, flagged(is_argument_symbolic)))
 
-            if tx.sort == 'CALL':
+            if sym_tx.sort == 'CALL':
                 if metadata is not None:
-                    calldata = state.solve_one(tx.data)
-                    is_calldata_symbolic = issymbolic(tx.data)
+                    # calldata = state.solve_one(sym_tx.data)
+                    calldata = conc_tx.data
+                    is_calldata_symbolic = issymbolic(sym_tx.data)
 
                     function_id = calldata[:4]  # hope there is enough data
                     signature = metadata.get_func_signature(function_id)
@@ -1389,18 +1411,19 @@ class ManticoreEVM(Manticore):
                         arguments = (calldata,)
 
                     return_data = None
-                    if tx.result == 'RETURN':
+                    if sym_tx.result == 'RETURN':
                         ret_types = metadata.get_func_return_types(function_id)
-                        return_data = state.solve_one(tx.return_data)
+                        # return_data = state.solve_one(sym_tx.return_data)
+                        return_data = conc_tx.return_data
                         return_values = ABI.deserialize(ret_types, return_data)  # function return
 
-                    is_return_symbolic = issymbolic(tx.return_data)
+                    is_return_symbolic = issymbolic(sym_tx.return_data)
 
                     stream.write('\n')
                     stream.write("Function call:\n")
                     stream.write("%s(" % function_name)
                     stream.write(','.join(map(repr, arguments)))
-                    stream.write(') -> %s %s\n' % (tx.result, flagged(is_calldata_symbolic)))
+                    stream.write(') -> %s %s\n' % (sym_tx.result, flagged(is_calldata_symbolic)))
 
                     if return_data is not None:
                         if len(return_values) == 1:
