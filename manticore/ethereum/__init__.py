@@ -9,7 +9,7 @@ from .. import Manticore
 from ..exceptions import EthereumError, DependencyError, NoAliveStates
 from ..core.smtlib import ConstraintSet, Operators, solver, BitVec, Array, ArrayProxy
 from ..platforms import evm
-from ..core.state import State
+from ..core.state import State, TerminateState
 from ..utils.helpers import issymbolic, PickleSerializer
 import tempfile
 from subprocess import Popen, PIPE, check_output
