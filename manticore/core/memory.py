@@ -1325,7 +1325,7 @@ class LazySMemory(SMemory):
         if isinstance(data_to_find, bytes):
             data_to_find = [bytes([c]) for c in data_to_find]
 
-        for mapping in self.maps:
+        for mapping in sorted(self.maps):
             for ptr in mapping:
                 if ptr + len(data_to_find) >= mapping.end:
                     break
