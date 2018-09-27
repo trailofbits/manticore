@@ -4,7 +4,6 @@ import sha3
 
 from .. import abitypes, issymbolic
 from ..core.smtlib import Array, Operators, BitVec, ArrayVariable, ArrayProxy
-from ..ethereum import EVMAccount
 from ..exceptions import EthereumError
 
 
@@ -231,6 +230,7 @@ class ABI(object):
         if size <= 0 and size > 32:
             raise ValueError
 
+        from .account import EVMAccount  # because of circular import
         if not isinstance(value, (int, BitVec, EVMAccount)):
             raise ValueError
         if issymbolic(value):
