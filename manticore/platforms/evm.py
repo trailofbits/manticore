@@ -70,12 +70,22 @@ class Transaction(object):
         return Transaction(self.sort, conc_address, self.price, conc_data, conc_caller, conc_value, conc_gas,
                            depth=self.depth, result=self.result, return_data=bytearray(conc_return_data))
 
-    def dump(self, stream, state, mevm, flagged):
+    def dump(self, stream, state, mevm, flagged, conc_tx=None):
+        """
+
+        :param stream:
+        :param state:
+        :param mevm:
+        :param flagged:
+        :param conc_tx: this is thinking ahead to .tx.json file
+        :return:
+        """
         from ..ethereum import ABI  # circular imports
 
         is_something_symbolic = False
 
-        conc_tx = self.concretize(state)
+        if conc_tx is None:
+            conc_tx = self.concretize(state)
 
         # The result if any RETURN or REVERT
         stream.write("Type: %s (%d)\n" % (self.sort, self.depth))
