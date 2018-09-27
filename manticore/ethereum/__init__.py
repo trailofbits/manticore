@@ -1343,18 +1343,6 @@ class ManticoreEVM(Manticore):
         if is_something_symbolic:
             stream.write('\n\n(*) Example solution given. Value is symbolic and may take other values\n')
 
-    def _emit_testcase_tx(self, stream, state, flagged):
-        blockchain = state.platform
-
-        is_something_symbolic = False
-        for sym_tx in blockchain.human_transactions:  # external transactions
-            stream.write("Transactions No. %d\n" % blockchain.transactions.index(sym_tx))
-
-            is_something_symbolic = sym_tx.dump(stream, state, self, flagged)
-
-        if is_something_symbolic:
-            stream.write('\n\n(*) Example solution given. Value is symbolic and may take other values\n')
-
     def _generate_testcase_callback(self, state, name, message=''):
         """
         Create a serialized description of a given state.
@@ -1402,7 +1390,14 @@ class ManticoreEVM(Manticore):
         # Transactions
 
         with testcase.open_stream('tx') as tx_summary:
-            self._emit_testcase_tx(tx_summary, state, flagged)
+            is_something_symbolic = False
+            for sym_tx in blockchain.human_transactions:  # external transactions
+                tx_summary.write("Transactions No. %d\n" % blockchain.transactions.index(sym_tx))
+
+                is_something_symbolic = sym_tx.dump(tx_summary, state, self, flagged)
+
+            if is_something_symbolic:
+                tx_summary.write('\n\n(*) Example solution given. Value is symbolic and may take other values\n')
 
         # logs
         with testcase.open_stream('logs') as logs_summary:
