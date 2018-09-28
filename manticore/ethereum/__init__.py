@@ -1249,6 +1249,171 @@ class ManticoreEVM(Manticore):
             output.write('\n')
         return output.getvalue()
 
+    def _emit_testcase_summary(self, stream, state, message, flagged):
+        blockchain = state.platform
+        last_tx = blockchain.last_transaction
+
+        stream.write("Message: %s\n" % message)
+        stream.write("Last exception: %s\n" % state.context.get('last_exception', 'None'))
+
+        if last_tx:
+            at_runtime = last_tx.sort != 'CREATE'
+            address, offset, at_init = state.context['evm.trace'][-1]
+            assert at_runtime != at_init
+
+            #Last instruction if last tx was valid
+            if str(state.context['last_exception']) != 'TXERROR':
+                metadata = self.get_metadata(blockchain.last_transaction.address)
+                if metadata is not None:
+                    stream.write('Last instruction at contract %x offset %x\n' % (address, offset))
+                    source_code_snippet = metadata.get_source_for(offset, at_runtime)
+                    if source_code_snippet:
+                        stream.write('    '.join(source_code_snippet.splitlines(True)))
+                    stream.write('\n')
+
+        # Accounts summary
+        is_something_symbolic = False
+        stream.write("%d accounts.\n" % len(blockchain.accounts))
+        for account_address in blockchain.accounts:
+            is_account_address_symbolic = issymbolic(account_address)
+            account_address = state.solve_one(account_address)
+
+            stream.write("* %s::\n" % self.account_name(account_address))
+            stream.write("Address: 0x%x %s\n" % (account_address, flagged(is_account_address_symbolic)))
+            balance = blockchain.get_balance(account_address)
+            is_balance_symbolic = issymbolic(balance)
+            is_something_symbolic = is_something_symbolic or is_balance_symbolic
+            balance = state.solve_one(balance)
+            stream.write("Balance: %d %s\n" % (balance, flagged(is_balance_symbolic)))
+            from ..core.smtlib.visitors import translate_to_smtlib
+
+            storage = blockchain.get_storage(account_address)
+            stream.write("Storage: %s\n" % translate_to_smtlib(storage, use_bindings=True))
+
+            all_used_indexes = []
+            with state.constraints as temp_cs:
+                index = temp_cs.new_bitvec(256)
+                storage = blockchain.get_storage(account_address)
+                temp_cs.add(storage.get(index) != 0)
+
+                try:
+                    while True:
+                        a_index = solver.get_value(temp_cs, index)
+                        all_used_indexes.append(a_index)
+
+                        temp_cs.add(storage.get(a_index) != 0)
+                        temp_cs.add(index != a_index)
+                except:
+                    pass
+
+            if all_used_indexes:
+                stream.write("Storage:\n")
+                for i in all_used_indexes:
+                    value = storage.get(i)
+                    is_storage_symbolic = issymbolic(value)
+                    stream.write("storage[%x] = %x %s\n" % (state.solve_one(i), state.solve_one(value), flagged(is_storage_symbolic)))
+            """if blockchain.has_storage(account_address):
+                stream.write("Storage:\n")
+                for offset, value in blockchain.get_storage_items(account_address):
+                    is_storage_symbolic = issymbolic(offset) or issymbolic(value)
+                    offset = state.solve_one(offset)
+                    value = state.solve_one(value)
+                    stream.write("\t%032x -> %032x %s\n" % (offset, value, flagged(is_storage_symbolic)))
+                    is_something_symbolic = is_something_symbolic or is_storage_symbolic
+            """
+
+            runtime_code = state.solve_one(blockchain.get_code(account_address))
+            if runtime_code:
+                stream.write("Code:\n")
+                fcode = io.BytesIO(runtime_code)
+                for chunk in iter(lambda: fcode.read(32), b''):
+                    stream.write('\t%s\n' % binascii.hexlify(chunk))
+                runtime_trace = set((pc for contract, pc, at_init in state.context['evm.trace'] if address == contract and not at_init))
+                stream.write("Coverage %d%% (on this state)\n" % calculate_coverage(runtime_code, runtime_trace))  # coverage % for address in this account/state
+            stream.write("\n")
+
+        with self.locked_context('ethereum') as context:
+            known_sha3 = context.get('_known_sha3', None)
+            if known_sha3:
+                stream.write("Known hashes:\n")
+                for key, value in known_sha3:
+                    stream.write('%s::%x\n' % (binascii.hexlify(key), value))
+
+        if is_something_symbolic:
+            stream.write('\n\n(*) Example solution given. Value is symbolic and may take other values\n')
+
+    def _emit_testcase_tx(self, stream, state, flagged):
+        blockchain = state.platform
+
+        is_something_symbolic = False
+        for tx in blockchain.human_transactions:  # external transactions
+            stream.write("Transactions No. %d\n" % blockchain.transactions.index(tx))
+
+            # The result if any RETURN or REVERT
+            stream.write("Type: %s (%d)\n" % (tx.sort, tx.depth))
+            caller_solution = state.solve_one(tx.caller)
+            caller_name = self.account_name(caller_solution)
+            stream.write("From: %s(0x%x) %s\n" % (caller_name, caller_solution, flagged(issymbolic(tx.caller))))
+            address_solution = state.solve_one(tx.address)
+            address_name = self.account_name(address_solution)
+            stream.write("To: %s(0x%x) %s\n" % (address_name, address_solution, flagged(issymbolic(tx.address))))
+            stream.write("Value: %d %s\n" % (state.solve_one(tx.value), flagged(issymbolic(tx.value))))
+            stream.write("Gas used: %d %s\n" % (state.solve_one(tx.gas), flagged(issymbolic(tx.gas))))
+            tx_data = state.solve_one(tx.data)
+            stream.write("Data: 0x{} {}\n".format(binascii.hexlify(tx_data).decode(), flagged(issymbolic(tx.data))))
+            if tx.return_data is not None:
+                return_data = state.solve_one(tx.return_data)
+                stream.write("Return_data: 0x{} {}\n".format(binascii.hexlify(return_data).decode(), flagged(issymbolic(tx.return_data))))
+            metadata = self.get_metadata(tx.address)
+            if tx.sort == 'CREATE':
+                if metadata is not None:
+                    args_data = tx.data[len(metadata._init_bytecode):]
+                    arguments = ABI.deserialize(metadata.get_constructor_arguments(), state.solve_one(args_data))
+                    is_argument_symbolic = any(map(issymbolic, arguments))
+                    stream.write('Function call:\n')
+                    stream.write("Constructor(")
+                    stream.write(','.join(map(repr, map(state.solve_one, arguments))))
+                    stream.write(') -> %s %s\n' % (tx.result, flagged(is_argument_symbolic)))
+
+            if tx.sort == 'CALL':
+                if metadata is not None:
+                    calldata = state.solve_one(tx.data)
+                    is_calldata_symbolic = issymbolic(tx.data)
+
+                    function_id = calldata[:4]  # hope there is enough data
+                    signature = metadata.get_func_signature(function_id)
+                    function_name = metadata.get_func_name(function_id)
+                    if signature:
+                        _, arguments = ABI.deserialize(signature, calldata)
+                    else:
+                        arguments = (calldata,)
+
+                    return_data = None
+                    if tx.result == 'RETURN':
+                        ret_types = metadata.get_func_return_types(function_id)
+                        return_data = state.solve_one(tx.return_data)
+                        return_values = ABI.deserialize(ret_types, return_data)  # function return
+
+                    is_return_symbolic = issymbolic(tx.return_data)
+
+                    stream.write('\n')
+                    stream.write("Function call:\n")
+                    stream.write("%s(" % function_name)
+                    stream.write(','.join(map(repr, arguments)))
+                    stream.write(') -> %s %s\n' % (tx.result, flagged(is_calldata_symbolic)))
+
+                    if return_data is not None:
+                        if len(return_values) == 1:
+                            return_values = return_values[0]
+
+                        stream.write('return: %r %s\n' % (return_values, flagged(is_return_symbolic)))
+                    is_something_symbolic = is_calldata_symbolic or is_return_symbolic
+
+            stream.write('\n\n')
+
+        if is_something_symbolic:
+            stream.write('\n\n(*) Example solution given. Value is symbolic and may take other values\n')
+
     def _generate_testcase_callback(self, state, name, message=''):
         """
         Create a serialized description of a given state.
@@ -1291,166 +1456,12 @@ class ManticoreEVM(Manticore):
                         findings.write('\n')
 
         with testcase.open_stream('summary') as summary:
-            summary.write("Message: %s\n" % message)
-            summary.write("Last exception: %s\n" % state.context.get('last_exception', 'None'))
-
-            if last_tx:
-                at_runtime = last_tx.sort != 'CREATE'
-                address, offset, at_init = state.context['evm.trace'][-1]
-                assert at_runtime != at_init
-
-                #Last instruction if last tx was valid
-                if str(state.context['last_exception']) != 'TXERROR':
-                    metadata = self.get_metadata(blockchain.last_transaction.address)
-                    if metadata is not None:
-                        summary.write('Last instruction at contract %x offset %x\n' % (address, offset))
-                        source_code_snippet = metadata.get_source_for(offset, at_runtime)
-                        if source_code_snippet:
-                            summary.write('    '.join(source_code_snippet.splitlines(True)))
-                        summary.write('\n')
-
-            # Accounts summary
-            is_something_symbolic = False
-            summary.write("%d accounts.\n" % len(blockchain.accounts))
-            for account_address in blockchain.accounts:
-                is_account_address_symbolic = issymbolic(account_address)
-                account_address = state.solve_one(account_address)
-
-                summary.write("* %s::\n" % self.account_name(account_address))
-                summary.write("Address: 0x%x %s\n" % (account_address, flagged(is_account_address_symbolic)))
-                balance = blockchain.get_balance(account_address)
-                is_balance_symbolic = issymbolic(balance)
-                is_something_symbolic = is_something_symbolic or is_balance_symbolic
-                balance = state.solve_one(balance)
-                summary.write("Balance: %d %s\n" % (balance, flagged(is_balance_symbolic)))
-                from ..core.smtlib.visitors import translate_to_smtlib
-
-                storage = blockchain.get_storage(account_address)
-                summary.write("Storage: %s\n" % translate_to_smtlib(storage, use_bindings=True))
-
-                all_used_indexes = []
-                with state.constraints as temp_cs:
-                    index = temp_cs.new_bitvec(256)
-                    storage = blockchain.get_storage(account_address)
-                    temp_cs.add(storage.get(index) != 0)
-
-                    try:
-                        while True:
-                            a_index = solver.get_value(temp_cs, index)
-                            all_used_indexes.append(a_index)
-
-                            temp_cs.add(storage.get(a_index) != 0)
-                            temp_cs.add(index != a_index)
-                    except:
-                        pass
-
-                if all_used_indexes:
-                    summary.write("Storage:\n")
-                    for i in all_used_indexes:
-                        value = storage.get(i)
-                        is_storage_symbolic = issymbolic(value)
-                        summary.write("storage[%x] = %x %s\n" % (state.solve_one(i), state.solve_one(value), flagged(is_storage_symbolic)))
-                """if blockchain.has_storage(account_address):
-                    summary.write("Storage:\n")
-                    for offset, value in blockchain.get_storage_items(account_address):
-                        is_storage_symbolic = issymbolic(offset) or issymbolic(value)
-                        offset = state.solve_one(offset)
-                        value = state.solve_one(value)
-                        summary.write("\t%032x -> %032x %s\n" % (offset, value, flagged(is_storage_symbolic)))
-                        is_something_symbolic = is_something_symbolic or is_storage_symbolic
-                """
-
-                runtime_code = state.solve_one(blockchain.get_code(account_address))
-                if runtime_code:
-                    summary.write("Code:\n")
-                    fcode = io.BytesIO(runtime_code)
-                    for chunk in iter(lambda: fcode.read(32), b''):
-                        summary.write('\t%s\n' % binascii.hexlify(chunk))
-                    runtime_trace = set((pc for contract, pc, at_init in state.context['evm.trace'] if address == contract and not at_init))
-                    summary.write("Coverage %d%% (on this state)\n" % calculate_coverage(runtime_code, runtime_trace))  # coverage % for address in this account/state
-                summary.write("\n")
-
-            with self.locked_context('ethereum') as context:
-                known_sha3 = context.get('_known_sha3', None)
-                if known_sha3:
-                    summary.write("Known hashes:\n")
-                    for key, value in known_sha3:
-                        summary.write('%s::%x\n' % (binascii.hexlify(key), value))
-
-            if is_something_symbolic:
-                summary.write('\n\n(*) Example solution given. Value is symbolic and may take other values\n')
+            self._emit_testcase_summary(summary, state, message, flagged)
 
         # Transactions
 
         with testcase.open_stream('tx') as tx_summary:
-            is_something_symbolic = False
-            for tx in blockchain.human_transactions:  # external transactions
-                tx_summary.write("Transactions No. %d\n" % blockchain.transactions.index(tx))
-
-                # The result if any RETURN or REVERT
-                tx_summary.write("Type: %s (%d)\n" % (tx.sort, tx.depth))
-                caller_solution = state.solve_one(tx.caller)
-                caller_name = self.account_name(caller_solution)
-                tx_summary.write("From: %s(0x%x) %s\n" % (caller_name, caller_solution, flagged(issymbolic(tx.caller))))
-                address_solution = state.solve_one(tx.address)
-                address_name = self.account_name(address_solution)
-                tx_summary.write("To: %s(0x%x) %s\n" % (address_name, address_solution, flagged(issymbolic(tx.address))))
-                tx_summary.write("Value: %d %s\n" % (state.solve_one(tx.value), flagged(issymbolic(tx.value))))
-                tx_summary.write("Gas used: %d %s\n" % (state.solve_one(tx.gas), flagged(issymbolic(tx.gas))))
-                tx_data = state.solve_one(tx.data)
-                tx_summary.write("Data: 0x{} {}\n".format(binascii.hexlify(tx_data).decode(), flagged(issymbolic(tx.data))))
-                if tx.return_data is not None:
-                    return_data = state.solve_one(tx.return_data)
-                    tx_summary.write("Return_data: 0x{} {}\n".format(binascii.hexlify(return_data).decode(), flagged(issymbolic(tx.return_data))))
-                metadata = self.get_metadata(tx.address)
-                if tx.sort == 'CREATE':
-                    if metadata is not None:
-                        args_data = tx.data[len(metadata._init_bytecode):]
-                        arguments = ABI.deserialize(metadata.get_constructor_arguments(), state.solve_one(args_data))
-                        is_argument_symbolic = any(map(issymbolic, arguments))
-                        tx_summary.write('Function call:\n')
-                        tx_summary.write("Constructor(")
-                        tx_summary.write(','.join(map(repr, map(state.solve_one, arguments))))
-                        tx_summary.write(') -> %s %s\n' % (tx.result, flagged(is_argument_symbolic)))
-
-                if tx.sort == 'CALL':
-                    if metadata is not None:
-                        calldata = state.solve_one(tx.data)
-                        is_calldata_symbolic = issymbolic(tx.data)
-
-                        function_id = calldata[:4]  # hope there is enough data
-                        signature = metadata.get_func_signature(function_id)
-                        function_name = metadata.get_func_name(function_id)
-                        if signature:
-                            _, arguments = ABI.deserialize(signature, calldata)
-                        else:
-                            arguments = (calldata,)
-
-                        return_data = None
-                        if tx.result == 'RETURN':
-                            ret_types = metadata.get_func_return_types(function_id)
-                            return_data = state.solve_one(tx.return_data)
-                            return_values = ABI.deserialize(ret_types, return_data)  # function return
-
-                        is_return_symbolic = issymbolic(tx.return_data)
-
-                        tx_summary.write('\n')
-                        tx_summary.write("Function call:\n")
-                        tx_summary.write("%s(" % function_name)
-                        tx_summary.write(','.join(map(repr, arguments)))
-                        tx_summary.write(') -> %s %s\n' % (tx.result, flagged(is_calldata_symbolic)))
-
-                        if return_data is not None:
-                            if len(return_values) == 1:
-                                return_values = return_values[0]
-
-                            tx_summary.write('return: %r %s\n' % (return_values, flagged(is_return_symbolic)))
-                        is_something_symbolic = is_calldata_symbolic or is_return_symbolic
-
-                tx_summary.write('\n\n')
-
-            if is_something_symbolic:
-                tx_summary.write('\n\n(*) Example solution given. Value is symbolic and may take other values\n')
+            self._emit_testcase_tx(tx_summary, state, flagged)
 
         # logs
         with testcase.open_stream('logs') as logs_summary:
