@@ -70,7 +70,7 @@ class Transaction(object):
         return Transaction(self.sort, conc_address, self.price, conc_data, conc_caller, conc_value, conc_gas,
                            depth=self.depth, result=self.result, return_data=bytearray(conc_return_data))
 
-    def dump(self, stream, state, mevm, conc_tx=None):
+    def dump(self, stream, state, mevm)
         """
         Concretize and write a human readable version of the transaction into the stream. Used during testcase
         generation.
@@ -78,15 +78,13 @@ class Transaction(object):
         :param stream: Output stream to write to. Typically a file.
         :param manticore.core.state.State state: state that the tx exists in
         :param manticore.ethereum.ManticoreEVM mevm: manticore instance
-        :param Transaction conc_tx: a concrete Transaction to use instead of concretizing this object. this is thinking ahead to .tx.json file feature where we want to concretize once and write two files
         :return:
         """
         from ..ethereum import ABI, flagged  # circular imports
 
         is_something_symbolic = False
 
-        if conc_tx is None:
-            conc_tx = self.concretize(state)
+        conc_tx = self.concretize(state)
 
         # The result if any RETURN or REVERT
         stream.write("Type: %s (%d)\n" % (self.sort, self.depth))
