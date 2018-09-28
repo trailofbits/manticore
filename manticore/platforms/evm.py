@@ -72,12 +72,14 @@ class Transaction(object):
 
     def dump(self, stream, state, mevm, flagged, conc_tx=None):
         """
+        Concretize and write a human readable version of the transaction into the stream. Used during testcase
+        generation.
 
-        :param stream:
-        :param state:
-        :param mevm:
-        :param flagged:
-        :param conc_tx: this is thinking ahead to .tx.json file
+        :param stream: Output stream to write to. Typically a file.
+        :param manticore.core.state.State state: state that the tx exists in
+        :param manticore.ethereum.ManticoreEVM mevm: manticore instance
+        :param callable flagged:
+        :param Transaction conc_tx: a concrete Transaction to use instead of concretizing this object. this is thinking ahead to .tx.json file feature where we want to concretize once and write two files
         :return:
         """
         from ..ethereum import ABI  # circular imports
