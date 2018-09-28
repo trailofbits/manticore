@@ -6,7 +6,6 @@ import os
 import pyevmasm as EVMAsm
 
 from .. import Manticore
-# from ..manticore import Manticore
 from ..exceptions import EthereumError, DependencyError, NoAliveStates
 from ..core.smtlib import ConstraintSet, Operators, solver, BitVec, Array, ArrayProxy
 from ..platforms import evm
