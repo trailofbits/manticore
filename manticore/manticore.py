@@ -600,20 +600,25 @@ class Manticore(Eventful):
         :param timeout: Analysis timeout, in seconds
         '''
         assert not self.running, "Manticore is already running."
-        self._start_run()
-
-        self._time_started = time.time()
-        if timeout > 0:
-            t = Timer(timeout, self.terminate)
-            t.start()
         try:
-            self._start_workers(procs, profiling=should_profile)
+            self._start_run()
 
-            self._join_workers()
-        finally:
+            self._time_started = time.time()
             if timeout > 0:
-                t.cancel()
-        self._finish_run(profiling=should_profile)
+                t = Timer(timeout, self.terminate)
+                t.start()
+            try:
+                self._start_workers(procs, profiling=should_profile)
+
+                self._join_workers()
+            finally:
+                if timeout > 0:
+                    t.cancel()
+            self._finish_run(profiling=should_profile)
+        except TerminateState:
+            #  Must have been raised outside of executor loop. likely by Manticore.terminate()
+            # or State.abandon() in the init hook.
+            pass
 
     #Fixme remove. terminate is used to TerminateState. May be confusing
     def terminate(self):
@@ -622,6 +627,7 @@ class Manticore(Eventful):
         a :func:`~hook`.
         '''
         self._executor.shutdown()
+        raise TerminateState('Terminated')
 
     def shutdown(self):
         '''
