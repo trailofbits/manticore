@@ -31,6 +31,11 @@ from .solidity import SolidityMetadata
 logger = logging.getLogger(__name__)
 
 
+def flagged(flag):
+    """
+    Return special character denoting concretization happened.
+    """
+    return '(*)' if flag else ''
 
 #
 # Plugins
@@ -1249,7 +1254,7 @@ class ManticoreEVM(Manticore):
             output.write('\n')
         return output.getvalue()
 
-    def _emit_testcase_summary(self, stream, state, message, flagged):
+    def _emit_testcase_summary(self, stream, state, message):
         blockchain = state.platform
         last_tx = blockchain.last_transaction
 
@@ -1356,8 +1361,6 @@ class ManticoreEVM(Manticore):
         #  so this function can be fully ported to EVMWorld.generate_workspace_files.
         blockchain = state.platform
 
-        def flagged(flag):
-            return '(*)' if flag else ''
         testcase = self._output.testcase(name.replace(' ', '_'))
         last_tx = blockchain.last_transaction
         if last_tx:
@@ -1384,7 +1387,7 @@ class ManticoreEVM(Manticore):
                         findings.write('\n')
 
         with testcase.open_stream('summary') as summary:
-            self._emit_testcase_summary(summary, state, message, flagged)
+            self._emit_testcase_summary(summary, state, message)
 
         # Transactions
 
@@ -1393,7 +1396,7 @@ class ManticoreEVM(Manticore):
             for sym_tx in blockchain.human_transactions:  # external transactions
                 tx_summary.write("Transactions No. %d\n" % blockchain.transactions.index(sym_tx))
 
-                is_something_symbolic = sym_tx.dump(tx_summary, state, self, flagged)
+                is_something_symbolic = sym_tx.dump(tx_summary, state, self)
 
             if is_something_symbolic:
                 tx_summary.write('\n\n(*) Example solution given. Value is symbolic and may take other values\n')
