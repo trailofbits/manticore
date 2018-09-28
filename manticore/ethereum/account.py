@@ -38,6 +38,16 @@ class EVMAccount(object):
     def __str__(self):
         return str(self._address)
 
+    def dump(self, stream, blockchain, mevm):
+        """
+
+        :param stream:
+        :param blockchain: evmworld platform
+        :param mevm:
+        :return:
+        """
+        pass
+
 
 class EVMContract(EVMAccount):
     """ An EVM account

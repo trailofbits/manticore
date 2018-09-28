@@ -1,6 +1,7 @@
 ''' Symbolic EVM implementation based on the yellow paper: http://gavwood.com/paper.pdf '''
 import binascii
 import random
+import io
 import copy
 import inspect
 from functools import wraps
@@ -1633,6 +1634,91 @@ class EVMWorld(Platform):
     _published_events = {'evm_read_storage', 'evm_write_storage', 'evm_read_code',
                          'decode_instruction', 'execute_instruction', 'concrete_sha3', 'symbolic_sha3',
                          'open_transaction', 'close_transaction'}
+
+    def dump(self, stream, state, mevm, message):
+        from ..ethereum import flagged, calculate_coverage
+        blockchain = state.platform
+        last_tx = blockchain.last_transaction
+
+        stream.write("Message: %s\n" % message)
+        stream.write("Last exception: %s\n" % state.context.get('last_exception', 'None'))
+
+        if last_tx:
+            at_runtime = last_tx.sort != 'CREATE'
+            address, offset, at_init = state.context['evm.trace'][-1]
+            assert at_runtime != at_init
+
+            #Last instruction if last tx was valid
+            if str(state.context['last_exception']) != 'TXERROR':
+                metadata = mevm.get_metadata(blockchain.last_transaction.address)
+                if metadata is not None:
+                    stream.write('Last instruction at contract %x offset %x\n' % (address, offset))
+                    source_code_snippet = metadata.get_source_for(offset, at_runtime)
+                    if source_code_snippet:
+                        stream.write('    '.join(source_code_snippet.splitlines(True)))
+                    stream.write('\n')
+
+        # Accounts summary
+        is_something_symbolic = False
+        stream.write("%d accounts.\n" % len(blockchain.accounts))
+        for account_address in blockchain.accounts:
+            is_account_address_symbolic = issymbolic(account_address)
+            account_address = state.solve_one(account_address)
+
+            stream.write("* %s::\n" % mevm.account_name(account_address))
+            stream.write("Address: 0x%x %s\n" % (account_address, flagged(is_account_address_symbolic)))
+            balance = blockchain.get_balance(account_address)
+            is_balance_symbolic = issymbolic(balance)
+            is_something_symbolic = is_something_symbolic or is_balance_symbolic
+            balance = state.solve_one(balance)
+            stream.write("Balance: %d %s\n" % (balance, flagged(is_balance_symbolic)))
+            # from ..core.smtlib.visitors import translate_to_smtlib
+
+            storage = blockchain.get_storage(account_address)
+            stream.write("Storage: %s\n" % translate_to_smtlib(storage, use_bindings=True))
+
+            all_used_indexes = []
+            with state.constraints as temp_cs:
+                index = temp_cs.new_bitvec(256)
+                storage = blockchain.get_storage(account_address)
+                temp_cs.add(storage.get(index) != 0)
+
+                try:
+                    while True:
+                        a_index = solver.get_value(temp_cs, index)
+                        all_used_indexes.append(a_index)
+
+                        temp_cs.add(storage.get(a_index) != 0)
+                        temp_cs.add(index != a_index)
+                except:
+                    pass
+
+            if all_used_indexes:
+                stream.write("Storage:\n")
+                for i in all_used_indexes:
+                    value = storage.get(i)
+                    is_storage_symbolic = issymbolic(value)
+                    stream.write("storage[%x] = %x %s\n" % (state.solve_one(i), state.solve_one(value), flagged(is_storage_symbolic)))
+            """if blockchain.has_storage(account_address):
+                stream.write("Storage:\n")
+                for offset, value in blockchain.get_storage_items(account_address):
+                    is_storage_symbolic = issymbolic(offset) or issymbolic(value)
+                    offset = state.solve_one(offset)
+                    value = state.solve_one(value)
+                    stream.write("\t%032x -> %032x %s\n" % (offset, value, flagged(is_storage_symbolic)))
+                    is_something_symbolic = is_something_symbolic or is_storage_symbolic
+            """
+
+            runtime_code = state.solve_one(blockchain.get_code(account_address))
+            if runtime_code:
+                stream.write("Code:\n")
+                fcode = io.BytesIO(runtime_code)
+                for chunk in iter(lambda: fcode.read(32), b''):
+                    stream.write('\t%s\n' % binascii.hexlify(chunk))
+                runtime_trace = set((pc for contract, pc, at_init in state.context['evm.trace'] if address == contract and not at_init))
+                stream.write("Coverage %d%% (on this state)\n" % calculate_coverage(runtime_code, runtime_trace))  # coverage % for address in this account/state
+            stream.write("\n")
+        return is_something_symbolic
 
     def __init__(self, constraints, storage=None, initial_block_number=None, initial_timestamp=None, **kwargs):
         super().__init__(path="NOPATH", **kwargs)
