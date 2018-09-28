@@ -1254,19 +1254,6 @@ class ManticoreEVM(Manticore):
             output.write('\n')
         return output.getvalue()
 
-    def _emit_testcase_summary(self, stream, state, message):
-        is_something_symbolic = state.platform.dump(stream, state, self, message)
-
-        with self.locked_context('ethereum') as context:
-            known_sha3 = context.get('_known_sha3', None)
-            if known_sha3:
-                stream.write("Known hashes:\n")
-                for key, value in known_sha3:
-                    stream.write('%s::%x\n' % (binascii.hexlify(key), value))
-
-        if is_something_symbolic:
-            stream.write('\n\n(*) Example solution given. Value is symbolic and may take other values\n')
-
     def _generate_testcase_callback(self, state, name, message=''):
         """
         Create a serialized description of a given state.
@@ -1306,8 +1293,18 @@ class ManticoreEVM(Manticore):
                         findings.write(src.replace('\n', '\n    ').strip())
                         findings.write('\n')
 
-        with testcase.open_stream('summary') as summary:
-            self._emit_testcase_summary(summary, state, message)
+        with testcase.open_stream('summary') as stream:
+            is_something_symbolic = state.platform.dump(stream, state, self, message)
+
+            with self.locked_context('ethereum') as context:
+                known_sha3 = context.get('_known_sha3', None)
+                if known_sha3:
+                    stream.write("Known hashes:\n")
+                    for key, value in known_sha3:
+                        stream.write('%s::%x\n' % (binascii.hexlify(key), value))
+
+            if is_something_symbolic:
+                stream.write('\n\n(*) Example solution given. Value is symbolic and may take other values\n')
 
         # Transactions
 
