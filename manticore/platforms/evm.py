@@ -9,7 +9,7 @@ from ..platforms.platform import *
 from ..core.smtlib import solver, BitVec, Array, Operators, Constant, ArrayVariable, BitVecConstant, translate_to_smtlib
 from ..core.state import Concretize, TerminateState
 from ..utils.event import Eventful
-from ..core.smtlib.visitors import simplify
+from ..core.smtlib.visitors import simplify, to_constant
 import pyevmasm as EVMAsm
 import logging
 from collections import namedtuple
@@ -395,7 +395,7 @@ class EVM(Eventful):
 
     @property
     def gas(self):
-        return self._gas
+        return to_constant(self._gas)
 
     def __getstate__(self):
         state = super().__getstate__()
@@ -668,6 +668,11 @@ class EVM(Eventful):
             pc = self.pc
             instruction = self.instruction
             old_gas = self.gas
+
+            #Fix old bug in pyevmasm
+            if instruction.semantics == 'PUSH' and instruction.fee == 0:
+                self._consume(3)
+
             self._consume(instruction.fee)
             arguments = self._pop_arguments()
             self._checkpoint_data = (pc, old_gas, instruction, arguments)
@@ -1234,6 +1239,24 @@ class EVM(Eventful):
         '''Save word to storage'''
         storage_address = self.address
         self._publish('will_evm_write_storage', storage_address, offset, value)
+
+
+        GSTORAGEREFUND = 15000
+        GSTORAGEKILL = 5000
+        GSTORAGEMOD = 5000
+        GSTORAGEADD = 20000
+        
+        previous_value = self.world.get_storage_data(storage_address, offset)
+
+        gascost = Operators.ITEBV(512, previous_value != 0,
+                                                          Operators.ITEBV(512, value != 0, GSTORAGEMOD, GSTORAGEKILL),
+                                                          Operators.ITEBV(512, value != 0, GSTORAGEADD, GSTORAGEMOD))
+
+        refund = Operators.ITEBV(256, previous_value != 0,
+                                                          Operators.ITEBV(256, value != 0, 0, GSTORAGEREFUND),
+                                                          0)
+        self._consume(gascost)
+
         if istainted(self.pc):
             for taint in get_taints(self.pc):
                 value = taint_with(value, taint)
@@ -1529,7 +1552,7 @@ class EVMWorld(Platform):
                          'decode_instruction', 'execute_instruction', 'concrete_sha3', 'symbolic_sha3',
                          'open_transaction', 'close_transaction'}
 
-    def __init__(self, constraints, storage=None, initial_block_number=None, initial_timestamp=None, **kwargs):
+    def __init__(self, constraints, storage=None, blocknumber=None, timestamp=None, difficulty=0, gaslimit=0, coinbase=0, **kwargs):
         super().__init__(path="NOPATH", **kwargs)
         self._world_state = {} if storage is None else storage
         self._constraints = constraints
@@ -1539,16 +1562,21 @@ class EVMWorld(Platform):
         self._pending_transaction = None
         self._transactions = list()
 
-        if initial_block_number is None:
+        if blocknumber is None:
             #assume initial symbolic block
-            initial_block_number = constraints.new_bitvec(256, "BLOCKNUMBER", avoid_collisions=True)
-        self._initial_block_number = initial_block_number
-        if initial_timestamp is None:
+            block_number = constraints.new_bitvec(256, "BLOCKNUMBER", avoid_collisions=True)
+        self._blocknumber = blocknumber
+
+        if timestamp is None:
             #1524785992; // Thu Apr 26 23:39:52 UTC 2018
-            initial_timestamp = constraints.new_bitvec(256, "TIMESTAMP", avoid_collisions=True)
-            constraints.add(Operators.UGT(initial_timestamp, 1000000000))
-            constraints.add(Operators.ULT(initial_timestamp, 3000000000))
-        self._initial_timestamp = initial_timestamp
+            timestamp = constraints.new_bitvec(256, "TIMESTAMP", avoid_collisions=True)
+            constraints.add(Operators.UGT(timestamp, 1000000000))
+            constraints.add(Operators.ULT(timestamp, 3000000000))
+        self._timestamp = timestamp
+        self._blocknumber = blocknumber
+        self._difficulty = difficulty
+        self._gaslimit = gaslimit
+        self._coinbaise = coinbase
         self._do_events()
 
     def __getstate__(self):
@@ -1560,8 +1588,11 @@ class EVMWorld(Platform):
         state['callstack'] = self._callstack
         state['deleted_accounts'] = self._deleted_accounts
         state['transactions'] = self._transactions
-        state['initial_block_number'] = self._initial_block_number
-        state['_initial_timestamp'] = self._initial_timestamp
+        state['_blocknumber'] = self._blocknumber
+        state['_timestamp'] = self._timestamp
+        state['_difficulty'] = self._difficulty
+        state['_gaslimit'] = self._gaslimit
+        state['_coinbase'] = self._coinbase
         return state
 
     def __setstate__(self, state):
@@ -1573,8 +1604,11 @@ class EVMWorld(Platform):
         self._logs = state['logs']
         self._callstack = state['callstack']
         self._transactions = state['transactions']
-        self._initial_block_number = state['initial_block_number']
-        self._initial_timestamp = state['_initial_timestamp']
+        self._blocknumber = state['_blocknumber']
+        self._timestamp = state['_timestamp']
+        self._difficulty = state['_difficulty']
+        self._gaslimitstate['_gaslimit']
+        self._coinbase = state['_coinbase']
         self._do_events()
 
     @property
@@ -1858,6 +1892,11 @@ class EVMWorld(Platform):
     def has_code(self, address):
         return len(self._world_state[address]['code']) > 0
 
+    def get_nonce(self, address):
+        if address not in self._world_state:
+            return 0
+        return self._world_state[address]['nonce']
+
     def log(self, address, topics, data):
         self._logs.append(EVMLog(address, data, topics))
         logger.info('LOG %r %r', data, topics)
@@ -1872,19 +1911,19 @@ class EVMWorld(Platform):
         return 0
 
     def block_coinbase(self):
-        return 0
+        return self._coinbase
 
     def block_timestamp(self):
-        return self._initial_timestamp + len(self.human_transactions)
+        return self._timestamp + len(self.human_transactions)/2000
 
     def block_number(self):
-        return self._initial_block_number + len(self.human_transactions)
+        return self._block_number + len(self.human_transactions)/20
 
     def block_difficulty(self):
-        return 0
+        return self._difficulty
 
     def block_gaslimit(self):
-        return 0
+        return self._gaslimit
 
     def block_hash(self, block_number=None, force_recent=True):
         ''' Calculates a block's hash

@@ -1,6 +1,9 @@
-
 from pprint import pformat
 from io import StringIO
+from binascii import unhexlify
+import pyevmasm as EVMAsm
+import hashlib
+
 
 def pretty(value, htchar=' ', lfchar='\n', indent=0, width=100):
     nlch = lfchar + htchar * (indent + 1)
@@ -34,9 +37,9 @@ def pretty(value, htchar=' ', lfchar='\n', indent=0, width=100):
                 o.append(repr(value[pos: pos+width]) )
             return ('\\' + lfchar + htchar * indent).join(o)
         return repr(value)
-
     else:
         return repr(value)
+
 pprint = pretty
 pp = pretty
 def spprint(x, indent=0, width=None,**kwargs):
@@ -55,133 +58,137 @@ def i(x):
     if not x.startswith('0x'):
         x = '0x' + x
     return int(x, 0)
-def gen_test(testcase, testname, skip):
+
+def gen_test(testcase, filename, skip):
+
     output = ''
     if skip:
         output += '''    @unittest.skip('Gas or performance related')\n'''
 
-    output += '    def test_%s(self):\n'% (os.path.split(testname)[1].replace('-','_'))
-    header = {}
+    testname = (os.path.split(filename)[1].replace('-','_')).split('.')[0]
+    bytecode = unhexlify(testcase['exec']['code'][2:])
+    disassemble = '\n                  '.join(EVMAsm.disassemble(bytecode).split('\n'))
+    sha256sum = hashlib.sha256(open(filename, 'rb').read()).hexdigest()
+
+    output += f"""
+    def test_{testname}(self):
+        '''
+            Textcase taken from https://github.com/ethereum/tests
+            File: {filename}
+            sha256sum: {sha256sum}
+            Code: {disassemble}
+        '''    
+    """
     env = testcase['env']
-    for key in env:
-        if key.startswith('previous'):
-            _key = str(key[8:].lower())
-        else:
-            _key = str(key[7:].lower())
-        try:
-            header[_key] = i(env[key])
-        except:
-            print("XXXXXX" , key, env[key])
-    output += '        header =' + pprint (header, indent=18) +'\n'
 
-    pre = testcase['pre']
-    world = {}
-    for address in pre.keys():
-        iaddress = i(address)
-        world[iaddress] = {}
-        world[iaddress]['code'] = pre[address]['code'][2:].decode('hex')
-        world[iaddress]['nonce'] = i(pre[address]['nonce'])
-        world[iaddress]['balance'] = i(pre[address]['balance'])
-        world[iaddress]['storage'] = {}
-        for key, value in pre[address]['storage'].items():
-            world[iaddress]['storage'][key] = value
-
-    #output += "        pre_world =" + pprint( world, indent=22)+'\n'
-    pre_world = world
-    exe = testcase['exec']
-    transaction = {}
-    for key in exe.keys():
-        pkey = str(key)
-        if key == 'gasPrice':
-            pkey = 'price'
-        if key in ['data', 'code']:
-            value = exe[key][2:].decode('hex')
-        else:
-            value = i(exe[key])
-
-        transaction[pkey] = value
-
-    pos_world = None
-    if 'post' in testcase:
-        pos = testcase['post']
-        world = {}
-        for address in pos.keys():
-            iaddress = i(address)
-            world[iaddress] = {}
-            world[iaddress]['code'] = pos[address]['code'][2:].decode('hex')
-            world[iaddress]['nonce'] = i(pos[address]['nonce'])
-            world[iaddress]['balance'] = i(pos[address]['balance'])
-            world[iaddress]['storage'] = {} 
-            for key, value in pos[address]['storage'].items():
-                world[iaddress]['storage'][i(key)] = i(value)        
-        output += "        pos_world = " + pprint(world, indent=27) + '\n'
-    
-    else:
-        output += "        pos_world = None\n"
-    pos_world = world
-
-
-    #CONTRACT['NONCE'] NOT USED fixme
-    output += '''
+    gaslimit=int(env['currentGasLimit'], 0)
+    blocknumber=int(env['currentNumber'], 0)
+    timestamp=int(env['currentTimestamp'], 0)
+    difficulty=int(env['currentDifficulty'], 0)
+    coinbase=int(env['currentCoinbase'],0)
+    output += f'''
         constraints = ConstraintSet()
-        platform = evm.EVMWorld(constraints)'''
-    
-    for address, contract in pre_world.items():
-        output +='''           
-        platform.create_account(address=%s, 
-                                balance=%s, 
-                                code=%s, 
-                                storage=%s
-                                )''' % (pp(address),
-                                        pp(contract['balance']), 
-                                        pp(contract['code'],width=60, indent=37), 
-                                        pp(contract['storage'],width=80, indent=40))
+        world = evm.EVMWorld(constraints, blocknumber={blocknumber}, timestamp={timestamp}, difficulty={difficulty}, coinbase={coinbase}, gaslimit={gaslimit})
+    '''
 
-        output +='''           
-        platform.create_account(address=%s, 
-                                balance=%s, 
-                                code=%s, 
-                                storage=%s
-                                )''' % (pp(transaction['caller']),
-                                        pp(contract['balance']), 
-                                        pp(contract['code'],width=60, indent=37), 
-                                        pp(contract['storage'],width=80, indent=40))
+    for address, account in testcase['pre'].items():
+        account_address = i(address)
+        account_code = account['code'][2:]
+        account_nonce = i(account['nonce'])
+        account_balance = i(account['balance'])
+
+        output += f'''
+        world.create_account(address={hex(account_address)},
+                             balance={account_balance},
+                             code=unhexlify('{account_code}'),
+                            )'''
+
+        for key, value in account['storage'].items():
+            output += '''
+        world.set_storage_data({account_address}, {key}, {value})'''
+
+    address = int(testcase['exec']['address'], 0)
+    caller = int(testcase['exec']['caller'], 0)
+    code = testcase['exec']['code'][2:]
+    calldata = testcase['exec']['data'][2:]
+    gas = int(testcase['exec']['gas'], 0)
+    price = int(testcase['exec']['gasPrice'], 0)
+    origin = int(testcase['exec']['origin'], 0)
+    value = int(testcase['exec']['value'], 0)
 
 
-    output += '''        
-        address = %s
-        origin = %s
-        price = %s
-        data = %s
-        caller = %s
-        value = %s''' % (
-    pp(transaction['address']),
-    pp(transaction['origin']),
-    pp(transaction['price']),
-    pp(transaction['data']),
-    pp(transaction['caller']),
-    pp(transaction['value']) )
-    output += '''        
-        #platform.transaction(address, origin, price, data, caller, value, header)
-        bytecode = platform.storage[address]['code']
-        new_vm = EVM(constraints, address, origin, price, data, caller, value, bytecode, header, global_storage=platform.storage)
-        
-  
-        throw = False
+    #Need to check if origin is diff from caller. we do not support those tests
+    assert origin==caller, "test type not supported"
+    assert testcase['pre']['0x{:040x}'.format(address)]['code'][2:] == code, "test type not supported"
+
+    output += f'''
+        address = {hex(address)}
+        price = {hex(price)}'''
+
+    if calldata:
+        output += f'''
+        data = unhexlify('{calldata}')'''
+    else:
+        output += f"""
+        data = ''"""
+
+    output += f'''
+        caller = {hex(caller)}
+        value = {value}
+        bytecode = world.get_code(address)
+        gas = {gas}
+
+        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
+
+        result = None
+        returndata = ''
         try:
-            #platform.run()
-            new_vm.run()
-        except state.TerminateState as e:                
-            if e.message != 'STOP':
-                throw = True
+            while True:
+                new_vm.execute()
+        except evm.EndTx as e:
+            result = e.result
+            if e.result in ('RETURN', 'REVERT'):
+                returndata = e.data'''
 
-        if pos_world is None:
-            self.assertTrue(throw)
-        else:
-            self.assertEqual( pos_world, platform.storage)
-'''
+    if 'post' not in testcase:
+        output +='''
+        #If test end in exception ceck it here
+        self.assertTrue(result in ('THROW'))'''
+    else:
+        final_gas = testcase['gas']
+        output += f'''
+        # test spent gas
+        self.assertEqual(new_vm.gas, {final_gas})'''
 
-    
+        output += '''
+        #check refund
+        #check logs
+        '''
+
+        for address, account in testcase['post'].items():
+            account_address = i(address)
+            account_code = account['code'][2:]
+            account_nonce = i(account['nonce'])
+            account_balance = i(account['balance'])
+
+            output += f'''
+        #Add pos checks for account hex(account_address)
+        account_address = {hex(account_address)}
+        #check nonce
+        self.assertEqual(world.get_nonce(account_address), {account_nonce})
+        #check balance
+        self.assertEqual(world.get_balance(account_address), {account_balance})
+        #check code
+        self.assertEqual(world.get_code(account_address), unhexlify('{account_code}'))'''
+
+        if account['storage']:
+            output += '''
+        #check storage'''
+
+            for key, value in account['storage'].items():
+                output += f'''
+        self.assertEqual(world.get_storage_data(account_address, {key}), {value})'''
+
     return output
 
 import sys, os, json
@@ -189,6 +196,7 @@ if __name__ == '__main__':
     filename = os.path.abspath(sys.argv[1])
 
     assert filename.endswith('.json')
+
 
     print('''
 import struct
@@ -198,7 +206,7 @@ from manticore.platforms import evm
 from manticore.core import state
 from manticore.core.smtlib import Operators, ConstraintSet
 import os
-
+from binascii import unhexlify
 
 class EVMTest_%s(unittest.TestCase):
     _multiprocess_can_split_ = True
@@ -239,10 +247,7 @@ class EVMTest_%s(unittest.TestCase):
 'f76b7c41b0a7d2879851037f8eea928fc7302bd60fd6af4b6e4030a3a24436b4','f8660436772f63f5cd6bb20e12150cdc66f5238f78d872196f49bc9bf7b5d68d',
 'fa78200fce12b17e9c320d743ddd7d32094326376fe9f6bf9964b285a9350a7e', 'DynamicJump0_foreverOutOfGas', 'JDfromStorageDynamicJump0_foreverOutOfGas', 'ABAcalls1', 'ABAcalls3', 'CallToNameRegistratorTooMuchMemory1','callcodeToNameRegistrator0'):
             skip = True
-        #print filename, test_name, tests[test_name]    
-        name = 'test_%s_%s'%(filename[:-5],test_name)
-        name = str(name.replace('.', '_'))
-        print(gen_test(testcase, test_name, skip))
+        print(gen_test(testcase, filename, skip))
 
     print('''
 if __name__ == '__main__':
