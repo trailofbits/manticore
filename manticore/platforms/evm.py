@@ -17,12 +17,12 @@ import sha3
 
 logger = logging.getLogger(__name__)
 
-#fixme make it gobal using this https://docs.python.org/3/library/configparser.html
+#fixme make it global using this https://docs.python.org/3/library/configparser.html
 #and save it at the workspace so results are reproducible
 config = namedtuple("config", "out_of_gas")
 config.out_of_gas = None  # 0: default not enough gas, 1 default to always enough gas, 2: for on both
 
-# Auxiliar constants and functions
+# Auxiliary constants and functions
 TT256 = 2 ** 256
 TT256M1 = 2 ** 256 - 1
 MASK160 = 2 ** 160 - 1
@@ -167,14 +167,14 @@ class InvalidOpcode(EndTx):
 
 
 class StackOverflow(EndTx):
-    ''' Attemped to push more than 1024 items '''
+    ''' Attempted to push more than 1024 items '''
 
     def __init__(self):
         super().__init__('THROW')
 
 
 class StackUnderflow(EndTx):
-    ''' Attemped to pop from an empty stack '''
+    ''' Attempted to pop from an empty stack '''
 
     def __init__(self):
         super().__init__('THROW')
@@ -522,7 +522,7 @@ class EVM(Eventful):
         _decoding_cache[pc] = instruction
         return instruction
 
-    # auxiliar funcs
+    # auxiliary funcs
     # Stack related
     def _push(self, value):
         '''
@@ -566,7 +566,7 @@ class EVM(Eventful):
         #FIXME add configurable checks here
         config.out_of_gas = 3
 
-        # Iff both are concrete values...
+        # If both are concrete values...
         if not issymbolic(self._gas) and not issymbolic(fee):
             if self._gas < fee:
                 logger.debug("Not enough gas for instruction")
@@ -622,7 +622,7 @@ class EVM(Eventful):
         return arguments
 
     def _top_arguments(self):
-        #Get arguments (imm, top). Stack is not chanaged
+        #Get arguments (imm, top). Stack is not changed
         current = self.instruction
         arguments = []
         if current.has_operand:
@@ -919,27 +919,27 @@ class EVM(Eventful):
     ############################################################################
     # Comparison & Bitwise Logic Operations
     def LT(self, a, b):
-        '''Less-than comparision'''
+        '''Less-than comparison'''
         return Operators.ITEBV(256, Operators.ULT(a, b), 1, 0)
 
     def GT(self, a, b):
-        '''Greater-than comparision'''
+        '''Greater-than comparison'''
         return Operators.ITEBV(256, Operators.UGT(a, b), 1, 0)
 
     def SLT(self, a, b):
-        '''Signed less-than comparision'''
+        '''Signed less-than comparison'''
         # http://gavwood.com/paper.pdf
         s0, s1 = to_signed(a), to_signed(b)
         return Operators.ITEBV(256, s0 < s1, 1, 0)
 
     def SGT(self, a, b):
-        '''Signed greater-than comparision'''
+        '''Signed greater-than comparison'''
         # http://gavwood.com/paper.pdf
         s0, s1 = to_signed(a), to_signed(b)
         return Operators.ITEBV(256, s0 > s1, 1, 0)
 
     def EQ(self, a, b):
-        '''Equality comparision'''
+        '''Equality comparison'''
         return Operators.ITEBV(256, a == b, 1, 0)
 
     def ISZERO(self, a):
@@ -1859,7 +1859,7 @@ class EVMWorld(Platform):
         return self._world_state[address]['storage']
 
     def _set_storage(self, address, storage):
-        """ Private auxiliar function to replace the storage """
+        """ Private auxiliary function to replace the storage """
         self._world_state[address]['storage'] = storage
 
     def set_balance(self, address, value):
@@ -1984,9 +1984,9 @@ class EVMWorld(Platform):
         if address is None:
             address = self.new_address()
         if address in self.accounts:
-            # FIXME account may have been created via selfdestruct destinatary
-            # or CALL and may contain some ether already. Though if it was a
-            # selfdestroyed address it can not be reused
+            # FIXME account may have been created via selfdestruct destination
+            # or CALL and may contain some ether already, though if it was a
+            # selfdestructed address, it can not be reused
             raise EthereumError('The account already exists')
         if storage is None:
             storage = self.constraints.new_array(index_bits=256, value_bits=256, name='STORAGE_{:x}'.format(address), avoid_collisions=True)
@@ -2084,7 +2084,7 @@ class EVMWorld(Platform):
             def set_caller(state, solution):
                 world = state.platform
                 world._pending_transaction = sort, address, price, data, solution, value, gas
-            #Constraint it so it can range over all normal accounts
+            #Constrain it so it can range over all normal accounts
             cond = self._constraint_to_accounts(caller, ty='normal')
             self.constraints.add(cond)
             raise Concretize('Concretizing caller on transaction',
@@ -2112,7 +2112,7 @@ class EVMWorld(Platform):
             raise EVMException('Caller account does not exist')
 
         if address not in self.accounts:
-            # Creating a unaccessible account
+            # Creating an unaccessible account
             self.create_account(address=address)
 
         # Check depth

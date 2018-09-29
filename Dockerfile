@@ -13,6 +13,7 @@ USER manticore
 WORKDIR /home/manticore
 ENV HOME /home/manticore
 ENV PATH $PATH:$HOME/.local/bin
+ENV LANG C.UTF-8
 
 RUN git clone https://github.com/trailofbits/manticore.git
 RUN cd manticore && pip3 install --user .

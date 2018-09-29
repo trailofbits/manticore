@@ -340,7 +340,7 @@ class State(Eventful):
     def solve_max(self, expr):
         '''
         Solves a symbolic :class:`~manticore.core.smtlib.expression.Expression` into
-        its maximun solution
+        its maximum solution
 
         :param manticore.core.smtlib.Expression expr: Symbolic value to solve
         :return: Concrete value
@@ -354,7 +354,7 @@ class State(Eventful):
     def solve_min(self, expr):
         '''
         Solves a symbolic :class:`~manticore.core.smtlib.expression.Expression` into
-        its minimun solution
+        its minimum solution
 
         :param manticore.core.smtlib.Expression expr: Symbolic value to solve
         :return: Concrete value

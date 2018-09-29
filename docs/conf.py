@@ -156,12 +156,12 @@ texinfo_documents = [
 # -- Custom
 
 # our setup.py does not install z3-solver when on rtd because
-# for some reason z3 it built during the dep install process,
-# and rtd ooms. something related to `python setup.py --force`
+# for some reason z3 is built during the dep install process,
+# and rtd ooms (something related to `python setup.py --force`)
 
 # so because z3-solver is not installed as a dep, but
 # rtd still does `import manticore`, we need to mock the environment
-# enough to make manticore importable. specifically, we need to mock
+# enough to make Manticore importable. specifically, we need to mock
 # things so a Z3Solver can be constructed.
 
 

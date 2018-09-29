@@ -4,8 +4,9 @@
 # A solver maintains a companion smtlib capable process connected via stdio.
 # It can be in 4 main states: None, unknown, sat, unsat
 # None      nothing was yet sent to the smtlib process. Al the state is only at the python side
-# unknown   is an error state. Some query sent early was unsuccessful or timed out. Further
-#           interaction with the smtlib process will probably kept beign unknown. An exception is raised.
+# unknown   is an error state. Some query sent earlier was unsuccessful or timed out.
+#           Further interaction with the smtlib process will probably keep returning
+#           unknown. An exception is raised.
 # sat       the current set of constraints is satisfiable and has at least one solution
 # unsat     the current set of constraints is impossible
 #
@@ -15,6 +16,8 @@
 # You can add new constraints. A new constraint may change the state from {None, sat} to {sat, unsat, unknown}
 from abc import ABCMeta, abstractmethod
 from subprocess import PIPE, Popen, check_output
+
+from ...exceptions import Z3NotFoundError, SolverException, SolverUnknown, TooManySolutions
 from . import operators as Operators
 from .expression import *
 from .constraints import *
@@ -30,31 +33,13 @@ import collections
 logger = logging.getLogger(__name__)
 
 
-class Z3NotFoundError(EnvironmentError):
-    pass
-
-
-class SolverException(Exception):
-    pass
-
-
-class SolverUnknown(SolverException):
-    pass
-
-
-class TooManySolutions(SolverException):
-    def __init__(self, solutions):
-        super().__init__("Max number of different solutions hit")
-        self.solutions = solutions
-
-
 class Solver(object, metaclass=ABCMeta):
     @abstractmethod
     def __init__(self):
         pass
 
     def optimize(self, constraints, X, operation, M=10000):
-        ''' Iterativelly finds the maximum or minimal value for the operation
+        ''' Iteratively finds the maximum or minimal value for the operation
             (Normally Operators.UGT or Operators.ULT)
             :param constraints: the constraints set
             :param X: a symbol or expression
@@ -89,7 +74,7 @@ class Solver(object, metaclass=ABCMeta):
         raise Exception("Abstract method not implemented")
 
     def max(self, constraints, X, M=10000):
-        ''' Iterativelly finds the maximum value for a symbol.
+        ''' Iteratively finds the maximum value for a symbol.
             :param X: a symbol or expression
             :param M: maximum number of iterations allowed
         '''
@@ -97,7 +82,7 @@ class Solver(object, metaclass=ABCMeta):
         return self.optimize(constraints, X, 'maximize')
 
     def min(self, constraints, X, M=10000):
-        ''' Iterativelly finds the minimum value for a symbol.
+        ''' Iteratively finds the minimum value for a symbol.
             :param X: a symbol or expression
             :param M: maximum number of iterations allowed
         '''
@@ -179,7 +164,7 @@ class Z3Solver(Solver):
         try:
             self._proc = Popen(self._command.split(' '), stdin=PIPE, stdout=PIPE, bufsize=0, universal_newlines=True)
         except OSError as e:
-            print(e, "Probably too  much cached expressions? visitors._cache...")
+            print(e, "Probably too many cached expressions? visitors._cache...")
             # Z3 was removed from the system in the middle of operation
             raise Z3NotFoundError  # TODO(mark) don't catch this exception in two places
 
@@ -337,7 +322,7 @@ class Z3Solver(Solver):
         self._send('(push 1)')
 
     def _pop(self):
-        ''' Recall the last pushed constraint store  and state. '''
+        ''' Recall the last pushed constraint store and state. '''
         self._send('(pop 1)')
 
     #@memoized
@@ -400,7 +385,7 @@ class Z3Solver(Solver):
 
     #@memoized
     def optimize(self, constraints, x, goal, M=10000):
-        ''' Iterativelly finds the maximum or minimal value for the operation
+        ''' Iteratively finds the maximum or minimal value for the operation
             (Normally Operators.UGT or Operators.ULT)
             :param X: a symbol or expression
             :param M: maximum number of iterations allowed
