@@ -126,7 +126,8 @@ class Eventful(object, metaclass=EventsGatherMetaclass):
 
         # The include_source flag indicates to prepend the source of the event in
         # the callback signature. This is set on forward_events_from/to
-        for sink, include_source in self._forwards.items():
+        items = tuple(self._forwards.items())
+        for sink, include_source in items:
             if include_source:
                 sink._publish_impl(_name, self, *args, **kwargs)
             else:

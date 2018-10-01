@@ -16,7 +16,7 @@ from manticore.core.smtlib import ConstraintSet, operators
 from manticore.core.smtlib.expression import BitVec
 from manticore.core.smtlib import solver
 from manticore.core.state import State
-from manticore.ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, Detector, NoAliveStates, ABI, EthereumError, DetectReentrancy
+from manticore.ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, Detector, NoAliveStates, ABI, EthereumError, DetectReentrancyAdvanced
 from manticore.platforms.evm import EVMWorld, ConcretizeStack, concretized_args, Return, Stop
 from manticore.core.smtlib.visitors import pretty_print, translate_to_smtlib, simplify, to_constant
 
@@ -43,12 +43,12 @@ class EthBenchmark(unittest.TestCase):
 
     def _test(self, name, should_find):
         """
-        Tests DetectInvalid over the consensys benchmark suit
+        Tests DetectInvalid over the consensys benchmark suite
         """
         mevm = self.mevm
         mevm.register_detector(DetectInvalid())
         mevm.register_detector(DetectIntegerOverflow())
-        mevm.register_detector(DetectReentrancy())
+        mevm.register_detector(DetectReentrancyAdvanced())
 
         filename = os.path.join(THIS_DIR, 'binaries', 'benchmark', '{}.sol'.format(name))
 
@@ -156,7 +156,7 @@ class EthBenchmark(unittest.TestCase):
 
     def test_reentrancy_dao(self):
         name = inspect.currentframe().f_code.co_name[5:]
-        self._test(name, {(247, 'Reentrancy muti-million ether bug', False)})
+        self._test(name, {(247, 'Reentrancy multi-million ether bug', False)})
 
     @unittest.skip('too slow')  #FIXME #TODO
     def test_eth_tx_order_dependence_multitx_1(self):

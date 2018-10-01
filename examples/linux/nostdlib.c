@@ -1,5 +1,5 @@
 /* Minimal toy example with some input output no stdlib
- * Symbolic values are read from stdin using int80 or syscall. The program has 2 posible paths
+ * Symbolic values are read from stdin using int80 or syscall. The program has 2 possible paths
  * 
  * Compile with :
  *   $ gcc -fno-builtin -static -nostdlib -m32  -fomit-frame-pointer  toy001.c  -o toy001

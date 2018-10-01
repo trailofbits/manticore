@@ -71,7 +71,7 @@ class Operation(Expression):
         assert all(isinstance(x, Expression) for x in operands)
         self._operands = operands
 
-        # If taint was not forced by a keyword argument calculate default
+        # If taint was not forced by a keyword argument, calculate default
         if 'taint' not in kwargs:
             kwargs['taint'] = reduce(lambda x, y: x.union(y.taint), operands, frozenset())
 
@@ -412,7 +412,6 @@ class BitVecConstant(BitVec, Constant):
 
 class BitVecOperation(BitVec, Operation):
     def __init__(self, size, *operands, **kwargs):
-        #assert all(x.size == size for x in operands)
         super().__init__(size, *operands, **kwargs)
 
 
@@ -596,7 +595,7 @@ class Array(Expression):
 
     def cast(self, possible_array):
         if isinstance(possible_array, bytearray):
-            # FIXME Ths should be related to a constrainSet
+            # FIXME This should be related to a constrainSet
             arr = ArrayVariable(self.index_bits, len(possible_array), 8)
             for pos, byte in enumerate(possible_array):
                 arr = arr.store(pos, byte)
@@ -636,7 +635,8 @@ class Array(Expression):
         return self._index_max
 
     def select(self, index):
-        return ArraySelect(self, self.cast_index(index))
+        index = self.cast_index(index)
+        return ArraySelect(self, index)
 
     def store(self, index, value):
         return ArrayStore(self, self.cast_index(index), self.cast_value(value))
@@ -735,7 +735,7 @@ class Array(Expression):
         return new_arr
 
     def __radd__(self, other):
-        if not isinstance(other, (Array, bytearray)):
+        if not isinstance(other, (Array, bytearray, bytes)):
             raise TypeError("can't concat Array to {}".format(type(other)))
         if isinstance(other, Array):
             if self.index_bits != other.index_bits or self.value_bits != other.value_bits:
@@ -852,7 +852,7 @@ class ArrayProxy(Array):
             self._array = array
             self._name = array.name
         else:
-            #arrayproxy for an prepopulated array
+            #arrayproxy for a prepopulated array
             super().__init__(array.index_bits, array.index_max, array.value_bits)
             self._name = array.underlying_variable.name
             self._array = array
@@ -894,6 +894,7 @@ class ArrayProxy(Array):
         if self.index_max is not None:
             from manticore.core.smtlib.visitors import simplify
             index = simplify(BitVecITE(self.index_bits, index < 0, self.index_max + index + 1, index))
+
         if isinstance(index, Constant) and index.value in self._concrete_cache:
             return self._concrete_cache[index.value]
 
@@ -909,8 +910,8 @@ class ArrayProxy(Array):
         if isinstance(index, Constant):
             self._concrete_cache[index.value] = value
         self.written.add(index)
-        auxiliar = self._array.store(index, value)
-        self._array = auxiliar
+        auxiliary = self._array.store(index, value)
+        self._array = auxiliary
         return self
 
     def __getitem__(self, index):

@@ -195,7 +195,7 @@ class PrettyPrinter(Visitor):
         '''
         Overload Visitor.visit because:
         - We need a pre-order traversal
-        - We use a recursion as it makes eaiser to keep track of the indentation
+        - We use a recursion as it makes it easier to keep track of the indentation
 
         '''
         self._method(expression)
@@ -203,7 +203,7 @@ class PrettyPrinter(Visitor):
     def _method(self, expression, *args):
         '''
         Overload Visitor._method because we want to stop to iterate over the
-        visit_ functions as soon as a valide visit_ function is found
+        visit_ functions as soon as a valid visit_ function is found
         '''
         assert expression.__class__.__mro__[-1] is object
         for cls in expression.__class__.__mro__:
@@ -393,15 +393,18 @@ class ArithmeticSimplifier(Visitor):
             return BitVecITE(expression.size, *operands, taint=expression.taint)
 
     def visit_BitVecExtract(self, expression, *operands):
-        ''' extract(0,sizeof(a))(a)  ==> a
-            extract(0, 16 )( concat(a,b,c,d) ) => concat(c, d)
+        ''' extract(sizeof(a), 0)(a)  ==> a
+            extract(16, 0)( concat(a,b,c,d) ) => concat(c, d)
             extract(m,M)(and/or/xor a b ) => and/or/xor((extract(m,M) a) (extract(m,M) a)
         '''
         op = expression.operands[0]
         begining = expression.begining
         end = expression.end
 
-        if isinstance(op, BitVecConcat):
+        # extract(sizeof(a), 0)(a)  ==> a
+        if begining == 0 and end + 1 == op.size:
+            return op
+        elif isinstance(op, BitVecConcat):
             new_operands = []
             bitcount = 0
             for item in reversed(op.operands):
@@ -470,7 +473,7 @@ class ArithmeticSimplifier(Visitor):
         ''' ct & x => x & ct                move constants to the right
             a & 0 => 0                      remove zero
             a & 0xffffffff => a             remove full mask
-            (b & ct2) & ct => b & (ct&ct2)  ?
+            (b & ct2) & ct => b & (ct&ct2)  associative property
             (a & (b | c) => a&b | a&c       distribute over |
         '''
         left = expression.operands[0]
@@ -515,7 +518,8 @@ class ArithmeticSimplifier(Visitor):
 
         if isinstance(index, BitVecConstant):
             ival = index.value
-            # props are slow and using them tight loops should be avoided, esp when they offer no additional validation
+
+            # props are slow and using them in tight loops should be avoided, esp when they offer no additional validation
             # arr._operands[1] = arr.index, arr._operands[0] = arr.array
             while isinstance(arr, ArrayStore) and isinstance(arr._operands[1], BitVecConstant) and arr._operands[1]._value != ival:
                 arr = arr._operands[0]  # arr.array
@@ -657,6 +661,7 @@ class TranslatorSmtlib(Translator):
         array_smt, index_smt = operands
         if isinstance(expression.array, ArrayStore):
             array_smt = self._add_binding(expression.array, array_smt)
+
         return '(select %s %s)' % (array_smt, index_smt)
 
     def visit_Operation(self, expression, *operands):
@@ -689,7 +694,7 @@ def translate_to_smtlib(expression, **kwargs):
 
 
 class Replace(Visitor):
-    ''' Simple visitor to replaces expresions '''
+    ''' Simple visitor to replaces expressions '''
 
     def __init__(self, bindings=None, **kwargs):
         super().__init__(**kwargs)

@@ -51,7 +51,6 @@ class ConstraintSet(object):
         :param check: Currently unused.
         :return:
         '''
-        # XXX(yan): check is an unused param
         if isinstance(constraint, bool):
             constraint = BoolConstant(constraint)
         assert isinstance(constraint, Bool)
@@ -65,15 +64,20 @@ class ConstraintSet(object):
 
         if isinstance(constraint, BoolConstant):
             if not constraint.value:
-                logger.info("Adding an imposible constant constraint")
+                logger.info("Adding an impossible constant constraint")
                 self._constraints = [constraint]
             else:
                 return
 
         self._constraints.append(constraint)
 
+        if check:
+            from manticore.core.smtlib import solver
+            if not solver.check(self):
+                raise ValueError("Added an impossible constraint")
+
     def _get_sid(self):
-        ''' Returns an unique id. '''
+        ''' Returns a unique id. '''
         assert self._child is None
         self._sid += 1
         return self._sid
@@ -171,13 +175,13 @@ class ConstraintSet(object):
         self._declarations[var.name] = var
         return var
 
-    def get_variable(self, name):
-        ''' Returns the variable declared under name or None if it does not exists '''
-        return self._declarations.get(name)
-
     def get_declared_variables(self):
         ''' Returns the variable expressions of this constraint set '''
         return self._declarations.values()
+
+    def get_variable(self, name):
+        ''' Returns the variable declared under name or None if it does not exists '''
+        return self._declarations.get(name)
 
     @property
     def declarations(self):
@@ -214,7 +218,7 @@ class ConstraintSet(object):
         return self.to_string()
 
     def _make_unique_name(self, name='VAR'):
-        ''' Makes an uniq variable name'''
+        ''' Makes a unique variable name'''
         # the while loop is necessary because appending the result of _get_sid()
         # is not guaranteed to make a unique name on the first try; a colliding
         # name could have been added previously
@@ -240,7 +244,7 @@ class ConstraintSet(object):
 
             :param expression: the potentially foreign expression
             :param name_migration_map: mapping of already migrated variables. maps from string name of foreign variable to its currently existing migrated string name. this is updated during this migration.
-            :return: a migrated expresion where all the variables are local. name_migration_map is updated
+            :return: a migrated expression where all the variables are local. name_migration_map is updated
 
         '''
         if name_migration_map is None:
@@ -265,7 +269,7 @@ class ConstraintSet(object):
             else:
                 # foreign_var was not found in the local declared variables nor
                 # any variable with the same name was previously migrated
-                # lets make a new uniq internal name for it
+                # let's make a new unique internal name for it
                 migrated_name = foreign_var.name
                 if migrated_name in self._declarations:
                     migrated_name = self._make_unique_name(foreign_var.name + '_migrated')
@@ -284,15 +288,15 @@ class ConstraintSet(object):
                 # Update the name to name mapping
                 name_migration_map[foreign_var.name] = new_var.name
 
-        #  Actually replace each appearence of migrated variables by the new ones
+        #  Actually replace each appearance of migrated variables by the new ones
         migrated_expression = replace(expression, object_migration_map)
         return migrated_expression
 
     def new_bool(self, name=None, taint=frozenset(), avoid_collisions=False):
         ''' Declares a free symbolic boolean in the constraint store
             :param name: try to assign name to internal variable representation,
-                         if not uniq a numeric nonce will be appended
-            :param avoid_collisions: potentially avoid_collisions the variable to avoid name colisions if True
+                         if not unique, a numeric nonce will be appended
+            :param avoid_collisions: potentially avoid_collisions the variable to avoid name collisions if True
             :return: a fresh BoolVariable
         '''
         if name is None:
@@ -309,8 +313,8 @@ class ConstraintSet(object):
         ''' Declares a free symbolic bitvector in the constraint store
             :param size: size in bits for the bitvector
             :param name: try to assign name to internal variable representation,
-                         if not uniq a numeric nonce will be appended
-            :param avoid_collisions: potentially avoid_collisions the variable to avoid name colisions if True
+                         if not unique, a numeric nonce will be appended
+            :param avoid_collisions: potentially avoid_collisions the variable to avoid name collisions if True
             :return: a fresh BitVecVariable
         '''
         if not (size == 1 or size % 8 == 0):
@@ -330,9 +334,9 @@ class ConstraintSet(object):
             :param index_bits: size in bits for the array indexes one of [32, 64]
             :param value_bits: size in bits for the array values
             :param name: try to assign name to internal variable representation,
-                         if not uniq a numeric nonce will be appended
-            :param index_max: upper limit for indexes on ths array (#FIXME)
-            :param avoid_collisions: potentially avoid_collisions the variable to avoid name colisions if True
+                         if not unique, a numeric nonce will be appended
+            :param index_max: upper limit for indexes on this array (#FIXME)
+            :param avoid_collisions: potentially avoid_collisions the variable to avoid name collisions if True
             :return: a fresh ArrayProxy
         '''
         if name is None:
