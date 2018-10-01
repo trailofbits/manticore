@@ -73,8 +73,7 @@ class Transaction(object):
 
     def to_dict(self, mevm):
         """
-        Used
-        :return:
+        Only meant to be used with concrete Transaction objects! (after calling .concretize())
         """
         return dict(type=self.sort,
                     from_address=self.caller,
