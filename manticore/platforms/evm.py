@@ -15,6 +15,10 @@ import pyevmasm as EVMAsm
 import logging
 from collections import namedtuple
 import sha3
+if not hasattr(sha3, 'keccak_256'):
+    # some installs of pysha3 collide with Python3's internal sha3 implementation
+    # so manually import it:
+    import _pysha3 as sha3
 
 logger = logging.getLogger(__name__)
 
