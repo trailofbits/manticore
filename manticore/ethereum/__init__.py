@@ -1317,15 +1317,7 @@ class ManticoreEVM(Manticore):
                     tx_summary.write("Transactions No. %d\n" % blockchain.transactions.index(sym_tx))
 
                     conc_tx = sym_tx.concretize(state)
-                    txlist.append(dict(type=conc_tx.sort,
-                                       from_address=conc_tx.caller,
-                                       from_name=self.account_name(conc_tx.caller),
-                                       to_address=conc_tx.address,
-                                       to_name=self.account_name(conc_tx.address),
-                                       value=conc_tx.value,
-                                       gas=conc_tx.gas,
-                                       data=binascii.hexlify(conc_tx.data).decode()))
-
+                    txlist.append(conc_tx.to_dict(self))
 
                     is_something_symbolic = sym_tx.dump(tx_summary, state, self, conc_tx=conc_tx)
 

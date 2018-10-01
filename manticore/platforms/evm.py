@@ -71,6 +71,20 @@ class Transaction(object):
         return Transaction(self.sort, conc_address, self.price, conc_data, conc_caller, conc_value, conc_gas,
                            depth=self.depth, result=self.result, return_data=bytearray(conc_return_data))
 
+    def to_dict(self, mevm):
+        """
+        Used
+        :return:
+        """
+        return dict(type=self.sort,
+                    from_address=self.caller,
+                    from_name=mevm.account_name(self.caller),
+                    to_address=self.address,
+                    to_name=mevm.account_name(self.address),
+                    value=self.value,
+                    gas=self.gas,
+                    data=binascii.hexlify(self.data).decode())
+
     def dump(self, stream, state, mevm, conc_tx=None):
         """
         Concretize and write a human readable version of the transaction into the stream. Used during testcase
