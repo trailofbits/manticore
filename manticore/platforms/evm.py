@@ -1839,7 +1839,8 @@ class EVMWorld(Platform):
         return self._world_state[address]['nonce']
 
     def increase_nonce(self, address):
-        return self._world_state[address]['nonce'] += 1
+        self._world_state[address]['nonce'] += 1
+        return self._world_state[address]['nonce']
 
     def set_balance(self, address, value):
         self._world_state[int(address)]['balance'] = value
