@@ -1,42 +1,42 @@
 # -*- coding: utf-8 -*-
 
-import collections
+import collections.abc
+
+def int_to_bytes(n):
+    return n.to_bytes((n.bit_length() + 7) // 8, 'big')
 
 def rlp_encode(item):
     if item is None or item == 0:
-        return chr(0x80)
-    elif isinstance(item, str) or isinstance(item, bytearray):
-        if len(item) == 1 and ord(item) < 0x80:
+        return b'\x80'
+    elif isinstance(item, str):
+        return rlp_encode(item.encode('utf8'))
+    elif isinstance(item, bytearray) or isinstance(item, bytes):
+        if len(item) == 1 and item[0] < 0x80:
             return item
         else:
             return encode_length(len(item), 0x80) + item
-    elif isinstance(item, collections.Sequence):
-        output = ''.join(map(rlp_encode, item))
+    elif isinstance(item, collections.abc.Sequence):
+        output = b''.join(map(rlp_encode, item))
         return encode_length(len(output), 0xC0) + output
     elif isinstance(item, int) or isinstance(item, long):
-        if item < 0x80:
-            return chr(item)
-        hex_str = "%x" % item
-        if len(hex_str) % 2:
-            hex_str = "0%s" % hex_str
-        return rlp_encode(hex_str.decode('hex'))
+        return rlp_encode(int_to_bytes(item))
     else:
         raise Exception("Cannot encode object of type %s" % type(item).__name__)
 
 def encode_length(length, offset):
     if length < 56:
-         return chr(length + offset)
+         return int_to_bytes(length + offset)
     elif length < 256**8:
          binary = to_binary(length)
-         return chr(len(binary) + offset + 55) + binary
+         return int_to_bytes(len(binary) + offset + 55) + binary
     else:
          raise Exception("length must be less than %d" % 256**8)
 
 def to_binary(x):
     if x == 0:
-        return ''
+        return b''
     else: 
-        return to_binary(int(x / 256)) + chr(x % 256)
+        return to_binary(int(x / 256)) + int_to_bytes(x % 256)
 
 if __name__ == "__main__":
     import sys
@@ -44,17 +44,16 @@ if __name__ == "__main__":
     def to_list(encoded):
         ret = []
         for c in encoded:
-            oc = ord(c)
-            if oc >= ord(' ') and oc <= ord('~'):
-                ret.append(c)
+            if c >= ord(' ') and c <= ord('~'):
+                ret.append(chr(c))
             else:
-                ret.append(oc)
+                ret.append(c)
         return ret
-    def to_str(exp):
+    def to_int(exp):
         if isinstance(exp, str):
-            return exp
+            return ord(exp)
         else:
-            return chr(exp)
+            return exp
     LOREM_IPSUM = "Lorem ipsum dolor sit amet, consectetur adipisicing elit"
     for item, expected in (
             ('dog', [0x83, 'd', 'o', 'g']),
@@ -69,9 +68,9 @@ if __name__ == "__main__":
             (LOREM_IPSUM, [ 0xb8, 0x38 ] + list(LOREM_IPSUM))
     ):
         sys.stdout.write("Testing %s" % str(item))
-        expected_str = ''.join(map(to_str, expected))
+        expected_bytes = bytes(map(to_int, expected))
         encoding = rlp_encode(item)
-        if encoding == expected_str:
+        if encoding == expected_bytes:
             sys.stdout.write(' ✓\n')
         else:
             sys.stdout.write(" ✗ expected %s but got %s\n" % (expected, to_list(encoding)))
