@@ -2028,7 +2028,7 @@ class EVMWorld(Platform):
         This is done when the byte code in the init byte array is actually run
         on the network.
         '''
-        address = self.create_account(self.create_address(caller))
+        address = self.create_account(self.new_address(sender=caller))
         self.start_transaction('CREATE', address, price, init, caller, balance, gas=gas)
         self._process_pending_transaction()
         return address
