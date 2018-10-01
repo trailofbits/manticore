@@ -71,7 +71,20 @@ class Transaction(object):
         return Transaction(self.sort, conc_address, self.price, conc_data, conc_caller, conc_value, conc_gas,
                            depth=self.depth, result=self.result, return_data=bytearray(conc_return_data))
 
-    def dump(self, stream, state, mevm):
+    def to_dict(self, mevm):
+        """
+        Only meant to be used with concrete Transaction objects! (after calling .concretize())
+        """
+        return dict(type=self.sort,
+                    from_address=self.caller,
+                    from_name=mevm.account_name(self.caller),
+                    to_address=self.address,
+                    to_name=mevm.account_name(self.address),
+                    value=self.value,
+                    gas=self.gas,
+                    data=binascii.hexlify(self.data).decode())
+
+    def dump(self, stream, state, mevm, conc_tx=None):
         """
         Concretize and write a human readable version of the transaction into the stream. Used during testcase
         generation.
@@ -85,7 +98,8 @@ class Transaction(object):
 
         is_something_symbolic = False
 
-        conc_tx = self.concretize(state)
+        if conc_tx is None:
+            conc_tx = self.concretize(state)
 
         # The result if any RETURN or REVERT
         stream.write("Type: %s (%d)\n" % (self.sort, self.depth))

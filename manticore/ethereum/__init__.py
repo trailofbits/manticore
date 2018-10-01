@@ -1309,14 +1309,22 @@ class ManticoreEVM(Manticore):
         # Transactions
 
         with testcase.open_stream('tx') as tx_summary:
-            is_something_symbolic = False
-            for sym_tx in blockchain.human_transactions:  # external transactions
-                tx_summary.write("Transactions No. %d\n" % blockchain.transactions.index(sym_tx))
+            with testcase.open_stream('tx.json') as txjson:
+                txlist = []
+                is_something_symbolic = False
 
-                is_something_symbolic = sym_tx.dump(tx_summary, state, self)
+                for sym_tx in blockchain.human_transactions:  # external transactions
+                    tx_summary.write("Transactions No. %d\n" % blockchain.transactions.index(sym_tx))
 
-            if is_something_symbolic:
-                tx_summary.write('\n\n(*) Example solution given. Value is symbolic and may take other values\n')
+                    conc_tx = sym_tx.concretize(state)
+                    txlist.append(conc_tx.to_dict(self))
+
+                    is_something_symbolic = sym_tx.dump(tx_summary, state, self, conc_tx=conc_tx)
+
+                if is_something_symbolic:
+                    tx_summary.write('\n\n(*) Example solution given. Value is symbolic and may take other values\n')
+
+                json.dump(txlist, txjson)
 
         # logs
         with testcase.open_stream('logs') as logs_summary:
