@@ -31,6 +31,11 @@ from .solidity import SolidityMetadata
 logger = logging.getLogger(__name__)
 
 
+def flagged(flag):
+    """
+    Return special character denoting concretization happened.
+    """
+    return '(*)' if flag else ''
 
 #
 # Plugins
@@ -1249,7 +1254,7 @@ class ManticoreEVM(Manticore):
             output.write('\n')
         return output.getvalue()
 
-    def _emit_testcase_summary(self, stream, state, message, flagged):
+    def _emit_testcase_summary(self, stream, state, message):
         blockchain = state.platform
         last_tx = blockchain.last_transaction
 
@@ -1342,78 +1347,6 @@ class ManticoreEVM(Manticore):
         if is_something_symbolic:
             stream.write('\n\n(*) Example solution given. Value is symbolic and may take other values\n')
 
-    def _emit_testcase_tx(self, stream, state, flagged):
-        blockchain = state.platform
-
-        is_something_symbolic = False
-        for tx in blockchain.human_transactions:  # external transactions
-            stream.write("Transactions No. %d\n" % blockchain.transactions.index(tx))
-
-            # The result if any RETURN or REVERT
-            stream.write("Type: %s (%d)\n" % (tx.sort, tx.depth))
-            caller_solution = state.solve_one(tx.caller)
-            caller_name = self.account_name(caller_solution)
-            stream.write("From: %s(0x%x) %s\n" % (caller_name, caller_solution, flagged(issymbolic(tx.caller))))
-            address_solution = state.solve_one(tx.address)
-            address_name = self.account_name(address_solution)
-            stream.write("To: %s(0x%x) %s\n" % (address_name, address_solution, flagged(issymbolic(tx.address))))
-            stream.write("Value: %d %s\n" % (state.solve_one(tx.value), flagged(issymbolic(tx.value))))
-            stream.write("Gas used: %d %s\n" % (state.solve_one(tx.gas), flagged(issymbolic(tx.gas))))
-            tx_data = state.solve_one(tx.data)
-            stream.write("Data: 0x{} {}\n".format(binascii.hexlify(tx_data).decode(), flagged(issymbolic(tx.data))))
-            if tx.return_data is not None:
-                return_data = state.solve_one(tx.return_data)
-                stream.write("Return_data: 0x{} {}\n".format(binascii.hexlify(return_data).decode(), flagged(issymbolic(tx.return_data))))
-            metadata = self.get_metadata(tx.address)
-            if tx.sort == 'CREATE':
-                if metadata is not None:
-                    args_data = tx.data[len(metadata._init_bytecode):]
-                    arguments = ABI.deserialize(metadata.get_constructor_arguments(), state.solve_one(args_data))
-                    is_argument_symbolic = any(map(issymbolic, arguments))
-                    stream.write('Function call:\n')
-                    stream.write("Constructor(")
-                    stream.write(','.join(map(repr, map(state.solve_one, arguments))))
-                    stream.write(') -> %s %s\n' % (tx.result, flagged(is_argument_symbolic)))
-
-            if tx.sort == 'CALL':
-                if metadata is not None:
-                    calldata = state.solve_one(tx.data)
-                    is_calldata_symbolic = issymbolic(tx.data)
-
-                    function_id = calldata[:4]  # hope there is enough data
-                    signature = metadata.get_func_signature(function_id)
-                    function_name = metadata.get_func_name(function_id)
-                    if signature:
-                        _, arguments = ABI.deserialize(signature, calldata)
-                    else:
-                        arguments = (calldata,)
-
-                    return_data = None
-                    if tx.result == 'RETURN':
-                        ret_types = metadata.get_func_return_types(function_id)
-                        return_data = state.solve_one(tx.return_data)
-                        return_values = ABI.deserialize(ret_types, return_data)  # function return
-
-                    is_return_symbolic = issymbolic(tx.return_data)
-
-                    stream.write('\n')
-                    stream.write("Function call:\n")
-                    stream.write("%s(" % function_name)
-                    stream.write(','.join(map(repr, arguments)))
-                    stream.write(') -> %s %s\n' % (tx.result, flagged(is_calldata_symbolic)))
-
-                    if return_data is not None:
-                        if len(return_values) == 1:
-                            return_values = return_values[0]
-
-                        stream.write('return: %r %s\n' % (return_values, flagged(is_return_symbolic)))
-                    is_something_symbolic = is_calldata_symbolic or is_return_symbolic
-
-            stream.write('\n\n')
-
-        if is_something_symbolic:
-            stream.write('\n\n(*) Example solution given. Value is symbolic and may take other values\n')
-
     def _generate_testcase_callback(self, state, name, message=''):
         """
         Create a serialized description of a given state.
@@ -1428,8 +1361,6 @@ class ManticoreEVM(Manticore):
         #  so this function can be fully ported to EVMWorld.generate_workspace_files.
         blockchain = state.platform
 
-        def flagged(flag):
-            return '(*)' if flag else ''
         testcase = self._output.testcase(name.replace(' ', '_'))
         last_tx = blockchain.last_transaction
         if last_tx:
@@ -1456,12 +1387,19 @@ class ManticoreEVM(Manticore):
                         findings.write('\n')
 
         with testcase.open_stream('summary') as summary:
-            self._emit_testcase_summary(summary, state, message, flagged)
+            self._emit_testcase_summary(summary, state, message)
 
         # Transactions
 
         with testcase.open_stream('tx') as tx_summary:
-            self._emit_testcase_tx(tx_summary, state, flagged)
+            is_something_symbolic = False
+            for sym_tx in blockchain.human_transactions:  # external transactions
+                tx_summary.write("Transactions No. %d\n" % blockchain.transactions.index(sym_tx))
+
+                is_something_symbolic = sym_tx.dump(tx_summary, state, self)
+
+            if is_something_symbolic:
+                tx_summary.write('\n\n(*) Example solution given. Value is symbolic and may take other values\n')
 
         # logs
         with testcase.open_stream('logs') as logs_summary:
