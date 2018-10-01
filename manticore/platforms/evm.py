@@ -1974,9 +1974,6 @@ class EVMWorld(Platform):
                 # As per EIP 161, contract accounts are initialized with a nonce of 1
                 nonce = 1
 
-        if storage is None:
-            storage = self.constraints.new_array(index_bits=256, value_bits=256, name='STORAGE')
-
         if address is None:
             address = self.new_address(sender=sender, nonce=nonce)
         if address in self.accounts:
@@ -2105,7 +2102,7 @@ class EVMWorld(Platform):
         self._pending_transaction_concretize_address()
         self._pending_transaction_concretize_caller()
         if caller not in self.accounts:
-            raise EVMException('Caller account does not exist')
+            raise EVMException("Caller account %x does not exist; valid accounts: %s" % (caller, list(map(hex, self.accounts))))
 
         if address not in self.accounts:
             # Creating an unaccessible account
