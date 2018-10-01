@@ -4,6 +4,7 @@ import unittest
 from manticore.core.cpu.x86 import *
 from manticore.core.smtlib import Operators
 from manticore.core.memory import *
+from manticore.core.smtlib import BitVecOr
 from tests import mockmem
 from functools import reduce
 
@@ -66,7 +67,7 @@ class SymCPUTest(unittest.TestCase):
     def setUp(self):
         mem = mockmem.Memory()
         self.cpu = I386Cpu(mem) #TODO reset cpu in between tests...
-                    #TODO mock getchar/putchar in case the instructon access memory directly
+                    #TODO mock getchar/putchar in case the instruction accesses memory directly
 
     def tearDown(self):
         self.cpu = None

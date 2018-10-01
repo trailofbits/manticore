@@ -7,7 +7,7 @@
  *
  * Analyze it with:
  *  $ manticore strncmp
- *   - By default manticore will consider` all input of stdin symbolic
+ *   - By default, Manticore will consider` all input of stdin to be symbolic
  *
  * Expected output:
  * 2017-04-24 16:04:22,261: [30182] MAIN:INFO: Loading program: ['strncmp']

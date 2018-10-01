@@ -4,9 +4,10 @@ import random
 import logging
 import signal
 
+from ..exceptions import ExecutorError, SolverException
 from ..utils.nointerrupt import WithKeyboardInterruptAs
 from ..utils.event import Eventful
-from .smtlib import Z3Solver, Expression, SolverException
+from .smtlib import Z3Solver, Expression
 from .state import Concretize, TerminateState
 
 from .workspace import Workspace
@@ -86,8 +87,10 @@ class Random(Policy):
 class Uncovered(Policy):
     def __init__(self, executor, *args, **kwargs):
         super().__init__(executor, *args, **kwargs)
-        # hook on the necesary executor signals
+        # hook on the necessary executor signals
         # on callbacks save data in executor.context['policy']
+        with self._executor.locked_context() as ctx:
+            ctx['policy'] = {}
         self._executor.subscribe('will_load_state', self._register)
 
     def _register(self, *args):
@@ -101,7 +104,7 @@ class Uncovered(Policy):
 
     def summarize(self, state):
         ''' Save the last pc before storing the state '''
-        return state.cpu.PC
+        return state.platform.PC
 
     def choice(self, state_ids):
         # Use executor.context['uncovered'] = state_id -> stats
@@ -220,7 +223,7 @@ class Executor(Eventful):
             It needs a lock. Its used like this:
 
             with executor.context() as context:
-                vsited = context['visited']
+                visited = context['visited']
                 visited.append(state.cpu.PC)
                 context['visited'] = visited
         '''
@@ -228,14 +231,6 @@ class Executor(Eventful):
         with self._lock:
             if key is None:
                 yield self._shared_context
-            elif '.' in key:
-                keys = key.split('.')
-                with self.locked_context('.'.join(keys[:-1])) as sub_context:
-                    sub_sub_context = sub_context.get(keys[-1], None)
-                    if sub_sub_context is None:
-                        sub_sub_context = default()
-                    yield sub_sub_context
-                    sub_context[keys[-1]] = sub_sub_context
             else:
                 sub_context = self._shared_context.get(key, None)
                 if sub_context is None:
@@ -286,7 +281,7 @@ class Executor(Eventful):
     def _notify_stop_run(self):
         # notify siblings we are about to stop this run()
         self._running.value -= 1
-        if self._running.value < 0:
+        if self._running is None or self._running.value < 0:
             raise SystemExit
         self._lock.notify_all()
 
@@ -322,15 +317,15 @@ class Executor(Eventful):
         if self.is_shutdown():
             return None
 
-        # if not more states in the queue lets wait for some forks
+        # if not more states in the queue, let's wait for some forks
         while len(self._states) == 0:
-            # if no worker is running bail out
+            # if no worker is running, bail out
             if self.running == 0:
                 return None
-            # if a shutdown has been requested bail out
+            # if a shutdown has been requested, bail out
             if self.is_shutdown():
                 return None
-            # if there is actually some workers running wait for state forks
+            # if there ares actually some workers running, wait for state forks
             logger.debug("Waiting for available states")
             self._lock.wait()
 
@@ -385,7 +380,7 @@ class Executor(Eventful):
         solutions = state.concretize(expression, policy)
 
         if not solutions:
-            logger.info("Forking on unfeasible constraint set")
+            raise ExecutorError("Forking on unfeasible constraint set")
 
         if len(solutions) == 1:
             setstate(state, solutions[0])
@@ -411,7 +406,7 @@ class Executor(Eventful):
 
                 # enqueue new_state
                 state_id = self.enqueue(new_state)
-                # maintain a list of childres for logging purpose
+                # maintain a list of children for logging purpose
                 children.append(state_id)
 
         logger.info("Forking current state into states %r", children)

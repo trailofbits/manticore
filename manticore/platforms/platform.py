@@ -6,7 +6,7 @@ class OSException(Exception):
 
 
 class SyscallNotImplemented(OSException):
-    ''' Exception raised when you try to call a not implemented
+    ''' Exception raised when you try to call an unimplemented
         system call. Go to linux.py and add it!
     '''
 
