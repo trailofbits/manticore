@@ -1835,8 +1835,9 @@ class EVMWorld(Platform):
         return self._world_state[address]['nonce']
 
     def increase_nonce(self, address):
-        self._world_state[address]['nonce'] += 1
-        return self._world_state[address]['nonce']
+        new_nonce = self._world_state[address].get('nonce', 1) + 1
+        self._world_state[address]['nonce'] = new_nonce
+        return new_nonce
 
     def set_balance(self, address, value):
         self._world_state[int(address)]['balance'] = value
@@ -2146,11 +2147,9 @@ class EVMWorld(Platform):
             self._close_transaction('TXERROR', rollback=True)
 
         if caller not in self._world_state:
-            self._world_state[caller] = {}
-        if 'nonce' not in self._world_state[caller] or self._world_state[caller]['nonce'] is None:
-            self._world_state[caller]['nonce'] = 1
+            self._world_state[caller] = { 'nonce' : 1 }
         else:
-            self._world_state[caller]['nonce'] += 1
+            self.increase_nonce(caller)
 
         #Transaction to normal account
         if sort in ('CALL', 'DELEGATECALL') and not self.get_code(address):
