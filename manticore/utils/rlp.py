@@ -55,7 +55,7 @@ def rlp_encode(item):
     elif isinstance(item, collections.abc.Sequence):
         output = b''.join(map(rlp_encode, item))
         return encode_length(len(output), 0xC0) + output
-    elif isinstance(item, (int, long)):
+    elif isinstance(item, int):
         return rlp_encode(int_to_bytes(item))
     else:
         raise Exception("Cannot encode object of type %s" % type(item).__name__)
