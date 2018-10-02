@@ -2265,7 +2265,6 @@ class ManticoreEVM(Manticore):
     def _on_symbolic_sha3_callback(self, state, data, known_hashes):
         """ INTERNAL USE """
         assert issymbolic(data), 'Data should be symbolic here!'
-
         with self.locked_context('ethereum') as context:
             known_sha3 = context.get('_known_sha3', None)
             if known_sha3 is None:
@@ -2294,7 +2293,7 @@ class ManticoreEVM(Manticore):
                 data_hash = int(s.hexdigest(), 16)
                 results.append((data_concrete, data_hash))
                 known_hashes_cond = data_concrete == data
-                known_sha3.append((data_concrete, data_hash))
+                known_sha3.add((data_concrete, data_hash))
             not_known_hashes_cond = Operators.NOT(known_hashes_cond)
 
             # We need to fork/save the state
@@ -2310,6 +2309,7 @@ class ManticoreEVM(Manticore):
 
             if not state.can_be_true(known_hashes_cond):
                 raise TerminateState("There is not matching sha3 pair, bailing out")
+            state.constrain(known_hashes_cond)
 
             #send knwon hashes to evm
             known_hashes.update(results)

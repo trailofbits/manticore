@@ -999,12 +999,9 @@ class EVM(Eventful):
             self._publish('on_symbolic_sha3', data, known_sha3)  # This updates the local copy of sha3 with the pairs we need to explore
 
             value = 0  # never used
-            known_hashes_cond = False
             for key, hsh in known_sha3.items():
                 assert not issymbolic(key), "Saved sha3 data,hash pairs should be concrete"
-                cond = key == data
-                known_hashes_cond = Operators.OR(cond, known_hashes_cond)
-                value = Operators.ITEBV(256, cond, hsh, value)
+                value = Operators.ITEBV(256, key == data, hsh, value)
             return value
 
         value = sha3.keccak_256(data).hexdigest()
