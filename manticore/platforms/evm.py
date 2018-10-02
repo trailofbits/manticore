@@ -2010,8 +2010,7 @@ class EVMWorld(Platform):
         return address
 
     def create_contract(self, price=0, address=None, caller=None, balance=0, init=None, gas=2300):
-        '''
-            Create a contract account. Sends a transaction to initialize the contract
+        ''' Create a contract account. Sends a transaction to initialize the contract
             :param address: the address of the new account, if known. If omitted, a new address will be generated as closely to the Yellow Paper as possible.
             :param balance: the initial balance of the account in Wei
             :param init: the initialization code of the contract
@@ -2043,7 +2042,6 @@ class EVMWorld(Platform):
             :param value: the value, in Wei, passed to this account as part of the same procedure as execution. One Ether is defined as being 10**18 Wei.
             :param bytecode: the byte array that is the machine code to be executed.
             :param gas: gas budget for this transaction.
-
         '''
         assert self._pending_transaction is None, "Already started tx"
         self._pending_transaction = PendingTransaction(sort, address, price, data, caller, value, gas)
