@@ -1,5 +1,7 @@
 # Usage:
-# for i in tests/VMTests/*; do python3.6 make_evmtests.py $i > $DESTINATION/eth_`basename $i`.py; done
+# git clone https://github.com/ethereum/tests
+# for i in tests/EVM/VMTests/*; do python3.6 make_evmtests.py $i > $MANTICORE/tests/EVM/VMTests/eth_`basename $i`.py; done
+#MANTICORE is manticore source folder
 
 from pprint import pformat
 from io import StringIO
@@ -72,8 +74,9 @@ def gen_test(testcase, filename, skip):
     bytecode = unhexlify(testcase['exec']['code'][2:])
     disassemble = ''
     try:
-        disassemble = '\n                  '.join(EVMAsm.disassemble(bytecode, silent=True).split('\n'))
-    except:
+        #add silent=True when evmasm supports it
+        disassemble = '\n                  '.join(EVMAsm.disassemble(bytecode).split('\n'))
+    except Exception as e:
         pass
     sha256sum = hashlib.sha256(open(filename, 'rb').read()).hexdigest()
 
@@ -111,7 +114,7 @@ def gen_test(testcase, filename, skip):
                             )'''
 
         for key, value in account['storage'].items():
-            output += '''
+            output += f'''
         world.set_storage_data({account_address}, {key}, {value})'''
 
     address = int(testcase['exec']['address'], 0)
@@ -162,15 +165,6 @@ def gen_test(testcase, filename, skip):
         #If test end in exception ceck it here
         self.assertTrue(result in ('THROW'))'''
     else:
-        final_gas = testcase['gas']
-        output += f'''
-        # test spent gas
-        self.assertEqual(new_vm.gas, {final_gas})'''
-
-        output += '''
-        #check refund
-        #check logs
-        '''
 
         for address, account in testcase['post'].items():
             account_address = i(address)
@@ -195,6 +189,17 @@ def gen_test(testcase, filename, skip):
             for key, value in account['storage'].items():
                 output += f'''
         self.assertEqual(world.get_storage_data(account_address, {key}), {value})'''
+
+        final_gas = int(testcase['gas'], 0)
+        output += f'''
+        # test spent gas
+        self.assertEqual(new_vm.gas, {final_gas})'''
+
+        output += '''
+        #check callcreates
+        #check refund
+        #check logs
+        '''
 
     return output
 

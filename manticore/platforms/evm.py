@@ -10,6 +10,7 @@ from ..core.smtlib import solver, BitVec, Array, Operators, Constant, ArrayVaria
 from ..core.state import Concretize, TerminateState
 from ..utils.event import Eventful
 from ..core.smtlib.visitors import simplify, to_constant
+from ..exceptions import EthereumError
 import pyevmasm as EVMAsm
 import logging
 from collections import namedtuple
@@ -672,6 +673,9 @@ class EVM(Eventful):
             #Fix old bug in pyevmasm
             if instruction.semantics == 'PUSH' and instruction.fee == 0:
                 self._consume(3)
+            #@@@
+            #if instruction.semantics == 'EXP': # and instruction.fee == 0:
+            #    self._consume(10)
 
             self._consume(instruction.fee)
             arguments = self._pop_arguments()
@@ -896,14 +900,13 @@ class EVM(Eventful):
             The zero-th power of zero 0^0 is defined to be one
         '''
         # fixme integer bitvec
-        EXP_SUPPLEMENTAL_GAS = 50   # cost of EXP exponent per byte
-
         def nbytes(e):
-            result = 32
+            result = 0
             for i in range(32):
-                result = Operators.ITEBV(512, Operators.EXTRACT(e, i, 8) == 0, i, result)
+                result = Operators.ITEBV(512, e > (1<< i*8)-1, i+1, result)
             return result
-        self._consume(EXP_SUPPLEMENTAL_GAS * nbytes(exponent))
+        self._consume(10 * nbytes(exponent))
+
 
         return pow(base, exponent, TT256)
 
@@ -1455,7 +1458,7 @@ class EVM(Eventful):
             recipient = solver.get_value(self.constraints, recipient)
 
         if recipient not in self.world:
-            self.world.create_account(address=recipient, balance=0, code='', storage=None)
+            self.world.create_account(address=recipient)
 
         self.world.send_funds(address, recipient, self.world.get_balance(address))
         self.world.delete_account(address)
@@ -1576,7 +1579,7 @@ class EVMWorld(Platform):
         self._blocknumber = blocknumber
         self._difficulty = difficulty
         self._gaslimit = gaslimit
-        self._coinbaise = coinbase
+        self._coinbase = coinbase
         self._do_events()
 
     def __getstate__(self):
@@ -1880,11 +1883,11 @@ class EVMWorld(Platform):
 
     def get_code(self, address):
         if address not in self._world_state:
-            return bytearray()
+            return bytes()
         return self._world_state[address]['code']
 
     def set_code(self, address, data):
-        assert data is not None
+        assert data is not None and isinstance(data, (bytes, Array))
         if self._world_state[address]['code']:
             raise EVMException("Code already set")
         self._world_state[address]['code'] = data
@@ -1914,10 +1917,10 @@ class EVMWorld(Platform):
         return self._coinbase
 
     def block_timestamp(self):
-        return self._timestamp + len(self.human_transactions)/2000
+        return self._timestamp + len(self.human_transactions)//2000
 
     def block_number(self):
-        return self._block_number + len(self.human_transactions)/20
+        return self._blocknumber + len(self.human_transactions)//20
 
     def block_difficulty(self):
         return self._difficulty
@@ -1979,7 +1982,7 @@ class EVMWorld(Platform):
         except EndTx as ex:
             self._close_transaction(ex.result, ex.data, rollback=ex.is_rollback())
 
-    def create_account(self, address=None, balance=0, code='', storage=None, nonce=0):
+    def create_account(self, address=None, balance=0, code=b'', storage=None, nonce=0):
         ''' code is the runtime code '''
         if address is None:
             address = self.new_address()
@@ -1991,7 +1994,9 @@ class EVMWorld(Platform):
         if storage is None:
             storage = self.constraints.new_array(index_bits=256, value_bits=256, name='STORAGE_{:x}'.format(address), avoid_collisions=True)
         if code is None:
-            code = bytearray()
+            code = bytes()
+        if not isinstance(code, (bytes, Array)):
+            raise EthereumError('Wrong code type')
         self._world_state[address] = {}
         self._world_state[address]['nonce'] = 0
         self._world_state[address]['balance'] = balance
