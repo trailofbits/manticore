@@ -668,7 +668,12 @@ class EVM(Eventful):
             pc = self.pc
             instruction = self.instruction
             old_gas = self.gas
-            self._consume(instruction.fee)
+
+            # FIXME patch for pyevmasm
+            if instruction.semantics == 'PUSH':
+                self._consume(3)
+            else:
+                self._consume(instruction.fee)
             arguments = self._pop_arguments()
             self._checkpoint_data = (pc, old_gas, instruction, arguments)
         return self._checkpoint_data
