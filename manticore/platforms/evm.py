@@ -1978,10 +1978,7 @@ class EVMWorld(Platform):
         # nonce default to initial nonce
         if nonce is None:
             # As per EIP 161, contract accounts are initialized with a nonce of 1
-            if not code:
-                nonce = 0
-            else:
-                nonce = 1
+            nonce = 1 if code else 0
 
         if not isinstance(address, int):
             raise EthereumError('You must provide an address')
