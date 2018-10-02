@@ -9,10 +9,38 @@ def int_to_bytes(n):
         return n.to_bytes((n.bit_length() + 7) // 8, 'big')
 
 def rlp_encode(item):
-    ''' Recursive Length Prefix Encoding
+    r''' Recursive Length Prefix Encoding
         :param item: the object to encode, either a string, bytes, bytearray, int, long, or sequence
 
     https://github.com/ethereum/wiki/wiki/RLP
+
+    >>> rlp_encode('dog')
+    b'\x83dog'
+
+    >>> rlp_encode([ 'cat', 'dog' ])
+    b'\xc8\x83cat\x83dog'
+
+    >>> rlp_encode('')
+    b'\x80'
+
+    >>> rlp_encode([])
+    b'\xc0'
+
+    >>> rlp_encode(0)
+    b'\x80'
+
+    >>> rlp_encode('\x00')
+    b'\x00'
+
+    >>> rlp_encode(15)
+    b'\x0f'
+
+    >>> rlp_encode(1024)
+    b'\x82\x04\x00'
+
+    >>> rlp_encode([ [], [[]], [ [], [[]] ] ])
+    b'\xc7\xc0\xc1\xc0\xc3\xc0\xc1\xc0'
+
     '''
     if item is None or item == 0:
         return b'\x80'
