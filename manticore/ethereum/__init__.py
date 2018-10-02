@@ -325,16 +325,17 @@ class ManticoreEVM(Manticore):
         #solc path search is a mess #fixme
         #https://solidity.readthedocs.io/en/latest/layout-of-source-files.html
         current_folder = os.getcwd()
-        abs_filename = os.path.abspath(source_file.name)
-        working_folder, filename = os.path.split(abs_filename)
+        filepath = os.path.abspath(source_file.name)
+
+        filename = filepath[filepath.rindex(os.path.sep)+1:]
 
         solc_invocation = [solc] + list(solc_remaps) + [
             '--combined-json', 'abi,srcmap,srcmap-runtime,bin,hashes,bin-runtime',
             '--allow-paths', '.',
-            filename
+            filepath
         ]
 
-        p = Popen(solc_invocation, stdout=PIPE, stderr=PIPE, cwd=working_folder)
+        p = Popen(solc_invocation, stdout=PIPE, stderr=PIPE, cwd=current_folder)
         stdout, stderr = p.communicate()
 
         stdout, stderr = stdout.decode(), stderr.decode()
