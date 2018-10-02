@@ -46,7 +46,7 @@ def rlp_encode(item):
         return b'\x80'
     elif isinstance(item, str):
         return rlp_encode(item.encode('utf8'))
-    elif isinstance(item, bytearray) or isinstance(item, bytes):
+    elif isinstance(item, (bytearray, bytes)):
         if len(item) == 1 and item[0] < 0x80:
             # For a single byte whose value is in the [0x00, 0x7f] range, that byte is its own RLP encoding.
             return item
