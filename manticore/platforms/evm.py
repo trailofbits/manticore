@@ -6,7 +6,7 @@ import inspect
 from functools import wraps
 from ..utils.helpers import issymbolic, get_taints, taint_with, istainted
 from ..platforms.platform import *
-from ..core.smtlib import solver, BitVec, Array, Operators, Constant, ArrayVariable, BitVecConstant, translate_to_smtlib
+from ..core.smtlib import solver, BitVec, Array, Operators, Constant, ArrayVariable, BitVecConstant, translate_to_smtlib, to_constant
 from ..core.state import Concretize, TerminateState
 from ..utils.event import Eventful
 from ..core.smtlib.visitors import simplify
@@ -158,7 +158,8 @@ class EndTx(EVMException):
             assert self.result in {'THROW', 'TXERROR', 'REVERT'}
             return True
 
-
+    def __str__(self):
+        return f'EndTX<{self.result}>'
 class InvalidOpcode(EndTx):
     ''' Trying to execute invalid opcode '''
 
@@ -349,6 +350,25 @@ class EVM(Eventful):
             bytecode_symbolic[0:bytecode_size] = bytecode
             bytecode = bytecode_symbolic
 
+        #TODO: Handle the case in which bytecode is  symbolic (This happens at 
+        # CREATE instructions that has the arguments appended to the bytecode)
+        self._check_jumpdest = False
+        self._valid_jumpdests = set()
+
+
+        def f(b):
+            try:
+                for x in b:
+                    yield(to_constant(x))
+                for x in (0,)*32:
+                    yield(x)
+            except Exception as e:
+                print (e)
+                raise StopIteration
+        for i in EVMAsm.disassemble_all(f(bytecode)):
+            if i.mnemonic == 'JUMPDEST':
+                self._valid_jumpdests.add(i.pc)
+
         #A no code VM is used to execute transactions to normal accounts.
         #I'll execute a STOP and close the transaction
         #if len(bytecode) == 0:
@@ -379,6 +399,8 @@ class EVM(Eventful):
         max_size = len(self.data)
         self._used_calldata_size = 0
         self._calldata_size = len(self.data)
+        self._valid_jmpdests = set()
+
 
     @property
     def bytecode(self):
@@ -417,6 +439,8 @@ class EVM(Eventful):
         state['_checkpoint_data'] = self._checkpoint_data
         state['_used_calldata_size'] = self._used_calldata_size
         state['_calldata_size'] = self._calldata_size
+        state['_valid_jumpdests'] = self._valid_jumpdests
+        state['_check_jumpdest'] = self._check_jumpdest
         return state
 
     def __setstate__(self, state):
@@ -438,7 +462,8 @@ class EVM(Eventful):
         self.suicides = state['suicides']
         self._used_calldata_size = state['_used_calldata_size']
         self._calldata_size = state['_calldata_size']
-
+        self._valid_jumpdests = state['_valid_jumpdests']
+        self._check_jumpdest = state['_check_jumpdest']
         super().__setstate__(state)
 
     def _get_memfee(self, address, size=1):
@@ -681,6 +706,15 @@ class EVM(Eventful):
         self._pc = last_pc
         self._checkpoint_data = None
 
+    def _set_check_jmpdest(self):
+        self._check_jumpdest = True
+
+    def _check_jmpdest(self):
+        if self._check_jumpdest:
+            self._check_jumpdest = False
+            if self.pc not in self._valid_jmpdests:
+                raise InvalidOpcode()
+
     def _advance(self, result=None, exception=False):
         if self._checkpoint_data is None:
             return
@@ -689,6 +723,8 @@ class EVM(Eventful):
             if not last_instruction.is_branch:
                 #advance pc pointer
                 self.pc += last_instruction.size
+            else:
+                self._set_check_jmpdest()
             self._push_results(last_instruction, result)
         self._publish('did_evm_execute_instruction', last_instruction, last_arguments, result)
         self._publish('did_execute_instruction', last_pc, self.pc, last_instruction)
@@ -728,6 +764,7 @@ class EVM(Eventful):
                              setstate=setstate,
                              policy='ALL')
         try:
+            self._check_jmpdest()
             last_pc, last_gas, instruction, arguments = self._checkpoint()
             result = self._handler(*arguments)
             self._advance(result)

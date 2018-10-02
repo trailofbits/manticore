@@ -17,6 +17,8 @@ from manticore.core.state import State
 from manticore.ethereum import ManticoreEVM, DetectIntegerOverflow, Detector, NoAliveStates, ABI, EthereumError
 from manticore.platforms.evm import EVMWorld, ConcretizeStack, concretized_args, Return, Stop
 from manticore.core.smtlib.visitors import pretty_print, translate_to_smtlib, simplify, to_constant
+import pyevmasm as EVMAsm
+
 
 import shutil
 
@@ -860,3 +862,44 @@ class EthSolidityCompilerTest(unittest.TestCase):
                 self.assertIn("lib/B.sol", source_list)
         finally:
             shutil.rmtree(d)
+
+    def test_jmpdest_check(self):
+        '''
+        '''    
+    
+        constraints = ConstraintSet()
+        world = evm.EVMWorld(constraints)
+    
+        world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
+                             balance=100000000000000000000000,
+                             code=EVMAsm.assemble('PUSH1 0x5b\nPUSH1 0x1\nJUMP')
+                            )
+        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        price = 0x5af3107a4000
+        data = ''
+        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        value = 1000000000000000000
+        bytecode = world.get_code(address)        
+        gas = 100000
+
+        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
+
+        result = None
+        returndata = ''
+        try:
+            while True:
+                new_vm.execute()
+        except evm.EndTx as e:
+            result = e.result
+            if e.result in ('RETURN', 'REVERT'):
+                returndata = e.data
+        # test spent gas
+        self.assertEqual(result, 'THROW')
+        self.assertEqual(new_vm.gas, 99992)
+        #check refund
+        #check logs
+        
+
+
+if __name__ == '__main__':
+    unittest.main()
