@@ -1937,13 +1937,13 @@ class EVMWorld(Platform):
         if sender is not None and nonce is None:
             nonce = self.get_nonce(sender)
 
-        new_address = self._new_address(sender, nonce)
+        new_address = self.calculate_new_address(sender, nonce)
         if sender is None and new_address in self:
             return self.new_address(sender, nonce)
         return new_address
 
     @staticmethod
-    def _new_address(sender=None, nonce=None):
+    def calculate_new_address(sender=None, nonce=None):
         if sender is None:
             # Just choose a random address for regular accounts:
             new_address = random.randint(100, pow(2, 160))
@@ -2021,7 +2021,11 @@ class EVMWorld(Platform):
         This is done when the byte code in the init byte array is actually run
         on the network.
         '''
-        address = self.create_account(self.new_address(sender=caller))
+        expected_address = self.create_account(self.new_address(sender=caller))
+        if address is None:
+            address = expected_address
+        elif caller is not None and address != expected_address:
+            raise EVMException("Error: contract created from address %x with nonce %d was expected to be at address %x, but create_contract was called with address=%x" % (caller, self.get_nonce(caller), expected_address, address))
         self.start_transaction('CREATE', address, price, init, caller, balance, gas=gas)
         self._process_pending_transaction()
         return address

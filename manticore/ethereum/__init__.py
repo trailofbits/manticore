@@ -692,9 +692,12 @@ class ManticoreEVM(Manticore):
             # Address already used
             raise EthereumError("Address already used")
 
-        # Let's just choose the address ourself. This is not yellow paper material
         if address is None:
-            address = self.new_address()
+            # Assumes that:
+            # (1) the owner is a regular account and not a contract address; and
+            # (2) this is the first contract deployed by owner.
+            # Therefore, nonce = 0.
+            address = evm.EVMWorld.calculate_new_address(int(owner), nonce = 0)
 
         # Name check
         if name is None:
