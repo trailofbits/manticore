@@ -886,10 +886,6 @@ class ManticoreEVM(Manticore):
             raise ValueError('unsupported transaction type')
 
         if sort == 'CREATE':
-            #let's choose an address here for now #NOTYELLOW
-            if address is None:
-                address = self.new_address()
-
             # When creating data is the init_bytecode + arguments
             if len(data) == 0:
                 raise EthereumError("An initialization bytecode is needed for a CREATE")
@@ -907,6 +903,10 @@ class ManticoreEVM(Manticore):
 
             if '_pending_transaction' in state.context:
                 raise EthereumError("This is bad. It should not be a pending transaction")
+
+            # Choose an address here, because it will be dependent on the caller's nonce in this state
+            if address is None:
+                address = world.new_address(caller)
 
             # Migrate any expression to state specific constraint set
             caller, address, value, data = self._migrate_tx_expressions(state, caller, address, value, data)
