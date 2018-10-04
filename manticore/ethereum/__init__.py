@@ -675,20 +675,15 @@ class ManticoreEVM(Manticore):
     def get_nonce(self, address):
         # type forgiveness:
         address = int(address)
-        # get all states containing this address:
-        states = tuple(state for state in self.running_states if address in state.platform)
-        if not states:
+        # get all nonces for states containing this address:
+        nonces = set(state.platform.get_nonce(address) for state in self.running_states if address in state.platform)
+        if not nonces:
             raise NoAliveStates("There are no alive states containing address %x" % address)
-        if len(states) == 1:
-            return states[0].platform.get_nonce(address)
-        # if there are multiple states with this address, ensure that they all currently have the same nonce:
-        existing_nonces = set(state.platform.get_nonce(address) for state in states)
-        if len(existing_nonces) != 1:
+        elif len(nonces) != 1:
+            # if there are multiple states with this address, they all have to have the same nonce:
             raise EthereumError("Cannot increase the nonce of address %x because it exists in multiple states with different nonces" % address)
-        ret = None
-        for state in states:
-            ret = state.platform.get_nonce(address)
-        return ret
+        else:
+            return next(iter(nonces))
 
     def create_contract(self, owner, balance=0, address=None, init=None, name=None, gas=21000):
         """ Creates a contract
