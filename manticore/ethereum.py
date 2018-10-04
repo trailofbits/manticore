@@ -240,11 +240,8 @@ class Detector(Plugin):
 
 class VerboseTrace(Plugin):
     def will_evm_execute_instruction_callback(self, state, instruction, arguments):
-        world = state.platform
-        current_vm = world.current_vm
-        str_trace = state.context.get('str_trace', [])
-        str_trace.append(str(current_vm))
-        state.context['str_trace'] = str_trace
+        current_vm = state.platform.current_vm
+        state.setdefault('str_trace', []).append(str(current_vm))
 
     def on_finalize(self, state, testcase):
         with testcase.open_stream('str_trace') as str_trace_f:
