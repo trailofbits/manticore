@@ -688,16 +688,24 @@ class ManticoreEVM(Manticore):
         if not self.count_running_states():
             raise NoAliveStates
 
-        if address is not None and address in map(int, self.accounts.values()):
-            # Address already used
-            raise EthereumError("Address already used")
+        if isinstance(owner, EVMAccount):
+            nonce = owner.increment_nonce()
+        else:
+            for account in self.accounts.values():
+                if int(owner) == int(account):
+                    nonce = account.increment_nonce()
+                    break
+            else:
+                # assume that the owner is a regular account and not a contract address
+                nonce = 0
+                # TODO (ESultanik): Consider inspecting all of the accounts in current states to see if they are owner
+                # and, if so, and if there is a unique owner, use and increment its nonce
+        expected_address = evm.EVMWorld.calculate_new_address(int(owner), nonce=nonce)
 
         if address is None:
-            # Assumes that:
-            # (1) the owner is a regular account and not a contract address; and
-            # (2) this is the first contract deployed by owner.
-            # Therefore, nonce = 0.
-            address = evm.EVMWorld.calculate_new_address(int(owner), nonce=0)
+            address = expected_address
+        elif address != expected_address:
+            raise EthereumError("Address was expected to be %x but was given %x" % (expected_address, address))
 
         # Name check
         if name is None:
@@ -724,12 +732,20 @@ class ManticoreEVM(Manticore):
         assert name not in self.accounts
         return name
 
+    def _all_addresses(self):
+        """ Returns all addresses in all running states """
+        ret = set()
+        for state in self.running_states:
+            ret |= set(state.platform.accounts)
+        return ret
+
     def new_address(self):
         """ Create a fresh 160bit address """
-        new_address = random.randint(100, pow(2, 160))
-        if new_address in map(int, self.accounts.values()):
-            return self.new_address()
-        return new_address
+        all_addresses = self._all_addresses()
+        while True:
+            new_address = random.randint(100, pow(2, 160))
+            if new_address not in all_addresses:
+                return new_address
 
     def transaction(self, caller, address, value, data, gas=21000):
         """ Issue a symbolic transaction in all running states
@@ -859,7 +875,10 @@ class ManticoreEVM(Manticore):
         if isinstance(address, EVMAccount):
             address = int(address)
         if isinstance(caller, EVMAccount):
+            caller_nonce = caller.increment_nonce()
             caller = int(caller)
+        else:
+            caller_nonce = None
         #Defaults, call data is empty
         if data is None:
             data = bytearray(b"")
@@ -906,7 +925,7 @@ class ManticoreEVM(Manticore):
 
             # Choose an address here, because it will be dependent on the caller's nonce in this state
             if address is None:
-                address = world.new_address(caller)
+                address = world.new_address(caller, nonce=caller_nonce)
 
             # Migrate any expression to state specific constraint set
             caller, address, value, data = self._migrate_tx_expressions(state, caller, address, value, data)
