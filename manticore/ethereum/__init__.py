@@ -1096,7 +1096,7 @@ class ManticoreEVM(Manticore):
                 data_hash = int(s.hexdigest(), 16)
                 results.append((data_concrete, data_hash))
                 known_hashes_cond = data_concrete == data
-                known_sha3.append((data_concrete, data_hash))
+                known_sha3.add((data_concrete, data_hash))
             not_known_hashes_cond = Operators.NOT(known_hashes_cond)
 
             # We need to fork/save the state
@@ -1112,6 +1112,7 @@ class ManticoreEVM(Manticore):
 
             if not state.can_be_true(known_hashes_cond):
                 raise TerminateState("There is no matching sha3 pair, bailing out")
+            state.constrain(known_hashes_cond)
 
             #send known hashes to evm
             known_hashes.update(results)
