@@ -124,6 +124,9 @@ def parse_arguments():
     parser.add_argument('--no-testcases', action='store_true',
                         help='Do not generate testcases for discovered states when analysis finishes (Ethereum only)')
 
+    parser.add_argument('--verbose-trace', action='store_true',
+                        help='Dump an extra verbose trace for each state (Ethereum only)')
+
     parsed = parser.parse_args(sys.argv[1:])
     if parsed.procs <= 0:
         parsed.procs = 1
@@ -137,7 +140,7 @@ def parse_arguments():
 
 
 def ethereum_cli(args):
-    from .ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, DetectUninitializedStorage, DetectUninitializedMemory, FilterFunctions, DetectReentrancySimple, DetectUnusedRetVal, DetectSelfdestruct, LoopDepthLimiter, DetectDelegatecall, DetectExternalCallAndLeak, DetectReentrancyAdvanced, DetectEnvInstruction
+    from .ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, DetectUninitializedStorage, DetectUninitializedMemory, FilterFunctions, DetectReentrancySimple, DetectUnusedRetVal, DetectSelfdestruct, LoopDepthLimiter, DetectDelegatecall, DetectExternalCallAndLeak, DetectReentrancySimple, DetectEnvInstruction, VerboseTrace
 
     log.init_logging()
 
@@ -165,6 +168,9 @@ def ethereum_cli(args):
         m.register_detector(DetectExternalCallAndLeak())
     if args.detect_all or args.detect_env_instr:
         m.register_detector(DetectEnvInstruction())
+
+    if args.verbose_trace:
+        m.register_plugin(VerboseTrace())
 
     if args.limit_loops:
         m.register_plugin(LoopDepthLimiter())
