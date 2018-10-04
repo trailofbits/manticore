@@ -672,7 +672,7 @@ class ManticoreEVM(Manticore):
             return None
         return contract_account
 
-    def _get_nonce(self, address):
+    def get_nonce(self, address):
         # type forgiveness:
         address = int(address)
         # get all states containing this address:
@@ -706,7 +706,7 @@ class ManticoreEVM(Manticore):
         if not self.count_running_states():
             raise NoAliveStates
 
-        nonce = self._get_nonce(owner)
+        nonce = self.get_nonce(owner)
         expected_address = evm.EVMWorld.calculate_new_address(int(owner), nonce=nonce)
 
         if address is None:
