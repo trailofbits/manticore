@@ -2156,7 +2156,8 @@ class EVMWorld(Platform):
 
         if caller not in self._world_state:
             self._world_state[caller] = { 'nonce' : 1 }
-        else:
+        elif sort == 'CREATE' or not self._world_state[caller]['code']:
+            # Increment the nonce if this transaction is creating a contract, or if it was called by a non-contract account
             self.increase_nonce(caller)
 
         #Transaction to normal account
