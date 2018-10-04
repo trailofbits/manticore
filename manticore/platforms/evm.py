@@ -356,16 +356,17 @@ class EVM(Eventful):
         self._valid_jumpdests = set()
 
 
-        def f(b):
+        #Compile the list of valid jumpdests via linear dissassembly
+        def extend_with_zeroes(b):
             try:
                 for x in b:
                     yield(to_constant(x))
                 for x in (0,)*32:
                     yield(x)
             except Exception as e:
-                print (e)
                 raise StopIteration
-        for i in EVMAsm.disassemble_all(f(bytecode)):
+
+        for i in EVMAsm.disassemble_all(extend_with_zeroes(bytecode)):
             if i.mnemonic == 'JUMPDEST':
                 self._valid_jumpdests.add(i.pc)
 
@@ -706,13 +707,20 @@ class EVM(Eventful):
         self._pc = last_pc
         self._checkpoint_data = None
 
-    def _set_check_jmpdest(self):
-        self._check_jumpdest = True
+    def _set_check_jmpdest(self, flag=True):
+        self._check_jumpdest = flag
 
     def _check_jmpdest(self):
-        if self._check_jumpdest:
+        if issymbolic(self._check_jumpdest):
+            should_check_jumpdest = solver.get_all_values(self.constraints, self._check_jumpdest)
+            if len(should_check_jumpdest) != 1:
+                raise EthereumError("Conditional not concretized at JMPDEST check")
+        else:
+            should_check_jumpdest = [self._check_jumpdest]
+
+        if should_check_jumpdest == [True]:
             self._check_jumpdest = False
-            if self.pc not in self._valid_jmpdests:
+            if self.pc not in self._valid_jumpdests:
                 raise InvalidOpcode()
 
     def _advance(self, result=None, exception=False):
@@ -723,8 +731,6 @@ class EVM(Eventful):
             if not last_instruction.is_branch:
                 #advance pc pointer
                 self.pc += last_instruction.size
-            else:
-                self._set_check_jmpdest()
             self._push_results(last_instruction, result)
         self._publish('did_evm_execute_instruction', last_instruction, last_arguments, result)
         self._publish('did_execute_instruction', last_pc, self.pc, last_instruction)
@@ -1280,11 +1286,15 @@ class EVM(Eventful):
     def JUMP(self, dest):
         '''Alter the program counter'''
         self.pc = dest
-        # TODO check for JUMPDEST on next iter?
+        #This set ups a check for JMPDEST in the next instruction
+        self._set_check_jmpdest()
 
     def JUMPI(self, dest, cond):
         '''Conditionally alter the program counter'''
         self.pc = Operators.ITEBV(256, cond != 0, dest, self.pc + self.instruction.size)
+        #This set ups a check for JMPDEST in the next instruction if cond != 0
+        self._set_check_jmpdest(cond != 0)
+
 
     def GETPC(self):
         '''Get the value of the program counter prior to the increment'''

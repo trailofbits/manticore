@@ -946,7 +946,6 @@ class ManticoreEVM(Manticore):
 
         if contract_account is None:
             logger.info("Failed to create contract: exception in constructor")
-            self.finalize()
             return
 
         prev_coverage = 0
@@ -1258,18 +1257,18 @@ class ManticoreEVM(Manticore):
 
         if last_tx:
             at_runtime = last_tx.sort != 'CREATE'
-            address, offset, at_init = state.context['evm.trace'][-1]
-            assert at_runtime != at_init
 
             #Last instruction if last tx was valid
             if str(state.context['last_exception']) != 'TXERROR':
-                metadata = self.get_metadata(blockchain.last_transaction.address)
-                if metadata is not None:
-                    stream.write('Last instruction at contract %x offset %x\n' % (address, offset))
-                    source_code_snippet = metadata.get_source_for(offset, at_runtime)
-                    if source_code_snippet:
-                        stream.write('    '.join(source_code_snippet.splitlines(True)))
-                    stream.write('\n')
+                if 'evm.trace' in state.context:
+                    address, offset, at_init = state.context['evm.trace'][-1]
+                    metadata = self.get_metadata(blockchain.last_transaction.address)
+                    if metadata is not None:
+                        stream.write('Last instruction at contract %x offset %x\n' % (address, offset))
+                        source_code_snippet = metadata.get_source_for(offset, at_runtime)
+                        if source_code_snippet:
+                            stream.write('    '.join(source_code_snippet.splitlines(True)))
+                        stream.write('\n')
 
         # Accounts summary
         is_something_symbolic = False
