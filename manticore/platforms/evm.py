@@ -2029,7 +2029,7 @@ class EVMWorld(Platform):
         if address is None:
             address = expected_address
         elif caller is not None and address != expected_address:
-            raise EVMException("Error: contract created from address %x with nonce %d was expected to be at address %x, but create_contract was called with address=%x" % (caller, self.get_nonce(caller), expected_address, address))
+            raise EthereumError("Error: contract created from address %x with nonce %d was expected to be at address %x, but create_contract was called with address=%x" % (caller, self.get_nonce(caller), expected_address, address))
         self.start_transaction('CREATE', address, price, init, caller, balance, gas=gas)
         self._process_pending_transaction()
         return address
