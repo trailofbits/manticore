@@ -672,6 +672,24 @@ class ManticoreEVM(Manticore):
             return None
         return contract_account
 
+    def _get_nonce(self, address):
+        # type forgiveness:
+        address = int(address)
+        # get all states containing this address:
+        states = tuple(state for state in self.running_states if address in state.platform)
+        if not states:
+            raise NoAliveStates("There are no alive states containing address %x" % address)
+        if len(states) == 1:
+            return states[0].platform.get_nonce(address)
+        # if there are multiple states with this address, ensure that they all currently have the same nonce:
+        existing_nonces = set(state.platform.get_nonce(address) for state in states)
+        if len(existing_nonces) != 1:
+            raise EthereumError("Cannot increase the nonce of address %x because it exists in multiple states with different nonces" % address)
+        ret = None
+        for state in states:
+            ret = state.platform.get_nonce(address)
+        return ret
+
     def create_contract(self, owner, balance=0, address=None, init=None, name=None, gas=21000):
         """ Creates a contract
 
@@ -688,18 +706,7 @@ class ManticoreEVM(Manticore):
         if not self.count_running_states():
             raise NoAliveStates
 
-        if isinstance(owner, EVMAccount):
-            nonce = owner.increment_nonce()
-        else:
-            for account in self.accounts.values():
-                if int(owner) == int(account):
-                    nonce = account.increment_nonce()
-                    break
-            else:
-                # assume that the owner is a regular account and not a contract address
-                nonce = 0
-                # TODO (ESultanik): Consider inspecting all of the accounts in current states to see if they are owner
-                # and, if so, and if there is a unique owner, use and increment its nonce
+        nonce = self._get_nonce(owner)
         expected_address = evm.EVMWorld.calculate_new_address(int(owner), nonce=nonce)
 
         if address is None:
@@ -875,10 +882,7 @@ class ManticoreEVM(Manticore):
         if isinstance(address, EVMAccount):
             address = int(address)
         if isinstance(caller, EVMAccount):
-            caller_nonce = caller.increment_nonce()
             caller = int(caller)
-        else:
-            caller_nonce = None
         #Defaults, call data is empty
         if data is None:
             data = bytearray(b"")
@@ -925,7 +929,7 @@ class ManticoreEVM(Manticore):
 
             # Choose an address here, because it will be dependent on the caller's nonce in this state
             if address is None:
-                address = world.new_address(caller, nonce=caller_nonce)
+                address = world.new_address(caller)
 
             # Migrate any expression to state specific constraint set
             caller, address, value, data = self._migrate_tx_expressions(state, caller, address, value, data)

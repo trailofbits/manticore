@@ -5,7 +5,7 @@ from ..exceptions import EthereumError
 
 
 class EVMAccount(object):
-    def __init__(self, address=None, manticore=None, name=None, nonce = 0):
+    def __init__(self, address=None, manticore=None, name=None):
         """ Encapsulates an account.
 
             :param address: the address of this account
@@ -16,7 +16,6 @@ class EVMAccount(object):
         self._manticore = manticore
         self._address = address
         self._name = name
-        self._nonce = nonce
 
     def __eq__(self, other):
         if isinstance(other, int):
@@ -32,15 +31,6 @@ class EVMAccount(object):
     @property
     def address(self):
         return self._address
-
-    @property
-    def nonce(self):
-        return self._nonce
-
-    def increment_nonce(self):
-        n = self._nonce
-        self._nonce += 1
-        return n
 
     def __int__(self):
         return self._address
@@ -62,8 +52,6 @@ class EVMContract(EVMAccount):
             :param default_caller: the default caller address for any transaction
 
         """
-        if 'nonce' not in kwargs:
-            kwargs['nonce'] = 1
         super().__init__(**kwargs)
         self._default_caller = default_caller
         self._hashes = None
