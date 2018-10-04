@@ -1982,6 +1982,9 @@ class EVMWorld(Platform):
             # As per EIP 161, contract accounts are initialized with a nonce of 1
             nonce = 1 if code else 0
 
+        if address is None:
+            address = self.new_address()
+
         if not isinstance(address, int):
             raise EthereumError('You must provide an address')
 
