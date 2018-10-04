@@ -8,7 +8,7 @@
  * Analyze it with:
  *   $ manticore basic
  *
- *   - By default manticore will consider all input of stdin symbolic
+ *   - By default, Manticore will consider all input of stdin to be symbolic
  *
  * Expected output:
  *  $ manticore basic

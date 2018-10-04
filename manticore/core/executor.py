@@ -4,9 +4,10 @@ import random
 import logging
 import signal
 
+from ..exceptions import ExecutorError, SolverException
 from ..utils.nointerrupt import WithKeyboardInterruptAs
 from ..utils.event import Eventful
-from .smtlib import Z3Solver, Expression, SolverException
+from .smtlib import Z3Solver, Expression
 from .state import Concretize, TerminateState
 
 from .workspace import Workspace
@@ -86,7 +87,7 @@ class Random(Policy):
 class Uncovered(Policy):
     def __init__(self, executor, *args, **kwargs):
         super().__init__(executor, *args, **kwargs)
-        # hook on the necesary executor signals
+        # hook on the necessary executor signals
         # on callbacks save data in executor.context['policy']
         with self._executor.locked_context() as ctx:
             ctx['policy'] = {}
@@ -222,7 +223,7 @@ class Executor(Eventful):
             It needs a lock. Its used like this:
 
             with executor.context() as context:
-                vsited = context['visited']
+                visited = context['visited']
                 visited.append(state.cpu.PC)
                 context['visited'] = visited
         '''
@@ -316,15 +317,15 @@ class Executor(Eventful):
         if self.is_shutdown():
             return None
 
-        # if not more states in the queue lets wait for some forks
+        # if not more states in the queue, let's wait for some forks
         while len(self._states) == 0:
-            # if no worker is running bail out
+            # if no worker is running, bail out
             if self.running == 0:
                 return None
-            # if a shutdown has been requested bail out
+            # if a shutdown has been requested, bail out
             if self.is_shutdown():
                 return None
-            # if there is actually some workers running wait for state forks
+            # if there ares actually some workers running, wait for state forks
             logger.debug("Waiting for available states")
             self._lock.wait()
 
@@ -379,7 +380,7 @@ class Executor(Eventful):
         solutions = state.concretize(expression, policy)
 
         if not solutions:
-            logger.info("Forking on unfeasible constraint set")
+            raise ExecutorError("Forking on unfeasible constraint set")
 
         if len(solutions) == 1:
             setstate(state, solutions[0])
@@ -405,7 +406,7 @@ class Executor(Eventful):
 
                 # enqueue new_state
                 state_id = self.enqueue(new_state)
-                # maintain a list of childres for logging purpose
+                # maintain a list of children for logging purpose
                 children.append(state_id)
 
         logger.info("Forking current state into states %r", children)

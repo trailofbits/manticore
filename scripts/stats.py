@@ -9,7 +9,7 @@ def parse_arguments():
     parser = argparse.ArgumentParser(
         description='Extract different statistic and information from a manticore workspace')
     parser.add_argument('--workspace', type=str, default=None,
-                        help='A folder name fpor temporaries and results. (default mcore_?????)')
+                        help='A folder name for temporaries and results. (default mcore_?????)')
     parser.add_argument('--pcfreq', action='store_true', help='Print out visited pc and frequency')
     parser.add_argument('--visited', action='store_true', help='Print out visited pc set')
     parser.add_argument('--bbs', action='store_true', help='Print out visited basic blocks ')
@@ -20,7 +20,7 @@ def parse_arguments():
     parsed.workspace = parsed.workspace[0]
 
     assert int(parsed.pcfreq) + int(parsed.visited) + int(
-        parsed.bbs) == 1, "Choose one option one option from: --pcfreq --visited"
+        parsed.bbs) == 1, "Choose one option from: --pcfreq --visited"
     return parsed
 
 
@@ -29,7 +29,7 @@ workspace = args.workspace
 
 # search previously generated states
 saved_states = [os.path.join(workspace, filename) for filename in os.listdir(workspace) if filename.endswith('.pkl')]
-# prepare a dictionary to hold stats
+# prepare a dictionary to hold states
 db = {}
 edges = {}
 for filename in saved_states:
@@ -55,7 +55,7 @@ elif args.visited:
     for pc in list(db.keys()):
         print('%x' % pc)
 elif args.bbs:
-    assert len(set(edges['ROOT'])) == 1, "Something is wrong it should be only one root"
+    assert len(set(edges['ROOT'])) == 1, "Something is wrong; there should be only one root"
     bbs = set()
     for targets in list(edges.values()):
         if len(set(targets)) > 1:

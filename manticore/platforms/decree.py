@@ -444,7 +444,7 @@ class Decree(Platform):
         ''' random - fill a buffer with random data
 
            The  random  system call populates the buffer referenced by buf with up to
-           count bytes of random data. If count is zero, random returns 0 and optionallyi
+           count bytes of random data. If count is zero, random returns 0 and optionally
            sets *rx_bytes to zero. If count is greater than SSIZE_MAX, the result is unspecified.
 
            :param cpu: current CPU
@@ -486,10 +486,10 @@ class Decree(Platform):
 
             The receive system call reads up to count bytes from file descriptor fd to the
             buffer pointed to by buf. If count is zero, receive returns 0 and optionally
-            dets *rx_bytes to zero.
+            sets *rx_bytes to zero.
 
             :param cpu: current CPU.
-            :param fd: a valid file descripor
+            :param fd: a valid file descriptor
             :param buf: a memory buffer
             :param count: max number of bytes to receive
             :param rx_bytes: if valid, points to the actual number of bytes received
@@ -519,7 +519,7 @@ class Decree(Platform):
             # if random.randint(5) == 0 and count > 1:
             #    count = count/2
 
-            # Read the data and put in tin memory
+            # Read the data and put it in memory
             data = self.files[fd].receive(count)
             self.syscall_trace.append(("_receive", fd, data))
             cpu.write_bytes(buf, data)
@@ -543,7 +543,7 @@ class Decree(Platform):
           and optionally sets *tx_bytes to zero.
 
           :param cpu           current CPU
-          :param fd            a valid file descripor
+          :param fd            a valid file descriptor
           :param buf           a memory buffer
           :param count         number of bytes to send
           :param tx_bytes      if valid, points to the actual number of bytes transmitted
@@ -658,7 +658,7 @@ class Decree(Platform):
 
         if timeout:
             if timeout not in cpu.memory:  # todo: size
-                logger.info("FDWAIT: timeput is pointing to invalid memory. Returning EFAULT")
+                logger.info("FDWAIT: timeout is pointing to invalid memory. Returning EFAULT")
                 return Decree.CGC_EFAULT
 
         if readyfds:
@@ -698,7 +698,7 @@ class Decree(Platform):
                         readfds_ready.add(fd)
         n = len(readfds_ready) + len(writefds_ready)
         if n == 0:
-            # TODO FIX timout symbolic
+            # TODO FIX timeout symbolic
             if timeout != 0:
                 seconds = cpu.read_int(timeout, 32)
                 microseconds = cpu.read_int(timeout + 4, 32)
@@ -713,8 +713,8 @@ class Decree(Platform):
 
             cpu.PC -= cpu.instruction.size
             self.wait(readfds_wait, writefds_wait, to)
-            raise RestartSyscall()  # When comming back from a timeout remember
-            # not to backtrack instruction and set EAX to 0! :( uglyness alert!
+            raise RestartSyscall()  # When coming back from a timeout remember
+            # not to backtrack instruction and set EAX to 0! :( ugliness alert!
 
         if readfds:
             bits = 0
@@ -762,7 +762,7 @@ class Decree(Platform):
         ''' Yield CPU.
             This will choose another process from the RUNNNIG list and change
             current running process. May give the same cpu if only one running
-            proccess.
+            process.
         '''
         if len(self.procs) > 1:
             logger.info("SCHED:")
@@ -790,9 +790,9 @@ class Decree(Platform):
         self._current = next
 
     def wait(self, readfds, writefds, timeout):
-        ''' Wait for filedescriptors or timout.
-            Adds the current proceess in the correspondant wainting list and
-            yield the cpu to another running process.
+        ''' Wait for filedescriptors or timeout.
+            Adds the current process to the corresponding waiting list and
+            yields the cpu to another running process.
         '''
         logger.info("WAIT:")
         logger.info("\tProcess %d is going to wait for [ %r %r %r ]", self._current, readfds, writefds, timeout)
@@ -825,8 +825,8 @@ class Decree(Platform):
             self.check_timers()
 
     def awake(self, procid):
-        ''' Remove procid from waitlists and restablish it in the running list '''
-        logger.info("Remove procid:%d from waitlists and restablish it in the running list", procid)
+        ''' Remove procid from waitlists and reestablish it in the running list '''
+        logger.info("Remove procid:%d from waitlists and reestablish it in the running list", procid)
         for wait_list in self.rwait:
             if procid in wait_list:
                 wait_list.remove(procid)
@@ -861,7 +861,7 @@ class Decree(Platform):
             self.awake(procid)
 
     def check_timers(self):
-        ''' Awake proccess if timer has expired '''
+        ''' Awake process if timer has expired '''
         if self._current is None:
             # Advance the clocks. Go to future!!
             advance = min([x for x in self.timers if x is not None]) + 1
@@ -875,7 +875,7 @@ class Decree(Platform):
 
     def execute(self):
         """
-        Execute one cpu instruction in the current thread (only one suported).
+        Execute one cpu instruction in the current thread (only one supported).
         :rtype: bool
         :return: C{True}
 

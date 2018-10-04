@@ -22,7 +22,7 @@ library Manticore{
 
     function assume(bool constraint){
         /*
-            Add constraint to the path contraint set
+            Add constraint to the path constraint set
         */
         assembly {
             jump(0x4141414141414141414141414141414141414141)
@@ -86,14 +86,14 @@ library Manticore{
     }
 
     function can_be_true(bool condition) returns (bool){
-        /* Retuen True if condiction can be true */
+        /* Return True if condition can be true */
         assembly {
             jump(0x4141414141414141414141414141414141414141)
         }
     }
 
     function assert(bool condition, string message){
-        /* Retuen True if condiction can be true */
+        /* Return True if condition can be true */
         assembly {
             jump(0x4141414141414141414141414141414141414141)
         }
@@ -108,7 +108,7 @@ contract Reachable {
         storage_variable = 0x585858;
         Manticore.print("Initializing!");
         if (Manticore.is_symbolic(storage_variable))
-            Manticore.print("Noo! storage_variable should not be symbolic");
+            Manticore.print("No! storage_variable should not be symbolic");
 
         //this.write_then_throw();
         this.call.gas(10001).value(msg.value)(bytes4(sha3("function write_then_throw()")));
