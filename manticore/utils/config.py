@@ -4,14 +4,14 @@ This file implements a configuration system.
 The config values and constant are gathered from three sources:
 
     1. default values provided at time of definition
-    2. ini files (i.e. ./manticore.ini)
+    2. ini files (i.e. ./manticore.yml)
     3. command line arguments
 
 in that order of priority.
 """
 
 import ast
-import configparser
+import yaml
 import io
 import logging
 import os
@@ -138,39 +138,28 @@ def save(f):
     """
     global _groups
 
-    c = configparser.ConfigParser()
+    c = {}
     for group_name, group in _groups.items():
-        set_vars = list(group.updated_vars())
-        if not set_vars:
+        section = dict((var.name, var.value) for var in group.updated_vars())
+        if not section:
             continue
-        c.add_section(group_name)
-        for var in set_vars:
-            c.set(group_name, var.name, str(var.value))
-    c.write(f)
+        c[group_name] = section
+
+    yaml.safe_dump(c, f)
 
 
-def parse_ini(f):
+def parse_config(f):
     """
     Load an ini-formatted configuration from file stream |f|
 
     :param file f: Where to read the config.
     """
 
-    # This currently does some hacky ast parsing on the literals, but this is in service
-    # of having a simpler, ini-style configuration without external dependencies, like
-    # a YAML parser, and ini files do not have typed values.
-
-    c = configparser.ConfigParser()
-    c.read_file(f)
-    for section_name in c.sections():
+    c = yaml.safe_load(f)
+    for section_name, section in c.items():
         group = get_group(section_name)
 
-        for key, v in c.items(section_name):
-            try:
-                val = ast.literal_eval(v)
-            except (ValueError, SyntaxError):
-                val = v
-
+        for key, val in section.items():
             group.update(key)
             setattr(group, key, val)
 
@@ -180,26 +169,51 @@ def load_overrides(path=None):
     Load config overrides from the ini file at |path|, or from default paths. If a path
     is provided and it does not exist, raise an exception
 
-    Default paths: ./mcore.ini, ./.mcore.ini, ./manticore.ini, ./.manticore.ini.
+    Default paths: ./mcore.yml, ./.mcore.yml, ./manticore.yml, ./.manticore.yml.
     """
 
     if path is not None:
         names = [path]
     else:
-        possible_names = ['mcore.ini', 'manticore.ini']
+        possible_names = ['mcore.yml', 'manticore.yml']
         names = [os.path.join('.', ''.join(x)) for x in product(['', '.'], possible_names)]
 
     for name in names:
         try:
             with open(name, 'r') as ini_f:
                 logger.info(f'Reading configuration from {name}')
-                parse_ini(ini_f)
+                parse_config(ini_f)
             break
         except FileNotFoundError:
             pass
     else:
         if path is not None:
             raise FileNotFoundError(f"'{path}' not found for config overrides")
+
+
+def add_config_vars_to_argparse(args):
+    """
+    Import all defined config vars into |args|, for parsing command line.
+    :param args: A container for argparse vars
+    :type args: argparse.ArgumentParser or argparse._ArgumentGroup
+    :return:
+    """
+    global _groups
+    for group_name, group in _groups.items():
+        for key in group:
+            obj = group._var_object(key)
+            args.add_argument(f"--{group_name}.{key}", type=type(obj.default),
+                              default=obj.default, help=obj.description)
+
+
+def get_config_keys():
+    """
+    Return an iterable covering all defined keys so far
+    """
+    global _groups
+    for group_name, group in _groups.items():
+        for key in group:
+            yield f"{group_name}.{key}"
 
 
 def describe_options():

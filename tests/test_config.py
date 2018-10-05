@@ -1,4 +1,5 @@
 import io
+import argparse
 import tempfile
 import unittest
 
@@ -72,22 +73,30 @@ class ConfigTest(unittest.TestCase):
         self.assertTrue('one' in g)
         self.assertFalse('three' in g)
 
+    def test_get_config_keys(self):
+        g = config.get_group('few')
+        g.add('one')
+        g.add('two')
+        keys = list(config.get_config_keys())
+        self.assertIn('few.one', keys)
+        self.assertIn('few.two', keys)
+
     def test_parse(self):
         ini = '''
-        [group]
-        var1 = val
-        var2 = 234
-        var3 = [1,2,3]
-        var4 = [[;;]]
+        group:
+            var1: val
+            var2: 234
+            var3: [1, 2, 3]
+            var4: []
         '''
         f = io.StringIO(ini)
-        config.parse_ini(f)
+        config.parse_config(f)
 
         g = config.get_group('group')
         self.assertEqual(g.var1, 'val')
         self.assertEqual(g.var2, 234)
         self.assertEqual(g.var3, [1, 2, 3])
-        self.assertEqual(g.var4, '[[;;]]')  # unparsed vals are just strs
+        self.assertEqual(g.var4, [])
 
     def test_describe(self):
         g = config.get_group('group')
@@ -100,10 +109,7 @@ class ConfigTest(unittest.TestCase):
 
     def test_overrides(self):
         with tempfile.NamedTemporaryFile('w+') as conf:
-            conf.file.write('''
-            [group]
-            var1 = val1
-            ''')
+            conf.file.write('group: {var1: val1}')
             conf.file.close()
 
             config.load_overrides(conf.name)
@@ -130,8 +136,8 @@ class ConfigTest(unittest.TestCase):
         config.save(s)
         saved = s.getvalue()
 
-        self.assertIn('[set_vars]', saved)
-        self.assertNotIn('[unset_vars]', saved)
+        self.assertIn('set_vars:', saved)
+        self.assertNotIn('unset_vars:', saved)
 
         # Updating a var makes describe_options ignore it, as it's usually to print
         # vars that have default values.
@@ -139,4 +145,16 @@ class ConfigTest(unittest.TestCase):
         described = config.describe_options()
         self.assertNotIn('unset', described)
 
+    def test_add_config_vars(self):
+        g = config.get_group('few')
+        g.add('one', default=0, description="desc")
+        g.add('two', default='x', description="desc2t")
 
+        parser = argparse.ArgumentParser('Description')
+        config.add_config_vars_to_argparse(parser)
+        usage = parser.format_help()
+
+        # There are no public methods to get at the added options so far, so we're just checking with
+        # usage string
+        self.assertIn('--few.one', usage)
+        self.assertIn('--few.two', usage)

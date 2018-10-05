@@ -679,7 +679,7 @@ class Manticore(Eventful):
         with self._output.save_stream('command.sh') as f:
             f.write(' '.join(sys.argv))
 
-        with self._output.save_stream('manticore.ini') as f:
+        with self._output.save_stream('manticore.yml') as f:
             config.save(f)
 
         elapsed = time.time() - self._time_started
