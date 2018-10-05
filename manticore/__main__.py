@@ -23,31 +23,35 @@ def process_config_values(args, parser):
     from all arguments that were actually passed on the command line
     """
 
-    # First, load a local config file, if passed
+    # First, load a local config file, if passed or look for one in pwd if it wasn't.
     config.load_overrides(args.config)
 
     # Get a list of defined config vals. If these are passed on the command line,
     # update them in their correct group, not in the cli group
     defined_vars = list(config.get_config_keys())
 
-    opts = config.get_group('cli')
+    command_line_args = vars(args)
 
     # Bring in the options keys into args
-    for k in opts:
-        setattr(args, k, getattr(opts, k))
+    config_cli_args = config.get_group('cli')
 
-    # Place all command line args into the cli group (for saving in the workspace)
-    for k in vars(args):
+    # Place all command line args into the cli group (for saving in the workspace). If
+    # the value is set on command line, then it takes precedence; otherwise we try to
+    # read it from the config file's cli group.
+    for k in command_line_args:
         default = parser.get_default(k)
         set_val = getattr(args, k)
         if default is not set_val:
             if k not in defined_vars:
-                opts.update(k, value=set_val)
+                config_cli_args.update(k, value=set_val)
             else:
                 # Update a var's native group
                 group_name, key = k.split('.')
                 group = config.get_group(group_name)
                 setattr(group, key, set_val)
+        else:
+            if k in config_cli_args:
+                setattr(args, k, getattr(config_cli_args, k))
 
 
 def parse_arguments():
