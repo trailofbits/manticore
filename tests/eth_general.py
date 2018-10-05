@@ -893,11 +893,9 @@ class EthSolidityCompilerTest(unittest.TestCase):
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
                 returndata = e.data
-        # test spent gas
+
         self.assertEqual(result, 'THROW')
         self.assertEqual(new_vm.gas, 99992)
-        #check refund
-        #check logs
         
 
 
