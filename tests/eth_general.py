@@ -865,7 +865,10 @@ class EthSolidityCompilerTest(unittest.TestCase):
 
     def test_jmpdest_check(self):
         '''
-        '''    
+            This test that jumping to a JUMPDEST in the operand of a PUSH should 
+            be treated as an INVALID instruction.
+            https://github.com/trailofbits/manticore/issues/1169
+        '''
     
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints)
