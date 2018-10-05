@@ -478,10 +478,10 @@ class EVM(Eventful):
 
         #Compile the list of valid jumpdests via linear dissassembly
         def extend_with_zeroes(b):
-            #Fixme(felipe) This does not deal with the corner case  in which the
+            # Fixme(felipe) This does not deal with the corner case in which the
             # arguments are actually dynamic code 
-            #This simplifies the bytecode that ends early or has symbolic arguments
-            #appeded at the end
+            # This simplifies the bytecode that ends early or has symbolic arguments
+            # appended at the end
             try:
                 for x in b:
                     x = to_constant(x)
