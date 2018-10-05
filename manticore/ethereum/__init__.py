@@ -144,6 +144,14 @@ class LoopDepthLimiter(Plugin):
                 state.abandon()
 
 
+class VerboseTrace(Plugin):
+    def will_evm_execute_instruction_callback(self, state, instruction, arguments):
+        current_vm = state.platform.current_vm
+        state.setdefault('str_trace', []).append(str(current_vm))
+
+    def on_finalize(self, state, testcase):
+        with testcase.open_stream('str_trace') as str_trace_f:
+            str_trace_f.write('\n'.join(state.context.get('str_trace', [])))
 
 
 def calculate_coverage(runtime_bytecode, seen):
