@@ -478,9 +478,18 @@ class EVM(Eventful):
 
         #Compile the list of valid jumpdests via linear dissassembly
         def extend_with_zeroes(b):
+            #Fixme(felipe) This does not deal with the corner case  in which the
+            # arguments are actually dynamic code 
+            #This simplifies the bytecode that ends early or has symbolic arguments
+            #appeded at the end
             try:
                 for x in b:
-                    yield(to_constant(x))
+                    x = to_constant(x)
+                    if isinstance(x, int):
+                        yield(x)
+                    else:
+                        yield(0)
+                        
                 for x in (0,)*32:
                     yield(x)
             except Exception as e:
