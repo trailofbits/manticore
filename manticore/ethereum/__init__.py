@@ -924,6 +924,11 @@ class ManticoreEVM(Manticore):
 
             # Choose an address here, because it will be dependent on the caller's nonce in this state
             if address is None:
+                if issymbolic(caller):
+                    # TODO (ESultanik): In order to handle this case, we are going to have to do something like fork
+                    # over all possible caller addresses.
+                    # But this edge case will likely be extremely rare, if ever ecountered.
+                    raise EthereumError("Manticore does not currently support contracts with symbolic addresses creating new contracts")
                 address = world.new_address(caller)
 
             # Migrate any expression to state specific constraint set
