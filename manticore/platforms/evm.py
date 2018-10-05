@@ -838,14 +838,14 @@ class EVM(Eventful):
         self._check_jumpdest = flag
 
     def _check_jmpdest(self):
-        if issymbolic(self._check_jumpdest):
-            should_check_jumpdest = solver.get_all_values(self.constraints, self._check_jumpdest)
-            if len(should_check_jumpdest) != 1:
+        should_check_jumpdest = self._check_jumpdest
+        if issymbolic(should_check_jumpdest):
+            should_check_jumpdest_solutions = solver.get_all_values(self.constraints, self._check_jumpdest)
+            if len(should_check_jumpdest_solutions) != 1:
                 raise EthereumError("Conditional not concretized at JMPDEST check")
-        else:
-            should_check_jumpdest = [self._check_jumpdest]
+            should_check_jumpdest = should_check_jumpdest_solutions[0]
 
-        if should_check_jumpdest == [True]:
+        if should_check_jumpdest:
             self._check_jumpdest = False
             if self.pc not in self._valid_jumpdests:
                 raise InvalidOpcode()
