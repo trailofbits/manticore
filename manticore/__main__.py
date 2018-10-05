@@ -88,9 +88,9 @@ def parse_arguments():
     parser.add_argument('--version', action='version', version='Manticore 0.2.1.1',
                         help='Show program version information')
     parser.add_argument('--config', type=str,
-                        help='Manticore config file (.ini) to use. (default config file pattern is: ./[.]m[anti]core.ini)')
+                        help='Manticore config file (.yml) to use. (default config file pattern is: ./[.]m[anti]core.yml)')
     parser.add_argument('--config-print', action='store_true',
-                        help='Print internal options that are configurable from an ini file and exit')
+                        help='Print internal options that are configurable from an yml file and exit')
 
     bin_flags = parser.add_argument_group('Binary flags')
     bin_flags.add_argument('--entrysymbol', type=str, default=None,

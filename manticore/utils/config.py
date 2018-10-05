@@ -4,7 +4,7 @@ This file implements a configuration system.
 The config values and constant are gathered from three sources:
 
     1. default values provided at time of definition
-    2. ini files (i.e. ./manticore.yml)
+    2. yml files (i.e. ./manticore.yml)
     3. command line arguments
 
 in that order of priority.
@@ -132,7 +132,7 @@ def get_group(name: str):
 
 def save(f):
     """
-    Save current config state to an ini file stream identified by |f|
+    Save current config state to an yml file stream identified by |f|
 
     :param f: where to write the config file
     """
@@ -145,12 +145,12 @@ def save(f):
             continue
         c[group_name] = section
 
-    yaml.safe_dump(c, f)
+    yaml.safe_dump(c, f, line_break=True)
 
 
 def parse_config(f):
     """
-    Load an ini-formatted configuration from file stream |f|
+    Load an yml-formatted configuration from file stream |f|
 
     :param file f: Where to read the config.
     """
@@ -166,7 +166,7 @@ def parse_config(f):
 
 def load_overrides(path=None):
     """
-    Load config overrides from the ini file at |path|, or from default paths. If a path
+    Load config overrides from the yml file at |path|, or from default paths. If a path
     is provided and it does not exist, raise an exception
 
     Default paths: ./mcore.yml, ./.mcore.yml, ./manticore.yml, ./.manticore.yml.
@@ -180,9 +180,9 @@ def load_overrides(path=None):
 
     for name in names:
         try:
-            with open(name, 'r') as ini_f:
+            with open(name, 'r') as yml_f:
                 logger.info(f'Reading configuration from {name}')
-                parse_config(ini_f)
+                parse_config(yml_f)
             break
         except FileNotFoundError:
             pass
