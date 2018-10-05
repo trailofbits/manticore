@@ -15,6 +15,7 @@ import yaml
 import io
 import logging
 import os
+import sys
 
 from itertools import product
 
@@ -155,13 +156,18 @@ def parse_config(f):
     :param file f: Where to read the config.
     """
 
-    c = yaml.safe_load(f)
-    for section_name, section in c.items():
-        group = get_group(section_name)
+    try:
+        c = yaml.safe_load(f)
+        for section_name, section in c.items():
+            group = get_group(section_name)
 
-        for key, val in section.items():
-            group.update(key)
-            setattr(group, key, val)
+            for key, val in section.items():
+                group.update(key)
+                setattr(group, key, val)
+    # Any exception here should trigger the warning; from not being able to parse yaml
+    # to reading poorly formatted values
+    except Exception:
+        logger.error("Failed reading config file! Ignoring configuration. (Do you have a local [.]manticore.yml file?)")
 
 
 def load_overrides(path=None):

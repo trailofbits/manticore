@@ -82,14 +82,14 @@ class ConfigTest(unittest.TestCase):
         self.assertIn('few.two', keys)
 
     def test_parse(self):
-        ini = '''
+        conf = '''
         group:
             var1: val
             var2: 234
             var3: [1, 2, 3]
             var4: []
         '''
-        f = io.StringIO(ini)
+        f = io.StringIO(conf)
         config.parse_config(f)
 
         g = config.get_group('group')
@@ -97,6 +97,14 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(g.var2, 234)
         self.assertEqual(g.var3, [1, 2, 3])
         self.assertEqual(g.var4, [])
+
+    def test_parse(self):
+        conf = 'bad config'
+        f = io.StringIO(conf)
+        # this shouldn't raise
+        config.parse_config(f)
+
+        self.assertEquals(len(config._groups), 0)
 
     def test_describe(self):
         g = config.get_group('group')
