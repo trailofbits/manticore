@@ -22,8 +22,13 @@ def process_config_values(args, parser):
     Bring in provided config values to the args parser, and import entries to the config
     from all arguments that were actually passed on the command line
     """
+
     # First, load a local config file, if passed
     config.load_overrides(args.config)
+
+    # Get a list of defined config vals. If these are passed on the command line,
+    # update them in their correct group, not in the cli group
+    defined_vars = list(config.get_config_keys())
 
     opts = config.get_group('cli')
 
@@ -36,7 +41,13 @@ def process_config_values(args, parser):
         default = parser.get_default(k)
         set_val = getattr(args, k)
         if default is not set_val:
-            opts.update(k, value=set_val)
+            if k not in defined_vars:
+                opts.update(k, value=set_val)
+            else:
+                # Update a var's native group
+                group_name, key = k.split('.')
+                group = config.get_group(group_name)
+                setattr(group, key, set_val)
 
 
 def parse_arguments():
@@ -47,25 +58,10 @@ def parse_arguments():
         return ivalue
 
     parser = argparse.ArgumentParser(description='Symbolic execution tool')
-    parser.add_argument('--assertions', type=str, default=None,
-                        help=argparse.SUPPRESS)
-    parser.add_argument('--buffer', type=str,
-                        help=argparse.SUPPRESS)
     parser.add_argument('--context', type=str, default=None,
                         help=argparse.SUPPRESS)
     parser.add_argument('--coverage', type=str, default=None,
                         help='Where to write the coverage data')
-    parser.add_argument('--data', type=str, default='',
-                        help='Initial concrete concrete_data for the input symbolic buffer')
-    parser.add_argument('--env', type=str, nargs=1, default=[], action='append',
-                        help='Add an environment variable. Use "+" for symbolic bytes. (VARNAME=++++)')
-    #TODO allow entry as an address
-    #parser.add_argument('--entry', type=str, default=None,
-    #                    help='address as entry point')
-    parser.add_argument('--entrysymbol', type=str, default=None,
-                        help='Symbol as entry point')
-    parser.add_argument('--file', type=str, default=[], action='append', dest='files',
-                        help='Specify symbolic input file, \'+\' marks symbolic bytes')
     parser.add_argument('--names', type=str, default=None,
                         help=argparse.SUPPRESS)
     parser.add_argument('--offset', type=int, default=16,
@@ -90,74 +86,90 @@ def parse_arguments():
                               "(default mcore_?????)"))
     parser.add_argument('--version', action='version', version='Manticore 0.2.1.1',
                         help='Show program version information')
-    parser.add_argument('--txlimit', type=positive,
-                        help='Maximum number of symbolic transactions to run (positive integer) (Ethereum only)')
-
-    parser.add_argument('--txnocoverage', action='store_true',
-                        help='Do not use coverage as stopping criteria (Ethereum only)')
-
-    parser.add_argument('--txnoether', action='store_true',
-                        help='Do not attempt to send ether to contract (Ethereum only)')
-
-    parser.add_argument('--txaccount', type=str, default="attacker",
-                        help='Account used as caller in the symbolic transactions, either "attacker" or "owner" (Ethereum only)')
-
-    parser.add_argument('--contract', type=str,
-                        help='Contract name to analyze in case of multiple contracts (Ethereum only)')
-
-    parser.add_argument('--detect-overflow', action='store_true',
-                        help='Enable integer overflow detection (Ethereum only)')
-
-    parser.add_argument('--detect-invalid', action='store_true',
-                        help='Enable INVALID instruction detection (Ethereum only)')
-
-    parser.add_argument('--detect-uninitialized-memory', action='store_true',
-                        help='Enable detection of uninitialized memory usage (Ethereum only)')
-
-    parser.add_argument('--detect-uninitialized-storage', action='store_true',
-                        help='Enable detection of uninitialized storage usage (Ethereum only)')
-
-    parser.add_argument('--detect-reentrancy', action='store_true',
-                        help='Enable detection of reentrancy bug (Ethereum only)')
-
-    parser.add_argument('--detect-reentrancy-advanced', action='store_true',
-                        help='Enable detection of reentrancy bug -- this detector is better used via API (Ethereum only)')
-
-    parser.add_argument('--detect-unused-retval', action='store_true',
-                        help='Enable detection of unused internal transaction return value (Ethereum only)')
-
-    parser.add_argument('--detect-delegatecall', action='store_true',
-                        help='Enable detection of problematic uses of DELEGATECALL instruction (Ethereum only)')
-
-    parser.add_argument('--detect-selfdestruct', action='store_true',
-                        help='Enable detection of reachable selfdestruct instructions')
-
-    parser.add_argument('--detect-externalcall', action='store_true',
-                        help='Enable detection of reachable external call or ether leak to sender or arbitrary address')
-
-    parser.add_argument('--detect-env-instr', action='store_true',
-                        help='Enable detection of use of potentially unsafe/manipulable instructions')
-
-    parser.add_argument('--detect-all', action='store_true',
-                        help='Enable all detector heuristics (Ethereum only)')
-
-    parser.add_argument('--avoid-constant', action='store_true',
-                        help='Avoid exploring constant functions for human transactions (Ethereum only)')
-
-    parser.add_argument('--limit-loops', action='store_true',
-                        help='Avoid exploring constant functions for human transactions (Ethereum only)')
-
-    parser.add_argument('--no-testcases', action='store_true',
-                        help='Do not generate testcases for discovered states when analysis finishes (Ethereum only)')
-
     parser.add_argument('--config', type=str,
                         help='Manticore config file (.ini) to use. (default config file pattern is: ./[.]m[anti]core.ini)')
-
     parser.add_argument('--config-print', action='store_true',
                         help='Print internal options that are configurable from an ini file and exit')
 
-    parser.add_argument('--verbose-trace', action='store_true',
-                        help='Dump an extra verbose trace for each state (Ethereum only)')
+    bin_flags = parser.add_argument_group('Binary flags')
+    bin_flags.add_argument('--entrysymbol', type=str, default=None,
+                           help='Symbol as entry point')
+    bin_flags.add_argument('--assertions', type=str, default=None,
+                           help=argparse.SUPPRESS)
+    bin_flags.add_argument('--buffer', type=str,
+                           help=argparse.SUPPRESS)
+    bin_flags.add_argument('--data', type=str, default='',
+                           help='Initial concrete concrete_data for the input symbolic buffer')
+    bin_flags.add_argument('--file', type=str, default=[], action='append', dest='files',
+                           help='Specify symbolic input file, \'+\' marks symbolic bytes')
+    bin_flags.add_argument('--env', type=str, nargs=1, default=[], action='append',
+                           help='Add an environment variable. Use "+" for symbolic bytes. (VARNAME=++++)')
+
+    eth_flags = parser.add_argument_group('Ethereum flags')
+    eth_flags.add_argument('--verbose-trace', action='store_true',
+                           help='Dump an extra verbose trace for each state')
+    eth_flags.add_argument('--txlimit', type=positive,
+                           help='Maximum number of symbolic transactions to run (positive integer)')
+
+    eth_flags.add_argument('--txnocoverage', action='store_true',
+                           help='Do not use coverage as stopping criteria')
+
+    eth_flags.add_argument('--txnoether', action='store_true',
+                           help='Do not attempt to send ether to contract')
+
+    eth_flags.add_argument('--txaccount', type=str, default="attacker",
+                           help='Account used as caller in the symbolic transactions, either "attacker" or "owner"')
+
+    eth_flags.add_argument('--contract', type=str,
+                           help='Contract name to analyze in case of multiple contracts')
+
+    eth_flags.add_argument('--detect-overflow', action='store_true',
+                           help='Enable integer overflow detection')
+
+    eth_flags.add_argument('--detect-invalid', action='store_true',
+                           help='Enable INVALID instruction detection')
+
+    eth_flags.add_argument('--detect-uninitialized-memory', action='store_true',
+                           help='Enable detection of uninitialized memory usage')
+
+    eth_flags.add_argument('--detect-uninitialized-storage', action='store_true',
+                           help='Enable detection of uninitialized storage usage')
+
+    eth_flags.add_argument('--detect-reentrancy', action='store_true',
+                           help='Enable detection of reentrancy bug')
+
+    eth_flags.add_argument('--detect-reentrancy-advanced', action='store_true',
+                           help='Enable detection of reentrancy bug -- this detector is better used via API')
+
+    eth_flags.add_argument('--detect-unused-retval', action='store_true',
+                           help='Enable detection of unused internal transaction return value')
+
+    eth_flags.add_argument('--detect-delegatecall', action='store_true',
+                           help='Enable detection of problematic uses of DELEGATECALL instruction')
+
+    eth_flags.add_argument('--detect-selfdestruct', action='store_true',
+                           help='Enable detection of reachable selfdestruct instructions')
+
+    eth_flags.add_argument('--detect-externalcall', action='store_true',
+                           help='Enable detection of reachable external call or ether leak to sender or arbitrary address')
+
+    eth_flags.add_argument('--detect-env-instr', action='store_true',
+                           help='Enable detection of use of potentially unsafe/manipulable instructions')
+
+    eth_flags.add_argument('--detect-all', action='store_true',
+                           help='Enable all detector heuristics')
+
+    eth_flags.add_argument('--avoid-constant', action='store_true',
+                           help='Avoid exploring constant functions for human transactions')
+
+    eth_flags.add_argument('--limit-loops', action='store_true',
+                           help='Avoid exploring constant functions for human transactions')
+
+    eth_flags.add_argument('--no-testcases', action='store_true',
+                           help='Do not generate testcases for discovered states when analysis finishes')
+
+    config_flags = parser.add_argument_group('Constants')
+    config.add_config_vars_to_argparse(config_flags)
 
     parsed = parser.parse_args(sys.argv[1:])
     if parsed.procs <= 0:
