@@ -167,7 +167,7 @@ def parse_config(f):
     # Any exception here should trigger the warning; from not being able to parse yaml
     # to reading poorly formatted values
     except Exception:
-        logger.error("Failed reading config file! Ignoring configuration. (Do you have a local [.]manticore.yml file?)")
+        raise ConfigError("Failed reading config file. Do you have a local [.]manticore.yml file?")
 
 
 def load_overrides(path=None):
