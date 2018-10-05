@@ -57,7 +57,8 @@ def parse_arguments():
             raise argparse.ArgumentTypeError("Argument must be positive")
         return ivalue
 
-    parser = argparse.ArgumentParser(description='Symbolic execution tool')
+    parser = argparse.ArgumentParser(description='Symbolic execution tool',
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--context', type=str, default=None,
                         help=argparse.SUPPRESS)
     parser.add_argument('--coverage', type=str, default=None,
