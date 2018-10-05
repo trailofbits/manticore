@@ -470,16 +470,15 @@ class EVM(Eventful):
             bytecode_symbolic[0:bytecode_size] = bytecode
             bytecode = bytecode_symbolic
 
-        #TODO: Handle the case in which bytecode is  symbolic (This happens at 
+        #TODO: Handle the case in which bytecode is  symbolic (This happens at
         # CREATE instructions that has the arguments appended to the bytecode)
         self._check_jumpdest = False
         self._valid_jumpdests = set()
 
-
         #Compile the list of valid jumpdests via linear dissassembly
         def extend_with_zeroes(b):
             #Fixme(felipe) This does not deal with the corner case  in which the
-            # arguments are actually dynamic code 
+            # arguments are actually dynamic code
             #This simplifies the bytecode that ends early or has symbolic arguments
             #appeded at the end
             try:
@@ -489,11 +488,10 @@ class EVM(Eventful):
                         yield(x)
                     else:
                         yield(0)
-                        
-                for x in (0,)*32:
-                    yield(x)
+                for _ in range(32):
+                    yield(0)
             except Exception as e:
-                raise StopIteration
+                return
 
         for i in EVMAsm.disassemble_all(extend_with_zeroes(bytecode)):
             if i.mnemonic == 'JUMPDEST':
