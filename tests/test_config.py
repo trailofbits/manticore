@@ -4,6 +4,7 @@ import tempfile
 import unittest
 
 from manticore.utils import config
+from manticore.__main__ import process_config_values
 
 
 class ConfigTest(unittest.TestCase):
@@ -102,9 +103,8 @@ class ConfigTest(unittest.TestCase):
         conf = 'bad config'
         f = io.StringIO(conf)
         # this shouldn't raise
-        config.parse_config(f)
-
-        self.assertEquals(len(config._groups), 0)
+        with self.assertRaises(config.ConfigError):
+            config.parse_config(f)
 
     def test_describe(self):
         g = config.get_group('group')
@@ -166,3 +166,32 @@ class ConfigTest(unittest.TestCase):
         # usage string
         self.assertIn('--few.one', usage)
         self.assertIn('--few.two', usage)
+
+    def test_process_cli(self):
+
+        g = config.get_group('grp')
+        g.add('shouldchange', default=123)
+
+        with tempfile.NamedTemporaryFile('w+') as conf:
+            conf.file.write('cli: {overwritten: 1, unchanged: "val"}\ngrp: {val: 1}')
+            conf.file.close()
+
+            parser = argparse.ArgumentParser('Desc')
+            parser.add_argument('--overwritten', type=int, default=0)
+            parser.add_argument('--config', default=None)
+
+            config.add_config_vars_to_argparse(parser)
+
+            args = parser.parse_args(['--overwritten=42', '--grp.shouldchange=23', f'--config={conf.name}'])
+
+            process_config_values(args, parser)
+
+        # Make sure that cmdline flags get precedence
+        g = config.get_group('cli')
+        self.assertEquals(g.overwritten, 42)
+        self.assertEquals(g.unchanged, 'val')
+
+        # Make sure that we can update defined vars
+        g = config.get_group('grp')
+        self.assertEquals(g.val, 1)
+        self.assertEquals(g.shouldchange, 23)
