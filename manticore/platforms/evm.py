@@ -7,7 +7,7 @@ import inspect
 from functools import wraps
 from ..utils.helpers import issymbolic, get_taints, taint_with, istainted
 from ..platforms.platform import *
-from ..core.smtlib import solver, BitVec, Array, Operators, Constant, ArrayVariable, BitVecConstant, translate_to_smtlib
+from ..core.smtlib import solver, BitVec, Array, Operators, Constant, ArrayVariable, BitVecConstant, translate_to_smtlib, to_constant
 from ..core.state import Concretize, TerminateState
 from ..utils.event import Eventful
 from ..core.smtlib.visitors import simplify
@@ -278,7 +278,8 @@ class EndTx(EVMException):
             assert self.result in {'THROW', 'TXERROR', 'REVERT'}
             return True
 
-
+    def __str__(self):
+        return f'EndTX<{self.result}>'
 class InvalidOpcode(EndTx):
     ''' Trying to execute invalid opcode '''
 
@@ -469,6 +470,32 @@ class EVM(Eventful):
             bytecode_symbolic[0:bytecode_size] = bytecode
             bytecode = bytecode_symbolic
 
+        #TODO: Handle the case in which bytecode is symbolic (This happens at
+        # CREATE instructions that has the arguments appended to the bytecode)
+        # This is a very cornered corner case in which code is actually symbolic
+        # We should simply not allow to jump to unconstrained(*) symbolic code.
+        # (*) bytecode that could take more than a single value
+        self._check_jumpdest = False
+        self._valid_jumpdests = set()
+
+        #Compile the list of valid jumpdests via linear dissassembly
+        def extend_with_zeroes(b):
+            try:
+                for x in b:
+                    x = to_constant(x)
+                    if isinstance(x, int):
+                        yield(x)
+                    else:
+                        yield(0)
+                for _ in range(32):
+                    yield(0)
+            except Exception as e:
+                return
+
+        for i in EVMAsm.disassemble_all(extend_with_zeroes(bytecode)):
+            if i.mnemonic == 'JUMPDEST':
+                self._valid_jumpdests.add(i.pc)
+
         #A no code VM is used to execute transactions to normal accounts.
         #I'll execute a STOP and close the transaction
         #if len(bytecode) == 0:
@@ -499,6 +526,8 @@ class EVM(Eventful):
         max_size = len(self.data)
         self._used_calldata_size = 0
         self._calldata_size = len(self.data)
+        self._valid_jmpdests = set()
+
 
     @property
     def bytecode(self):
@@ -537,6 +566,8 @@ class EVM(Eventful):
         state['_checkpoint_data'] = self._checkpoint_data
         state['_used_calldata_size'] = self._used_calldata_size
         state['_calldata_size'] = self._calldata_size
+        state['_valid_jumpdests'] = self._valid_jumpdests
+        state['_check_jumpdest'] = self._check_jumpdest
         return state
 
     def __setstate__(self, state):
@@ -558,7 +589,8 @@ class EVM(Eventful):
         self.suicides = state['suicides']
         self._used_calldata_size = state['_used_calldata_size']
         self._calldata_size = state['_calldata_size']
-
+        self._valid_jumpdests = state['_valid_jumpdests']
+        self._check_jumpdest = state['_check_jumpdest']
         super().__setstate__(state)
 
     def _get_memfee(self, address, size=1):
@@ -801,6 +833,22 @@ class EVM(Eventful):
         self._pc = last_pc
         self._checkpoint_data = None
 
+    def _set_check_jmpdest(self, flag=True):
+        self._check_jumpdest = flag
+
+    def _check_jmpdest(self):
+        should_check_jumpdest = self._check_jumpdest
+        if issymbolic(should_check_jumpdest):
+            should_check_jumpdest_solutions = solver.get_all_values(self.constraints, self._check_jumpdest)
+            if len(should_check_jumpdest_solutions) != 1:
+                raise EthereumError("Conditional not concretized at JMPDEST check")
+            should_check_jumpdest = should_check_jumpdest_solutions[0]
+
+        if should_check_jumpdest:
+            self._check_jumpdest = False
+            if self.pc not in self._valid_jumpdests:
+                raise InvalidOpcode()
+
     def _advance(self, result=None, exception=False):
         if self._checkpoint_data is None:
             return
@@ -848,6 +896,7 @@ class EVM(Eventful):
                              setstate=setstate,
                              policy='ALL')
         try:
+            self._check_jmpdest()
             last_pc, last_gas, instruction, arguments = self._checkpoint()
             result = self._handler(*arguments)
             self._advance(result)
@@ -1363,11 +1412,15 @@ class EVM(Eventful):
     def JUMP(self, dest):
         '''Alter the program counter'''
         self.pc = dest
-        # TODO check for JUMPDEST on next iter?
+        #This set ups a check for JMPDEST in the next instruction
+        self._set_check_jmpdest()
 
     def JUMPI(self, dest, cond):
         '''Conditionally alter the program counter'''
         self.pc = Operators.ITEBV(256, cond != 0, dest, self.pc + self.instruction.size)
+        #This set ups a check for JMPDEST in the next instruction if cond != 0
+        self._set_check_jmpdest(cond != 0)
+
 
     def GETPC(self):
         '''Get the value of the program counter prior to the increment'''

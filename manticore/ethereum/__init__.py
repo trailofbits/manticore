@@ -959,7 +959,6 @@ class ManticoreEVM(Manticore):
 
         if contract_account is None:
             logger.info("Failed to create contract: exception in constructor")
-            self.finalize()
             return
 
         prev_coverage = 0
