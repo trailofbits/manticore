@@ -470,17 +470,16 @@ class EVM(Eventful):
             bytecode_symbolic[0:bytecode_size] = bytecode
             bytecode = bytecode_symbolic
 
-        #TODO: Handle the case in which bytecode is  symbolic (This happens at
+        #TODO: Handle the case in which bytecode is symbolic (This happens at
         # CREATE instructions that has the arguments appended to the bytecode)
+        # This is a very cornered corner case in which code is actually symbolic
+        # We should simply not allow to jump to unconstrained(*) symbolic code.
+        # (*) bytecode that could take more than a single value
         self._check_jumpdest = False
         self._valid_jumpdests = set()
 
         #Compile the list of valid jumpdests via linear dissassembly
         def extend_with_zeroes(b):
-            # Fixme(felipe) This does not deal with the corner case in which the
-            # arguments are actually dynamic code 
-            # This simplifies the bytecode that ends early or has symbolic arguments
-            # appended at the end
             try:
                 for x in b:
                     x = to_constant(x)
