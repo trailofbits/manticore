@@ -17,6 +17,8 @@ class ContextFilter(logging.Filter):
         prefix = '.'.join(c[0] for c in components[:-1])
         return '{}.{}'.format(prefix, components[-1])
 
+    colors_disabled = False
+
     coloring = {u'DEBUG':u'magenta', u'WARNING':u'yellow',
         u'ERROR':u'red', u'INFO':u'blue'}
     colors =  dict(zip([u'black', u'red', u'green', u'yellow',
@@ -33,11 +35,10 @@ class ContextFilter(logging.Filter):
         '''
         Colors the logging level in the logging record
         '''
-        if ( 1 == 0 ): # disable colored output if true
+        if ( self.colors_disabled ):
             return levelname + u':'
         else:
-            retval = (self.color_set % self.color_map[levelname]) +
-                levelname + u':' + self.color_reset
+            retval = (self.color_set % self.color_map[levelname]) + levelname + u':' + self.color_reset
             return retval
 
     def filter(self, record):
@@ -54,6 +55,8 @@ class ContextFilter(logging.Filter):
 manticore_verbosity = 0
 all_loggers = []
 
+def disable_colors():
+    ContextFilter.colors_disabled = True
 
 def init_logging(default_level=logging.WARNING):
     global all_loggers

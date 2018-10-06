@@ -42,6 +42,8 @@ def parse_arguments():
                         help='Specify symbolic input file, \'+\' marks symbolic bytes')
     parser.add_argument('--names', type=str, default=None,
                         help=argparse.SUPPRESS)
+    parser.add_argument('--no-colors', action='store_true',
+                        help='Disable ANSI color escape sequences in output')
     parser.add_argument('--offset', type=int, default=16,
                         help=argparse.SUPPRESS)
     # FIXME (theo) Add some documentation on the different search policy options
@@ -194,6 +196,8 @@ def main():
 
     log.init_logging()
     args = parse_arguments()
+    if args.no_colors:
+        log.disable_colors()
 
     Manticore.verbosity(args.v)
 
