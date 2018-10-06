@@ -11,7 +11,10 @@ class WithKeyboardInterruptAs(object):
     def __enter__(self):
         self.signal_received = 0
         self.old_handler = signal.getsignal(signal.SIGINT)
-        signal.signal(signal.SIGINT, self.handler)
+        try:
+            signal.signal(signal.SIGINT, self.handler)
+        except ValueError as e:
+            logging.debug(e)
 
     def handler(self, sig, frame):
         self.signal_received += 1
@@ -22,4 +25,7 @@ class WithKeyboardInterruptAs(object):
             logging.debug('SIGINT received. Supressing KeyboardInterrupt.')
 
     def __exit__(self, type, value, traceback):
-        signal.signal(signal.SIGINT, self.old_handler)
+        try:
+            signal.signal(signal.SIGINT, self.old_handler)
+        except ValueError as e:
+            logging.debug(e)
