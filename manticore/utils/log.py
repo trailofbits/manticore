@@ -8,7 +8,6 @@ class ContextFilter(logging.Filter):
     '''
     This is a filter which injects contextual information into the log.
     '''
-
     def summarized_name(self, name):
         '''
         Produce a summarized record name
@@ -18,6 +17,29 @@ class ContextFilter(logging.Filter):
         prefix = '.'.join(c[0] for c in components[:-1])
         return '{}.{}'.format(prefix, components[-1])
 
+    coloring = {u'DEBUG':u'magenta', u'WARNING':u'yellow',
+        u'ERROR':u'red', u'INFO':u'blue'}
+    colors =  dict(zip([u'black', u'red', u'green', u'yellow',
+        u'blue', u'magenta', u'cyan', u'white'], map(str, range(30, 30 + 8))))
+
+    color_map = {}
+    for k, v in coloring.items():
+        color_map[k] = colors[v]
+
+    color_set = u'\x1b[%sm'
+    color_reset = u'\x1b[0m'
+
+    def colored_level_name(self, levelname):
+        '''
+        Colors the logging level in the logging record
+        '''
+        if ( 1 == 0 ): # disable colored output if true
+            return levelname + u':'
+        else:
+            retval = (self.color_set % self.color_map[levelname]) +
+                levelname + u':' + self.color_reset
+            return retval
+
     def filter(self, record):
         if hasattr(self, 'stateid') and isinstance(self.stateid, int):
             record.stateid = '[%d]' % self.stateid
@@ -25,6 +47,7 @@ class ContextFilter(logging.Filter):
             record.stateid = ''
 
         record.name = self.summarized_name(record.name)
+        record.levelname = self.colored_level_name(record.levelname)
         return True
 
 
@@ -37,7 +60,7 @@ def init_logging(default_level=logging.WARNING):
     loggers = logging.getLogger().manager.loggerDict.keys()
 
     ctxfilter = ContextFilter()
-    logfmt = ("%(asctime)s: [%(process)d]%(stateid)s %(name)s:%(levelname)s:"
+    logfmt = ("%(asctime)s: [%(process)d]%(stateid)s %(name)s:%(levelname)s"
               " %(message)s")
     handler = logging.StreamHandler(sys.stdout)
     formatter = logging.Formatter(logfmt)
