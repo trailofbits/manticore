@@ -43,7 +43,7 @@ class ABI(object):
         num_args = len(args)
         num_sig_args = len(type_spec.split(','))
         if num_args != num_sig_args:
-            logger.warning(f'Number of provided arguments does not match number of arguments in signature: {type_spec}')
+            logger.warning(f'Number of provided arguments ({num_args}) does not match number of arguments in signature: {type_spec}')
 
 
     @staticmethod
