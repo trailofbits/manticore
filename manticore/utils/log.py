@@ -28,18 +28,17 @@ class ContextFilter(logging.Filter):
     for k, v in coloring.items():
         color_map[k] = colors[v]
 
-    color_set = u'\x1b[%sm'
-    color_reset = u'\x1b[0m'
+    colored_levelname_format = u'\x1b[{}m{}:\x1b[0m'
+    plain_levelname_format = u'{}:'
 
     def colored_level_name(self, levelname):
         '''
         Colors the logging level in the logging record
         '''
-        if ( self.colors_disabled ):
-            return levelname + u':'
+        if self.colors_disabled:
+            return self.plain_levelname_format.format(levelname)
         else:
-            retval = (self.color_set % self.color_map[levelname]) + levelname + u':' + self.color_reset
-            return retval
+            return self.colored_levelname_format.format(self.color_map[levelname], levelname)
 
     def filter(self, record):
         if hasattr(self, 'stateid') and isinstance(self.stateid, int):
