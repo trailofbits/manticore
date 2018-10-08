@@ -4,7 +4,6 @@ import tempfile
 import unittest
 
 from manticore.utils import config
-from manticore.__main__ import process_config_values
 
 
 class ConfigTest(unittest.TestCase):
@@ -184,7 +183,7 @@ class ConfigTest(unittest.TestCase):
 
             args = parser.parse_args(['--overwritten=42', '--grp.shouldchange=23', f'--config={conf.name}'])
 
-            process_config_values(args, parser)
+            config.process_config_values(parser, args)
 
         # Make sure that cmdline flags get precedence
         g = config.get_group('cli')
