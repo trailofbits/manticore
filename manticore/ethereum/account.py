@@ -100,7 +100,6 @@ class EVMContract(EVMAccount):
         """
         if not name.startswith('_'):
             self.__init_hashes()
-            print(self._hashes)
             if self._hashes is not None and name in self._hashes.keys():
                 def f(*args, signature: Optional[str]=None, caller=None, value=0, **kwargs):
                     try:
@@ -112,7 +111,6 @@ class EVMContract(EVMAccount):
 
                             tx_data = ABI.function_call(f'{name}{signature}', *args)
                         else:
-                            # print(12333)
                             entries = self._hashes[name]
                             if len(entries) > 1:
                                 sig = entries[0].signature[len(name):]
