@@ -4,7 +4,9 @@ from typing import Optional
 from .abi import ABI
 from ..exceptions import EthereumError
 
+
 HashesEntry = namedtuple('HashesEntry', 'signature func_id')
+
 
 class EVMAccount(object):
     def __init__(self, address=None, manticore=None, name=None):
