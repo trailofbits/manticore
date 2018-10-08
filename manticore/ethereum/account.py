@@ -103,7 +103,6 @@ class EVMContract(EVMAccount):
             print(self._hashes)
             if self._hashes is not None and name in self._hashes.keys():
                 def f(*args, signature: Optional[str]=None, caller=None, value=0, **kwargs):
-                    num_args = len(args)
                     try:
                         if signature:
                             if f'{name}{signature}' not in {entry.signature for entries in self._hashes.values() for entry in entries}:
@@ -117,7 +116,6 @@ class EVMContract(EVMAccount):
                             entries = self._hashes[name]
                             if len(entries) > 1:
                                 sig = entries[0].signature[len(name):]
-                                # print(sig)
                                 raise EthereumError(
                                     f'Function: `{name}` has multiple signatures but `signature` is not '
                                     f'defined! Example: `account.{name}(..., signature="{sig}")`\n'
