@@ -309,17 +309,20 @@ class State(Eventful):
         expr = self.migrate_expression(expr)
         return not self._solver.can_be_true(self._constraints, expr == False)
 
-    def solve_one(self, expr):
+    def solve_one(self, expr, constrain=False):
         '''
         Concretize a symbolic :class:`~manticore.core.smtlib.expression.Expression` into
         one solution.
 
         :param manticore.core.smtlib.Expression expr: Symbolic value to concretize
+        :param bool constrain: If True, constrain expr to concretized value
         :return: Concrete value
         :rtype: int
         '''
         expr = self.migrate_expression(expr)
         value = self._solver.get_value(self._constraints, expr)
+        if constrain:
+            self.constrain(expr == value)
         #Include forgiveness here
         if isinstance(value, bytearray):
             value = bytes(value)
