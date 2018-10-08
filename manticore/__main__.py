@@ -14,8 +14,6 @@ consts = config.get_group('main')
 consts.add('recursionlimit', default=10000,
            description="Value to set for Python recursion limit")
 
-sys.setrecursionlimit(consts.recursionlimit)
-
 
 def parse_arguments():
     def positive(value):
@@ -212,6 +210,8 @@ def main():
 
     log.init_logging()
     args = parse_arguments()
+
+    sys.setrecursionlimit(consts.recursionlimit)
 
     Manticore.verbosity(args.v)
 
