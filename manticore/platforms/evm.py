@@ -1707,7 +1707,7 @@ class EVMWorld(Platform):
         self._world_state = {} if storage is None else storage
         self._constraints = constraints
         self._callstack = []
-        self._deleted_accounts = []
+        self._deleted_accounts = set()
         self._logs = list()
         self._pending_transaction = None
         self._transactions = list()
@@ -1931,7 +1931,7 @@ class EVMWorld(Platform):
         if address in self._world_state:
             deleted_account = (address, self._world_state[address])
             del self._world_state[address]
-            self._deleted_accounts.append(deleted_account)
+            self._deleted_accounts.add(deleted_account)
 
     def get_storage_data(self, storage_address, offset):
         """
