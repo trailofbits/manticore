@@ -12,7 +12,7 @@ class ConfigTest(unittest.TestCase):
 
     def test_create_group(self):
         consts = config.get_group('smt')
-        self.assertIsInstance(consts, config._group)
+        self.assertIsInstance(consts, config._Group)
         self.assertEquals(consts.name, 'smt')
 
     def test_repeated_get(self):
@@ -165,6 +165,16 @@ class ConfigTest(unittest.TestCase):
         # usage string
         self.assertIn('--few.one', usage)
         self.assertIn('--few.two', usage)
+
+    def test_bad_group_name(self):
+        g = config.get_group('few')
+
+        # Shouldn't be able to make a var named 'name'
+        with self.assertRaises(config.ConfigError):
+            g.add('name', default=0, description="desc")
+
+        with self.assertRaises(config.ConfigError):
+            g.update('name', default=0, description="desc")
 
     def test_process_cli(self):
 

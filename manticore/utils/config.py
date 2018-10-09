@@ -28,7 +28,7 @@ class ConfigError(Exception):
     pass
 
 
-class _var:
+class _Var:
     def __init__(self, name: str='', default=None, description: str=None, defined: bool=True):
         self.name = name
         self.description = description
@@ -41,7 +41,7 @@ class _var:
         return self.value is not self.default
 
 
-class _group:
+class _Group:
     def __init__(self, name: str):
         # To bypass __setattr__
         object.__setattr__(self, '_name', name)
@@ -64,7 +64,10 @@ class _group:
         if name in self._vars:
             raise ConfigError(f"{self.name}.{name} already defined.")
 
-        v = _var(name, description=description, default=default)
+        if name == 'name':
+            raise ConfigError("'name' is a reserved name for a group.")
+
+        v = _Var(name, description=description, default=default)
         self._vars[name] = v
 
     def update(self, name: str, value=None, default=None, description: str=None):
@@ -80,8 +83,10 @@ class _group:
         if name in self._vars:
             description = description or self._vars[name].description
             default = default or self._vars[name].default
+        elif name == 'name':
+            raise ConfigError("'name' is a reserved name for a group.")
 
-        v = _var(name, description=description, default=default, defined=False)
+        v = _Var(name, description=description, default=default, defined=False)
         v.value = value
         self._vars[name] = v
 
@@ -100,7 +105,7 @@ class _group:
         """
         return filter(lambda x: x.was_set, self._vars.values())
 
-    def _var_object(self, name: str) -> _var:
+    def _var_object(self, name: str) -> _Var:
         return self._vars[name]
 
     def __getattr__(self, name):
@@ -127,7 +132,7 @@ def get_group(name: str):
     if name in _groups:
         return _groups[name]
 
-    group = _group(name)
+    group = _Group(name)
     _groups[name] = group
 
     return group
