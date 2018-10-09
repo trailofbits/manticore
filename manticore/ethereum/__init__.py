@@ -12,6 +12,7 @@ from ..platforms import evm
 from ..core.state import State, TerminateState
 from ..utils.helpers import issymbolic, PickleSerializer
 from ..utils import config
+from ..utils.log import init_logging
 import tempfile
 from subprocess import Popen, PIPE, check_output
 from multiprocessing import Process, Queue
@@ -29,7 +30,10 @@ from .account import EVMAccount, EVMContract
 from .abi import ABI
 from .solidity import SolidityMetadata
 
+
 logger = logging.getLogger(__name__)
+
+init_logging()  # FIXME(mark): emitting a warning in abi.py does not work unless this is called a second time here
 
 
 def flagged(flag):
@@ -960,7 +964,6 @@ class ManticoreEVM(Manticore):
 
         if contract_account is None:
             logger.info("Failed to create contract: exception in constructor")
-            self.finalize()
             return
 
         prev_coverage = 0

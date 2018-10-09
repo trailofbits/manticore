@@ -1,10 +1,14 @@
 import re
 import uuid
 import sha3
+import logging
 
 from .. import abitypes, issymbolic
 from ..core.smtlib import Array, Operators, BitVec, ArrayVariable, ArrayProxy
 from ..exceptions import EthereumError
+
+
+logger = logging.getLogger(__name__)
 
 
 class ABI(object):
@@ -35,6 +39,14 @@ class ABI(object):
         raise ValueError
 
     @staticmethod
+    def _check_and_warn_num_args(type_spec, *args):
+        num_args = len(args)
+        num_sig_args = len(type_spec.split(','))
+        if num_args != num_sig_args:
+            logger.warning(f'Number of provided arguments ({num_args}) does not match number of arguments in signature: {type_spec}')
+
+
+    @staticmethod
     def function_call(type_spec, *args):
         """
         Build transaction data from function signature and arguments
@@ -42,6 +54,8 @@ class ABI(object):
         m = re.match(r"(?P<name>[a-zA-Z_][a-zA-Z_0-9]*)(?P<type>\(.*\))", type_spec)
         if not m:
             raise EthereumError("Function signature expected")
+
+        ABI._check_and_warn_num_args(type_spec, *args)
 
         result = ABI.function_selector(type_spec)  # Funcid
         result += ABI.serialize(m.group('type'), *args)
