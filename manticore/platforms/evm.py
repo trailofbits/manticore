@@ -7,7 +7,7 @@ import inspect
 from functools import wraps
 from ..utils.helpers import issymbolic, get_taints, taint_with, istainted
 from ..platforms.platform import *
-from ..core.smtlib import solver, BitVec, Array, Operators, Constant, ArrayVariable, BitVecConstant, translate_to_smtlib, to_constant
+from ..core.smtlib import solver, BitVec, Array, Operators, Constant, ArrayVariable, ArrayStore, BitVecConstant, translate_to_smtlib, to_constant
 from ..core.state import Concretize, TerminateState
 from ..utils.event import Eventful
 from ..core.smtlib.visitors import simplify
@@ -1517,7 +1517,7 @@ class EVM(Eventful):
     @concretized_args(in_offset='SAMPLED', in_size='SAMPLED')
     def CALLCODE(self, gas, _ignored_, value, in_offset, in_size, out_offset, out_size):
         '''Message-call into this account with alternative account's code'''
-        self.world.start_transaction('CALL',
+        self.world.start_transaction('CALLCODE',
                                      address=self.address,
                                      data=self.read_buffer(in_offset, in_size),
                                      caller=self.address,
@@ -1792,10 +1792,13 @@ class EVMWorld(Platform):
             bytecode = self.get_code(address)
             data = bytecode_or_data
 
-        address = tx.address
         if tx.sort == 'DELEGATECALL':
-            address = tx.caller
+            # So at a DELEGATECALL the environment should look exactly the same as the original tx
+            # This means caller, value and address are the same as prev tx
             assert value == 0
+            address = self.current_transaction.address
+            caller = self.current_transaction.caller
+            value = self.current_transaction.value
 
         vm = EVM(self._constraints, address, data, caller, value, bytecode, world=self, gas=gas)
 
@@ -2232,11 +2235,13 @@ class EVMWorld(Platform):
             return
         sort, address, price, data, caller, value, gas = self._pending_transaction
 
-        if sort not in {'CALL', 'CREATE', 'DELEGATECALL'}:
+        if sort not in {'CALL', 'CREATE', 'DELEGATECALL', 'CALLCODE'}:
             raise EVMException('Type of transaction not supported')
 
         if self.depth > 0:
+            assert price is None, "Price should not be used in internal transactions"
             price = self.tx_gasprice()
+
         if price is None:
             raise EVMException("Need to set a gas price on human tx")
 
@@ -2269,7 +2274,9 @@ class EVMWorld(Platform):
         self._pending_transaction = None
 
         #Here we have enough funds and room in the callstack
-        self.send_funds(caller, address, value)
+        # CALLCODE and  DELEGATECALL do not send funds
+        if sort in ('CALL', 'CREATE'):
+            self.send_funds(caller, address, value)
 
         self._open_transaction(sort, address, price, data, caller, value, gas=gas)
 
@@ -2277,7 +2284,7 @@ class EVMWorld(Platform):
             self._close_transaction('TXERROR', rollback=True)
 
         #Transaction to normal account
-        if sort in ('CALL', 'DELEGATECALL') and not self.get_code(address):
+        if sort in ('CALL', 'DELEGATECALL', 'CALLCODE') and not self.get_code(address):
             self._close_transaction('STOP')
             
     def dump(self, stream, state, mevm, message):

@@ -13,7 +13,7 @@ from manticore.core.plugin import Plugin
 from manticore.core.smtlib import ConstraintSet, operators
 from manticore.core.smtlib.expression import BitVec
 from manticore.core.smtlib import solver
-from manticore.core.state import State
+from manticore.core.state import State, TerminateState
 from manticore.ethereum import ManticoreEVM, DetectIntegerOverflow, Detector, NoAliveStates, ABI, EthereumError
 from manticore.platforms.evm import EVMWorld, ConcretizeStack, concretized_args, Return, Stop
 from manticore.core.smtlib.visitors import pretty_print, translate_to_smtlib, simplify, to_constant
@@ -863,6 +863,10 @@ class EthSolidityCompilerTest(unittest.TestCase):
         finally:
             shutil.rmtree(d)
 
+
+
+class EthSpecificTxIntructionTests(unittest.TestCase):
+
     def test_jmpdest_check(self):
         '''
             This test that jumping to a JUMPDEST in the operand of a PUSH should 
@@ -900,6 +904,79 @@ class EthSolidityCompilerTest(unittest.TestCase):
         self.assertEqual(result, 'THROW')
         self.assertEqual(new_vm.gas, 99992)
         
+
+    def test_delegatecall_env(self):
+        '''
+            This test that the delegatecalled environment is identicall to the caller
+            https://github.com/trailofbits/manticore/issues/1169
+        '''
+        constraints = ConstraintSet()
+        world = evm.EVMWorld(constraints)
+        asm_acc1 = '''  CALLER
+                        PUSH1 0x0
+                        SSTORE
+                        ADDRESS
+                        PUSH1 0x1
+                        SSTORE
+                        CALLVALUE
+                        PUSH1 0x2
+                        SSTORE
+                        STOP
+                  '''
+        # delegatecall(gas, address, in_offset, in_size, out_offset, out_size)
+        asm_acc2 = '''  PUSH1 0x0
+                        PUSH2 0X0
+                        PUSH1 0x0
+                        PUSH2 0X0
+                        PUSH32 0x111111111111111111111111111111111111111
+                        PUSH32 0x10000
+                        DELEGATECALL
+                        STOP
+            '''
+
+        world.create_account(address=0x111111111111111111111111111111111111111,
+                             code=EVMAsm.assemble(asm_acc1))
+
+        world.create_account(address=0x222222222222222222222222222222222222222,
+                             code=EVMAsm.assemble(asm_acc2))
+
+        world.create_account(address=0x333333333333333333333333333333333333333,
+                             balance=100000000000000000000000,
+                             code=EVMAsm.assemble(asm_acc2))
+
+        world.transaction(0x222222222222222222222222222222222222222, caller=0x333333333333333333333333333333333333333, value=10, gas=5000000)
+
+
+        try:
+            while True:
+                world.execute()
+        except TerminateState as e:
+            result = str(e)
+
+        self.assertEqual(result, 'STOP')
+
+        # Check there is something written to the storage of the contract making
+        # the delegatecall
+        self.assertTrue(world.has_storage(0x222222222222222222222222222222222222222))
+
+        # Caller at delegatecalled contract must be original caller
+        self.assertEqual( world.get_storage_data(0x222222222222222222222222222222222222222, 0), 0x333333333333333333333333333333333333333)
+        # address at delegatecalled contract must be original address
+        self.assertEqual( world.get_storage_data(0x222222222222222222222222222222222222222, 1), 0x222222222222222222222222222222222222222)
+        # value at delegatecalled contract must be original value
+        self.assertEqual( world.get_storage_data(0x222222222222222222222222222222222222222, 2), 10)
+
+        # check balances
+        self.assertEqual(world.get_balance(0x111111111111111111111111111111111111111), 0)
+        self.assertEqual(world.get_balance(0x222222222222222222222222222222222222222), 10)
+        self.assertEqual(world.get_balance(0x333333333333333333333333333333333333333), 100000000000000000000000-10)
+
+        #checl delegated call storage was not touch
+        self.assertFalse(world.has_storage(0x111111111111111111111111111111111111111))
+        self.assertEqual( world.get_storage_data(0x111111111111111111111111111111111111111, 0), 0)
+        self.assertEqual( world.get_storage_data(0x111111111111111111111111111111111111111, 1), 0)
+        self.assertEqual( world.get_storage_data(0x111111111111111111111111111111111111111, 2), 0)
+        self.assertFalse(world.has_storage(0x333333333333333333333333333333333333333))
 
 
 if __name__ == '__main__':
