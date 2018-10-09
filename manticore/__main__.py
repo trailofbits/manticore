@@ -22,7 +22,7 @@ def parse_arguments():
             raise argparse.ArgumentTypeError("Argument must be positive")
         return ivalue
 
-    parser = argparse.ArgumentParser(description='Symbolic execution tool',
+    parser = argparse.ArgumentParser(description='Symbolic execution tool', prog='manticore',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--context', type=str, default=None,
                         help=argparse.SUPPRESS)
@@ -43,7 +43,7 @@ def parse_arguments():
                         help='Enable profiling mode.')
     parser.add_argument('--procs', type=int, default=1,
                         help='Number of parallel processes to spawn')
-    parser.add_argument('argv', type=str, nargs='+',
+    parser.add_argument('argv', type=str, nargs='*', default=[],
                         help="Path to program, and arguments ('+' in arguments indicates symbolic byte).")
     parser.add_argument('--timeout', type=int, default=0,
                         help='Timeout. Abort exploration after TIMEOUT seconds')
@@ -148,6 +148,10 @@ def parse_arguments():
     if parsed.config_print:
         print(config.describe_options())
         sys.exit(0)
+
+    if not parsed.argv:
+        print(parser.format_usage() + "error: the following arguments are required: argv")
+        sys.exit(1)
 
     if parsed.policy.startswith('min'):
         parsed.policy = '-' + parsed.policy[3:]
