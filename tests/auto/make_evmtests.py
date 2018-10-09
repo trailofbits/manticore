@@ -223,17 +223,19 @@ class EVMTest_{os.path.basename(folder)}(unittest.TestCase):
     maxDiff=None 
 ''')
 
-    for filename in os.listdir(folder):
-        if not filename.endswith('.json'):
-            continue
+    if os.path.isdir(folder):
+        for filename in os.listdir(folder):
+            if not filename.endswith('.json'):
+                continue
 
-        testcase = dict(json.loads(open(os.path.join(folder,filename)).read()))
-        skip = False
-        if False:
-            skip = True
-        #print (testcase)
-        for name, testcase in testcase.items():
-            print(gen_test(testcase, os.path.join(folder,filename), skip))
+            testcase = dict(json.loads(open(os.path.join(folder,filename)).read()))
+            for name, testcase in testcase.items():
+                print(gen_test(testcase, os.path.join(folder,filename), False))
+    else:
+            testcase = dict(json.loads(open(os.path.join(folder,folder)).read()))
+            for name, testcase in testcase.items():
+                print(gen_test(testcase, os.path.join(folder,folder), False))
+
 
     print('''
 if __name__ == '__main__':
