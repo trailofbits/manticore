@@ -420,6 +420,40 @@ class EthTests(unittest.TestCase):
             contract_account.ret(self.mevm.make_symbolic_value(), signature='(uint8)')
         self.assertTrue(str(ctx.exception))
 
+    def test_selfdestruct_decoupled_account_delete(self):
+        source_code = '''
+            contract C{
+                function d( ){
+                    selfdestruct(0);
+                }
+                function g() returns(uint) {
+                    return 42 ;
+                }
+            }
+
+            contract D{
+                C c;
+                constructor () {
+                    c = new C();
+                }
+                function t () returns(uint){
+                    c.d();
+                    return c.g();
+                }
+            }
+        '''
+        user_account = self.mevm.create_account(balance=1000)
+        contract_account = self.mevm.solidity_create_contract(source_code, owner=user_account, contract_name='D', gas=9000000)
+        contract_account.t(gas=9000000) #this does not return nothing as it may create several states
+
+        # nothing reverted and we end up with a single state
+        self.assertEqual(self.mevm.count_states(), 1)
+
+        # Check that calling t() returned a 42
+        # That is that calling a selfdestructed contract works as the account
+        # is actually deleted at the end of the human tx
+        self.assertEqual(ABI.deserialize('uint', to_constant(self.mevm.world.transactions[-1].return_data)), 42)
+
     def test_function_name_collision(self):
         source_code = '''
         contract Test{

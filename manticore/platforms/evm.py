@@ -202,10 +202,10 @@ class Transaction(object):
 
     @property
     def return_value(self):
-        if self.result in {'RETURN', 'STOP'}:
+        if self.result in {'RETURN', 'STOP', 'SELFDESTRUCT'}:
             return 1
         else:
-            assert self.result in {'TXERROR', 'REVERT', 'THROW', 'SELFDESTRUCT'}
+            assert self.result in {'TXERROR', 'REVERT', 'THROW'}
             return 0
 
     def set_result(self, result, return_data=None):
@@ -1477,6 +1477,7 @@ class EVM(Eventful):
                                      caller=self.address,
                                      value=value,
                                      gas=self.gas)
+
         raise StartTx()
 
     @CREATE.pos
@@ -1813,13 +1814,16 @@ class EVMWorld(Platform):
         self.constraints = vm.constraints
 
         if rollback:
-            for address, account in self._deleted_accounts:
-                self._world_state[address] = account
-
             self._set_storage(vm.address, account_storage)
-            self._deleted_accounts = self._deleted_accounts
             self._logs = logs
             self.send_funds(tx.address, tx.caller, tx.value)
+        else:
+            self._deleted_accounts = deleted_accounts
+
+        if tx.is_human():
+            for deleted_account in self._deleted_accounts:
+                if deleted_account in self._world_state:
+                    del self._world_state[deleted_account]
 
         tx.set_result(result, data)
         self._transactions.append(tx)
@@ -1929,9 +1933,7 @@ class EVMWorld(Platform):
 
     def delete_account(self, address):
         if address in self._world_state:
-            deleted_account = (address, self._world_state[address])
-            del self._world_state[address]
-            self._deleted_accounts.add(deleted_account)
+            self._deleted_accounts.add(address) #deleted_account)
 
     def get_storage_data(self, storage_address, offset):
         """
@@ -2239,7 +2241,6 @@ class EVMWorld(Platform):
             price = self.tx_gasprice()
         if price is None:
             raise EVMException("Need to set a gas price on human tx")
-
         self._pending_transaction_concretize_address()
         self._pending_transaction_concretize_caller()
         if caller not in self.accounts:
@@ -2264,10 +2265,8 @@ class EVMWorld(Platform):
                                  setstate=lambda a, b: None,
                                  policy='ALL')
             failed = set(enough_balance_solutions) == {False}
-
         #processed
         self._pending_transaction = None
-
         #Here we have enough funds and room in the callstack
         self.send_funds(caller, address, value)
 
