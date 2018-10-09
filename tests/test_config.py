@@ -188,6 +188,7 @@ class ConfigTest(unittest.TestCase):
             parser = argparse.ArgumentParser('Desc')
             parser.add_argument('--overwritten', type=int, default=0)
             parser.add_argument('--config', default=None)
+            parser.add_argument('--unchanged', default=None)
 
             config.add_config_vars_to_argparse(parser)
 
