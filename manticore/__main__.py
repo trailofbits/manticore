@@ -56,8 +56,6 @@ def parse_arguments():
                         help='Show program version information')
     parser.add_argument('--config', type=str,
                         help='Manticore config file (.yml) to use. (default config file pattern is: ./[.]m[anti]core.yml)')
-    parser.add_argument('--config-print', action='store_true',
-                        help='Print internal options that are configurable from an yml file and exit')
 
     bin_flags = parser.add_argument_group('Binary flags')
     bin_flags.add_argument('--entrysymbol', type=str, default=None,
@@ -144,10 +142,6 @@ def parse_arguments():
         parsed.procs = 1
 
     config.process_config_values(parser, parsed)
-
-    if parsed.config_print:
-        print(config.describe_options())
-        sys.exit(0)
 
     if not parsed.argv:
         print(parser.format_usage() + "error: the following arguments are required: argv")

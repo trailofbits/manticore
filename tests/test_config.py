@@ -105,15 +105,6 @@ class ConfigTest(unittest.TestCase):
         with self.assertRaises(config.ConfigError):
             config.parse_config(f)
 
-    def test_describe(self):
-        g = config.get_group('group')
-        g.add('val', default=34, description='its a val')
-
-        summary = config.describe_options()
-        self.assertIn('group.val', summary)
-        self.assertIn('default: 34', summary)
-        self.assertIn('its a val', summary)
-
     def test_overrides(self):
         with tempfile.NamedTemporaryFile('w+') as conf:
             conf.file.write('group: {var1: val1}')
@@ -145,12 +136,6 @@ class ConfigTest(unittest.TestCase):
 
         self.assertIn('set_vars:', saved)
         self.assertNotIn('unset_vars:', saved)
-
-        # Updating a var makes describe_options ignore it, as it's usually to print
-        # vars that have default values.
-        g.update('unset', 34)
-        described = config.describe_options()
-        self.assertNotIn('unset', described)
 
     def test_add_config_vars(self):
         g = config.get_group('few')

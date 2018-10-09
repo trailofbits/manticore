@@ -75,10 +75,6 @@ class _Group:
         Like add, but can tolerate existing values; also updates the value.
 
         Mostly used for setting fields from imported INI files and modified CLI flags.
-        In the above case, we set defined to False so that they're not printed when
-        describe_options() is called. That's desirable because we want describe_options
-        to produce a list of everything that was defined in module headers, not values
-        that were imported.
         """
         if name in self._vars:
             description = description or self._vars[name].description
@@ -269,21 +265,3 @@ def get_config_keys():
             yield f"{group_name}.{key}"
 
 
-def describe_options():
-    """
-    Print a summary of variables that have been defined to be settable.
-    """
-    global _groups
-
-    s = io.StringIO()
-
-    for group_name, group in _groups.items():
-        for key in group:
-            obj = group._var_object(key)
-            if not obj.defined:
-                continue
-            s.write(f"{group_name}.{key}\n")
-            s.write(f"  default: {obj.default}\n")
-            s.write(f"  {obj.description}\n")
-
-    return s.getvalue()
