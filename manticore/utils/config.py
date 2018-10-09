@@ -10,12 +10,10 @@ The config values and constant are gathered from three sources:
 in that order of priority.
 """
 
-import ast
 import yaml
 import io
 import logging
 import os
-import sys
 
 from itertools import product
 
@@ -46,8 +44,12 @@ class _var:
 class _group:
     def __init__(self, name: str):
         # To bypass __setattr__
-        object.__setattr__(self, 'name', name)
+        object.__setattr__(self, '_name', name)
         object.__setattr__(self, '_vars', {})
+
+    @property
+    def name(self):
+        return self._name
 
     def add(self, name: str, default=None, description: str=None):
         """
