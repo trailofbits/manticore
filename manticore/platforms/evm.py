@@ -1933,7 +1933,7 @@ class EVMWorld(Platform):
 
     def delete_account(self, address):
         if address in self._world_state:
-            self._deleted_accounts.add(address) #deleted_account)
+            self._deleted_accounts.add(address)
 
     def get_storage_data(self, storage_address, offset):
         """
