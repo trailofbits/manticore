@@ -32,9 +32,6 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df294e] = b'f'
-        mem[0x7ffff7df294f] = b'\x0f'
-        mem[0x7ffff7df2950] = b'\x16'
         mem[0x7ffff7a249d1] = b'I'
         mem[0x7ffff7a249d2] = b'V'
         mem[0x7ffff7a249d3] = b'A'
@@ -43,6 +40,9 @@ class CPUTest(unittest.TestCase):
         mem[0x7ffff7a249d6] = b'\x00'
         mem[0x7ffff7a249d7] = b'\x00'
         mem[0x7ffff7a249d8] = b'\x00'
+        mem[0x7ffff7df294e] = b'f'
+        mem[0x7ffff7df294f] = b'\x0f'
+        mem[0x7ffff7df2950] = b'\x16'
         mem[0x7ffff7df2951] = b'O'
         mem[0x7ffff7df2952] = b'\x08'
         cpu.XMM1 = 0xffffffffffff00ff52505f4342494c47
@@ -76,11 +76,6 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df294e] = b'f'
-        mem[0x7ffff7df294f] = b'\x0f'
-        mem[0x7ffff7df2950] = b'\x16'
-        mem[0x7ffff7df2951] = b'O'
-        mem[0x7ffff7df2952] = b'\x08'
         mem[0x7ffff7a248d6] = b'2'
         mem[0x7ffff7a248d7] = b'.'
         mem[0x7ffff7a248d8] = b'5'
@@ -89,6 +84,11 @@ class CPUTest(unittest.TestCase):
         mem[0x7ffff7a248db] = b'L'
         mem[0x7ffff7a248dc] = b'I'
         mem[0x7ffff7a248dd] = b'B'
+        mem[0x7ffff7df294e] = b'f'
+        mem[0x7ffff7df294f] = b'\x0f'
+        mem[0x7ffff7df2950] = b'\x16'
+        mem[0x7ffff7df2951] = b'O'
+        mem[0x7ffff7df2952] = b'\x08'
         cpu.XMM1 = 0xffffffff00ffffff2e325f4342494c47
         cpu.RDI = 0x7ffff7a248ce
         cpu.RIP = 0x7ffff7df294e
@@ -120,11 +120,6 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df2956] = b'V'
-        mem[0x7ffff7df2957] = b'\x08'
-        mem[0x7ffff7df2953] = b'f'
-        mem[0x7ffff7df2954] = b'\x0f'
-        mem[0x7ffff7df2955] = b'\x16'
         mem[0x7ffff7a248d6] = b'2'
         mem[0x7ffff7a248d7] = b'.'
         mem[0x7ffff7a248d8] = b'5'
@@ -133,6 +128,11 @@ class CPUTest(unittest.TestCase):
         mem[0x7ffff7a248db] = b'L'
         mem[0x7ffff7a248dc] = b'I'
         mem[0x7ffff7a248dd] = b'B'
+        mem[0x7ffff7df2953] = b'f'
+        mem[0x7ffff7df2954] = b'\x0f'
+        mem[0x7ffff7df2955] = b'\x16'
+        mem[0x7ffff7df2956] = b'V'
+        mem[0x7ffff7df2957] = b'\x08'
         cpu.XMM2 = 0x42494c4700352e322e325f4342494c47
         cpu.RSI = 0x7ffff7a248ce
         cpu.RIP = 0x7ffff7df2953
@@ -164,11 +164,6 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df294e] = b'f'
-        mem[0x7ffff7df294f] = b'\x0f'
-        mem[0x7ffff7df2950] = b'\x16'
-        mem[0x7ffff7df2951] = b'O'
-        mem[0x7ffff7df2952] = b'\x08'
         mem[0x7ffff7a248d6] = b'2'
         mem[0x7ffff7a248d7] = b'.'
         mem[0x7ffff7a248d8] = b'5'
@@ -177,6 +172,11 @@ class CPUTest(unittest.TestCase):
         mem[0x7ffff7a248db] = b'L'
         mem[0x7ffff7a248dc] = b'I'
         mem[0x7ffff7a248dd] = b'B'
+        mem[0x7ffff7df294e] = b'f'
+        mem[0x7ffff7df294f] = b'\x0f'
+        mem[0x7ffff7df2950] = b'\x16'
+        mem[0x7ffff7df2951] = b'O'
+        mem[0x7ffff7df2952] = b'\x08'
         cpu.XMM1 = 0xffffffff00ffffff2e325f4342494c47
         cpu.RDI = 0x7ffff7a248ce
         cpu.RIP = 0x7ffff7df294e
@@ -208,11 +208,6 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a21000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df294e] = b'f'
-        mem[0x7ffff7df294f] = b'\x0f'
-        mem[0x7ffff7df2950] = b'\x16'
-        mem[0x7ffff7df2951] = b'O'
-        mem[0x7ffff7df2952] = b'\x08'
         mem[0x7ffff7a218da] = b't'
         mem[0x7ffff7a218db] = b'a'
         mem[0x7ffff7a218dc] = b'r'
@@ -221,6 +216,11 @@ class CPUTest(unittest.TestCase):
         mem[0x7ffff7a218df] = b'm'
         mem[0x7ffff7a218e0] = b'a'
         mem[0x7ffff7a218e1] = b'i'
+        mem[0x7ffff7df294e] = b'f'
+        mem[0x7ffff7df294f] = b'\x0f'
+        mem[0x7ffff7df2950] = b'\x16'
+        mem[0x7ffff7df2951] = b'O'
+        mem[0x7ffff7df2952] = b'\x08'
         cpu.XMM1 = 0x735f6362696c5f5f
         cpu.RDI = 0x7ffff7a218d2
         cpu.RIP = 0x7ffff7df294e
@@ -252,11 +252,6 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a20000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df2953] = b'f'
-        mem[0x7ffff7df2954] = b'\x0f'
-        mem[0x7ffff7df2955] = b'\x16'
-        mem[0x7ffff7df2956] = b'V'
-        mem[0x7ffff7df2957] = b'\x08'
         mem[0x7ffff7a20a9b] = b'\x00'
         mem[0x7ffff7a20a9c] = b'a'
         mem[0x7ffff7a20a9d] = b'c'
@@ -265,6 +260,11 @@ class CPUTest(unittest.TestCase):
         mem[0x7ffff7a20aa0] = b'\x00'
         mem[0x7ffff7a20aa1] = b'_'
         mem[0x7ffff7a20aa2] = b'n'
+        mem[0x7ffff7df2953] = b'f'
+        mem[0x7ffff7df2954] = b'\x0f'
+        mem[0x7ffff7df2955] = b'\x16'
+        mem[0x7ffff7df2956] = b'V'
+        mem[0x7ffff7df2957] = b'\x08'
         cpu.XMM2 = 0x36766772615f6c645f
         cpu.RSI = 0x7ffff7a20a93
         cpu.RIP = 0x7ffff7df2953
@@ -296,11 +296,6 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a23000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df2953] = b'f'
-        mem[0x7ffff7df2954] = b'\x0f'
-        mem[0x7ffff7df2955] = b'\x16'
-        mem[0x7ffff7df2956] = b'V'
-        mem[0x7ffff7df2957] = b'\x08'
         mem[0x7ffff7a232ee] = b'n'
         mem[0x7ffff7a232ef] = b'a'
         mem[0x7ffff7a232f0] = b'b'
@@ -309,6 +304,11 @@ class CPUTest(unittest.TestCase):
         mem[0x7ffff7a232f3] = b'_'
         mem[0x7ffff7a232f4] = b's'
         mem[0x7ffff7a232f5] = b'e'
+        mem[0x7ffff7df2953] = b'f'
+        mem[0x7ffff7df2954] = b'\x0f'
+        mem[0x7ffff7df2955] = b'\x16'
+        mem[0x7ffff7df2956] = b'V'
+        mem[0x7ffff7df2957] = b'\x08'
         cpu.XMM2 = 0x36655f6362696c5f5f
         cpu.RSI = 0x7ffff7a232e6
         cpu.RIP = 0x7ffff7df2953
@@ -340,11 +340,6 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df2956] = b'V'
-        mem[0x7ffff7df2957] = b'\x08'
-        mem[0x7ffff7df2953] = b'f'
-        mem[0x7ffff7df2954] = b'\x0f'
-        mem[0x7ffff7df2955] = b'\x16'
         mem[0x7ffff7a248d6] = b'2'
         mem[0x7ffff7a248d7] = b'.'
         mem[0x7ffff7a248d8] = b'5'
@@ -353,6 +348,11 @@ class CPUTest(unittest.TestCase):
         mem[0x7ffff7a248db] = b'L'
         mem[0x7ffff7a248dc] = b'I'
         mem[0x7ffff7a248dd] = b'B'
+        mem[0x7ffff7df2953] = b'f'
+        mem[0x7ffff7df2954] = b'\x0f'
+        mem[0x7ffff7df2955] = b'\x16'
+        mem[0x7ffff7df2956] = b'V'
+        mem[0x7ffff7df2957] = b'\x08'
         cpu.XMM2 = 0x42494c4700352e322e325f4342494c47
         cpu.RSI = 0x7ffff7a248ce
         cpu.RIP = 0x7ffff7df2953
@@ -384,11 +384,6 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7dd7000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df294e] = b'f'
-        mem[0x7ffff7df294f] = b'\x0f'
-        mem[0x7ffff7df2950] = b'\x16'
-        mem[0x7ffff7df2951] = b'O'
-        mem[0x7ffff7df2952] = b'\x08'
         mem[0x7ffff7dd7671] = b'_'
         mem[0x7ffff7dd7672] = b'd'
         mem[0x7ffff7dd7673] = b's'
@@ -397,6 +392,11 @@ class CPUTest(unittest.TestCase):
         mem[0x7ffff7dd7676] = b'f'
         mem[0x7ffff7dd7677] = b'o'
         mem[0x7ffff7dd7678] = b'r'
+        mem[0x7ffff7df294e] = b'f'
+        mem[0x7ffff7df294f] = b'\x0f'
+        mem[0x7ffff7df2950] = b'\x16'
+        mem[0x7ffff7df2951] = b'O'
+        mem[0x7ffff7df2952] = b'\x08'
         cpu.XMM1 = 0x646e69665f6c645f
         cpu.RDI = 0x7ffff7dd7669
         cpu.RIP = 0x7ffff7df294e
@@ -428,11 +428,6 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df2956] = b'V'
-        mem[0x7ffff7df2957] = b'\x08'
-        mem[0x7ffff7df2953] = b'f'
-        mem[0x7ffff7df2954] = b'\x0f'
-        mem[0x7ffff7df2955] = b'\x16'
         mem[0x7ffff7a248d6] = b'2'
         mem[0x7ffff7a248d7] = b'.'
         mem[0x7ffff7a248d8] = b'5'
@@ -441,6 +436,11 @@ class CPUTest(unittest.TestCase):
         mem[0x7ffff7a248db] = b'L'
         mem[0x7ffff7a248dc] = b'I'
         mem[0x7ffff7a248dd] = b'B'
+        mem[0x7ffff7df2953] = b'f'
+        mem[0x7ffff7df2954] = b'\x0f'
+        mem[0x7ffff7df2955] = b'\x16'
+        mem[0x7ffff7df2956] = b'V'
+        mem[0x7ffff7df2957] = b'\x08'
         cpu.XMM2 = 0x42494c4700352e322e325f4342494c47
         cpu.RSI = 0x7ffff7a248ce
         cpu.RIP = 0x7ffff7df2953
@@ -472,8 +472,6 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7dd7000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df294e] = b'f'
-        mem[0x7ffff7df294f] = b'\x0f'
         mem[0x7ffff7dd7750] = b'o'
         mem[0x7ffff7dd7751] = b'b'
         mem[0x7ffff7dd7752] = b'a'
@@ -482,6 +480,8 @@ class CPUTest(unittest.TestCase):
         mem[0x7ffff7dd7755] = b'r'
         mem[0x7ffff7dd7756] = b'o'
         mem[0x7ffff7dd7757] = b'\x00'
+        mem[0x7ffff7df294e] = b'f'
+        mem[0x7ffff7df294f] = b'\x0f'
         mem[0x7ffff7df2950] = b'\x16'
         mem[0x7ffff7df2951] = b'O'
         mem[0x7ffff7df2952] = b'\x08'
@@ -516,11 +516,6 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df294e] = b'f'
-        mem[0x7ffff7df294f] = b'\x0f'
-        mem[0x7ffff7df2950] = b'\x16'
-        mem[0x7ffff7df2951] = b'O'
-        mem[0x7ffff7df2952] = b'\x08'
         mem[0x7ffff7a248d6] = b'2'
         mem[0x7ffff7a248d7] = b'.'
         mem[0x7ffff7a248d8] = b'5'
@@ -529,6 +524,11 @@ class CPUTest(unittest.TestCase):
         mem[0x7ffff7a248db] = b'L'
         mem[0x7ffff7a248dc] = b'I'
         mem[0x7ffff7a248dd] = b'B'
+        mem[0x7ffff7df294e] = b'f'
+        mem[0x7ffff7df294f] = b'\x0f'
+        mem[0x7ffff7df2950] = b'\x16'
+        mem[0x7ffff7df2951] = b'O'
+        mem[0x7ffff7df2952] = b'\x08'
         cpu.XMM1 = 0xffffffff00ffffff2e325f4342494c47
         cpu.RDI = 0x7ffff7a248ce
         cpu.RIP = 0x7ffff7df294e
@@ -560,11 +560,6 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df294e] = b'f'
-        mem[0x7ffff7df294f] = b'\x0f'
-        mem[0x7ffff7df2950] = b'\x16'
-        mem[0x7ffff7df2951] = b'O'
-        mem[0x7ffff7df2952] = b'\x08'
         mem[0x7ffff7a248b7] = b'-'
         mem[0x7ffff7a248b8] = b'x'
         mem[0x7ffff7a248b9] = b'8'
@@ -573,6 +568,11 @@ class CPUTest(unittest.TestCase):
         mem[0x7ffff7a248bc] = b'6'
         mem[0x7ffff7a248bd] = b'4'
         mem[0x7ffff7a248be] = b'.'
+        mem[0x7ffff7df294e] = b'f'
+        mem[0x7ffff7df294f] = b'\x0f'
+        mem[0x7ffff7df2950] = b'\x16'
+        mem[0x7ffff7df2951] = b'O'
+        mem[0x7ffff7df2952] = b'\x08'
         cpu.XMM1 = 0x78756e696c2d646c
         cpu.RDI = 0x7ffff7a248af
         cpu.RIP = 0x7ffff7df294e
@@ -604,11 +604,6 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7b99000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df2953] = b'f'
-        mem[0x7ffff7df2954] = b'\x0f'
-        mem[0x7ffff7df2955] = b'\x16'
-        mem[0x7ffff7df2956] = b'V'
-        mem[0x7ffff7df2957] = b'\x08'
         mem[0x7ffff7b99a30] = b'6'
         mem[0x7ffff7b99a31] = b'\x00'
         mem[0x7ffff7b99a32] = b'_'
@@ -617,6 +612,11 @@ class CPUTest(unittest.TestCase):
         mem[0x7ffff7b99a35] = b'd'
         mem[0x7ffff7b99a36] = b's'
         mem[0x7ffff7b99a37] = b'o'
+        mem[0x7ffff7df2953] = b'f'
+        mem[0x7ffff7df2954] = b'\x0f'
+        mem[0x7ffff7df2955] = b'\x16'
+        mem[0x7ffff7df2956] = b'V'
+        mem[0x7ffff7df2957] = b'\x08'
         cpu.XMM2 = 0x64765f5f00656d692e325f58554e494c
         cpu.RSI = 0x7ffff7b99a28
         cpu.RIP = 0x7ffff7df2953
@@ -648,11 +648,6 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df294e] = b'f'
-        mem[0x7ffff7df294f] = b'\x0f'
-        mem[0x7ffff7df2950] = b'\x16'
-        mem[0x7ffff7df2951] = b'O'
-        mem[0x7ffff7df2952] = b'\x08'
         mem[0x7ffff7a248d6] = b'2'
         mem[0x7ffff7a248d7] = b'.'
         mem[0x7ffff7a248d8] = b'5'
@@ -661,6 +656,11 @@ class CPUTest(unittest.TestCase):
         mem[0x7ffff7a248db] = b'L'
         mem[0x7ffff7a248dc] = b'I'
         mem[0x7ffff7a248dd] = b'B'
+        mem[0x7ffff7df294e] = b'f'
+        mem[0x7ffff7df294f] = b'\x0f'
+        mem[0x7ffff7df2950] = b'\x16'
+        mem[0x7ffff7df2951] = b'O'
+        mem[0x7ffff7df2952] = b'\x08'
         cpu.XMM1 = 0xffffffff00ffffff2e325f4342494c47
         cpu.RDI = 0x7ffff7a248ce
         cpu.RIP = 0x7ffff7df294e
@@ -692,11 +692,6 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df2956] = b'V'
-        mem[0x7ffff7df2957] = b'\x08'
-        mem[0x7ffff7df2953] = b'f'
-        mem[0x7ffff7df2954] = b'\x0f'
-        mem[0x7ffff7df2955] = b'\x16'
         mem[0x7ffff7a248d6] = b'2'
         mem[0x7ffff7a248d7] = b'.'
         mem[0x7ffff7a248d8] = b'5'
@@ -705,6 +700,11 @@ class CPUTest(unittest.TestCase):
         mem[0x7ffff7a248db] = b'L'
         mem[0x7ffff7a248dc] = b'I'
         mem[0x7ffff7a248dd] = b'B'
+        mem[0x7ffff7df2953] = b'f'
+        mem[0x7ffff7df2954] = b'\x0f'
+        mem[0x7ffff7df2955] = b'\x16'
+        mem[0x7ffff7df2956] = b'V'
+        mem[0x7ffff7df2957] = b'\x08'
         cpu.XMM2 = 0x42494c4700352e322e325f4342494c47
         cpu.RSI = 0x7ffff7a248ce
         cpu.RIP = 0x7ffff7df2953
@@ -736,19 +736,19 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7ffa000, 0x1000, 'rwx')
+        mem[0x7ffff7df294e] = b'f'
+        mem[0x7ffff7df294f] = b'\x0f'
+        mem[0x7ffff7df2950] = b'\x16'
+        mem[0x7ffff7df2951] = b'O'
+        mem[0x7ffff7df2952] = b'\x08'
         mem[0x7ffff7ffa30c] = b'6'
         mem[0x7ffff7ffa30d] = b'\x00'
         mem[0x7ffff7ffa30e] = b'\x00'
-        mem[0x7ffff7df294f] = b'\x0f'
+        mem[0x7ffff7ffa30f] = b'\x00'
         mem[0x7ffff7ffa310] = b'\x00'
         mem[0x7ffff7ffa311] = b'\x00'
-        mem[0x7ffff7df2952] = b'\x08'
-        mem[0x7ffff7ffa313] = b'\x00'
-        mem[0x7ffff7df294e] = b'f'
-        mem[0x7ffff7ffa30f] = b'\x00'
-        mem[0x7ffff7df2950] = b'\x16'
-        mem[0x7ffff7df2951] = b'O'
         mem[0x7ffff7ffa312] = b'\x02'
+        mem[0x7ffff7ffa313] = b'\x00'
         cpu.XMM1 = 0xffffffff00ffffff2e325f58554e494c
         cpu.RDI = 0x7ffff7ffa304
         cpu.RIP = 0x7ffff7df294e
@@ -780,11 +780,6 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df2956] = b'V'
-        mem[0x7ffff7df2957] = b'\x08'
-        mem[0x7ffff7df2953] = b'f'
-        mem[0x7ffff7df2954] = b'\x0f'
-        mem[0x7ffff7df2955] = b'\x16'
         mem[0x7ffff7a248d6] = b'2'
         mem[0x7ffff7a248d7] = b'.'
         mem[0x7ffff7a248d8] = b'5'
@@ -793,6 +788,11 @@ class CPUTest(unittest.TestCase):
         mem[0x7ffff7a248db] = b'L'
         mem[0x7ffff7a248dc] = b'I'
         mem[0x7ffff7a248dd] = b'B'
+        mem[0x7ffff7df2953] = b'f'
+        mem[0x7ffff7df2954] = b'\x0f'
+        mem[0x7ffff7df2955] = b'\x16'
+        mem[0x7ffff7df2956] = b'V'
+        mem[0x7ffff7df2957] = b'\x08'
         cpu.XMM2 = 0x42494c4700352e322e325f4342494c47
         cpu.RSI = 0x7ffff7a248ce
         cpu.RIP = 0x7ffff7df2953
@@ -824,11 +824,6 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df2956] = b'V'
-        mem[0x7ffff7df2957] = b'\x08'
-        mem[0x7ffff7df2953] = b'f'
-        mem[0x7ffff7df2954] = b'\x0f'
-        mem[0x7ffff7df2955] = b'\x16'
         mem[0x7ffff7a248d6] = b'2'
         mem[0x7ffff7a248d7] = b'.'
         mem[0x7ffff7a248d8] = b'5'
@@ -837,6 +832,11 @@ class CPUTest(unittest.TestCase):
         mem[0x7ffff7a248db] = b'L'
         mem[0x7ffff7a248dc] = b'I'
         mem[0x7ffff7a248dd] = b'B'
+        mem[0x7ffff7df2953] = b'f'
+        mem[0x7ffff7df2954] = b'\x0f'
+        mem[0x7ffff7df2955] = b'\x16'
+        mem[0x7ffff7df2956] = b'V'
+        mem[0x7ffff7df2957] = b'\x08'
         cpu.XMM2 = 0x42494c4700352e322e325f4342494c47
         cpu.RSI = 0x7ffff7a248ce
         cpu.RIP = 0x7ffff7df2953
@@ -912,11 +912,6 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a21000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df294e] = b'f'
-        mem[0x7ffff7df294f] = b'\x0f'
-        mem[0x7ffff7df2950] = b'\x16'
-        mem[0x7ffff7df2951] = b'O'
-        mem[0x7ffff7df2952] = b'\x08'
         mem[0x7ffff7a21315] = b'e'
         mem[0x7ffff7a21316] = b'm'
         mem[0x7ffff7a21317] = b'a'
@@ -925,6 +920,11 @@ class CPUTest(unittest.TestCase):
         mem[0x7ffff7a2131a] = b'g'
         mem[0x7ffff7a2131b] = b'n'
         mem[0x7ffff7a2131c] = b'\x00'
+        mem[0x7ffff7df294e] = b'f'
+        mem[0x7ffff7df294f] = b'\x0f'
+        mem[0x7ffff7df2950] = b'\x16'
+        mem[0x7ffff7df2951] = b'O'
+        mem[0x7ffff7df2952] = b'\x08'
         cpu.XMM1 = 0xffffffff00ffffff6d5f6362696c5f5f
         cpu.RDI = 0x7ffff7a2130d
         cpu.RIP = 0x7ffff7df294e
@@ -1105,11 +1105,11 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df38a0] = b'\xfa'
-        mem[0x7ffff7df38a1] = b'\x04'
         mem[0x7ffff7df389d] = b'f'
         mem[0x7ffff7df389e] = b'\x0f'
         mem[0x7ffff7df389f] = b's'
+        mem[0x7ffff7df38a0] = b'\xfa'
+        mem[0x7ffff7df38a1] = b'\x04'
         cpu.XMM2 = 0x3000000020002000000352e322e32
         cpu.RIP = 0x7ffff7df389d
         cpu.execute()
@@ -1155,11 +1155,11 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df39e0] = b'\xfa'
-        mem[0x7ffff7df39e1] = b'\x03'
         mem[0x7ffff7df39dd] = b'f'
         mem[0x7ffff7df39de] = b'\x0f'
         mem[0x7ffff7df39df] = b's'
+        mem[0x7ffff7df39e0] = b'\xfa'
+        mem[0x7ffff7df39e1] = b'\x03'
         cpu.XMM2 = 0x494c4700352e322e325f4342494c4700
         cpu.RIP = 0x7ffff7df39dd
         cpu.execute()
@@ -1180,11 +1180,11 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df38a0] = b'\xfa'
-        mem[0x7ffff7df38a1] = b'\x04'
         mem[0x7ffff7df389d] = b'f'
         mem[0x7ffff7df389e] = b'\x0f'
         mem[0x7ffff7df389f] = b's'
+        mem[0x7ffff7df38a0] = b'\xfa'
+        mem[0x7ffff7df38a1] = b'\x04'
         cpu.XMM2 = 0x665f4f495f006f6c6c657466006b6863
         cpu.RIP = 0x7ffff7df389d
         cpu.execute()
@@ -1380,11 +1380,11 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df38a0] = b'\xfa'
-        mem[0x7ffff7df38a1] = b'\x04'
         mem[0x7ffff7df389d] = b'f'
         mem[0x7ffff7df389e] = b'\x0f'
         mem[0x7ffff7df389f] = b's'
+        mem[0x7ffff7df38a0] = b'\xfa'
+        mem[0x7ffff7df38a1] = b'\x04'
         cpu.XMM2 = 0x3000000020002000000352e322e32
         cpu.RIP = 0x7ffff7df389d
         cpu.execute()
@@ -1430,11 +1430,11 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df39e0] = b'\xfa'
-        mem[0x7ffff7df39e1] = b'\x03'
         mem[0x7ffff7df39dd] = b'f'
         mem[0x7ffff7df39de] = b'\x0f'
         mem[0x7ffff7df39df] = b's'
+        mem[0x7ffff7df39e0] = b'\xfa'
+        mem[0x7ffff7df39e1] = b'\x03'
         cpu.XMM2 = 0x7461636f6c6c6165645f6c645f00636f
         cpu.RIP = 0x7ffff7df39dd
         cpu.execute()
@@ -1455,11 +1455,11 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df3c60] = b'\xfa'
-        mem[0x7ffff7df3c61] = b'\x01'
         mem[0x7ffff7df3c5d] = b'f'
         mem[0x7ffff7df3c5e] = b'\x0f'
         mem[0x7ffff7df3c5f] = b's'
+        mem[0x7ffff7df3c60] = b'\xfa'
+        mem[0x7ffff7df3c61] = b'\x01'
         cpu.XMM2 = 0x68252e7568254d00796164666f656d69
         cpu.RIP = 0x7ffff7df3c5d
         cpu.execute()
@@ -1678,11 +1678,11 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df2956] = b'V'
-        mem[0x7ffff7df2957] = b'\x08'
         mem[0x7ffff7df2953] = b'f'
         mem[0x7ffff7df2954] = b'\x0f'
         mem[0x7ffff7df2955] = b'\x16'
+        mem[0x7ffff7df2956] = b'V'
+        mem[0x7ffff7df2957] = b'\x08'
         addr = cs.new_bitvec(64)
         cs.add(addr == 0x7ffff7a248d6)
         value = cs.new_bitvec(8)
@@ -2168,11 +2168,11 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df2956] = b'V'
-        mem[0x7ffff7df2957] = b'\x08'
         mem[0x7ffff7df2953] = b'f'
         mem[0x7ffff7df2954] = b'\x0f'
         mem[0x7ffff7df2955] = b'\x16'
+        mem[0x7ffff7df2956] = b'V'
+        mem[0x7ffff7df2957] = b'\x08'
         addr = cs.new_bitvec(64)
         cs.add(addr == 0x7ffff7a248d6)
         value = cs.new_bitvec(8)
@@ -2364,11 +2364,11 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df2956] = b'V'
-        mem[0x7ffff7df2957] = b'\x08'
         mem[0x7ffff7df2953] = b'f'
         mem[0x7ffff7df2954] = b'\x0f'
         mem[0x7ffff7df2955] = b'\x16'
+        mem[0x7ffff7df2956] = b'V'
+        mem[0x7ffff7df2957] = b'\x08'
         addr = cs.new_bitvec(64)
         cs.add(addr == 0x7ffff7a248d6)
         value = cs.new_bitvec(8)
@@ -2952,11 +2952,11 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df2956] = b'V'
-        mem[0x7ffff7df2957] = b'\x08'
         mem[0x7ffff7df2953] = b'f'
         mem[0x7ffff7df2954] = b'\x0f'
         mem[0x7ffff7df2955] = b'\x16'
+        mem[0x7ffff7df2956] = b'V'
+        mem[0x7ffff7df2957] = b'\x08'
         addr = cs.new_bitvec(64)
         cs.add(addr == 0x7ffff7a248d6)
         value = cs.new_bitvec(8)
@@ -3148,11 +3148,11 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df2956] = b'V'
-        mem[0x7ffff7df2957] = b'\x08'
         mem[0x7ffff7df2953] = b'f'
         mem[0x7ffff7df2954] = b'\x0f'
         mem[0x7ffff7df2955] = b'\x16'
+        mem[0x7ffff7df2956] = b'V'
+        mem[0x7ffff7df2957] = b'\x08'
         addr = cs.new_bitvec(64)
         cs.add(addr == 0x7ffff7a248d6)
         value = cs.new_bitvec(8)
@@ -3246,11 +3246,11 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df2956] = b'V'
-        mem[0x7ffff7df2957] = b'\x08'
         mem[0x7ffff7df2953] = b'f'
         mem[0x7ffff7df2954] = b'\x0f'
         mem[0x7ffff7df2955] = b'\x16'
+        mem[0x7ffff7df2956] = b'V'
+        mem[0x7ffff7df2957] = b'\x08'
         addr = cs.new_bitvec(64)
         cs.add(addr == 0x7ffff7a248d6)
         value = cs.new_bitvec(8)
@@ -3815,11 +3815,11 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df38a0] = b'\xfa'
-        mem[0x7ffff7df38a1] = b'\x04'
         mem[0x7ffff7df389d] = b'f'
         mem[0x7ffff7df389e] = b'\x0f'
         mem[0x7ffff7df389f] = b's'
+        mem[0x7ffff7df38a0] = b'\xfa'
+        mem[0x7ffff7df38a1] = b'\x04'
         cpu.XMM2 = cs.new_bitvec(128)
         cs.add(cpu.XMM2 == 0x3000000020002000000352e322e32)
         cpu.RIP = 0x7ffff7df389d
@@ -3907,11 +3907,11 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df39e0] = b'\xfa'
-        mem[0x7ffff7df39e1] = b'\x03'
         mem[0x7ffff7df39dd] = b'f'
         mem[0x7ffff7df39de] = b'\x0f'
         mem[0x7ffff7df39df] = b's'
+        mem[0x7ffff7df39e0] = b'\xfa'
+        mem[0x7ffff7df39e1] = b'\x03'
         cpu.XMM2 = cs.new_bitvec(128)
         cs.add(cpu.XMM2 == 0x494c4700352e322e325f4342494c4700)
         cpu.RIP = 0x7ffff7df39dd
@@ -3953,11 +3953,11 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df38a0] = b'\xfa'
-        mem[0x7ffff7df38a1] = b'\x04'
         mem[0x7ffff7df389d] = b'f'
         mem[0x7ffff7df389e] = b'\x0f'
         mem[0x7ffff7df389f] = b's'
+        mem[0x7ffff7df38a0] = b'\xfa'
+        mem[0x7ffff7df38a1] = b'\x04'
         cpu.XMM2 = cs.new_bitvec(128)
         cs.add(cpu.XMM2 == 0x665f4f495f006f6c6c657466006b6863)
         cpu.RIP = 0x7ffff7df389d
@@ -4321,11 +4321,11 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df38a0] = b'\xfa'
-        mem[0x7ffff7df38a1] = b'\x04'
         mem[0x7ffff7df389d] = b'f'
         mem[0x7ffff7df389e] = b'\x0f'
         mem[0x7ffff7df389f] = b's'
+        mem[0x7ffff7df38a0] = b'\xfa'
+        mem[0x7ffff7df38a1] = b'\x04'
         cpu.XMM2 = cs.new_bitvec(128)
         cs.add(cpu.XMM2 == 0x3000000020002000000352e322e32)
         cpu.RIP = 0x7ffff7df389d
@@ -4413,11 +4413,11 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df39e0] = b'\xfa'
-        mem[0x7ffff7df39e1] = b'\x03'
         mem[0x7ffff7df39dd] = b'f'
         mem[0x7ffff7df39de] = b'\x0f'
         mem[0x7ffff7df39df] = b's'
+        mem[0x7ffff7df39e0] = b'\xfa'
+        mem[0x7ffff7df39e1] = b'\x03'
         cpu.XMM2 = cs.new_bitvec(128)
         cs.add(cpu.XMM2 == 0x7461636f6c6c6165645f6c645f00636f)
         cpu.RIP = 0x7ffff7df39dd
@@ -4459,11 +4459,11 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df3c60] = b'\xfa'
-        mem[0x7ffff7df3c61] = b'\x01'
         mem[0x7ffff7df3c5d] = b'f'
         mem[0x7ffff7df3c5e] = b'\x0f'
         mem[0x7ffff7df3c5f] = b's'
+        mem[0x7ffff7df3c60] = b'\xfa'
+        mem[0x7ffff7df3c61] = b'\x01'
         cpu.XMM2 = cs.new_bitvec(128)
         cs.add(cpu.XMM2 == 0x68252e7568254d00796164666f656d69)
         cpu.RIP = 0x7ffff7df3c5d
