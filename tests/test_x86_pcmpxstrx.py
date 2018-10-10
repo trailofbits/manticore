@@ -71,12 +71,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x8
         cpu.execute()
     
-        self.assertEqual(mem[0x400bec],  b'f')
-        self.assertEqual(mem[0x400bed],  b'\x0f')
-        self.assertEqual(mem[0x400bee],  b':')
-        self.assertEqual(mem[0x400bef],  b'a')
-        self.assertEqual(mem[0x400bf0],  b'\xca')
-        self.assertEqual(mem[0x400bf1],  b'd')
+        self.assertEqual(mem[0x400bec:0x400bf2], [b'f',b'\x0f',b':',b'a',b'\xca',b'd'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
@@ -113,12 +108,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x0
         cpu.execute()
     
-        self.assertEqual(mem[0x400b20],  b'f')
-        self.assertEqual(mem[0x400b21],  b'\x0f')
-        self.assertEqual(mem[0x400b22],  b':')
-        self.assertEqual(mem[0x400b23],  b'a')
-        self.assertEqual(mem[0x400b24],  b'\xca')
-        self.assertEqual(mem[0x400b25],  b' ')
+        self.assertEqual(mem[0x400b20:0x400b26], [b'f',b'\x0f',b':',b'a',b'\xca',b' '])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
@@ -155,12 +145,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x8
         cpu.execute()
     
-        self.assertEqual(mem[0x400b38],  b'f')
-        self.assertEqual(mem[0x400b39],  b'\x0f')
-        self.assertEqual(mem[0x400b3a],  b':')
-        self.assertEqual(mem[0x400b3b],  b'a')
-        self.assertEqual(mem[0x400b3c],  b'\xca')
-        self.assertEqual(mem[0x400b3d],  b'(')
+        self.assertEqual(mem[0x400b38:0x400b3e], [b'f',b'\x0f',b':',b'a',b'\xca',b'('])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -197,12 +182,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0xf
         cpu.execute()
     
-        self.assertEqual(mem[0x400bfe],  b'f')
-        self.assertEqual(mem[0x400bff],  b'\x0f')
-        self.assertEqual(mem[0x400c00],  b':')
-        self.assertEqual(mem[0x400c01],  b'a')
-        self.assertEqual(mem[0x400c02],  b'\xca')
-        self.assertEqual(mem[0x400c03],  b'i')
+        self.assertEqual(mem[0x400bfe:0x400c04], [b'f',b'\x0f',b':',b'a',b'\xca',b'i'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -239,12 +219,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x10
         cpu.execute()
     
-        self.assertEqual(mem[0x400b86],  b'f')
-        self.assertEqual(mem[0x400b87],  b'\x0f')
-        self.assertEqual(mem[0x400b88],  b':')
-        self.assertEqual(mem[0x400b89],  b'a')
-        self.assertEqual(mem[0x400b8a],  b'\xca')
-        self.assertEqual(mem[0x400b8b],  b'A')
+        self.assertEqual(mem[0x400b86:0x400b8c], [b'f',b'\x0f',b':',b'a',b'\xca',b'A'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
@@ -281,12 +256,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x7
         cpu.execute()
     
-        self.assertEqual(mem[0x400ae4],  b'f')
-        self.assertEqual(mem[0x400ae5],  b'\x0f')
-        self.assertEqual(mem[0x400ae6],  b':')
-        self.assertEqual(mem[0x400ae7],  b'a')
-        self.assertEqual(mem[0x400ae8],  b'\xca')
-        self.assertEqual(mem[0x400ae9],  b'\x0c')
+        self.assertEqual(mem[0x400ae4:0x400aea], [b'f',b'\x0f',b':',b'a',b'\xca',b'\x0c'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
@@ -323,12 +293,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x7
         cpu.execute()
     
-        self.assertEqual(mem[0x400c04],  b'f')
-        self.assertEqual(mem[0x400c05],  b'\x0f')
-        self.assertEqual(mem[0x400c06],  b':')
-        self.assertEqual(mem[0x400c07],  b'a')
-        self.assertEqual(mem[0x400c08],  b'\xca')
-        self.assertEqual(mem[0x400c09],  b'l')
+        self.assertEqual(mem[0x400c04:0x400c0a], [b'f',b'\x0f',b':',b'a',b'\xca',b'l'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
@@ -365,12 +330,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x0
         cpu.execute()
     
-        self.assertEqual(mem[0x400b6e],  b'f')
-        self.assertEqual(mem[0x400b6f],  b'\x0f')
-        self.assertEqual(mem[0x400b70],  b':')
-        self.assertEqual(mem[0x400b71],  b'a')
-        self.assertEqual(mem[0x400b72],  b'\xca')
-        self.assertEqual(mem[0x400b73],  b'9')
+        self.assertEqual(mem[0x400b6e:0x400b74], [b'f',b'\x0f',b':',b'a',b'\xca',b'9'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -407,12 +367,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x8
         cpu.execute()
     
-        self.assertEqual(mem[0x400b2c],  b'f')
-        self.assertEqual(mem[0x400b2d],  b'\x0f')
-        self.assertEqual(mem[0x400b2e],  b':')
-        self.assertEqual(mem[0x400b2f],  b'a')
-        self.assertEqual(mem[0x400b30],  b'\xca')
-        self.assertEqual(mem[0x400b31],  b'$')
+        self.assertEqual(mem[0x400b2c:0x400b32], [b'f',b'\x0f',b':',b'a',b'\xca',b'$'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
@@ -449,12 +404,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x8
         cpu.execute()
     
-        self.assertEqual(mem[0x400af0],  b'f')
-        self.assertEqual(mem[0x400af1],  b'\x0f')
-        self.assertEqual(mem[0x400af2],  b':')
-        self.assertEqual(mem[0x400af3],  b'a')
-        self.assertEqual(mem[0x400af4],  b'\xca')
-        self.assertEqual(mem[0x400af5],  b'\x10')
+        self.assertEqual(mem[0x400af0:0x400af6], [b'f',b'\x0f',b':',b'a',b'\xca',b'\x10'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -491,12 +441,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x7
         cpu.execute()
     
-        self.assertEqual(mem[0x400be0],  b'f')
-        self.assertEqual(mem[0x400be1],  b'\x0f')
-        self.assertEqual(mem[0x400be2],  b':')
-        self.assertEqual(mem[0x400be3],  b'a')
-        self.assertEqual(mem[0x400be4],  b'\xca')
-        self.assertEqual(mem[0x400be5],  b'`')
+        self.assertEqual(mem[0x400be0:0x400be6], [b'f',b'\x0f',b':',b'a',b'\xca',b'`'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
@@ -533,12 +478,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x10
         cpu.execute()
     
-        self.assertEqual(mem[0x400b4a],  b'f')
-        self.assertEqual(mem[0x400b4b],  b'\x0f')
-        self.assertEqual(mem[0x400b4c],  b':')
-        self.assertEqual(mem[0x400b4d],  b'a')
-        self.assertEqual(mem[0x400b4e],  b'\xca')
-        self.assertEqual(mem[0x400b4f],  b'-')
+        self.assertEqual(mem[0x400b4a:0x400b50], [b'f',b'\x0f',b':',b'a',b'\xca',b'-'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
@@ -575,12 +515,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x10
         cpu.execute()
     
-        self.assertEqual(mem[0x400c0a],  b'f')
-        self.assertEqual(mem[0x400c0b],  b'\x0f')
-        self.assertEqual(mem[0x400c0c],  b':')
-        self.assertEqual(mem[0x400c0d],  b'a')
-        self.assertEqual(mem[0x400c0e],  b'\xca')
-        self.assertEqual(mem[0x400c0f],  b'm')
+        self.assertEqual(mem[0x400c0a:0x400c10], [b'f',b'\x0f',b':',b'a',b'\xca',b'm'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
@@ -617,12 +552,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x0
         cpu.execute()
     
-        self.assertEqual(mem[0x400b14],  b'f')
-        self.assertEqual(mem[0x400b15],  b'\x0f')
-        self.assertEqual(mem[0x400b16],  b':')
-        self.assertEqual(mem[0x400b17],  b'a')
-        self.assertEqual(mem[0x400b18],  b'\xca')
-        self.assertEqual(mem[0x400b19],  b'\x1c')
+        self.assertEqual(mem[0x400b14:0x400b1a], [b'f',b'\x0f',b':',b'a',b'\xca',b'\x1c'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -659,12 +589,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0xf
         cpu.execute()
     
-        self.assertEqual(mem[0x400bb6],  b'f')
-        self.assertEqual(mem[0x400bb7],  b'\x0f')
-        self.assertEqual(mem[0x400bb8],  b':')
-        self.assertEqual(mem[0x400bb9],  b'a')
-        self.assertEqual(mem[0x400bba],  b'\xca')
-        self.assertEqual(mem[0x400bbb],  b'Q')
+        self.assertEqual(mem[0x400bb6:0x400bbc], [b'f',b'\x0f',b':',b'a',b'\xca',b'Q'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -701,12 +626,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x0
         cpu.execute()
     
-        self.assertEqual(mem[0x400b08],  b'f')
-        self.assertEqual(mem[0x400b09],  b'\x0f')
-        self.assertEqual(mem[0x400b0a],  b':')
-        self.assertEqual(mem[0x400b0b],  b'a')
-        self.assertEqual(mem[0x400b0c],  b'\xca')
-        self.assertEqual(mem[0x400b0d],  b'\x18')
+        self.assertEqual(mem[0x400b08:0x400b0e], [b'f',b'\x0f',b':',b'a',b'\xca',b'\x18'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -743,12 +663,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x6
         cpu.execute()
     
-        self.assertEqual(mem[0x400c1c],  b'f')
-        self.assertEqual(mem[0x400c1d],  b'\x0f')
-        self.assertEqual(mem[0x400c1e],  b':')
-        self.assertEqual(mem[0x400c1f],  b'a')
-        self.assertEqual(mem[0x400c20],  b'\xca')
-        self.assertEqual(mem[0x400c21],  b't')
+        self.assertEqual(mem[0x400c1c:0x400c22], [b'f',b'\x0f',b':',b'a',b'\xca',b't'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -785,12 +700,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0xf
         cpu.execute()
     
-        self.assertEqual(mem[0x400bda],  b'f')
-        self.assertEqual(mem[0x400bdb],  b'\x0f')
-        self.assertEqual(mem[0x400bdc],  b':')
-        self.assertEqual(mem[0x400bdd],  b'a')
-        self.assertEqual(mem[0x400bde],  b'\xca')
-        self.assertEqual(mem[0x400bdf],  b']')
+        self.assertEqual(mem[0x400bda:0x400be0], [b'f',b'\x0f',b':',b'a',b'\xca',b']'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -827,12 +737,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x8
         cpu.execute()
     
-        self.assertEqual(mem[0x400c10],  b'f')
-        self.assertEqual(mem[0x400c11],  b'\x0f')
-        self.assertEqual(mem[0x400c12],  b':')
-        self.assertEqual(mem[0x400c13],  b'a')
-        self.assertEqual(mem[0x400c14],  b'\xca')
-        self.assertEqual(mem[0x400c15],  b'p')
+        self.assertEqual(mem[0x400c10:0x400c16], [b'f',b'\x0f',b':',b'a',b'\xca',b'p'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -869,12 +774,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x7
         cpu.execute()
     
-        self.assertEqual(mem[0x400c34],  b'f')
-        self.assertEqual(mem[0x400c35],  b'\x0f')
-        self.assertEqual(mem[0x400c36],  b':')
-        self.assertEqual(mem[0x400c37],  b'a')
-        self.assertEqual(mem[0x400c38],  b'\xca')
-        self.assertEqual(mem[0x400c39],  b'|')
+        self.assertEqual(mem[0x400c34:0x400c3a], [b'f',b'\x0f',b':',b'a',b'\xca',b'|'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -911,12 +811,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0xf
         cpu.execute()
     
-        self.assertEqual(mem[0x400c2e],  b'f')
-        self.assertEqual(mem[0x400c2f],  b'\x0f')
-        self.assertEqual(mem[0x400c30],  b':')
-        self.assertEqual(mem[0x400c31],  b'a')
-        self.assertEqual(mem[0x400c32],  b'\xca')
-        self.assertEqual(mem[0x400c33],  b'y')
+        self.assertEqual(mem[0x400c2e:0x400c34], [b'f',b'\x0f',b':',b'a',b'\xca',b'y'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -953,12 +848,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x0
         cpu.execute()
     
-        self.assertEqual(mem[0x400b80],  b'f')
-        self.assertEqual(mem[0x400b81],  b'\x0f')
-        self.assertEqual(mem[0x400b82],  b':')
-        self.assertEqual(mem[0x400b83],  b'a')
-        self.assertEqual(mem[0x400b84],  b'\xca')
-        self.assertEqual(mem[0x400b85],  b'@')
+        self.assertEqual(mem[0x400b80:0x400b86], [b'f',b'\x0f',b':',b'a',b'\xca',b'@'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
@@ -995,12 +885,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x10
         cpu.execute()
     
-        self.assertEqual(mem[0x400ac6],  b'f')
-        self.assertEqual(mem[0x400ac7],  b'\x0f')
-        self.assertEqual(mem[0x400ac8],  b':')
-        self.assertEqual(mem[0x400ac9],  b'a')
-        self.assertEqual(mem[0x400aca],  b'\xca')
-        self.assertEqual(mem[0x400acb],  b'\x01')
+        self.assertEqual(mem[0x400ac6:0x400acc], [b'f',b'\x0f',b':',b'a',b'\xca',b'\x01'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
@@ -1037,12 +922,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x7
         cpu.execute()
     
-        self.assertEqual(mem[0x400ba4],  b'f')
-        self.assertEqual(mem[0x400ba5],  b'\x0f')
-        self.assertEqual(mem[0x400ba6],  b':')
-        self.assertEqual(mem[0x400ba7],  b'a')
-        self.assertEqual(mem[0x400ba8],  b'\xca')
-        self.assertEqual(mem[0x400ba9],  b'L')
+        self.assertEqual(mem[0x400ba4:0x400baa], [b'f',b'\x0f',b':',b'a',b'\xca',b'L'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
@@ -1079,12 +959,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x8
         cpu.execute()
     
-        self.assertEqual(mem[0x400ad8],  b'f')
-        self.assertEqual(mem[0x400ad9],  b'\x0f')
-        self.assertEqual(mem[0x400ada],  b':')
-        self.assertEqual(mem[0x400adb],  b'a')
-        self.assertEqual(mem[0x400adc],  b'\xca')
-        self.assertEqual(mem[0x400add],  b'\x08')
+        self.assertEqual(mem[0x400ad8:0x400ade], [b'f',b'\x0f',b':',b'a',b'\xca',b'\x08'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -1121,12 +996,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x8
         cpu.execute()
     
-        self.assertEqual(mem[0x400b50],  b'f')
-        self.assertEqual(mem[0x400b51],  b'\x0f')
-        self.assertEqual(mem[0x400b52],  b':')
-        self.assertEqual(mem[0x400b53],  b'a')
-        self.assertEqual(mem[0x400b54],  b'\xca')
-        self.assertEqual(mem[0x400b55],  b'0')
+        self.assertEqual(mem[0x400b50:0x400b56], [b'f',b'\x0f',b':',b'a',b'\xca',b'0'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -1163,12 +1033,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x7
         cpu.execute()
     
-        self.assertEqual(mem[0x400b44],  b'f')
-        self.assertEqual(mem[0x400b45],  b'\x0f')
-        self.assertEqual(mem[0x400b46],  b':')
-        self.assertEqual(mem[0x400b47],  b'a')
-        self.assertEqual(mem[0x400b48],  b'\xca')
-        self.assertEqual(mem[0x400b49],  b',')
+        self.assertEqual(mem[0x400b44:0x400b4a], [b'f',b'\x0f',b':',b'a',b'\xca',b','])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
@@ -1205,12 +1070,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x7
         cpu.execute()
     
-        self.assertEqual(mem[0x400bbc],  b'f')
-        self.assertEqual(mem[0x400bbd],  b'\x0f')
-        self.assertEqual(mem[0x400bbe],  b':')
-        self.assertEqual(mem[0x400bbf],  b'a')
-        self.assertEqual(mem[0x400bc0],  b'\xca')
-        self.assertEqual(mem[0x400bc1],  b'T')
+        self.assertEqual(mem[0x400bbc:0x400bc2], [b'f',b'\x0f',b':',b'a',b'\xca',b'T'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -1247,12 +1107,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x10
         cpu.execute()
     
-        self.assertEqual(mem[0x400ad2],  b'f')
-        self.assertEqual(mem[0x400ad3],  b'\x0f')
-        self.assertEqual(mem[0x400ad4],  b':')
-        self.assertEqual(mem[0x400ad5],  b'a')
-        self.assertEqual(mem[0x400ad6],  b'\xca')
-        self.assertEqual(mem[0x400ad7],  b'\x05')
+        self.assertEqual(mem[0x400ad2:0x400ad8], [b'f',b'\x0f',b':',b'a',b'\xca',b'\x05'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
@@ -1289,12 +1144,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x10
         cpu.execute()
     
-        self.assertEqual(mem[0x400b26],  b'f')
-        self.assertEqual(mem[0x400b27],  b'\x0f')
-        self.assertEqual(mem[0x400b28],  b':')
-        self.assertEqual(mem[0x400b29],  b'a')
-        self.assertEqual(mem[0x400b2a],  b'\xca')
-        self.assertEqual(mem[0x400b2b],  b'!')
+        self.assertEqual(mem[0x400b26:0x400b2c], [b'f',b'\x0f',b':',b'a',b'\xca',b'!'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
@@ -1331,12 +1181,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x7
         cpu.execute()
     
-        self.assertEqual(mem[0x400bc8],  b'f')
-        self.assertEqual(mem[0x400bc9],  b'\x0f')
-        self.assertEqual(mem[0x400bca],  b':')
-        self.assertEqual(mem[0x400bcb],  b'a')
-        self.assertEqual(mem[0x400bcc],  b'\xca')
-        self.assertEqual(mem[0x400bcd],  b'X')
+        self.assertEqual(mem[0x400bc8:0x400bce], [b'f',b'\x0f',b':',b'a',b'\xca',b'X'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -1373,12 +1218,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x8
         cpu.execute()
     
-        self.assertEqual(mem[0x400b98],  b'f')
-        self.assertEqual(mem[0x400b99],  b'\x0f')
-        self.assertEqual(mem[0x400b9a],  b':')
-        self.assertEqual(mem[0x400b9b],  b'a')
-        self.assertEqual(mem[0x400b9c],  b'\xca')
-        self.assertEqual(mem[0x400b9d],  b'H')
+        self.assertEqual(mem[0x400b98:0x400b9e], [b'f',b'\x0f',b':',b'a',b'\xca',b'H'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -1415,12 +1255,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x0
         cpu.execute()
     
-        self.assertEqual(mem[0x400b02],  b'f')
-        self.assertEqual(mem[0x400b03],  b'\x0f')
-        self.assertEqual(mem[0x400b04],  b':')
-        self.assertEqual(mem[0x400b05],  b'a')
-        self.assertEqual(mem[0x400b06],  b'\xca')
-        self.assertEqual(mem[0x400b07],  b'\x15')
+        self.assertEqual(mem[0x400b02:0x400b08], [b'f',b'\x0f',b':',b'a',b'\xca',b'\x15'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -1457,12 +1292,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x6
         cpu.execute()
     
-        self.assertEqual(mem[0x400c22],  b'f')
-        self.assertEqual(mem[0x400c23],  b'\x0f')
-        self.assertEqual(mem[0x400c24],  b':')
-        self.assertEqual(mem[0x400c25],  b'a')
-        self.assertEqual(mem[0x400c26],  b'\xca')
-        self.assertEqual(mem[0x400c27],  b'u')
+        self.assertEqual(mem[0x400c22:0x400c28], [b'f',b'\x0f',b':',b'a',b'\xca',b'u'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -1499,12 +1329,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x6
         cpu.execute()
     
-        self.assertEqual(mem[0x400c3a],  b'f')
-        self.assertEqual(mem[0x400c3b],  b'\x0f')
-        self.assertEqual(mem[0x400c3c],  b':')
-        self.assertEqual(mem[0x400c3d],  b'a')
-        self.assertEqual(mem[0x400c3e],  b'\xca')
-        self.assertEqual(mem[0x400c3f],  b'}')
+        self.assertEqual(mem[0x400c3a:0x400c40], [b'f',b'\x0f',b':',b'a',b'\xca',b'}'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -1541,12 +1366,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x0
         cpu.execute()
     
-        self.assertEqual(mem[0x400af6],  b'f')
-        self.assertEqual(mem[0x400af7],  b'\x0f')
-        self.assertEqual(mem[0x400af8],  b':')
-        self.assertEqual(mem[0x400af9],  b'a')
-        self.assertEqual(mem[0x400afa],  b'\xca')
-        self.assertEqual(mem[0x400afb],  b'\x11')
+        self.assertEqual(mem[0x400af6:0x400afc], [b'f',b'\x0f',b':',b'a',b'\xca',b'\x11'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -1583,12 +1403,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x6
         cpu.execute()
     
-        self.assertEqual(mem[0x400c28],  b'f')
-        self.assertEqual(mem[0x400c29],  b'\x0f')
-        self.assertEqual(mem[0x400c2a],  b':')
-        self.assertEqual(mem[0x400c2b],  b'a')
-        self.assertEqual(mem[0x400c2c],  b'\xca')
-        self.assertEqual(mem[0x400c2d],  b'x')
+        self.assertEqual(mem[0x400c28:0x400c2e], [b'f',b'\x0f',b':',b'a',b'\xca',b'x'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -1625,12 +1440,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x0
         cpu.execute()
     
-        self.assertEqual(mem[0x400b62],  b'f')
-        self.assertEqual(mem[0x400b63],  b'\x0f')
-        self.assertEqual(mem[0x400b64],  b':')
-        self.assertEqual(mem[0x400b65],  b'a')
-        self.assertEqual(mem[0x400b66],  b'\xca')
-        self.assertEqual(mem[0x400b67],  b'5')
+        self.assertEqual(mem[0x400b62:0x400b68], [b'f',b'\x0f',b':',b'a',b'\xca',b'5'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -1667,12 +1477,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x10
         cpu.execute()
     
-        self.assertEqual(mem[0x400baa],  b'f')
-        self.assertEqual(mem[0x400bab],  b'\x0f')
-        self.assertEqual(mem[0x400bac],  b':')
-        self.assertEqual(mem[0x400bad],  b'a')
-        self.assertEqual(mem[0x400bae],  b'\xca')
-        self.assertEqual(mem[0x400baf],  b'M')
+        self.assertEqual(mem[0x400baa:0x400bb0], [b'f',b'\x0f',b':',b'a',b'\xca',b'M'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
@@ -1709,12 +1514,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x0
         cpu.execute()
     
-        self.assertEqual(mem[0x400b68],  b'f')
-        self.assertEqual(mem[0x400b69],  b'\x0f')
-        self.assertEqual(mem[0x400b6a],  b':')
-        self.assertEqual(mem[0x400b6b],  b'a')
-        self.assertEqual(mem[0x400b6c],  b'\xca')
-        self.assertEqual(mem[0x400b6d],  b'8')
+        self.assertEqual(mem[0x400b68:0x400b6e], [b'f',b'\x0f',b':',b'a',b'\xca',b'8'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -1751,12 +1551,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x6
         cpu.execute()
     
-        self.assertEqual(mem[0x400c16],  b'f')
-        self.assertEqual(mem[0x400c17],  b'\x0f')
-        self.assertEqual(mem[0x400c18],  b':')
-        self.assertEqual(mem[0x400c19],  b'a')
-        self.assertEqual(mem[0x400c1a],  b'\xca')
-        self.assertEqual(mem[0x400c1b],  b'q')
+        self.assertEqual(mem[0x400c16:0x400c1c], [b'f',b'\x0f',b':',b'a',b'\xca',b'q'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -1793,12 +1588,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x8
         cpu.execute()
     
-        self.assertEqual(mem[0x400acc],  b'f')
-        self.assertEqual(mem[0x400acd],  b'\x0f')
-        self.assertEqual(mem[0x400ace],  b':')
-        self.assertEqual(mem[0x400acf],  b'a')
-        self.assertEqual(mem[0x400ad0],  b'\xca')
-        self.assertEqual(mem[0x400ad1],  b'\x04')
+        self.assertEqual(mem[0x400acc:0x400ad2], [b'f',b'\x0f',b':',b'a',b'\xca',b'\x04'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
@@ -1835,12 +1625,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x10
         cpu.execute()
     
-        self.assertEqual(mem[0x400b92],  b'f')
-        self.assertEqual(mem[0x400b93],  b'\x0f')
-        self.assertEqual(mem[0x400b94],  b':')
-        self.assertEqual(mem[0x400b95],  b'a')
-        self.assertEqual(mem[0x400b96],  b'\xca')
-        self.assertEqual(mem[0x400b97],  b'E')
+        self.assertEqual(mem[0x400b92:0x400b98], [b'f',b'\x0f',b':',b'a',b'\xca',b'E'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
@@ -1877,12 +1662,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x0
         cpu.execute()
     
-        self.assertEqual(mem[0x400afc],  b'f')
-        self.assertEqual(mem[0x400afd],  b'\x0f')
-        self.assertEqual(mem[0x400afe],  b':')
-        self.assertEqual(mem[0x400aff],  b'a')
-        self.assertEqual(mem[0x400b00],  b'\xca')
-        self.assertEqual(mem[0x400b01],  b'\x14')
+        self.assertEqual(mem[0x400afc:0x400b02], [b'f',b'\x0f',b':',b'a',b'\xca',b'\x14'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -1919,12 +1699,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x10
         cpu.execute()
     
-        self.assertEqual(mem[0x400be6],  b'f')
-        self.assertEqual(mem[0x400be7],  b'\x0f')
-        self.assertEqual(mem[0x400be8],  b':')
-        self.assertEqual(mem[0x400be9],  b'a')
-        self.assertEqual(mem[0x400bea],  b'\xca')
-        self.assertEqual(mem[0x400beb],  b'a')
+        self.assertEqual(mem[0x400be6:0x400bec], [b'f',b'\x0f',b':',b'a',b'\xca',b'a'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
@@ -1961,12 +1736,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0xf
         cpu.execute()
     
-        self.assertEqual(mem[0x400b9e],  b'f')
-        self.assertEqual(mem[0x400b9f],  b'\x0f')
-        self.assertEqual(mem[0x400ba0],  b':')
-        self.assertEqual(mem[0x400ba1],  b'a')
-        self.assertEqual(mem[0x400ba2],  b'\xca')
-        self.assertEqual(mem[0x400ba3],  b'I')
+        self.assertEqual(mem[0x400b9e:0x400ba4], [b'f',b'\x0f',b':',b'a',b'\xca',b'I'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -2003,12 +1773,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x8
         cpu.execute()
     
-        self.assertEqual(mem[0x400ac0],  b'f')
-        self.assertEqual(mem[0x400ac1],  b'\x0f')
-        self.assertEqual(mem[0x400ac2],  b':')
-        self.assertEqual(mem[0x400ac3],  b'a')
-        self.assertEqual(mem[0x400ac4],  b'\xca')
-        self.assertEqual(mem[0x400ac5],  b'\x00')
+        self.assertEqual(mem[0x400ac0:0x400ac6], [b'f',b'\x0f',b':',b'a',b'\xca',b'\x00'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
@@ -2045,12 +1810,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x0
         cpu.execute()
     
-        self.assertEqual(mem[0x400b74],  b'f')
-        self.assertEqual(mem[0x400b75],  b'\x0f')
-        self.assertEqual(mem[0x400b76],  b':')
-        self.assertEqual(mem[0x400b77],  b'a')
-        self.assertEqual(mem[0x400b78],  b'\xca')
-        self.assertEqual(mem[0x400b79],  b'<')
+        self.assertEqual(mem[0x400b74:0x400b7a], [b'f',b'\x0f',b':',b'a',b'\xca',b'<'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -2087,12 +1847,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x6
         cpu.execute()
     
-        self.assertEqual(mem[0x400bce],  b'f')
-        self.assertEqual(mem[0x400bcf],  b'\x0f')
-        self.assertEqual(mem[0x400bd0],  b':')
-        self.assertEqual(mem[0x400bd1],  b'a')
-        self.assertEqual(mem[0x400bd2],  b'\xca')
-        self.assertEqual(mem[0x400bd3],  b'Y')
+        self.assertEqual(mem[0x400bce:0x400bd4], [b'f',b'\x0f',b':',b'a',b'\xca',b'Y'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -2129,12 +1884,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x0
         cpu.execute()
     
-        self.assertEqual(mem[0x400b56],  b'f')
-        self.assertEqual(mem[0x400b57],  b'\x0f')
-        self.assertEqual(mem[0x400b58],  b':')
-        self.assertEqual(mem[0x400b59],  b'a')
-        self.assertEqual(mem[0x400b5a],  b'\xca')
-        self.assertEqual(mem[0x400b5b],  b'1')
+        self.assertEqual(mem[0x400b56:0x400b5c], [b'f',b'\x0f',b':',b'a',b'\xca',b'1'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -2171,12 +1921,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x0
         cpu.execute()
     
-        self.assertEqual(mem[0x400b7a],  b'f')
-        self.assertEqual(mem[0x400b7b],  b'\x0f')
-        self.assertEqual(mem[0x400b7c],  b':')
-        self.assertEqual(mem[0x400b7d],  b'a')
-        self.assertEqual(mem[0x400b7e],  b'\xca')
-        self.assertEqual(mem[0x400b7f],  b'=')
+        self.assertEqual(mem[0x400b7a:0x400b80], [b'f',b'\x0f',b':',b'a',b'\xca',b'='])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -2213,12 +1958,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x0
         cpu.execute()
     
-        self.assertEqual(mem[0x400b5c],  b'f')
-        self.assertEqual(mem[0x400b5d],  b'\x0f')
-        self.assertEqual(mem[0x400b5e],  b':')
-        self.assertEqual(mem[0x400b5f],  b'a')
-        self.assertEqual(mem[0x400b60],  b'\xca')
-        self.assertEqual(mem[0x400b61],  b'4')
+        self.assertEqual(mem[0x400b5c:0x400b62], [b'f',b'\x0f',b':',b'a',b'\xca',b'4'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -2255,12 +1995,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x7
         cpu.execute()
     
-        self.assertEqual(mem[0x400ade],  b'f')
-        self.assertEqual(mem[0x400adf],  b'\x0f')
-        self.assertEqual(mem[0x400ae0],  b':')
-        self.assertEqual(mem[0x400ae1],  b'a')
-        self.assertEqual(mem[0x400ae2],  b'\xca')
-        self.assertEqual(mem[0x400ae3],  b'\t')
+        self.assertEqual(mem[0x400ade:0x400ae4], [b'f',b'\x0f',b':',b'a',b'\xca',b'\t'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -2297,12 +2032,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x7
         cpu.execute()
     
-        self.assertEqual(mem[0x400b3e],  b'f')
-        self.assertEqual(mem[0x400b3f],  b'\x0f')
-        self.assertEqual(mem[0x400b40],  b':')
-        self.assertEqual(mem[0x400b41],  b'a')
-        self.assertEqual(mem[0x400b42],  b'\xca')
-        self.assertEqual(mem[0x400b43],  b')')
+        self.assertEqual(mem[0x400b3e:0x400b44], [b'f',b'\x0f',b':',b'a',b'\xca',b')'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -2339,12 +2069,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x8
         cpu.execute()
     
-        self.assertEqual(mem[0x400bb0],  b'f')
-        self.assertEqual(mem[0x400bb1],  b'\x0f')
-        self.assertEqual(mem[0x400bb2],  b':')
-        self.assertEqual(mem[0x400bb3],  b'a')
-        self.assertEqual(mem[0x400bb4],  b'\xca')
-        self.assertEqual(mem[0x400bb5],  b'P')
+        self.assertEqual(mem[0x400bb0:0x400bb6], [b'f',b'\x0f',b':',b'a',b'\xca',b'P'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -2381,12 +2106,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x0
         cpu.execute()
     
-        self.assertEqual(mem[0x400b0e],  b'f')
-        self.assertEqual(mem[0x400b0f],  b'\x0f')
-        self.assertEqual(mem[0x400b10],  b':')
-        self.assertEqual(mem[0x400b11],  b'a')
-        self.assertEqual(mem[0x400b12],  b'\xca')
-        self.assertEqual(mem[0x400b13],  b'\x19')
+        self.assertEqual(mem[0x400b0e:0x400b14], [b'f',b'\x0f',b':',b'a',b'\xca',b'\x19'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -2423,12 +2143,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x0
         cpu.execute()
     
-        self.assertEqual(mem[0x400b1a],  b'f')
-        self.assertEqual(mem[0x400b1b],  b'\x0f')
-        self.assertEqual(mem[0x400b1c],  b':')
-        self.assertEqual(mem[0x400b1d],  b'a')
-        self.assertEqual(mem[0x400b1e],  b'\xca')
-        self.assertEqual(mem[0x400b1f],  b'\x1d')
+        self.assertEqual(mem[0x400b1a:0x400b20], [b'f',b'\x0f',b':',b'a',b'\xca',b'\x1d'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -2465,12 +2180,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x10
         cpu.execute()
     
-        self.assertEqual(mem[0x400bf2],  b'f')
-        self.assertEqual(mem[0x400bf3],  b'\x0f')
-        self.assertEqual(mem[0x400bf4],  b':')
-        self.assertEqual(mem[0x400bf5],  b'a')
-        self.assertEqual(mem[0x400bf6],  b'\xca')
-        self.assertEqual(mem[0x400bf7],  b'e')
+        self.assertEqual(mem[0x400bf2:0x400bf8], [b'f',b'\x0f',b':',b'a',b'\xca',b'e'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
@@ -2507,12 +2217,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x6
         cpu.execute()
     
-        self.assertEqual(mem[0x400bd4],  b'f')
-        self.assertEqual(mem[0x400bd5],  b'\x0f')
-        self.assertEqual(mem[0x400bd6],  b':')
-        self.assertEqual(mem[0x400bd7],  b'a')
-        self.assertEqual(mem[0x400bd8],  b'\xca')
-        self.assertEqual(mem[0x400bd9],  b'\\')
+        self.assertEqual(mem[0x400bd4:0x400bda], [b'f',b'\x0f',b':',b'a',b'\xca',b'\\'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -2549,12 +2254,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x8
         cpu.execute()
     
-        self.assertEqual(mem[0x400bf8],  b'f')
-        self.assertEqual(mem[0x400bf9],  b'\x0f')
-        self.assertEqual(mem[0x400bfa],  b':')
-        self.assertEqual(mem[0x400bfb],  b'a')
-        self.assertEqual(mem[0x400bfc],  b'\xca')
-        self.assertEqual(mem[0x400bfd],  b'h')
+        self.assertEqual(mem[0x400bf8:0x400bfe], [b'f',b'\x0f',b':',b'a',b'\xca',b'h'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -2591,12 +2291,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0xf
         cpu.execute()
     
-        self.assertEqual(mem[0x400bc2],  b'f')
-        self.assertEqual(mem[0x400bc3],  b'\x0f')
-        self.assertEqual(mem[0x400bc4],  b':')
-        self.assertEqual(mem[0x400bc5],  b'a')
-        self.assertEqual(mem[0x400bc6],  b'\xca')
-        self.assertEqual(mem[0x400bc7],  b'U')
+        self.assertEqual(mem[0x400bc2:0x400bc8], [b'f',b'\x0f',b':',b'a',b'\xca',b'U'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -2633,12 +2328,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x8
         cpu.execute()
     
-        self.assertEqual(mem[0x400b8c],  b'f')
-        self.assertEqual(mem[0x400b8d],  b'\x0f')
-        self.assertEqual(mem[0x400b8e],  b':')
-        self.assertEqual(mem[0x400b8f],  b'a')
-        self.assertEqual(mem[0x400b90],  b'\xca')
-        self.assertEqual(mem[0x400b91],  b'D')
+        self.assertEqual(mem[0x400b8c:0x400b92], [b'f',b'\x0f',b':',b'a',b'\xca',b'D'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
@@ -2675,12 +2365,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x10
         cpu.execute()
     
-        self.assertEqual(mem[0x400aea],  b'f')
-        self.assertEqual(mem[0x400aeb],  b'\x0f')
-        self.assertEqual(mem[0x400aec],  b':')
-        self.assertEqual(mem[0x400aed],  b'a')
-        self.assertEqual(mem[0x400aee],  b'\xca')
-        self.assertEqual(mem[0x400aef],  b'\r')
+        self.assertEqual(mem[0x400aea:0x400af0], [b'f',b'\x0f',b':',b'a',b'\xca',b'\r'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
@@ -2717,12 +2402,7 @@ class CPUTest(unittest.TestCase):
         cpu.ECX = 0x10
         cpu.execute()
     
-        self.assertEqual(mem[0x400b32],  b'f')
-        self.assertEqual(mem[0x400b33],  b'\x0f')
-        self.assertEqual(mem[0x400b34],  b':')
-        self.assertEqual(mem[0x400b35],  b'a')
-        self.assertEqual(mem[0x400b36],  b'\xca')
-        self.assertEqual(mem[0x400b37],  b'%')
+        self.assertEqual(mem[0x400b32:0x400b38], [b'f',b'\x0f',b':',b'a',b'\xca',b'%'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
@@ -2758,12 +2438,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x4009d0],  b'f')
-        self.assertEqual(mem[0x4009d1],  b'\x0f')
-        self.assertEqual(mem[0x4009d2],  b':')
-        self.assertEqual(mem[0x4009d3],  b'`')
-        self.assertEqual(mem[0x4009d4],  b'\xca')
-        self.assertEqual(mem[0x4009d5],  b'8')
+        self.assertEqual(mem[0x4009d0:0x4009d6], [b'f',b'\x0f',b':',b'`',b'\xca',b'8'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -2798,12 +2473,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x4009ac],  b'f')
-        self.assertEqual(mem[0x4009ad],  b'\x0f')
-        self.assertEqual(mem[0x4009ae],  b':')
-        self.assertEqual(mem[0x4009af],  b'`')
-        self.assertEqual(mem[0x4009b0],  b'\xca')
-        self.assertEqual(mem[0x4009b1],  b',')
+        self.assertEqual(mem[0x4009ac:0x4009b2], [b'f',b'\x0f',b':',b'`',b'\xca',b','])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
@@ -2838,12 +2508,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x400a24],  b'f')
-        self.assertEqual(mem[0x400a25],  b'\x0f')
-        self.assertEqual(mem[0x400a26],  b':')
-        self.assertEqual(mem[0x400a27],  b'`')
-        self.assertEqual(mem[0x400a28],  b'\xca')
-        self.assertEqual(mem[0x400a29],  b'T')
+        self.assertEqual(mem[0x400a24:0x400a2a], [b'f',b'\x0f',b':',b'`',b'\xca',b'T'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -2878,12 +2543,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x4009f4],  b'f')
-        self.assertEqual(mem[0x4009f5],  b'\x0f')
-        self.assertEqual(mem[0x4009f6],  b':')
-        self.assertEqual(mem[0x4009f7],  b'`')
-        self.assertEqual(mem[0x4009f8],  b'\xca')
-        self.assertEqual(mem[0x4009f9],  b'D')
+        self.assertEqual(mem[0x4009f4:0x4009fa], [b'f',b'\x0f',b':',b'`',b'\xca',b'D'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
@@ -2918,12 +2578,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x400a1e],  b'f')
-        self.assertEqual(mem[0x400a1f],  b'\x0f')
-        self.assertEqual(mem[0x400a20],  b':')
-        self.assertEqual(mem[0x400a21],  b'`')
-        self.assertEqual(mem[0x400a22],  b'\xca')
-        self.assertEqual(mem[0x400a23],  b'Q')
+        self.assertEqual(mem[0x400a1e:0x400a24], [b'f',b'\x0f',b':',b'`',b'\xca',b'Q'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -2958,12 +2613,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x400a7e],  b'f')
-        self.assertEqual(mem[0x400a7f],  b'\x0f')
-        self.assertEqual(mem[0x400a80],  b':')
-        self.assertEqual(mem[0x400a81],  b'`')
-        self.assertEqual(mem[0x400a82],  b'\xca')
-        self.assertEqual(mem[0x400a83],  b'q')
+        self.assertEqual(mem[0x400a7e:0x400a84], [b'f',b'\x0f',b':',b'`',b'\xca',b'q'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -2998,12 +2648,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x400994],  b'f')
-        self.assertEqual(mem[0x400995],  b'\x0f')
-        self.assertEqual(mem[0x400996],  b':')
-        self.assertEqual(mem[0x400997],  b'`')
-        self.assertEqual(mem[0x400998],  b'\xca')
-        self.assertEqual(mem[0x400999],  b'$')
+        self.assertEqual(mem[0x400994:0x40099a], [b'f',b'\x0f',b':',b'`',b'\xca',b'$'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
@@ -3038,12 +2683,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x400934],  b'f')
-        self.assertEqual(mem[0x400935],  b'\x0f')
-        self.assertEqual(mem[0x400936],  b':')
-        self.assertEqual(mem[0x400937],  b'`')
-        self.assertEqual(mem[0x400938],  b'\xca')
-        self.assertEqual(mem[0x400939],  b'\x04')
+        self.assertEqual(mem[0x400934:0x40093a], [b'f',b'\x0f',b':',b'`',b'\xca',b'\x04'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
@@ -3078,12 +2718,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x400a9c],  b'f')
-        self.assertEqual(mem[0x400a9d],  b'\x0f')
-        self.assertEqual(mem[0x400a9e],  b':')
-        self.assertEqual(mem[0x400a9f],  b'`')
-        self.assertEqual(mem[0x400aa0],  b'\xca')
-        self.assertEqual(mem[0x400aa1],  b'|')
+        self.assertEqual(mem[0x400a9c:0x400aa2], [b'f',b'\x0f',b':',b'`',b'\xca',b'|'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -3118,12 +2753,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x40092e],  b'f')
-        self.assertEqual(mem[0x40092f],  b'\x0f')
-        self.assertEqual(mem[0x400930],  b':')
-        self.assertEqual(mem[0x400931],  b'`')
-        self.assertEqual(mem[0x400932],  b'\xca')
-        self.assertEqual(mem[0x400933],  b'\x01')
+        self.assertEqual(mem[0x40092e:0x400934], [b'f',b'\x0f',b':',b'`',b'\xca',b'\x01'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
@@ -3158,12 +2788,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x4009a6],  b'f')
-        self.assertEqual(mem[0x4009a7],  b'\x0f')
-        self.assertEqual(mem[0x4009a8],  b':')
-        self.assertEqual(mem[0x4009a9],  b'`')
-        self.assertEqual(mem[0x4009aa],  b'\xca')
-        self.assertEqual(mem[0x4009ab],  b')')
+        self.assertEqual(mem[0x4009a6:0x4009ac], [b'f',b'\x0f',b':',b'`',b'\xca',b')'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -3198,12 +2823,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x400a54],  b'f')
-        self.assertEqual(mem[0x400a55],  b'\x0f')
-        self.assertEqual(mem[0x400a56],  b':')
-        self.assertEqual(mem[0x400a57],  b'`')
-        self.assertEqual(mem[0x400a58],  b'\xca')
-        self.assertEqual(mem[0x400a59],  b'd')
+        self.assertEqual(mem[0x400a54:0x400a5a], [b'f',b'\x0f',b':',b'`',b'\xca',b'd'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
@@ -3238,12 +2858,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x400a66],  b'f')
-        self.assertEqual(mem[0x400a67],  b'\x0f')
-        self.assertEqual(mem[0x400a68],  b':')
-        self.assertEqual(mem[0x400a69],  b'`')
-        self.assertEqual(mem[0x400a6a],  b'\xca')
-        self.assertEqual(mem[0x400a6b],  b'i')
+        self.assertEqual(mem[0x400a66:0x400a6c], [b'f',b'\x0f',b':',b'`',b'\xca',b'i'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -3278,12 +2893,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x400958],  b'f')
-        self.assertEqual(mem[0x400959],  b'\x0f')
-        self.assertEqual(mem[0x40095a],  b':')
-        self.assertEqual(mem[0x40095b],  b'`')
-        self.assertEqual(mem[0x40095c],  b'\xca')
-        self.assertEqual(mem[0x40095d],  b'\x10')
+        self.assertEqual(mem[0x400958:0x40095e], [b'f',b'\x0f',b':',b'`',b'\xca',b'\x10'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -3318,12 +2928,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x40095e],  b'f')
-        self.assertEqual(mem[0x40095f],  b'\x0f')
-        self.assertEqual(mem[0x400960],  b':')
-        self.assertEqual(mem[0x400961],  b'`')
-        self.assertEqual(mem[0x400962],  b'\xca')
-        self.assertEqual(mem[0x400963],  b'\x11')
+        self.assertEqual(mem[0x40095e:0x400964], [b'f',b'\x0f',b':',b'`',b'\xca',b'\x11'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -3358,12 +2963,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x400976],  b'f')
-        self.assertEqual(mem[0x400977],  b'\x0f')
-        self.assertEqual(mem[0x400978],  b':')
-        self.assertEqual(mem[0x400979],  b'`')
-        self.assertEqual(mem[0x40097a],  b'\xca')
-        self.assertEqual(mem[0x40097b],  b'\x19')
+        self.assertEqual(mem[0x400976:0x40097c], [b'f',b'\x0f',b':',b'`',b'\xca',b'\x19'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -3398,12 +2998,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x400a8a],  b'f')
-        self.assertEqual(mem[0x400a8b],  b'\x0f')
-        self.assertEqual(mem[0x400a8c],  b':')
-        self.assertEqual(mem[0x400a8d],  b'`')
-        self.assertEqual(mem[0x400a8e],  b'\xca')
-        self.assertEqual(mem[0x400a8f],  b'u')
+        self.assertEqual(mem[0x400a8a:0x400a90], [b'f',b'\x0f',b':',b'`',b'\xca',b'u'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -3438,12 +3033,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x400a12],  b'f')
-        self.assertEqual(mem[0x400a13],  b'\x0f')
-        self.assertEqual(mem[0x400a14],  b':')
-        self.assertEqual(mem[0x400a15],  b'`')
-        self.assertEqual(mem[0x400a16],  b'\xca')
-        self.assertEqual(mem[0x400a17],  b'M')
+        self.assertEqual(mem[0x400a12:0x400a18], [b'f',b'\x0f',b':',b'`',b'\xca',b'M'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
@@ -3478,12 +3068,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x40093a],  b'f')
-        self.assertEqual(mem[0x40093b],  b'\x0f')
-        self.assertEqual(mem[0x40093c],  b':')
-        self.assertEqual(mem[0x40093d],  b'`')
-        self.assertEqual(mem[0x40093e],  b'\xca')
-        self.assertEqual(mem[0x40093f],  b'\x05')
+        self.assertEqual(mem[0x40093a:0x400940], [b'f',b'\x0f',b':',b'`',b'\xca',b'\x05'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
@@ -3518,12 +3103,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x400a30],  b'f')
-        self.assertEqual(mem[0x400a31],  b'\x0f')
-        self.assertEqual(mem[0x400a32],  b':')
-        self.assertEqual(mem[0x400a33],  b'`')
-        self.assertEqual(mem[0x400a34],  b'\xca')
-        self.assertEqual(mem[0x400a35],  b'X')
+        self.assertEqual(mem[0x400a30:0x400a36], [b'f',b'\x0f',b':',b'`',b'\xca',b'X'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -3558,12 +3138,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x4009ca],  b'f')
-        self.assertEqual(mem[0x4009cb],  b'\x0f')
-        self.assertEqual(mem[0x4009cc],  b':')
-        self.assertEqual(mem[0x4009cd],  b'`')
-        self.assertEqual(mem[0x4009ce],  b'\xca')
-        self.assertEqual(mem[0x4009cf],  b'5')
+        self.assertEqual(mem[0x4009ca:0x4009d0], [b'f',b'\x0f',b':',b'`',b'\xca',b'5'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -3598,12 +3173,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x400a3c],  b'f')
-        self.assertEqual(mem[0x400a3d],  b'\x0f')
-        self.assertEqual(mem[0x400a3e],  b':')
-        self.assertEqual(mem[0x400a3f],  b'`')
-        self.assertEqual(mem[0x400a40],  b'\xca')
-        self.assertEqual(mem[0x400a41],  b'\\')
+        self.assertEqual(mem[0x400a3c:0x400a42], [b'f',b'\x0f',b':',b'`',b'\xca',b'\\'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -3638,12 +3208,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x400a18],  b'f')
-        self.assertEqual(mem[0x400a19],  b'\x0f')
-        self.assertEqual(mem[0x400a1a],  b':')
-        self.assertEqual(mem[0x400a1b],  b'`')
-        self.assertEqual(mem[0x400a1c],  b'\xca')
-        self.assertEqual(mem[0x400a1d],  b'P')
+        self.assertEqual(mem[0x400a18:0x400a1e], [b'f',b'\x0f',b':',b'`',b'\xca',b'P'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -3678,12 +3243,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x40098e],  b'f')
-        self.assertEqual(mem[0x40098f],  b'\x0f')
-        self.assertEqual(mem[0x400990],  b':')
-        self.assertEqual(mem[0x400991],  b'`')
-        self.assertEqual(mem[0x400992],  b'\xca')
-        self.assertEqual(mem[0x400993],  b'!')
+        self.assertEqual(mem[0x40098e:0x400994], [b'f',b'\x0f',b':',b'`',b'\xca',b'!'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
@@ -3718,12 +3278,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x400a96],  b'f')
-        self.assertEqual(mem[0x400a97],  b'\x0f')
-        self.assertEqual(mem[0x400a98],  b':')
-        self.assertEqual(mem[0x400a99],  b'`')
-        self.assertEqual(mem[0x400a9a],  b'\xca')
-        self.assertEqual(mem[0x400a9b],  b'y')
+        self.assertEqual(mem[0x400a96:0x400a9c], [b'f',b'\x0f',b':',b'`',b'\xca',b'y'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -3758,12 +3313,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x400a90],  b'f')
-        self.assertEqual(mem[0x400a91],  b'\x0f')
-        self.assertEqual(mem[0x400a92],  b':')
-        self.assertEqual(mem[0x400a93],  b'`')
-        self.assertEqual(mem[0x400a94],  b'\xca')
-        self.assertEqual(mem[0x400a95],  b'x')
+        self.assertEqual(mem[0x400a90:0x400a96], [b'f',b'\x0f',b':',b'`',b'\xca',b'x'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -3798,12 +3348,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x400a06],  b'f')
-        self.assertEqual(mem[0x400a07],  b'\x0f')
-        self.assertEqual(mem[0x400a08],  b':')
-        self.assertEqual(mem[0x400a09],  b'`')
-        self.assertEqual(mem[0x400a0a],  b'\xca')
-        self.assertEqual(mem[0x400a0b],  b'I')
+        self.assertEqual(mem[0x400a06:0x400a0c], [b'f',b'\x0f',b':',b'`',b'\xca',b'I'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -3838,12 +3383,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x400928],  b'f')
-        self.assertEqual(mem[0x400929],  b'\x0f')
-        self.assertEqual(mem[0x40092a],  b':')
-        self.assertEqual(mem[0x40092b],  b'`')
-        self.assertEqual(mem[0x40092c],  b'\xca')
-        self.assertEqual(mem[0x40092d],  b'\x00')
+        self.assertEqual(mem[0x400928:0x40092e], [b'f',b'\x0f',b':',b'`',b'\xca',b'\x00'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
@@ -3878,12 +3418,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x400a84],  b'f')
-        self.assertEqual(mem[0x400a85],  b'\x0f')
-        self.assertEqual(mem[0x400a86],  b':')
-        self.assertEqual(mem[0x400a87],  b'`')
-        self.assertEqual(mem[0x400a88],  b'\xca')
-        self.assertEqual(mem[0x400a89],  b't')
+        self.assertEqual(mem[0x400a84:0x400a8a], [b'f',b'\x0f',b':',b'`',b'\xca',b't'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -3918,12 +3453,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x400a72],  b'f')
-        self.assertEqual(mem[0x400a73],  b'\x0f')
-        self.assertEqual(mem[0x400a74],  b':')
-        self.assertEqual(mem[0x400a75],  b'`')
-        self.assertEqual(mem[0x400a76],  b'\xca')
-        self.assertEqual(mem[0x400a77],  b'm')
+        self.assertEqual(mem[0x400a72:0x400a78], [b'f',b'\x0f',b':',b'`',b'\xca',b'm'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
@@ -3958,12 +3488,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x400946],  b'f')
-        self.assertEqual(mem[0x400947],  b'\x0f')
-        self.assertEqual(mem[0x400948],  b':')
-        self.assertEqual(mem[0x400949],  b'`')
-        self.assertEqual(mem[0x40094a],  b'\xca')
-        self.assertEqual(mem[0x40094b],  b'\t')
+        self.assertEqual(mem[0x400946:0x40094c], [b'f',b'\x0f',b':',b'`',b'\xca',b'\t'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -3998,12 +3523,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x400940],  b'f')
-        self.assertEqual(mem[0x400941],  b'\x0f')
-        self.assertEqual(mem[0x400942],  b':')
-        self.assertEqual(mem[0x400943],  b'`')
-        self.assertEqual(mem[0x400944],  b'\xca')
-        self.assertEqual(mem[0x400945],  b'\x08')
+        self.assertEqual(mem[0x400940:0x400946], [b'f',b'\x0f',b':',b'`',b'\xca',b'\x08'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -4038,12 +3558,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x400aa2],  b'f')
-        self.assertEqual(mem[0x400aa3],  b'\x0f')
-        self.assertEqual(mem[0x400aa4],  b':')
-        self.assertEqual(mem[0x400aa5],  b'`')
-        self.assertEqual(mem[0x400aa6],  b'\xca')
-        self.assertEqual(mem[0x400aa7],  b'}')
+        self.assertEqual(mem[0x400aa2:0x400aa8], [b'f',b'\x0f',b':',b'`',b'\xca',b'}'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -4078,12 +3593,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x40097c],  b'f')
-        self.assertEqual(mem[0x40097d],  b'\x0f')
-        self.assertEqual(mem[0x40097e],  b':')
-        self.assertEqual(mem[0x40097f],  b'`')
-        self.assertEqual(mem[0x400980],  b'\xca')
-        self.assertEqual(mem[0x400981],  b'\x1c')
+        self.assertEqual(mem[0x40097c:0x400982], [b'f',b'\x0f',b':',b'`',b'\xca',b'\x1c'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -4118,12 +3628,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x400a48],  b'f')
-        self.assertEqual(mem[0x400a49],  b'\x0f')
-        self.assertEqual(mem[0x400a4a],  b':')
-        self.assertEqual(mem[0x400a4b],  b'`')
-        self.assertEqual(mem[0x400a4c],  b'\xca')
-        self.assertEqual(mem[0x400a4d],  b'`')
+        self.assertEqual(mem[0x400a48:0x400a4e], [b'f',b'\x0f',b':',b'`',b'\xca',b'`'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
@@ -4158,12 +3663,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x400952],  b'f')
-        self.assertEqual(mem[0x400953],  b'\x0f')
-        self.assertEqual(mem[0x400954],  b':')
-        self.assertEqual(mem[0x400955],  b'`')
-        self.assertEqual(mem[0x400956],  b'\xca')
-        self.assertEqual(mem[0x400957],  b'\r')
+        self.assertEqual(mem[0x400952:0x400958], [b'f',b'\x0f',b':',b'`',b'\xca',b'\r'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
@@ -4198,12 +3698,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x40094c],  b'f')
-        self.assertEqual(mem[0x40094d],  b'\x0f')
-        self.assertEqual(mem[0x40094e],  b':')
-        self.assertEqual(mem[0x40094f],  b'`')
-        self.assertEqual(mem[0x400950],  b'\xca')
-        self.assertEqual(mem[0x400951],  b'\x0c')
+        self.assertEqual(mem[0x40094c:0x400952], [b'f',b'\x0f',b':',b'`',b'\xca',b'\x0c'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
@@ -4238,12 +3733,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x400a0c],  b'f')
-        self.assertEqual(mem[0x400a0d],  b'\x0f')
-        self.assertEqual(mem[0x400a0e],  b':')
-        self.assertEqual(mem[0x400a0f],  b'`')
-        self.assertEqual(mem[0x400a10],  b'\xca')
-        self.assertEqual(mem[0x400a11],  b'L')
+        self.assertEqual(mem[0x400a0c:0x400a12], [b'f',b'\x0f',b':',b'`',b'\xca',b'L'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
@@ -4278,12 +3768,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x400964],  b'f')
-        self.assertEqual(mem[0x400965],  b'\x0f')
-        self.assertEqual(mem[0x400966],  b':')
-        self.assertEqual(mem[0x400967],  b'`')
-        self.assertEqual(mem[0x400968],  b'\xca')
-        self.assertEqual(mem[0x400969],  b'\x14')
+        self.assertEqual(mem[0x400964:0x40096a], [b'f',b'\x0f',b':',b'`',b'\xca',b'\x14'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -4318,12 +3803,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x400a36],  b'f')
-        self.assertEqual(mem[0x400a37],  b'\x0f')
-        self.assertEqual(mem[0x400a38],  b':')
-        self.assertEqual(mem[0x400a39],  b'`')
-        self.assertEqual(mem[0x400a3a],  b'\xca')
-        self.assertEqual(mem[0x400a3b],  b'Y')
+        self.assertEqual(mem[0x400a36:0x400a3c], [b'f',b'\x0f',b':',b'`',b'\xca',b'Y'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -4358,12 +3838,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x40099a],  b'f')
-        self.assertEqual(mem[0x40099b],  b'\x0f')
-        self.assertEqual(mem[0x40099c],  b':')
-        self.assertEqual(mem[0x40099d],  b'`')
-        self.assertEqual(mem[0x40099e],  b'\xca')
-        self.assertEqual(mem[0x40099f],  b'%')
+        self.assertEqual(mem[0x40099a:0x4009a0], [b'f',b'\x0f',b':',b'`',b'\xca',b'%'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
@@ -4398,12 +3873,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x400988],  b'f')
-        self.assertEqual(mem[0x400989],  b'\x0f')
-        self.assertEqual(mem[0x40098a],  b':')
-        self.assertEqual(mem[0x40098b],  b'`')
-        self.assertEqual(mem[0x40098c],  b'\xca')
-        self.assertEqual(mem[0x40098d],  b' ')
+        self.assertEqual(mem[0x400988:0x40098e], [b'f',b'\x0f',b':',b'`',b'\xca',b' '])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
@@ -4438,12 +3908,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x400a5a],  b'f')
-        self.assertEqual(mem[0x400a5b],  b'\x0f')
-        self.assertEqual(mem[0x400a5c],  b':')
-        self.assertEqual(mem[0x400a5d],  b'`')
-        self.assertEqual(mem[0x400a5e],  b'\xca')
-        self.assertEqual(mem[0x400a5f],  b'e')
+        self.assertEqual(mem[0x400a5a:0x400a60], [b'f',b'\x0f',b':',b'`',b'\xca',b'e'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
@@ -4478,12 +3943,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x40096a],  b'f')
-        self.assertEqual(mem[0x40096b],  b'\x0f')
-        self.assertEqual(mem[0x40096c],  b':')
-        self.assertEqual(mem[0x40096d],  b'`')
-        self.assertEqual(mem[0x40096e],  b'\xca')
-        self.assertEqual(mem[0x40096f],  b'\x15')
+        self.assertEqual(mem[0x40096a:0x400970], [b'f',b'\x0f',b':',b'`',b'\xca',b'\x15'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -4518,12 +3978,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x4009b2],  b'f')
-        self.assertEqual(mem[0x4009b3],  b'\x0f')
-        self.assertEqual(mem[0x4009b4],  b':')
-        self.assertEqual(mem[0x4009b5],  b'`')
-        self.assertEqual(mem[0x4009b6],  b'\xca')
-        self.assertEqual(mem[0x4009b7],  b'-')
+        self.assertEqual(mem[0x4009b2:0x4009b8], [b'f',b'\x0f',b':',b'`',b'\xca',b'-'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
@@ -4558,12 +4013,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x400a60],  b'f')
-        self.assertEqual(mem[0x400a61],  b'\x0f')
-        self.assertEqual(mem[0x400a62],  b':')
-        self.assertEqual(mem[0x400a63],  b'`')
-        self.assertEqual(mem[0x400a64],  b'\xca')
-        self.assertEqual(mem[0x400a65],  b'h')
+        self.assertEqual(mem[0x400a60:0x400a66], [b'f',b'\x0f',b':',b'`',b'\xca',b'h'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -4598,12 +4048,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x4009be],  b'f')
-        self.assertEqual(mem[0x4009bf],  b'\x0f')
-        self.assertEqual(mem[0x4009c0],  b':')
-        self.assertEqual(mem[0x4009c1],  b'`')
-        self.assertEqual(mem[0x4009c2],  b'\xca')
-        self.assertEqual(mem[0x4009c3],  b'1')
+        self.assertEqual(mem[0x4009be:0x4009c4], [b'f',b'\x0f',b':',b'`',b'\xca',b'1'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -4638,12 +4083,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x4009e2],  b'f')
-        self.assertEqual(mem[0x4009e3],  b'\x0f')
-        self.assertEqual(mem[0x4009e4],  b':')
-        self.assertEqual(mem[0x4009e5],  b'`')
-        self.assertEqual(mem[0x4009e6],  b'\xca')
-        self.assertEqual(mem[0x4009e7],  b'=')
+        self.assertEqual(mem[0x4009e2:0x4009e8], [b'f',b'\x0f',b':',b'`',b'\xca',b'='])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -4678,12 +4118,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x4009d6],  b'f')
-        self.assertEqual(mem[0x4009d7],  b'\x0f')
-        self.assertEqual(mem[0x4009d8],  b':')
-        self.assertEqual(mem[0x4009d9],  b'`')
-        self.assertEqual(mem[0x4009da],  b'\xca')
-        self.assertEqual(mem[0x4009db],  b'9')
+        self.assertEqual(mem[0x4009d6:0x4009dc], [b'f',b'\x0f',b':',b'`',b'\xca',b'9'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -4718,12 +4153,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x400a6c],  b'f')
-        self.assertEqual(mem[0x400a6d],  b'\x0f')
-        self.assertEqual(mem[0x400a6e],  b':')
-        self.assertEqual(mem[0x400a6f],  b'`')
-        self.assertEqual(mem[0x400a70],  b'\xca')
-        self.assertEqual(mem[0x400a71],  b'l')
+        self.assertEqual(mem[0x400a6c:0x400a72], [b'f',b'\x0f',b':',b'`',b'\xca',b'l'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
@@ -4758,12 +4188,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x4009c4],  b'f')
-        self.assertEqual(mem[0x4009c5],  b'\x0f')
-        self.assertEqual(mem[0x4009c6],  b':')
-        self.assertEqual(mem[0x4009c7],  b'`')
-        self.assertEqual(mem[0x4009c8],  b'\xca')
-        self.assertEqual(mem[0x4009c9],  b'4')
+        self.assertEqual(mem[0x4009c4:0x4009ca], [b'f',b'\x0f',b':',b'`',b'\xca',b'4'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -4798,12 +4223,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x400a00],  b'f')
-        self.assertEqual(mem[0x400a01],  b'\x0f')
-        self.assertEqual(mem[0x400a02],  b':')
-        self.assertEqual(mem[0x400a03],  b'`')
-        self.assertEqual(mem[0x400a04],  b'\xca')
-        self.assertEqual(mem[0x400a05],  b'H')
+        self.assertEqual(mem[0x400a00:0x400a06], [b'f',b'\x0f',b':',b'`',b'\xca',b'H'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -4838,12 +4258,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x4009e8],  b'f')
-        self.assertEqual(mem[0x4009e9],  b'\x0f')
-        self.assertEqual(mem[0x4009ea],  b':')
-        self.assertEqual(mem[0x4009eb],  b'`')
-        self.assertEqual(mem[0x4009ec],  b'\xca')
-        self.assertEqual(mem[0x4009ed],  b'@')
+        self.assertEqual(mem[0x4009e8:0x4009ee], [b'f',b'\x0f',b':',b'`',b'\xca',b'@'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
@@ -4878,12 +4293,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x4009b8],  b'f')
-        self.assertEqual(mem[0x4009b9],  b'\x0f')
-        self.assertEqual(mem[0x4009ba],  b':')
-        self.assertEqual(mem[0x4009bb],  b'`')
-        self.assertEqual(mem[0x4009bc],  b'\xca')
-        self.assertEqual(mem[0x4009bd],  b'0')
+        self.assertEqual(mem[0x4009b8:0x4009be], [b'f',b'\x0f',b':',b'`',b'\xca',b'0'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -4918,12 +4328,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x4009ee],  b'f')
-        self.assertEqual(mem[0x4009ef],  b'\x0f')
-        self.assertEqual(mem[0x4009f0],  b':')
-        self.assertEqual(mem[0x4009f1],  b'`')
-        self.assertEqual(mem[0x4009f2],  b'\xca')
-        self.assertEqual(mem[0x4009f3],  b'A')
+        self.assertEqual(mem[0x4009ee:0x4009f4], [b'f',b'\x0f',b':',b'`',b'\xca',b'A'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
@@ -4958,12 +4363,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x4009a0],  b'f')
-        self.assertEqual(mem[0x4009a1],  b'\x0f')
-        self.assertEqual(mem[0x4009a2],  b':')
-        self.assertEqual(mem[0x4009a3],  b'`')
-        self.assertEqual(mem[0x4009a4],  b'\xca')
-        self.assertEqual(mem[0x4009a5],  b'(')
+        self.assertEqual(mem[0x4009a0:0x4009a6], [b'f',b'\x0f',b':',b'`',b'\xca',b'('])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -4998,12 +4398,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x400970],  b'f')
-        self.assertEqual(mem[0x400971],  b'\x0f')
-        self.assertEqual(mem[0x400972],  b':')
-        self.assertEqual(mem[0x400973],  b'`')
-        self.assertEqual(mem[0x400974],  b'\xca')
-        self.assertEqual(mem[0x400975],  b'\x18')
+        self.assertEqual(mem[0x400970:0x400976], [b'f',b'\x0f',b':',b'`',b'\xca',b'\x18'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -5038,12 +4433,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x400a78],  b'f')
-        self.assertEqual(mem[0x400a79],  b'\x0f')
-        self.assertEqual(mem[0x400a7a],  b':')
-        self.assertEqual(mem[0x400a7b],  b'`')
-        self.assertEqual(mem[0x400a7c],  b'\xca')
-        self.assertEqual(mem[0x400a7d],  b'p')
+        self.assertEqual(mem[0x400a78:0x400a7e], [b'f',b'\x0f',b':',b'`',b'\xca',b'p'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -5078,12 +4468,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x400a2a],  b'f')
-        self.assertEqual(mem[0x400a2b],  b'\x0f')
-        self.assertEqual(mem[0x400a2c],  b':')
-        self.assertEqual(mem[0x400a2d],  b'`')
-        self.assertEqual(mem[0x400a2e],  b'\xca')
-        self.assertEqual(mem[0x400a2f],  b'U')
+        self.assertEqual(mem[0x400a2a:0x400a30], [b'f',b'\x0f',b':',b'`',b'\xca',b'U'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -5118,12 +4503,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x400a42],  b'f')
-        self.assertEqual(mem[0x400a43],  b'\x0f')
-        self.assertEqual(mem[0x400a44],  b':')
-        self.assertEqual(mem[0x400a45],  b'`')
-        self.assertEqual(mem[0x400a46],  b'\xca')
-        self.assertEqual(mem[0x400a47],  b']')
+        self.assertEqual(mem[0x400a42:0x400a48], [b'f',b'\x0f',b':',b'`',b'\xca',b']'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -5158,12 +4538,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x400a4e],  b'f')
-        self.assertEqual(mem[0x400a4f],  b'\x0f')
-        self.assertEqual(mem[0x400a50],  b':')
-        self.assertEqual(mem[0x400a51],  b'`')
-        self.assertEqual(mem[0x400a52],  b'\xca')
-        self.assertEqual(mem[0x400a53],  b'a')
+        self.assertEqual(mem[0x400a4e:0x400a54], [b'f',b'\x0f',b':',b'`',b'\xca',b'a'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
@@ -5198,12 +4573,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x4009dc],  b'f')
-        self.assertEqual(mem[0x4009dd],  b'\x0f')
-        self.assertEqual(mem[0x4009de],  b':')
-        self.assertEqual(mem[0x4009df],  b'`')
-        self.assertEqual(mem[0x4009e0],  b'\xca')
-        self.assertEqual(mem[0x4009e1],  b'<')
+        self.assertEqual(mem[0x4009dc:0x4009e2], [b'f',b'\x0f',b':',b'`',b'\xca',b'<'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -5238,12 +4608,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x4009fa],  b'f')
-        self.assertEqual(mem[0x4009fb],  b'\x0f')
-        self.assertEqual(mem[0x4009fc],  b':')
-        self.assertEqual(mem[0x4009fd],  b'`')
-        self.assertEqual(mem[0x4009fe],  b'\xca')
-        self.assertEqual(mem[0x4009ff],  b'E')
+        self.assertEqual(mem[0x4009fa:0x400a00], [b'f',b'\x0f',b':',b'`',b'\xca',b'E'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
@@ -5278,12 +4643,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x400982],  b'f')
-        self.assertEqual(mem[0x400983],  b'\x0f')
-        self.assertEqual(mem[0x400984],  b':')
-        self.assertEqual(mem[0x400985],  b'`')
-        self.assertEqual(mem[0x400986],  b'\xca')
-        self.assertEqual(mem[0x400987],  b'\x1d')
+        self.assertEqual(mem[0x400982:0x400988], [b'f',b'\x0f',b':',b'`',b'\xca',b'\x1d'])
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
@@ -5317,12 +4677,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x400746],  b'f')
-        self.assertEqual(mem[0x400747],  b'\x0f')
-        self.assertEqual(mem[0x400748],  b':')
-        self.assertEqual(mem[0x400749],  b'c')
-        self.assertEqual(mem[0x40074a],  b'\xca')
-        self.assertEqual(mem[0x40074b],  b'm')
+        self.assertEqual(mem[0x400746:0x40074c], [b'f',b'\x0f',b':',b'c',b'\xca',b'm'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -5355,12 +4710,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x400650],  b'f')
-        self.assertEqual(mem[0x400651],  b'\x0f')
-        self.assertEqual(mem[0x400652],  b':')
-        self.assertEqual(mem[0x400653],  b'c')
-        self.assertEqual(mem[0x400654],  b'\xca')
-        self.assertEqual(mem[0x400655],  b'\x1c')
+        self.assertEqual(mem[0x400650:0x400656], [b'f',b'\x0f',b':',b'c',b'\xca',b'\x1c'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -5393,12 +4743,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x400668],  b'f')
-        self.assertEqual(mem[0x400669],  b'\x0f')
-        self.assertEqual(mem[0x40066a],  b':')
-        self.assertEqual(mem[0x40066b],  b'c')
-        self.assertEqual(mem[0x40066c],  b'\xca')
-        self.assertEqual(mem[0x40066d],  b'$')
+        self.assertEqual(mem[0x400668:0x40066e], [b'f',b'\x0f',b':',b'c',b'\xca',b'$'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -5431,12 +4776,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x400698],  b'f')
-        self.assertEqual(mem[0x400699],  b'\x0f')
-        self.assertEqual(mem[0x40069a],  b':')
-        self.assertEqual(mem[0x40069b],  b'c')
-        self.assertEqual(mem[0x40069c],  b'\xca')
-        self.assertEqual(mem[0x40069d],  b'4')
+        self.assertEqual(mem[0x400698:0x40069e], [b'f',b'\x0f',b':',b'c',b'\xca',b'4'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -5469,12 +4809,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x4006c8],  b'f')
-        self.assertEqual(mem[0x4006c9],  b'\x0f')
-        self.assertEqual(mem[0x4006ca],  b':')
-        self.assertEqual(mem[0x4006cb],  b'c')
-        self.assertEqual(mem[0x4006cc],  b'\xca')
-        self.assertEqual(mem[0x4006cd],  b'D')
+        self.assertEqual(mem[0x4006c8:0x4006ce], [b'f',b'\x0f',b':',b'c',b'\xca',b'D'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -5507,12 +4842,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x4006bc],  b'f')
-        self.assertEqual(mem[0x4006bd],  b'\x0f')
-        self.assertEqual(mem[0x4006be],  b':')
-        self.assertEqual(mem[0x4006bf],  b'c')
-        self.assertEqual(mem[0x4006c0],  b'\xca')
-        self.assertEqual(mem[0x4006c1],  b'@')
+        self.assertEqual(mem[0x4006bc:0x4006c2], [b'f',b'\x0f',b':',b'c',b'\xca',b'@'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -5545,12 +4875,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x40068c],  b'f')
-        self.assertEqual(mem[0x40068d],  b'\x0f')
-        self.assertEqual(mem[0x40068e],  b':')
-        self.assertEqual(mem[0x40068f],  b'c')
-        self.assertEqual(mem[0x400690],  b'\xca')
-        self.assertEqual(mem[0x400691],  b'0')
+        self.assertEqual(mem[0x40068c:0x400692], [b'f',b'\x0f',b':',b'c',b'\xca',b'0'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -5583,12 +4908,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x40062c],  b'f')
-        self.assertEqual(mem[0x40062d],  b'\x0f')
-        self.assertEqual(mem[0x40062e],  b':')
-        self.assertEqual(mem[0x40062f],  b'c')
-        self.assertEqual(mem[0x400630],  b'\xca')
-        self.assertEqual(mem[0x400631],  b'\x10')
+        self.assertEqual(mem[0x40062c:0x400632], [b'f',b'\x0f',b':',b'c',b'\xca',b'\x10'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -5621,12 +4941,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x400764],  b'f')
-        self.assertEqual(mem[0x400765],  b'\x0f')
-        self.assertEqual(mem[0x400766],  b':')
-        self.assertEqual(mem[0x400767],  b'c')
-        self.assertEqual(mem[0x400768],  b'\xca')
-        self.assertEqual(mem[0x400769],  b'x')
+        self.assertEqual(mem[0x400764:0x40076a], [b'f',b'\x0f',b':',b'c',b'\xca',b'x'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -5659,12 +4974,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = True
         cpu.execute()
     
-        self.assertEqual(mem[0x4005fc],  b'f')
-        self.assertEqual(mem[0x4005fd],  b'\x0f')
-        self.assertEqual(mem[0x4005fe],  b':')
-        self.assertEqual(mem[0x4005ff],  b'c')
-        self.assertEqual(mem[0x400600],  b'\xca')
-        self.assertEqual(mem[0x400601],  b'\x00')
+        self.assertEqual(mem[0x4005fc:0x400602], [b'f',b'\x0f',b':',b'c',b'\xca',b'\x00'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -5697,12 +5007,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x4006ce],  b'f')
-        self.assertEqual(mem[0x4006cf],  b'\x0f')
-        self.assertEqual(mem[0x4006d0],  b':')
-        self.assertEqual(mem[0x4006d1],  b'c')
-        self.assertEqual(mem[0x4006d2],  b'\xca')
-        self.assertEqual(mem[0x4006d3],  b'E')
+        self.assertEqual(mem[0x4006ce:0x4006d4], [b'f',b'\x0f',b':',b'c',b'\xca',b'E'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -5735,12 +5040,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x400704],  b'f')
-        self.assertEqual(mem[0x400705],  b'\x0f')
-        self.assertEqual(mem[0x400706],  b':')
-        self.assertEqual(mem[0x400707],  b'c')
-        self.assertEqual(mem[0x400708],  b'\xca')
-        self.assertEqual(mem[0x400709],  b'X')
+        self.assertEqual(mem[0x400704:0x40070a], [b'f',b'\x0f',b':',b'c',b'\xca',b'X'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -5773,12 +5073,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x4006f8],  b'f')
-        self.assertEqual(mem[0x4006f9],  b'\x0f')
-        self.assertEqual(mem[0x4006fa],  b':')
-        self.assertEqual(mem[0x4006fb],  b'c')
-        self.assertEqual(mem[0x4006fc],  b'\xca')
-        self.assertEqual(mem[0x4006fd],  b'T')
+        self.assertEqual(mem[0x4006f8:0x4006fe], [b'f',b'\x0f',b':',b'c',b'\xca',b'T'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -5811,12 +5106,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x4006c2],  b'f')
-        self.assertEqual(mem[0x4006c3],  b'\x0f')
-        self.assertEqual(mem[0x4006c4],  b':')
-        self.assertEqual(mem[0x4006c5],  b'c')
-        self.assertEqual(mem[0x4006c6],  b'\xca')
-        self.assertEqual(mem[0x4006c7],  b'A')
+        self.assertEqual(mem[0x4006c2:0x4006c8], [b'f',b'\x0f',b':',b'c',b'\xca',b'A'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -5849,12 +5139,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x40069e],  b'f')
-        self.assertEqual(mem[0x40069f],  b'\x0f')
-        self.assertEqual(mem[0x4006a0],  b':')
-        self.assertEqual(mem[0x4006a1],  b'c')
-        self.assertEqual(mem[0x4006a2],  b'\xca')
-        self.assertEqual(mem[0x4006a3],  b'5')
+        self.assertEqual(mem[0x40069e:0x4006a4], [b'f',b'\x0f',b':',b'c',b'\xca',b'5'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -5887,12 +5172,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x4006b6],  b'f')
-        self.assertEqual(mem[0x4006b7],  b'\x0f')
-        self.assertEqual(mem[0x4006b8],  b':')
-        self.assertEqual(mem[0x4006b9],  b'c')
-        self.assertEqual(mem[0x4006ba],  b'\xca')
-        self.assertEqual(mem[0x4006bb],  b'=')
+        self.assertEqual(mem[0x4006b6:0x4006bc], [b'f',b'\x0f',b':',b'c',b'\xca',b'='])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -5925,12 +5205,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x400620],  b'f')
-        self.assertEqual(mem[0x400621],  b'\x0f')
-        self.assertEqual(mem[0x400622],  b':')
-        self.assertEqual(mem[0x400623],  b'c')
-        self.assertEqual(mem[0x400624],  b'\xca')
-        self.assertEqual(mem[0x400625],  b'\x0c')
+        self.assertEqual(mem[0x400620:0x400626], [b'f',b'\x0f',b':',b'c',b'\xca',b'\x0c'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -5963,12 +5238,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x400710],  b'f')
-        self.assertEqual(mem[0x400711],  b'\x0f')
-        self.assertEqual(mem[0x400712],  b':')
-        self.assertEqual(mem[0x400713],  b'c')
-        self.assertEqual(mem[0x400714],  b'\xca')
-        self.assertEqual(mem[0x400715],  b'\\')
+        self.assertEqual(mem[0x400710:0x400716], [b'f',b'\x0f',b':',b'c',b'\xca',b'\\'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -6001,12 +5271,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x4006b0],  b'f')
-        self.assertEqual(mem[0x4006b1],  b'\x0f')
-        self.assertEqual(mem[0x4006b2],  b':')
-        self.assertEqual(mem[0x4006b3],  b'c')
-        self.assertEqual(mem[0x4006b4],  b'\xca')
-        self.assertEqual(mem[0x4006b5],  b'<')
+        self.assertEqual(mem[0x4006b0:0x4006b6], [b'f',b'\x0f',b':',b'c',b'\xca',b'<'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -6039,12 +5304,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x400740],  b'f')
-        self.assertEqual(mem[0x400741],  b'\x0f')
-        self.assertEqual(mem[0x400742],  b':')
-        self.assertEqual(mem[0x400743],  b'c')
-        self.assertEqual(mem[0x400744],  b'\xca')
-        self.assertEqual(mem[0x400745],  b'l')
+        self.assertEqual(mem[0x400740:0x400746], [b'f',b'\x0f',b':',b'c',b'\xca',b'l'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -6077,12 +5337,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x400692],  b'f')
-        self.assertEqual(mem[0x400693],  b'\x0f')
-        self.assertEqual(mem[0x400694],  b':')
-        self.assertEqual(mem[0x400695],  b'c')
-        self.assertEqual(mem[0x400696],  b'\xca')
-        self.assertEqual(mem[0x400697],  b'1')
+        self.assertEqual(mem[0x400692:0x400698], [b'f',b'\x0f',b':',b'c',b'\xca',b'1'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -6115,12 +5370,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x40064a],  b'f')
-        self.assertEqual(mem[0x40064b],  b'\x0f')
-        self.assertEqual(mem[0x40064c],  b':')
-        self.assertEqual(mem[0x40064d],  b'c')
-        self.assertEqual(mem[0x40064e],  b'\xca')
-        self.assertEqual(mem[0x40064f],  b'\x19')
+        self.assertEqual(mem[0x40064a:0x400650], [b'f',b'\x0f',b':',b'c',b'\xca',b'\x19'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -6153,12 +5403,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x400728],  b'f')
-        self.assertEqual(mem[0x400729],  b'\x0f')
-        self.assertEqual(mem[0x40072a],  b':')
-        self.assertEqual(mem[0x40072b],  b'c')
-        self.assertEqual(mem[0x40072c],  b'\xca')
-        self.assertEqual(mem[0x40072d],  b'd')
+        self.assertEqual(mem[0x400728:0x40072e], [b'f',b'\x0f',b':',b'c',b'\xca',b'd'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -6193,32 +5438,8 @@ class CPUTest(unittest.TestCase):
         cpu.RBP = 0x7fffffffe230
         cpu.execute()
     
-        self.assertEqual(mem[0x40077c],  b'f')
-        self.assertEqual(mem[0x40077d],  b'\x0f')
-        self.assertEqual(mem[0x40077e],  b':')
-        self.assertEqual(mem[0x40077f],  b'c')
-        self.assertEqual(mem[0x400780],  b'\x8d')
-        self.assertEqual(mem[0x400781],  b'`')
-        self.assertEqual(mem[0x400782],  b'\xff')
-        self.assertEqual(mem[0x400783],  b'\xff')
-        self.assertEqual(mem[0x400784],  b'\xff')
-        self.assertEqual(mem[0x400785],  b'\x1b')
-        self.assertEqual(mem[0x7fffffffe190],  b'A')
-        self.assertEqual(mem[0x7fffffffe191],  b'B')
-        self.assertEqual(mem[0x7fffffffe192],  b'C')
-        self.assertEqual(mem[0x7fffffffe193],  b'D')
-        self.assertEqual(mem[0x7fffffffe194],  b'E')
-        self.assertEqual(mem[0x7fffffffe195],  b'F')
-        self.assertEqual(mem[0x7fffffffe196],  b'G')
-        self.assertEqual(mem[0x7fffffffe197],  b'H')
-        self.assertEqual(mem[0x7fffffffe198],  b'A')
-        self.assertEqual(mem[0x7fffffffe199],  b'B')
-        self.assertEqual(mem[0x7fffffffe19a],  b'C')
-        self.assertEqual(mem[0x7fffffffe19b],  b'D')
-        self.assertEqual(mem[0x7fffffffe19c],  b'E')
-        self.assertEqual(mem[0x7fffffffe19d],  b'F')
-        self.assertEqual(mem[0x7fffffffe19e],  b'G')
-        self.assertEqual(mem[0x7fffffffe19f],  b'H')
+        self.assertEqual(mem[0x40077c:0x400786], [b'f',b'\x0f',b':',b'c',b'\x8d',b'`',b'\xff',b'\xff',b'\xff',b'\x1b'])
+        self.assertEqual(mem[0x7fffffffe190:0x7fffffffe1a0], [b'A',b'B',b'C',b'D',b'E',b'F',b'G',b'H',b'A',b'B',b'C',b'D',b'E',b'F',b'G',b'H'])
         self.assertEqual(cpu.SF, False)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -6251,12 +5472,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x400626],  b'f')
-        self.assertEqual(mem[0x400627],  b'\x0f')
-        self.assertEqual(mem[0x400628],  b':')
-        self.assertEqual(mem[0x400629],  b'c')
-        self.assertEqual(mem[0x40062a],  b'\xca')
-        self.assertEqual(mem[0x40062b],  b'\r')
+        self.assertEqual(mem[0x400626:0x40062c], [b'f',b'\x0f',b':',b'c',b'\xca',b'\r'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -6289,12 +5505,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x4006d4],  b'f')
-        self.assertEqual(mem[0x4006d5],  b'\x0f')
-        self.assertEqual(mem[0x4006d6],  b':')
-        self.assertEqual(mem[0x4006d7],  b'c')
-        self.assertEqual(mem[0x4006d8],  b'\xca')
-        self.assertEqual(mem[0x4006d9],  b'H')
+        self.assertEqual(mem[0x4006d4:0x4006da], [b'f',b'\x0f',b':',b'c',b'\xca',b'H'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -6327,12 +5538,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x400686],  b'f')
-        self.assertEqual(mem[0x400687],  b'\x0f')
-        self.assertEqual(mem[0x400688],  b':')
-        self.assertEqual(mem[0x400689],  b'c')
-        self.assertEqual(mem[0x40068a],  b'\xca')
-        self.assertEqual(mem[0x40068b],  b'-')
+        self.assertEqual(mem[0x400686:0x40068c], [b'f',b'\x0f',b':',b'c',b'\xca',b'-'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -6365,12 +5571,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x400770],  b'f')
-        self.assertEqual(mem[0x400771],  b'\x0f')
-        self.assertEqual(mem[0x400772],  b':')
-        self.assertEqual(mem[0x400773],  b'c')
-        self.assertEqual(mem[0x400774],  b'\xca')
-        self.assertEqual(mem[0x400775],  b'|')
+        self.assertEqual(mem[0x400770:0x400776], [b'f',b'\x0f',b':',b'c',b'\xca',b'|'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -6403,12 +5604,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x40071c],  b'f')
-        self.assertEqual(mem[0x40071d],  b'\x0f')
-        self.assertEqual(mem[0x40071e],  b':')
-        self.assertEqual(mem[0x40071f],  b'c')
-        self.assertEqual(mem[0x400720],  b'\xca')
-        self.assertEqual(mem[0x400721],  b'`')
+        self.assertEqual(mem[0x40071c:0x400722], [b'f',b'\x0f',b':',b'c',b'\xca',b'`'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -6441,12 +5637,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x400776],  b'f')
-        self.assertEqual(mem[0x400777],  b'\x0f')
-        self.assertEqual(mem[0x400778],  b':')
-        self.assertEqual(mem[0x400779],  b'c')
-        self.assertEqual(mem[0x40077a],  b'\xca')
-        self.assertEqual(mem[0x40077b],  b'}')
+        self.assertEqual(mem[0x400776:0x40077c], [b'f',b'\x0f',b':',b'c',b'\xca',b'}'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -6479,12 +5670,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x400758],  b'f')
-        self.assertEqual(mem[0x400759],  b'\x0f')
-        self.assertEqual(mem[0x40075a],  b':')
-        self.assertEqual(mem[0x40075b],  b'c')
-        self.assertEqual(mem[0x40075c],  b'\xca')
-        self.assertEqual(mem[0x40075d],  b't')
+        self.assertEqual(mem[0x400758:0x40075e], [b'f',b'\x0f',b':',b'c',b'\xca',b't'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -6517,12 +5703,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x400602],  b'f')
-        self.assertEqual(mem[0x400603],  b'\x0f')
-        self.assertEqual(mem[0x400604],  b':')
-        self.assertEqual(mem[0x400605],  b'c')
-        self.assertEqual(mem[0x400606],  b'\xca')
-        self.assertEqual(mem[0x400607],  b'\x01')
+        self.assertEqual(mem[0x400602:0x400608], [b'f',b'\x0f',b':',b'c',b'\xca',b'\x01'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -6555,12 +5736,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x400608],  b'f')
-        self.assertEqual(mem[0x400609],  b'\x0f')
-        self.assertEqual(mem[0x40060a],  b':')
-        self.assertEqual(mem[0x40060b],  b'c')
-        self.assertEqual(mem[0x40060c],  b'\xca')
-        self.assertEqual(mem[0x40060d],  b'\x04')
+        self.assertEqual(mem[0x400608:0x40060e], [b'f',b'\x0f',b':',b'c',b'\xca',b'\x04'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -6593,12 +5769,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x400752],  b'f')
-        self.assertEqual(mem[0x400753],  b'\x0f')
-        self.assertEqual(mem[0x400754],  b':')
-        self.assertEqual(mem[0x400755],  b'c')
-        self.assertEqual(mem[0x400756],  b'\xca')
-        self.assertEqual(mem[0x400757],  b'q')
+        self.assertEqual(mem[0x400752:0x400758], [b'f',b'\x0f',b':',b'c',b'\xca',b'q'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -6631,12 +5802,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x400638],  b'f')
-        self.assertEqual(mem[0x400639],  b'\x0f')
-        self.assertEqual(mem[0x40063a],  b':')
-        self.assertEqual(mem[0x40063b],  b'c')
-        self.assertEqual(mem[0x40063c],  b'\xca')
-        self.assertEqual(mem[0x40063d],  b'\x14')
+        self.assertEqual(mem[0x400638:0x40063e], [b'f',b'\x0f',b':',b'c',b'\xca',b'\x14'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -6669,12 +5835,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x40074c],  b'f')
-        self.assertEqual(mem[0x40074d],  b'\x0f')
-        self.assertEqual(mem[0x40074e],  b':')
-        self.assertEqual(mem[0x40074f],  b'c')
-        self.assertEqual(mem[0x400750],  b'\xca')
-        self.assertEqual(mem[0x400751],  b'p')
+        self.assertEqual(mem[0x40074c:0x400752], [b'f',b'\x0f',b':',b'c',b'\xca',b'p'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -6707,12 +5868,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x400734],  b'f')
-        self.assertEqual(mem[0x400735],  b'\x0f')
-        self.assertEqual(mem[0x400736],  b':')
-        self.assertEqual(mem[0x400737],  b'c')
-        self.assertEqual(mem[0x400738],  b'\xca')
-        self.assertEqual(mem[0x400739],  b'h')
+        self.assertEqual(mem[0x400734:0x40073a], [b'f',b'\x0f',b':',b'c',b'\xca',b'h'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -6745,12 +5901,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x400644],  b'f')
-        self.assertEqual(mem[0x400645],  b'\x0f')
-        self.assertEqual(mem[0x400646],  b':')
-        self.assertEqual(mem[0x400647],  b'c')
-        self.assertEqual(mem[0x400648],  b'\xca')
-        self.assertEqual(mem[0x400649],  b'\x18')
+        self.assertEqual(mem[0x400644:0x40064a], [b'f',b'\x0f',b':',b'c',b'\xca',b'\x18'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -6783,12 +5934,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x40065c],  b'f')
-        self.assertEqual(mem[0x40065d],  b'\x0f')
-        self.assertEqual(mem[0x40065e],  b':')
-        self.assertEqual(mem[0x40065f],  b'c')
-        self.assertEqual(mem[0x400660],  b'\xca')
-        self.assertEqual(mem[0x400661],  b' ')
+        self.assertEqual(mem[0x40065c:0x400662], [b'f',b'\x0f',b':',b'c',b'\xca',b' '])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -6821,12 +5967,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x40061a],  b'f')
-        self.assertEqual(mem[0x40061b],  b'\x0f')
-        self.assertEqual(mem[0x40061c],  b':')
-        self.assertEqual(mem[0x40061d],  b'c')
-        self.assertEqual(mem[0x40061e],  b'\xca')
-        self.assertEqual(mem[0x40061f],  b'\t')
+        self.assertEqual(mem[0x40061a:0x400620], [b'f',b'\x0f',b':',b'c',b'\xca',b'\t'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -6859,12 +6000,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x40073a],  b'f')
-        self.assertEqual(mem[0x40073b],  b'\x0f')
-        self.assertEqual(mem[0x40073c],  b':')
-        self.assertEqual(mem[0x40073d],  b'c')
-        self.assertEqual(mem[0x40073e],  b'\xca')
-        self.assertEqual(mem[0x40073f],  b'i')
+        self.assertEqual(mem[0x40073a:0x400740], [b'f',b'\x0f',b':',b'c',b'\xca',b'i'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -6897,12 +6033,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x40070a],  b'f')
-        self.assertEqual(mem[0x40070b],  b'\x0f')
-        self.assertEqual(mem[0x40070c],  b':')
-        self.assertEqual(mem[0x40070d],  b'c')
-        self.assertEqual(mem[0x40070e],  b'\xca')
-        self.assertEqual(mem[0x40070f],  b'Y')
+        self.assertEqual(mem[0x40070a:0x400710], [b'f',b'\x0f',b':',b'c',b'\xca',b'Y'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -6935,12 +6066,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x4006aa],  b'f')
-        self.assertEqual(mem[0x4006ab],  b'\x0f')
-        self.assertEqual(mem[0x4006ac],  b':')
-        self.assertEqual(mem[0x4006ad],  b'c')
-        self.assertEqual(mem[0x4006ae],  b'\xca')
-        self.assertEqual(mem[0x4006af],  b'9')
+        self.assertEqual(mem[0x4006aa:0x4006b0], [b'f',b'\x0f',b':',b'c',b'\xca',b'9'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -6973,12 +6099,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x400716],  b'f')
-        self.assertEqual(mem[0x400717],  b'\x0f')
-        self.assertEqual(mem[0x400718],  b':')
-        self.assertEqual(mem[0x400719],  b'c')
-        self.assertEqual(mem[0x40071a],  b'\xca')
-        self.assertEqual(mem[0x40071b],  b']')
+        self.assertEqual(mem[0x400716:0x40071c], [b'f',b'\x0f',b':',b'c',b'\xca',b']'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -7011,12 +6132,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x40063e],  b'f')
-        self.assertEqual(mem[0x40063f],  b'\x0f')
-        self.assertEqual(mem[0x400640],  b':')
-        self.assertEqual(mem[0x400641],  b'c')
-        self.assertEqual(mem[0x400642],  b'\xca')
-        self.assertEqual(mem[0x400643],  b'\x15')
+        self.assertEqual(mem[0x40063e:0x400644], [b'f',b'\x0f',b':',b'c',b'\xca',b'\x15'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -7049,12 +6165,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x400656],  b'f')
-        self.assertEqual(mem[0x400657],  b'\x0f')
-        self.assertEqual(mem[0x400658],  b':')
-        self.assertEqual(mem[0x400659],  b'c')
-        self.assertEqual(mem[0x40065a],  b'\xca')
-        self.assertEqual(mem[0x40065b],  b'\x1d')
+        self.assertEqual(mem[0x400656:0x40065c], [b'f',b'\x0f',b':',b'c',b'\xca',b'\x1d'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -7087,12 +6198,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x40072e],  b'f')
-        self.assertEqual(mem[0x40072f],  b'\x0f')
-        self.assertEqual(mem[0x400730],  b':')
-        self.assertEqual(mem[0x400731],  b'c')
-        self.assertEqual(mem[0x400732],  b'\xca')
-        self.assertEqual(mem[0x400733],  b'e')
+        self.assertEqual(mem[0x40072e:0x400734], [b'f',b'\x0f',b':',b'c',b'\xca',b'e'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -7125,12 +6231,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x400680],  b'f')
-        self.assertEqual(mem[0x400681],  b'\x0f')
-        self.assertEqual(mem[0x400682],  b':')
-        self.assertEqual(mem[0x400683],  b'c')
-        self.assertEqual(mem[0x400684],  b'\xca')
-        self.assertEqual(mem[0x400685],  b',')
+        self.assertEqual(mem[0x400680:0x400686], [b'f',b'\x0f',b':',b'c',b'\xca',b','])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -7163,12 +6264,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x400674],  b'f')
-        self.assertEqual(mem[0x400675],  b'\x0f')
-        self.assertEqual(mem[0x400676],  b':')
-        self.assertEqual(mem[0x400677],  b'c')
-        self.assertEqual(mem[0x400678],  b'\xca')
-        self.assertEqual(mem[0x400679],  b'(')
+        self.assertEqual(mem[0x400674:0x40067a], [b'f',b'\x0f',b':',b'c',b'\xca',b'('])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -7201,12 +6297,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x40067a],  b'f')
-        self.assertEqual(mem[0x40067b],  b'\x0f')
-        self.assertEqual(mem[0x40067c],  b':')
-        self.assertEqual(mem[0x40067d],  b'c')
-        self.assertEqual(mem[0x40067e],  b'\xca')
-        self.assertEqual(mem[0x40067f],  b')')
+        self.assertEqual(mem[0x40067a:0x400680], [b'f',b'\x0f',b':',b'c',b'\xca',b')'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -7239,12 +6330,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x400722],  b'f')
-        self.assertEqual(mem[0x400723],  b'\x0f')
-        self.assertEqual(mem[0x400724],  b':')
-        self.assertEqual(mem[0x400725],  b'c')
-        self.assertEqual(mem[0x400726],  b'\xca')
-        self.assertEqual(mem[0x400727],  b'a')
+        self.assertEqual(mem[0x400722:0x400728], [b'f',b'\x0f',b':',b'c',b'\xca',b'a'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -7277,12 +6363,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x4006e6],  b'f')
-        self.assertEqual(mem[0x4006e7],  b'\x0f')
-        self.assertEqual(mem[0x4006e8],  b':')
-        self.assertEqual(mem[0x4006e9],  b'c')
-        self.assertEqual(mem[0x4006ea],  b'\xca')
-        self.assertEqual(mem[0x4006eb],  b'M')
+        self.assertEqual(mem[0x4006e6:0x4006ec], [b'f',b'\x0f',b':',b'c',b'\xca',b'M'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -7315,12 +6396,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x40076a],  b'f')
-        self.assertEqual(mem[0x40076b],  b'\x0f')
-        self.assertEqual(mem[0x40076c],  b':')
-        self.assertEqual(mem[0x40076d],  b'c')
-        self.assertEqual(mem[0x40076e],  b'\xca')
-        self.assertEqual(mem[0x40076f],  b'y')
+        self.assertEqual(mem[0x40076a:0x400770], [b'f',b'\x0f',b':',b'c',b'\xca',b'y'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -7353,12 +6429,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x4006ec],  b'f')
-        self.assertEqual(mem[0x4006ed],  b'\x0f')
-        self.assertEqual(mem[0x4006ee],  b':')
-        self.assertEqual(mem[0x4006ef],  b'c')
-        self.assertEqual(mem[0x4006f0],  b'\xca')
-        self.assertEqual(mem[0x4006f1],  b'P')
+        self.assertEqual(mem[0x4006ec:0x4006f2], [b'f',b'\x0f',b':',b'c',b'\xca',b'P'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -7391,12 +6462,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x400632],  b'f')
-        self.assertEqual(mem[0x400633],  b'\x0f')
-        self.assertEqual(mem[0x400634],  b':')
-        self.assertEqual(mem[0x400635],  b'c')
-        self.assertEqual(mem[0x400636],  b'\xca')
-        self.assertEqual(mem[0x400637],  b'\x11')
+        self.assertEqual(mem[0x400632:0x400638], [b'f',b'\x0f',b':',b'c',b'\xca',b'\x11'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -7429,12 +6495,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x40066e],  b'f')
-        self.assertEqual(mem[0x40066f],  b'\x0f')
-        self.assertEqual(mem[0x400670],  b':')
-        self.assertEqual(mem[0x400671],  b'c')
-        self.assertEqual(mem[0x400672],  b'\xca')
-        self.assertEqual(mem[0x400673],  b'%')
+        self.assertEqual(mem[0x40066e:0x400674], [b'f',b'\x0f',b':',b'c',b'\xca',b'%'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -7467,12 +6528,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x4006f2],  b'f')
-        self.assertEqual(mem[0x4006f3],  b'\x0f')
-        self.assertEqual(mem[0x4006f4],  b':')
-        self.assertEqual(mem[0x4006f5],  b'c')
-        self.assertEqual(mem[0x4006f6],  b'\xca')
-        self.assertEqual(mem[0x4006f7],  b'Q')
+        self.assertEqual(mem[0x4006f2:0x4006f8], [b'f',b'\x0f',b':',b'c',b'\xca',b'Q'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -7505,12 +6561,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x400614],  b'f')
-        self.assertEqual(mem[0x400615],  b'\x0f')
-        self.assertEqual(mem[0x400616],  b':')
-        self.assertEqual(mem[0x400617],  b'c')
-        self.assertEqual(mem[0x400618],  b'\xca')
-        self.assertEqual(mem[0x400619],  b'\x08')
+        self.assertEqual(mem[0x400614:0x40061a], [b'f',b'\x0f',b':',b'c',b'\xca',b'\x08'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -7543,12 +6594,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x4006da],  b'f')
-        self.assertEqual(mem[0x4006db],  b'\x0f')
-        self.assertEqual(mem[0x4006dc],  b':')
-        self.assertEqual(mem[0x4006dd],  b'c')
-        self.assertEqual(mem[0x4006de],  b'\xca')
-        self.assertEqual(mem[0x4006df],  b'I')
+        self.assertEqual(mem[0x4006da:0x4006e0], [b'f',b'\x0f',b':',b'c',b'\xca',b'I'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -7581,12 +6627,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x4006a4],  b'f')
-        self.assertEqual(mem[0x4006a5],  b'\x0f')
-        self.assertEqual(mem[0x4006a6],  b':')
-        self.assertEqual(mem[0x4006a7],  b'c')
-        self.assertEqual(mem[0x4006a8],  b'\xca')
-        self.assertEqual(mem[0x4006a9],  b'8')
+        self.assertEqual(mem[0x4006a4:0x4006aa], [b'f',b'\x0f',b':',b'c',b'\xca',b'8'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -7619,12 +6660,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x4006fe],  b'f')
-        self.assertEqual(mem[0x4006ff],  b'\x0f')
-        self.assertEqual(mem[0x400700],  b':')
-        self.assertEqual(mem[0x400701],  b'c')
-        self.assertEqual(mem[0x400702],  b'\xca')
-        self.assertEqual(mem[0x400703],  b'U')
+        self.assertEqual(mem[0x4006fe:0x400704], [b'f',b'\x0f',b':',b'c',b'\xca',b'U'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -7657,12 +6693,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x400662],  b'f')
-        self.assertEqual(mem[0x400663],  b'\x0f')
-        self.assertEqual(mem[0x400664],  b':')
-        self.assertEqual(mem[0x400665],  b'c')
-        self.assertEqual(mem[0x400666],  b'\xca')
-        self.assertEqual(mem[0x400667],  b'!')
+        self.assertEqual(mem[0x400662:0x400668], [b'f',b'\x0f',b':',b'c',b'\xca',b'!'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -7695,12 +6726,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x4006e0],  b'f')
-        self.assertEqual(mem[0x4006e1],  b'\x0f')
-        self.assertEqual(mem[0x4006e2],  b':')
-        self.assertEqual(mem[0x4006e3],  b'c')
-        self.assertEqual(mem[0x4006e4],  b'\xca')
-        self.assertEqual(mem[0x4006e5],  b'L')
+        self.assertEqual(mem[0x4006e0:0x4006e6], [b'f',b'\x0f',b':',b'c',b'\xca',b'L'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -7733,12 +6759,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x40060e],  b'f')
-        self.assertEqual(mem[0x40060f],  b'\x0f')
-        self.assertEqual(mem[0x400610],  b':')
-        self.assertEqual(mem[0x400611],  b'c')
-        self.assertEqual(mem[0x400612],  b'\xca')
-        self.assertEqual(mem[0x400613],  b'\x05')
+        self.assertEqual(mem[0x40060e:0x400614], [b'f',b'\x0f',b':',b'c',b'\xca',b'\x05'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -7771,12 +6792,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x40075e],  b'f')
-        self.assertEqual(mem[0x40075f],  b'\x0f')
-        self.assertEqual(mem[0x400760],  b':')
-        self.assertEqual(mem[0x400761],  b'c')
-        self.assertEqual(mem[0x400762],  b'\xca')
-        self.assertEqual(mem[0x400763],  b'u')
+        self.assertEqual(mem[0x40075e:0x400764], [b'f',b'\x0f',b':',b'c',b'\xca',b'u'])
         self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -7808,12 +6824,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x400856],  b'f')
-        self.assertEqual(mem[0x400857],  b'\x0f')
-        self.assertEqual(mem[0x400858],  b':')
-        self.assertEqual(mem[0x400859],  b'b')
-        self.assertEqual(mem[0x40085a],  b'\xca')
-        self.assertEqual(mem[0x40085b],  b'A')
+        self.assertEqual(mem[0x400856:0x40085c], [b'f',b'\x0f',b':',b'b',b'\xca',b'A'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -7844,12 +6855,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x4007cc],  b'f')
-        self.assertEqual(mem[0x4007cd],  b'\x0f')
-        self.assertEqual(mem[0x4007ce],  b':')
-        self.assertEqual(mem[0x4007cf],  b'b')
-        self.assertEqual(mem[0x4007d0],  b'\xca')
-        self.assertEqual(mem[0x4007d1],  b'\x14')
+        self.assertEqual(mem[0x4007cc:0x4007d2], [b'f',b'\x0f',b':',b'b',b'\xca',b'\x14'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -7880,12 +6886,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x40087a],  b'f')
-        self.assertEqual(mem[0x40087b],  b'\x0f')
-        self.assertEqual(mem[0x40087c],  b':')
-        self.assertEqual(mem[0x40087d],  b'b')
-        self.assertEqual(mem[0x40087e],  b'\xca')
-        self.assertEqual(mem[0x40087f],  b'M')
+        self.assertEqual(mem[0x40087a:0x400880], [b'f',b'\x0f',b':',b'b',b'\xca',b'M'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -7916,12 +6917,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x400802],  b'f')
-        self.assertEqual(mem[0x400803],  b'\x0f')
-        self.assertEqual(mem[0x400804],  b':')
-        self.assertEqual(mem[0x400805],  b'b')
-        self.assertEqual(mem[0x400806],  b'\xca')
-        self.assertEqual(mem[0x400807],  b'%')
+        self.assertEqual(mem[0x400802:0x400808], [b'f',b'\x0f',b':',b'b',b'\xca',b'%'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -7952,12 +6948,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x4007fc],  b'f')
-        self.assertEqual(mem[0x4007fd],  b'\x0f')
-        self.assertEqual(mem[0x4007fe],  b':')
-        self.assertEqual(mem[0x4007ff],  b'b')
-        self.assertEqual(mem[0x400800],  b'\xca')
-        self.assertEqual(mem[0x400801],  b'$')
+        self.assertEqual(mem[0x4007fc:0x400802], [b'f',b'\x0f',b':',b'b',b'\xca',b'$'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -7988,12 +6979,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x4008c8],  b'f')
-        self.assertEqual(mem[0x4008c9],  b'\x0f')
-        self.assertEqual(mem[0x4008ca],  b':')
-        self.assertEqual(mem[0x4008cb],  b'b')
-        self.assertEqual(mem[0x4008cc],  b'\xca')
-        self.assertEqual(mem[0x4008cd],  b'h')
+        self.assertEqual(mem[0x4008c8:0x4008ce], [b'f',b'\x0f',b':',b'b',b'\xca',b'h'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -8024,12 +7010,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x4008f8],  b'f')
-        self.assertEqual(mem[0x4008f9],  b'\x0f')
-        self.assertEqual(mem[0x4008fa],  b':')
-        self.assertEqual(mem[0x4008fb],  b'b')
-        self.assertEqual(mem[0x4008fc],  b'\xca')
-        self.assertEqual(mem[0x4008fd],  b'x')
+        self.assertEqual(mem[0x4008f8:0x4008fe], [b'f',b'\x0f',b':',b'b',b'\xca',b'x'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -8060,12 +7041,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x40080e],  b'f')
-        self.assertEqual(mem[0x40080f],  b'\x0f')
-        self.assertEqual(mem[0x400810],  b':')
-        self.assertEqual(mem[0x400811],  b'b')
-        self.assertEqual(mem[0x400812],  b'\xca')
-        self.assertEqual(mem[0x400813],  b')')
+        self.assertEqual(mem[0x40080e:0x400814], [b'f',b'\x0f',b':',b'b',b'\xca',b')'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -8096,12 +7072,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x40089e],  b'f')
-        self.assertEqual(mem[0x40089f],  b'\x0f')
-        self.assertEqual(mem[0x4008a0],  b':')
-        self.assertEqual(mem[0x4008a1],  b'b')
-        self.assertEqual(mem[0x4008a2],  b'\xca')
-        self.assertEqual(mem[0x4008a3],  b'Y')
+        self.assertEqual(mem[0x40089e:0x4008a4], [b'f',b'\x0f',b':',b'b',b'\xca',b'Y'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -8132,12 +7103,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x4008f2],  b'f')
-        self.assertEqual(mem[0x4008f3],  b'\x0f')
-        self.assertEqual(mem[0x4008f4],  b':')
-        self.assertEqual(mem[0x4008f5],  b'b')
-        self.assertEqual(mem[0x4008f6],  b'\xca')
-        self.assertEqual(mem[0x4008f7],  b'u')
+        self.assertEqual(mem[0x4008f2:0x4008f8], [b'f',b'\x0f',b':',b'b',b'\xca',b'u'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -8168,12 +7134,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x4007b4],  b'f')
-        self.assertEqual(mem[0x4007b5],  b'\x0f')
-        self.assertEqual(mem[0x4007b6],  b':')
-        self.assertEqual(mem[0x4007b7],  b'b')
-        self.assertEqual(mem[0x4007b8],  b'\xca')
-        self.assertEqual(mem[0x4007b9],  b'\x0c')
+        self.assertEqual(mem[0x4007b4:0x4007ba], [b'f',b'\x0f',b':',b'b',b'\xca',b'\x0c'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -8204,12 +7165,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x4008ec],  b'f')
-        self.assertEqual(mem[0x4008ed],  b'\x0f')
-        self.assertEqual(mem[0x4008ee],  b':')
-        self.assertEqual(mem[0x4008ef],  b'b')
-        self.assertEqual(mem[0x4008f0],  b'\xca')
-        self.assertEqual(mem[0x4008f1],  b't')
+        self.assertEqual(mem[0x4008ec:0x4008f2], [b'f',b'\x0f',b':',b'b',b'\xca',b't'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -8240,12 +7196,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x4007d8],  b'f')
-        self.assertEqual(mem[0x4007d9],  b'\x0f')
-        self.assertEqual(mem[0x4007da],  b':')
-        self.assertEqual(mem[0x4007db],  b'b')
-        self.assertEqual(mem[0x4007dc],  b'\xca')
-        self.assertEqual(mem[0x4007dd],  b'\x18')
+        self.assertEqual(mem[0x4007d8:0x4007de], [b'f',b'\x0f',b':',b'b',b'\xca',b'\x18'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -8276,12 +7227,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x400892],  b'f')
-        self.assertEqual(mem[0x400893],  b'\x0f')
-        self.assertEqual(mem[0x400894],  b':')
-        self.assertEqual(mem[0x400895],  b'b')
-        self.assertEqual(mem[0x400896],  b'\xca')
-        self.assertEqual(mem[0x400897],  b'U')
+        self.assertEqual(mem[0x400892:0x400898], [b'f',b'\x0f',b':',b'b',b'\xca',b'U'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -8312,12 +7258,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x40084a],  b'f')
-        self.assertEqual(mem[0x40084b],  b'\x0f')
-        self.assertEqual(mem[0x40084c],  b':')
-        self.assertEqual(mem[0x40084d],  b'b')
-        self.assertEqual(mem[0x40084e],  b'\xca')
-        self.assertEqual(mem[0x40084f],  b'=')
+        self.assertEqual(mem[0x40084a:0x400850], [b'f',b'\x0f',b':',b'b',b'\xca',b'='])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -8348,12 +7289,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x40088c],  b'f')
-        self.assertEqual(mem[0x40088d],  b'\x0f')
-        self.assertEqual(mem[0x40088e],  b':')
-        self.assertEqual(mem[0x40088f],  b'b')
-        self.assertEqual(mem[0x400890],  b'\xca')
-        self.assertEqual(mem[0x400891],  b'T')
+        self.assertEqual(mem[0x40088c:0x400892], [b'f',b'\x0f',b':',b'b',b'\xca',b'T'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -8384,12 +7320,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x4008fe],  b'f')
-        self.assertEqual(mem[0x4008ff],  b'\x0f')
-        self.assertEqual(mem[0x400900],  b':')
-        self.assertEqual(mem[0x400901],  b'b')
-        self.assertEqual(mem[0x400902],  b'\xca')
-        self.assertEqual(mem[0x400903],  b'y')
+        self.assertEqual(mem[0x4008fe:0x400904], [b'f',b'\x0f',b':',b'b',b'\xca',b'y'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -8420,12 +7351,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x400838],  b'f')
-        self.assertEqual(mem[0x400839],  b'\x0f')
-        self.assertEqual(mem[0x40083a],  b':')
-        self.assertEqual(mem[0x40083b],  b'b')
-        self.assertEqual(mem[0x40083c],  b'\xca')
-        self.assertEqual(mem[0x40083d],  b'8')
+        self.assertEqual(mem[0x400838:0x40083e], [b'f',b'\x0f',b':',b'b',b'\xca',b'8'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -8456,12 +7382,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x400832],  b'f')
-        self.assertEqual(mem[0x400833],  b'\x0f')
-        self.assertEqual(mem[0x400834],  b':')
-        self.assertEqual(mem[0x400835],  b'b')
-        self.assertEqual(mem[0x400836],  b'\xca')
-        self.assertEqual(mem[0x400837],  b'5')
+        self.assertEqual(mem[0x400832:0x400838], [b'f',b'\x0f',b':',b'b',b'\xca',b'5'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -8492,12 +7413,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x400820],  b'f')
-        self.assertEqual(mem[0x400821],  b'\x0f')
-        self.assertEqual(mem[0x400822],  b':')
-        self.assertEqual(mem[0x400823],  b'b')
-        self.assertEqual(mem[0x400824],  b'\xca')
-        self.assertEqual(mem[0x400825],  b'0')
+        self.assertEqual(mem[0x400820:0x400826], [b'f',b'\x0f',b':',b'b',b'\xca',b'0'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -8528,12 +7444,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x400850],  b'f')
-        self.assertEqual(mem[0x400851],  b'\x0f')
-        self.assertEqual(mem[0x400852],  b':')
-        self.assertEqual(mem[0x400853],  b'b')
-        self.assertEqual(mem[0x400854],  b'\xca')
-        self.assertEqual(mem[0x400855],  b'@')
+        self.assertEqual(mem[0x400850:0x400856], [b'f',b'\x0f',b':',b'b',b'\xca',b'@'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -8564,12 +7475,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x4007d2],  b'f')
-        self.assertEqual(mem[0x4007d3],  b'\x0f')
-        self.assertEqual(mem[0x4007d4],  b':')
-        self.assertEqual(mem[0x4007d5],  b'b')
-        self.assertEqual(mem[0x4007d6],  b'\xca')
-        self.assertEqual(mem[0x4007d7],  b'\x15')
+        self.assertEqual(mem[0x4007d2:0x4007d8], [b'f',b'\x0f',b':',b'b',b'\xca',b'\x15'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -8600,12 +7506,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x400826],  b'f')
-        self.assertEqual(mem[0x400827],  b'\x0f')
-        self.assertEqual(mem[0x400828],  b':')
-        self.assertEqual(mem[0x400829],  b'b')
-        self.assertEqual(mem[0x40082a],  b'\xca')
-        self.assertEqual(mem[0x40082b],  b'1')
+        self.assertEqual(mem[0x400826:0x40082c], [b'f',b'\x0f',b':',b'b',b'\xca',b'1'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -8636,12 +7537,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x400898],  b'f')
-        self.assertEqual(mem[0x400899],  b'\x0f')
-        self.assertEqual(mem[0x40089a],  b':')
-        self.assertEqual(mem[0x40089b],  b'b')
-        self.assertEqual(mem[0x40089c],  b'\xca')
-        self.assertEqual(mem[0x40089d],  b'X')
+        self.assertEqual(mem[0x400898:0x40089e], [b'f',b'\x0f',b':',b'b',b'\xca',b'X'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -8672,12 +7568,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x4008aa],  b'f')
-        self.assertEqual(mem[0x4008ab],  b'\x0f')
-        self.assertEqual(mem[0x4008ac],  b':')
-        self.assertEqual(mem[0x4008ad],  b'b')
-        self.assertEqual(mem[0x4008ae],  b'\xca')
-        self.assertEqual(mem[0x4008af],  b']')
+        self.assertEqual(mem[0x4008aa:0x4008b0], [b'f',b'\x0f',b':',b'b',b'\xca',b']'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -8708,12 +7599,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x4007ea],  b'f')
-        self.assertEqual(mem[0x4007eb],  b'\x0f')
-        self.assertEqual(mem[0x4007ec],  b':')
-        self.assertEqual(mem[0x4007ed],  b'b')
-        self.assertEqual(mem[0x4007ee],  b'\xca')
-        self.assertEqual(mem[0x4007ef],  b'\x1d')
+        self.assertEqual(mem[0x4007ea:0x4007f0], [b'f',b'\x0f',b':',b'b',b'\xca',b'\x1d'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -8744,12 +7630,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x4007f6],  b'f')
-        self.assertEqual(mem[0x4007f7],  b'\x0f')
-        self.assertEqual(mem[0x4007f8],  b':')
-        self.assertEqual(mem[0x4007f9],  b'b')
-        self.assertEqual(mem[0x4007fa],  b'\xca')
-        self.assertEqual(mem[0x4007fb],  b'!')
+        self.assertEqual(mem[0x4007f6:0x4007fc], [b'f',b'\x0f',b':',b'b',b'\xca',b'!'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -8780,12 +7661,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x4008b0],  b'f')
-        self.assertEqual(mem[0x4008b1],  b'\x0f')
-        self.assertEqual(mem[0x4008b2],  b':')
-        self.assertEqual(mem[0x4008b3],  b'b')
-        self.assertEqual(mem[0x4008b4],  b'\xca')
-        self.assertEqual(mem[0x4008b5],  b'`')
+        self.assertEqual(mem[0x4008b0:0x4008b6], [b'f',b'\x0f',b':',b'b',b'\xca',b'`'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -8816,12 +7692,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x4008a4],  b'f')
-        self.assertEqual(mem[0x4008a5],  b'\x0f')
-        self.assertEqual(mem[0x4008a6],  b':')
-        self.assertEqual(mem[0x4008a7],  b'b')
-        self.assertEqual(mem[0x4008a8],  b'\xca')
-        self.assertEqual(mem[0x4008a9],  b'\\')
+        self.assertEqual(mem[0x4008a4:0x4008aa], [b'f',b'\x0f',b':',b'b',b'\xca',b'\\'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -8852,12 +7723,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x4008e0],  b'f')
-        self.assertEqual(mem[0x4008e1],  b'\x0f')
-        self.assertEqual(mem[0x4008e2],  b':')
-        self.assertEqual(mem[0x4008e3],  b'b')
-        self.assertEqual(mem[0x4008e4],  b'\xca')
-        self.assertEqual(mem[0x4008e5],  b'p')
+        self.assertEqual(mem[0x4008e0:0x4008e6], [b'f',b'\x0f',b':',b'b',b'\xca',b'p'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -8888,12 +7754,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x400904],  b'f')
-        self.assertEqual(mem[0x400905],  b'\x0f')
-        self.assertEqual(mem[0x400906],  b':')
-        self.assertEqual(mem[0x400907],  b'b')
-        self.assertEqual(mem[0x400908],  b'\xca')
-        self.assertEqual(mem[0x400909],  b'|')
+        self.assertEqual(mem[0x400904:0x40090a], [b'f',b'\x0f',b':',b'b',b'\xca',b'|'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -8924,12 +7785,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x4008c2],  b'f')
-        self.assertEqual(mem[0x4008c3],  b'\x0f')
-        self.assertEqual(mem[0x4008c4],  b':')
-        self.assertEqual(mem[0x4008c5],  b'b')
-        self.assertEqual(mem[0x4008c6],  b'\xca')
-        self.assertEqual(mem[0x4008c7],  b'e')
+        self.assertEqual(mem[0x4008c2:0x4008c8], [b'f',b'\x0f',b':',b'b',b'\xca',b'e'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -8960,12 +7816,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x40081a],  b'f')
-        self.assertEqual(mem[0x40081b],  b'\x0f')
-        self.assertEqual(mem[0x40081c],  b':')
-        self.assertEqual(mem[0x40081d],  b'b')
-        self.assertEqual(mem[0x40081e],  b'\xca')
-        self.assertEqual(mem[0x40081f],  b'-')
+        self.assertEqual(mem[0x40081a:0x400820], [b'f',b'\x0f',b':',b'b',b'\xca',b'-'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -8996,12 +7847,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x4008bc],  b'f')
-        self.assertEqual(mem[0x4008bd],  b'\x0f')
-        self.assertEqual(mem[0x4008be],  b':')
-        self.assertEqual(mem[0x4008bf],  b'b')
-        self.assertEqual(mem[0x4008c0],  b'\xca')
-        self.assertEqual(mem[0x4008c1],  b'd')
+        self.assertEqual(mem[0x4008bc:0x4008c2], [b'f',b'\x0f',b':',b'b',b'\xca',b'd'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -9032,12 +7878,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x4007de],  b'f')
-        self.assertEqual(mem[0x4007df],  b'\x0f')
-        self.assertEqual(mem[0x4007e0],  b':')
-        self.assertEqual(mem[0x4007e1],  b'b')
-        self.assertEqual(mem[0x4007e2],  b'\xca')
-        self.assertEqual(mem[0x4007e3],  b'\x19')
+        self.assertEqual(mem[0x4007de:0x4007e4], [b'f',b'\x0f',b':',b'b',b'\xca',b'\x19'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -9068,12 +7909,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x400814],  b'f')
-        self.assertEqual(mem[0x400815],  b'\x0f')
-        self.assertEqual(mem[0x400816],  b':')
-        self.assertEqual(mem[0x400817],  b'b')
-        self.assertEqual(mem[0x400818],  b'\xca')
-        self.assertEqual(mem[0x400819],  b',')
+        self.assertEqual(mem[0x400814:0x40081a], [b'f',b'\x0f',b':',b'b',b'\xca',b','])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -9104,12 +7940,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x4007c6],  b'f')
-        self.assertEqual(mem[0x4007c7],  b'\x0f')
-        self.assertEqual(mem[0x4007c8],  b':')
-        self.assertEqual(mem[0x4007c9],  b'b')
-        self.assertEqual(mem[0x4007ca],  b'\xca')
-        self.assertEqual(mem[0x4007cb],  b'\x11')
+        self.assertEqual(mem[0x4007c6:0x4007cc], [b'f',b'\x0f',b':',b'b',b'\xca',b'\x11'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -9140,12 +7971,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x400868],  b'f')
-        self.assertEqual(mem[0x400869],  b'\x0f')
-        self.assertEqual(mem[0x40086a],  b':')
-        self.assertEqual(mem[0x40086b],  b'b')
-        self.assertEqual(mem[0x40086c],  b'\xca')
-        self.assertEqual(mem[0x40086d],  b'H')
+        self.assertEqual(mem[0x400868:0x40086e], [b'f',b'\x0f',b':',b'b',b'\xca',b'H'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -9176,12 +8002,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x4008ce],  b'f')
-        self.assertEqual(mem[0x4008cf],  b'\x0f')
-        self.assertEqual(mem[0x4008d0],  b':')
-        self.assertEqual(mem[0x4008d1],  b'b')
-        self.assertEqual(mem[0x4008d2],  b'\xca')
-        self.assertEqual(mem[0x4008d3],  b'i')
+        self.assertEqual(mem[0x4008ce:0x4008d4], [b'f',b'\x0f',b':',b'b',b'\xca',b'i'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -9212,12 +8033,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x400874],  b'f')
-        self.assertEqual(mem[0x400875],  b'\x0f')
-        self.assertEqual(mem[0x400876],  b':')
-        self.assertEqual(mem[0x400877],  b'b')
-        self.assertEqual(mem[0x400878],  b'\xca')
-        self.assertEqual(mem[0x400879],  b'L')
+        self.assertEqual(mem[0x400874:0x40087a], [b'f',b'\x0f',b':',b'b',b'\xca',b'L'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -9248,12 +8064,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x40085c],  b'f')
-        self.assertEqual(mem[0x40085d],  b'\x0f')
-        self.assertEqual(mem[0x40085e],  b':')
-        self.assertEqual(mem[0x40085f],  b'b')
-        self.assertEqual(mem[0x400860],  b'\xca')
-        self.assertEqual(mem[0x400861],  b'D')
+        self.assertEqual(mem[0x40085c:0x400862], [b'f',b'\x0f',b':',b'b',b'\xca',b'D'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -9284,12 +8095,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x4007a8],  b'f')
-        self.assertEqual(mem[0x4007a9],  b'\x0f')
-        self.assertEqual(mem[0x4007aa],  b':')
-        self.assertEqual(mem[0x4007ab],  b'b')
-        self.assertEqual(mem[0x4007ac],  b'\xca')
-        self.assertEqual(mem[0x4007ad],  b'\x08')
+        self.assertEqual(mem[0x4007a8:0x4007ae], [b'f',b'\x0f',b':',b'b',b'\xca',b'\x08'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -9320,12 +8126,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x40082c],  b'f')
-        self.assertEqual(mem[0x40082d],  b'\x0f')
-        self.assertEqual(mem[0x40082e],  b':')
-        self.assertEqual(mem[0x40082f],  b'b')
-        self.assertEqual(mem[0x400830],  b'\xca')
-        self.assertEqual(mem[0x400831],  b'4')
+        self.assertEqual(mem[0x40082c:0x400832], [b'f',b'\x0f',b':',b'b',b'\xca',b'4'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -9356,12 +8157,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x4008da],  b'f')
-        self.assertEqual(mem[0x4008db],  b'\x0f')
-        self.assertEqual(mem[0x4008dc],  b':')
-        self.assertEqual(mem[0x4008dd],  b'b')
-        self.assertEqual(mem[0x4008de],  b'\xca')
-        self.assertEqual(mem[0x4008df],  b'm')
+        self.assertEqual(mem[0x4008da:0x4008e0], [b'f',b'\x0f',b':',b'b',b'\xca',b'm'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -9392,12 +8188,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x4007a2],  b'f')
-        self.assertEqual(mem[0x4007a3],  b'\x0f')
-        self.assertEqual(mem[0x4007a4],  b':')
-        self.assertEqual(mem[0x4007a5],  b'b')
-        self.assertEqual(mem[0x4007a6],  b'\xca')
-        self.assertEqual(mem[0x4007a7],  b'\x05')
+        self.assertEqual(mem[0x4007a2:0x4007a8], [b'f',b'\x0f',b':',b'b',b'\xca',b'\x05'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -9428,12 +8219,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x4007e4],  b'f')
-        self.assertEqual(mem[0x4007e5],  b'\x0f')
-        self.assertEqual(mem[0x4007e6],  b':')
-        self.assertEqual(mem[0x4007e7],  b'b')
-        self.assertEqual(mem[0x4007e8],  b'\xca')
-        self.assertEqual(mem[0x4007e9],  b'\x1c')
+        self.assertEqual(mem[0x4007e4:0x4007ea], [b'f',b'\x0f',b':',b'b',b'\xca',b'\x1c'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -9464,12 +8250,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x400880],  b'f')
-        self.assertEqual(mem[0x400881],  b'\x0f')
-        self.assertEqual(mem[0x400882],  b':')
-        self.assertEqual(mem[0x400883],  b'b')
-        self.assertEqual(mem[0x400884],  b'\xca')
-        self.assertEqual(mem[0x400885],  b'P')
+        self.assertEqual(mem[0x400880:0x400886], [b'f',b'\x0f',b':',b'b',b'\xca',b'P'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -9500,12 +8281,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x400886],  b'f')
-        self.assertEqual(mem[0x400887],  b'\x0f')
-        self.assertEqual(mem[0x400888],  b':')
-        self.assertEqual(mem[0x400889],  b'b')
-        self.assertEqual(mem[0x40088a],  b'\xca')
-        self.assertEqual(mem[0x40088b],  b'Q')
+        self.assertEqual(mem[0x400886:0x40088c], [b'f',b'\x0f',b':',b'b',b'\xca',b'Q'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -9536,12 +8312,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x4008b6],  b'f')
-        self.assertEqual(mem[0x4008b7],  b'\x0f')
-        self.assertEqual(mem[0x4008b8],  b':')
-        self.assertEqual(mem[0x4008b9],  b'b')
-        self.assertEqual(mem[0x4008ba],  b'\xca')
-        self.assertEqual(mem[0x4008bb],  b'a')
+        self.assertEqual(mem[0x4008b6:0x4008bc], [b'f',b'\x0f',b':',b'b',b'\xca',b'a'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -9572,12 +8343,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x4007ba],  b'f')
-        self.assertEqual(mem[0x4007bb],  b'\x0f')
-        self.assertEqual(mem[0x4007bc],  b':')
-        self.assertEqual(mem[0x4007bd],  b'b')
-        self.assertEqual(mem[0x4007be],  b'\xca')
-        self.assertEqual(mem[0x4007bf],  b'\r')
+        self.assertEqual(mem[0x4007ba:0x4007c0], [b'f',b'\x0f',b':',b'b',b'\xca',b'\r'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -9608,12 +8374,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x40090a],  b'f')
-        self.assertEqual(mem[0x40090b],  b'\x0f')
-        self.assertEqual(mem[0x40090c],  b':')
-        self.assertEqual(mem[0x40090d],  b'b')
-        self.assertEqual(mem[0x40090e],  b'\xca')
-        self.assertEqual(mem[0x40090f],  b'}')
+        self.assertEqual(mem[0x40090a:0x400910], [b'f',b'\x0f',b':',b'b',b'\xca',b'}'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -9644,12 +8405,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x40079c],  b'f')
-        self.assertEqual(mem[0x40079d],  b'\x0f')
-        self.assertEqual(mem[0x40079e],  b':')
-        self.assertEqual(mem[0x40079f],  b'b')
-        self.assertEqual(mem[0x4007a0],  b'\xca')
-        self.assertEqual(mem[0x4007a1],  b'\x04')
+        self.assertEqual(mem[0x40079c:0x4007a2], [b'f',b'\x0f',b':',b'b',b'\xca',b'\x04'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -9680,12 +8436,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x4007ae],  b'f')
-        self.assertEqual(mem[0x4007af],  b'\x0f')
-        self.assertEqual(mem[0x4007b0],  b':')
-        self.assertEqual(mem[0x4007b1],  b'b')
-        self.assertEqual(mem[0x4007b2],  b'\xca')
-        self.assertEqual(mem[0x4007b3],  b'\t')
+        self.assertEqual(mem[0x4007ae:0x4007b4], [b'f',b'\x0f',b':',b'b',b'\xca',b'\t'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -9716,12 +8467,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x400844],  b'f')
-        self.assertEqual(mem[0x400845],  b'\x0f')
-        self.assertEqual(mem[0x400846],  b':')
-        self.assertEqual(mem[0x400847],  b'b')
-        self.assertEqual(mem[0x400848],  b'\xca')
-        self.assertEqual(mem[0x400849],  b'<')
+        self.assertEqual(mem[0x400844:0x40084a], [b'f',b'\x0f',b':',b'b',b'\xca',b'<'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -9752,12 +8498,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x4008e6],  b'f')
-        self.assertEqual(mem[0x4008e7],  b'\x0f')
-        self.assertEqual(mem[0x4008e8],  b':')
-        self.assertEqual(mem[0x4008e9],  b'b')
-        self.assertEqual(mem[0x4008ea],  b'\xca')
-        self.assertEqual(mem[0x4008eb],  b'q')
+        self.assertEqual(mem[0x4008e6:0x4008ec], [b'f',b'\x0f',b':',b'b',b'\xca',b'q'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -9788,12 +8529,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x400808],  b'f')
-        self.assertEqual(mem[0x400809],  b'\x0f')
-        self.assertEqual(mem[0x40080a],  b':')
-        self.assertEqual(mem[0x40080b],  b'b')
-        self.assertEqual(mem[0x40080c],  b'\xca')
-        self.assertEqual(mem[0x40080d],  b'(')
+        self.assertEqual(mem[0x400808:0x40080e], [b'f',b'\x0f',b':',b'b',b'\xca',b'('])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -9824,12 +8560,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x4008d4],  b'f')
-        self.assertEqual(mem[0x4008d5],  b'\x0f')
-        self.assertEqual(mem[0x4008d6],  b':')
-        self.assertEqual(mem[0x4008d7],  b'b')
-        self.assertEqual(mem[0x4008d8],  b'\xca')
-        self.assertEqual(mem[0x4008d9],  b'l')
+        self.assertEqual(mem[0x4008d4:0x4008da], [b'f',b'\x0f',b':',b'b',b'\xca',b'l'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -9860,12 +8591,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x400796],  b'f')
-        self.assertEqual(mem[0x400797],  b'\x0f')
-        self.assertEqual(mem[0x400798],  b':')
-        self.assertEqual(mem[0x400799],  b'b')
-        self.assertEqual(mem[0x40079a],  b'\xca')
-        self.assertEqual(mem[0x40079b],  b'\x01')
+        self.assertEqual(mem[0x400796:0x40079c], [b'f',b'\x0f',b':',b'b',b'\xca',b'\x01'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -9896,12 +8622,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x40083e],  b'f')
-        self.assertEqual(mem[0x40083f],  b'\x0f')
-        self.assertEqual(mem[0x400840],  b':')
-        self.assertEqual(mem[0x400841],  b'b')
-        self.assertEqual(mem[0x400842],  b'\xca')
-        self.assertEqual(mem[0x400843],  b'9')
+        self.assertEqual(mem[0x40083e:0x400844], [b'f',b'\x0f',b':',b'b',b'\xca',b'9'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -9932,12 +8653,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x400790],  b'f')
-        self.assertEqual(mem[0x400791],  b'\x0f')
-        self.assertEqual(mem[0x400792],  b':')
-        self.assertEqual(mem[0x400793],  b'b')
-        self.assertEqual(mem[0x400794],  b'\xca')
-        self.assertEqual(mem[0x400795],  b'\x00')
+        self.assertEqual(mem[0x400790:0x400796], [b'f',b'\x0f',b':',b'b',b'\xca',b'\x00'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -9968,12 +8684,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x4007c0],  b'f')
-        self.assertEqual(mem[0x4007c1],  b'\x0f')
-        self.assertEqual(mem[0x4007c2],  b':')
-        self.assertEqual(mem[0x4007c3],  b'b')
-        self.assertEqual(mem[0x4007c4],  b'\xca')
-        self.assertEqual(mem[0x4007c5],  b'\x10')
+        self.assertEqual(mem[0x4007c0:0x4007c6], [b'f',b'\x0f',b':',b'b',b'\xca',b'\x10'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -10004,12 +8715,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x4007f0],  b'f')
-        self.assertEqual(mem[0x4007f1],  b'\x0f')
-        self.assertEqual(mem[0x4007f2],  b':')
-        self.assertEqual(mem[0x4007f3],  b'b')
-        self.assertEqual(mem[0x4007f4],  b'\xca')
-        self.assertEqual(mem[0x4007f5],  b' ')
+        self.assertEqual(mem[0x4007f0:0x4007f6], [b'f',b'\x0f',b':',b'b',b'\xca',b' '])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -10040,12 +8746,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x40086e],  b'f')
-        self.assertEqual(mem[0x40086f],  b'\x0f')
-        self.assertEqual(mem[0x400870],  b':')
-        self.assertEqual(mem[0x400871],  b'b')
-        self.assertEqual(mem[0x400872],  b'\xca')
-        self.assertEqual(mem[0x400873],  b'I')
+        self.assertEqual(mem[0x40086e:0x400874], [b'f',b'\x0f',b':',b'b',b'\xca',b'I'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
@@ -10076,12 +8777,7 @@ class CPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.execute()
     
-        self.assertEqual(mem[0x400862],  b'f')
-        self.assertEqual(mem[0x400863],  b'\x0f')
-        self.assertEqual(mem[0x400864],  b':')
-        self.assertEqual(mem[0x400865],  b'b')
-        self.assertEqual(mem[0x400866],  b'\xca')
-        self.assertEqual(mem[0x400867],  b'E')
+        self.assertEqual(mem[0x400862:0x400868], [b'f',b'\x0f',b':',b'b',b'\xca',b'E'])
         self.assertEqual(cpu.XMM2, 59602136937009)
         self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
