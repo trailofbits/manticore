@@ -23,6 +23,7 @@ from .core.state import State, TerminateState
 from .core.smtlib import solver, ConstraintSet
 from .core.workspace import ManticoreOutput
 from .platforms import linux, evm, decree
+from .utils import config
 from .utils.helpers import issymbolic
 from .utils.nointerrupt import WithKeyboardInterruptAs
 from .utils.event import Eventful
@@ -677,6 +678,9 @@ class Manticore(Eventful):
     def _did_finish_run_callback(self):
         with self._output.save_stream('command.sh') as f:
             f.write(' '.join(sys.argv))
+
+        with self._output.save_stream('manticore.yml') as f:
+            config.save(f)
 
         elapsed = time.time() - self._time_started
         logger.info('Results in %s', self._output.store.uri)

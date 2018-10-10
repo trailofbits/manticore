@@ -16,6 +16,7 @@ from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, istainted
 from .platforms import evm
 from .core.state import State
 from .utils.helpers import istainted, issymbolic, PickleSerializer
+from .utils import config
 import tempfile
 from subprocess import Popen, PIPE, check_output
 from multiprocessing import Process, Queue
@@ -2756,6 +2757,9 @@ class ManticoreEVM(Manticore):
                         global_findings.write('  Solidity snippet:\n')
                         global_findings.write('    '.join(source_code_snippet.splitlines(True)))
                         global_findings.write('\n')
+
+        with self._output.save_stream('manticore.yml') as f:
+            config.save(f)
 
         with self._output.save_stream('global.summary') as global_summary:
             # (accounts created by contract code are not in this list )
