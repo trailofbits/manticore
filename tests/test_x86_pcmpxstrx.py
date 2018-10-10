@@ -197,12 +197,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
+        mem[0x00400bfe] = b'f'
+        mem[0x00400bff] = b'\x0f'
         mem[0x00400c00] = b':'
         mem[0x00400c01] = b'a'
         mem[0x00400c02] = b'\xca'
         mem[0x00400c03] = b'i'
-        mem[0x00400bfe] = b'f'
-        mem[0x00400bff] = b'\x0f'
         cpu.AF = False
         cpu.ZF = True
         cpu.CF = True
@@ -808,12 +808,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
-        mem[0x00400c20] = b'\xca'
-        mem[0x00400c21] = b't'
         mem[0x00400c1c] = b'f'
         mem[0x00400c1d] = b'\x0f'
         mem[0x00400c1e] = b':'
         mem[0x00400c1f] = b'a'
+        mem[0x00400c20] = b'\xca'
+        mem[0x00400c21] = b't'
         cpu.AF = False
         cpu.ZF = True
         cpu.CF = True
@@ -1325,12 +1325,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
-        mem[0x00400bc0] = b'\xca'
-        mem[0x00400bc1] = b'T'
         mem[0x00400bbc] = b'f'
         mem[0x00400bbd] = b'\x0f'
         mem[0x00400bbe] = b':'
         mem[0x00400bbf] = b'a'
+        mem[0x00400bc0] = b'\xca'
+        mem[0x00400bc1] = b'T'
         cpu.AF = False
         cpu.ZF = True
         cpu.CF = True
@@ -2077,12 +2077,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
-        mem[0x00400b00] = b'\xca'
-        mem[0x00400b01] = b'\x14'
         mem[0x00400afc] = b'f'
         mem[0x00400afd] = b'\x0f'
         mem[0x00400afe] = b':'
         mem[0x00400aff] = b'a'
+        mem[0x00400b00] = b'\xca'
+        mem[0x00400b01] = b'\x14'
         cpu.AF = False
         cpu.ZF = True
         cpu.CF = True
@@ -2171,12 +2171,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
+        mem[0x00400b9e] = b'f'
+        mem[0x00400b9f] = b'\x0f'
         mem[0x00400ba0] = b':'
         mem[0x00400ba1] = b'a'
         mem[0x00400ba2] = b'\xca'
         mem[0x00400ba3] = b'I'
-        mem[0x00400b9e] = b'f'
-        mem[0x00400b9f] = b'\x0f'
         cpu.AF = False
         cpu.ZF = True
         cpu.CF = True
@@ -2453,12 +2453,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
-        mem[0x00400b60] = b'\xca'
-        mem[0x00400b61] = b'4'
         mem[0x00400b5c] = b'f'
         mem[0x00400b5d] = b'\x0f'
         mem[0x00400b5e] = b':'
         mem[0x00400b5f] = b'a'
+        mem[0x00400b60] = b'\xca'
+        mem[0x00400b61] = b'4'
         cpu.AF = False
         cpu.ZF = True
         cpu.CF = True
@@ -2500,12 +2500,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
+        mem[0x00400ade] = b'f'
+        mem[0x00400adf] = b'\x0f'
         mem[0x00400ae0] = b':'
         mem[0x00400ae1] = b'a'
         mem[0x00400ae2] = b'\xca'
         mem[0x00400ae3] = b'\t'
-        mem[0x00400ade] = b'f'
-        mem[0x00400adf] = b'\x0f'
         cpu.AF = False
         cpu.ZF = True
         cpu.CF = True
@@ -2547,12 +2547,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
+        mem[0x00400b3e] = b'f'
+        mem[0x00400b3f] = b'\x0f'
         mem[0x00400b40] = b':'
         mem[0x00400b41] = b'a'
         mem[0x00400b42] = b'\xca'
         mem[0x00400b43] = b')'
-        mem[0x00400b3e] = b'f'
-        mem[0x00400b3f] = b'\x0f'
         cpu.AF = False
         cpu.ZF = True
         cpu.CF = True
@@ -3244,12 +3244,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
+        mem[0x00400a1e] = b'f'
+        mem[0x00400a1f] = b'\x0f'
         mem[0x00400a20] = b':'
         mem[0x00400a21] = b'`'
         mem[0x00400a22] = b'\xca'
         mem[0x00400a23] = b'Q'
-        mem[0x00400a1e] = b'f'
-        mem[0x00400a1f] = b'\x0f'
         cpu.AF = False
         cpu.ZF = True
         cpu.CF = True
@@ -3289,12 +3289,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
+        mem[0x00400a7e] = b'f'
+        mem[0x00400a7f] = b'\x0f'
         mem[0x00400a80] = b':'
         mem[0x00400a81] = b'`'
         mem[0x00400a82] = b'\xca'
         mem[0x00400a83] = b'q'
-        mem[0x00400a7e] = b'f'
-        mem[0x00400a7f] = b'\x0f'
         cpu.AF = False
         cpu.ZF = True
         cpu.CF = True
@@ -3424,12 +3424,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
-        mem[0x00400aa0] = b'\xca'
-        mem[0x00400aa1] = b'|'
         mem[0x00400a9c] = b'f'
         mem[0x00400a9d] = b'\x0f'
         mem[0x00400a9e] = b':'
         mem[0x00400a9f] = b'`'
+        mem[0x00400aa0] = b'\xca'
+        mem[0x00400aa1] = b'|'
         cpu.AF = False
         cpu.ZF = True
         cpu.CF = True
@@ -3694,12 +3694,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
+        mem[0x0040095e] = b'f'
+        mem[0x0040095f] = b'\x0f'
         mem[0x00400960] = b':'
         mem[0x00400961] = b'`'
         mem[0x00400962] = b'\xca'
         mem[0x00400963] = b'\x11'
-        mem[0x0040095e] = b'f'
-        mem[0x0040095f] = b'\x0f'
         cpu.AF = False
         cpu.ZF = True
         cpu.CF = True
@@ -4009,12 +4009,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
-        mem[0x00400a40] = b'\xca'
-        mem[0x00400a41] = b'\\'
         mem[0x00400a3c] = b'f'
         mem[0x00400a3d] = b'\x0f'
         mem[0x00400a3e] = b':'
         mem[0x00400a3f] = b'`'
+        mem[0x00400a40] = b'\xca'
+        mem[0x00400a41] = b'\\'
         cpu.AF = False
         cpu.ZF = True
         cpu.CF = True
@@ -4549,12 +4549,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
-        mem[0x00400980] = b'\xca'
-        mem[0x00400981] = b'\x1c'
         mem[0x0040097c] = b'f'
         mem[0x0040097d] = b'\x0f'
         mem[0x0040097e] = b':'
         mem[0x0040097f] = b'`'
+        mem[0x00400980] = b'\xca'
+        mem[0x00400981] = b'\x1c'
         cpu.AF = False
         cpu.ZF = True
         cpu.CF = True
@@ -5134,12 +5134,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
+        mem[0x004009be] = b'f'
+        mem[0x004009bf] = b'\x0f'
         mem[0x004009c0] = b':'
         mem[0x004009c1] = b'`'
         mem[0x004009c2] = b'\xca'
         mem[0x004009c3] = b'1'
-        mem[0x004009be] = b'f'
-        mem[0x004009bf] = b'\x0f'
         cpu.AF = False
         cpu.ZF = True
         cpu.CF = True
@@ -5809,12 +5809,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
-        mem[0x004009e0] = b'\xca'
-        mem[0x004009e1] = b'<'
         mem[0x004009dc] = b'f'
         mem[0x004009dd] = b'\x0f'
         mem[0x004009de] = b':'
         mem[0x004009df] = b'`'
+        mem[0x004009e0] = b'\xca'
+        mem[0x004009e1] = b'<'
         cpu.AF = False
         cpu.ZF = True
         cpu.CF = True
@@ -6159,12 +6159,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
-        mem[0x004006c0] = b'\xca'
-        mem[0x004006c1] = b'@'
         mem[0x004006bc] = b'f'
         mem[0x004006bd] = b'\x0f'
         mem[0x004006be] = b':'
         mem[0x004006bf] = b'c'
+        mem[0x004006c0] = b'\xca'
+        mem[0x004006c1] = b'@'
         cpu.XMM2 = 0x48474645444342414847464544434241
         cpu.XMM1 = 0x48474645444342414847464544434241
         cpu.PF = False
@@ -6331,12 +6331,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
-        mem[0x00400600] = b'\xca'
-        mem[0x00400601] = b'\x00'
         mem[0x004005fc] = b'f'
         mem[0x004005fd] = b'\x0f'
         mem[0x004005fe] = b':'
         mem[0x004005ff] = b'c'
+        mem[0x00400600] = b'\xca'
+        mem[0x00400601] = b'\x00'
         cpu.XMM2 = 0x48474645444342414847464544434241
         cpu.XMM1 = 0x48474645444342414847464544434241
         cpu.PF = False
@@ -6546,12 +6546,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
+        mem[0x0040069e] = b'f'
+        mem[0x0040069f] = b'\x0f'
         mem[0x004006a0] = b':'
         mem[0x004006a1] = b'c'
         mem[0x004006a2] = b'\xca'
         mem[0x004006a3] = b'5'
-        mem[0x0040069e] = b'f'
-        mem[0x0040069f] = b'\x0f'
         cpu.XMM2 = 0x48474645444342414847464544434241
         cpu.XMM1 = 0x48474645444342414847464544434241
         cpu.PF = False
@@ -6934,6 +6934,10 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
         mem.mmap(0x7fffffffe000, 0x1000, 'rwx')
+        mem[0x0040077c] = b'f'
+        mem[0x0040077d] = b'\x0f'
+        mem[0x0040077e] = b':'
+        mem[0x0040077f] = b'c'
         mem[0x00400780] = b'\x8d'
         mem[0x00400781] = b'`'
         mem[0x00400782] = b'\xff'
@@ -6956,10 +6960,6 @@ class CPUTest(unittest.TestCase):
         mem[0x7fffffffe19d] = b'F'
         mem[0x7fffffffe19e] = b'G'
         mem[0x7fffffffe19f] = b'H'
-        mem[0x0040077c] = b'f'
-        mem[0x0040077d] = b'\x0f'
-        mem[0x0040077e] = b':'
-        mem[0x0040077f] = b'c'
         cpu.SF = False
         cpu.XMM1 = 0x48474645444342414847464544434241
         cpu.PF = False
@@ -7189,12 +7189,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
-        mem[0x00400720] = b'\xca'
-        mem[0x00400721] = b'`'
         mem[0x0040071c] = b'f'
         mem[0x0040071d] = b'\x0f'
         mem[0x0040071e] = b':'
         mem[0x0040071f] = b'c'
+        mem[0x00400720] = b'\xca'
+        mem[0x00400721] = b'`'
         cpu.XMM2 = 0x48474645444342414847464544434241
         cpu.XMM1 = 0x48474645444342414847464544434241
         cpu.PF = False
@@ -7619,12 +7619,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
-        mem[0x00400660] = b'\xca'
-        mem[0x00400661] = b' '
         mem[0x0040065c] = b'f'
         mem[0x0040065d] = b'\x0f'
         mem[0x0040065e] = b':'
         mem[0x0040065f] = b'c'
+        mem[0x00400660] = b'\xca'
+        mem[0x00400661] = b' '
         cpu.XMM2 = 0x48474645444342414847464544434241
         cpu.XMM1 = 0x48474645444342414847464544434241
         cpu.PF = False
@@ -7877,12 +7877,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
+        mem[0x0040063e] = b'f'
+        mem[0x0040063f] = b'\x0f'
         mem[0x00400640] = b':'
         mem[0x00400641] = b'c'
         mem[0x00400642] = b'\xca'
         mem[0x00400643] = b'\x15'
-        mem[0x0040063e] = b'f'
-        mem[0x0040063f] = b'\x0f'
         cpu.XMM2 = 0x48474645444342414847464544434241
         cpu.XMM1 = 0x48474645444342414847464544434241
         cpu.PF = False
@@ -8565,12 +8565,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
+        mem[0x004006fe] = b'f'
+        mem[0x004006ff] = b'\x0f'
         mem[0x00400700] = b':'
         mem[0x00400701] = b'c'
         mem[0x00400702] = b'\xca'
         mem[0x00400703] = b'U'
-        mem[0x004006fe] = b'f'
-        mem[0x004006ff] = b'\x0f'
         cpu.XMM2 = 0x48474645444342414847464544434241
         cpu.XMM1 = 0x48474645444342414847464544434241
         cpu.PF = False
@@ -8737,12 +8737,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
+        mem[0x0040075e] = b'f'
+        mem[0x0040075f] = b'\x0f'
         mem[0x00400760] = b':'
         mem[0x00400761] = b'c'
         mem[0x00400762] = b'\xca'
         mem[0x00400763] = b'u'
-        mem[0x0040075e] = b'f'
-        mem[0x0040075f] = b'\x0f'
         cpu.XMM2 = 0x48474645444342414847464544434241
         cpu.XMM1 = 0x48474645444342414847464544434241
         cpu.PF = False
@@ -8944,12 +8944,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
-        mem[0x00400800] = b'\xca'
-        mem[0x00400801] = b'$'
         mem[0x004007fc] = b'f'
         mem[0x004007fd] = b'\x0f'
         mem[0x004007fe] = b':'
         mem[0x004007ff] = b'b'
+        mem[0x00400800] = b'\xca'
+        mem[0x00400801] = b'$'
         cpu.XMM2 = 0x363534333231
         cpu.XMM1 = 0x48474645444342414847464544434241
         cpu.PF = False
@@ -9108,12 +9108,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
+        mem[0x0040089e] = b'f'
+        mem[0x0040089f] = b'\x0f'
         mem[0x004008a0] = b':'
         mem[0x004008a1] = b'b'
         mem[0x004008a2] = b'\xca'
         mem[0x004008a3] = b'Y'
-        mem[0x0040089e] = b'f'
-        mem[0x0040089f] = b'\x0f'
         cpu.XMM2 = 0x363534333231
         cpu.XMM1 = 0x48474645444342414847464544434241
         cpu.PF = False
@@ -9436,12 +9436,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
+        mem[0x004008fe] = b'f'
+        mem[0x004008ff] = b'\x0f'
         mem[0x00400900] = b':'
         mem[0x00400901] = b'b'
         mem[0x00400902] = b'\xca'
         mem[0x00400903] = b'y'
-        mem[0x004008fe] = b'f'
-        mem[0x004008ff] = b'\x0f'
         cpu.XMM2 = 0x363534333231
         cpu.XMM1 = 0x48474645444342414847464544434241
         cpu.PF = False
@@ -10133,12 +10133,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
-        mem[0x004008c0] = b'\xca'
-        mem[0x004008c1] = b'd'
         mem[0x004008bc] = b'f'
         mem[0x004008bd] = b'\x0f'
         mem[0x004008be] = b':'
         mem[0x004008bf] = b'b'
+        mem[0x004008c0] = b'\xca'
+        mem[0x004008c1] = b'd'
         cpu.XMM2 = 0x363534333231
         cpu.XMM1 = 0x48474645444342414847464544434241
         cpu.PF = False
@@ -10174,12 +10174,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
+        mem[0x004007de] = b'f'
+        mem[0x004007df] = b'\x0f'
         mem[0x004007e0] = b':'
         mem[0x004007e1] = b'b'
         mem[0x004007e2] = b'\xca'
         mem[0x004007e3] = b'\x19'
-        mem[0x004007de] = b'f'
-        mem[0x004007df] = b'\x0f'
         cpu.XMM2 = 0x363534333231
         cpu.XMM1 = 0x48474645444342414847464544434241
         cpu.PF = False
@@ -10420,12 +10420,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
-        mem[0x00400860] = b'\xca'
-        mem[0x00400861] = b'D'
         mem[0x0040085c] = b'f'
         mem[0x0040085d] = b'\x0f'
         mem[0x0040085e] = b':'
         mem[0x0040085f] = b'b'
+        mem[0x00400860] = b'\xca'
+        mem[0x00400861] = b'D'
         cpu.XMM2 = 0x363534333231
         cpu.XMM1 = 0x48474645444342414847464544434241
         cpu.PF = False
@@ -10871,12 +10871,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
-        mem[0x004007a0] = b'\xca'
-        mem[0x004007a1] = b'\x04'
         mem[0x0040079c] = b'f'
         mem[0x0040079d] = b'\x0f'
         mem[0x0040079e] = b':'
         mem[0x0040079f] = b'b'
+        mem[0x004007a0] = b'\xca'
+        mem[0x004007a1] = b'\x04'
         cpu.XMM2 = 0x363534333231
         cpu.XMM1 = 0x48474645444342414847464544434241
         cpu.PF = False
@@ -11158,12 +11158,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
+        mem[0x0040083e] = b'f'
+        mem[0x0040083f] = b'\x0f'
         mem[0x00400840] = b':'
         mem[0x00400841] = b'b'
         mem[0x00400842] = b'\xca'
         mem[0x00400843] = b'9'
-        mem[0x0040083e] = b'f'
-        mem[0x0040083f] = b'\x0f'
         cpu.XMM2 = 0x363534333231
         cpu.XMM1 = 0x48474645444342414847464544434241
         cpu.PF = False
@@ -11684,12 +11684,12 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
+        mem[0x400bfe] = b'f'
+        mem[0x400bff] = b'\x0f'
         mem[0x400c00] = b':'
         mem[0x400c01] = b'a'
         mem[0x400c02] = b'\xca'
         mem[0x400c03] = b'i'
-        mem[0x400bfe] = b'f'
-        mem[0x400bff] = b'\x0f'
         cpu.AF = cs.new_bool()
         cs.add(cpu.AF == False)
         cpu.ZF = cs.new_bool()
@@ -12893,12 +12893,12 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
-        mem[0x400c20] = b'\xca'
-        mem[0x400c21] = b't'
         mem[0x400c1c] = b'f'
         mem[0x400c1d] = b'\x0f'
         mem[0x400c1e] = b':'
         mem[0x400c1f] = b'a'
+        mem[0x400c20] = b'\xca'
+        mem[0x400c21] = b't'
         cpu.AF = cs.new_bool()
         cs.add(cpu.AF == False)
         cpu.ZF = cs.new_bool()
@@ -13916,12 +13916,12 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
-        mem[0x400bc0] = b'\xca'
-        mem[0x400bc1] = b'T'
         mem[0x400bbc] = b'f'
         mem[0x400bbd] = b'\x0f'
         mem[0x400bbe] = b':'
         mem[0x400bbf] = b'a'
+        mem[0x400bc0] = b'\xca'
+        mem[0x400bc1] = b'T'
         cpu.AF = cs.new_bool()
         cs.add(cpu.AF == False)
         cpu.ZF = cs.new_bool()
@@ -15404,12 +15404,12 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
-        mem[0x400b00] = b'\xca'
-        mem[0x400b01] = b'\x14'
         mem[0x400afc] = b'f'
         mem[0x400afd] = b'\x0f'
         mem[0x400afe] = b':'
         mem[0x400aff] = b'a'
+        mem[0x400b00] = b'\xca'
+        mem[0x400b01] = b'\x14'
         cpu.AF = cs.new_bool()
         cs.add(cpu.AF == False)
         cpu.ZF = cs.new_bool()
@@ -15590,12 +15590,12 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
+        mem[0x400b9e] = b'f'
+        mem[0x400b9f] = b'\x0f'
         mem[0x400ba0] = b':'
         mem[0x400ba1] = b'a'
         mem[0x400ba2] = b'\xca'
         mem[0x400ba3] = b'I'
-        mem[0x400b9e] = b'f'
-        mem[0x400b9f] = b'\x0f'
         cpu.AF = cs.new_bool()
         cs.add(cpu.AF == False)
         cpu.ZF = cs.new_bool()
@@ -16148,12 +16148,12 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
-        mem[0x400b60] = b'\xca'
-        mem[0x400b61] = b'4'
         mem[0x400b5c] = b'f'
         mem[0x400b5d] = b'\x0f'
         mem[0x400b5e] = b':'
         mem[0x400b5f] = b'a'
+        mem[0x400b60] = b'\xca'
+        mem[0x400b61] = b'4'
         cpu.AF = cs.new_bool()
         cs.add(cpu.AF == False)
         cpu.ZF = cs.new_bool()
@@ -16241,12 +16241,12 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
+        mem[0x400ade] = b'f'
+        mem[0x400adf] = b'\x0f'
         mem[0x400ae0] = b':'
         mem[0x400ae1] = b'a'
         mem[0x400ae2] = b'\xca'
         mem[0x400ae3] = b'\t'
-        mem[0x400ade] = b'f'
-        mem[0x400adf] = b'\x0f'
         cpu.AF = cs.new_bool()
         cs.add(cpu.AF == False)
         cpu.ZF = cs.new_bool()
@@ -16334,12 +16334,12 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
+        mem[0x400b3e] = b'f'
+        mem[0x400b3f] = b'\x0f'
         mem[0x400b40] = b':'
         mem[0x400b41] = b'a'
         mem[0x400b42] = b'\xca'
         mem[0x400b43] = b')'
-        mem[0x400b3e] = b'f'
-        mem[0x400b3f] = b'\x0f'
         cpu.AF = cs.new_bool()
         cs.add(cpu.AF == False)
         cpu.ZF = cs.new_bool()
@@ -17717,12 +17717,12 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
+        mem[0x400a1e] = b'f'
+        mem[0x400a1f] = b'\x0f'
         mem[0x400a20] = b':'
         mem[0x400a21] = b'`'
         mem[0x400a22] = b'\xca'
         mem[0x400a23] = b'Q'
-        mem[0x400a1e] = b'f'
-        mem[0x400a1f] = b'\x0f'
         cpu.AF = cs.new_bool()
         cs.add(cpu.AF == False)
         cpu.ZF = cs.new_bool()
@@ -17807,12 +17807,12 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
+        mem[0x400a7e] = b'f'
+        mem[0x400a7f] = b'\x0f'
         mem[0x400a80] = b':'
         mem[0x400a81] = b'`'
         mem[0x400a82] = b'\xca'
         mem[0x400a83] = b'q'
-        mem[0x400a7e] = b'f'
-        mem[0x400a7f] = b'\x0f'
         cpu.AF = cs.new_bool()
         cs.add(cpu.AF == False)
         cpu.ZF = cs.new_bool()
@@ -18077,12 +18077,12 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
-        mem[0x400aa0] = b'\xca'
-        mem[0x400aa1] = b'|'
         mem[0x400a9c] = b'f'
         mem[0x400a9d] = b'\x0f'
         mem[0x400a9e] = b':'
         mem[0x400a9f] = b'`'
+        mem[0x400aa0] = b'\xca'
+        mem[0x400aa1] = b'|'
         cpu.AF = cs.new_bool()
         cs.add(cpu.AF == False)
         cpu.ZF = cs.new_bool()
@@ -18617,12 +18617,12 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
+        mem[0x40095e] = b'f'
+        mem[0x40095f] = b'\x0f'
         mem[0x400960] = b':'
         mem[0x400961] = b'`'
         mem[0x400962] = b'\xca'
         mem[0x400963] = b'\x11'
-        mem[0x40095e] = b'f'
-        mem[0x40095f] = b'\x0f'
         cpu.AF = cs.new_bool()
         cs.add(cpu.AF == False)
         cpu.ZF = cs.new_bool()
@@ -19247,12 +19247,12 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
-        mem[0x400a40] = b'\xca'
-        mem[0x400a41] = b'\\'
         mem[0x400a3c] = b'f'
         mem[0x400a3d] = b'\x0f'
         mem[0x400a3e] = b':'
         mem[0x400a3f] = b'`'
+        mem[0x400a40] = b'\xca'
+        mem[0x400a41] = b'\\'
         cpu.AF = cs.new_bool()
         cs.add(cpu.AF == False)
         cpu.ZF = cs.new_bool()
@@ -20327,12 +20327,12 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
-        mem[0x400980] = b'\xca'
-        mem[0x400981] = b'\x1c'
         mem[0x40097c] = b'f'
         mem[0x40097d] = b'\x0f'
         mem[0x40097e] = b':'
         mem[0x40097f] = b'`'
+        mem[0x400980] = b'\xca'
+        mem[0x400981] = b'\x1c'
         cpu.AF = cs.new_bool()
         cs.add(cpu.AF == False)
         cpu.ZF = cs.new_bool()
@@ -21497,12 +21497,12 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
+        mem[0x4009be] = b'f'
+        mem[0x4009bf] = b'\x0f'
         mem[0x4009c0] = b':'
         mem[0x4009c1] = b'`'
         mem[0x4009c2] = b'\xca'
         mem[0x4009c3] = b'1'
-        mem[0x4009be] = b'f'
-        mem[0x4009bf] = b'\x0f'
         cpu.AF = cs.new_bool()
         cs.add(cpu.AF == False)
         cpu.ZF = cs.new_bool()
@@ -22847,12 +22847,12 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
-        mem[0x4009e0] = b'\xca'
-        mem[0x4009e1] = b'<'
         mem[0x4009dc] = b'f'
         mem[0x4009dd] = b'\x0f'
         mem[0x4009de] = b':'
         mem[0x4009df] = b'`'
+        mem[0x4009e0] = b'\xca'
+        mem[0x4009e1] = b'<'
         cpu.AF = cs.new_bool()
         cs.add(cpu.AF == False)
         cpu.ZF = cs.new_bool()
@@ -23552,12 +23552,12 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
-        mem[0x4006c0] = b'\xca'
-        mem[0x4006c1] = b'@'
         mem[0x4006bc] = b'f'
         mem[0x4006bd] = b'\x0f'
         mem[0x4006be] = b':'
         mem[0x4006bf] = b'c'
+        mem[0x4006c0] = b'\xca'
+        mem[0x4006c1] = b'@'
         cpu.XMM2 = cs.new_bitvec(128)
         cs.add(cpu.XMM2 == 0x48474645444342414847464544434241)
         cpu.XMM1 = cs.new_bitvec(128)
@@ -23900,12 +23900,12 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
-        mem[0x400600] = b'\xca'
-        mem[0x400601] = b'\x00'
         mem[0x4005fc] = b'f'
         mem[0x4005fd] = b'\x0f'
         mem[0x4005fe] = b':'
         mem[0x4005ff] = b'c'
+        mem[0x400600] = b'\xca'
+        mem[0x400601] = b'\x00'
         cpu.XMM2 = cs.new_bitvec(128)
         cs.add(cpu.XMM2 == 0x48474645444342414847464544434241)
         cpu.XMM1 = cs.new_bitvec(128)
@@ -24335,12 +24335,12 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
+        mem[0x40069e] = b'f'
+        mem[0x40069f] = b'\x0f'
         mem[0x4006a0] = b':'
         mem[0x4006a1] = b'c'
         mem[0x4006a2] = b'\xca'
         mem[0x4006a3] = b'5'
-        mem[0x40069e] = b'f'
-        mem[0x40069f] = b'\x0f'
         cpu.XMM2 = cs.new_bitvec(128)
         cs.add(cpu.XMM2 == 0x48474645444342414847464544434241)
         cpu.XMM1 = cs.new_bitvec(128)
@@ -25658,12 +25658,12 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
-        mem[0x400720] = b'\xca'
-        mem[0x400721] = b'`'
         mem[0x40071c] = b'f'
         mem[0x40071d] = b'\x0f'
         mem[0x40071e] = b':'
         mem[0x40071f] = b'c'
+        mem[0x400720] = b'\xca'
+        mem[0x400721] = b'`'
         cpu.XMM2 = cs.new_bitvec(128)
         cs.add(cpu.XMM2 == 0x48474645444342414847464544434241)
         cpu.XMM1 = cs.new_bitvec(128)
@@ -26528,12 +26528,12 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
-        mem[0x400660] = b'\xca'
-        mem[0x400661] = b' '
         mem[0x40065c] = b'f'
         mem[0x40065d] = b'\x0f'
         mem[0x40065e] = b':'
         mem[0x40065f] = b'c'
+        mem[0x400660] = b'\xca'
+        mem[0x400661] = b' '
         cpu.XMM2 = cs.new_bitvec(128)
         cs.add(cpu.XMM2 == 0x48474645444342414847464544434241)
         cpu.XMM1 = cs.new_bitvec(128)
@@ -27050,12 +27050,12 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
+        mem[0x40063e] = b'f'
+        mem[0x40063f] = b'\x0f'
         mem[0x400640] = b':'
         mem[0x400641] = b'c'
         mem[0x400642] = b'\xca'
         mem[0x400643] = b'\x15'
-        mem[0x40063e] = b'f'
-        mem[0x40063f] = b'\x0f'
         cpu.XMM2 = cs.new_bitvec(128)
         cs.add(cpu.XMM2 == 0x48474645444342414847464544434241)
         cpu.XMM1 = cs.new_bitvec(128)
@@ -28442,12 +28442,12 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
+        mem[0x4006fe] = b'f'
+        mem[0x4006ff] = b'\x0f'
         mem[0x400700] = b':'
         mem[0x400701] = b'c'
         mem[0x400702] = b'\xca'
         mem[0x400703] = b'U'
-        mem[0x4006fe] = b'f'
-        mem[0x4006ff] = b'\x0f'
         cpu.XMM2 = cs.new_bitvec(128)
         cs.add(cpu.XMM2 == 0x48474645444342414847464544434241)
         cpu.XMM1 = cs.new_bitvec(128)
@@ -28790,12 +28790,12 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
+        mem[0x40075e] = b'f'
+        mem[0x40075f] = b'\x0f'
         mem[0x400760] = b':'
         mem[0x400761] = b'c'
         mem[0x400762] = b'\xca'
         mem[0x400763] = b'u'
-        mem[0x40075e] = b'f'
-        mem[0x40075f] = b'\x0f'
         cpu.XMM2 = cs.new_bitvec(128)
         cs.add(cpu.XMM2 == 0x48474645444342414847464544434241)
         cpu.XMM1 = cs.new_bitvec(128)
@@ -29213,12 +29213,12 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
-        mem[0x400800] = b'\xca'
-        mem[0x400801] = b'$'
         mem[0x4007fc] = b'f'
         mem[0x4007fd] = b'\x0f'
         mem[0x4007fe] = b':'
         mem[0x4007ff] = b'b'
+        mem[0x400800] = b'\xca'
+        mem[0x400801] = b'$'
         cpu.XMM2 = cs.new_bitvec(128)
         cs.add(cpu.XMM2 == 0x363534333231)
         cpu.XMM1 = cs.new_bitvec(128)
@@ -29549,12 +29549,12 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
+        mem[0x40089e] = b'f'
+        mem[0x40089f] = b'\x0f'
         mem[0x4008a0] = b':'
         mem[0x4008a1] = b'b'
         mem[0x4008a2] = b'\xca'
         mem[0x4008a3] = b'Y'
-        mem[0x40089e] = b'f'
-        mem[0x40089f] = b'\x0f'
         cpu.XMM2 = cs.new_bitvec(128)
         cs.add(cpu.XMM2 == 0x363534333231)
         cpu.XMM1 = cs.new_bitvec(128)
@@ -30221,12 +30221,12 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
+        mem[0x4008fe] = b'f'
+        mem[0x4008ff] = b'\x0f'
         mem[0x400900] = b':'
         mem[0x400901] = b'b'
         mem[0x400902] = b'\xca'
         mem[0x400903] = b'y'
-        mem[0x4008fe] = b'f'
-        mem[0x4008ff] = b'\x0f'
         cpu.XMM2 = cs.new_bitvec(128)
         cs.add(cpu.XMM2 == 0x363534333231)
         cpu.XMM1 = cs.new_bitvec(128)
@@ -31649,12 +31649,12 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
-        mem[0x4008c0] = b'\xca'
-        mem[0x4008c1] = b'd'
         mem[0x4008bc] = b'f'
         mem[0x4008bd] = b'\x0f'
         mem[0x4008be] = b':'
         mem[0x4008bf] = b'b'
+        mem[0x4008c0] = b'\xca'
+        mem[0x4008c1] = b'd'
         cpu.XMM2 = cs.new_bitvec(128)
         cs.add(cpu.XMM2 == 0x363534333231)
         cpu.XMM1 = cs.new_bitvec(128)
@@ -31733,12 +31733,12 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
+        mem[0x4007de] = b'f'
+        mem[0x4007df] = b'\x0f'
         mem[0x4007e0] = b':'
         mem[0x4007e1] = b'b'
         mem[0x4007e2] = b'\xca'
         mem[0x4007e3] = b'\x19'
-        mem[0x4007de] = b'f'
-        mem[0x4007df] = b'\x0f'
         cpu.XMM2 = cs.new_bitvec(128)
         cs.add(cpu.XMM2 == 0x363534333231)
         cpu.XMM1 = cs.new_bitvec(128)
@@ -32237,12 +32237,12 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
-        mem[0x400860] = b'\xca'
-        mem[0x400861] = b'D'
         mem[0x40085c] = b'f'
         mem[0x40085d] = b'\x0f'
         mem[0x40085e] = b':'
         mem[0x40085f] = b'b'
+        mem[0x400860] = b'\xca'
+        mem[0x400861] = b'D'
         cpu.XMM2 = cs.new_bitvec(128)
         cs.add(cpu.XMM2 == 0x363534333231)
         cpu.XMM1 = cs.new_bitvec(128)
@@ -33161,12 +33161,12 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
-        mem[0x4007a0] = b'\xca'
-        mem[0x4007a1] = b'\x04'
         mem[0x40079c] = b'f'
         mem[0x40079d] = b'\x0f'
         mem[0x40079e] = b':'
         mem[0x40079f] = b'b'
+        mem[0x4007a0] = b'\xca'
+        mem[0x4007a1] = b'\x04'
         cpu.XMM2 = cs.new_bitvec(128)
         cs.add(cpu.XMM2 == 0x363534333231)
         cpu.XMM1 = cs.new_bitvec(128)
@@ -33749,12 +33749,12 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x00400000, 0x1000, 'rwx')
+        mem[0x40083e] = b'f'
+        mem[0x40083f] = b'\x0f'
         mem[0x400840] = b':'
         mem[0x400841] = b'b'
         mem[0x400842] = b'\xca'
         mem[0x400843] = b'9'
-        mem[0x40083e] = b'f'
-        mem[0x40083f] = b'\x0f'
         cpu.XMM2 = cs.new_bitvec(128)
         cs.add(cpu.XMM2 == 0x363534333231)
         cpu.XMM1 = cs.new_bitvec(128)
