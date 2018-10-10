@@ -558,10 +558,10 @@ class CPUTest(unittest.TestCase):
         cpu.RIP = 0x419c86
         cpu.execute()
 
-        self.assertEqual(mem[0x419c88], b'm')
-        self.assertEqual(mem[0x419c89], b'\xc0')
         self.assertEqual(mem[0x419c86], b'f')
         self.assertEqual(mem[0x419c87], b'\x0f')
+        self.assertEqual(mem[0x419c88], b'm')
+        self.assertEqual(mem[0x419c89], b'\xc0')
         self.assertEqual(cpu.XMM0, 131444857441387729384159880)
         self.assertEqual(cpu.RIP, 4299914)
 
@@ -618,10 +618,10 @@ class CPUTest(unittest.TestCase):
         cpu.RIP = 0x419c86
         cpu.execute()
 
-        self.assertEqual(mem[0x419c88], b'm')
-        self.assertEqual(mem[0x419c89], b'\xc0')
         self.assertEqual(mem[0x419c86], b'f')
         self.assertEqual(mem[0x419c87], b'\x0f')
+        self.assertEqual(mem[0x419c88], b'm')
+        self.assertEqual(mem[0x419c89], b'\xc0')
         self.assertEqual(cpu.XMM0, 131467288682181360198926152)
         self.assertEqual(cpu.RIP, 4299914)
 
@@ -638,10 +638,10 @@ class CPUTest(unittest.TestCase):
         cpu.RIP = 0x419c86
         cpu.execute()
 
-        self.assertEqual(mem[0x419c88], b'm')
-        self.assertEqual(mem[0x419c89], b'\xc0')
         self.assertEqual(mem[0x419c86], b'f')
         self.assertEqual(mem[0x419c87], b'\x0f')
+        self.assertEqual(mem[0x419c88], b'm')
+        self.assertEqual(mem[0x419c89], b'\xc0')
         self.assertEqual(cpu.XMM0, 131460205132457055731105224)
         self.assertEqual(cpu.RIP, 4299914)
 
@@ -678,10 +678,10 @@ class CPUTest(unittest.TestCase):
         cpu.RIP = 0x419c86
         cpu.execute()
 
-        self.assertEqual(mem[0x419c88], b'm')
-        self.assertEqual(mem[0x419c89], b'\xc0')
         self.assertEqual(mem[0x419c86], b'f')
         self.assertEqual(mem[0x419c87], b'\x0f')
+        self.assertEqual(mem[0x419c88], b'm')
+        self.assertEqual(mem[0x419c89], b'\xc0')
         self.assertEqual(cpu.XMM0, 131448399216249881618070344)
         self.assertEqual(cpu.RIP, 4299914)
 
@@ -698,10 +698,10 @@ class CPUTest(unittest.TestCase):
         cpu.RIP = 0x419c86
         cpu.execute()
 
-        self.assertEqual(mem[0x419c88], b'm')
-        self.assertEqual(mem[0x419c89], b'\xc0')
         self.assertEqual(mem[0x419c86], b'f')
         self.assertEqual(mem[0x419c87], b'\x0f')
+        self.assertEqual(mem[0x419c88], b'm')
+        self.assertEqual(mem[0x419c89], b'\xc0')
         self.assertEqual(cpu.XMM0, 131437773891663424916338952)
         self.assertEqual(cpu.RIP, 4299914)
 
@@ -738,10 +738,10 @@ class CPUTest(unittest.TestCase):
         cpu.RIP = 0x419c86
         cpu.execute()
 
-        self.assertEqual(mem[0x419c88], b'm')
-        self.assertEqual(mem[0x419c89], b'\xc0')
         self.assertEqual(mem[0x419c86], b'f')
         self.assertEqual(mem[0x419c87], b'\x0f')
+        self.assertEqual(mem[0x419c88], b'm')
+        self.assertEqual(mem[0x419c89], b'\xc0')
         self.assertEqual(cpu.XMM0, 131435412708421990093731976)
         self.assertEqual(cpu.RIP, 4299914)
 
@@ -778,10 +778,10 @@ class CPUTest(unittest.TestCase):
         cpu.RIP = 0x419c86
         cpu.execute()
 
-        self.assertEqual(mem[0x419c88], b'm')
-        self.assertEqual(mem[0x419c89], b'\xc0')
         self.assertEqual(mem[0x419c86], b'f')
         self.assertEqual(mem[0x419c87], b'\x0f')
+        self.assertEqual(mem[0x419c88], b'm')
+        self.assertEqual(mem[0x419c89], b'\xc0')
         self.assertEqual(cpu.XMM0, 131446038033008446795463368)
         self.assertEqual(cpu.RIP, 4299914)
 
@@ -818,10 +818,10 @@ class CPUTest(unittest.TestCase):
         cpu.RIP = 0x419c86
         cpu.execute()
 
-        self.assertEqual(mem[0x419c88], b'm')
-        self.assertEqual(mem[0x419c89], b'\xc0')
         self.assertEqual(mem[0x419c86], b'f')
         self.assertEqual(mem[0x419c87], b'\x0f')
+        self.assertEqual(mem[0x419c88], b'm')
+        self.assertEqual(mem[0x419c89], b'\xc0')
         self.assertEqual(cpu.XMM0, 131459024540836338319801736)
         self.assertEqual(cpu.RIP, 4299914)
 
@@ -918,10 +918,10 @@ class CPUTest(unittest.TestCase):
         cpu.RIP = 0x419c86
         cpu.execute()
 
-        self.assertEqual(mem[0x419c88], b'm')
-        self.assertEqual(mem[0x419c89], b'\xc0')
         self.assertEqual(mem[0x419c86], b'f')
         self.assertEqual(mem[0x419c87], b'\x0f')
+        self.assertEqual(mem[0x419c88], b'm')
+        self.assertEqual(mem[0x419c89], b'\xc0')
         self.assertEqual(cpu.XMM0, 131438954483284142327642440)
         self.assertEqual(cpu.RIP, 4299914)
 
@@ -1464,11 +1464,11 @@ class CPUTest(unittest.TestCase):
         cpu.RIP = 0x419c6c
         cpu.execute()
 
-        self.assertEqual(mem[0x419c70], b'\xc1')
         self.assertEqual(mem[0x419c6c], b'f')
         self.assertEqual(mem[0x419c6d], b'D')
         self.assertEqual(mem[0x419c6e], b'\x0f')
         self.assertEqual(mem[0x419c6f], b'l')
+        self.assertEqual(mem[0x419c70], b'\xc1')
         self.assertEqual(cpu.XMM8, 131453416730637930616110168)
         self.assertEqual(cpu.XMM1, 131453711878543109968936024)
         self.assertEqual(cpu.RIP, 4299889)
@@ -1509,11 +1509,11 @@ class CPUTest(unittest.TestCase):
         cpu.RIP = 0x419c6c
         cpu.execute()
 
-        self.assertEqual(mem[0x419c70], b'\xc1')
         self.assertEqual(mem[0x419c6c], b'f')
         self.assertEqual(mem[0x419c6d], b'D')
         self.assertEqual(mem[0x419c6e], b'\x0f')
         self.assertEqual(mem[0x419c6f], b'l')
+        self.assertEqual(mem[0x419c70], b'\xc1')
         self.assertEqual(cpu.XMM8, 131460500280362235083931096)
         self.assertEqual(cpu.XMM1, 131460795428267414436756952)
         self.assertEqual(cpu.RIP, 4299889)
@@ -1532,11 +1532,11 @@ class CPUTest(unittest.TestCase):
         cpu.RIP = 0x419c6c
         cpu.execute()
 
-        self.assertEqual(mem[0x419c70], b'\xc1')
         self.assertEqual(mem[0x419c6c], b'f')
         self.assertEqual(mem[0x419c6d], b'D')
         self.assertEqual(mem[0x419c6e], b'\x0f')
         self.assertEqual(mem[0x419c6f], b'l')
+        self.assertEqual(mem[0x419c70], b'\xc1')
         self.assertEqual(cpu.XMM8, 131465222646845104729145048)
         self.assertEqual(cpu.XMM1, 131465517794750284081970904)
         self.assertEqual(cpu.RIP, 4299889)
@@ -1555,11 +1555,11 @@ class CPUTest(unittest.TestCase):
         cpu.RIP = 0x419c6c
         cpu.execute()
 
-        self.assertEqual(mem[0x419c70], b'\xc1')
         self.assertEqual(mem[0x419c6c], b'f')
         self.assertEqual(mem[0x419c6d], b'D')
         self.assertEqual(mem[0x419c6e], b'\x0f')
         self.assertEqual(mem[0x419c6f], b'l')
+        self.assertEqual(mem[0x419c70], b'\xc1')
         self.assertEqual(cpu.XMM8, 131449874955775778382199704)
         self.assertEqual(cpu.XMM1, 131450170103680957735025560)
         self.assertEqual(cpu.RIP, 4299889)
@@ -1644,11 +1644,11 @@ class CPUTest(unittest.TestCase):
         cpu.RIP = 0x419c6c
         cpu.execute()
 
-        self.assertEqual(mem[0x419c70], b'\xc1')
         self.assertEqual(mem[0x419c6c], b'f')
         self.assertEqual(mem[0x419c6d], b'D')
         self.assertEqual(mem[0x419c6e], b'\x0f')
         self.assertEqual(mem[0x419c6f], b'l')
+        self.assertEqual(mem[0x419c70], b'\xc1')
         self.assertEqual(cpu.XMM8, 131451055547396495793503192)
         self.assertEqual(cpu.XMM1, 131451350695301675146329048)
         self.assertEqual(cpu.RIP, 4299889)
@@ -1689,11 +1689,11 @@ class CPUTest(unittest.TestCase):
         cpu.RIP = 0x419c6c
         cpu.execute()
 
-        self.assertEqual(mem[0x419c70], b'\xc1')
         self.assertEqual(mem[0x419c6c], b'f')
         self.assertEqual(mem[0x419c6d], b'D')
         self.assertEqual(mem[0x419c6e], b'\x0f')
         self.assertEqual(mem[0x419c6f], b'l')
+        self.assertEqual(mem[0x419c70], b'\xc1')
         self.assertEqual(cpu.XMM8, 131467583830086539551752024)
         self.assertEqual(cpu.XMM1, 131467878977991718904577880)
         self.assertEqual(cpu.RIP, 4299889)
@@ -1734,11 +1734,11 @@ class CPUTest(unittest.TestCase):
         cpu.RIP = 0x419c6c
         cpu.execute()
 
-        self.assertEqual(mem[0x419c70], b'\xc1')
         self.assertEqual(mem[0x419c6c], b'f')
         self.assertEqual(mem[0x419c6d], b'D')
         self.assertEqual(mem[0x419c6e], b'\x0f')
         self.assertEqual(mem[0x419c6f], b'l')
+        self.assertEqual(mem[0x419c70], b'\xc1')
         self.assertEqual(cpu.XMM8, 131439249631189321680468312)
         self.assertEqual(cpu.XMM1, 131439544779094501033294168)
         self.assertEqual(cpu.RIP, 4299889)
@@ -1757,11 +1757,11 @@ class CPUTest(unittest.TestCase):
         cpu.RIP = 0x419c6c
         cpu.execute()
 
-        self.assertEqual(mem[0x419c70], b'\xc1')
         self.assertEqual(mem[0x419c6c], b'f')
         self.assertEqual(mem[0x419c6d], b'D')
         self.assertEqual(mem[0x419c6e], b'\x0f')
         self.assertEqual(mem[0x419c6f], b'l')
+        self.assertEqual(mem[0x419c70], b'\xc1')
         self.assertEqual(cpu.XMM8, 131447513772534343559592728)
         self.assertEqual(cpu.XMM1, 131447808920439522912418584)
         self.assertEqual(cpu.RIP, 4299889)
@@ -1780,11 +1780,11 @@ class CPUTest(unittest.TestCase):
         cpu.RIP = 0x419c6c
         cpu.execute()
 
-        self.assertEqual(mem[0x419c70], b'\xc1')
         self.assertEqual(mem[0x419c6c], b'f')
         self.assertEqual(mem[0x419c6d], b'D')
         self.assertEqual(mem[0x419c6e], b'\x0f')
         self.assertEqual(mem[0x419c6f], b'l')
+        self.assertEqual(mem[0x419c70], b'\xc1')
         self.assertEqual(cpu.XMM8, 131435707856327169446557848)
         self.assertEqual(cpu.XMM1, 131436003004232348799383704)
         self.assertEqual(cpu.RIP, 4299889)
@@ -1803,11 +1803,11 @@ class CPUTest(unittest.TestCase):
         cpu.RIP = 0x419c6c
         cpu.execute()
 
-        self.assertEqual(mem[0x419c70], b'\xc1')
         self.assertEqual(mem[0x419c6c], b'f')
         self.assertEqual(mem[0x419c6d], b'D')
         self.assertEqual(mem[0x419c6e], b'\x0f')
         self.assertEqual(mem[0x419c6f], b'l')
+        self.assertEqual(mem[0x419c70], b'\xc1')
         self.assertEqual(cpu.XMM8, 131452236139017213204806680)
         self.assertEqual(cpu.XMM1, 131452531286922392557632536)
         self.assertEqual(cpu.RIP, 4299889)
@@ -1848,11 +1848,11 @@ class CPUTest(unittest.TestCase):
         cpu.RIP = 0x419c6c
         cpu.execute()
 
-        self.assertEqual(mem[0x419c70], b'\xc1')
         self.assertEqual(mem[0x419c6c], b'f')
         self.assertEqual(mem[0x419c6d], b'D')
         self.assertEqual(mem[0x419c6e], b'\x0f')
         self.assertEqual(mem[0x419c6f], b'l')
+        self.assertEqual(mem[0x419c70], b'\xc1')
         self.assertEqual(cpu.XMM8, 131443971997672191325682264)
         self.assertEqual(cpu.XMM1, 131444267145577370678508120)
         self.assertEqual(cpu.RIP, 4299889)
@@ -1914,10 +1914,10 @@ class CPUTest(unittest.TestCase):
         cpu.RIP = 0x4668b6
         cpu.execute()
 
-        self.assertEqual(mem[0x4668b8], b'a')
-        self.assertEqual(mem[0x4668b9], b'\xc9')
         self.assertEqual(mem[0x4668b6], b'f')
         self.assertEqual(mem[0x4668b7], b'\x0f')
+        self.assertEqual(mem[0x4668b8], b'a')
+        self.assertEqual(mem[0x4668b9], b'\xc9')
         self.assertEqual(cpu.XMM1, 791621423)
         self.assertEqual(cpu.RIP, 4614330)
 
