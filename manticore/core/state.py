@@ -309,17 +309,20 @@ class State(Eventful):
         expr = self.migrate_expression(expr)
         return not self._solver.can_be_true(self._constraints, expr == False)
 
-    def solve_one(self, expr):
+    def solve_one(self, expr, constrain=False):
         '''
         Concretize a symbolic :class:`~manticore.core.smtlib.expression.Expression` into
         one solution.
 
         :param manticore.core.smtlib.Expression expr: Symbolic value to concretize
+        :param bool constrain: If True, constrain expr to concretized value
         :return: Concrete value
         :rtype: int
         '''
         expr = self.migrate_expression(expr)
         value = self._solver.get_value(self._constraints, expr)
+        if constrain:
+            self.constrain(expr == value)
         #Include forgiveness here
         if isinstance(value, bytearray):
             value = bytes(value)
@@ -367,22 +370,24 @@ class State(Eventful):
 
     ################################################################################################
     # The following should be moved to specific class StatePosix?
-    def solve_buffer(self, addr, nbytes):
+    def solve_buffer(self, addr, nbytes, constrain=False):
         '''
         Reads `nbytes` of symbolic data from a buffer in memory at `addr` and attempts to
         concretize it
 
         :param int address: Address of buffer to concretize
         :param int nbytes: Size of buffer to concretize
+        :param bool constrain: If True, constrain the buffer to the concretized value
         :return: Concrete contents of buffer
         :rtype: list[int]
         '''
         buffer = self.cpu.read_bytes(addr, nbytes)
         result = []
         with self._constraints as temp_cs:
+            cs_to_use = self.constraints if constrain else temp_cs
             for c in buffer:
-                result.append(self._solver.get_value(temp_cs, c))
-                temp_cs.add(c == result[-1])
+                result.append(self._solver.get_value(cs_to_use, c))
+                cs_to_use.add(c == result[-1])
         return result
 
     def invoke_model(self, model):
