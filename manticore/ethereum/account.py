@@ -29,7 +29,11 @@ class EVMAccount(object):
         return super().__eq__(other)
 
     @property
-    def name(self):
+    def name_(self):
+        """
+        This is named this way to avoid naming collisions with Solidity functions/data, since EVMContract inherits
+        this.
+        """
         return self._name
 
     @property
