@@ -1,6 +1,6 @@
 # Usage:
 # git clone https://github.com/ethereum/tests
-# for i in tests/EVM/VMTests/*; do python3.6 make_evmtests.py $i > $MANTICORE/tests/EVM/VMTests/eth_`basename $i`.py; done
+# for i in tests/VMTests/*; do python3.6 make_evmtests.py $i > $MANTICORE/tests/EVM/VMTests/eth_`basename $i`.py; done
 #MANTICORE is manticore source folder
 
 from pprint import pformat
@@ -95,7 +95,7 @@ def gen_test(testcase, filename, skip):
     blocknumber=int(env['currentNumber'], 0)
     timestamp=int(env['currentTimestamp'], 0)
     difficulty=int(env['currentDifficulty'], 0)
-    coinbase=int(env['currentCoinbase'],0)
+    coinbase=int(env['currentCoinbase'], 0)
     output += f'''
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber={blocknumber}, timestamp={timestamp}, difficulty={difficulty}, coinbase={coinbase}, gaslimit={gaslimit})
@@ -108,9 +108,10 @@ def gen_test(testcase, filename, skip):
         account_balance = i(account['balance'])
 
         output += f'''
+        bytecode = unhexlify('{account_code}')
         world.create_account(address={hex(account_address)},
                              balance={account_balance},
-                             code=unhexlify('{account_code}'),
+                             code=bytecode,
                             )'''
 
         for key, value in account['storage'].items():
@@ -145,20 +146,21 @@ def gen_test(testcase, filename, skip):
     output += f'''
         caller = {hex(caller)}
         value = {value}
-        bytecode = world.get_code(address)
         gas = {gas}
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data'''
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')'''
 
     if 'post' not in testcase:
         output +='''
@@ -190,25 +192,31 @@ def gen_test(testcase, filename, skip):
                 output += f'''
         self.assertEqual(world.get_storage_data(account_address, {key}), {value})'''
 
-        final_gas = int(testcase['gas'], 0)
+        output += f'''
+        #check outs
+        self.assertEqual(returndata, unhexlify('{testcase['out'][2:]}'))'''
+
+        output += f'''
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '{testcase['logs'][2:]}')
+        '''
+
         output += f'''
         # test spent gas
-        self.assertEqual(new_vm.gas, {final_gas})'''
-
-        output += '''
-        #check callcreates
-        #check refund
-        #check logs
-        '''
+        self.assertEqual(new_vm.gas, {int(testcase['gas'], 0)})'''
 
     return output
 
 import sys, os, json
 if __name__ == '__main__':
-    folder = os.path.abspath(sys.argv[1])
+    filename_or_folder = os.path.abspath(sys.argv[1])
     
+    
+
+
     print(f'''
-#Taken from folder {folder}
+#Taken from {filename_or_folder}
 import struct
 import unittest
 import json
@@ -217,24 +225,46 @@ from binascii import unhexlify
 from manticore.platforms import evm
 from manticore.core import state
 from manticore.core.smtlib import Operators, ConstraintSet
+from manticore.core.smtlib.visitors import to_constant
+import sha3
+import rlp
+from rlp.sedes import (
+    CountableList,
+    BigEndianInt,
+    Binary,
+)
+class Log(rlp.Serializable):
+    fields = [
+        ('address', Binary.fixed_length(20, allow_empty=True)),
+        ('topics', CountableList(BigEndianInt(32))),
+        ('data', Binary())
+    ]
 
-class EVMTest_{os.path.basename(folder)}(unittest.TestCase):
+class EVMTest_{os.path.splitext(os.path.basename(filename_or_folder))[0]}(unittest.TestCase):
     _multiprocess_can_split_ = True
     maxDiff=None 
 ''')
 
-    if os.path.isdir(folder):
+    def disabled(test):
+        if 'Performance' in test:
+            return True
+        return False 
+
+    if os.path.isdir(filename_or_folder):
+        folder = filename_or_folder
         for filename in os.listdir(folder):
             if not filename.endswith('.json'):
                 continue
 
-            testcase = dict(json.loads(open(os.path.join(folder,filename)).read()))
+            filename = os.path.join(folder, filename)
+            testcase = dict(json.loads(open(filename).read()))
             for name, testcase in testcase.items():
-                print(gen_test(testcase, os.path.join(folder,filename), False))
+                print(gen_test(testcase, filename, disabled(filename)))
     else:
-            testcase = dict(json.loads(open(os.path.join(folder,folder)).read()))
-            for name, testcase in testcase.items():
-                print(gen_test(testcase, os.path.join(folder,folder), False))
+        filename = os.path.abspath(filename_or_folder)
+        testcase = dict(json.loads(open(filename).read()))
+        for name, testcase in testcase.items():
+            print(gen_test(testcase, filename, disabled(filename)))
 
 
     print('''

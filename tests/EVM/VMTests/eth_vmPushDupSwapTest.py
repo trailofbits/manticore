@@ -1,5 +1,5 @@
 
-#Taken from folder /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmPushDupSwapTest
+#Taken from /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmPushDupSwapTest
 import struct
 import unittest
 import json
@@ -8,6 +8,20 @@ from binascii import unhexlify
 from manticore.platforms import evm
 from manticore.core import state
 from manticore.core.smtlib import Operators, ConstraintSet
+from manticore.core.smtlib.visitors import to_constant
+import sha3
+import rlp
+from rlp.sedes import (
+    CountableList,
+    BigEndianInt,
+    Binary,
+)
+class Log(rlp.Serializable):
+    fields = [
+        ('address', Binary.fixed_length(20, allow_empty=True)),
+        ('topics', CountableList(BigEndianInt(32))),
+        ('data', Binary())
+    ]
 
 class EVMTest_vmPushDupSwapTest(unittest.TestCase):
     _multiprocess_can_split_ = True
@@ -38,29 +52,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('600b600a60096008600760066005600460036002600160039a55')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('600b600a60096008600760066005600460036002600160039a55'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -71,12 +87,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('600b600a60096008600760066005600460036002600160039a55'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x0b), 0x01)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79961)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_swap15(self):
         '''
@@ -106,29 +124,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('600f600e600d600c600b600a60096008600760066005600460036002600160039e55')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('600f600e600d600c600b600a60096008600760066005600460036002600160039e55'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -139,12 +159,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('600f600e600d600c600b600a60096008600760066005600460036002600160039e55'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x0f), 0x01)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79949)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_dup3(self):
         '''
@@ -162,29 +184,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('60036002600182600355')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('60036002600182600355'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -195,12 +219,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('60036002600182600355'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x03), 0x03)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79985)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_push20(self):
         '''
@@ -215,29 +241,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('73ccddeeff00112233445566778899aabbccddeeff600355')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('73ccddeeff00112233445566778899aabbccddeeff600355'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -248,12 +276,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('73ccddeeff00112233445566778899aabbccddeeff600355'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x03), 0xccddeeff00112233445566778899aabbccddeeff)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79994)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_swap7(self):
         '''
@@ -275,29 +305,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('600760066005600460036002600160039655')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('600760066005600460036002600160039655'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -308,12 +340,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('600760066005600460036002600160039655'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x07), 0x01)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79973)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_swap14(self):
         '''
@@ -342,29 +376,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('600e600d600c600b600a60096008600760066005600460036002600160039d55')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('600e600d600c600b600a60096008600760066005600460036002600160039d55'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -375,12 +411,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('600e600d600c600b600a60096008600760066005600460036002600160039d55'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x0e), 0x01)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79952)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_push12(self):
         '''
@@ -395,29 +433,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('6b445566778899aabbccddeeff600355')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('6b445566778899aabbccddeeff600355'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -428,12 +468,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('6b445566778899aabbccddeeff600355'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x03), 0x445566778899aabbccddeeff)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79994)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_dup14(self):
         '''
@@ -462,29 +504,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('600e600d600c600b600a6009600860076006600560046003600260018d600355')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('600e600d600c600b600a6009600860076006600560046003600260018d600355'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -495,12 +539,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('600e600d600c600b600a6009600860076006600560046003600260018d600355'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x03), 0x0e)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79952)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_swap8(self):
         '''
@@ -523,29 +569,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('6008600760066005600460036002600160039755')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('6008600760066005600460036002600160039755'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -556,12 +604,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('6008600760066005600460036002600160039755'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x08), 0x01)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79970)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_push15(self):
         '''
@@ -576,29 +626,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('6e112233445566778899aabbccddeeff600355')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('6e112233445566778899aabbccddeeff600355'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -609,12 +661,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('6e112233445566778899aabbccddeeff600355'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x03), 0x112233445566778899aabbccddeeff)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79994)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_dup12(self):
         '''
@@ -641,29 +695,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('600c600b600a6009600860076006600560046003600260018b600355')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('600c600b600a6009600860076006600560046003600260018b600355'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -674,12 +730,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('600c600b600a6009600860076006600560046003600260018b600355'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x03), 0x0c)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79958)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_push9(self):
         '''
@@ -694,29 +752,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('68778899aabbccddeeff600355')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('68778899aabbccddeeff600355'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -727,12 +787,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('68778899aabbccddeeff600355'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x03), 0x778899aabbccddeeff)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79994)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_push8(self):
         '''
@@ -747,29 +809,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('678899aabbccddeeff600355')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('678899aabbccddeeff600355'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -780,12 +844,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('678899aabbccddeeff600355'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x03), 0x8899aabbccddeeff)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79994)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_push16(self):
         '''
@@ -800,29 +866,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('6f10112233445566778899aabbccddeeff600355')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('6f10112233445566778899aabbccddeeff600355'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -833,12 +901,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('6f10112233445566778899aabbccddeeff600355'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x03), 0x10112233445566778899aabbccddeeff)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79994)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_dup6(self):
         '''
@@ -859,29 +929,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('60066005600460036002600185600355')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('60066005600460036002600185600355'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -892,12 +964,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('60066005600460036002600185600355'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x03), 0x06)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79976)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_swap2(self):
         '''
@@ -914,29 +988,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('6002600160039155')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('6002600160039155'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -947,12 +1023,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('6002600160039155'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x02), 0x01)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79988)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_push21(self):
         '''
@@ -967,29 +1045,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('74bbccddeeff00112233445566778899aabbccddeeff600355')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('74bbccddeeff00112233445566778899aabbccddeeff600355'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -1000,12 +1080,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('74bbccddeeff00112233445566778899aabbccddeeff600355'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x03), 0xbbccddeeff00112233445566778899aabbccddeeff)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79994)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_dup10(self):
         '''
@@ -1030,29 +1112,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('600a60096008600760066005600460036002600189600355')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('600a60096008600760066005600460036002600189600355'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -1063,12 +1147,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('600a60096008600760066005600460036002600189600355'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x03), 0x0a)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79964)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_push24(self):
         '''
@@ -1083,29 +1169,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('778899aabbccddeeff00112233445566778899aabbccddeeff600355')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('778899aabbccddeeff00112233445566778899aabbccddeeff600355'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -1116,12 +1204,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('778899aabbccddeeff00112233445566778899aabbccddeeff600355'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x03), 0x8899aabbccddeeff00112233445566778899aabbccddeeff)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79994)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_push25(self):
         '''
@@ -1136,29 +1226,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('78778899aabbccddeeff00112233445566778899aabbccddeeff600355')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('78778899aabbccddeeff00112233445566778899aabbccddeeff600355'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -1169,12 +1261,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('78778899aabbccddeeff00112233445566778899aabbccddeeff600355'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x03), 0x778899aabbccddeeff00112233445566778899aabbccddeeff)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79994)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_dup16(self):
         '''
@@ -1205,29 +1299,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('6010600f600e600d600c600b600a6009600860076006600560046003600260018f600355')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('6010600f600e600d600c600b600a6009600860076006600560046003600260018f600355'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -1238,12 +1334,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('6010600f600e600d600c600b600a6009600860076006600560046003600260018f600355'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x03), 0x10)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79946)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_swap2error(self):
         '''
@@ -1259,29 +1357,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('7f10112233445566778899aabbccddeeff00112233445566778899aabbccddeeff60039155')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('7f10112233445566778899aabbccddeeff00112233445566778899aabbccddeeff60039155'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #If test end in exception ceck it here
         self.assertTrue(result in ('THROW'))
 
@@ -1298,29 +1398,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('7699aabbccddeeff00112233445566778899aabbccddeeff600355')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('7699aabbccddeeff00112233445566778899aabbccddeeff600355'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -1331,12 +1433,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('7699aabbccddeeff00112233445566778899aabbccddeeff600355'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x03), 0x99aabbccddeeff00112233445566778899aabbccddeeff)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79994)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_push32AndSuicide(self):
         '''
@@ -1352,29 +1456,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('7fff10112233445566778899aabbccddeeff00112233445566778899aabbccddeeff600355')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('7fff10112233445566778899aabbccddeeff00112233445566778899aabbccddeeff600355'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xbbccddeeff00112233445566778899aabbccddee
         #check nonce
@@ -1383,12 +1489,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_balance(account_address), 100000000000000000000000)
         #check code
         self.assertEqual(world.get_code(account_address), unhexlify(''))
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 99997)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_push3(self):
         '''
@@ -1403,29 +1511,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('62ddeeff600355')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('62ddeeff600355'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -1436,12 +1546,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('62ddeeff600355'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x03), 0xddeeff)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79994)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_push10(self):
         '''
@@ -1456,29 +1568,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('6966778899aabbccddeeff600355')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('6966778899aabbccddeeff600355'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -1489,12 +1603,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('6966778899aabbccddeeff600355'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x03), 0x66778899aabbccddeeff)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79994)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_dup13(self):
         '''
@@ -1522,29 +1638,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('600d600c600b600a6009600860076006600560046003600260018c600355')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('600d600c600b600a6009600860076006600560046003600260018c600355'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -1555,12 +1673,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('600d600c600b600a6009600860076006600560046003600260018c600355'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x03), 0x0d)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79955)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_push6(self):
         '''
@@ -1575,29 +1695,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('65aabbccddeeff600355')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('65aabbccddeeff600355'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -1608,12 +1730,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('65aabbccddeeff600355'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x03), 0xaabbccddeeff)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79994)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_dup4(self):
         '''
@@ -1632,29 +1756,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('600460036002600183600355')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('600460036002600183600355'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -1665,12 +1791,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('600460036002600183600355'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x03), 0x04)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79982)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_push13(self):
         '''
@@ -1685,29 +1813,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('6c33445566778899aabbccddeeff600355')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('6c33445566778899aabbccddeeff600355'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -1718,12 +1848,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('6c33445566778899aabbccddeeff600355'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x03), 0x33445566778899aabbccddeeff)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79994)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_dup1(self):
         '''
@@ -1739,29 +1871,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('7f10112233445566778899aabbccddeeff00112233445566778899aabbccddeeff80600355')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('7f10112233445566778899aabbccddeeff00112233445566778899aabbccddeeff80600355'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -1772,12 +1906,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('7f10112233445566778899aabbccddeeff00112233445566778899aabbccddeeff80600355'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x03), 0x10112233445566778899aabbccddeeff00112233445566778899aabbccddeeff)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79991)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_push11(self):
         '''
@@ -1792,29 +1928,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('6a5566778899aabbccddeeff600355')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('6a5566778899aabbccddeeff600355'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -1825,12 +1963,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('6a5566778899aabbccddeeff600355'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x03), 0x5566778899aabbccddeeff)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79994)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_push19(self):
         '''
@@ -1845,29 +1985,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('72ddeeff00112233445566778899aabbccddeeff600355')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('72ddeeff00112233445566778899aabbccddeeff600355'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -1878,12 +2020,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('72ddeeff00112233445566778899aabbccddeeff600355'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x03), 0xddeeff00112233445566778899aabbccddeeff)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79994)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_push32Undefined3(self):
         '''
@@ -1896,29 +2040,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('7f')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('7f'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -1927,12 +2073,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_balance(account_address), 100000000000000000000000)
         #check code
         self.assertEqual(world.get_code(account_address), unhexlify('7f'))
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 99997)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_push30(self):
         '''
@@ -1947,29 +2095,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('7d2233445566778899aabbccddeeff00112233445566778899aabbccddeeff600355')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('7d2233445566778899aabbccddeeff00112233445566778899aabbccddeeff600355'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -1980,12 +2130,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('7d2233445566778899aabbccddeeff00112233445566778899aabbccddeeff600355'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x03), 0x2233445566778899aabbccddeeff00112233445566778899aabbccddeeff)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79994)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_swap16(self):
         '''
@@ -2016,29 +2168,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('6010600f600e600d600c600b600a60096008600760066005600460036002600160039f55')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('6010600f600e600d600c600b600a60096008600760066005600460036002600160039f55'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -2049,12 +2203,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('6010600f600e600d600c600b600a60096008600760066005600460036002600160039f55'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x10), 0x01)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79946)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_swap9(self):
         '''
@@ -2078,29 +2234,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('60096008600760066005600460036002600160039855')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('60096008600760066005600460036002600160039855'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -2111,12 +2269,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('60096008600760066005600460036002600160039855'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x09), 0x01)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79967)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_swap1(self):
         '''
@@ -2132,29 +2292,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('7f10112233445566778899aabbccddeeff00112233445566778899aabbccddeeff60039055')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('7f10112233445566778899aabbccddeeff00112233445566778899aabbccddeeff60039055'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -2165,12 +2327,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('7f10112233445566778899aabbccddeeff00112233445566778899aabbccddeeff60039055'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x10112233445566778899aabbccddeeff00112233445566778899aabbccddeeff), 0x03)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79991)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_push5(self):
         '''
@@ -2185,29 +2349,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('64bbccddeeff600355')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('64bbccddeeff600355'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -2218,12 +2384,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('64bbccddeeff600355'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x03), 0xbbccddeeff)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79994)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_swapjump1(self):
         '''
@@ -2259,29 +2427,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('600560026001600c575050005b9060016116575050005b035b0360005260016003611ff3')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('600560026001600c575050005b9060016116575050005b035b0360005260016003611ff3'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -2290,12 +2460,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_balance(account_address), 100000000000000000000000)
         #check code
         self.assertEqual(world.get_code(account_address), unhexlify('600560026001600c575050005b9060016116575050005b035b0360005260016003611ff3'))
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 99964)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_dup11(self):
         '''
@@ -2321,29 +2493,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('600b600a6009600860076006600560046003600260018a600355')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('600b600a6009600860076006600560046003600260018a600355'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -2354,12 +2528,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('600b600a6009600860076006600560046003600260018a600355'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x03), 0x0b)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79961)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_dup7(self):
         '''
@@ -2381,29 +2557,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('600760066005600460036002600186600355')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('600760066005600460036002600186600355'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -2414,12 +2592,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('600760066005600460036002600186600355'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x03), 0x07)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79973)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_swap13(self):
         '''
@@ -2447,29 +2627,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('600d600c600b600a60096008600760066005600460036002600160039c55')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('600d600c600b600a60096008600760066005600460036002600160039c55'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -2480,12 +2662,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('600d600c600b600a60096008600760066005600460036002600160039c55'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x0d), 0x01)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79955)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_dup5(self):
         '''
@@ -2505,29 +2689,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('6005600460036002600184600355')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('6005600460036002600184600355'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -2538,12 +2724,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('6005600460036002600184600355'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x03), 0x05)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79979)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_push32(self):
         '''
@@ -2558,29 +2746,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('7f10112233445566778899aabbccddeeff00112233445566778899aabbccddeeff600355')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('7f10112233445566778899aabbccddeeff00112233445566778899aabbccddeeff600355'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -2591,12 +2781,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('7f10112233445566778899aabbccddeeff00112233445566778899aabbccddeeff600355'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x03), 0x10112233445566778899aabbccddeeff00112233445566778899aabbccddeeff)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79994)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_push32FillUpInputWithZerosAtTheEnd(self):
         '''
@@ -2609,29 +2801,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('7fff10112233445566778899aabbccddeeff00112233445566778899aabbccdd')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('7fff10112233445566778899aabbccddeeff00112233445566778899aabbccdd'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -2640,12 +2834,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_balance(account_address), 100000000000000000000000)
         #check code
         self.assertEqual(world.get_code(account_address), unhexlify('7fff10112233445566778899aabbccddeeff00112233445566778899aabbccdd'))
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 99997)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_push14(self):
         '''
@@ -2660,29 +2856,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('6d2233445566778899aabbccddeeff600355')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('6d2233445566778899aabbccddeeff600355'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -2693,12 +2891,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('6d2233445566778899aabbccddeeff600355'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x03), 0x2233445566778899aabbccddeeff)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79994)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_push32Undefined2(self):
         '''
@@ -2713,29 +2913,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('7f0102030000000000000000000000000000000000000000000000000000000000600055')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('7f0102030000000000000000000000000000000000000000000000000000000000600055'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -2746,12 +2948,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('7f0102030000000000000000000000000000000000000000000000000000000000600055'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x00), 0x0102030000000000000000000000000000000000000000000000000000000000)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79994)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_push1_missingStack(self):
         '''
@@ -2764,29 +2968,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('60')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('60'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -2795,12 +3001,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_balance(account_address), 100000000000000000000000)
         #check code
         self.assertEqual(world.get_code(account_address), unhexlify('60'))
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 99997)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_push18(self):
         '''
@@ -2815,29 +3023,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('71eeff00112233445566778899aabbccddeeff600355')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('71eeff00112233445566778899aabbccddeeff600355'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -2848,12 +3058,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('71eeff00112233445566778899aabbccddeeff600355'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x03), 0xeeff00112233445566778899aabbccddeeff)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79994)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_swap12(self):
         '''
@@ -2880,29 +3092,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('600c600b600a60096008600760066005600460036002600160039b55')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('600c600b600a60096008600760066005600460036002600160039b55'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -2913,12 +3127,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('600c600b600a60096008600760066005600460036002600160039b55'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x0c), 0x01)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79958)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_swap6(self):
         '''
@@ -2939,29 +3155,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('60066005600460036002600160039555')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('60066005600460036002600160039555'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -2972,12 +3190,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('60066005600460036002600160039555'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x06), 0x01)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79976)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_push32Undefined(self):
         '''
@@ -2990,29 +3210,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('7f010203600055')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('7f010203600055'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -3021,12 +3243,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_balance(account_address), 100000000000000000000000)
         #check code
         self.assertEqual(world.get_code(account_address), unhexlify('7f010203600055'))
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 99997)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_dup2(self):
         '''
@@ -3043,29 +3267,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('6002600181600355')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('6002600181600355'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -3076,12 +3302,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('6002600181600355'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x03), 0x02)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79988)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_swap3(self):
         '''
@@ -3099,29 +3327,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('60036002600160039255')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('60036002600160039255'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -3132,12 +3362,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('60036002600160039255'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x03), 0x01)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79985)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_dup2error(self):
         '''
@@ -3153,29 +3385,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('7f10112233445566778899aabbccddeeff00112233445566778899aabbccddeeff81600355')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('7f10112233445566778899aabbccddeeff00112233445566778899aabbccddeeff81600355'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #If test end in exception ceck it here
         self.assertTrue(result in ('THROW'))
 
@@ -3196,29 +3430,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('600460036002600160039355')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('600460036002600160039355'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -3229,12 +3465,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('600460036002600160039355'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x04), 0x01)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79982)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_push31(self):
         '''
@@ -3249,29 +3487,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('7e112233445566778899aabbccddeeff00112233445566778899aabbccddeeff600355')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('7e112233445566778899aabbccddeeff00112233445566778899aabbccddeeff600355'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -3282,12 +3522,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('7e112233445566778899aabbccddeeff00112233445566778899aabbccddeeff600355'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x03), 0x112233445566778899aabbccddeeff00112233445566778899aabbccddeeff)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79994)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_swap10(self):
         '''
@@ -3312,29 +3554,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('600a60096008600760066005600460036002600160039955')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('600a60096008600760066005600460036002600160039955'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -3345,12 +3589,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('600a60096008600760066005600460036002600160039955'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x0a), 0x01)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79964)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_push7(self):
         '''
@@ -3365,29 +3611,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('6699aabbccddeeff600355')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('6699aabbccddeeff600355'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -3398,12 +3646,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('6699aabbccddeeff600355'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x03), 0x99aabbccddeeff)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79994)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_dup9(self):
         '''
@@ -3427,29 +3677,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('60096008600760066005600460036002600188600355')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('60096008600760066005600460036002600188600355'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -3460,12 +3712,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('60096008600760066005600460036002600188600355'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x03), 0x09)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79967)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_push2(self):
         '''
@@ -3480,29 +3734,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('61eeff600355')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('61eeff600355'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -3513,12 +3769,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('61eeff600355'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x03), 0xeeff)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79994)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_push1(self):
         '''
@@ -3533,29 +3791,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('60ff600355')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('60ff600355'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -3566,12 +3826,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('60ff600355'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x03), 0xff)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79994)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_push29(self):
         '''
@@ -3586,29 +3848,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('7c33445566778899aabbccddeeff00112233445566778899aabbccddeeff600355')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('7c33445566778899aabbccddeeff00112233445566778899aabbccddeeff600355'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -3619,12 +3883,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('7c33445566778899aabbccddeeff00112233445566778899aabbccddeeff600355'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x03), 0x33445566778899aabbccddeeff00112233445566778899aabbccddeeff)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79994)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_push4(self):
         '''
@@ -3639,29 +3905,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('63ccddeeff600355')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('63ccddeeff600355'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -3672,12 +3940,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('63ccddeeff600355'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x03), 0xccddeeff)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79994)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_push33(self):
         '''
@@ -3721,29 +3991,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('60656107d26204a0c763026921f4640bc5588eb165372d0f1dca6e661ba1d901961c71670c55f7bc23038e3868056bc75e2d630fffff69021e19e0c9bab24000016a085d1c6e8050f0ea1c71bd6b0688be36543f3c36e638e37a6c03d41f73d55d0d482ae55555376dc76810d0fe03c91964d31c71c6f46e615dd0360c07d931663b14e38e38b16f2da3f99955a3adcf27ebb1caaaaaaa6e7014ccba6a8bb1ed35bd86bf065c71c71c2b7109491c5d4781b79c9009de6bfb8e38e38de8720414a0f6fdec81304d4c563e740bffffffffa573118427b3b4a05bc8a8a4de8459868000000000017406eb15e7331e727940d4ac54b7cdca1c71c71c71bd750567a91c9fefc96ebaa626a22f98c5e638e38e38e37a76032abd16c5b68006e15d5aa307e383f4e55555555555377701a6427bdc4f0d58eab5f48a3ec67f64e21c71c71c71c6f478080dd0a0c9b9ff2c2a0c740b06853a0a980ee38e38e38e38b17903c679cb5e8f2f9cb3b5d6652b0e7334f746faaaaaaaaaaaaa6e7a01b873815917ebb2bf3b890a1af495d6235bae3c71c71c71c71c2b7b07ae4cca96e1a55dfa49c85ad3c3e60e426b92fb8e38e38e38e38de87c036018bf074e292bcc7d6c8bea0f9699443046178bffffffffffffffa57d0e7d34c64a9c85d4460dbbca87196b61618a4bd2168000000000000000017e05b901f48a5b994d6572502bc4ea43140486666416aa1c71c71c71c71c71bd7f047889870c178fc477414ea231d70467a388fffe31b4e638e38e38e38e38e37a')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('60656107d26204a0c763026921f4640bc5588eb165372d0f1dca6e661ba1d901961c71670c55f7bc23038e3868056bc75e2d630fffff69021e19e0c9bab24000016a085d1c6e8050f0ea1c71bd6b0688be36543f3c36e638e37a6c03d41f73d55d0d482ae55555376dc76810d0fe03c91964d31c71c6f46e615dd0360c07d931663b14e38e38b16f2da3f99955a3adcf27ebb1caaaaaaa6e7014ccba6a8bb1ed35bd86bf065c71c71c2b7109491c5d4781b79c9009de6bfb8e38e38de8720414a0f6fdec81304d4c563e740bffffffffa573118427b3b4a05bc8a8a4de8459868000000000017406eb15e7331e727940d4ac54b7cdca1c71c71c71bd750567a91c9fefc96ebaa626a22f98c5e638e38e38e37a76032abd16c5b68006e15d5aa307e383f4e55555555555377701a6427bdc4f0d58eab5f48a3ec67f64e21c71c71c71c6f478080dd0a0c9b9ff2c2a0c740b06853a0a980ee38e38e38e38b17903c679cb5e8f2f9cb3b5d6652b0e7334f746faaaaaaaaaaaaa6e7a01b873815917ebb2bf3b890a1af495d6235bae3c71c71c71c71c2b7b07ae4cca96e1a55dfa49c85ad3c3e60e426b92fb8e38e38e38e38de87c036018bf074e292bcc7d6c8bea0f9699443046178bffffffffffffffa57d0e7d34c64a9c85d4460dbbca87196b61618a4bd2168000000000000000017e05b901f48a5b994d6572502bc4ea43140486666416aa1c71c71c71c71c71bd7f047889870c178fc477414ea231d70467a388fffe31b4e638e38e38e38e38e37a'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 32
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #If test end in exception ceck it here
         self.assertTrue(result in ('THROW'))
 
@@ -3768,29 +4040,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('6008600760066005600460036002600187600355')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('6008600760066005600460036002600187600355'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -3801,12 +4075,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('6008600760066005600460036002600187600355'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x03), 0x08)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79970)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_push26(self):
         '''
@@ -3821,29 +4097,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('7966778899aabbccddeeff00112233445566778899aabbccddeeff600355')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('7966778899aabbccddeeff00112233445566778899aabbccddeeff600355'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -3854,12 +4132,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('7966778899aabbccddeeff00112233445566778899aabbccddeeff600355'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x03), 0x66778899aabbccddeeff00112233445566778899aabbccddeeff)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79994)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_push27(self):
         '''
@@ -3874,29 +4154,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('7a5566778899aabbccddeeff00112233445566778899aabbccddeeff600355')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('7a5566778899aabbccddeeff00112233445566778899aabbccddeeff600355'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -3907,12 +4189,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('7a5566778899aabbccddeeff00112233445566778899aabbccddeeff600355'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x03), 0x5566778899aabbccddeeff00112233445566778899aabbccddeeff)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79994)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_dup15(self):
         '''
@@ -3942,29 +4226,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('600f600e600d600c600b600a6009600860076006600560046003600260018e600355')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('600f600e600d600c600b600a6009600860076006600560046003600260018e600355'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -3975,12 +4261,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('600f600e600d600c600b600a6009600860076006600560046003600260018e600355'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x03), 0x0f)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79949)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_swap5(self):
         '''
@@ -4000,29 +4288,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('6005600460036002600160039455')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('6005600460036002600160039455'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -4033,12 +4323,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('6005600460036002600160039455'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x05), 0x01)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79979)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_push17(self):
         '''
@@ -4053,29 +4345,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('70ff00112233445566778899aabbccddeeff600355')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('70ff00112233445566778899aabbccddeeff600355'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -4086,12 +4380,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('70ff00112233445566778899aabbccddeeff600355'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x03), 0xff00112233445566778899aabbccddeeff)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79994)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_push22(self):
         '''
@@ -4106,29 +4402,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('75aabbccddeeff00112233445566778899aabbccddeeff600355')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('75aabbccddeeff00112233445566778899aabbccddeeff600355'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -4139,12 +4437,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('75aabbccddeeff00112233445566778899aabbccddeeff600355'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x03), 0xaabbccddeeff00112233445566778899aabbccddeeff)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79994)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
     def test_push28(self):
         '''
@@ -4159,29 +4459,31 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
     
+        bytecode = unhexlify('7b445566778899aabbccddeeff00112233445566778899aabbccddeeff600355')
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
-                             code=unhexlify('7b445566778899aabbccddeeff00112233445566778899aabbccddeeff600355'),
+                             code=bytecode,
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
 
         result = None
-        returndata = ''
+        returndata = b''
         try:
             while True:
                 new_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
-                returndata = e.data
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
         account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce
@@ -4192,12 +4494,14 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         self.assertEqual(world.get_code(account_address), unhexlify('7b445566778899aabbccddeeff00112233445566778899aabbccddeeff600355'))
         #check storage
         self.assertEqual(world.get_storage_data(account_address, 0x03), 0x445566778899aabbccddeeff00112233445566778899aabbccddeeff)
+        #check outs
+        self.assertEqual(returndata, unhexlify(''))
+        #check logs
+        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
         # test spent gas
         self.assertEqual(new_vm.gas, 79994)
-        #check callcreates
-        #check refund
-        #check logs
-        
 
 if __name__ == '__main__':
     unittest.main()

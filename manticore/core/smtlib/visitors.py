@@ -560,7 +560,7 @@ def to_constant(expression):
                     break
                 ba.append(value_i.value)
             else:
-                return ba
+                return bytes(ba)
     return value
 
 
