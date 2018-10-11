@@ -286,12 +286,21 @@ class ABI(object):
         return buf
 
     @staticmethod
-    def _readBE(data, nbytes, padding=True):
+    def _readBE(data, nbytes, padding=True, offset=0):
+        """
+
+        :param data:
+        :param nbytes:
+        :param padding: If True, treat data as padded at the beginning to multiple of 32
+        :param offset:
+        :return:
+        """
+        pos = offset
+
         if padding:
-            pos = 32 - nbytes
+            pos += 32 - nbytes
             size = 32
         else:
-            pos = 0
             size = nbytes
 
         values = []
@@ -304,7 +313,7 @@ class ABI(object):
         return Operators.CONCAT(nbytes * 8, *values)
 
     @staticmethod
-    def _deserialize_uint(data, nbytes=32, padding=0):
+    def _deserialize_uint(data, nbytes=32, padding=0, offset=0):
         """
         Read a `nbytes` bytes long big endian unsigned integer from `data` starting at `offset`
 
@@ -313,7 +322,7 @@ class ABI(object):
         :rtype: int or Expression
         """
         assert isinstance(data, (bytearray, Array))
-        value = ABI._readBE(data, nbytes)
+        value = ABI._readBE(data, nbytes, offset=offset)
         value = Operators.ZEXTEND(value, (nbytes + padding) * 8)
         return value
 
