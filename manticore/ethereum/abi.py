@@ -127,8 +127,12 @@ class ABI(object):
         Serializes the value and pads to multiple of 32 bytes
 
         :param value:
-        :type value: bytearray or Array
+        :type value: str or bytearray or Array
         """
+        if isinstance(value, str):  # DECISION: instead of implementing this leniency, we could have changed the g
+            # client to pass a bytes as an argument to solidity_create_contract(..., args=(b'qwe')). which is better?
+            # inclined so say it's ok to be lenient here.
+            value = value.encode()
         return value + bytearray(b'\x00' * (32 - len(value)))
 
     @staticmethod
