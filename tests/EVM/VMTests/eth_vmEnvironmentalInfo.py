@@ -61,13 +61,14 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         value = 1000000000000000000
         gas = 100000000000
 
-        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
 
         result = None
         returndata = b''
         try:
             while True:
-                new_vm.execute()
+                world.current_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
@@ -75,13 +76,10 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
-        account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        #check nonce
-        self.assertEqual(world.get_nonce(account_address), 0)
-        #check balance
-        self.assertEqual(world.get_balance(account_address), 1000000000000000000)
-        #check code
-        self.assertEqual(world.get_code(account_address), unhexlify('60006001600037600051600055596000f3'))
+        #check nonce, balance, code
+        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
+        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
+        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60006001600037600051600055596000f3'))
         #check outs
         self.assertEqual(returndata, unhexlify('0000000000000000000000000000000000000000000000000000000000000000'))
         #check logs
@@ -89,7 +87,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
         # test spent gas
-        self.assertEqual(new_vm.gas, 99999994971)
+        self.assertEqual(world.current_vm.gas, 99999994971)
 
     def test_calldatacopy1_return(self):
         '''
@@ -124,13 +122,14 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         value = 1000000000000000000
         gas = 100000000000
 
-        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
 
         result = None
         returndata = b''
         try:
             while True:
-                new_vm.execute()
+                world.current_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
@@ -138,15 +137,12 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
-        account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        #check nonce
-        self.assertEqual(world.get_nonce(account_address), 0)
-        #check balance
-        self.assertEqual(world.get_balance(account_address), 1000000000000000000)
-        #check code
-        self.assertEqual(world.get_code(account_address), unhexlify('60016001600037600051600055596000f3'))
+        #check nonce, balance, code
+        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
+        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
+        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60016001600037600051600055596000f3'))
         #check storage
-        self.assertEqual(world.get_storage_data(account_address, 0x00), 0x3400000000000000000000000000000000000000000000000000000000000000)
+        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x3400000000000000000000000000000000000000000000000000000000000000)
         #check outs
         self.assertEqual(returndata, unhexlify('3400000000000000000000000000000000000000000000000000000000000000'))
         #check logs
@@ -154,7 +150,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
         # test spent gas
-        self.assertEqual(new_vm.gas, 99999979968)
+        self.assertEqual(world.current_vm.gas, 99999979968)
 
     def test_calldatacopy0_return(self):
         '''
@@ -189,13 +185,14 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         value = 1000000000000000000
         gas = 100000000000
 
-        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
 
         result = None
         returndata = b''
         try:
             while True:
-                new_vm.execute()
+                world.current_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
@@ -203,15 +200,12 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
-        account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        #check nonce
-        self.assertEqual(world.get_nonce(account_address), 0)
-        #check balance
-        self.assertEqual(world.get_balance(account_address), 1000000000000000000)
-        #check code
-        self.assertEqual(world.get_code(account_address), unhexlify('60026001600037600051600055596000f3'))
+        #check nonce, balance, code
+        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
+        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
+        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60026001600037600051600055596000f3'))
         #check storage
-        self.assertEqual(world.get_storage_data(account_address, 0x00), 0x3456000000000000000000000000000000000000000000000000000000000000)
+        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x3456000000000000000000000000000000000000000000000000000000000000)
         #check outs
         self.assertEqual(returndata, unhexlify('3456000000000000000000000000000000000000000000000000000000000000'))
         #check logs
@@ -219,7 +213,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
         # test spent gas
-        self.assertEqual(new_vm.gas, 99999979968)
+        self.assertEqual(world.current_vm.gas, 99999979968)
 
     def test_calldatacopy0(self):
         '''
@@ -251,13 +245,14 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         value = 1000000000000000000
         gas = 100000000000
 
-        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
 
         result = None
         returndata = b''
         try:
             while True:
-                new_vm.execute()
+                world.current_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
@@ -265,15 +260,12 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
-        account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        #check nonce
-        self.assertEqual(world.get_nonce(account_address), 0)
-        #check balance
-        self.assertEqual(world.get_balance(account_address), 100000000000000000000000)
-        #check code
-        self.assertEqual(world.get_code(account_address), unhexlify('60026001600037600051600055'))
+        #check nonce, balance, code
+        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
+        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
+        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60026001600037600051600055'))
         #check storage
-        self.assertEqual(world.get_storage_data(account_address, 0x00), 0x3456000000000000000000000000000000000000000000000000000000000000)
+        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x3456000000000000000000000000000000000000000000000000000000000000)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -281,7 +273,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
         # test spent gas
-        self.assertEqual(new_vm.gas, 99999979973)
+        self.assertEqual(world.current_vm.gas, 99999979973)
 
     def test_calldataload1(self):
         '''
@@ -309,13 +301,14 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         value = 1000000000000000000
         gas = 100000000000
 
-        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
 
         result = None
         returndata = b''
         try:
             while True:
-                new_vm.execute()
+                world.current_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
@@ -323,15 +316,12 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
-        account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        #check nonce
-        self.assertEqual(world.get_nonce(account_address), 0)
-        #check balance
-        self.assertEqual(world.get_balance(account_address), 100000000000000000000000)
-        #check code
-        self.assertEqual(world.get_code(account_address), unhexlify('600135600055'))
+        #check nonce, balance, code
+        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
+        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
+        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600135600055'))
         #check storage
-        self.assertEqual(world.get_storage_data(account_address, 0x00), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff23)
+        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff23)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -339,7 +329,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
         # test spent gas
-        self.assertEqual(new_vm.gas, 99999979991)
+        self.assertEqual(world.current_vm.gas, 99999979991)
 
     def test_calldatacopy_DataIndexTooHigh2_return(self):
         '''
@@ -374,13 +364,14 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         value = 1000000000000000000
         gas = 100000000000
 
-        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
 
         result = None
         returndata = b''
         try:
             while True:
-                new_vm.execute()
+                world.current_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
@@ -388,13 +379,10 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
-        account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        #check nonce
-        self.assertEqual(world.get_nonce(account_address), 0)
-        #check balance
-        self.assertEqual(world.get_balance(account_address), 1000000000000000000)
-        #check code
-        self.assertEqual(world.get_code(account_address), unhexlify('60097ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffa600037600051600055596000f3'))
+        #check nonce, balance, code
+        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
+        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
+        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60097ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffa600037600051600055596000f3'))
         #check outs
         self.assertEqual(returndata, unhexlify('0000000000000000000000000000000000000000000000000000000000000000'))
         #check logs
@@ -402,7 +390,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
         # test spent gas
-        self.assertEqual(new_vm.gas, 99999994968)
+        self.assertEqual(world.current_vm.gas, 99999994968)
 
     def test_calldatacopy_sec(self):
         '''
@@ -448,13 +436,14 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         value = 1000000000000000000
         gas = 100000000000
 
-        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
 
         result = None
         returndata = b''
         try:
             while True:
-                new_vm.execute()
+                world.current_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
@@ -462,15 +451,12 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
-        account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        #check nonce
-        self.assertEqual(world.get_nonce(account_address), 0)
-        #check balance
-        self.assertEqual(world.get_balance(account_address), 1000000000000000000)
-        #check code
-        self.assertEqual(world.get_code(account_address), unhexlify('6005565b005b6042601f536101036000601f3760005180606014600357640badc0ffee60ff55'))
+        #check nonce, balance, code
+        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
+        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
+        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6005565b005b6042601f536101036000601f3760005180606014600357640badc0ffee60ff55'))
         #check storage
-        self.assertEqual(world.get_storage_data(account_address, 0xff), 0x0badc0ffee)
+        self.assertEqual(to_constant(world.get_storage_data(account_address, 0xff)), 0x0badc0ffee)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -478,7 +464,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
         # test spent gas
-        self.assertEqual(new_vm.gas, 99999979876)
+        self.assertEqual(world.current_vm.gas, 99999979876)
 
     def test_calldatacopy2(self):
         '''
@@ -510,13 +496,14 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         value = 1000000000000000000
         gas = 100000000000
 
-        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
 
         result = None
         returndata = b''
         try:
             while True:
-                new_vm.execute()
+                world.current_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
@@ -524,13 +511,10 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
-        account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        #check nonce
-        self.assertEqual(world.get_nonce(account_address), 0)
-        #check balance
-        self.assertEqual(world.get_balance(account_address), 100000000000000000000000)
-        #check code
-        self.assertEqual(world.get_code(account_address), unhexlify('60006001600037600051600055'))
+        #check nonce, balance, code
+        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
+        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
+        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60006001600037600051600055'))
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -538,7 +522,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
         # test spent gas
-        self.assertEqual(new_vm.gas, 99999994976)
+        self.assertEqual(world.current_vm.gas, 99999994976)
 
     def test_codesize(self):
         '''
@@ -565,13 +549,14 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         value = 1000000000000000000
         gas = 100000000000
 
-        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
 
         result = None
         returndata = b''
         try:
             while True:
-                new_vm.execute()
+                world.current_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
@@ -579,15 +564,12 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
-        account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        #check nonce
-        self.assertEqual(world.get_nonce(account_address), 0)
-        #check balance
-        self.assertEqual(world.get_balance(account_address), 100000000000000000000000)
-        #check code
-        self.assertEqual(world.get_code(account_address), unhexlify('38600055'))
+        #check nonce, balance, code
+        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
+        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
+        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('38600055'))
         #check storage
-        self.assertEqual(world.get_storage_data(account_address, 0x00), 0x04)
+        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x04)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -595,7 +577,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
         # test spent gas
-        self.assertEqual(new_vm.gas, 99999979995)
+        self.assertEqual(world.current_vm.gas, 99999979995)
 
     def test_calldataloadSizeTooHighPartial(self):
         '''
@@ -623,13 +605,14 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         value = 1000000000000000000
         gas = 100000000000
 
-        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
 
         result = None
         returndata = b''
         try:
             while True:
-                new_vm.execute()
+                world.current_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
@@ -637,15 +620,12 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
-        account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        #check nonce
-        self.assertEqual(world.get_nonce(account_address), 0)
-        #check balance
-        self.assertEqual(world.get_balance(account_address), 100000000000000000000000)
-        #check code
-        self.assertEqual(world.get_code(account_address), unhexlify('600a35600055'))
+        #check nonce, balance, code
+        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
+        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
+        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600a35600055'))
         #check storage
-        self.assertEqual(world.get_storage_data(account_address, 0x00), 0x240000000000000000000000)
+        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x240000000000000000000000)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -653,7 +633,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
         # test spent gas
-        self.assertEqual(new_vm.gas, 99999979991)
+        self.assertEqual(world.current_vm.gas, 99999979991)
 
     def test_calldataload2(self):
         '''
@@ -681,13 +661,14 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         value = 1000000000000000000
         gas = 100000000000
 
-        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
 
         result = None
         returndata = b''
         try:
             while True:
-                new_vm.execute()
+                world.current_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
@@ -695,15 +676,12 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
-        account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        #check nonce
-        self.assertEqual(world.get_nonce(account_address), 0)
-        #check balance
-        self.assertEqual(world.get_balance(account_address), 100000000000000000000000)
-        #check code
-        self.assertEqual(world.get_code(account_address), unhexlify('600535600055'))
+        #check nonce, balance, code
+        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
+        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
+        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600535600055'))
         #check storage
-        self.assertEqual(world.get_storage_data(account_address, 0x00), 0xbcdef00000000000000000000000000000000000000000000000000024000000)
+        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0xbcdef00000000000000000000000000000000000000000000000000024000000)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -711,7 +689,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
         # test spent gas
-        self.assertEqual(new_vm.gas, 99999979991)
+        self.assertEqual(world.current_vm.gas, 99999979991)
 
     def test_calldatacopyUnderFlow(self):
         '''
@@ -738,13 +716,14 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         value = 1000000000000000000
         gas = 100000000000
 
-        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
 
         result = None
         returndata = b''
         try:
             while True:
-                new_vm.execute()
+                world.current_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
@@ -787,13 +766,14 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         value = 1000000000000000000
         gas = 100000000000
 
-        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
 
         result = None
         returndata = b''
         try:
             while True:
-                new_vm.execute()
+                world.current_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
@@ -801,13 +781,10 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
-        account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        #check nonce
-        self.assertEqual(world.get_nonce(account_address), 0)
-        #check balance
-        self.assertEqual(world.get_balance(account_address), 1000000000000000000)
-        #check code
-        self.assertEqual(world.get_code(account_address), unhexlify('60006000600037600051600055596000f3'))
+        #check nonce, balance, code
+        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
+        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
+        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60006000600037600051600055596000f3'))
         #check outs
         self.assertEqual(returndata, unhexlify('0000000000000000000000000000000000000000000000000000000000000000'))
         #check logs
@@ -815,7 +792,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
         # test spent gas
-        self.assertEqual(new_vm.gas, 99999994971)
+        self.assertEqual(world.current_vm.gas, 99999994971)
 
     def test_calldatacopy_DataIndexTooHigh(self):
         '''
@@ -847,13 +824,14 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         value = 1000000000000000000
         gas = 100000000000
 
-        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
 
         result = None
         returndata = b''
         try:
             while True:
-                new_vm.execute()
+                world.current_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
@@ -861,13 +839,10 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
-        account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        #check nonce
-        self.assertEqual(world.get_nonce(account_address), 0)
-        #check balance
-        self.assertEqual(world.get_balance(account_address), 100000000000000000000000)
-        #check code
-        self.assertEqual(world.get_code(account_address), unhexlify('60ff7ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffa600037600051600055'))
+        #check nonce, balance, code
+        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
+        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
+        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60ff7ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffa600037600051600055'))
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -875,7 +850,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
         # test spent gas
-        self.assertEqual(new_vm.gas, 99999994931)
+        self.assertEqual(world.current_vm.gas, 99999994931)
 
     def test_origin(self):
         '''
@@ -902,13 +877,14 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         value = 1000000000000000000
         gas = 100000000000
 
-        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
 
         result = None
         returndata = b''
         try:
             while True:
-                new_vm.execute()
+                world.current_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
@@ -916,15 +892,12 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
-        account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        #check nonce
-        self.assertEqual(world.get_nonce(account_address), 0)
-        #check balance
-        self.assertEqual(world.get_balance(account_address), 100000000000000000000000)
-        #check code
-        self.assertEqual(world.get_code(account_address), unhexlify('32600055'))
+        #check nonce, balance, code
+        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
+        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
+        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('32600055'))
         #check storage
-        self.assertEqual(world.get_storage_data(account_address, 0x00), 0xcd1722f3947def4cf144679da39c4c32bdc35681)
+        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0xcd1722f3947def4cf144679da39c4c32bdc35681)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -932,7 +905,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
         # test spent gas
-        self.assertEqual(new_vm.gas, 99999979995)
+        self.assertEqual(world.current_vm.gas, 99999979995)
 
     def test_codecopy0(self):
         '''
@@ -964,13 +937,14 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         value = 1000000000000000000
         gas = 100000000000
 
-        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
 
         result = None
         returndata = b''
         try:
             while True:
-                new_vm.execute()
+                world.current_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
@@ -978,15 +952,12 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
-        account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        #check nonce
-        self.assertEqual(world.get_nonce(account_address), 0)
-        #check balance
-        self.assertEqual(world.get_balance(account_address), 100000000000000000000000)
-        #check code
-        self.assertEqual(world.get_code(account_address), unhexlify('60056000600039600051600055'))
+        #check nonce, balance, code
+        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
+        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
+        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60056000600039600051600055'))
         #check storage
-        self.assertEqual(world.get_storage_data(account_address, 0x00), 0x6005600060000000000000000000000000000000000000000000000000000000)
+        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x6005600060000000000000000000000000000000000000000000000000000000)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -994,7 +965,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
         # test spent gas
-        self.assertEqual(new_vm.gas, 99999979973)
+        self.assertEqual(world.current_vm.gas, 99999979973)
 
     def test_codecopyZeroMemExpansion(self):
         '''
@@ -1026,13 +997,14 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         value = 1000000000000000000
         gas = 100000000000
 
-        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
 
         result = None
         returndata = b''
         try:
             while True:
-                new_vm.execute()
+                world.current_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
@@ -1040,13 +1012,10 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
-        account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        #check nonce
-        self.assertEqual(world.get_nonce(account_address), 0)
-        #check balance
-        self.assertEqual(world.get_balance(account_address), 100000000000000000000000)
-        #check code
-        self.assertEqual(world.get_code(account_address), unhexlify('60006000600039600051600055'))
+        #check nonce, balance, code
+        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
+        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
+        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60006000600039600051600055'))
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -1054,7 +1023,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
         # test spent gas
-        self.assertEqual(new_vm.gas, 99999994976)
+        self.assertEqual(world.current_vm.gas, 99999994976)
 
     def test_calldatacopy_DataIndexTooHigh2(self):
         '''
@@ -1086,13 +1055,14 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         value = 1000000000000000000
         gas = 100000000000
 
-        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
 
         result = None
         returndata = b''
         try:
             while True:
-                new_vm.execute()
+                world.current_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
@@ -1100,13 +1070,10 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
-        account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        #check nonce
-        self.assertEqual(world.get_nonce(account_address), 0)
-        #check balance
-        self.assertEqual(world.get_balance(account_address), 100000000000000000000000)
-        #check code
-        self.assertEqual(world.get_code(account_address), unhexlify('60097ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffa600037600051600055'))
+        #check nonce, balance, code
+        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
+        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
+        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60097ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffa600037600051600055'))
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -1114,7 +1081,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
         # test spent gas
-        self.assertEqual(new_vm.gas, 99999994973)
+        self.assertEqual(world.current_vm.gas, 99999994973)
 
     def test_calldatasize1(self):
         '''
@@ -1141,13 +1108,14 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         value = 1000000000000000000
         gas = 100000000000
 
-        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
 
         result = None
         returndata = b''
         try:
             while True:
-                new_vm.execute()
+                world.current_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
@@ -1155,15 +1123,12 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
-        account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        #check nonce
-        self.assertEqual(world.get_nonce(account_address), 0)
-        #check balance
-        self.assertEqual(world.get_balance(account_address), 100000000000000000000000)
-        #check code
-        self.assertEqual(world.get_code(account_address), unhexlify('36600055'))
+        #check nonce, balance, code
+        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
+        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
+        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('36600055'))
         #check storage
-        self.assertEqual(world.get_storage_data(account_address, 0x00), 0x21)
+        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x21)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -1171,7 +1136,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
         # test spent gas
-        self.assertEqual(new_vm.gas, 99999979995)
+        self.assertEqual(world.current_vm.gas, 99999979995)
 
     def test_codecopy_DataIndexTooHigh(self):
         '''
@@ -1203,13 +1168,14 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         value = 1000000000000000000
         gas = 100000000000
 
-        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
 
         result = None
         returndata = b''
         try:
             while True:
-                new_vm.execute()
+                world.current_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
@@ -1217,13 +1183,10 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
-        account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        #check nonce
-        self.assertEqual(world.get_nonce(account_address), 0)
-        #check balance
-        self.assertEqual(world.get_balance(account_address), 100000000000000000000000)
-        #check code
-        self.assertEqual(world.get_code(account_address), unhexlify('60087ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffa600039600051600055'))
+        #check nonce, balance, code
+        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
+        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
+        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60087ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffa600039600051600055'))
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -1231,7 +1194,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
         # test spent gas
-        self.assertEqual(new_vm.gas, 99999994973)
+        self.assertEqual(world.current_vm.gas, 99999994973)
 
     def test_calldatasize2(self):
         '''
@@ -1258,13 +1221,14 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         value = 1000000000000000000
         gas = 100000000000
 
-        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
 
         result = None
         returndata = b''
         try:
             while True:
-                new_vm.execute()
+                world.current_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
@@ -1272,15 +1236,12 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
-        account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        #check nonce
-        self.assertEqual(world.get_nonce(account_address), 0)
-        #check balance
-        self.assertEqual(world.get_balance(account_address), 100000000000000000000000)
-        #check code
-        self.assertEqual(world.get_code(account_address), unhexlify('36600055'))
+        #check nonce, balance, code
+        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
+        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
+        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('36600055'))
         #check storage
-        self.assertEqual(world.get_storage_data(account_address, 0x00), 0x21)
+        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x21)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -1288,7 +1249,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
         # test spent gas
-        self.assertEqual(new_vm.gas, 99999979995)
+        self.assertEqual(world.current_vm.gas, 99999979995)
 
     def test_calldataloadSizeTooHigh(self):
         '''
@@ -1316,13 +1277,14 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         value = 1000000000000000000
         gas = 100000000000
 
-        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
 
         result = None
         returndata = b''
         try:
             while True:
-                new_vm.execute()
+                world.current_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
@@ -1330,13 +1292,10 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
-        account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        #check nonce
-        self.assertEqual(world.get_nonce(account_address), 0)
-        #check balance
-        self.assertEqual(world.get_balance(account_address), 100000000000000000000000)
-        #check code
-        self.assertEqual(world.get_code(account_address), unhexlify('7ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffa35600055'))
+        #check nonce, balance, code
+        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
+        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
+        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('7ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffa35600055'))
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -1344,7 +1303,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
         # test spent gas
-        self.assertEqual(new_vm.gas, 99999994991)
+        self.assertEqual(world.current_vm.gas, 99999994991)
 
     def test_address1(self):
         '''
@@ -1371,13 +1330,14 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         value = 1000000000000000000
         gas = 100000000000
 
-        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
 
         result = None
         returndata = b''
         try:
             while True:
-                new_vm.execute()
+                world.current_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
@@ -1385,15 +1345,12 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
-        account_address = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        #check nonce
-        self.assertEqual(world.get_nonce(account_address), 0)
-        #check balance
-        self.assertEqual(world.get_balance(account_address), 100000000000000000000000)
-        #check code
-        self.assertEqual(world.get_code(account_address), unhexlify('30600055'))
+        #check nonce, balance, code
+        self.assertEqual(world.get_nonce(0xcd1722f3947def4cf144679da39c4c32bdc35681), 0)
+        self.assertEqual(to_constant(world.get_balance(0xcd1722f3947def4cf144679da39c4c32bdc35681)), 100000000000000000000000)
+        self.assertEqual(world.get_code(0xcd1722f3947def4cf144679da39c4c32bdc35681), unhexlify('30600055'))
         #check storage
-        self.assertEqual(world.get_storage_data(account_address, 0x00), 0xcd1722f3947def4cf144679da39c4c32bdc35681)
+        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0xcd1722f3947def4cf144679da39c4c32bdc35681)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -1401,7 +1358,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
         # test spent gas
-        self.assertEqual(new_vm.gas, 99999979995)
+        self.assertEqual(world.current_vm.gas, 99999979995)
 
     def test_gasprice(self):
         '''
@@ -1428,13 +1385,14 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         value = 1000000000000000000
         gas = 100000000000
 
-        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
 
         result = None
         returndata = b''
         try:
             while True:
-                new_vm.execute()
+                world.current_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
@@ -1442,15 +1400,12 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
-        account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        #check nonce
-        self.assertEqual(world.get_nonce(account_address), 0)
-        #check balance
-        self.assertEqual(world.get_balance(account_address), 100000000000000000000000)
-        #check code
-        self.assertEqual(world.get_code(account_address), unhexlify('3a600055'))
+        #check nonce, balance, code
+        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
+        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
+        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('3a600055'))
         #check storage
-        self.assertEqual(world.get_storage_data(account_address, 0x00), 0x075bcd15)
+        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x075bcd15)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -1458,7 +1413,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
         # test spent gas
-        self.assertEqual(new_vm.gas, 99999979995)
+        self.assertEqual(world.current_vm.gas, 99999979995)
 
     def test_callvalue(self):
         '''
@@ -1485,13 +1440,14 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         value = 1000000000000000000
         gas = 100000000000
 
-        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
 
         result = None
         returndata = b''
         try:
             while True:
-                new_vm.execute()
+                world.current_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
@@ -1499,15 +1455,12 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
-        account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        #check nonce
-        self.assertEqual(world.get_nonce(account_address), 0)
-        #check balance
-        self.assertEqual(world.get_balance(account_address), 100000000000000000000000)
-        #check code
-        self.assertEqual(world.get_code(account_address), unhexlify('34600055'))
+        #check nonce, balance, code
+        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
+        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
+        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('34600055'))
         #check storage
-        self.assertEqual(world.get_storage_data(account_address, 0x00), 0x0de0b6b3a7640000)
+        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x0de0b6b3a7640000)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -1515,7 +1468,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
         # test spent gas
-        self.assertEqual(new_vm.gas, 99999979995)
+        self.assertEqual(world.current_vm.gas, 99999979995)
 
     def test_calldataload_BigOffset(self):
         '''
@@ -1543,13 +1496,14 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         value = 1000000000000000000
         gas = 100000000000
 
-        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
 
         result = None
         returndata = b''
         try:
             while True:
-                new_vm.execute()
+                world.current_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
@@ -1557,13 +1511,10 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
-        account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        #check nonce
-        self.assertEqual(world.get_nonce(account_address), 0)
-        #check balance
-        self.assertEqual(world.get_balance(account_address), 100000000000000000000000)
-        #check code
-        self.assertEqual(world.get_code(account_address), unhexlify('7f420000000000000000000000000000000000000000000000000000000000000035600055'))
+        #check nonce, balance, code
+        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
+        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
+        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('7f420000000000000000000000000000000000000000000000000000000000000035600055'))
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -1571,7 +1522,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
         # test spent gas
-        self.assertEqual(new_vm.gas, 99999994991)
+        self.assertEqual(world.current_vm.gas, 99999994991)
 
     def test_calldataload0(self):
         '''
@@ -1599,13 +1550,14 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         value = 1000000000000000000
         gas = 100000000000
 
-        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
 
         result = None
         returndata = b''
         try:
             while True:
-                new_vm.execute()
+                world.current_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
@@ -1613,15 +1565,12 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
-        account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        #check nonce
-        self.assertEqual(world.get_nonce(account_address), 0)
-        #check balance
-        self.assertEqual(world.get_balance(account_address), 100000000000000000000000)
-        #check code
-        self.assertEqual(world.get_code(account_address), unhexlify('600035600055'))
+        #check nonce, balance, code
+        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
+        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
+        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600035600055'))
         #check storage
-        self.assertEqual(world.get_storage_data(account_address, 0x00), 0x2560000000000000000000000000000000000000000000000000000000000000)
+        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x2560000000000000000000000000000000000000000000000000000000000000)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -1629,7 +1578,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
         # test spent gas
-        self.assertEqual(new_vm.gas, 99999979991)
+        self.assertEqual(world.current_vm.gas, 99999979991)
 
     def test_address0(self):
         '''
@@ -1656,13 +1605,14 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         value = 1000000000000000000
         gas = 100000000000
 
-        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
 
         result = None
         returndata = b''
         try:
             while True:
-                new_vm.execute()
+                world.current_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
@@ -1670,15 +1620,12 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
-        account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        #check nonce
-        self.assertEqual(world.get_nonce(account_address), 0)
-        #check balance
-        self.assertEqual(world.get_balance(account_address), 100000000000000000000000)
-        #check code
-        self.assertEqual(world.get_code(account_address), unhexlify('30600055'))
+        #check nonce, balance, code
+        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
+        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
+        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('30600055'))
         #check storage
-        self.assertEqual(world.get_storage_data(account_address, 0x00), 0x0f572e5295c57f15886f9b263e2f6d2d6c7b5ec6)
+        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x0f572e5295c57f15886f9b263e2f6d2d6c7b5ec6)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -1686,7 +1633,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
         # test spent gas
-        self.assertEqual(new_vm.gas, 99999979995)
+        self.assertEqual(world.current_vm.gas, 99999979995)
 
     def test_calldatacopy1(self):
         '''
@@ -1718,13 +1665,14 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         value = 1000000000000000000
         gas = 100000000000
 
-        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
 
         result = None
         returndata = b''
         try:
             while True:
-                new_vm.execute()
+                world.current_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
@@ -1732,15 +1680,12 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
-        account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        #check nonce
-        self.assertEqual(world.get_nonce(account_address), 0)
-        #check balance
-        self.assertEqual(world.get_balance(account_address), 100000000000000000000000)
-        #check code
-        self.assertEqual(world.get_code(account_address), unhexlify('60016001600037600051600055'))
+        #check nonce, balance, code
+        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
+        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
+        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60016001600037600051600055'))
         #check storage
-        self.assertEqual(world.get_storage_data(account_address, 0x00), 0x3400000000000000000000000000000000000000000000000000000000000000)
+        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x3400000000000000000000000000000000000000000000000000000000000000)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -1748,7 +1693,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
         # test spent gas
-        self.assertEqual(new_vm.gas, 99999979973)
+        self.assertEqual(world.current_vm.gas, 99999979973)
 
     def test_calldatacopyZeroMemExpansion(self):
         '''
@@ -1780,13 +1725,14 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         value = 1000000000000000000
         gas = 100000000000
 
-        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
 
         result = None
         returndata = b''
         try:
             while True:
-                new_vm.execute()
+                world.current_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
@@ -1794,13 +1740,10 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
-        account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        #check nonce
-        self.assertEqual(world.get_nonce(account_address), 0)
-        #check balance
-        self.assertEqual(world.get_balance(account_address), 100000000000000000000000)
-        #check code
-        self.assertEqual(world.get_code(account_address), unhexlify('60006000600037600051600055'))
+        #check nonce, balance, code
+        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
+        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
+        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60006000600037600051600055'))
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -1808,7 +1751,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
         # test spent gas
-        self.assertEqual(new_vm.gas, 99999994976)
+        self.assertEqual(world.current_vm.gas, 99999994976)
 
     def test_calldatasize0(self):
         '''
@@ -1835,13 +1778,14 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         value = 1000000000000000000
         gas = 100000000000
 
-        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
 
         result = None
         returndata = b''
         try:
             while True:
-                new_vm.execute()
+                world.current_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
@@ -1849,15 +1793,12 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
-        account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        #check nonce
-        self.assertEqual(world.get_nonce(account_address), 0)
-        #check balance
-        self.assertEqual(world.get_balance(account_address), 100000000000000000000000)
-        #check code
-        self.assertEqual(world.get_code(account_address), unhexlify('36600055'))
+        #check nonce, balance, code
+        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
+        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
+        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('36600055'))
         #check storage
-        self.assertEqual(world.get_storage_data(account_address, 0x00), 0x02)
+        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x02)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -1865,7 +1806,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
         # test spent gas
-        self.assertEqual(new_vm.gas, 99999979995)
+        self.assertEqual(world.current_vm.gas, 99999979995)
 
     def test_calldatacopy_DataIndexTooHigh_return(self):
         '''
@@ -1900,13 +1841,14 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         value = 1000000000000000000
         gas = 100000000000
 
-        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
 
         result = None
         returndata = b''
         try:
             while True:
-                new_vm.execute()
+                world.current_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
@@ -1914,13 +1856,10 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
-        account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        #check nonce
-        self.assertEqual(world.get_nonce(account_address), 0)
-        #check balance
-        self.assertEqual(world.get_balance(account_address), 1000000000000000000)
-        #check code
-        self.assertEqual(world.get_code(account_address), unhexlify('60ff7ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffa600037600051600055596000f3'))
+        #check nonce, balance, code
+        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
+        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
+        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60ff7ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffa600037600051600055596000f3'))
         #check outs
         self.assertEqual(returndata, unhexlify('00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'))
         #check logs
@@ -1928,7 +1867,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
         # test spent gas
-        self.assertEqual(new_vm.gas, 99999994926)
+        self.assertEqual(world.current_vm.gas, 99999994926)
 
     def test_caller(self):
         '''
@@ -1955,13 +1894,14 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         value = 1000000000000000000
         gas = 100000000000
 
-        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
 
         result = None
         returndata = b''
         try:
             while True:
-                new_vm.execute()
+                world.current_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
@@ -1969,15 +1909,12 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
-        account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        #check nonce
-        self.assertEqual(world.get_nonce(account_address), 0)
-        #check balance
-        self.assertEqual(world.get_balance(account_address), 100000000000000000000000)
-        #check code
-        self.assertEqual(world.get_code(account_address), unhexlify('33600055'))
+        #check nonce, balance, code
+        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
+        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
+        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('33600055'))
         #check storage
-        self.assertEqual(world.get_storage_data(account_address, 0x00), 0xcd1722f3947def4cf144679da39c4c32bdc35681)
+        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0xcd1722f3947def4cf144679da39c4c32bdc35681)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -1985,7 +1922,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
         # test spent gas
-        self.assertEqual(new_vm.gas, 99999979995)
+        self.assertEqual(world.current_vm.gas, 99999979995)
 
 if __name__ == '__main__':
     unittest.main()

@@ -825,13 +825,11 @@ class EVM(Eventful):
             #Fix old bug in pyevmasm
             if instruction.semantics == 'PUSH' and instruction.fee == 0:
                 self._consume(3)
-            #@@@
-            #if instruction.semantics == 'EXP': # and instruction.fee == 0:
-            #    self._consume(10)
 
             self._consume(instruction.fee)
             arguments = self._pop_arguments()
             self._checkpoint_data = (pc, old_gas, instruction, arguments)
+
         return self._checkpoint_data
 
     def _rollback(self):
@@ -1199,7 +1197,7 @@ class EVM(Eventful):
 
     def ORIGIN(self):
         '''Get execution origination address'''
-        return self.world.tx_origin()
+        return Operators.ZEXTEND(self.world.tx_origin(), 256)
 
     def CALLER(self):
         '''Get caller address'''
@@ -1624,7 +1622,6 @@ class EVM(Eventful):
         #This may create a user account
         recipient = Operators.EXTRACT(recipient, 0, 160)
         address = self.address
-
         #FIXME for on the known addresses
         if issymbolic(recipient):
             logger.info("Symbolic recipient on self destruct")

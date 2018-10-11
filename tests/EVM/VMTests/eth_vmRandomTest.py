@@ -51,13 +51,14 @@ class EVMTest_vmRandomTest(unittest.TestCase):
         value = 1000000000000000000
         gas = 10000
 
-        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
 
         result = None
         returndata = b''
         try:
             while True:
-                new_vm.execute()
+                world.current_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
@@ -65,13 +66,10 @@ class EVMTest_vmRandomTest(unittest.TestCase):
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
-        account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        #check nonce
-        self.assertEqual(world.get_nonce(account_address), 0)
-        #check balance
-        self.assertEqual(world.get_balance(account_address), 1000000000000000000)
-        #check code
-        self.assertEqual(world.get_code(account_address), unhexlify('7745414245403745f31387900a8d55'))
+        #check nonce, balance, code
+        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
+        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
+        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('7745414245403745f31387900a8d55'))
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -79,7 +77,7 @@ class EVMTest_vmRandomTest(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
         # test spent gas
-        self.assertEqual(new_vm.gas, 9997)
+        self.assertEqual(world.current_vm.gas, 9997)
 
     def test_201503110219PYTHON(self):
         '''
@@ -115,13 +113,14 @@ class EVMTest_vmRandomTest(unittest.TestCase):
         value = 1000000000000000000
         gas = 10000
 
-        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
 
         result = None
         returndata = b''
         try:
             while True:
-                new_vm.execute()
+                world.current_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
@@ -154,13 +153,14 @@ class EVMTest_vmRandomTest(unittest.TestCase):
         value = 1000000000000000000
         gas = 10000
 
-        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
 
         result = None
         returndata = b''
         try:
             while True:
-                new_vm.execute()
+                world.current_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
@@ -168,13 +168,10 @@ class EVMTest_vmRandomTest(unittest.TestCase):
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
-        account_address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        #check nonce
-        self.assertEqual(world.get_nonce(account_address), 0)
-        #check balance
-        self.assertEqual(world.get_balance(account_address), 1000000000000000000)
-        #check code
-        self.assertEqual(world.get_code(account_address), unhexlify('65424555'))
+        #check nonce, balance, code
+        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
+        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
+        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('65424555'))
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -182,7 +179,7 @@ class EVMTest_vmRandomTest(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
         # test spent gas
-        self.assertEqual(new_vm.gas, 9997)
+        self.assertEqual(world.current_vm.gas, 9997)
 
     def test_201503102320PYTHON(self):
         '''
@@ -215,13 +212,14 @@ class EVMTest_vmRandomTest(unittest.TestCase):
         value = 1000000000000000000
         gas = 10000
 
-        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
 
         result = None
         returndata = b''
         try:
             while True:
-                new_vm.execute()
+                world.current_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
@@ -270,13 +268,14 @@ class EVMTest_vmRandomTest(unittest.TestCase):
         value = 1000000000000000000
         gas = 10000
 
-        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
 
         result = None
         returndata = b''
         try:
             while True:
-                new_vm.execute()
+                world.current_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
@@ -310,13 +309,14 @@ class EVMTest_vmRandomTest(unittest.TestCase):
         value = 1000000000000000000
         gas = 10000
 
-        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
 
         result = None
         returndata = b''
         try:
             while True:
-                new_vm.execute()
+                world.current_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):

@@ -148,13 +148,14 @@ def gen_test(testcase, filename, skip):
         value = {value}
         gas = {gas}
 
-        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
 
         result = None
         returndata = b''
         try:
             while True:
-                new_vm.execute()
+                world.current_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
@@ -176,13 +177,10 @@ def gen_test(testcase, filename, skip):
 
             output += f'''
         #Add pos checks for account hex(account_address)
-        account_address = {hex(account_address)}
-        #check nonce
-        self.assertEqual(world.get_nonce(account_address), {account_nonce})
-        #check balance
-        self.assertEqual(world.get_balance(account_address), {account_balance})
-        #check code
-        self.assertEqual(world.get_code(account_address), unhexlify('{account_code}'))'''
+        #check nonce, balance, code
+        self.assertEqual(world.get_nonce({hex(account_address)}), {account_nonce})
+        self.assertEqual(to_constant(world.get_balance({hex(account_address)})), {account_balance})
+        self.assertEqual(world.get_code({hex(account_address)}), unhexlify('{account_code}'))'''
 
         if account['storage']:
             output += '''
@@ -190,7 +188,7 @@ def gen_test(testcase, filename, skip):
 
             for key, value in account['storage'].items():
                 output += f'''
-        self.assertEqual(world.get_storage_data(account_address, {key}), {value})'''
+        self.assertEqual(to_constant(world.get_storage_data(account_address, {key})), {value})'''
 
         output += f'''
         #check outs
@@ -204,7 +202,7 @@ def gen_test(testcase, filename, skip):
 
         output += f'''
         # test spent gas
-        self.assertEqual(new_vm.gas, {int(testcase['gas'], 0)})'''
+        self.assertEqual(world.current_vm.gas, {int(testcase['gas'], 0)})'''
 
     return output
 

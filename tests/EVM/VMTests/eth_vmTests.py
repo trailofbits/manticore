@@ -52,13 +52,14 @@ class EVMTest_vmTests(unittest.TestCase):
         value = 1000000000000000000
         gas = 100000
 
-        new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
 
         result = None
         returndata = b''
         try:
             while True:
-                new_vm.execute()
+                world.current_vm.execute()
         except evm.EndTx as e:
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
@@ -66,13 +67,10 @@ class EVMTest_vmTests(unittest.TestCase):
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
         #Add pos checks for account hex(account_address)
-        account_address = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        #check nonce
-        self.assertEqual(world.get_nonce(account_address), 0)
-        #check balance
-        self.assertEqual(world.get_balance(account_address), 100000000000000000000000)
-        #check code
-        self.assertEqual(world.get_code(account_address), unhexlify(''))
+        #check nonce, balance, code
+        self.assertEqual(world.get_nonce(0xcd1722f3947def4cf144679da39c4c32bdc35681), 0)
+        self.assertEqual(to_constant(world.get_balance(0xcd1722f3947def4cf144679da39c4c32bdc35681)), 100000000000000000000000)
+        self.assertEqual(world.get_code(0xcd1722f3947def4cf144679da39c4c32bdc35681), unhexlify(''))
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -80,7 +78,7 @@ class EVMTest_vmTests(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
         # test spent gas
-        self.assertEqual(new_vm.gas, 99998)
+        self.assertEqual(world.current_vm.gas, 99998)
 
 if __name__ == '__main__':
     unittest.main()
