@@ -67,7 +67,7 @@ class EVMContract(EVMAccount):
     def add_function(self, signature):
         func_id = ABI.function_selector(signature)
         func_name = str(signature.split('(')[0])
-        if func_name.startswith('__') or func_name in {'add_function', 'address', 'name'}:
+        if func_name.startswith('__') or func_name in {'add_function', 'address', 'name_'}:
             # TODO(mark): is this actually true? is there anything actually wrong with a solidity name beginning w/ an underscore?
             raise EthereumError("Function name ({}) is internally reserved".format(func_name))
         entry = HashesEntry(signature, func_id)
