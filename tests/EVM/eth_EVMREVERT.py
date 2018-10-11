@@ -287,7 +287,7 @@ class EVMTest_REVERT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             address = 0x222222222222222222222222222222222222200
             balance = 0
-            code = ''
+            code = b''
             world.create_account( address=address)
             world.create_account( address=caller)
 

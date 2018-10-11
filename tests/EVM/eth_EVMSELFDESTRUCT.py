@@ -44,25 +44,25 @@ class EVMTest_SELFDESTRUCT(unittest.TestCase):
 
             address = 0x303232323232323232323232323232323232323
             balance = 0
-            code = ''
+            code = b''
             storage = {}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address = 0xfffffffffffffffffffffffffffffffffffffff
             balance = 0
-            code = ''
+            code = b''
             storage = {}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address = 0x111111111111111111111111111111111111100
             balance = 0
-            code = ''
+            code = b''
             storage = {}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address = 0x222222222222222222222222222222222222200
             balance = 0
-            code = ''
+            code = b''
             storage = {}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -94,25 +94,25 @@ class EVMTest_SELFDESTRUCT(unittest.TestCase):
 
             address = 0x3032323232323232323232323232323232323230
             balance = 0
-            code = ''
+            code = b''
             storage = {}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address = 0x0
             balance = 0
-            code = ''
+            code = b''
             storage = {}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address = 0x111111111111111111111111111111111111100
             balance = 0
-            code = ''
+            code = b''
             storage = {}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address = 0x222222222222222222222222222222222222200
             balance = 0
-            code = ''
+            code = b''
             storage = {}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -144,25 +144,25 @@ class EVMTest_SELFDESTRUCT(unittest.TestCase):
 
             address = 0x3032323232323232323232323232323232323230
             balance = 0
-            code = ''
+            code = b''
             storage = {}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address = 0x1
             balance = 0
-            code = ''
+            code = b''
             storage = {}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address = 0x111111111111111111111111111111111111100
             balance = 0
-            code = ''
+            code = b''
             storage = {}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address = 0x222222222222222222222222222222222222200
             balance = 0
-            code = ''
+            code = b''
             storage = {}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -194,25 +194,25 @@ class EVMTest_SELFDESTRUCT(unittest.TestCase):
 
             address = 0x3032323232323232323232323232323232323230
             balance = 0
-            code = ''
+            code = b''
             storage = {}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address = 0xfffffffffffffffffffffffffffffffffffffff0
             balance = 0
-            code = ''
+            code = b''
             storage = {}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address = 0x111111111111111111111111111111111111100
             balance = 0
-            code = ''
+            code = b''
             storage = {}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address = 0x222222222222222222222222222222222222200
             balance = 0
-            code = ''
+            code = b''
             storage = {}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -244,25 +244,25 @@ class EVMTest_SELFDESTRUCT(unittest.TestCase):
 
             address = 0x3032323232323232323232323232323232323230
             balance = 0
-            code = ''
+            code = b''
             storage = {}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address = 0xf
             balance = 0
-            code = ''
+            code = b''
             storage = {}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address = 0x111111111111111111111111111111111111100
             balance = 0
-            code = ''
+            code = b''
             storage = {}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address = 0x222222222222222222222222222222222222200
             balance = 0
-            code = ''
+            code = b''
             storage = {}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -294,25 +294,25 @@ class EVMTest_SELFDESTRUCT(unittest.TestCase):
 
             address = 0x3032323232323232323232323232323232323230
             balance = 0
-            code = ''
+            code = b''
             storage = {}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address = 0x10
             balance = 0
-            code = ''
+            code = b''
             storage = {}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address = 0x111111111111111111111111111111111111100
             balance = 0
-            code = ''
+            code = b''
             storage = {}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address = 0x222222222222222222222222222222222222200
             balance = 0
-            code = ''
+            code = b''
             storage = {}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -344,25 +344,25 @@ class EVMTest_SELFDESTRUCT(unittest.TestCase):
 
             address = 0x3032323232323232323232323232323232323230
             balance = 0
-            code = ''
+            code = b''
             storage = {}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address = 0x20
             balance = 0
-            code = ''
+            code = b''
             storage = {}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address = 0x111111111111111111111111111111111111100
             balance = 0
-            code = ''
+            code = b''
             storage = {}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address = 0x222222222222222222222222222222222222200
             balance = 0
-            code = ''
+            code = b''
             storage = {}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -394,25 +394,25 @@ class EVMTest_SELFDESTRUCT(unittest.TestCase):
 
             address = 0x3032323232323232323232323232323232323230
             balance = 0
-            code = ''
+            code = b''
             storage = {}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address = 0x30
             balance = 0
-            code = ''
+            code = b''
             storage = {}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address = 0x111111111111111111111111111111111111100
             balance = 0
-            code = ''
+            code = b''
             storage = {}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address = 0x222222222222222222222222222222222222200
             balance = 0
-            code = ''
+            code = b''
             storage = {}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -444,20 +444,20 @@ class EVMTest_SELFDESTRUCT(unittest.TestCase):
 
             address = 0x3032323232323232323232323232323232323230
             balance = 0
-            code = ''
+            code = b''
             storage = {}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address = 0x111111111111111111111111111111111111100
             balance = 0
-            code = ''
+            code = b''
             storage = {}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
 
             address = 0x222222222222222222222222222222222222200
             balance = 0
-            code = ''
+            code = b''
             storage = {}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 

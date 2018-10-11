@@ -42,7 +42,7 @@ class EVMTest_EXTCODESIZE(unittest.TestCase):
 
             address = 0x66666666666666666666666666666666666666
             balance = None
-            code = ''
+            code = b''
             storage = {}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -75,7 +75,7 @@ class EVMTest_EXTCODESIZE(unittest.TestCase):
 
             address = 0x3030303030303030303030303030303030303030
             balance = None
-            code = ''
+            code = b''
             storage = {}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -108,7 +108,7 @@ class EVMTest_EXTCODESIZE(unittest.TestCase):
 
             address = 0x30303030303030303030303030303030303030
             balance = None
-            code = ''
+            code = b''
             storage = {}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -141,7 +141,7 @@ class EVMTest_EXTCODESIZE(unittest.TestCase):
 
             address = 0x66666666666666666666666666666666666666
             balance = None
-            code = ''
+            code = b''
             storage = {}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -174,7 +174,7 @@ class EVMTest_EXTCODESIZE(unittest.TestCase):
 
             address = 0x30303030303030303030303030303030303030
             balance = None
-            code = ''
+            code = b''
             storage = {}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -207,7 +207,7 @@ class EVMTest_EXTCODESIZE(unittest.TestCase):
 
             address = 0x30303030303030303030303030303030303030
             balance = None
-            code = ''
+            code = b''
             storage = {}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -240,7 +240,7 @@ class EVMTest_EXTCODESIZE(unittest.TestCase):
 
             address = 0x30303030303030303030303030303030303030
             balance = None
-            code = ''
+            code = b''
             storage = {}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -273,7 +273,7 @@ class EVMTest_EXTCODESIZE(unittest.TestCase):
 
             address = 0x30303030303030303030303030303030303030
             balance = None
-            code = ''
+            code = b''
             storage = {}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -306,7 +306,7 @@ class EVMTest_EXTCODESIZE(unittest.TestCase):
 
             address = 0x30313131313131313131313131313131313131
             balance = None
-            code = ''
+            code = b''
             storage = {}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 

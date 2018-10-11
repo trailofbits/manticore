@@ -42,7 +42,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {115792089237316195423570985008687907853269984665640564039457584007913129639935: 115792089237316195423570985008687907853269984665640564039457584007913129639935}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -76,7 +76,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {0: 115792089237316195423570985008687907853269984665640564039457584007913129639935}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -110,7 +110,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {1: 115792089237316195423570985008687907853269984665640564039457584007913129639935}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -144,7 +144,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {57896044618658097711785492504343953926634992332820282019728792003956564819952: 115792089237316195423570985008687907853269984665640564039457584007913129639935}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -178,7 +178,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {3618502788666131106986593281521497120414687020801267626233049500247285301263: 115792089237316195423570985008687907853269984665640564039457584007913129639935}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -212,7 +212,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {16: 115792089237316195423570985008687907853269984665640564039457584007913129639935}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -246,7 +246,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {32: 115792089237316195423570985008687907853269984665640564039457584007913129639935}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -280,7 +280,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {48: 115792089237316195423570985008687907853269984665640564039457584007913129639935}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -314,7 +314,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {6089590155545428825848686802984512581899718912: 115792089237316195423570985008687907853269984665640564039457584007913129639935}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -348,7 +348,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {115792089237316195423570985008687907853269984665640564039457584007913129639935: 0}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -382,7 +382,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {0: 0}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -416,7 +416,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {1: 0}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -450,7 +450,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {57896044618658097711785492504343953926634992332820282019728792003956564819952: 0}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -484,7 +484,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {3618502788666131106986593281521497120414687020801267626233049500247285301263: 0}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -518,7 +518,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {16: 0}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -552,7 +552,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {32: 0}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -586,7 +586,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {48: 0}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -620,7 +620,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {6089590155545428825848686802984512581899718912: 0}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -654,7 +654,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {115792089237316195423570985008687907853269984665640564039457584007913129639935: 1}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -688,7 +688,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {0: 1}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -722,7 +722,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {1: 1}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -756,7 +756,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {57896044618658097711785492504343953926634992332820282019728792003956564819952: 1}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -790,7 +790,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {3618502788666131106986593281521497120414687020801267626233049500247285301263: 1}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -824,7 +824,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {16: 1}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -858,7 +858,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {32: 1}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -892,7 +892,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {48: 1}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -926,7 +926,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {6089590155545428825848686802984512581899718912: 1}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -960,7 +960,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {115792089237316195423570985008687907853269984665640564039457584007913129639935: 57896044618658097711785492504343953926634992332820282019728792003956564819952}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -994,7 +994,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {0: 57896044618658097711785492504343953926634992332820282019728792003956564819952}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -1028,7 +1028,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {1: 57896044618658097711785492504343953926634992332820282019728792003956564819952}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -1062,7 +1062,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {57896044618658097711785492504343953926634992332820282019728792003956564819952: 57896044618658097711785492504343953926634992332820282019728792003956564819952}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -1096,7 +1096,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {3618502788666131106986593281521497120414687020801267626233049500247285301263: 57896044618658097711785492504343953926634992332820282019728792003956564819952}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -1130,7 +1130,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {16: 57896044618658097711785492504343953926634992332820282019728792003956564819952}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -1164,7 +1164,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {32: 57896044618658097711785492504343953926634992332820282019728792003956564819952}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -1198,7 +1198,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {48: 57896044618658097711785492504343953926634992332820282019728792003956564819952}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -1232,7 +1232,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {6089590155545428825848686802984512581899718912: 57896044618658097711785492504343953926634992332820282019728792003956564819952}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -1266,7 +1266,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {115792089237316195423570985008687907853269984665640564039457584007913129639935: 3618502788666131106986593281521497120414687020801267626233049500247285301263}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -1300,7 +1300,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {0: 3618502788666131106986593281521497120414687020801267626233049500247285301263}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -1334,7 +1334,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {1: 3618502788666131106986593281521497120414687020801267626233049500247285301263}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -1368,7 +1368,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {57896044618658097711785492504343953926634992332820282019728792003956564819952: 3618502788666131106986593281521497120414687020801267626233049500247285301263}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -1402,7 +1402,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {3618502788666131106986593281521497120414687020801267626233049500247285301263: 3618502788666131106986593281521497120414687020801267626233049500247285301263}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -1436,7 +1436,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {16: 3618502788666131106986593281521497120414687020801267626233049500247285301263}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -1470,7 +1470,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {32: 3618502788666131106986593281521497120414687020801267626233049500247285301263}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -1504,7 +1504,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {48: 3618502788666131106986593281521497120414687020801267626233049500247285301263}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -1538,7 +1538,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {6089590155545428825848686802984512581899718912: 3618502788666131106986593281521497120414687020801267626233049500247285301263}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -1572,7 +1572,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {115792089237316195423570985008687907853269984665640564039457584007913129639935: 16}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -1606,7 +1606,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {0: 16}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -1640,7 +1640,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {1: 16}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -1674,7 +1674,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {57896044618658097711785492504343953926634992332820282019728792003956564819952: 16}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -1708,7 +1708,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {3618502788666131106986593281521497120414687020801267626233049500247285301263: 16}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -1742,7 +1742,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {16: 16}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -1776,7 +1776,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {32: 16}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -1810,7 +1810,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {48: 16}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -1844,7 +1844,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {6089590155545428825848686802984512581899718912: 16}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -1878,7 +1878,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {115792089237316195423570985008687907853269984665640564039457584007913129639935: 32}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -1912,7 +1912,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {0: 32}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -1946,7 +1946,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {1: 32}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -1980,7 +1980,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {57896044618658097711785492504343953926634992332820282019728792003956564819952: 32}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -2014,7 +2014,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {3618502788666131106986593281521497120414687020801267626233049500247285301263: 32}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -2048,7 +2048,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {16: 32}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -2082,7 +2082,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {32: 32}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -2116,7 +2116,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {48: 32}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -2150,7 +2150,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {6089590155545428825848686802984512581899718912: 32}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -2184,7 +2184,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {115792089237316195423570985008687907853269984665640564039457584007913129639935: 48}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -2218,7 +2218,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {0: 48}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -2252,7 +2252,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {1: 48}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -2286,7 +2286,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {57896044618658097711785492504343953926634992332820282019728792003956564819952: 48}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -2320,7 +2320,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {3618502788666131106986593281521497120414687020801267626233049500247285301263: 48}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -2354,7 +2354,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {16: 48}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -2388,7 +2388,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {32: 48}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -2422,7 +2422,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {48: 48}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -2456,7 +2456,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {6089590155545428825848686802984512581899718912: 48}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -2490,7 +2490,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {115792089237316195423570985008687907853269984665640564039457584007913129639935: 6089590155545428825848686802984512581899718912}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -2524,7 +2524,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {0: 6089590155545428825848686802984512581899718912}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -2558,7 +2558,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {1: 6089590155545428825848686802984512581899718912}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -2592,7 +2592,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {57896044618658097711785492504343953926634992332820282019728792003956564819952: 6089590155545428825848686802984512581899718912}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -2626,7 +2626,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {3618502788666131106986593281521497120414687020801267626233049500247285301263: 6089590155545428825848686802984512581899718912}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -2660,7 +2660,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {16: 6089590155545428825848686802984512581899718912}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -2694,7 +2694,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {32: 6089590155545428825848686802984512581899718912}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -2728,7 +2728,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {48: 6089590155545428825848686802984512581899718912}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -2762,7 +2762,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'U'
+            code = b'U'
             storage = {6089590155545428825848686802984512581899718912: 6089590155545428825848686802984512581899718912}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
