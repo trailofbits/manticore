@@ -453,7 +453,7 @@ class ManticoreEVM(Manticore):
         # Make the constraint store
         constraints = ConstraintSet()
         # make the ethereum world state
-        world = evm.EVMWorld(constraints, initial_timestamp=1524785992)
+        world = evm.EVMWorld(constraints, timestamp=1524785992)
         initial_state = State(constraints, world)
         super().__init__(initial_state, **kwargs)
 

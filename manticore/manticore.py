@@ -223,9 +223,12 @@ class Manticore(Eventful):
         plugin.manticore = None
 
     def __del__(self):
-        plugins = list(self.plugins)
-        for plugin in plugins:
-            self.unregister_plugin(plugin)
+        try:
+            plugins = list(self.plugins)
+            for plugin in plugins:
+                self.unregister_plugin(plugin)
+        except:
+            pass
 
     @classmethod
     def linux(cls, path, argv=None, envp=None, entry_symbol=None, symbolic_files=None, concrete_start='', **kwargs):
