@@ -1783,7 +1783,7 @@ class EVMWorld(Platform):
         self._blocknumber = state['_blocknumber']
         self._timestamp = state['_timestamp']
         self._difficulty = state['_difficulty']
-        self._gaslimitstate['_gaslimit']
+        self._gaslimit = state['_gaslimit']
         self._coinbase = state['_coinbase']
         self._do_events()
 

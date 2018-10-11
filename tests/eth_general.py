@@ -898,7 +898,7 @@ class EthSolidityCompilerTest(unittest.TestCase):
                 returndata = e.data
 
         self.assertEqual(result, 'THROW')
-        self.assertEqual(new_vm.gas, 99992)
+        self.assertEqual(new_vm.gas, 99986)
         
 
 
