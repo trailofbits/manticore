@@ -11,6 +11,8 @@ from ..core.smtlib import ConstraintSet, Operators, solver, BitVec, Array, Array
 from ..platforms import evm
 from ..core.state import State, TerminateState
 from ..utils.helpers import issymbolic, PickleSerializer
+from ..utils import config
+from ..utils.log import init_logging
 import tempfile
 from subprocess import Popen, PIPE, check_output
 from multiprocessing import Process, Queue
@@ -28,7 +30,10 @@ from .account import EVMAccount, EVMContract
 from .abi import ABI
 from .solidity import SolidityMetadata
 
+
 logger = logging.getLogger(__name__)
+
+init_logging()  # FIXME(mark): emitting a warning in abi.py does not work unless this is called a second time here
 
 
 def flagged(flag):
@@ -1434,6 +1439,9 @@ class ManticoreEVM(Manticore):
                         global_findings.write('  Solidity snippet:\n')
                         global_findings.write('    '.join(source_code_snippet.splitlines(True)))
                         global_findings.write('\n')
+
+        with self._output.save_stream('manticore.yml') as f:
+            config.save(f)
 
         with self._output.save_stream('global.summary') as global_summary:
             # (accounts created by contract code are not in this list )
