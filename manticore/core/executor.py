@@ -148,14 +148,14 @@ class BranchLimited(Policy):
         with self.locked_context() as policy_ctx:
             visited = policy_ctx.get('visited', dict())
             summaries = policy_ctx.get('summaries', dict())
-            lst = []
-            for id_, pc in summaries.items():
-                cnt = visited.get(pc, 0)
-                if id_ not in state_ids:
-                    continue
-                if cnt <= self._limit:
-                    lst.append((id_, visited.get(pc, 0)))
-            lst = sorted(lst, key=lambda x: x[1])
+        lst = []
+        for id_, pc in summaries.items():
+            cnt = visited.get(pc, 0)
+            if id_ not in state_ids:
+                continue
+            if cnt <= self._limit:
+                lst.append((id_, visited.get(pc, 0)))
+        lst = sorted(lst, key=lambda x: x[1])
 
         if lst:
             return lst[0][0]
