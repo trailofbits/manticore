@@ -254,7 +254,11 @@ class ABI(object):
         if issymbolic(value):
             # FIXME This temporary array variable should be obtained from a specific constraint store
             bytes = ArrayVariable(index_bits=256, index_max=32, value_bits=8, name='temp{}'.format(uuid.uuid1()))
-            value = Operators.ZEXTEND(value, size * 8)
+            if value.size <= size * 8:
+                value = Operators.ZEXTEND(value, size * 8)
+            else:
+                # automatically truncate, e.g. if they passed a BitVec(256) for an `address` argument
+                value = Operators.EXTRACT(value, 0, size * 8)
             bytes = ArrayProxy(bytes.write_BE(padding, value, size))
         else:
             value = int(value)
