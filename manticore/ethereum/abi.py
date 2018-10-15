@@ -312,7 +312,7 @@ class ABI(object):
             size = nbytes
 
         values = []
-        while pos < size:
+        while pos < offset + size:
             if pos >= len(data):
                 values.append(0)
             else:
