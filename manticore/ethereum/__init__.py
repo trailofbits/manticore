@@ -626,6 +626,11 @@ class ManticoreEVM(Manticore):
         state = self.load(state_id)
         return state.platform.transactions
 
+    def human_transactions(self, state_id=None):
+        """ Transactions list for state `state_id` """
+        state = self.load(state_id)
+        return state.platform.human_transactions
+
     def make_symbolic_arguments(self, types):
         """
             Make a reasonable serialization of the symbolic argument types
