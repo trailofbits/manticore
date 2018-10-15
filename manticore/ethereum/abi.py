@@ -211,7 +211,7 @@ class ABI(object):
         elif ty[0] == 'bytesM':
             result = buf[offset:offset + ty[1]]
         elif ty[0] == 'function':
-            address = Operators.ZEXTEND(ABI._readBE(buf[offset:offset + 20], 20, padding=False), 256)
+            address = Operators.ZEXTEND(ABI._readBE(buf[offset:offset + 20], 20), 256)
             func_id = buf[offset + 20:offset + 24]
             result = (address, func_id)
         elif ty[0] in ('bytes', 'string'):
@@ -294,7 +294,7 @@ class ABI(object):
         return buf
 
     @staticmethod
-    def _readBE(data, nbytes, padding=True, offset=0):
+    def _readBE(data, nbytes, padding=False, offset=0):
         """
 
         :param data:
