@@ -241,7 +241,7 @@ class ABI(object):
         """
         Translates a python integral or a BitVec into a 32 byte string, MSB first
         """
-        if size <= 0 and size > 32:
+        if size <= 0 or size > 32:
             raise ValueError
 
         from .account import EVMAccount  # because of circular import
@@ -267,7 +267,7 @@ class ABI(object):
         """
         Translates a signed python integral or a BitVec into a 32 byte string, MSB first
         """
-        if size <= 0 and size > 32:
+        if size <= 0 or size > 32:
             raise ValueError
         if not isinstance(value, (int, BitVec)):
             raise ValueError
