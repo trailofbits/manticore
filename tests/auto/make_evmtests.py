@@ -108,6 +108,7 @@ def gen_test(testcase, filename, skip):
         account_balance = i(account['balance'])
 
         output += f'''
+        account_address = {hex(account_address)}
         bytecode = unhexlify('{account_code}')
         world.create_account(address={hex(account_address)},
                              balance={account_balance},
