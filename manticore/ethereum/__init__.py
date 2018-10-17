@@ -1548,10 +1548,7 @@ class ManticoreEVM(Manticore):
         pass
 
     def __repr__(self):
-        return "<ManticoreEVM | Alive States: {}; Terminated States: {}>".format(
-            self.count_running_states(),
-            self.count_terminated_states()
-        )
+        return self.__str__()
 
     def __str__(self):
         return "<ManticoreEVM | Alive States: {}; Terminated States: {}>".format(
