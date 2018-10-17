@@ -1546,3 +1546,12 @@ class ManticoreEVM(Manticore):
     # We suppress because otherwise we log it many times and it looks weird.
     def _did_finish_run_callback(self):
         pass
+
+    def __repr__(self):
+        return self.__str__()
+
+    def __str__(self):
+        return "<ManticoreEVM | Alive States: {}; Terminated States: {}>".format(
+            self.count_running_states(),
+            self.count_terminated_states()
+        )
