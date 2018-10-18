@@ -39,11 +39,11 @@ class Concretize(StateException):
         if policy is None:
             policy = 'ALL'
         if policy not in self._ValidPolicies:
-            raise Exception("Policy (%s) must be one of: %s" % (policy, ', '.join(self._ValidPolicies),))
+            raise Exception(f'Policy ({policy}) must be one of: {", ".join(self._ValidPolicies)}')
         self.expression = expression
         self.setstate = setstate
         self.policy = policy
-        self.message = "Concretize: %s (Policy: %s)" % (message, policy)
+        self.message = f'Concretize: {message} (Policy: {policy})'
         super().__init__(**kwargs)
 
 

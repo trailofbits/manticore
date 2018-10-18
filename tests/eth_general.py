@@ -160,9 +160,9 @@ class EthAbiTests(unittest.TestCase):
         self.assertTrue(solver.must_be_true(cs, my_ser[0] == operators.EXTRACT(x, 256 - 8, 8)))
 
     def test_address0(self):
-        data = '{}\x01\x55{}'.format('\0'*11, '\0'*19)
+        data = f'{chr(0) * 11}\x01\x55{chr(0) * 19}'
         parsed = ABI.deserialize('address', data)
-        self.assertEqual(parsed, 0x55 << (8 * 19) )
+        self.assertEqual(parsed, 0x55 << (8 * 19))
 
     def test_mult_dyn_types(self):
         d = [
@@ -170,7 +170,7 @@ class EthAbiTests(unittest.TestCase):
             self._pack_int_to_32(0x40),  # offset to data 1 start
             self._pack_int_to_32(0x80),  # offset to data 2 start
             self._pack_int_to_32(10),  # data 1 size
-            b'helloworld'.ljust(32, b'\x00'), # data 1
+            b'helloworld'.ljust(32, b'\x00'),  # data 1
             self._pack_int_to_32(3),  # data 2 size
             self._pack_int_to_32(3),  # data 2
             self._pack_int_to_32(4),
@@ -268,11 +268,11 @@ class EthAbiTests(unittest.TestCase):
         self.assertEqual(parsed, 2**256 - 1)
 
         for i in range(8, 257, 8):
-            parsed = ABI.deserialize('uint{}'.format(i), data)
+            parsed = ABI.deserialize(f'uint{i}', data)
             self.assertEqual(parsed, 2**i - 1)
 
     def test_empty_types(self):
-        name, args = ABI.deserialize('func()', '\0'*32)
+        name, args = ABI.deserialize('func()', '\0' * 32)
         self.assertEqual(name, b'\x00\x00\x00\x00')
         self.assertEqual(args, tuple())
 
@@ -555,7 +555,7 @@ class EthTests(unittest.TestCase):
             user_accounts.append(m.create_account())
         self.assertEqual(len(m.accounts), 12)
         for i in range(10):
-            self.assertEqual(m.accounts['normal{:d}'.format(i)], user_accounts[i])
+            self.assertEqual(m.accounts[f'normal{i}'], user_accounts[i])
 
     def test_regression_internal_tx(self):
         m = self.mevm

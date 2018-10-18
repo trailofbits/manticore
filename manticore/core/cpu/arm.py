@@ -177,14 +177,14 @@ class Armv7Operand(Operand):
         # of the instruction following the next instruction.
         if self.mem.base in ('PC', 'R15'):
             if self.cpu.mode == cs.CS_MODE_ARM:
-                logger.debug("ARM mode PC relative addressing: PC + offset: 0x{:x} + 0x{:x}".format(base, 4))
+                logger.debug(f"ARM mode PC relative addressing: PC + offset: 0x{base:x} + 0x{4:x}")
                 return base + 4
             else:
                 # base currently has the value PC + len(current_instruction)
                 # we need (PC & 0xFFFFFFFC) + 4
                 # thus:
                 new_base = (base - self.cpu.instruction.size) & 0xFFFFFFFC
-                logger.debug("THUMB mode PC relative addressing: ALIGN(PC) + offset => 0x{:x} + 0x{:x}".format(new_base, 4))
+                logger.debug(f"THUMB mode PC relative addressing: ALIGN(PC) + offset => 0x{new_base:x} + 0x{4:x}")
                 return new_base + 4
         else:
             return base
@@ -316,7 +316,7 @@ class Armv7LinuxSyscallAbi(SyscallAbi):
 
     def get_arguments(self):
         for i in range(6):
-            yield 'R{}'.format(i)
+            yield f'R{i}'
 
     def write_result(self, result):
         self._cpu.R0 = result
@@ -386,7 +386,7 @@ class Armv7Cpu(Cpu):
         assert new_mode in (cs.CS_MODE_ARM, cs.CS_MODE_THUMB)
 
         if self._mode != new_mode:
-            logger.debug("swapping into {} mode".format("ARM" if new_mode == cs.CS_MODE_ARM else "THUMB"))
+            logger.debug(f'swapping into {"ARM" if new_mode == cs.CS_MODE_ARM else "THUMB"} mode')
 
         self._mode = new_mode
         self.disasm.disasm.mode = new_mode
@@ -428,7 +428,7 @@ class Armv7Cpu(Cpu):
         """
         unupdated_flags = self._last_flags.keys() - flags.keys()
         for flag in unupdated_flags:
-            flag_name = 'APSR_{}'.format(flag)
+            flag_name = f'APSR_{flag}'
             self._last_flags[flag] = self.regfile.read(flag_name)
         self._last_flags.update(flags)
 
@@ -437,7 +437,7 @@ class Armv7Cpu(Cpu):
         if self.instruction.mnemonic == 'adc':
             return
         for flag, val in self._last_flags.items():
-            flag_name = 'APSR_{}'.format(flag)
+            flag_name = f'APSR_{flag}'
             self.regfile.write(flag_name, val)
 
     def _shift(cpu, value, _type, amount, carry):
@@ -827,7 +827,7 @@ class Armv7Cpu(Cpu):
         if dest.reg in ('PC', 'R15'):
             cpu._set_mode_by_val(word)
             word &= ~0x1
-            logger.debug("LDR writing 0x{:x} -> PC".format(word))
+            logger.debug(f"LDR writing 0x{word:x} -> PC")
         dest.write(word)
         cpu._cs_hack_ldr_str_writeback(src, offset, writeback)
 
@@ -979,7 +979,7 @@ class Armv7Cpu(Cpu):
         # The `blx <label>` form of this instruction forces a mode swap
         # Otherwise check the lsb of the destination and set the mode
         if dest.type == 'immediate':
-            logger.debug("swapping mode due to BLX at inst 0x{:x}".format(address))
+            logger.debug(f"swapping mode due to BLX at inst 0x{address:x}")
             cpu._swap_mode()
         elif dest.type == 'register':
             cpu._set_mode_by_val(dest.read())
@@ -1139,7 +1139,7 @@ class Armv7Cpu(Cpu):
     @instruction
     def SVC(cpu, op):
         if op.read() != 0:
-            logger.warning("Bad SVC number: {:08}".format(op.read()))
+            logger.warning(f"Bad SVC number: {op.read():08}")
         raise Interruption(0)
 
     @instruction

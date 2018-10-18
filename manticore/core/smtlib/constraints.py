@@ -152,19 +152,19 @@ class ConstraintSet(object):
             translator.visit(constraint)
         for name, exp, smtlib in translator.bindings:
             if isinstance(exp, BitVec):
-                result += '(declare-fun %s () (_ BitVec %d))' % (name, exp.size)
+                result += f'(declare-fun {name} () (_ BitVec {exp.size}))'
             elif isinstance(exp, Bool):
-                result += '(declare-fun %s () Bool)' % name
+                result += f'(declare-fun {name} () Bool)'
             elif isinstance(exp, Array):
-                result += '(declare-fun %s () (Array (_ BitVec %d) (_ BitVec %d)))' % (name, exp.index_bits, exp.value_bits)
+                result += f'(declare-fun {name} () (Array (_ BitVec {exp.index_bits}) (_ BitVec {exp.value_bits})))'
             else:
-                raise Exception("Type not supported %r", exp)
-            result += '(assert (= %s %s))\n' % (name, smtlib)
+                raise Exception(f"Type not supported {exp!r}")
+            result += f'(assert (= {name} {smtlib}))\n'
 
         constraint_str = translator.pop()
         while constraint_str is not None:
             if constraint_str != 'true':
-                result += '(assert %s)\n' % constraint_str
+                result += f'(assert {constraint_str})\n'
             constraint_str = translator.pop()
         return result
 
@@ -223,7 +223,7 @@ class ConstraintSet(object):
         # is not guaranteed to make a unique name on the first try; a colliding
         # name could have been added previously
         while name in self._declarations:
-            name = '%s_%d' % (name, self._get_sid())
+            name = f'{name}_{self._get_sid()}'
         return name
 
     def is_declared(self, expression_var):
@@ -272,7 +272,7 @@ class ConstraintSet(object):
                 # let's make a new unique internal name for it
                 migrated_name = foreign_var.name
                 if migrated_name in self._declarations:
-                    migrated_name = self._make_unique_name(foreign_var.name + '_migrated')
+                    migrated_name = self._make_unique_name(f'{foreign_var.name}_migrated')
                 # Create and declare a new variable of given type
                 if isinstance(foreign_var, Bool):
                     new_var = self.new_bool(name=migrated_name)
@@ -282,7 +282,7 @@ class ConstraintSet(object):
                     # Note that we are discarding the ArrayProxy encapsulation
                     new_var = self.new_array(index_max=foreign_var.index_max, index_bits=foreign_var.index_bits, value_bits=foreign_var.value_bits, name=migrated_name).array
                 else:
-                    raise NotImplemented("Unknown expression type {} encountered during expression migration".format(type(var)))
+                    raise NotImplemented(f"Unknown expression type {type(var)} encountered during expression migration")
                 # Update the var to var mapping
                 object_migration_map[foreign_var] = new_var
                 # Update the name to name mapping
@@ -318,7 +318,7 @@ class ConstraintSet(object):
             :return: a fresh BitVecVariable
         '''
         if not (size == 1 or size % 8 == 0):
-            raise Exception('Invalid bitvec size %s' % size)
+            raise Exception(f'Invalid bitvec size {size}')
         if name is None:
             name = 'BV'
             avoid_collisions = True

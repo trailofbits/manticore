@@ -393,7 +393,7 @@ class Executor(Eventful):
 
         logger.info("Forking. Policy: %s. Values: %s",
                     policy,
-                    ', '.join('0x{:x}'.format(sol) for sol in solutions))
+                    ', '.join(f'0x{sol:x}' for sol in solutions))
 
         self._publish('will_fork_state', state, expression, solutions, policy)
 

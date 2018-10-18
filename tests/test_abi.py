@@ -57,7 +57,7 @@ class ABITest(unittest.TestCase):
         cpu = self._cpu_arm
 
         for i in range(4):
-            cpu.write_register('R{}'.format(i), i)
+            cpu.write_register(f'R{i}', i)
 
         cpu.LR = 0x1234
 
@@ -81,7 +81,7 @@ class ABITest(unittest.TestCase):
         cpu = self._cpu_arm
 
         for i in range(4):
-            cpu.write_register('R{}'.format(i), i)
+            cpu.write_register(f'R{i}', i)
 
         cpu.LR = 0x1234
 
@@ -112,7 +112,7 @@ class ABITest(unittest.TestCase):
         cpu = self._cpu_arm
 
         for i in range(4):
-            cpu.write_register('R{}'.format(i), i)
+            cpu.write_register(f'R{i}', i)
 
         previous_r0 = cpu.R0
         self.assertEqual(cpu.read_int(cpu.SP), 0x80)
@@ -131,7 +131,7 @@ class ABITest(unittest.TestCase):
         cpu = self._cpu_arm
 
         for i in range(4):
-            cpu.write_register('R{}'.format(i), i)
+            cpu.write_register(f'R{i}', i)
 
         previous_r0 = cpu.R0
         self.assertEqual(cpu.read_int(cpu.SP), 0x80)

@@ -22,7 +22,7 @@ from manticore import Manticore
 from manticore.core.plugin import ExtendedTracer, Follower, Plugin
 from manticore.core.smtlib.constraints import ConstraintSet
 from manticore.core.smtlib import Z3Solver, solver
-from manticore.core.smtlib.visitors  import pretty_print as pp
+from manticore.core.smtlib.visitors import pretty_print as pp
 
 import copy
 from manticore.core.smtlib.expression import *
@@ -52,8 +52,7 @@ class TraceReceiver(Plugin):
 
         instructions, writes = _partition(lambda x: x['type'] == 'regs', self._trace)
         total = len(self._trace)
-        log('Recorded concrete trace: {}/{} instructions, {}/{} writes'.format(
-            len(instructions), total, len(writes), total))
+        log(f'Recorded concrete trace: {len(instructions)}/{total} instructions, {len(writes)}/{total} writes')
 
 def flip(constraint):
     '''
@@ -223,7 +222,7 @@ def get_new_constrs_for_queue(oldcons, newcons):
 
 def inp2ints(inp):
     a, b, c = struct.unpack('<iii', inp)
-    return 'a={} b={} c={}'.format(a, b, c)
+    return f'a={a} b={b} c={c}'
 
 def ints2inp(*ints):
     return struct.pack('<'+'i'*len(ints), *ints)
@@ -251,7 +250,7 @@ def concrete_input_to_constraints(ci, prev=None):
     # but maybe a dumb way where we blindly permute the constraints
     # and just check if they're sat before queueing will work
     new_constraints = get_new_constrs_for_queue(prev, cons)
-    log('permuting constraints and adding {} constraints sets to queue'.format(len(new_constraints)))
+    log(f'permuting constraints and adding {len(new_constraints)} constraints sets to queue')
     return new_constraints, datas
 
 
@@ -262,7 +261,7 @@ def main():
     # todo randomly generated concrete start
     stdin = ints2inp(0, 5, 0)
 
-    log('seed input generated ({}), running initial concrete run.'.format(inp2ints(stdin)))
+    log(f'seed input generated ({inp2ints(stdin)}), running initial concrete run.')
 
     to_queue, datas = concrete_input_to_constraints(stdin)
     for each in to_queue:
@@ -271,7 +270,7 @@ def main():
     # hmmm: probably issues with the datas stuff here? probably need to store
     # the datas in the queue or something. what if there was a new read(2) deep in the program, changing the datas?
     while not q.empty():
-        log('get constraint set from queue, queue size: {}'.format(q.qsize()))
+        log(f'get constraint set from queue, queue size: {q.qsize()}')
         cons = q.get()
         inp = input_from_cons(cons, datas)
         to_queue, new_datas = concrete_input_to_constraints(inp, cons)
@@ -281,7 +280,7 @@ def main():
         for each in to_queue:
             q.put(each)
 
-    log('paths found: {}'.format(len(traces)))
+    log(f'paths found: {len(traces)}')
 
 if __name__=='__main__':
     main()
