@@ -131,9 +131,7 @@ class ABI(object):
         :param value:
         :type value: str or bytearray or Array
         """
-        if isinstance(value, str):  # DECISION: instead of implementing this leniency, we could have changed the g
-            # client to pass a bytes as an argument to solidity_create_contract(..., args=(b'qwe')). which is better?
-            # inclined so say it's ok to be lenient here.
+        if isinstance(value, str):
             value = value.encode()
         return value + bytearray(b'\x00' * (32 - len(value)))
 
