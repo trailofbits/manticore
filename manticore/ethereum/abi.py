@@ -304,12 +304,10 @@ class ABI(object):
         :return:
         """
         pos = offset
+        size = nbytes
 
         if padding:
             pos += 32 - nbytes
-            size = 32
-        else:
-            size = nbytes
 
         values = []
         while pos < offset + size:
