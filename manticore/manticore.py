@@ -48,7 +48,7 @@ def make_decree(program, concrete_start='', **kwargs):
     return initial_state
 
 
-def make_linux(program, argv=None, env=None, entry_symbol=None, symbolic_files=None, concrete_start='', input_size=256):
+def make_linux(program, argv=None, env=None, entry_symbol=None, symbolic_files=None, concrete_start='', stdin_size=256):
     env = {} if env is None else env
     argv = [] if argv is None else argv
     env = [f'{k}={v}' for k, v in env.items()]
@@ -87,7 +87,7 @@ def make_linux(program, argv=None, env=None, entry_symbol=None, symbolic_files=N
     platform.input.write(concrete_start)
 
     # set stdin input...
-    platform.input.write(initial_state.symbolicate_buffer('+' * input_size,
+    platform.input.write(initial_state.symbolicate_buffer('+' * stdin_size,
                                                           label='STDIN'))
     return initial_state
 
@@ -229,7 +229,7 @@ class Manticore(Eventful):
             self.unregister_plugin(plugin)
 
     @classmethod
-    def linux(cls, path, argv=None, envp=None, entry_symbol=None, symbolic_files=None, concrete_start='', input_size=256, **kwargs):
+    def linux(cls, path, argv=None, envp=None, entry_symbol=None, symbolic_files=None, concrete_start='', stdin_size=256, **kwargs):
         """
         Constructor for Linux binary analysis.
 
@@ -243,13 +243,13 @@ class Manticore(Eventful):
         :param symbolic_files: Filenames to mark as having symbolic input
         :type symbolic_files: list[str]
         :param str concrete_start: Concrete stdin to use before symbolic input
-        :param int input_size: stdin input size to use
+        :param int stdin_size: symbolic stdin size to use
         :param kwargs: Forwarded to the Manticore constructor
         :return: Manticore instance, initialized with a Linux State
         :rtype: Manticore
         """
         try:
-            return cls(make_linux(path, argv, envp, entry_symbol, symbolic_files, concrete_start, input_size), **kwargs)
+            return cls(make_linux(path, argv, envp, entry_symbol, symbolic_files, concrete_start, stdin_size), **kwargs)
         except elftools.common.exceptions.ELFError:
             raise Exception(f'Invalid binary: {path}')
 

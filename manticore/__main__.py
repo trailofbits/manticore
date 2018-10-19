@@ -56,8 +56,8 @@ def parse_arguments():
                         help='Show program version information')
     parser.add_argument('--config', type=str,
                         help='Manticore config file (.yml) to use. (default config file pattern is: ./[.]m[anti]core.yml)')
-    parser.add_argument('--input_size', type=int, default=256,
-                        help='Control the maximum input size')
+    parser.add_argument('--stdin_size', type=int, default=256,
+                        help='Control the maximum symbolic stdin size')
 
     bin_flags = parser.add_argument_group('Binary flags')
     bin_flags.add_argument('--entrysymbol', type=str, default=None,
@@ -226,7 +226,7 @@ def main():
 
     env = {key: val for key, val in [env[0].split('=') for env in args.env]}
 
-    m = Manticore(args.argv[0], argv=args.argv[1:], env=env, entry_symbol=args.entrysymbol, workspace_url=args.workspace, policy=args.policy, concrete_start=args.data, input_size=args.input_size)
+    m = Manticore(args.argv[0], argv=args.argv[1:], env=env, entry_symbol=args.entrysymbol, workspace_url=args.workspace, policy=args.policy, concrete_start=args.data, stdin_size=args.stdin_size)
 
     # Default plugins for now.. FIXME REMOVE!
     m.register_plugin(InstructionCounter())
