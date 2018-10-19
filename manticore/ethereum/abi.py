@@ -257,7 +257,7 @@ class ABI(object):
             if value.size <= size * 8:
                 value = Operators.ZEXTEND(value, size * 8)
             else:
-                # automatically truncate, e.g. if they passed a BitVec(256) for an `address` argument
+                # automatically truncate, e.g. if they passed a BitVec(256) for an `address` argument (160 bits)
                 value = Operators.EXTRACT(value, 0, size * 8)
             bytes = ArrayProxy(bytes.write_BE(padding, value, size))
         else:
