@@ -34,6 +34,9 @@ from .utils import log
 logger = logging.getLogger(__name__)
 log.init_logging()
 
+# Default symbolic input size
+STDIN_INPUT_DEFAULT_SIZE = 256
+
 
 def make_decree(program, concrete_start='', **kwargs):
     constraints = ConstraintSet()
@@ -48,7 +51,7 @@ def make_decree(program, concrete_start='', **kwargs):
     return initial_state
 
 
-def make_linux(program, argv=None, env=None, entry_symbol=None, symbolic_files=None, concrete_start='', stdin_size=256):
+def make_linux(program, argv=None, env=None, entry_symbol=None, symbolic_files=None, concrete_start='', stdin_size=STDIN_INPUT_DEFAULT_SIZE):
     env = {} if env is None else env
     argv = [] if argv is None else argv
     env = [f'{k}={v}' for k, v in env.items()]
@@ -229,7 +232,7 @@ class Manticore(Eventful):
             self.unregister_plugin(plugin)
 
     @classmethod
-    def linux(cls, path, argv=None, envp=None, entry_symbol=None, symbolic_files=None, concrete_start='', stdin_size=256, **kwargs):
+    def linux(cls, path, argv=None, envp=None, entry_symbol=None, symbolic_files=None, concrete_start='', stdin_size=STDIN_INPUT_DEFAULT_SIZE, **kwargs):
         """
         Constructor for Linux binary analysis.
 
