@@ -7,6 +7,7 @@ import os
 import sys
 import resource
 import re
+from contextlib import contextmanager
 
 from manticore.platforms import evm
 from manticore.core.plugin import Plugin
@@ -14,7 +15,7 @@ from manticore.core.smtlib import ConstraintSet, operators
 from manticore.core.smtlib.expression import BitVec
 from manticore.core.smtlib import solver
 from manticore.core.state import State, TerminateState
-from manticore.ethereum import ManticoreEVM, DetectIntegerOverflow, Detector, NoAliveStates, ABI, EthereumError
+from manticore.ethereum import ManticoreEVM, DetectIntegerOverflow, Detector, NoAliveStates, ABI, EthereumError, FilterFunctions
 from manticore.platforms.evm import EVMWorld, ConcretizeStack, concretized_args, Return, Stop
 from manticore.core.smtlib.visitors import pretty_print, translate_to_smtlib, simplify, to_constant
 import pyevmasm as EVMAsm
@@ -34,6 +35,13 @@ def make_mock_evm_state():
     fakestate = State(cs, EVMWorld(cs))
     return fakestate
 
+@contextmanager
+def disposable_mevm(**kwargs):
+    mevm = ManticoreEVM(**kwargs)
+    try:
+        yield mevm
+    finally:
+        shutil.rmtree(mevm.workspace)
 
 class EthDetectorsIntegrationTest(unittest.TestCase):
     def test_int_ovf(self):
@@ -1012,6 +1020,50 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
         self.assertEqual( world.get_storage_data(0x111111111111111111111111111111111111111, 2), 0)
         self.assertFalse(world.has_storage(0x333333333333333333333333333333333333333))
 
+
+class EthPluginTests(unittest.TestCase):
+
+    def test_FilterFunctions_fallback_function_matching(self):
+        """
+        Tests that the FilterFunctions plugin matches the fallback function hash correctly. issue #1196
+        """
+        with disposable_mevm(procs=1) as m:
+            source_code = '''
+            contract FallbackCounter {
+                uint public fallbackCounter = 123;
+                uint public otherCounter = 456;
+    
+                function other() {
+                    otherCounter += 1;
+                }
+                function() public {
+                    fallbackCounter += 1;
+                }
+            }
+            '''
+            plugin = FilterFunctions(regexp=r'^$', fallback=True)  # Only matches the fallback function.
+            m.register_plugin(plugin)
+
+            creator_account = m.create_account(balance=1000)
+            contract_account = m.solidity_create_contract(source_code, owner=creator_account)
+
+            symbolic_data = m.make_symbolic_buffer(320)
+            m.transaction(caller=creator_account, address=contract_account, data=symbolic_data, value=0)
+
+            self.assertEqual(m.count_states(), 1)
+            self.assertEqual(m.count_running_states(), 1)
+
+            self.assertEqual(len(m.world.all_transactions), 2)
+
+            # The fallbackCounter value must have been increased by 1.
+            contract_account.fallbackCounter()
+            self.assertEqual(len(m.world.all_transactions), 3)
+            self.assertEqual(ABI.deserialize('uint', to_constant(m.world.transactions[-1].return_data)), 123 + 1)
+
+            # The otherCounter value must not have changed.
+            contract_account.otherCounter()
+            self.assertEqual(len(m.world.all_transactions), 4)
+            self.assertEqual(ABI.deserialize('uint', to_constant(m.world.transactions[-1].return_data)), 456)
 
 if __name__ == '__main__':
     unittest.main()

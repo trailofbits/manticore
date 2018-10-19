@@ -100,7 +100,7 @@ class FilterFunctions(Plugin):
             selected_functions = []
 
             for func_hsh in md.hashes:
-                if func_hsh == '00000000':
+                if func_hsh == b'\0\0\0\0':
                     continue
                 abi = md.get_abi(func_hsh)
                 func_name = md.get_func_name(func_hsh)
@@ -113,7 +113,7 @@ class FilterFunctions(Plugin):
                 selected_functions.append(func_hsh)
 
             if self._fallback:
-                selected_functions.append('00000000')
+                selected_functions.append(b'\0\0\0\0')
 
             if self._include:
                 # constrain the input so it can take only the interesting values
