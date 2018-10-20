@@ -137,6 +137,8 @@ class ABI(object):
     def _serialize_tuple(types, value, dyn_offset=None):
         result = bytearray()
         dyn_result = bytearray()
+        if len(types) != len(value):
+            raise ValueError(f"The number of values to serialize is {'less' if len(value) < len(types) else 'greater'} than the number of types")
         for ty_i, value_i in zip(types, value):
             result_i, dyn_result_i = ABI._serialize(ty_i, value_i, dyn_offset + len(dyn_result))
             result += result_i

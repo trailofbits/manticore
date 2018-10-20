@@ -14,7 +14,18 @@ class SolidityMetadata(object):
         self._init_bytecode = init_bytecode
         self._runtime_bytecode = runtime_bytecode
         self._functions = hashes.keys()
-        self.abi = {item.get('name', '{fallback}'): item for item in abi}
+
+        abi_items_by_name = {}
+        for item in abi:
+            name = item.get('name')
+            if name is None:
+                type = item['type']
+                name = f'{{{type}}}'
+                assert name not in abi_items_by_name
+            # FIXME: Properly handle overloaded functions.
+            abi_items_by_name[name] = item
+        self.abi = abi_items_by_name
+
         self.warnings = warnings
         self.srcmap_runtime = self.__build_source_map(self.runtime_bytecode, srcmap_runtime)
         self.srcmap = self.__build_source_map(self.init_bytecode, srcmap)

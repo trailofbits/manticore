@@ -905,7 +905,25 @@ class EthSolidityCompilerTest(unittest.TestCase):
         finally:
             shutil.rmtree(d)
 
+class EthSolidityMetadataTests(unittest.TestCase):
+    def test_abi_constructor_and_fallback_items(self):
+        with disposable_mevm() as m:
+            source_code = '''
+            contract C {
+                constructor(uint a) public {}
+                function() public payable {}
+            }
+            '''
+            user_account = m.create_account(balance=1000, name='user_account')
+            contract_account = m.solidity_create_contract(source_code, owner=user_account, name='contract_account', args = (0,))
+            md = m.get_metadata(contract_account)
 
+            self.assertEqual(md.get_constructor_arguments(), '(uint256)')
+
+            fallback = md.get_abi('')
+            self.assertEqual(fallback['type'], 'fallback')
+            self.assertIsNone(fallback.get('inputs'))
+            self.assertEqual(fallback['stateMutability'], 'payable')
 
 class EthSpecificTxIntructionTests(unittest.TestCase):
 
