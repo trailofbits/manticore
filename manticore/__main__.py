@@ -3,7 +3,7 @@ import sys
 import logging
 import argparse
 
-from . import Manticore
+from . import Manticore, STDIN_INPUT_DEFAULT_SIZE
 from .utils import log, config
 
 # XXX(yan): This would normally be __name__, but then logger output will be pre-
