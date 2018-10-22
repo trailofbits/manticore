@@ -168,7 +168,7 @@ class Z3Solver(Solver):
         ''' Auxiliary method to spawn the external solver process'''
         assert '_proc' not in dir(self) or self._proc is None
         try:
-            self._proc = Popen(self._command.split(' '), stdin=PIPE, stdout=PIPE, bufsize=0, universal_newlines=True)
+            self._proc = Popen(shlex.split(self._command), stdin=PIPE, stdout=PIPE, bufsize=0, universal_newlines=True)
         except OSError as e:
             print(e, "Probably too many cached expressions? visitors._cache...")
             # Z3 was removed from the system in the middle of operation
