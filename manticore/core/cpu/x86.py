@@ -4603,7 +4603,9 @@ class X86Cpu(Cpu):
         """
         PMAXUB: returns maximum of packed unsigned byte integers in the dest operand
 
-        Performs a SIMD compare of the packed unsigned byte in the second source operand and the first source operand and returns the maximum value for each pair of integers to the destination operand.
+        Performs a SIMD compare of the packed unsigned byte in the second source operand
+        and the first source operand and returns the maximum value for each pair of 
+        integers to the destination operand.
 
         Example :
         $xmm1.v16_int8 = {..., 0xf2, 0xd1}
@@ -4942,7 +4944,9 @@ class X86Cpu(Cpu):
         """
         PADDD: Packed add with double words
 
-        Performs a SIMD add of the packed integers from the source operand (second operand) and the destination operand (first operand), and stores the packed integer results in the destination operand
+        Performs a SIMD add of the packed integers from the source operand (second operand)
+        and the destination operand (first operand), and stores the packed integer results
+        in the destination operand
 
         Example :
         $xmm1.v16_int8 = {..., 0x00000003, 0x00000001}
@@ -4977,7 +4981,10 @@ class X86Cpu(Cpu):
         """
         PSLLD: Packed shift left logical with double words
 
-        Shifts the destination operand (first operand) to the left by the number of bytes specified in the count operand (second operand). The empty low-order bytes are cleared (set to all 0s). If the value specified by the count operand is greater than 15, the destination operand is set to all 0s. The count operand is an 8-bit immediate.
+        Shifts the destination operand (first operand) to the left by the number of bytes specified 
+        in the count operand (second operand). The empty low-order bytes are cleared (set to all 0s).
+        If the value specified by the count operand is greater than 15, the destination operand is
+        set to all 0s. The count operand is an 8-bit immediate.
 
         Example :
         $xmm1.v16_int8 = {..., 0x00000003, 0x00000001}
