@@ -36,8 +36,8 @@ def make_mock_evm_state():
     return fakestate
 
 @contextmanager
-def disposable_mevm(**kwargs):
-    mevm = ManticoreEVM(**kwargs)
+def disposable_mevm(*args, **kwargs):
+    mevm = ManticoreEVM(*args, **kwargs)
     try:
         yield mevm
     finally:
