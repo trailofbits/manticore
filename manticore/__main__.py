@@ -56,7 +56,7 @@ def parse_arguments():
                         help='Show program version information')
     parser.add_argument('--config', type=str,
                         help='Manticore config file (.yml) to use. (default config file pattern is: ./[.]m[anti]core.yml)')
-    parser.add_argument('--stdin_size', type=int, default=256,
+    parser.add_argument('--stdin_size', type=int, default=STDIN_INPUT_DEFAULT_SIZE,
                         help='Control the maximum symbolic stdin size')
 
     bin_flags = parser.add_argument_group('Binary flags')
