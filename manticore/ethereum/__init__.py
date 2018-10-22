@@ -306,10 +306,10 @@ class ManticoreEVM(Manticore):
         return bytearray(binascii.unhexlify(hex_contract))
 
     @staticmethod
-    def _run_solc(source_file, solc_bin=None, solc_remaps=[]):
+    def _run_solc(source_file_path, solc_bin=None, solc_remaps=[]):
         """ Compile a source file with the Solidity compiler
 
-            :param source_file: a file object for the source file
+            :param str source_file_path: path to the source file
             :param solc_bin: path to solc binary
             :param solc_remaps: solc import remaps
             :return: output, warnings
@@ -338,7 +338,7 @@ class ManticoreEVM(Manticore):
         #solc path search is a mess #fixme
         #https://solidity.readthedocs.io/en/latest/layout-of-source-files.html
         current_folder = os.getcwd()
-        abs_filename = os.path.abspath(source_file.name)
+        abs_filename = os.path.abspath(source_file_path.name)
         working_folder, filename = os.path.split(abs_filename)
 
         solc_invocation = [solc] + list(solc_remaps) + [
@@ -373,10 +373,10 @@ class ManticoreEVM(Manticore):
             raise EthereumError('Solidity compilation error:\n\n{}'.format(stderr))
 
     @staticmethod
-    def _compile(source_code, contract_name, libraries=None, solc_bin=None, solc_remaps=[]):
+    def _compile(source_code_or_path, contract_name, libraries=None, solc_bin=None, solc_remaps=[]):
         """ Compile a Solidity contract, used internally
 
-            :param source_code: solidity source as either a string or a file handle
+            :param source_code_or_path: solidity source as either a string or a file handle
             :param contract_name: a string with the name of the contract to analyze
             :param libraries: an itemizable of pairs (library_name, address)
             :param solc_bin: path to solc binary
@@ -385,17 +385,19 @@ class ManticoreEVM(Manticore):
             :return: name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
         """
 
-        if isinstance(source_code, str):
-            with tempfile.NamedTemporaryFile('w+') as temp:
-                temp.write(source_code)
-                temp.flush()
-                output, warnings = ManticoreEVM._run_solc(temp, solc_bin, solc_remaps)
-        elif isinstance(source_code, io.IOBase):
-            output, warnings = ManticoreEVM._run_solc(source_code, solc_bin, solc_remaps)
-            source_code.seek(0)
-            source_code = source_code.read()
+        if not isinstance(source_code_or_path, str):
+            raise TypeError(f'source code bad type: {type(source_code_or_path).__name__}')
+
+        if os.path.exists(source_code_or_path):
+            output, warnings = ManticoreEVM._run_solc(source_code_or_path, solc_bin, solc_remaps)
+            with open(source_code_or_path) as f:
+                source_code = f.read()
         else:
-            raise TypeError(f'source code bad type: {type(source_code).__name__}')
+            source_code = source_code_or_path
+            with tempfile.NamedTemporaryFile('w+') as temp:
+                temp.write(source_code_or_path)
+                temp.flush()
+                output, warnings = ManticoreEVM._run_solc(temp.name, solc_bin, solc_remaps)
 
         contracts = output.get('contracts', [])
         if len(contracts) != 1 and contract_name is None:
