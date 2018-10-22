@@ -332,7 +332,7 @@ class ABI(object):
         :rtype: int or Expression
         """
         assert isinstance(data, (bytearray, Array))
-        value = ABI._readBE(data, nbytes, offset=offset)
+        value = ABI._readBE(data, nbytes, padding=True, offset=offset)
         value = Operators.ZEXTEND(value, (nbytes + padding) * 8)
         return value
 
@@ -346,7 +346,7 @@ class ABI(object):
         :rtype: int or Expression
         """
         assert isinstance(data, (bytearray, Array))
-        value = ABI._readBE(data, nbytes)
+        value = ABI._readBE(data, nbytes, padding=True)
         value = Operators.SEXTEND(value, nbytes * 8, (nbytes + padding) * 8)
         if not issymbolic(value):
             # sign bit on
