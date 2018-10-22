@@ -301,6 +301,23 @@ class State(Eventful):
     def is_feasible(self):
         return self.can_be_true(True)
 
+    # alternate names:
+    # state.check
+    # state.verify
+    # state.ensure
+    # ...
+    def assert_(self, expression, testcase_message, testcase_name='Assertion Failed'):
+        """
+        Check that an expression is always true, and if it is not always true, generate a testcase where the
+        expression is false.
+
+        :param condition: Expression (condition) to be asserted as always true
+        """
+        with self as temp_state:
+            temp_state.constrain(expression == False)
+            if temp_state.is_feasible():
+                temp_state.generate_testcase(name=testcase_name, message=testcase_message)
+
     def can_be_true(self, expr):
         expr = self.migrate_expression(expr)
         return self._solver.can_be_true(self._constraints, expr)
