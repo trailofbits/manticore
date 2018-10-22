@@ -57,7 +57,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -121,7 +121,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -186,7 +186,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -205,9 +205,9 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('604060020a600055603f60020a600155604160020a600255'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x010000000000000000)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x01)), 0x8000000000000000)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x02)), 0x020000000000000000)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x010000000000000000)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x01)), 0x8000000000000000)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x02)), 0x020000000000000000)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -249,7 +249,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -268,7 +268,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60016000037f800000000000000000000000000000000000000000000000000000000000000060000305600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x8000000000000000000000000000000000000000000000000000000000000000)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x8000000000000000000000000000000000000000000000000000000000000000)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -364,7 +364,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -383,15 +383,15 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60006101000a6101000a600055600060ff0a6101000a60015560006101010a6101000a60025560006101000a60ff0a600355600060ff0a60ff0a60045560006101010a60ff0a60055560006101000a6101010a600655600060ff0a6101010a60075560006101010a6101010a600855'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x0100)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x01)), 0x0100)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x02)), 0x0100)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x03)), 0xff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x04)), 0xff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x05)), 0xff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x06)), 0x0101)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x07)), 0x0101)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x08)), 0x0101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x0100)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x01)), 0x0100)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x02)), 0x0100)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0xff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x04)), 0xff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x05)), 0xff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x06)), 0x0101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x07)), 0x0101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x08)), 0x0101)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -431,7 +431,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -450,7 +450,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff60000305600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -498,7 +498,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -517,7 +517,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('61010060020a60005560ff60020a60015561010160020a600255'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x01)), 0x8000000000000000000000000000000000000000000000000000000000000000)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x01)), 0x8000000000000000000000000000000000000000000000000000000000000000)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -565,7 +565,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -584,9 +584,9 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600c6101000a600055600c60ff0a600155600c6101010a600255'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x01000000000000000000000000)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x01)), 0xf44125ebeb98e9ee2441f401)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x02)), 0x010c42ddf21b9f19efdc420c01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01000000000000000000000000)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x01)), 0xf44125ebeb98e9ee2441f401)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x02)), 0x010c42ddf21b9f19efdc420c01)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -634,7 +634,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -653,9 +653,9 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60096101000a600055600960ff0a60015560096101010a600255'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x01000000000000000000)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x01)), 0xf723ac7d8253dc08ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x02)), 0x010924547e7e54240901)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01000000000000000000)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x01)), 0xf723ac7d8253dc08ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x02)), 0x010924547e7e54240901)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -703,7 +703,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -722,9 +722,9 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600860020a600055600760020a600155600960020a600255'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x0100)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x01)), 0x80)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x02)), 0x0200)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x0100)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x01)), 0x80)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x02)), 0x0200)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -772,7 +772,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -791,9 +791,9 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('601c6101000a600055601c60ff0a600155601c6101010a600255'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x0100000000000000000000000000000000000000000000000000000000)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x01)), 0xe56d8280c5c1dc6be448760a77f47c1750f146fd962467ee3579e401)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x02)), 0x011d871d80b9e4ff369ba3f4b3ce9beb6f2bb9931fe9243807cd7a1c01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x0100000000000000000000000000000000000000000000000000000000)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x01)), 0xe56d8280c5c1dc6be448760a77f47c1750f146fd962467ee3579e401)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x02)), 0x011d871d80b9e4ff369ba3f4b3ce9beb6f2bb9931fe9243807cd7a1c01)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -889,7 +889,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -908,13 +908,13 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60206101000a6101000a600055602060ff0a6101000a60015560206101010a6101000a60025560206101000a60ff0a600355602060ff0a60ff0a60045560206101010a60ff0a60055560206101000a6101010a600655602060ff0a6101010a60075560206101010a6101010a600855'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x01)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x03)), 0x01)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x04)), 0xb8247842bb5ce75c08d0c251669ed5870fa24a22952e5db3a7c66c59ffe000ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x05)), 0xee526e5a06f2a990b2bf6c951e5feabf0e07ee16877296e1be872db9e02000ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x06)), 0x01)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x07)), 0xeda7d024b6de40a9d3b966e71f10a4667edc5b71cab07aeabcac6249dfe00101)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x08)), 0x512ecfaeeb11205f0833e1054dcb1300488e0954be5af77a49e143aa00200101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x04)), 0xb8247842bb5ce75c08d0c251669ed5870fa24a22952e5db3a7c66c59ffe000ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x05)), 0xee526e5a06f2a990b2bf6c951e5feabf0e07ee16877296e1be872db9e02000ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x06)), 0x01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x07)), 0xeda7d024b6de40a9d3b966e71f10a4667edc5b71cab07aeabcac6249dfe00101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x08)), 0x512ecfaeeb11205f0833e1054dcb1300488e0954be5af77a49e143aa00200101)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -962,7 +962,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -981,9 +981,9 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600d6101000a600055600d60ff0a600155600d6101010a600255'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x0100000000000000000000000000)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x01)), 0xf34ce4c5ffad5104361db20cff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x02)), 0x010d4f20d00dbab909cc1e4e0d01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x0100000000000000000000000000)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x01)), 0xf34ce4c5ffad5104361db20cff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x02)), 0x010d4f20d00dbab909cc1e4e0d01)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -1031,7 +1031,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -1050,9 +1050,9 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60146101000a600055601460ff0a60015560146101010a600255'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x010000000000000000000000000000000000000000)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x01)), 0xecb99eb1063b1984b725d2e3c72b82e88cbdec01)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x02)), 0x0114c2872a2898bea4ec46054167a4a2f174be1401)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x010000000000000000000000000000000000000000)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x01)), 0xecb99eb1063b1984b725d2e3c72b82e88cbdec01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x02)), 0x0114c2872a2898bea4ec46054167a4a2f174be1401)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -1090,7 +1090,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -1203,7 +1203,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -1222,13 +1222,13 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60216101000a6101000a600055602160ff0a6101000a60015560216101010a6101000a60025560216101000a60ff0a600355602160ff0a60ff0a60045560216101010a60ff0a60055560216101000a6101010a600655602160ff0a6101010a60075560216101010a6101010a600855'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x01)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x03)), 0x01)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x04)), 0x8dcb65b5494eba78cd6756a6f9851f6e26d0f2bb9ecd7e9abd7e9b11209ffeff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x05)), 0x6694bb31b20cd625f3756897dae6d738f2e64467b5b6f10fa3e07763ffa100ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x06)), 0x01)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x07)), 0xe678999aeffd1f1f45081f64de7f80ab083dd7df04721ed64ee04c03bda1ff01)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x08)), 0x39b68fb9898dd7568abd178397251ce8226a25c1d305a4e79573333520a10101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x04)), 0x8dcb65b5494eba78cd6756a6f9851f6e26d0f2bb9ecd7e9abd7e9b11209ffeff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x05)), 0x6694bb31b20cd625f3756897dae6d738f2e64467b5b6f10fa3e07763ffa100ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x06)), 0x01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x07)), 0xe678999aeffd1f1f45081f64de7f80ab083dd7df04721ed64ee04c03bda1ff01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x08)), 0x39b68fb9898dd7568abd178397251ce8226a25c1d305a4e79573333520a10101)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -1276,7 +1276,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -1295,9 +1295,9 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60166101000a600055601660ff0a60015560166101010a600255'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x0100000000000000000000000000000000000000000000)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x01)), 0xeae1182d42dfa98cc73c3e63d280f30e3e8cfce6ea01)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x02)), 0x0116ed20fb041418baf4c37d91efb553dbfa9904e71601)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x0100000000000000000000000000000000000000000000)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x01)), 0xeae1182d42dfa98cc73c3e63d280f30e3e8cfce6ea01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x02)), 0x0116ed20fb041418baf4c37d91efb553dbfa9904e71601)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -1335,7 +1335,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -1390,7 +1390,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -1409,7 +1409,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff02600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -1447,7 +1447,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -1560,7 +1560,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -1579,12 +1579,12 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('601d6101000a6101000a600055601d60ff0a6101000a600155601d6101010a6101000a600255601d6101000a60ff0a600355601d60ff0a60ff0a600455601d6101010a60ff0a600555601d6101000a6101010a600655601d60ff0a6101010a600755601d6101010a6101010a600855'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x03)), 0xff7f000000000000000000000000000000000000000000000000000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x04)), 0x41e065d46e0349cfe624c4e8a2034aea1f7edfff80e511cd8067d488949bfeff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x05)), 0xa84162ca6675a22c4c79dfc4ea15f760db5a04dbf04246764199b668879d00ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x06)), 0xff81000000000000000000000000000000000000000000000000000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x07)), 0x1226984faa6b05ebdbd45d8477fa4fd5b55bfd5061de03c319282b153d9dff01)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x08)), 0x5cc9e6b0b749fd94541ad00364bdec2fca7816981ca3e38f485decc7a49d0101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0xff7f000000000000000000000000000000000000000000000000000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x04)), 0x41e065d46e0349cfe624c4e8a2034aea1f7edfff80e511cd8067d488949bfeff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x05)), 0xa84162ca6675a22c4c79dfc4ea15f760db5a04dbf04246764199b668879d00ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x06)), 0xff81000000000000000000000000000000000000000000000000000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x07)), 0x1226984faa6b05ebdbd45d8477fa4fd5b55bfd5061de03c319282b153d9dff01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x08)), 0x5cc9e6b0b749fd94541ad00364bdec2fca7816981ca3e38f485decc7a49d0101)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -1632,7 +1632,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -1651,8 +1651,8 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60216101000a600055602160ff0a60015560216101010a600255'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x01)), 0xfb4c498e11e3f82e714be514ef024675bb48d678bd192222cd2e783d4df020ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x02)), 0x25f3884075dd08b8fb400789097aa95df8750bd17be0d83c9a0fb7ed52102101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x01)), 0xfb4c498e11e3f82e714be514ef024675bb48d678bd192222cd2e783d4df020ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x02)), 0x25f3884075dd08b8fb400789097aa95df8750bd17be0d83c9a0fb7ed52102101)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -1693,7 +1693,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -1712,7 +1712,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60036000036001600408600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x05)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x05)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -1754,7 +1754,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -1811,7 +1811,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -1830,7 +1830,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6003600260000306600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x02)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x02)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -1926,7 +1926,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -1945,12 +1945,12 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60066101000a6101000a600055600660ff0a6101000a60015560066101010a6101000a60025560066101000a60ff0a600355600660ff0a60ff0a60045560066101010a60ff0a60055560066101000a6101010a600655600660ff0a6101010a60075560066101010a6101010a600855'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x03)), 0x1948059de1def03c4ec35fc22c2bb8f2bf45dc33085514ff7f00000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x04)), 0x41f818a8e24eb6d7bb7b193b4f2b5fdcf4bd0d453f2ac3499d8830d391fa00ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x05)), 0xede6fe4a943dfb5d967a2b85d6728759d40d2ef0ae4bc28bbb1867f98c0600ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x06)), 0x083c936cbaad5de592badc2e142fe4ebd6103921f7aa6aff8100000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x07)), 0x57385019fe4e0939ca3f35c37cadfaf52fba5b1cdfb02def3866e8068bfa0101)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x08)), 0x810ac878bd98428f6be8c6426ba9f9da09e3e33bf4fe10bfa3f8b12c92060101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x1948059de1def03c4ec35fc22c2bb8f2bf45dc33085514ff7f00000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x04)), 0x41f818a8e24eb6d7bb7b193b4f2b5fdcf4bd0d453f2ac3499d8830d391fa00ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x05)), 0xede6fe4a943dfb5d967a2b85d6728759d40d2ef0ae4bc28bbb1867f98c0600ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x06)), 0x083c936cbaad5de592badc2e142fe4ebd6103921f7aa6aff8100000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x07)), 0x57385019fe4e0939ca3f35c37cadfaf52fba5b1cdfb02def3866e8068bfa0101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x08)), 0x810ac878bd98428f6be8c6426ba9f9da09e3e33bf4fe10bfa3f8b12c92060101)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -1998,7 +1998,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -2017,8 +2017,8 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6000356000556020356001556001546000540a600255'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x02)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x01)), 0x0100000000000f)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x02)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x01)), 0x0100000000000f)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -2065,7 +2065,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -2084,7 +2084,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60036001600560000309600360056000030614600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -2180,7 +2180,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -2199,12 +2199,12 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60036101000a6101000a600055600360ff0a6101000a60015560036101010a6101000a60025560036101000a60ff0a600355600360ff0a60ff0a60045560036101010a60ff0a60055560036101000a6101010a600655600360ff0a6101010a60075560036101010a6101010a600855'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x03)), 0x109a00e1370d2d2922bf892e85becb54297354b2e5c75388d514ff7f00000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x04)), 0x54a792f15e9aba7e4ad9e716bc169eea3a6e2e9c49bf9b335874613c8081feff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x05)), 0x5d24a14d8e5e039372cd0f6a0f31e9ed6b75adba9f16b1c5b3edd5ba818300ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x06)), 0x298e2f316b4ccded5ebf515998d9ec20df69404b04a441782a6aff8100000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x07)), 0x4335694e98f372183c62a2339fa4ad161e9b4c42240bdc9452abffd07783ff01)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x08)), 0xf0f0820797315acd063056bba76f6a9c3e281cdb5197a233967ca94684830101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x109a00e1370d2d2922bf892e85becb54297354b2e5c75388d514ff7f00000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x04)), 0x54a792f15e9aba7e4ad9e716bc169eea3a6e2e9c49bf9b335874613c8081feff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x05)), 0x5d24a14d8e5e039372cd0f6a0f31e9ed6b75adba9f16b1c5b3edd5ba818300ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x06)), 0x298e2f316b4ccded5ebf515998d9ec20df69404b04a441782a6aff8100000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x07)), 0x4335694e98f372183c62a2339fa4ad161e9b4c42240bdc9452abffd07783ff01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x08)), 0xf0f0820797315acd063056bba76f6a9c3e281cdb5197a233967ca94684830101)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -2300,7 +2300,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -2319,12 +2319,12 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600a6101000a6101000a600055600a60ff0a6101000a600155600a6101010a6101000a600255600a6101000a60ff0a600355600a60ff0a60ff0a600455600a6101010a60ff0a600555600a6101000a6101010a600655600a60ff0a6101010a600755600a6101010a6101010a600855'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x03)), 0xfe0f60957dc223578a0298879ec55c33085514ff7f0000000000000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x04)), 0xc1ea45f348b5d351c4d8fe5c77da979cadc33d866acc42e981278896b1f600ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x05)), 0x56ddb29bca94fb986ac0a40188b3b53f3216b3559bd8324a77ea8bd8a80a00ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x06)), 0x2d49ff6b0bbe177ae9317000b68fb921f7aa6aff810000000000000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x07)), 0x185fa9eab94cfe3016b69657e83b23fd24cc6960218254231c3db627a7f60101)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x08)), 0xa7a0223829f26d6c635368034320563df4aa5eb62efc87a42bb35f69b20a0101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0xfe0f60957dc223578a0298879ec55c33085514ff7f0000000000000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x04)), 0xc1ea45f348b5d351c4d8fe5c77da979cadc33d866acc42e981278896b1f600ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x05)), 0x56ddb29bca94fb986ac0a40188b3b53f3216b3559bd8324a77ea8bd8a80a00ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x06)), 0x2d49ff6b0bbe177ae9317000b68fb921f7aa6aff810000000000000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x07)), 0x185fa9eab94cfe3016b69657e83b23fd24cc6960218254231c3db627a7f60101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x08)), 0xa7a0223829f26d6c635368034320563df4aa5eb62efc87a42bb35f69b20a0101)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -2420,7 +2420,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -2439,12 +2439,12 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60116101000a6101000a600055601160ff0a6101000a60015560116101010a6101000a60025560116101000a60ff0a600355601160ff0a60ff0a60045560116101010a60ff0a60055560116101000a6101010a600655601160ff0a6101010a60075560116101010a6101010a600855'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x03)), 0xec698218879ec55c33085514ff7f000000000000000000000000000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x04)), 0x722ad218eb1995a2d257c4c06d8de993c203cfc8e3512df7d633e17e908ffeff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x05)), 0x8ac9b5ec08d74612cb29f941481d274b51721af2296207c0da8d24667f9100ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x06)), 0x8fc9b0f000b68fb921f7aa6aff81000000000000000000000000000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x07)), 0x81d5ff63680841482299f3eab616446dcd336f537c0c565aa4112ab95d91ff01)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x08)), 0x9c6ca90dac4e97dea02ac969e8649ee9e6232e0c3f4797411151cb8f90910101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0xec698218879ec55c33085514ff7f000000000000000000000000000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x04)), 0x722ad218eb1995a2d257c4c06d8de993c203cfc8e3512df7d633e17e908ffeff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x05)), 0x8ac9b5ec08d74612cb29f941481d274b51721af2296207c0da8d24667f9100ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x06)), 0x8fc9b0f000b68fb921f7aa6aff81000000000000000000000000000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x07)), 0x81d5ff63680841482299f3eab616446dcd336f537c0c565aa4112ab95d91ff01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x08)), 0x9c6ca90dac4e97dea02ac969e8649ee9e6232e0c3f4797411151cb8f90910101)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -2540,7 +2540,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -2559,12 +2559,12 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('601b6101000a6101000a600055601b60ff0a6101000a600155601b6101010a6101000a600255601b6101000a60ff0a600355601b60ff0a60ff0a600455601b6101010a60ff0a600555601b6101000a6101010a600655601b60ff0a6101010a600755601b6101010a6101010a600855'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x03)), 0x5514ff7f00000000000000000000000000000000000000000000000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x04)), 0x178918ffbcb401d4efd2f7dfb4d01a897172267f0f491121ac52dd614899feff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x05)), 0x38ecff71480ca0b422f2ed6f780d5fead2ae234a49104b10a86f7f0dd19b00ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x06)), 0xaa6aff8100000000000000000000000000000000000000000000000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x07)), 0xd02811cb5dc1d80567e810532b235b7672f5c78cd6e89bb511d5e2d8f79bff01)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x08)), 0x1b4e6404f474c18055d30bb8987672f59e97980d6f9de1764c0fbec5ec9b0101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x5514ff7f00000000000000000000000000000000000000000000000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x04)), 0x178918ffbcb401d4efd2f7dfb4d01a897172267f0f491121ac52dd614899feff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x05)), 0x38ecff71480ca0b422f2ed6f780d5fead2ae234a49104b10a86f7f0dd19b00ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x06)), 0xaa6aff8100000000000000000000000000000000000000000000000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x07)), 0xd02811cb5dc1d80567e810532b235b7672f5c78cd6e89bb511d5e2d8f79bff01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x08)), 0x1b4e6404f474c18055d30bb8987672f59e97980d6f9de1764c0fbec5ec9b0101)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -2612,7 +2612,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -2631,9 +2631,9 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60156101000a600055601560ff0a60015560156101010a600255'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x01000000000000000000000000000000000000000000)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x01)), 0xebcce5125534de6b326ead10e3645765a4312e14ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x02)), 0x0115d749b152c1576391324b46a90c47946632d21501)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01000000000000000000000000000000000000000000)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x01)), 0xebcce5125534de6b326ead10e3645765a4312e14ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x02)), 0x0115d749b152c1576391324b46a90c47946632d21501)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -2674,7 +2674,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -2693,7 +2693,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60016000600060000803600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -2741,7 +2741,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -2760,9 +2760,9 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60106101000a600055601060ff0a60015560106101010a600255'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x0100000000000000000000000000000000)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x01)), 0xf075d70b0f1b82196f36f719d077f001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x02)), 0x01107a372d2f74e272cf59171e30781001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x0100000000000000000000000000000000)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x01)), 0xf075d70b0f1b82196f36f719d077f001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x02)), 0x01107a372d2f74e272cf59171e30781001)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -2800,7 +2800,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -2819,7 +2819,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('7ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0a600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -2860,7 +2860,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 10000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -2879,7 +2879,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600560096000030580600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -2918,7 +2918,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -2937,7 +2937,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600560017fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff08600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -2977,7 +2977,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -2996,7 +2996,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6003600003600507600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x02)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x02)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -3039,7 +3039,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -3058,7 +3058,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60056002600003600160000308600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x04)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x04)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -3096,7 +3096,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -3115,7 +3115,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('637fffffff637fffffff0a600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0xbc8cccccccc888888880000000aaaaaab00000000fffffffffffffff7fffffff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0xbc8cccccccc888888880000000aaaaaab00000000fffffffffffffff7fffffff)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -3153,7 +3153,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -3172,7 +3172,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600260020a600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x04)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x04)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -3210,7 +3210,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -3265,7 +3265,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -3284,7 +3284,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6003600206600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x02)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x02)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -3332,7 +3332,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -3351,9 +3351,9 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60086101000a600055600860ff0a60015560086101010a600255'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x010000000000000000)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x01)), 0xf81bc845c81bf801)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x02)), 0x01081c3846381c0801)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x010000000000000000)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x01)), 0xf81bc845c81bf801)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x02)), 0x01081c3846381c0801)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -3392,7 +3392,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -3411,7 +3411,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60026002600108600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -3459,7 +3459,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -3478,9 +3478,9 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60176101000a600055601760ff0a60015560176101010a600255'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x010000000000000000000000000000000000000000000000)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x01)), 0xe9f63715159cc9e33a7502256eae721b304e6fea0316ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x02)), 0x0118040e1bff182cd3afb8410f81a5092fd6939debfd1701)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x010000000000000000000000000000000000000000000000)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x01)), 0xe9f63715159cc9e33a7502256eae721b304e6fea0316ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x02)), 0x0118040e1bff182cd3afb8410f81a5092fd6939debfd1701)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -3518,7 +3518,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -3537,7 +3537,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60016101010a600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x0101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x0101)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -3585,7 +3585,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -3604,9 +3604,9 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60126101000a600055601260ff0a60015560126101010a600255'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x01000000000000000000000000000000000000)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x01)), 0xee95dbd2d0085a30be71f86293f0d098ee01)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x02)), 0x01129c3c15c100fbac976a98a583f730991201)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01000000000000000000000000000000000000)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x01)), 0xee95dbd2d0085a30be71f86293f0d098ee01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x02)), 0x01129c3c15c100fbac976a98a583f730991201)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -3654,7 +3654,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -3673,9 +3673,9 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60116101000a600055601160ff0a60015560116101010a600255'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x010000000000000000000000000000000000)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x01)), 0xef856134040c669755c7c022b6a77810ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x02)), 0x01118ab1645ca45755422870354ea8881101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x010000000000000000000000000000000000)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x01)), 0xef856134040c669755c7c022b6a77810ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x02)), 0x01118ab1645ca45755422870354ea8881101)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -3717,7 +3717,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -3736,7 +3736,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600d600060c86000030703600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff3)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff3)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -3774,7 +3774,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -3793,7 +3793,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60047fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff01600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x03)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x03)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -3889,7 +3889,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -3908,12 +3908,12 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60166101000a6101000a600055601660ff0a6101000a60015560166101010a6101000a60025560166101000a60ff0a600355601660ff0a60ff0a60045560166101010a60ff0a60055560166101000a6101010a600655601660ff0a6101010a60075560166101010a6101010a600855'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x03)), 0x9ec55c33085514ff7f0000000000000000000000000000000000000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x04)), 0xec447e662ac08957d7e290a421dbf54c0aaf43aadc9cc465ad0b02f071ea00ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x05)), 0xdc9178d3bab470096f01477c859b5f4173986640b659426412a653465c1600ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x06)), 0xb68fb921f7aa6aff810000000000000000000000000000000000000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x07)), 0xdcf0a770777610503596ae0311af46c171151ed45107d7e7bb8f74bb5bea0101)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x08)), 0x4d65773387993928c95c861274232d3fb6f6b7fe1b22e4e61a30e71172160101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x9ec55c33085514ff7f0000000000000000000000000000000000000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x04)), 0xec447e662ac08957d7e290a421dbf54c0aaf43aadc9cc465ad0b02f071ea00ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x05)), 0xdc9178d3bab470096f01477c859b5f4173986640b659426412a653465c1600ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x06)), 0xb68fb921f7aa6aff810000000000000000000000000000000000000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x07)), 0xdcf0a770777610503596ae0311af46c171151ed45107d7e7bb8f74bb5bea0101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x08)), 0x4d65773387993928c95c861274232d3fb6f6b7fe1b22e4e61a30e71172160101)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -3953,7 +3953,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -3972,7 +3972,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6001600060030603600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -4010,7 +4010,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -4065,7 +4065,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -4084,7 +4084,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600060000a600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -4123,7 +4123,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -4188,7 +4188,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -4207,9 +4207,9 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('601b6101000a600055601b60ff0a600155601b6101010a600255'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x01000000000000000000000000000000000000000000000000000000)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x01)), 0xe653d6571cdebb270b53c9d44c40bcd425165d5af1157d6ba11aff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x02)), 0x011c6ab2cdebf906306b38bbf7d6c52648e2d6bc63859e996e5f1b01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01000000000000000000000000000000000000000000000000000000)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x01)), 0xe653d6571cdebb270b53c9d44c40bcd425165d5af1157d6ba11aff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x02)), 0x011c6ab2cdebf906306b38bbf7d6c52648e2d6bc63859e996e5f1b01)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -4250,7 +4250,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -4269,7 +4269,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60006000600009600103600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -4309,7 +4309,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -4364,7 +4364,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -4383,7 +4383,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6001601702600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x17)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x17)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -4431,7 +4431,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -4450,9 +4450,9 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('601f6101000a600055601f60ff0a600155601f6101010a600255'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x0100000000000000000000000000000000000000000000000000000000000000)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x01)), 0xe2bfe95c5d7067567402dd9d7235fc088ac84eab8113bf8d7e3c288d2f1eff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x02)), 0x0120e30c8c1bb25c9d2219ea196c17ded3d775b231bbd28005b131fa90d11f01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x0100000000000000000000000000000000000000000000000000000000000000)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x01)), 0xe2bfe95c5d7067567402dd9d7235fc088ac84eab8113bf8d7e3c288d2f1eff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x02)), 0x0120e30c8c1bb25c9d2219ea196c17ded3d775b231bbd28005b131fa90d11f01)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -4548,7 +4548,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -4567,12 +4567,12 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60196101000a6101000a600055601960ff0a6101000a60015560196101010a6101000a60025560196101000a60ff0a600355601960ff0a60ff0a60045560196101010a60ff0a60055560196101000a6101010a600655601960ff0a6101010a60075560196101010a6101010a600855'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x03)), 0x33085514ff7f0000000000000000000000000000000000000000000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x04)), 0x7f510dd7198cac0a92ff7ea80451838c0dfa12114c41a0ef05907397f897feff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x05)), 0x1275e752b6aee228ecba5e9b57ef1111deff3c651e2cfbf2cccd13151f9900ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x06)), 0x21f7aa6aff810000000000000000000000000000000000000000000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x07)), 0x6646340ad51a03bb710caf05756b685b33c7dad62ae68d369243700ead99ff01)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x08)), 0x29d80e8060ef2221929bb18215586c742686d6860e028ca0456b443238990101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x33085514ff7f0000000000000000000000000000000000000000000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x04)), 0x7f510dd7198cac0a92ff7ea80451838c0dfa12114c41a0ef05907397f897feff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x05)), 0x1275e752b6aee228ecba5e9b57ef1111deff3c651e2cfbf2cccd13151f9900ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x06)), 0x21f7aa6aff810000000000000000000000000000000000000000000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x07)), 0x6646340ad51a03bb710caf05756b685b33c7dad62ae68d369243700ead99ff01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x08)), 0x29d80e8060ef2221929bb18215586c742686d6860e028ca0456b443238990101)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -4668,7 +4668,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -4687,12 +4687,12 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60126101000a6101000a600055601260ff0a6101000a60015560126101010a6101000a60025560126101000a60ff0a600355601260ff0a60ff0a60045560126101010a60ff0a60055560126101000a6101010a600655601260ff0a6101010a60075560126101010a6101010a600855'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x03)), 0x698218879ec55c33085514ff7f00000000000000000000000000000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x04)), 0x8a2cbd9f40794e2205b13306f2aa0a43c60823c64b95d8601fa4f1e521ee00ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x05)), 0xc1b5a1e3a81da51b10d84e880f0113ff67b863ddad3faf1f4ecf413f101200ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x06)), 0xc9b0f000b68fb921f7aa6aff8100000000000000000000000000000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x07)), 0x410be68e49452a1fbcd863bf6e8d637f8eae4979c34c88d552afbcc20fee0101)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x08)), 0xf540cb714754b5b1eb0373833833bd7fb0ee925ce8b92962500b7a1c22120101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x698218879ec55c33085514ff7f00000000000000000000000000000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x04)), 0x8a2cbd9f40794e2205b13306f2aa0a43c60823c64b95d8601fa4f1e521ee00ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x05)), 0xc1b5a1e3a81da51b10d84e880f0113ff67b863ddad3faf1f4ecf413f101200ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x06)), 0xc9b0f000b68fb921f7aa6aff8100000000000000000000000000000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x07)), 0x410be68e49452a1fbcd863bf6e8d637f8eae4979c34c88d552afbcc20fee0101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x08)), 0xf540cb714754b5b1eb0373833833bd7fb0ee925ce8b92962500b7a1c22120101)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -4732,7 +4732,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -4751,7 +4751,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff6000037fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff05600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -4847,7 +4847,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -4866,12 +4866,12 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60056101000a6101000a600055600560ff0a6101000a60015560056101010a6101000a60025560056101000a60ff0a600355600560ff0a60ff0a60045560056101010a60ff0a60055560056101000a6101010a600655600560ff0a6101010a60075560056101010a6101010a600855'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x03)), 0xb581ac185aad71db2d177c286929c4c22809e5dcb3085514ff7f000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x04)), 0x75789eb2a64bc971389fbd11a1e6d7abbf95ad25e23fb9aa25e73a0bfc83feff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x05)), 0xfc403fa42ceb6a0d0d3321bd9b2d8af25b1b667f87a04f496c78168d078500ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x06)), 0xcec5ec213b9cb5811f6ae00428fd7b6ef5a1af39a1f7aa6aff81000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x07)), 0x70ab32233202b98d382d17713fa0be391eaf74f85ba1740c9c3238c4ed85ff01)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x08)), 0xb622672a213faa79b32185ff93a7b27a8499e48f7b032cdb4d1a70300c850101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0xb581ac185aad71db2d177c286929c4c22809e5dcb3085514ff7f000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x04)), 0x75789eb2a64bc971389fbd11a1e6d7abbf95ad25e23fb9aa25e73a0bfc83feff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x05)), 0xfc403fa42ceb6a0d0d3321bd9b2d8af25b1b667f87a04f496c78168d078500ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x06)), 0xcec5ec213b9cb5811f6ae00428fd7b6ef5a1af39a1f7aa6aff81000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x07)), 0x70ab32233202b98d382d17713fa0be391eaf74f85ba1740c9c3238c4ed85ff01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x08)), 0xb622672a213faa79b32185ff93a7b27a8499e48f7b032cdb4d1a70300c850101)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -4909,7 +4909,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -4928,7 +4928,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('62122f6a60000b600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x6a)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x6a)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -4966,7 +4966,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -5021,7 +5021,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -5040,7 +5040,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60ff68f000000000000000010b600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0xff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0xff)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -5079,7 +5079,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -5138,7 +5138,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -5157,7 +5157,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60016000037f7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff60000305600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -5205,7 +5205,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -5224,9 +5224,9 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60066101000a600055600660ff0a60015560066101010a600255'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x01000000000000)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x01)), 0xfa0eec0efa01)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x02)), 0x01060f140f0601)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01000000000000)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x01)), 0xfa0eec0efa01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x02)), 0x01060f140f0601)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -5264,7 +5264,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -5283,7 +5283,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6001600104600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -5322,7 +5322,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -5381,7 +5381,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -5494,7 +5494,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -5513,12 +5513,12 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('601c6101000a6101000a600055601c60ff0a6101000a600155601c6101010a6101000a600255601c6101000a60ff0a600355601c60ff0a60ff0a600455601c6101010a60ff0a600555601c6101000a6101010a600655601c60ff0a6101010a600755601c6101010a6101010a600855'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x03)), 0x14ff7f0000000000000000000000000000000000000000000000000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x04)), 0xffd368e44b3f85cb81ae394c9809ca9fa2db46a83d7880a912ab6d4a87e400ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x05)), 0x0981ad53c19b15a94bcf0bf20235dd0da9df25f46ae635029fe2062e6c1c00ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x06)), 0x6aff810000000000000000000000000000000000000000000000000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x07)), 0x19df06ffa28250867006726405fbc05d43dc2f9d2f025006db089bd46be40101)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x08)), 0x243fffe3a4f2982f45055c08f379648ab886da8027a7401117a8e0b8881c0101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x14ff7f0000000000000000000000000000000000000000000000000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x04)), 0xffd368e44b3f85cb81ae394c9809ca9fa2db46a83d7880a912ab6d4a87e400ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x05)), 0x0981ad53c19b15a94bcf0bf20235dd0da9df25f46ae635029fe2062e6c1c00ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x06)), 0x6aff810000000000000000000000000000000000000000000000000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x07)), 0x19df06ffa28250867006726405fbc05d43dc2f9d2f025006db089bd46be40101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x08)), 0x243fffe3a4f2982f45055c08f379648ab886da8027a7401117a8e0b8881c0101)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -5556,7 +5556,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -5575,7 +5575,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff60000b600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -5623,7 +5623,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -5642,9 +5642,9 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60056101000a600055600560ff0a60015560056101010a600255'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x010000000000)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x01)), 0xfb09f604ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x02)), 0x01050a0a0501)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x010000000000)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x01)), 0xfb09f604ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x02)), 0x01050a0a0501)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -5740,7 +5740,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -5759,12 +5759,12 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60046101000a6101000a600055600460ff0a6101000a60015560046101010a6101000a60025560046101000a60ff0a600355600460ff0a60ff0a60045560046101010a60ff0a60055560046101000a6101010a600655600460ff0a6101010a60075560046101010a6101010a600855'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x03)), 0xe6540ce46eaf70da9d644015a661e0e245b13f307cb3885514ff7f0000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x04)), 0x6526b38b05a6325b80e1c84ab41dc934fd70f33f1bd0eab3d1f61a4707fc00ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x05)), 0xe959516cd27e5d8fd487b72db2989b3ec2ba9fb7ead41554526fe5a3040400ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x06)), 0xe7498a48c6ce2530bbe814ee3440c8c44fffab7ad8a277aa6aff810000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x07)), 0x2dffa3e901e5a392d15b79f4193d2168147d2aa7c55870b46c3a905d03fc0101)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x08)), 0xe16ea721c96539edb4f7fb82de0dad8cccb1e7a6966a6777635f6fb908040101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0xe6540ce46eaf70da9d644015a661e0e245b13f307cb3885514ff7f0000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x04)), 0x6526b38b05a6325b80e1c84ab41dc934fd70f33f1bd0eab3d1f61a4707fc00ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x05)), 0xe959516cd27e5d8fd487b72db2989b3ec2ba9fb7ead41554526fe5a3040400ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x06)), 0xe7498a48c6ce2530bbe814ee3440c8c44fffab7ad8a277aa6aff810000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x07)), 0x2dffa3e901e5a392d15b79f4193d2168147d2aa7c55870b46c3a905d03fc0101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x08)), 0xe16ea721c96539edb4f7fb82de0dad8cccb1e7a6966a6777635f6fb908040101)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -5802,7 +5802,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -5821,7 +5821,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('7f01dae6076b981dae6076b981dae6076b981dae6076b981dae6076b981dae60777fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffba04600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x89)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x89)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -5859,7 +5859,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -5878,7 +5878,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('7ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe7ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe0b600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -5920,7 +5920,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -5939,7 +5939,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60016000037f800000000000000000000000000000000000000000000000000000000000000060000305600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x8000000000000000000000000000000000000000000000000000000000000000)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x8000000000000000000000000000000000000000000000000000000000000000)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -5977,7 +5977,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -6090,7 +6090,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -6109,12 +6109,12 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600d6101000a6101000a600055600d60ff0a6101000a600155600d6101010a6101000a600255600d6101000a60ff0a600355600d60ff0a60ff0a600455600d6101010a60ff0a600555600d6101000a6101010a600655600d60ff0a6101010a600755600d6101010a6101010a600855'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x03)), 0xe02639036c698218879ec55c33085514ff7f0000000000000000000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x04)), 0x8be664bde946d939ce551b948b503787942d2a7734509288c1b62fd5c48bfeff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x05)), 0xa923a28e7a75aef26c51580ffc686879e4a0b404b089bdbcd751d88b478d00ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x06)), 0x41ac5ea30fc9b0f000b68fb921f7aa6aff810000000000000000000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x07)), 0x0daa3a177ec975cb69bb4acf4a6e1be7bcc1ad33d1ffad97510f9fea9d8dff01)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x08)), 0x19e6822beb889be28310060f4fb9741bfd50a31fa81ec65de21f7b02548d0101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0xe02639036c698218879ec55c33085514ff7f0000000000000000000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x04)), 0x8be664bde946d939ce551b948b503787942d2a7734509288c1b62fd5c48bfeff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x05)), 0xa923a28e7a75aef26c51580ffc686879e4a0b404b089bdbcd751d88b478d00ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x06)), 0x41ac5ea30fc9b0f000b68fb921f7aa6aff810000000000000000000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x07)), 0x0daa3a177ec975cb69bb4acf4a6e1be7bcc1ad33d1ffad97510f9fea9d8dff01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x08)), 0x19e6822beb889be28310060f4fb9741bfd50a31fa81ec65de21f7b02548d0101)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -6156,7 +6156,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -6215,7 +6215,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -6234,7 +6234,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6003600003600560000307600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -6330,7 +6330,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -6349,12 +6349,12 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60186101000a6101000a600055601860ff0a6101000a60015560186101010a6101000a60025560186101000a60ff0a600355601860ff0a60ff0a60045560186101010a60ff0a60055560186101000a6101010a600655601860ff0a6101010a60075560186101010a6101010a600855'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x03)), 0x5c33085514ff7f00000000000000000000000000000000000000000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x04)), 0xd542e526003539ead104274aff2d78332366e29d328c2161f0c120731fe800ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x05)), 0xc706cb25e8384ce9bb5c9cb48415238ba03e16c448e292c0a101843b081800ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x06)), 0xb921f7aa6aff8100000000000000000000000000000000000000000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x07)), 0x4ca55f89202c524cb0f1cb3195d13c8d94a9f7a05c59e1d4031577c707e80101)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x08)), 0x8c4b0574e9156b80035f3ecdcf1fe79d273ed7559747a4322bcd338f20180101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x5c33085514ff7f00000000000000000000000000000000000000000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x04)), 0xd542e526003539ead104274aff2d78332366e29d328c2161f0c120731fe800ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x05)), 0xc706cb25e8384ce9bb5c9cb48415238ba03e16c448e292c0a101843b081800ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x06)), 0xb921f7aa6aff8100000000000000000000000000000000000000000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x07)), 0x4ca55f89202c524cb0f1cb3195d13c8d94a9f7a05c59e1d4031577c707e80101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x08)), 0x8c4b0574e9156b80035f3ecdcf1fe79d273ed7559747a4322bcd338f20180101)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -6393,7 +6393,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -6448,7 +6448,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -6467,7 +6467,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6001601703600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x16)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x16)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -6506,7 +6506,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -6564,7 +6564,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -6583,7 +6583,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60036001600560000309600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x02)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x02)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -6679,7 +6679,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -6698,12 +6698,12 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60016101000a6101000a600055600160ff0a6101000a60015560016101010a6101000a60025560016101000a60ff0a600355600160ff0a60ff0a60045560016101010a60ff0a60055560016101000a6101010a600655600160ff0a6101010a60075560016101010a6101010a600855'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x03)), 0x06c3acd330b959ad6efabce6d2d2125e73a88a65a9880d203dddf5957f7f0001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x04)), 0x8f965a06da0ac41dcb3a34f1d8ab7d8fee620a94faa42c395997756b007ffeff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x05)), 0xbce9265d88a053c18bc229ebff404c1534e1db43de85131da0179fe9ff8100ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x06)), 0x02b5e9d7a094c19f5ebdd4f2e618f859ed15e4f1f0351f286bf849eb7f810001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x07)), 0xc73b7a6f68385c653a24993bb72eea0e4ba17470816ec658cf9c5bedfd81ff01)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x08)), 0xb89fc178355660fe1c92c7d8ff11524702fad6e2255447946442356b00810101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x06c3acd330b959ad6efabce6d2d2125e73a88a65a9880d203dddf5957f7f0001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x04)), 0x8f965a06da0ac41dcb3a34f1d8ab7d8fee620a94faa42c395997756b007ffeff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x05)), 0xbce9265d88a053c18bc229ebff404c1534e1db43de85131da0179fe9ff8100ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x06)), 0x02b5e9d7a094c19f5ebdd4f2e618f859ed15e4f1f0351f286bf849eb7f810001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x07)), 0xc73b7a6f68385c653a24993bb72eea0e4ba17470816ec658cf9c5bedfd81ff01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x08)), 0xb89fc178355660fe1c92c7d8ff11524702fad6e2255447946442356b00810101)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -6799,7 +6799,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -6818,12 +6818,12 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600b6101000a6101000a600055600b60ff0a6101000a600155600b6101010a6101000a600255600b6101000a60ff0a600355600b60ff0a60ff0a600455600b6101010a60ff0a600555600b6101000a6101010a600655600b60ff0a6101010a600755600b6101010a6101010a600855'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x03)), 0xe1440264b8ee0cea0218879ec55c33085514ff7f000000000000000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x04)), 0x29575fdce377b23043e489e358581474bc863187fa85f9945473a2be5889feff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x05)), 0x3df8c030ec521fb109c4d887dbbc14c7c9c9921b27058e3503971b60b18b00ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x06)), 0x67799740340daf4a30f000b68fb921f7aa6aff81000000000000000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x07)), 0x540a4e4635b40585e09ff10b63ffe310dd717fca5c0a51570091e25e378bff01)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x08)), 0xdbbaef5c49ffee61b08cde6ebc8dba6e9a62d56c2355d1980cb9e790bc8b0101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0xe1440264b8ee0cea0218879ec55c33085514ff7f000000000000000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x04)), 0x29575fdce377b23043e489e358581474bc863187fa85f9945473a2be5889feff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x05)), 0x3df8c030ec521fb109c4d887dbbc14c7c9c9921b27058e3503971b60b18b00ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x06)), 0x67799740340daf4a30f000b68fb921f7aa6aff81000000000000000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x07)), 0x540a4e4635b40585e09ff10b63ffe310dd717fca5c0a51570091e25e378bff01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x08)), 0xdbbaef5c49ffee61b08cde6ebc8dba6e9a62d56c2355d1980cb9e790bc8b0101)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -6864,7 +6864,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -6883,7 +6883,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60056001600160000308600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -6921,7 +6921,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -6940,7 +6940,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6000637fffffff0a600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -6988,7 +6988,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -7007,9 +7007,9 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('601d6101000a600055601d60ff0a600155601d6101010a600255'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x010000000000000000000000000000000000000000000000000000000000)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x01)), 0xe48814fe44fc1a8f78642d946d7c879b39a055b6988e438647446a1cff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x02)), 0x011ea4a49e3a9ee435d23f98a8826a875a9ae54cb3090d5c3fd547961d01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x010000000000000000000000000000000000000000000000000000000000)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x01)), 0xe48814fe44fc1a8f78642d946d7c879b39a055b6988e438647446a1cff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x02)), 0x011ea4a49e3a9ee435d23f98a8826a875a9ae54cb3090d5c3fd547961d01)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -7047,7 +7047,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -7112,7 +7112,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -7131,8 +7131,8 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60206101000a600055602060ff0a60015560206101010a600255'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x01)), 0xe1dd29730112f6ef1d8edabfd4c3c60c823d865cd592abcdf0bdec64a1efe001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x02)), 0x2203ef98a7ce0ef9bf3c04038583f6b2ab4d27e3ed8e5285b6e32c8b61f02001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x01)), 0xe1dd29730112f6ef1d8edabfd4c3c60c823d865cd592abcdf0bdec64a1efe001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x02)), 0x2203ef98a7ce0ef9bf3c04038583f6b2ab4d27e3ed8e5285b6e32c8b61f02001)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -7228,7 +7228,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -7247,12 +7247,12 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60076101000a6101000a600055600760ff0a6101000a60015560076101010a6101000a60025560076101000a60ff0a600355600760ff0a60ff0a60045560076101010a60ff0a60055560076101000a6101010a600655600760ff0a6101010a60075560076101010a6101010a600855'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x03)), 0x8bb02654111ad8c60ad8af132283a81f455c33085514ff7f0000000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x04)), 0xa8f75c129dbb8466d6703a2a0b8212131b3248d70e2478862ac40fe17485feff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x05)), 0x5fd4d2de580383ee59f5e800ddb3f1717ceae03aede19d3dec5e5a69918700ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x06)), 0xc8624230b524b85d6340da48a5db20370fb921f7aa6aff810000000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x07)), 0x287b58a5a13cd7f454468ca616c181712f5ed25433a7d5a894b6ced35f87ff01)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x08)), 0x09930d11ac2804fa977bf951593c8dff8498779cc0cdc5812a4fba2f98870101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x8bb02654111ad8c60ad8af132283a81f455c33085514ff7f0000000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x04)), 0xa8f75c129dbb8466d6703a2a0b8212131b3248d70e2478862ac40fe17485feff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x05)), 0x5fd4d2de580383ee59f5e800ddb3f1717ceae03aede19d3dec5e5a69918700ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x06)), 0xc8624230b524b85d6340da48a5db20370fb921f7aa6aff810000000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x07)), 0x287b58a5a13cd7f454468ca616c181712f5ed25433a7d5a894b6ced35f87ff01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x08)), 0x09930d11ac2804fa977bf951593c8dff8498779cc0cdc5812a4fba2f98870101)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -7348,7 +7348,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -7367,12 +7367,12 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60176101000a6101000a600055601760ff0a6101000a60015560176101010a6101000a60025560176101000a60ff0a600355601760ff0a60ff0a60045560176101010a60ff0a60055560176101000a6101010a600655601760ff0a6101010a60075560176101010a6101010a600855'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x03)), 0xc55c33085514ff7f000000000000000000000000000000000000000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x04)), 0x537ca0f03f974303005f1e6693b55b72315a166841732e42b8353724a495feff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x05)), 0x86418797ec60058de6cca47dfdbee79923ac49d7801e01840041ca76719700ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x06)), 0x8fb921f7aa6aff81000000000000000000000000000000000000000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x07)), 0x56a55341ab8d4318f1cfb55d5f21e2ba35d7e070a72bac6b2b21baae5f97ff01)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x08)), 0x55ddd0ec77909de6d8311116cf520398e816f928b06fdd90ec239d0488970101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0xc55c33085514ff7f000000000000000000000000000000000000000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x04)), 0x537ca0f03f974303005f1e6693b55b72315a166841732e42b8353724a495feff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x05)), 0x86418797ec60058de6cca47dfdbee79923ac49d7801e01840041ca76719700ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x06)), 0x8fb921f7aa6aff81000000000000000000000000000000000000000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x07)), 0x56a55341ab8d4318f1cfb55d5f21e2ba35d7e070a72bac6b2b21baae5f97ff01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x08)), 0x55ddd0ec77909de6d8311116cf520398e816f928b06fdd90ec239d0488970101)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -7414,7 +7414,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -7475,7 +7475,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -7494,7 +7494,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600160016000037f80000000000000000000000000000000000000000000000000000000000000006000030703600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -7534,7 +7534,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 10000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -7647,7 +7647,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -7666,12 +7666,12 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('601f6101000a6101000a600055601f60ff0a6101000a600155601f6101010a6101000a600255601f6101000a60ff0a600355601f60ff0a60ff0a600455601f6101010a60ff0a600555601f6101000a6101010a600655601f60ff0a6101010a600755601f6101010a6101010a600855'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x03)), 0x01)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x04)), 0xf9cb87f5b1ab58602f52a1e9d392e5675b86a59a53943a8d4ec2a915dc9dfeff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x05)), 0x893d729a64e318860ec5047e70e598da163eb41e71e74b04dfd4712d419f00ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x06)), 0x01)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x07)), 0xee5f2839c1b4f6ca05e6fdb04e2fb49c0f860b3765c27dc781a150cb7f9fff01)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x08)), 0xb4c358e3c6bcddfb509ea487d733df0e1854f29c3b6bfd4a8caabe3f609f0101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x04)), 0xf9cb87f5b1ab58602f52a1e9d392e5675b86a59a53943a8d4ec2a915dc9dfeff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x05)), 0x893d729a64e318860ec5047e70e598da163eb41e71e74b04dfd4712d419f00ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x06)), 0x01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x07)), 0xee5f2839c1b4f6ca05e6fdb04e2fb49c0f860b3765c27dc781a150cb7f9fff01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x08)), 0xb4c358e3c6bcddfb509ea487d733df0e1854f29c3b6bfd4a8caabe3f609f0101)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -7709,7 +7709,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -7769,7 +7769,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -7788,7 +7788,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60026002600003600160000308600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -7884,7 +7884,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -7903,12 +7903,12 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600f6101000a6101000a600055600f60ff0a6101000a600155600f6101010a6101000a600255600f6101000a60ff0a600355600f60ff0a60ff0a600455600f6101010a60ff0a600555600f6101000a6101010a600655600f60ff0a6101010a600755600f6101010a6101010a600855'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x03)), 0x9882ec698218879ec55c33085514ff7f00000000000000000000000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x04)), 0x75c4915e18b96704209738f5ca765568bb4dc4113d56683977825a132c8dfeff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x05)), 0x5c76839bf5a80b1da705dbdf43e4dd6770cd7501af11ff2dab7918dfe18f00ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x06)), 0xbf228fc9b0f000b68fb921f7aa6aff8100000000000000000000000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x07)), 0xc6a29131e7594004bc2aa79f0d2c402a1409c57c77d284c14b1a3ab0ff8fff01)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x08)), 0xe6b3e5cf6ec90e532fef7d08455ebf92a03e9e3f6e224ea0febdf1a9f08f0101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x9882ec698218879ec55c33085514ff7f00000000000000000000000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x04)), 0x75c4915e18b96704209738f5ca765568bb4dc4113d56683977825a132c8dfeff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x05)), 0x5c76839bf5a80b1da705dbdf43e4dd6770cd7501af11ff2dab7918dfe18f00ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x06)), 0xbf228fc9b0f000b68fb921f7aa6aff8100000000000000000000000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x07)), 0xc6a29131e7594004bc2aa79f0d2c402a1409c57c77d284c14b1a3ab0ff8fff01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x08)), 0xe6b3e5cf6ec90e532fef7d08455ebf92a03e9e3f6e224ea0febdf1a9f08f0101)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -7956,7 +7956,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -7975,9 +7975,9 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('601060020a600055600f60020a600155601160020a600255'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x010000)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x01)), 0x8000)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x02)), 0x020000)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x010000)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x01)), 0x8000)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x02)), 0x020000)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -8073,7 +8073,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -8092,12 +8092,12 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60026101000a6101000a600055600260ff0a6101000a60015560026101010a6101000a60025560026101000a60ff0a600355600260ff0a60ff0a60045560026101010a60ff0a60055560026101000a6101010a600655600260ff0a6101010a60075560026101010a6101010a600855'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x03)), 0x4ee4ceeaac565c81f55a87c43f82f7c889ef4fc7c679671e28d594ff7f000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x04)), 0x82f46a1b4e34d66712910615d2571d75606ceac51fa8ca8c58cf6ca881fe00ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x05)), 0x81c9fcefa5de158ae2007f25d35c0d11cd735342a48905955a5a6852800200ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x06)), 0x666ac362902470ed850709e2a29969d10cba09debc03c38d172aeaff81000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x07)), 0xeb30a3c678a01bde914548f98f3366dc0ffe9f85384ebf1111d03dad7ffe0101)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x08)), 0x72d0a7939b6303ce1d46e6e3f1b8be303bfdb2b00f41ad8076b0975782020101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x4ee4ceeaac565c81f55a87c43f82f7c889ef4fc7c679671e28d594ff7f000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x04)), 0x82f46a1b4e34d66712910615d2571d75606ceac51fa8ca8c58cf6ca881fe00ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x05)), 0x81c9fcefa5de158ae2007f25d35c0d11cd735342a48905955a5a6852800200ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x06)), 0x666ac362902470ed850709e2a29969d10cba09debc03c38d172aeaff81000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x07)), 0xeb30a3c678a01bde914548f98f3366dc0ffe9f85384ebf1111d03dad7ffe0101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x08)), 0x72d0a7939b6303ce1d46e6e3f1b8be303bfdb2b00f41ad8076b0975782020101)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -8188,7 +8188,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -8246,7 +8246,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 10000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -8300,7 +8300,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -8344,7 +8344,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -8363,7 +8363,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('62122ff460000b600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff4)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff4)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -8403,7 +8403,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -8422,7 +8422,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60076000600d0401600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x07)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x07)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -8518,7 +8518,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -8537,12 +8537,12 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600e6101000a6101000a600055600e60ff0a6101000a600155600e6101010a6101000a600255600e6101000a60ff0a600355600e60ff0a60ff0a600455600e6101010a60ff0a600555600e6101000a6101010a600655600e60ff0a6101010a600755600e6101010a6101010a600855'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x03)), 0xdb9902ec698218879ec55c33085514ff7f000000000000000000000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x04)), 0x83fab06c6c8fef761ebbb9534c06ac2a9d61820623008069062ff3b1e1f200ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x05)), 0x3f791dd183ed5b963bd86e0dba1a9dd5b8ceeb078f15c73062f1942fd40e00ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x06)), 0xe0bfa28fc9b0f000b68fb921f7aa6aff81000000000000000000000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x07)), 0x8133b760dfae27560eb490f235ddfa301f058dee4f01f3fe4b3567d0d3f20101)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x08)), 0xcd4cd0124e983af71620fb5f98275965c6a8bebc4b8adc288b63224ee20e0101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0xdb9902ec698218879ec55c33085514ff7f000000000000000000000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x04)), 0x83fab06c6c8fef761ebbb9534c06ac2a9d61820623008069062ff3b1e1f200ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x05)), 0x3f791dd183ed5b963bd86e0dba1a9dd5b8ceeb078f15c73062f1942fd40e00ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x06)), 0xe0bfa28fc9b0f000b68fb921f7aa6aff81000000000000000000000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x07)), 0x8133b760dfae27560eb490f235ddfa301f058dee4f01f3fe4b3567d0d3f20101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x08)), 0xcd4cd0124e983af71620fb5f98275965c6a8bebc4b8adc288b63224ee20e0101)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -8590,7 +8590,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -8609,9 +8609,9 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('608060020a600055607f60020a600155608160020a600255'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x0100000000000000000000000000000000)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x01)), 0x80000000000000000000000000000000)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x02)), 0x0200000000000000000000000000000000)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x0100000000000000000000000000000000)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x01)), 0x80000000000000000000000000000000)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x02)), 0x0200000000000000000000000000000000)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -8651,7 +8651,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -8708,7 +8708,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -8765,7 +8765,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -8784,7 +8784,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6002600003600405600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -8880,7 +8880,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -8899,12 +8899,12 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60106101000a6101000a600055601060ff0a6101000a60015560106101010a6101000a60025560106101000a60ff0a600355601060ff0a60ff0a60045560106101010a60ff0a60055560106101000a6101010a600655601060ff0a6101010a60075560106101010a6101010a600855'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x03)), 0x82ec698218879ec55c33085514ff7f0000000000000000000000000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x04)), 0x3122f4bcdf6dd8b265cd18eb6af28c879aed44a35e0bf59273e39e6c7ff000ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x05)), 0x6a2b3bc87a02c29b9d27757df43047ecd0f15485270fca27417a701c701000ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x06)), 0x228fc9b0f000b68fb921f7aa6aff810000000000000000000000000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x07)), 0x88e1259502eef93d46060aacc9e2ff506c734dade0b6714ab12d17e46ff00101)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x08)), 0x4a103813c12c12169b218296bb0a9eae80cf8d2b158aa70eb990f99480100101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x82ec698218879ec55c33085514ff7f0000000000000000000000000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x04)), 0x3122f4bcdf6dd8b265cd18eb6af28c879aed44a35e0bf59273e39e6c7ff000ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x05)), 0x6a2b3bc87a02c29b9d27757df43047ecd0f15485270fca27417a701c701000ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x06)), 0x228fc9b0f000b68fb921f7aa6aff810000000000000000000000000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x07)), 0x88e1259502eef93d46060aacc9e2ff506c734dade0b6714ab12d17e46ff00101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x08)), 0x4a103813c12c12169b218296bb0a9eae80cf8d2b158aa70eb990f99480100101)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -8952,7 +8952,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -8971,9 +8971,9 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60026101000a600055600260ff0a60015560026101010a600255'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x010000)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x01)), 0xfe01)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x02)), 0x010201)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x010000)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x01)), 0xfe01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x02)), 0x010201)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -9021,7 +9021,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -9040,9 +9040,9 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('602060020a600055601f60020a600155602160020a600255'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x0100000000)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x01)), 0x80000000)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x02)), 0x0200000000)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x0100000000)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x01)), 0x80000000)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x02)), 0x0200000000)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -9080,7 +9080,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -9099,7 +9099,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0b600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -9147,7 +9147,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -9166,9 +9166,9 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60136101000a600055601360ff0a60015560136101010a600255'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x0100000000000000000000000000000000000000)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x01)), 0xeda745f6fd3851d68db3866a315cdfc85512ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x02)), 0x0113aed851d6c1fca84402033e297b27c9ab1301)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x0100000000000000000000000000000000000000)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x01)), 0xeda745f6fd3851d68db3866a315cdfc85512ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x02)), 0x0113aed851d6c1fca84402033e297b27c9ab1301)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -9207,7 +9207,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -9226,7 +9226,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600560027f800000000000000000000000000000000000000000000000000000000000000009600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -9266,7 +9266,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -9285,7 +9285,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('7f7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff60000307600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -9332,7 +9332,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -9397,7 +9397,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -9416,9 +9416,9 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6000356000556020356001556001546000540a600255'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x02)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x01)), 0x0f)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x02)), 0x8000)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x02)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x01)), 0x0f)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x02)), 0x8000)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -9458,7 +9458,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 10000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -9523,7 +9523,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -9542,9 +9542,9 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60196101000a600055601960ff0a60015560196101010a600255'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x0100000000000000000000000000000000000000000000000000)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x01)), 0xe823349d2286a5ec3de3529625f683e56c0903589efad418ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x02)), 0x011a352e3c45325c4583eb6149e1b7d4e73f709bbb72fd2c1901)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x0100000000000000000000000000000000000000000000000000)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x01)), 0xe823349d2286a5ec3de3529625f683e56c0903589efad418ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x02)), 0x011a352e3c45325c4583eb6149e1b7d4e73f709bbb72fd2c1901)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -9582,7 +9582,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -9601,7 +9601,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('7f7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff02600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -9642,7 +9642,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -9755,7 +9755,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -9774,12 +9774,12 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60156101000a6101000a600055601560ff0a6101000a60015560156101010a6101000a60025560156101000a60ff0a600355601560ff0a60ff0a60045560156101010a60ff0a60055560156101000a6101010a600655601560ff0a6101010a60075560156101010a6101010a600855'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x03)), 0x879ec55c33085514ff7f00000000000000000000000000000000000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x04)), 0x7fd07055ff50cdfe4b4bd9a15133d72d3607d92eb7ac81bac93db7ff4c93feff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x05)), 0x665ac5c769e87f61d5993abc26522fbfca2734d76a63216b2d550d29c79500ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x06)), 0xb68fb921f7aa6aff8100000000000000000000000000000000000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x07)), 0x1c93db67c9884bc694686d69a25a5d7ed089841d5ce147fdd7199ab00d95ff01)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x08)), 0x485053d8ff66be52036597520344fac87b6a305426a9e49221d3f934dc950101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x879ec55c33085514ff7f00000000000000000000000000000000000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x04)), 0x7fd07055ff50cdfe4b4bd9a15133d72d3607d92eb7ac81bac93db7ff4c93feff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x05)), 0x665ac5c769e87f61d5993abc26522fbfca2734d76a63216b2d550d29c79500ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x06)), 0xb68fb921f7aa6aff8100000000000000000000000000000000000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x07)), 0x1c93db67c9884bc694686d69a25a5d7ed089841d5ce147fdd7199ab00d95ff01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x08)), 0x485053d8ff66be52036597520344fac87b6a305426a9e49221d3f934dc950101)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -9875,7 +9875,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -9894,12 +9894,12 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60146101000a6101000a600055601460ff0a6101000a60015560146101010a6101000a60025560146101000a60ff0a600355601460ff0a60ff0a60045560146101010a60ff0a60055560146101000a6101010a600655601460ff0a6101010a60075560146101010a6101010a600855'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x03)), 0x18879ec55c33085514ff7f000000000000000000000000000000000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x04)), 0x67e4797dc21f02ce4a7c52218c7dbea5d212e6c244e24f0ba4c08613c7ec00ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x05)), 0xa1ce1a085f258785846939cc1d2e8725ac94ad4dff8913234e00679fb41400ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x06)), 0xf000b68fb921f7aa6aff81000000000000000000000000000000000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x07)), 0xcce501857a1cb45473915a28082af950e0f78f7e2de68ce748adb661b3ec0101)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x08)), 0x3b2e28d274a16c08b58a23bad63bba6d7b09685769d1f68ca3873bedc8140101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x18879ec55c33085514ff7f000000000000000000000000000000000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x04)), 0x67e4797dc21f02ce4a7c52218c7dbea5d212e6c244e24f0ba4c08613c7ec00ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x05)), 0xa1ce1a085f258785846939cc1d2e8725ac94ad4dff8913234e00679fb41400ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x06)), 0xf000b68fb921f7aa6aff81000000000000000000000000000000000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x07)), 0xcce501857a1cb45473915a28082af950e0f78f7e2de68ce748adb661b3ec0101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x08)), 0x3b2e28d274a16c08b58a23bad63bba6d7b09685769d1f68ca3873bedc8140101)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -9940,7 +9940,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -9959,7 +9959,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60036000036001600509600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x05)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x05)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -9998,7 +9998,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -10017,7 +10017,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600560027f7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff09600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x04)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x04)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -10055,7 +10055,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -10074,7 +10074,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6003600203600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -10114,7 +10114,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -10227,7 +10227,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -10246,12 +10246,12 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600c6101000a6101000a600055600c60ff0a6101000a600155600c6101010a6101000a600255600c6101000a60ff0a600355600c60ff0a60ff0a600455600c6101010a60ff0a600555600c6101000a6101010a600655600c60ff0a6101010a600755600c6101010a6101010a600855'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x03)), 0xb0e95b83a36ce98218879ec55c33085514ff7f00000000000000000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x04)), 0xc482ab56ec19186dc48c88f30861a850b2253b1ea6dc021589e569bd47f400ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x05)), 0xcf45c7f9af4bbe4a83055b55b97777ad5e0a3f08b129c9ae208c5d713c0c00ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x06)), 0xa5cbb62a421049b0f000b68fb921f7aa6aff8100000000000000000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x07)), 0x3bde6ca66dffe1bf5d727c3edea74c7a4af43b3912e6256d37705c8f3bf40101)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x08)), 0x3f49a1e40c5213aa4ffed57eb4c1ad2d181b2aaa289e9d59c2256c43480c0101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0xb0e95b83a36ce98218879ec55c33085514ff7f00000000000000000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x04)), 0xc482ab56ec19186dc48c88f30861a850b2253b1ea6dc021589e569bd47f400ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x05)), 0xcf45c7f9af4bbe4a83055b55b97777ad5e0a3f08b129c9ae208c5d713c0c00ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x06)), 0xa5cbb62a421049b0f000b68fb921f7aa6aff8100000000000000000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x07)), 0x3bde6ca66dffe1bf5d727c3edea74c7a4af43b3912e6256d37705c8f3bf40101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x08)), 0x3f49a1e40c5213aa4ffed57eb4c1ad2d181b2aaa289e9d59c2256c43480c0101)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -10347,7 +10347,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -10366,12 +10366,12 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('601e6101000a6101000a600055601e60ff0a6101000a600155601e6101010a6101000a600255601e6101000a60ff0a600355601e60ff0a60ff0a600455601e6101010a60ff0a600555601e6101000a6101010a600655601e60ff0a6101010a600755601e6101010a6101010a600855'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x03)), 0x7f00000000000000000000000000000000000000000000000000000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x04)), 0xe9772778f50fa0a69cd10fa019ac56d72ac7a7d7af26c4ba28415c8f41e200ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x05)), 0x33f0385ef73feebdb952e5adb643dd0fa178fd9271578219ad50a73d241e00ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x06)), 0x8100000000000000000000000000000000000000000000000000000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x07)), 0xfd405cce8f73dffc04a6f0ff6ffc6bf7961876d09c5b4933a68f0cc623e20101)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x08)), 0xc5a8f4566fd2e96e4ce3a8b3ec0863e7b20bc3b2f3dc5261ba8a0174421e0101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x7f00000000000000000000000000000000000000000000000000000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x04)), 0xe9772778f50fa0a69cd10fa019ac56d72ac7a7d7af26c4ba28415c8f41e200ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x05)), 0x33f0385ef73feebdb952e5adb643dd0fa178fd9271578219ad50a73d241e00ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x06)), 0x8100000000000000000000000000000000000000000000000000000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x07)), 0xfd405cce8f73dffc04a6f0ff6ffc6bf7961876d09c5b4933a68f0cc623e20101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x08)), 0xc5a8f4566fd2e96e4ce3a8b3ec0863e7b20bc3b2f3dc5261ba8a0174421e0101)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -10409,7 +10409,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -10428,7 +10428,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60027fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff06600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -10524,7 +10524,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -10543,12 +10543,12 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('601a6101000a6101000a600055601a60ff0a6101000a600155601a6101010a6101000a600255601a6101000a60ff0a600355601a60ff0a60ff0a600455601a6101010a60ff0a600555601a6101000a6101010a600655601a60ff0a6101010a600755601a6101010a6101010a600855'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x03)), 0x085514ff7f000000000000000000000000000000000000000000000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x04)), 0x1d164db738eb6893868b361ad2803f97be35764456e82a837667a693d1e600ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x05)), 0x8b92c24abebf376a5aab5ff4dfd3538a03d38a10bced2aae8e1a8a85b81a00ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x06)), 0xf7aa6aff81000000000000000000000000000000000000000000000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x07)), 0x6931bda98c70e860a1f6a5224940f1ec7e6734cd9456c95806384f7cb7e60101)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x08)), 0x3402a9db66492dfc2a220715e76243469462f24edc56903ba1d8e96ed21a0101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x085514ff7f000000000000000000000000000000000000000000000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x04)), 0x1d164db738eb6893868b361ad2803f97be35764456e82a837667a693d1e600ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x05)), 0x8b92c24abebf376a5aab5ff4dfd3538a03d38a10bced2aae8e1a8a85b81a00ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x06)), 0xf7aa6aff81000000000000000000000000000000000000000000000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x07)), 0x6931bda98c70e860a1f6a5224940f1ec7e6734cd9456c95806384f7cb7e60101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x08)), 0x3402a9db66492dfc2a220715e76243469462f24edc56903ba1d8e96ed21a0101)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -10596,7 +10596,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -10615,9 +10615,9 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60016101000a600055600160ff0a60015560016101010a600255'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x0100)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x01)), 0xff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x02)), 0x0101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x0100)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x01)), 0xff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x02)), 0x0101)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -10655,7 +10655,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -10720,7 +10720,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -10739,9 +10739,9 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600460020a600055600360020a600155600560020a600255'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x10)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x01)), 0x08)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x02)), 0x20)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x10)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x01)), 0x08)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x02)), 0x20)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -10789,7 +10789,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -10808,9 +10808,9 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600e6101000a600055600e60ff0a600155600e6101010a600255'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x010000000000000000000000000000)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x01)), 0xf25997e139ada3b331e7945af201)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x02)), 0x010e5c6ff0ddc873c2d5ea6c5b0e01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x010000000000000000000000000000)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x01)), 0xf25997e139ada3b331e7945af201)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x02)), 0x010e5c6ff0ddc873c2d5ea6c5b0e01)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -10844,7 +10844,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -10903,7 +10903,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -10922,7 +10922,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600160007ffffffffffffffffffffffffffffffffffffffffffffffffffffffffcf923bdff6000030501600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -10962,7 +10962,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -10981,7 +10981,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6004600003600505600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -11029,7 +11029,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -11048,9 +11048,9 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60076101000a600055600760ff0a60015560076101010a600255'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x0100000000000000)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x01)), 0xf914dd22eb06ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x02)), 0x0107152323150701)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x0100000000000000)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x01)), 0xf914dd22eb06ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x02)), 0x0107152323150701)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -11088,7 +11088,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -11153,7 +11153,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -11172,9 +11172,9 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('601a6101000a600055601a60ff0a600155601a6101010a600255'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x010000000000000000000000000000000000000000000000000000)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x01)), 0xe73b116885641f4651a56f438fd08d61869cfa55465bd944e601)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x02)), 0x011b4f636a81778ea1c96f4cab2b998cbc26b00c572e7029451a01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x010000000000000000000000000000000000000000000000000000)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x01)), 0xe73b116885641f4651a56f438fd08d61869cfa55465bd944e601)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x02)), 0x011b4f636a81778ea1c96f4cab2b998cbc26b00c572e7029451a01)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -11218,7 +11218,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -11273,7 +11273,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -11292,7 +11292,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6003600202600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x06)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x06)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -11333,7 +11333,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 10000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -11388,7 +11388,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -11407,7 +11407,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('61010160010a600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -11450,7 +11450,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -11507,7 +11507,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -11562,7 +11562,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -11581,7 +11581,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6212faf460010b600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffaf4)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffaf4)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -11628,7 +11628,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -11647,7 +11647,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60036001600660000308600360056000030614600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -11685,7 +11685,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -11704,7 +11704,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('62126af460010b600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x6af4)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x6af4)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -11742,7 +11742,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -11761,7 +11761,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6002600504600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x02)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x02)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -11809,7 +11809,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -11828,9 +11828,9 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600a6101000a600055600a60ff0a600155600a6101010a600255'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x0100000000000000000000)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x01)), 0xf62c88d104d1882cf601)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x02)), 0x010a2d78d2fcd2782d0a01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x0100000000000000000000)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x01)), 0xf62c88d104d1882cf601)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x02)), 0x010a2d78d2fcd2782d0a01)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -11868,7 +11868,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -11887,7 +11887,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff01600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -11927,7 +11927,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -11946,7 +11946,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6001600160000305600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -11994,7 +11994,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -12013,9 +12013,9 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600b6101000a600055600b60ff0a600155600b6101010a600255'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x010000000000000000000000)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x01)), 0xf5365c4833ccb6a4c90aff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x02)), 0x010b37a64bcfcf4aa5370b01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x010000000000000000000000)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x01)), 0xf5365c4833ccb6a4c90aff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x02)), 0x010b37a64bcfcf4aa5370b01)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -12055,7 +12055,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -12074,7 +12074,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6003600560000307600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -12112,7 +12112,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -12177,7 +12177,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -12196,9 +12196,9 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60186101000a600055601860ff0a60015560186101010a600255'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x01000000000000000000000000000000000000000000000000)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x01)), 0xe90c40de00872d19573a8d23493fc3a9151e217a1913e801)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x02)), 0x01191c122a1b1745008367f9509126ae39066a3189e9141801)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01000000000000000000000000000000000000000000000000)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x01)), 0xe90c40de00872d19573a8d23493fc3a9151e217a1913e801)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x02)), 0x01191c122a1b1745008367f9509126ae39066a3189e9141801)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -12238,7 +12238,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -12351,7 +12351,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -12370,12 +12370,12 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60136101000a6101000a600055601360ff0a6101000a60015560136101010a6101000a60025560136101000a60ff0a600355601360ff0a60ff0a60045560136101010a60ff0a60055560136101000a6101010a600655601360ff0a6101010a60075560136101010a6101010a600855'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x03)), 0x8218879ec55c33085514ff7f0000000000000000000000000000000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x04)), 0xb795ad7ac24cfbb7435cf53bd3584f3d4b2709935635c3ceb66e761ff091feff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x05)), 0x1f0bb7be91a0ccd0cca93d75cf03de3e6b56fe8f1c54242617665327219300ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x06)), 0xb0f000b68fb921f7aa6aff810000000000000000000000000000000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x07)), 0xad571756ecbff1bfdef064861e5e92c5d897a9cc380e54bdbaabd80bb793ff01)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x08)), 0xd8b5b531989e689f700dcdb43ab90e79a49dfbbb5a13dbf751df98bb34930101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x8218879ec55c33085514ff7f0000000000000000000000000000000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x04)), 0xb795ad7ac24cfbb7435cf53bd3584f3d4b2709935635c3ceb66e761ff091feff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x05)), 0x1f0bb7be91a0ccd0cca93d75cf03de3e6b56fe8f1c54242617665327219300ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x06)), 0xb0f000b68fb921f7aa6aff810000000000000000000000000000000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x07)), 0xad571756ecbff1bfdef064861e5e92c5d897a9cc380e54bdbaabd80bb793ff01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x08)), 0xd8b5b531989e689f700dcdb43ab90e79a49dfbbb5a13dbf751df98bb34930101)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -12416,7 +12416,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -12435,7 +12435,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60036001600660000308600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x02)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x02)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -12473,7 +12473,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -12538,7 +12538,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -12557,9 +12557,9 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60036101000a600055600360ff0a60015560036101010a600255'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x01000000)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x01)), 0xfd02ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x02)), 0x01030301)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01000000)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x01)), 0xfd02ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x02)), 0x01030301)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -12602,7 +12602,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -12668,7 +12668,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -12728,7 +12728,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -12793,7 +12793,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -12812,9 +12812,9 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600260020a600055600160020a600155600360020a600255'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x04)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x01)), 0x02)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x02)), 0x08)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x04)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x01)), 0x02)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x02)), 0x08)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -12881,7 +12881,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -12936,7 +12936,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -12955,7 +12955,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff600003600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -12993,7 +12993,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -13012,7 +13012,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('62126af460500b600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x126af4)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x126af4)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -13055,7 +13055,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -13111,7 +13111,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -13130,7 +13130,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600560027f800000000000000000000000000000000000000000000000000000000000000109600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x03)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x03)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -13226,7 +13226,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -13245,12 +13245,12 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60096101000a6101000a600055600960ff0a6101000a60015560096101010a6101000a60025560096101000a60ff0a600355600960ff0a60ff0a60045560096101010a60ff0a60055560096101000a6101010a600655600960ff0a6101010a60075560096101010a6101010a600855'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x03)), 0x53017d8eb210db2c8cd4a299079ec55c33085514ff7f00000000000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x04)), 0x48be09b6c6ae2aa660f1972125cecbb1038b5d236ecf766ba786e2c4e887feff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x05)), 0x2e350d847ba73dc2099f83f532951c47269d9fd7e411b50bae00a9581f8900ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x06)), 0x013ab9e1f0df89a184b4d07080b68fb921f7aa6aff8100000000000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x07)), 0xf387ed41c1050f9da667f429a3e8fb30b61a55ede97d7b8acd797a03cd89ff01)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x08)), 0x525696c22bb3ce00fd2e3f6bbb9b4ea1046a5e31fcff2fedf8f8c74d28890101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x53017d8eb210db2c8cd4a299079ec55c33085514ff7f00000000000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x04)), 0x48be09b6c6ae2aa660f1972125cecbb1038b5d236ecf766ba786e2c4e887feff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x05)), 0x2e350d847ba73dc2099f83f532951c47269d9fd7e411b50bae00a9581f8900ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x06)), 0x013ab9e1f0df89a184b4d07080b68fb921f7aa6aff8100000000000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x07)), 0xf387ed41c1050f9da667f429a3e8fb30b61a55ede97d7b8acd797a03cd89ff01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x08)), 0x525696c22bb3ce00fd2e3f6bbb9b4ea1046a5e31fcff2fedf8f8c74d28890101)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -13288,7 +13288,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -13343,7 +13343,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -13362,7 +13362,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6017600003600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe9)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe9)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -13400,7 +13400,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -13419,7 +13419,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('66f000000000000161ffff0b600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0xf0000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0xf0000000000001)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -13467,7 +13467,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -13486,9 +13486,9 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600f6101000a600055600f60ff0a600155600f6101010a600255'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x01000000000000000000000000000000)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x01)), 0xf1673e495873f60f7eb5acc6970eff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x02)), 0x010f6acc60cea63c3698c056c7690f01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01000000000000000000000000000000)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x01)), 0xf1673e495873f60f7eb5acc6970eff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x02)), 0x010f6acc60cea63c3698c056c7690f01)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -13529,7 +13529,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 1000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -13548,7 +13548,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60056002600160000308600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x02)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x02)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -13586,7 +13586,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -13605,7 +13605,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60007fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff03600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -13653,7 +13653,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -13672,9 +13672,9 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60046101000a600055600460ff0a60015560046101010a600255'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x0100000000)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x01)), 0xfc05fc01)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x02)), 0x0104060401)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x0100000000)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x01)), 0xfc05fc01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x02)), 0x0104060401)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -13722,7 +13722,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -13741,9 +13741,9 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('601e6101000a600055601e60ff0a600155601e6101010a600255'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x01000000000000000000000000000000000000000000000000000000000000)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x01)), 0xe3a38ce946b71e74e8ebc966d90f0b139e66b560e1f5b542c0fd25b2e201)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x02)), 0x011fc34942d8d9831a0811d8412aecf1e1f58031ffbc16699c151cddb31e01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01000000000000000000000000000000000000000000000000000000000000)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x01)), 0xe3a38ce946b71e74e8ebc966d90f0b139e66b560e1f5b542c0fd25b2e201)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x02)), 0x011fc34942d8d9831a0811d8412aecf1e1f58031ffbc16699c151cddb31e01)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -13781,7 +13781,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -13800,7 +13800,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f800000000000000000000000000000000000000000000000000000000000000002600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x8000000000000000000000000000000000000000000000000000000000000000)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x8000000000000000000000000000000000000000000000000000000000000000)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -13842,7 +13842,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -13861,7 +13861,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6001600003600160000305600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -13900,7 +13900,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -14013,7 +14013,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         gas = 10000000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -14032,12 +14032,12 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60086101000a6101000a600055600860ff0a6101000a60015560086101010a6101000a60025560086101000a60ff0a600355600860ff0a60ff0a60045560086101010a60ff0a60055560086101000a6101010a600655600860ff0a6101010a60075560086101010a6101010a600855'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x03)), 0x230041a0e7602d6e459609ed39081ec55c33085514ff7f000000000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x04)), 0xc407d8a413ef9079ead457ed686a05ac81039c0cae0a7f6afd01e8461ff800ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x05)), 0x67a397e0692385e4cd83853aabce220a94d449e885fa867e96d3ef5e180800ff)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x06)), 0x70add926e753655d6d0ebe9c0f81368fb921f7aa6aff81000000000000000001)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x07)), 0x0bdce80b8378e43f13d454b9d0a4c83cf311b8eaa45d5122cfd544a217f80101)
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x08)), 0x629c25790e1488998877a9ecdf0fb69637e77d8a4bdc1b46270093ba20080101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x03)), 0x230041a0e7602d6e459609ed39081ec55c33085514ff7f000000000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x04)), 0xc407d8a413ef9079ead457ed686a05ac81039c0cae0a7f6afd01e8461ff800ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x05)), 0x67a397e0692385e4cd83853aabce220a94d449e885fa867e96d3ef5e180800ff)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x06)), 0x70add926e753655d6d0ebe9c0f81368fb921f7aa6aff81000000000000000001)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x07)), 0x0bdce80b8378e43f13d454b9d0a4c83cf311b8eaa45d5122cfd544a217f80101)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x08)), 0x629c25790e1488998877a9ecdf0fb69637e77d8a4bdc1b46270093ba20080101)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs

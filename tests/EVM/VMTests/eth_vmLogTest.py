@@ -55,7 +55,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -108,7 +108,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -168,7 +168,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -226,7 +226,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -285,7 +285,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -341,7 +341,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -400,7 +400,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -421,6 +421,8 @@ class EVMTest_vmLogTest(unittest.TestCase):
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
+        for l in world.logs:
+            print(to_constant(l.memlog))
         data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '56733300bf7f644b82e00b314f1cfc0ac057f6dfc6a2b821970423603a44889f')
         
@@ -458,7 +460,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -514,7 +516,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -573,7 +575,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -622,7 +624,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -678,7 +680,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -723,7 +725,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -782,7 +784,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -841,7 +843,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -898,7 +900,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -957,7 +959,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -1014,7 +1016,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -1063,7 +1065,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -1109,7 +1111,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -1169,7 +1171,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -1227,7 +1229,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -1285,7 +1287,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -1333,7 +1335,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -1390,7 +1392,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -1447,7 +1449,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -1506,7 +1508,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -1566,7 +1568,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -1625,7 +1627,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -1685,7 +1687,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -1730,7 +1732,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -1787,7 +1789,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -1842,7 +1844,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -1902,7 +1904,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -1961,7 +1963,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -2007,7 +2009,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -2063,7 +2065,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -2120,7 +2122,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -2178,7 +2180,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -2238,7 +2240,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -2298,7 +2300,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -2354,7 +2356,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -2401,7 +2403,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -2447,7 +2449,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -2494,7 +2496,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -2552,7 +2554,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''

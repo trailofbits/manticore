@@ -54,7 +54,7 @@ class EVMTest_vmBlockInfoTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -73,7 +73,7 @@ class EVMTest_vmBlockInfoTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('41600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -109,7 +109,7 @@ class EVMTest_vmBlockInfoTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -128,7 +128,7 @@ class EVMTest_vmBlockInfoTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('45600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x0f4240)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x0f4240)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -164,7 +164,7 @@ class EVMTest_vmBlockInfoTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -183,7 +183,7 @@ class EVMTest_vmBlockInfoTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('42600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -219,7 +219,7 @@ class EVMTest_vmBlockInfoTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -238,7 +238,7 @@ class EVMTest_vmBlockInfoTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('44600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x0100)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x0100)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs
@@ -274,7 +274,7 @@ class EVMTest_vmBlockInfoTest(unittest.TestCase):
         gas = 100000
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -293,7 +293,7 @@ class EVMTest_vmBlockInfoTest(unittest.TestCase):
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('43600055'))
         #check storage
-        self.assertEqual(to_constant(world.get_storage_data(account_address, 0x00)), 0x01)
+        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
         #check outs
         self.assertEqual(returndata, unhexlify(''))
         #check logs

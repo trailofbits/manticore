@@ -149,7 +149,7 @@ def gen_test(testcase, filename, skip):
         gas = {gas}
 
         # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, bytecode, caller, value, gas=gas)
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
         result = None
         returndata = b''
@@ -188,7 +188,7 @@ def gen_test(testcase, filename, skip):
 
             for key, value in account['storage'].items():
                 output += f'''
-        self.assertEqual(to_constant(world.get_storage_data(account_address, {key})), {value})'''
+        self.assertEqual(to_constant(world.get_storage_data({hex(account_address)}, {key})), {value})'''
 
         output += f'''
         #check outs

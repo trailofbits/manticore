@@ -99,10 +99,11 @@ class ExpressionTest(unittest.TestCase):
         key = cs.new_bitvec(32)
 
         #assert that the array is 'A' at key position
+        #By default an smtlib can contain any value
         cs.add(array[key] == ord('A'))
+
         #let's restrict key to be greater than 1000
         cs.add(key.ugt(1000))
-
         with cs as temp_cs:
             #1001 position of array can be 'A'
             temp_cs.add(array[1001] == ord('A'))
@@ -213,7 +214,7 @@ class ExpressionTest(unittest.TestCase):
 
         array[key] = 1 # Write 1 to a single location
 
-        cs.add(array.get(index) != 0) # Constrain index so it selects that location
+        cs.add(array.get(index, default=0) != 0) # Constrain index so it selects that location
 
         cs.add(index != key)
         # key and index are the same there is only one slot in 1
@@ -227,9 +228,9 @@ class ExpressionTest(unittest.TestCase):
         index = cs.new_bitvec(32, name='index')
 
         array[key] = 1 # Write 1 to a single location
-        cs.add(array.get(index) != 0) # Constrain index so it selects that location
+        cs.add(array.get(index, 0) != 0) # Constrain index so it selects that location
         a_index = self.solver.get_value(cs, index)  # get a concrete solution for index
-        cs.add(array.get(a_index) != 0)             # now storage must have something at that location
+        cs.add(array.get(a_index, 0) != 0)             # now storage must have something at that location
         cs.add(a_index != index)                    # remove it from the solutions
 
         # It should not be another solution for index
@@ -263,6 +264,22 @@ class ExpressionTest(unittest.TestCase):
         for c in array[6:11]:
             results.append(c)
         self.assertTrue(len(results) == 5)
+
+    def testBasicArraySlice(self):
+        hw = bytearray(b'Hello world!')
+        cs =  ConstraintSet()
+        #make array of 32->8 bits
+        array = cs.new_array(32, index_max=12)
+        array = array.write(0, hw)
+        array_slice = array[0:2]
+        self.assertTrue(self.solver.must_be_true(cs, array == hw))
+        self.assertTrue(self.solver.must_be_true(cs, array_slice[0] == array[0]))
+        self.assertTrue(self.solver.must_be_true(cs, array_slice[0:2][1] == array[1]))
+        array_slice[0] = ord('A')
+        self.assertTrue(self.solver.must_be_true(cs, array_slice[0] == ord('A')))
+        self.assertTrue(self.solver.must_be_true(cs, array_slice[0:2][1] == array[1]))
+        self.assertTrue(self.solver.must_be_true(cs, array == hw))
+
 
     def testBasicPickle(self):
         import pickle

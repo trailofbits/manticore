@@ -51,10 +51,6 @@ class Visitor(object):
         return self._stack[-1]
 
     def _method(self, expression, *args):
-        #Special case. Need to get the unsleeved version of the array
-        if isinstance(expression, ArrayProxy):
-            expression = expression.array
-
         assert expression.__class__.__mro__[-1] is object
         for cls in expression.__class__.__mro__:
             sort = cls.__name__
@@ -548,19 +544,20 @@ def arithmetic_simplify(expression):
 
 
 def to_constant(expression):
-    value = arithmetic_simplify(expression)
+    value = simplify(expression)
     if isinstance(value, Constant):
         return value.value
     elif isinstance(value, Array):
-        if value.index_max:
+        if expression.index_max:
             ba = bytearray()
-            for i in range(value.index_max):
+            for i in range(expression.index_max):
                 value_i = simplify(value[i])
                 if not isinstance(value_i, Constant):
                     break
                 ba.append(value_i.value)
             else:
                 return bytes(ba)
+            return expression
     return value
 
 

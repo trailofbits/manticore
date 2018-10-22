@@ -690,6 +690,7 @@ class Array(Expression):
         return array
 
     def read_BE(self, address, size):
+        from manticore.core.smtlib.visitors import translate_to_smtlib
         bytes = []
         for offset in range(size):
             bytes.append(self.get(address + offset, 0))
@@ -830,12 +831,13 @@ class ArraySlice(Array):
         return self._array.select(index + self._slice_offset)
 
     def store(self, index, value):
-        return self._array.store(index + self.slice_offset, value)
+        return ArraySlice(self._array.store(index + self._slice_offset, value), self._slice_offset, self._slice_size)
 
 
 class ArrayProxy(Array):
-    def __init__(self, array):
+    def __init__(self, array, default=None):
         assert isinstance(array, Array)
+        self._default = default
         self._concrete_cache = {}
         self._written = None
         if isinstance(array, ArrayProxy):
@@ -843,9 +845,9 @@ class ArrayProxy(Array):
             super().__init__(array.index_bits, array.index_max, array.value_bits)
             self._array = array._array
             self._name = array._name
+            self._default = array._default
             self._concrete_cache = dict(array._concrete_cache)
-            if array._written is not None:
-                self._written = set(array._written)
+            self._written = set(array.written)
         elif isinstance(array, ArrayVariable):
             #fresh array proxy
             super().__init__(array.index_bits, array.index_max, array.value_bits)
@@ -894,10 +896,8 @@ class ArrayProxy(Array):
         if self.index_max is not None:
             from manticore.core.smtlib.visitors import simplify
             index = simplify(BitVecITE(self.index_bits, index < 0, self.index_max + index + 1, index))
-
         if isinstance(index, Constant) and index.value in self._concrete_cache:
             return self._concrete_cache[index.value]
-
         return self._array.select(index)
 
     def store(self, index, value):
@@ -918,12 +918,13 @@ class ArrayProxy(Array):
         if isinstance(index, slice):
             start, stop = self._fix_index(index)
             size = self._get_size(index)
-            return ArrayProxy(ArraySlice(self, start, size))
+            from manticore.core.smtlib.visitors import simplify, translate_to_smtlib
+            return ArrayProxy(ArraySlice(self, start, size), default=self._default)
         else:
             if self.index_max is not None:
                 if not isinstance(index, Expression) and index >= self.index_max:
                     raise IndexError
-            return self.select(index)
+            return self.get(index, self._default)
 
     def __setitem__(self, index, value):
         if isinstance(index, slice):
@@ -937,6 +938,7 @@ class ArrayProxy(Array):
 
     def __getstate__(self):
         state = {}
+        state['_default'] = self._default
         state['_array'] = self._array
         state['name'] = self.name
         state['_concrete_cache'] = self._concrete_cache
@@ -944,6 +946,7 @@ class ArrayProxy(Array):
         return state
 
     def __setstate__(self, state):
+        self._default = state['_default']
         self._array = state['_array']
         self._name = state['name']
         self._concrete_cache = state['_concrete_cache']
@@ -957,31 +960,39 @@ class ArrayProxy(Array):
         if self._written is None:
             written = set()
             array = self._array
+            offset = 0
             while not isinstance(array, ArrayVariable):
-                written.add(array.index)
+                if isinstance(array, ArraySlice):
+                    array = array._array
+                    continue
+                written.add(array.index+offset)
                 array = array.array
             self._written = written
         return self._written
 
     def is_known(self, index):
-        #return reduce(BoolOr, map(lambda known_index: index == known_index, self.written), BoolConstant(False))
+        # return reduce(BoolOr, map(lambda known_index: index == known_index, self.written), BoolConstant(False))
         is_known_index = BoolConstant(False)
         written = self.written
         for known_index in written:
             if isinstance(index, Constant) and isinstance(known_index, Constant):
                 if known_index.value == index.value:
                     return BoolConstant(True)
-                else:
-                    continue
             is_known_index = BoolOr(is_known_index.cast(index == known_index), is_known_index)
+        from manticore.core.smtlib.visitors import translate_to_smtlib
+
         return is_known_index
 
-    def get(self, index, default=0):
-        value = self.select(index)
-        if not isinstance(value, ArraySelect):
-            return value
-        is_known = self.is_known(index)
+    def get(self, index, default=None):
+        if default is None:
+            default = self._default
         index = self.cast_index(index)
+        value = self.select(index)
+        from manticore.core.smtlib.visitors import simplify
+        if default is None:
+            return value
+
+        is_known = self.is_known(index)
         default = self.cast_value(default)
         return BitVecITE(self._array.value_bits, is_known, value, default)
 

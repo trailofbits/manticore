@@ -267,7 +267,7 @@ class EndTx(EVMException):
             raise EVMException('Invalid end transaction result')
         if result is None and data is not None:
             raise EVMException('Invalid end transaction result')
-        if not isinstance(data, (type(None), Array, bytearray)):
+        if not isinstance(data, (type(None), Array, bytes)):
             raise EVMException('Invalid end transaction data type')
         self.result = result
         self.data = data
@@ -461,13 +461,13 @@ class EVM(Eventful):
         super().__init__(**kwargs)
         if data is not None and not issymbolic(data):
             data_size = len(data)
-            data_symbolic = constraints.new_array(index_bits=256, value_bits=8, index_max=data_size, name='DATA_{:x}'.format(address), avoid_collisions=True)
+            data_symbolic = constraints.new_array(index_bits=256, value_bits=8, index_max=data_size, name='DATA_{:x}'.format(address), avoid_collisions=True, default=0)
             data_symbolic[0:data_size] = data
             data = data_symbolic
 
         if bytecode is not None and not issymbolic(bytecode):
             bytecode_size = len(bytecode)
-            bytecode_symbolic = constraints.new_array(index_bits=256, value_bits=8, index_max=bytecode_size, name='BYTECODE_{:x}'.format(address), avoid_collisions=True)
+            bytecode_symbolic = constraints.new_array(index_bits=256, value_bits=8, index_max=bytecode_size, name='BYTECODE_{:x}'.format(address), avoid_collisions=True, default=0)
             bytecode_symbolic[0:bytecode_size] = bytecode
             bytecode = bytecode_symbolic
 
@@ -502,7 +502,7 @@ class EVM(Eventful):
         #if len(bytecode) == 0:
         #    raise EVMException("Need code")
         self._constraints = constraints
-        self.memory = constraints.new_array(index_bits=256, value_bits=8, name='EMPTY_MEMORY_{:x}'.format(address), avoid_collisions=True)
+        self.memory = constraints.new_array(index_bits=256, value_bits=8, name='EMPTY_MEMORY_{:x}'.format(address), avoid_collisions=True, default=0)
         self.address = address
         self.caller = caller  # address of the account that is directly responsible for this execution
         self.data = data
@@ -822,9 +822,6 @@ class EVM(Eventful):
             instruction = self.instruction
             old_gas = self.gas
 
-            #Fix old bug in pyevmasm
-            if instruction.semantics == 'PUSH' and instruction.fee == 0:
-                self._consume(3)
 
             self._consume(instruction.fee)
             arguments = self._pop_arguments()
@@ -927,7 +924,7 @@ class EVM(Eventful):
         if issymbolic(size):
             raise EVMException("Symbolic size not supported")
         if size == 0:
-            return bytearray()
+            return b''
         self._allocate(offset + size)
         return self.memory[offset: offset + size]
 
@@ -1161,8 +1158,8 @@ class EVM(Eventful):
         # calculate hash on it/ maybe remember in some structure where that hash came from
         # http://gavwood.com/paper.pdf
         self._consume(GSHA3WORD * (ceil32(size) // 32))
-        data = self.try_simplify_to_constant(self.read_buffer(start, size))
-
+        data = self.read_buffer(start, size)
+        data = self.try_simplify_to_constant(data)
         if issymbolic(data):
             known_sha3 = {}
             # Broadcast the signal
@@ -2165,7 +2162,7 @@ class EVMWorld(Platform):
             # selfdestructed address, it can not be reused
             raise EthereumError('The account already exists')
         if storage is None:
-            storage = self.constraints.new_array(index_bits=256, value_bits=256, name='STORAGE_{:x}'.format(address), avoid_collisions=True)
+            storage = self.constraints.new_array(index_bits=256, value_bits=256, name='STORAGE_{:x}'.format(address), avoid_collisions=True, default=0)
         if code is None:
             code = bytes()
         if not isinstance(code, (bytes, Array)):
