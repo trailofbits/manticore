@@ -78,7 +78,7 @@ class ABI(object):
 
         if parsed_ty[0] != 'tuple':
             if len(values) > 1:
-                raise ValueError
+                raise EthereumError('too many values passed for non-tuple')
             values = values[0]
 
         # implement type forgiveness for bytesM/string types
