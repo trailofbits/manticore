@@ -80,10 +80,12 @@ class ABI(object):
             if len(values) > 1:
                 raise EthereumError('too many values passed for non-tuple')
             values = values[0]
-
-        # implement type forgiveness for bytesM/string types
-        # allow python strs also to be used for Solidity bytesM/string types
-        values = tuple(val.encode() if isinstance(val, str) else val for val in values)
+            if isinstance(values, str):
+                values = values.encode()
+        else:
+            # implement type forgiveness for bytesM/string types
+            # allow python strs also to be used for Solidity bytesM/string types
+            values = tuple(val.encode() if isinstance(val, str) else val for val in values)
 
         result, dyn_result = ABI._serialize(parsed_ty, values)
         return result + dyn_result
