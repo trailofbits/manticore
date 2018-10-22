@@ -1,10 +1,8 @@
-import io
 import unittest
 import sys
 import shutil
 import tempfile
 import os
-import hashlib
 import subprocess
 import time
 from manticore.binary import Elf, CGCElf
@@ -12,6 +10,9 @@ from manticore.binary import Elf, CGCElf
 #logging.basicConfig(filename = "test.log",
 #                format = "%(asctime)s: %(name)s:%(levelname)s: %(message)s",
 #                level = logging.DEBUG)
+
+
+PYTHON_BIN = '/proc/self/exe'
 
 
 class TestBinaryPackage(unittest.TestCase):
@@ -40,6 +41,7 @@ class TestBinaryPackage(unittest.TestCase):
 
 class IntegrationTest(unittest.TestCase):
     _multiprocess_can_split_ = True
+
     def setUp(self):
         # Create a temporary directory
         self.test_dir = tempfile.mkdtemp()
@@ -51,7 +53,9 @@ class IntegrationTest(unittest.TestCase):
     def _loadVisitedSet(self, visited):
 
         self.assertTrue(os.path.exists(visited))
-        vitems = open(visited, 'r').read().splitlines()
+
+        with open(visited, 'r') as f:
+            vitems = f.read().splitlines()
 
         vitems = [int(x[2:], 16) for x in vitems]
 
@@ -65,7 +69,7 @@ class IntegrationTest(unittest.TestCase):
         """
         dirname = os.path.dirname(__file__)
         filename = os.path.join(dirname, 'binaries', filename)
-        command = ['python', '-m', 'manticore']
+        command = ['/proc/self/exe', '-m', 'manticore']
 
         if contract:
             command.append('--contract')
@@ -99,7 +103,7 @@ class IntegrationTest(unittest.TestCase):
         workspace = os.path.join(self.test_dir, 'workspace')
         t = time.time()
         with open(os.path.join(os.pardir, self.test_dir, 'output.log'), "w") as output:
-            subprocess.check_call(['python', '-m', 'manticore',
+            subprocess.check_call([PYTHON_BIN, '-m', 'manticore',
                                 '--workspace', workspace,
                                 '--timeout', '1',
                                 '--procs', '4',
@@ -115,7 +119,7 @@ class IntegrationTest(unittest.TestCase):
 
         dirname = os.path.dirname(__file__)
         filename = os.path.join(dirname, 'binaries', 'basic_linux_amd64')
-        output = subprocess.check_output(['python', '-m', 'manticore', filename])
+        output = subprocess.check_output([PYTHON_BIN, '-m', 'manticore', filename])
         output_lines = output.splitlines()
         start_info = output_lines[:2]
         testcase_info = output_lines[2:-5]
@@ -126,6 +130,7 @@ class IntegrationTest(unittest.TestCase):
 
         for line in testcase_info:
             self.assertIn('Generated testcase', line)
+
     @unittest.skip('sloowww')
     def testArgumentsAssertions(self):
         dirname = os.path.dirname(__file__)
@@ -136,7 +141,7 @@ class IntegrationTest(unittest.TestCase):
         assertions = os.path.join(self.test_dir, 'assertions.txt')
         open(assertions,'w').write('0x0000000000401003 ZF == 1')
         with open(os.path.join(os.pardir, self.test_dir, 'output.log'), "w") as output:
-            subprocess.check_call(['python', '-m', 'manticore',
+            subprocess.check_call([PYTHON_BIN, '-m', 'manticore',
                                    '--workspace', workspace,
                                    '--proc', '4',
                                    '--assertions', assertions,
@@ -152,7 +157,7 @@ class IntegrationTest(unittest.TestCase):
         self.assertTrue(filename.startswith(os.getcwd()))
         filename = filename[len(os.getcwd())+1:]
         workspace = os.path.join(self.test_dir, 'workspace')
-        self._runWithTimeout(['python', '-m', 'manticore',
+        self._runWithTimeout([PYTHON_BIN, '-m', 'manticore',
                     '--workspace', workspace,
                     '--timeout', '20',
                     '--proc', '4',
@@ -195,7 +200,7 @@ class IntegrationTest(unittest.TestCase):
         dirname = os.path.dirname(__file__)
         filename = os.path.abspath(os.path.join(dirname, 'binaries', 'basic_linux_armv7'))
         workspace = os.path.join(self.test_dir, 'workspace')
-        output = subprocess.check_output(['python', '-m', 'manticore', '--workspace', workspace, filename])
+        output = subprocess.check_output([PYTHON_BIN, '-m', 'manticore', '--workspace', workspace, filename])
 
         with open(os.path.join(workspace, "test_00000000.stdout")) as f:
             self.assertIn("Message", f.read())
@@ -206,37 +211,35 @@ class IntegrationTest(unittest.TestCase):
         """
         Tests for brk behavior. Source of brk_static_amd64:
 
-	#include <stdio.h>
-	#include <unistd.h>
-	#include <stdint.h>
+        #include <stdio.h>
+        #include <unistd.h>
+        #include <stdint.h>
 
-	int main(int argc, char *argv[])
-	{
-	    uint8_t *p = sbrk(0);
+        int main(int argc, char *argv[]) {
+            uint8_t *p = sbrk(0);
 
-	    int valid_at_first = (p == sbrk(16));
-	    int valid_after_shift = ((p+16) == sbrk(0));
-	    sbrk(-16);
-	    int valid_after_reset = (p == sbrk(0));
-	    sbrk(-(2<<20));
-	    int valid_after_bad_brk = (p == sbrk(0));
+            int valid_at_first = (p == sbrk(16));
+            int valid_after_shift = ((p+16) == sbrk(0));
+            sbrk(-16);
+            int valid_after_reset = (p == sbrk(0));
+            sbrk(-(2<<20));
+            int valid_after_bad_brk = (p == sbrk(0));
 
-	    if (valid_at_first && valid_after_shift 
-		    && valid_after_reset && valid_after_bad_brk)
-		return 0;
-	    else
-		return 1;
-	}
-
-
+            if (valid_at_first && valid_after_shift
+                && valid_after_reset && valid_after_bad_brk)
+            return 0;
+            else
+            return 1;
+        }
         """
         dirname = os.path.dirname(__file__)
         filename = os.path.abspath(os.path.join(dirname, 'binaries/brk_static_amd64'))
         workspace = f'{self.test_dir}/workspace'
-        output = subprocess.check_output(['python', '-m', 'manticore', '--workspace', workspace, filename])
+        output = subprocess.check_output([PYTHON_BIN, '-m', 'manticore', '--workspace', workspace, filename])
 
         with open(os.path.join(workspace, "test_00000000.messages")) as f:
             self.assertIn("finished with exit status: 0", f.read())
+
 
 if __name__ == '__main__':
     unittest.main()
