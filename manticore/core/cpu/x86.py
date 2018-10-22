@@ -4596,6 +4596,9 @@ class X86Cpu(Cpu):
 
     @instruction
     def PMAXUB(cpu, dest, src):
+        """
+        PMAXUB: returns maximum of packed unsigned byte integers in the dest operand
+        """
         dest_value = dest.read()
         src_value = src.read()
         result = 0
