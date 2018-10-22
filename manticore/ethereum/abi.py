@@ -64,7 +64,7 @@ class ABI(object):
         return result
 
     @staticmethod
-    def serialize(ty, *value, **kwargs):
+    def serialize(ty, *values, **kwargs):
         """
         Serialize value using type specification in ty.
         ABI.serialize('int256', 1000)
@@ -77,11 +77,15 @@ class ABI(object):
             raise EthereumError(str(e))
 
         if parsed_ty[0] != 'tuple':
-            if len(value) > 1:
+            if len(values) > 1:
                 raise ValueError
-            value = value[0]
+            values = values[0]
 
-        result, dyn_result = ABI._serialize(parsed_ty, value)
+        # implement type forgiveness for bytesM/string types
+        # allow python strs also to be used for Solidity bytesM/string types
+        values = tuple(val.encode() if isinstance(val, str) else val for val in values)
+
+        result, dyn_result = ABI._serialize(parsed_ty, values)
         return result + dyn_result
 
     @staticmethod
@@ -131,8 +135,6 @@ class ABI(object):
         :param value:
         :type value: str or bytearray or Array
         """
-        if isinstance(value, str):
-            value = value.encode()
         return value + bytearray(b'\x00' * (32 - len(value)))
 
     @staticmethod
