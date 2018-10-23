@@ -10,6 +10,11 @@ from manticore.binary import Elf, CGCElf
 
 DIRPATH = os.path.dirname(__file__)
 
+# Workaround for PyCharm's remote ssh interpreter that is in virtualenv
+# (it doesn't support venv on remote ssh, so `python` may point to system's Python)
+# and /proc/self/exe should always be the Python the tests have been run with.
+PYTHON_BIN = '/proc/self/exe'
+
 
 class TestBinaryPackage(unittest.TestCase):
     _multiprocess_can_split_ = True
@@ -63,7 +68,7 @@ class IntegrationTest(unittest.TestCase):
         :return:
         """
         filename = os.path.join(DIRPATH, 'binaries', filename)
-        command = ['python', '-m', 'manticore']
+        command = [PYTHON_BIN, '-m', 'manticore']
 
         if contract:
             command.append('--contract')
@@ -96,10 +101,11 @@ class IntegrationTest(unittest.TestCase):
         workspace = os.path.join(self.test_dir, 'workspace')
         t = time.time()
 
-        output = subprocess.check_output(['python', '-m', 'manticore',
+        output = subprocess.check_output([PYTHON_BIN, '-m', 'manticore',
                                           '--workspace', workspace,
                                           '--timeout', '1',
                                           '--procs', '4',
+                                          '--no-color',
                                           filename,
                                           '+++++++++'])
         expected_output_regex = (
@@ -118,7 +124,7 @@ class IntegrationTest(unittest.TestCase):
         """
 
         filename = os.path.join(DIRPATH, 'binaries', 'basic_linux_amd64')
-        output = subprocess.check_output(['python', '-m', 'manticore', filename])
+        output = subprocess.check_output([PYTHON_BIN, '-m', 'manticore', '--no-color', filename])
         output_lines = output.splitlines()
         start_info = output_lines[:2]
         testcase_info = output_lines[2:-5]
@@ -140,9 +146,10 @@ class IntegrationTest(unittest.TestCase):
         with open(assertions, 'w') as f:
             f.write('0x0000000000401003 ZF == 1')
 
-        output = subprocess.check_output(['python', '-m', 'manticore',
+        output = subprocess.check_output([PYTHON_BIN, '-m', 'manticore',
                                           '--workspace', workspace,
                                           '--proc', '4',
+                                          '--no-color',
                                           '--assertions', assertions,
                                           filename,
                                           '+++++++++'])
@@ -175,10 +182,11 @@ class IntegrationTest(unittest.TestCase):
         self.assertTrue(filename.startswith(os.getcwd()))
         filename = filename[len(os.getcwd()) + 1:]
         workspace = os.path.join(self.test_dir, 'workspace')
-        self._run_with_timeout(['python', '-m', 'manticore',
+        self._run_with_timeout([PYTHON_BIN, '-m', 'manticore',
                               '--workspace', workspace,
                               '--timeout', '20',
                               '--proc', '4',
+                              '--no-color',
                               '--policy', 'uncovered',
                                 filename], os.path.join(self.test_dir, 'output.log'))
 
@@ -217,7 +225,7 @@ class IntegrationTest(unittest.TestCase):
         filename = os.path.abspath(os.path.join(DIRPATH, 'binaries', 'basic_linux_armv7'))
         workspace = os.path.join(self.test_dir, 'workspace')
 
-        output = subprocess.check_output(['python', '-m', 'manticore', '--workspace', workspace, filename])
+        output = subprocess.check_output([PYTHON_BIN, '-m', 'manticore', '--no-color', '--workspace', workspace, filename])
 
         expected_output_regex = (
             b'.*m.manticore:INFO: Loading program .*tests/binaries/brk_static_amd64\n'
@@ -262,7 +270,7 @@ class IntegrationTest(unittest.TestCase):
         filename = os.path.abspath(os.path.join(DIRPATH, 'binaries/brk_static_amd64'))
         workspace = f'{self.test_dir}/workspace'
 
-        output = subprocess.check_output(['python', '-m', 'manticore', '--workspace', workspace, filename])
+        output = subprocess.check_output([PYTHON_BIN, '-m', 'manticore', '--no-color', '--workspace', workspace, filename])
 
         expected_output_regex = (
             b'.*m.manticore:INFO: Loading program .+/tests/binaries/brk_static_amd64\n'
