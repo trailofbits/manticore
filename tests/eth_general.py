@@ -16,8 +16,10 @@ from manticore.core.smtlib.expression import BitVec
 from manticore.core.smtlib import solver
 from manticore.core.state import State, TerminateState
 from manticore.ethereum import ManticoreEVM, DetectIntegerOverflow, Detector, NoAliveStates, ABI, EthereumError, FilterFunctions
+from manticore.ethereum.solidity import SolidityMetadata
 from manticore.platforms.evm import EVMWorld, ConcretizeStack, concretized_args, Return, Stop
 from manticore.core.smtlib.visitors import pretty_print, translate_to_smtlib, simplify, to_constant
+from manticore.utils.deprecated import ManticoreDeprecationWarning
 import pyevmasm as EVMAsm
 
 
@@ -905,7 +907,23 @@ class EthSolidityCompilerTest(unittest.TestCase):
         finally:
             shutil.rmtree(d)
 
+
 class EthSolidityMetadataTests(unittest.TestCase):
+
+    def test_tuple_signature_for_components(self):
+        self.assertEqual(SolidityMetadata.tuple_signature_for_components([]), '()')
+        self.assertEqual(SolidityMetadata.tuple_signature_for_components(
+                             [{'type': 'uint256'}, {'type': 'uint256[]'}]),
+                         '(uint256,uint256[])')
+        self.assertEqual(SolidityMetadata.tuple_signature_for_components(
+                            [{"type": "tuple[2]", "components": [{"type": "uint256"}, {"type": "uint256[]"}]},
+                             {"type": "tuple", "components": [
+                                 {"type": "tuple", "components": [{"type": "string"}]},
+                                 {"type": "string"},
+                                 {"type": "tuple[]", "components": [{"type": "uint256"}, {"type": "uint256[2]"}]}
+                             ]}]),
+                         '((uint256,uint256[])[2],((string),string,(uint256,uint256[2])[]))')
+
     def test_abi_constructor_and_fallback_items(self):
         with disposable_mevm() as m:
             source_code = '''
@@ -916,14 +934,109 @@ class EthSolidityMetadataTests(unittest.TestCase):
             '''
             user_account = m.create_account(balance=1000, name='user_account')
             contract_account = m.solidity_create_contract(source_code, owner=user_account, name='contract_account', args = (0,))
-            md = m.get_metadata(contract_account)
+            md: SolidityMetadata = m.get_metadata(contract_account)
 
+            self.assertTrue(md.has_non_default_constructor)
+            self.assertDictEqual(md.constructor_abi,
+                                 {'inputs': [{'name': 'a', 'type': 'uint256'}],
+                                  'payable': False, 'stateMutability': 'nonpayable', 'type': 'constructor'})
             self.assertEqual(md.get_constructor_arguments(), '(uint256)')
 
-            fallback = md.get_abi('')
-            self.assertEqual(fallback['type'], 'fallback')
-            self.assertIsNone(fallback.get('inputs'))
-            self.assertEqual(fallback['stateMutability'], 'payable')
+            self.assertTrue(md.has_non_default_fallback_function)
+            self.assertTrue(md.fallback_function_selector, b'\0\0\0\0')
+            fallback = md.get_abi(b'')
+            self.assertDictEqual(fallback, md.get_abi(md.fallback_function_selector))
+            self.assertDictEqual(fallback, {'payable': True, 'stateMutability': 'payable', 'type': 'fallback'})
+
+            self.assertEqual(md.get_func_signature(md.fallback_function_selector), None)
+            self.assertEqual(md.get_func_signature(b''), None)
+
+            self.assertEqual(md.get_func_name(md.fallback_function_selector), '{fallback}')
+            self.assertEqual(md.get_func_name(b''), '{fallback}')
+
+            self.assertEqual(md.get_func_argument_types(md.fallback_function_selector), '()')
+            self.assertEqual(md.get_func_argument_types(b''), '()')
+
+            self.assertEqual(md.get_func_return_types(md.fallback_function_selector), '()')
+            self.assertEqual(md.get_func_return_types(b''), '()')
+
+            self.assertDictEqual(md.signatures, {})
+            self.assertSequenceEqual(md.function_selectors, [md.fallback_function_selector])
+            self.assertSequenceEqual(md.function_signatures, [])
+
+            with self.assertWarns(ManticoreDeprecationWarning):
+                self.assertSequenceEqual(md.hashes, [md.fallback_function_selector])
+
+            with self.assertWarns(ManticoreDeprecationWarning):
+                self.assertSequenceEqual(md.functions, ['{fallback}()'])
+
+    def test_overloaded_functions_and_events(self):
+        with disposable_mevm() as m:
+            source_code = '''
+            contract C {                
+                function f() public payable returns (uint) {}
+                function f(string a) public {}
+                
+                event E(uint);
+                event E(uint, string);
+            }
+            '''
+            user_account = m.create_account(balance=1000, name='user_account')
+            contract_account = m.solidity_create_contract(source_code, owner=user_account, name='contract_account')
+            md: SolidityMetadata = m.get_metadata(contract_account)
+
+            f0_sel = ABI.function_selector('f()')
+            f1_sel = ABI.function_selector('f(string)')
+
+            with self.assertWarns(ManticoreDeprecationWarning):
+                self.assertEqual(md.get_hash('f()'), f0_sel)
+
+            self.assertListEqual(sorted(md.function_selectors), sorted([f0_sel, f1_sel]))
+            with self.assertWarns(ManticoreDeprecationWarning):
+                self.assertListEqual(sorted(md.hashes), sorted([f0_sel, f1_sel, md.fallback_function_selector]))
+
+            e1_sel = ABI.function_selector('E(uint256)')
+
+            f0_abi = md.get_abi(f0_sel)
+            f1_abi = md.get_abi(f1_sel)
+            self.assertEqual(f0_abi['stateMutability'], 'payable')
+            self.assertEqual(f1_abi['stateMutability'], 'nonpayable')
+            self.assertFalse(md.has_non_default_fallback_function)
+            fallback_abi = md.get_abi(md.fallback_function_selector)
+            self.assertDictEqual(fallback_abi, {'payable': False, 'stateMutability': 'nonpayable', 'type': 'fallback'})
+            # get_abi is only for functions, not events.
+            self.assertEqual(md.get_abi(e1_sel), fallback_abi)
+
+            self.assertEqual(md.get_func_signature(f0_sel), 'f()')
+            self.assertEqual(md.get_func_signature(f1_sel), 'f(string)')
+            self.assertEqual(md.get_func_signature(md.fallback_function_selector), None)
+            self.assertEqual(md.get_func_signature(e1_sel), None)
+
+            self.assertDictEqual(md.signatures, {f0_sel: 'f()', f1_sel: 'f(string)'})
+
+            self.assertListEqual(sorted(md.function_signatures), ['f()', 'f(string)'])
+            with self.assertWarns(ManticoreDeprecationWarning):
+                self.assertListEqual(sorted(md.functions), ['f()', 'f(string)', '{fallback}()'])
+
+            self.assertEqual(md.get_func_name(f0_sel), 'f')
+            self.assertEqual(md.get_func_name(f1_sel), 'f')
+            self.assertEqual(md.get_func_name(md.fallback_function_selector), '{fallback}')
+            self.assertEqual(md.get_func_name(e1_sel), '{fallback}')
+
+            self.assertEqual(md.get_func_argument_types(f0_sel), '()')
+            self.assertEqual(md.get_func_argument_types(f1_sel), '(string)')
+            self.assertEqual(md.get_func_argument_types(md.fallback_function_selector), '()')
+            self.assertEqual(md.get_func_argument_types(e1_sel), '()')
+
+            self.assertEqual(md.get_func_return_types(f0_sel), '(uint256)')
+            self.assertEqual(md.get_func_return_types(f1_sel), '()')
+            self.assertEqual(md.get_func_return_types(md.fallback_function_selector), '()')
+            self.assertEqual(md.get_func_return_types(e1_sel), '()')
+
+            self.assertFalse(md.has_non_default_constructor)
+            self.assertDictEqual(md.constructor_abi,
+                                 {'inputs': [], 'payable': False, 'stateMutability': 'nonpayable', 'type': 'constructor'})
+
 
 class EthSpecificTxIntructionTests(unittest.TestCase):
 
