@@ -154,7 +154,7 @@ class IntegrationTest(unittest.TestCase):
                                           filename,
                                           '+++++++++'])
 
-        expected_output_regex = b'.*m.manticore:INFO: Loading program .*tests/binaries/%s\n' % bytes(binname, 'utf-8')
+        expected_output_regex = b'.*m.manticore:INFO: Loading program .*binaries/%s\n' % bytes(binname, 'utf-8')
 
         expected_output_regex += b'.*m.manticore:INFO: Generated testcase No. [0-9][0-9]? -' \
                                  b' Program finished with exit status: [01]\n' * testcases_number
