@@ -215,12 +215,12 @@ class Transaction(object):
         if result not in {None, 'TXERROR', 'REVERT', 'RETURN', 'THROW', 'STOP', 'SELFDESTRUCT'}:
             raise EVMException('Invalid transaction result')
         if result in {'RETURN', 'REVERT'}:
-            if not isinstance(return_data, (bytearray, Array)):
+            if not isinstance(return_data, (bytes, bytearray, Array)):
                 raise EVMException('Invalid transaction return_data type:', type(return_data).__name__)
         elif result in {'STOP', 'THROW', 'SELFDESTRUCT'}:
             if return_data is None:
                 return_data = bytearray()
-            if not isinstance(return_data, (bytearray, Array)) or len(return_data) != 0:
+            if not isinstance(return_data, (bytes, bytearray, Array)) or len(return_data) != 0:
                 raise EVMException('Invalid transaction return_data. To much data for STOP,THROW or SELFDESTRUCT')
         else:
             if return_data is not None:
