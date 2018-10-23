@@ -137,6 +137,9 @@ def parse_arguments():
     eth_flags.add_argument('--limit-loops', action='store_true',
                            help='Avoid exploring constant functions for human transactions')
 
+    eth_flags.add_argument('--explore-contract-function-dispatcher', action='store_true',
+                           help='Do not constrain the data of human transactions to avoid exceptions in the contract function dispatcher')
+
     eth_flags.add_argument('--no-testcases', action='store_true',
                            help='Do not generate testcases for discovered states when analysis finishes')
 
@@ -169,7 +172,9 @@ def ethereum_cli(args):
 
     log.init_logging()
 
-    m = ManticoreEVM(procs=args.procs, workspace_url=args.workspace)
+    m = ManticoreEVM(procs=args.procs,
+                     preconstrain_symbolic_tx_data=not args.explore_contract_function_dispatcher,
+                     workspace_url=args.workspace)
 
     if args.detect_all or args.detect_invalid:
         m.register_detector(DetectInvalid())

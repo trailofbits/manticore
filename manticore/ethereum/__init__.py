@@ -4,6 +4,7 @@ import string
 import re
 import os
 import pyevmasm as EVMAsm
+from typing import Optional
 
 from .. import Manticore
 from ..exceptions import EthereumError, DependencyError, NoAliveStates
@@ -449,7 +450,7 @@ class ManticoreEVM(Manticore):
     def get_account(self, name):
         return self._accounts[name]
 
-    def __init__(self, procs=10, **kwargs):
+    def __init__(self, procs=10, preconstrain_symbolic_tx_data=True, **kwargs):
         """ A Manticore EVM manager
             :param int procs: number of workers to use in the exploration
         """
@@ -457,6 +458,7 @@ class ManticoreEVM(Manticore):
         self._serializer = PickleSerializer()
 
         self._config_procs = procs
+        self.preconstrains_symbolic_tx_data = preconstrain_symbolic_tx_data
         # Make the constraint store
         constraints = ConstraintSet()
         # make the ethereum world state
@@ -681,9 +683,11 @@ class ManticoreEVM(Manticore):
                                                             address=address,
                                                             init=md._init_bytecode + ABI.serialize(constructor_types, *args),
                                                             name=name,
-                                                            gas=gas)
+                                                            gas=gas,
+                                                            metadata=md)
                 else:
-                    contract_account = self.create_contract(owner=owner, init=md._init_bytecode)
+                    contract_account = self.create_contract(owner=owner, init=md._init_bytecode,
+                                                            metadata=md)
 
                 if contract_account is None:
                     raise EthereumError("Failed to build contract %s" % contract_name_i)
@@ -700,6 +704,7 @@ class ManticoreEVM(Manticore):
             return None
         return contract_account
 
+
     def get_nonce(self, address):
         # type forgiveness:
         address = int(address)
@@ -713,7 +718,8 @@ class ManticoreEVM(Manticore):
         else:
             return next(iter(nonces))
 
-    def create_contract(self, owner, balance=0, address=None, init=None, name=None, gas=21000):
+    def create_contract(self, owner, balance=0, address=None, init=None, name=None, gas=21000,
+                        metadata: Optional[SolidityMetadata] = None):
         """ Creates a contract
 
             :param owner: owner account (will be default caller in any transactions)
@@ -724,6 +730,7 @@ class ManticoreEVM(Manticore):
             :param str init: initializing evm bytecode and arguments
             :param str name: a unique name for reference
             :param gas: gas budget for the creation/initialization of the contract
+            :param metadata: The SolidityMetadata for the contract (optional)
             :rtype: EVMAccount
         """
         if not self.count_running_states():
@@ -744,7 +751,7 @@ class ManticoreEVM(Manticore):
             # Account name already used
             raise EthereumError("Name already used")
 
-        self._transaction('CREATE', owner, balance, address, data=init, gaslimit=gas)
+        self._transaction('CREATE', owner, balance, address, data=init, gaslimit=gas, contract_metadata=metadata)
         # TODO detect failure in the constructor
 
         self._accounts[name] = EVMContract(address=address, manticore=self, default_caller=owner, name=name)
@@ -888,7 +895,8 @@ class ManticoreEVM(Manticore):
 
             return caller, address, value, data
 
-    def _transaction(self, sort, caller, value=0, address=None, data=None, gaslimit=0, price=1):
+    def _transaction(self, sort, caller, value=0, address=None, data=None, gaslimit=0, price=1,
+                     contract_metadata: Optional[SolidityMetadata] = None):
         """ Initiates a transaction
 
             :param caller: caller account
@@ -899,6 +907,7 @@ class ManticoreEVM(Manticore):
             :type value: int or SValue
             :param str data: initializing evm bytecode and arguments or transaction call data
             :param gaslimit: gas budget
+            :param contract_metadata: The SolidityMetadata for the contract at the address (optional)
             :rtype: EVMAccount
         """
         #Type Forgiveness
@@ -931,10 +940,34 @@ class ManticoreEVM(Manticore):
         if sort not in ('CREATE', 'CALL'):
             raise ValueError('unsupported transaction type')
 
+        preconstraint = None
+
         if sort == 'CREATE':
             # When creating data is the init_bytecode + arguments
             if len(data) == 0:
                 raise EthereumError("An initialization bytecode is needed for a CREATE")
+
+            if contract_metadata is not None and issymbolic(value) and self.preconstrains_symbolic_tx_data \
+                and not contract_metadata.constructor_abi['payable']:
+                    preconstraint = value == 0
+        else:
+            assert sort == 'CALL'
+            if not issymbolic(address) and issymbolic(data) and len(data) > 4 and self.preconstrains_symbolic_tx_data:
+                if contract_metadata is None:
+                    contract_metadata = self.metadata.get(address)
+                if contract_metadata is not None:
+                    selectors = contract_metadata.function_selectors
+                    if selectors:
+                        symbolic_selector = data[:4]
+                        value_is_symbolic = issymbolic(value)
+                        for selector in selectors:
+                            c = symbolic_selector == selector
+                            if value_is_symbolic and not contract_metadata.get_abi(selector)['payable']:
+                                c = Operators.AND(c, value == 0)
+                            if preconstraint is None:
+                                preconstraint = c
+                            else:
+                                preconstraint = Operators.OR(preconstraint, c)
 
         assert address is not None
         assert caller is not None
@@ -949,6 +982,9 @@ class ManticoreEVM(Manticore):
 
             if '_pending_transaction' in state.context:
                 raise EthereumError("This is bad. It should not be a pending transaction")
+
+            if preconstraint is not None:
+                state.constrain(preconstraint)
 
             # Choose an address here, because it will be dependent on the caller's nonce in this state
             if address is None:

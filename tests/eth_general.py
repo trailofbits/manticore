@@ -839,6 +839,41 @@ class EthTests(unittest.TestCase):
         context = p.context.get('flags', {})
         self.assertTrue(context.get('found', False))
 
+    def test_preconstraints(self):
+        source_code = '''
+        contract C {
+            constructor() public {}
+            function other() public {}
+        }
+        '''
+        m: ManticoreEVM = self.mevm
+
+        creator_account = m.create_account(balance=1000)
+        contract_account = m.solidity_create_contract(source_code, owner=creator_account,
+                                                      balance=m.make_symbolic_value())
+
+        m.transaction(caller=creator_account, address=contract_account,
+                      data=m.make_symbolic_buffer(320), value=m.make_symbolic_value())
+
+        self.assertEqual(m.count_states(), 1)
+        self.assertEqual(m.count_running_states(), 1)
+
+        m.preconstrains_symbolic_tx_data = False
+
+        m.transaction(caller=creator_account, address=contract_account,
+                      data=m.make_symbolic_buffer(320), value=m.make_symbolic_value())
+
+        self.assertEqual(m.count_states(), 4)
+        self.assertEqual(m.count_running_states(), 1)
+
+        for state in m.all_states:
+            self.assertEqual(len(state.platform.all_transactions), 3)
+        results = [state.platform.all_transactions[-1].result for state in m.all_states]
+        # The two REVERTs are triggered in the function dispatcher due to an invalid function selector
+        # and an non-zero value send to the non-payable function. The TXERROR is the state where the sent
+        # value is greater than the senders budget.
+        self.assertListEqual(sorted(results), ['REVERT', 'REVERT', 'STOP', 'TXERROR'])
+
 class EthHelpersTest(unittest.TestCase):
     def setUp(self):
         self.bv = BitVec(256)
