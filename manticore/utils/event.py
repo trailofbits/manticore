@@ -159,3 +159,4 @@ class Eventful(object, metaclass=EventsGatherMetaclass):
 
     def copy_event_state(self, new_object: Eventful):
         new_object._forwards = copy.copy(self._forwards)
+        new_object._signals = copy.copy(self._signals)
