@@ -117,7 +117,9 @@ class State(Eventful):
         self.platform.constraints = new_state.constraints
         new_state._input_symbols = list(self._input_symbols)
         new_state._context = copy.copy(self._context)
-        new_state._forwards = copy.copy(self._forwards)  # copy over event system related state
+
+        self.copy_event_state(new_state)
+
         self._child = new_state
         assert new_state.platform.constraints is new_state.constraints
 

@@ -1,3 +1,4 @@
+import copy
 import inspect
 import logging
 from itertools import takewhile
@@ -155,3 +156,6 @@ class Eventful(object, metaclass=EventsGatherMetaclass):
         if not isinstance(sink, Eventful):
             raise TypeError
         self._forwards[sink] = include_source
+
+    def copy_event_state(self, new_object: Eventful):
+        new_object._forwards = copy.copy(self._forwards)
