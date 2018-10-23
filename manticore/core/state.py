@@ -123,7 +123,6 @@ class State(Eventful):
         self._child = new_state
         assert new_state.platform.constraints is new_state.constraints
 
-        # fixme NEW State won't inherit signals (pro: added signals to new_state wont affect parent)
         return new_state
 
     def __exit__(self, ty, value, traceback):
