@@ -42,6 +42,10 @@ class Eventful(object, metaclass=EventsGatherMetaclass):
           - publish an event with arbitrary arguments to its subscribers
           - let foreign objects subscribe their methods to events emitted here
           - forward events to/from other eventful objects
+
+        Any time an Eventful object is unserialized:
+          - All previous subscriptions need to be resubscribed
+          - All objects that would previously receive forwarded events need to be reconnected
     '''
 
     # Maps an Eventful subclass with a set of all the events it publishes.
