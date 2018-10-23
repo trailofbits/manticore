@@ -183,7 +183,7 @@ class SolidityMetadata(object):
         The content of the returned dict is described at https://solidity.readthedocs.io/en/latest/abi-spec.html#json_
         """
         if not isinstance(hsh, (bytes, bytearray)):
-            raise ValueError('The selector argument must be a concrete byte array')
+            raise TypeError('The selector argument must be a concrete byte array')
         sig = self._function_signatures_by_selector.get(hsh)
         if sig is not None:
             return dict(self._function_abi_items_by_signature[sig])
@@ -200,7 +200,7 @@ class SolidityMetadata(object):
         the empty tuple type signature ``'()'`` is returned.
         """
         if not isinstance(hsh, (bytes, bytearray)):
-            raise ValueError('The selector argument must be a concrete byte array')
+            raise TypeError('The selector argument must be a concrete byte array')
         sig = self._function_signatures_by_selector.get(hsh)
         return '()' if sig is None else sig[sig.find('('):]
 
@@ -212,7 +212,7 @@ class SolidityMetadata(object):
         the empty tuple type signature ``'()'`` is returned.
         """
         if not isinstance(hsh, (bytes, bytearray)):
-            raise ValueError('The selector argument must be a concrete byte array')
+            raise TypeError('The selector argument must be a concrete byte array')
         abi = self.get_abi(hsh)
         outputs = abi.get('outputs')
         return '()' if outputs is None else SolidityMetadata.tuple_signature_for_components(outputs)
@@ -222,7 +222,7 @@ class SolidityMetadata(object):
         or ``'{fallback}'`` if no such function exists.
         """
         if not isinstance(hsh, (bytes, bytearray)):
-            raise ValueError('The selector argument must be a concrete byte array')
+            raise TypeError('The selector argument must be a concrete byte array')
         sig = self._function_signatures_by_selector.get(hsh)
         return '{fallback}' if sig is None else sig[:sig.find('(')]
 
@@ -233,7 +233,7 @@ class SolidityMetadata(object):
         This function returns ``None`` for any selector that will be dispatched to a fallback function.
         """
         if not isinstance(hsh, (bytes, bytearray)):
-            raise ValueError('The selector argument must be a concrete byte array')
+            raise TypeError('The selector argument must be a concrete byte array')
         return self._function_signatures_by_selector.get(hsh)
 
     @deprecated("Use `abi.ABI.function_selector` instead.")
@@ -286,9 +286,9 @@ class SolidityMetadata(object):
         if returndata is None:
             returndata = bytes()
         if not isinstance(calldata, (bytes, bytearray)):
-            raise ValueError("calldata must be a concrete array")
+            raise TypeError("calldata must be a concrete byte array")
         if not isinstance(returndata, (bytes, bytearray)):
-            raise ValueError("returndata must be a concrete array")
+            raise TypeError("returndata must be a concrete byte array")
         calldata = bytes(calldata)
         returndata = bytes(returndata)
         function_id = calldata[:4]
