@@ -4,6 +4,7 @@ import logging
 import argparse
 
 from . import Manticore
+from .core.smtlib.solver import solver
 from .utils import log, config
 
 # XXX(yan): This would normally be __name__, but then logger output will be pre-
@@ -47,6 +48,8 @@ def parse_arguments():
                         help="Path to program, and arguments ('+' in arguments indicates symbolic byte).")
     parser.add_argument('--timeout', type=int, default=0,
                         help='Timeout. Abort exploration after TIMEOUT seconds')
+    parser.add_argument('--solver-timeout', type=int,
+                        help='Timeout. Abort current solver query after SOLVER_TIMEOUT seconds')
     parser.add_argument('-v', action='count', default=1,
                         help='Specify verbosity level from -v to -vvvv')
     parser.add_argument('--workspace', type=str, default=None,
@@ -240,6 +243,11 @@ def main():
 
     if args.assertions:
         m.load_assertions(args.assertions)
+
+    if args.solver_timeout:
+        solver.init_timeout(args.solver_timeout)
+    else:
+        solver.init_timeout()
 
     @m.init
     def init(initial_state):
