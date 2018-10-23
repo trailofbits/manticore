@@ -1,6 +1,6 @@
 # Usage:
 # git clone https://github.com/ethereum/tests
-# for i in tests/VMTests/*; do python3.6 make_evmtests.py $i > $MANTICORE/tests/EVM/VMTests/eth_`basename $i`.py; done
+# for i in tests/VMTests/*; do python3.6 make_VMTests.py $i > $MANTICORE/tests/EVM/VMTests/eth_`basename $i`.py; done
 #MANTICORE is manticore source folder
 from io import StringIO
 from binascii import unhexlify
