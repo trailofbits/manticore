@@ -228,8 +228,9 @@ class IntegrationTest(unittest.TestCase):
         output = subprocess.check_output([PYTHON_BIN, '-m', 'manticore', '--no-color', '--workspace', workspace, filename])
 
         expected_output_regex = (
-            b'.*m.manticore:INFO: Loading program .*tests/binaries/brk_static_amd64\n'
+            b'.*m.manticore:INFO: Loading program .*tests/binaries/basic_linux_armv7\n'
             b'.*m.manticore:INFO: Generated testcase No. 0 - Program finished with exit status: 0\n'
+            b'.*m.manticore:INFO: Generated testcase No. 1 - Program finished with exit status: 0\n'
             b'.*m.manticore:INFO: Results in /tmp/[a-z0-9_]+/workspace\n'
             b'.*m.manticore:INFO: Total time: [0-9]+.[0-9]+\n'
         )
