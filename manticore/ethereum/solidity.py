@@ -197,7 +197,8 @@ class SolidityMetadata(object):
         If no normal contract function has the specified selector,
         the empty tuple type signature ``'()'`` is returned.
         """
-        return self._function_signatures_by_selector.get(hsh, '()')
+        sig = self._function_signatures_by_selector.get(hsh)
+        return '()' if sig is None else sig[sig.find('('):]
 
     def get_func_return_types(self, hsh: bytes) -> str:
         """Returns the tuple type signature for the output values of the function
