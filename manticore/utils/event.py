@@ -157,6 +157,6 @@ class Eventful(object, metaclass=EventsGatherMetaclass):
             raise TypeError
         self._forwards[sink] = include_source
 
-    def copy_event_state(self, new_object: Eventful):
+    def copy_eventful_state(self, new_object: Eventful):
         new_object._forwards = copy.copy(self._forwards)
         new_object._signals = copy.copy(self._signals)
