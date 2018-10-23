@@ -42,7 +42,7 @@ def make_decree(program, concrete_start='', **kwargs):
     logger.info('Loading program %s', program)
 
     if concrete_start != '':
-        logger.info('Starting with concrete input: {}'.format(concrete_start))
+        logger.info(f'Starting with concrete input: {concrete_start}')
     platform.input.transmit(concrete_start)
     platform.input.transmit(initial_state.symbolicate_buffer('+' * 14, label='RECEIVE'))
     return initial_state
@@ -51,7 +51,7 @@ def make_decree(program, concrete_start='', **kwargs):
 def make_linux(program, argv=None, env=None, entry_symbol=None, symbolic_files=None, concrete_start=''):
     env = {} if env is None else env
     argv = [] if argv is None else argv
-    env = ['%s=%s' % (k, v) for k, v in env.items()]
+    env = [f'{k}={v}' for k, v in env.items()]
 
     logger.info('Loading program %s', program)
 
@@ -74,10 +74,10 @@ def make_linux(program, argv=None, env=None, entry_symbol=None, symbolic_files=N
         logger.info('Starting with concrete input: %s', concrete_start)
 
     for i, arg in enumerate(argv):
-        argv[i] = initial_state.symbolicate_buffer(arg, label='ARGV%d' % (i + 1))
+        argv[i] = initial_state.symbolicate_buffer(arg, label=f'ARGV{i + 1}')
 
     for i, evar in enumerate(env):
-        env[i] = initial_state.symbolicate_buffer(evar, label='ENV%d' % (i + 1))
+        env[i] = initial_state.symbolicate_buffer(evar, label=f'ENV{i + 1}')
 
     # If any of the arguments or environment refer to symbolic values, re-
     # initialize the stack
@@ -102,7 +102,7 @@ def make_initial_state(binary_path, **kwargs):
         # Decree
         state = make_decree(binary_path, **kwargs)
     else:
-        raise NotImplementedError("Binary {} not supported.".format(binary_path))
+        raise NotImplementedError(f"Binary {binary_path} not supported.")
     return state
 
 
@@ -130,7 +130,7 @@ class Manticore(Eventful):
 
         if isinstance(workspace_url, str):
             if ':' not in workspace_url:
-                ws_path = 'fs:' + workspace_url
+                ws_path = f'fs:{workspace_url}'
             else:
                 ws_path = workspace_url
         else:
@@ -153,14 +153,14 @@ class Manticore(Eventful):
 
         if isinstance(path_or_state, str):
             if not os.path.isfile(path_or_state):
-                raise Exception('{} is not an existing regular file'.format(path_or_state))
+                raise Exception(f'{path_or_state} is not an existing regular file')
             self._initial_state = make_initial_state(path_or_state, argv=argv, **kwargs)
         elif isinstance(path_or_state, State):
             self._initial_state = path_or_state
             #froward events from newly loaded object
             self._executor.forward_events_from(self._initial_state, True)
         else:
-            raise TypeError('path_or_state must be either a str or State, not {}'.format(type(path_or_state).__name__))
+            raise TypeError(f'path_or_state must be either a str or State, not {type(path_or_state).__name__}')
 
         if not isinstance(self._initial_state, State):
             raise TypeError("Manticore must be initialized with either a State or a path to a binary")
@@ -188,7 +188,7 @@ class Manticore(Eventful):
         prefix = Eventful.prefixes
         all_events = [x + y for x, y in itertools.product(prefix, events)]
         for event_name in all_events:
-            callback_name = '{}_callback'.format(event_name)
+            callback_name = f'{event_name}_callback'
             callback = getattr(plugin, callback_name, None)
             if callback is not None:
                 self.subscribe(event_name, callback)
@@ -253,7 +253,7 @@ class Manticore(Eventful):
         try:
             return cls(make_linux(path, argv, envp, entry_symbol, symbolic_files, concrete_start), **kwargs)
         except elftools.common.exceptions.ELFError:
-            raise Exception('Invalid binary: {}'.format(path))
+            raise Exception(f'Invalid binary: {path}')
 
     @classmethod
     def decree(cls, path, concrete_start='', **kwargs):
@@ -269,7 +269,7 @@ class Manticore(Eventful):
         try:
             return cls(make_decree(path, concrete_start), **kwargs)
         except KeyError:  # FIXME(mark) magic parsing for DECREE should raise better error
-            raise Exception('Invalid binary: {}'.format(path))
+            raise Exception(f'Invalid binary: {path}')
 
     @classmethod
     def evm(cls, **kwargs):
@@ -440,7 +440,7 @@ class Manticore(Eventful):
         :param callable callback: Hook function
         '''
         if not (isinstance(pc, int) or pc is None):
-            raise TypeError("pc must be either an int or None, not {}".format(pc.__class__.__name__))
+            raise TypeError(f"pc must be either an int or None, not {pc.__class__.__name__}")
         else:
             self._hooks.setdefault(pc, set()).add(callback)
             if self._hooks:
@@ -481,7 +481,7 @@ class Manticore(Eventful):
                 address, cc_name, name = line.strip().split(' ')
                 fmodel = platforms
                 name_parts = name.split('.')
-                importlib.import_module(".platforms.{}".format(name_parts[0]), 'manticore')
+                importlib.import_module(f".platforms.{name_parts[0]}", 'manticore')
                 for n in name_parts:
                     fmodel = getattr(fmodel, n)
                 assert fmodel != platforms
@@ -543,7 +543,7 @@ class Manticore(Eventful):
         :param message: Accompanying message
         '''
         testcase_id = self._output.save_testcase(state, name, message)
-        logger.info("Generated testcase No. {} - {}".format(testcase_id, message))
+        logger.info(f"Generated testcase No. {testcase_id} - {message}")
 
     def _produce_profiling_data(self):
         class PstatsFormatted:

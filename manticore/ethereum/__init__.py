@@ -100,7 +100,7 @@ class FilterFunctions(Plugin):
             selected_functions = []
 
             for func_hsh in md.hashes:
-                if func_hsh == '00000000':
+                if func_hsh == b'\0\0\0\0':
                     continue
                 abi = md.get_abi(func_hsh)
                 func_name = md.get_func_name(func_hsh)
@@ -113,7 +113,7 @@ class FilterFunctions(Plugin):
                 selected_functions.append(func_hsh)
 
             if self._fallback:
-                selected_functions.append('00000000')
+                selected_functions.append(b'\0\0\0\0')
 
             if self._include:
                 # constrain the input so it can take only the interesting values
@@ -484,7 +484,7 @@ class ManticoreEVM(Manticore):
     @property
     def world(self):
         """ The world instance or None if there is more than one state """
-        return self.get_world(None)
+        return self.get_world()
 
     @property
     def completed_transactions(self):
@@ -633,7 +633,7 @@ class ManticoreEVM(Manticore):
         # FIXME this is more naive than reasonable.
         return ABI.deserialize(types, self.make_symbolic_buffer(32, name="INITARGS"))
 
-    def solidity_create_contract(self, source_code, owner, name=None, contract_name=None, libraries=None, balance=0, address=None, args=(), solc_bin=None, solc_remaps=[]):
+    def solidity_create_contract(self, source_code, owner, name=None, contract_name=None, libraries=None, balance=0, address=None, args=(), solc_bin=None, solc_remaps=[], gas=90000):
         """ Creates a solidity contract and library dependencies
 
             :param str source_code: solidity source code
@@ -650,6 +650,8 @@ class ManticoreEVM(Manticore):
             :type solc_bin: str
             :param solc_remaps: solc import remaps
             :type solc_remaps: list of str
+            :param gas: gas budget for each contract creation needed (may be more than one if several related contracts defined in the solidity source)
+            :type gas: int
             :rtype: EVMAccount
         """
         if libraries is None:
@@ -671,7 +673,8 @@ class ManticoreEVM(Manticore):
                                                             balance=balance,
                                                             address=address,
                                                             init=md._init_bytecode + ABI.serialize(constructor_types, *args),
-                                                            name=name)
+                                                            name=name,
+                                                            gas=gas)
                 else:
                     contract_account = self.create_contract(owner=owner, init=md._init_bytecode)
 
@@ -1543,3 +1546,12 @@ class ManticoreEVM(Manticore):
     # We suppress because otherwise we log it many times and it looks weird.
     def _did_finish_run_callback(self):
         pass
+
+    def __repr__(self):
+        return self.__str__()
+
+    def __str__(self):
+        return "<ManticoreEVM | Alive States: {}; Terminated States: {}>".format(
+            self.count_running_states(),
+            self.count_terminated_states()
+        )

@@ -25,9 +25,9 @@ def assemble(asm, mode=CS_MODE_ARM):
     elif CS_MODE_THUMB == mode:
         ords = ks_thumb.asm(asm)[0]
     else:
-        raise Exception('bad processor mode for assembly: {}'.format(mode))
+        raise Exception(f'bad processor mode for assembly: {mode}')
     if not ords:
-        raise Exception('bad assembly: {}'.format(asm))
+        raise Exception(f'bad assembly: {asm}')
     return ''.join(map(chr, ords))
 
 

@@ -168,7 +168,7 @@ class Z3Solver(Solver):
         ''' Auxiliary method to spawn the external solver process'''
         assert '_proc' not in dir(self) or self._proc is None
         try:
-            self._proc = Popen(self._command.split(' '), stdin=PIPE, stdout=PIPE, bufsize=0, universal_newlines=True)
+            self._proc = Popen(shlex.split(self._command), stdin=PIPE, stdout=PIPE, bufsize=0, universal_newlines=True)
         except OSError as e:
             print(e, "Probably too many cached expressions? visitors._cache...")
             # Z3 was removed from the system in the middle of operation
@@ -237,7 +237,7 @@ class Z3Solver(Solver):
         logger.debug('>%s', cmd)
         try:
             self._proc.stdout.flush()
-            self._proc.stdin.write('{}\n'.format(cmd))
+            self._proc.stdin.write(f'{cmd}\n')
         except IOError as e:
             raise SolverException(str(e))
 
@@ -261,7 +261,7 @@ class Z3Solver(Solver):
         buf = ''.join(bufl).strip()
         logger.debug('<%s', buf)
         if '(error' in bufl[0]:
-            raise Exception("Error in smtlib: {}".format(bufl[0]))
+            raise Exception(f"Error in smtlib: {bufl[0]}")
         return buf
 
     # UTILS: check-sat get-value
@@ -410,7 +410,7 @@ class Z3Solver(Solver):
             self._reset(temp_cs.to_string(related_to=X))
             self._send(aux.declaration)
 
-            if getattr(self, 'support_{}'.format(goal)):
+            if getattr(self, f'support_{goal}'):
                 self._push()
                 try:
                     self._assert(operation(X, aux))

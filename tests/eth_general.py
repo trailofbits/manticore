@@ -7,6 +7,7 @@ import os
 import sys
 import resource
 import re
+from contextlib import contextmanager
 
 from manticore.platforms import evm
 from manticore.core.plugin import Plugin
@@ -14,7 +15,7 @@ from manticore.core.smtlib import ConstraintSet, operators
 from manticore.core.smtlib.expression import BitVec
 from manticore.core.smtlib import solver
 from manticore.core.state import State, TerminateState
-from manticore.ethereum import ManticoreEVM, DetectIntegerOverflow, Detector, NoAliveStates, ABI, EthereumError
+from manticore.ethereum import ManticoreEVM, DetectIntegerOverflow, Detector, NoAliveStates, ABI, EthereumError, FilterFunctions
 from manticore.platforms.evm import EVMWorld, ConcretizeStack, concretized_args, Return, Stop
 from manticore.core.smtlib.visitors import pretty_print, translate_to_smtlib, simplify, to_constant
 import pyevmasm as EVMAsm
@@ -34,6 +35,13 @@ def make_mock_evm_state():
     fakestate = State(cs, EVMWorld(cs))
     return fakestate
 
+@contextmanager
+def disposable_mevm(*args, **kwargs):
+    mevm = ManticoreEVM(*args, **kwargs)
+    try:
+        yield mevm
+    finally:
+        shutil.rmtree(mevm.workspace)
 
 class EthDetectorsIntegrationTest(unittest.TestCase):
     def test_int_ovf(self):
@@ -160,9 +168,9 @@ class EthAbiTests(unittest.TestCase):
         self.assertTrue(solver.must_be_true(cs, my_ser[0] == operators.EXTRACT(x, 256 - 8, 8)))
 
     def test_address0(self):
-        data = '{}\x01\x55{}'.format('\0'*11, '\0'*19)
+        data = f'{chr(0) * 11}\x01\x55{chr(0) * 19}'
         parsed = ABI.deserialize('address', data)
-        self.assertEqual(parsed, 0x55 << (8 * 19) )
+        self.assertEqual(parsed, 0x55 << (8 * 19))
 
     def test_mult_dyn_types(self):
         d = [
@@ -170,7 +178,7 @@ class EthAbiTests(unittest.TestCase):
             self._pack_int_to_32(0x40),  # offset to data 1 start
             self._pack_int_to_32(0x80),  # offset to data 2 start
             self._pack_int_to_32(10),  # data 1 size
-            b'helloworld'.ljust(32, b'\x00'), # data 1
+            b'helloworld'.ljust(32, b'\x00'),  # data 1
             self._pack_int_to_32(3),  # data 2 size
             self._pack_int_to_32(3),  # data 2
             self._pack_int_to_32(4),
@@ -268,11 +276,11 @@ class EthAbiTests(unittest.TestCase):
         self.assertEqual(parsed, 2**256 - 1)
 
         for i in range(8, 257, 8):
-            parsed = ABI.deserialize('uint{}'.format(i), data)
+            parsed = ABI.deserialize(f'uint{i}', data)
             self.assertEqual(parsed, 2**i - 1)
 
     def test_empty_types(self):
-        name, args = ABI.deserialize('func()', '\0'*32)
+        name, args = ABI.deserialize('func()', '\0' * 32)
         self.assertEqual(name, b'\x00\x00\x00\x00')
         self.assertEqual(args, tuple())
 
@@ -420,6 +428,40 @@ class EthTests(unittest.TestCase):
             contract_account.ret(self.mevm.make_symbolic_value(), signature='(uint8)')
         self.assertTrue(str(ctx.exception))
 
+    def test_selfdestruct_decoupled_account_delete(self):
+        source_code = '''
+            contract C{
+                function d( ){
+                    selfdestruct(0);
+                }
+                function g() returns(uint) {
+                    return 42 ;
+                }
+            }
+
+            contract D{
+                C c;
+                constructor () {
+                    c = new C();
+                }
+                function t () returns(uint){
+                    c.d();
+                    return c.g();
+                }
+            }
+        '''
+        user_account = self.mevm.create_account(balance=1000)
+        contract_account = self.mevm.solidity_create_contract(source_code, owner=user_account, contract_name='D', gas=9000000)
+        contract_account.t(gas=9000000) #this does not return nothing as it may create several states
+
+        # nothing reverted and we end up with a single state
+        self.assertEqual(self.mevm.count_states(), 1)
+
+        # Check that calling t() returned a 42
+        # That is that calling a selfdestructed contract works as the account
+        # is actually deleted at the end of the human tx
+        self.assertEqual(ABI.deserialize('uint', to_constant(self.mevm.world.transactions[-1].return_data)), 42)
+
     def test_function_name_collision(self):
         source_code = '''
         contract Test{
@@ -521,7 +563,7 @@ class EthTests(unittest.TestCase):
             user_accounts.append(m.create_account())
         self.assertEqual(len(m.accounts), 12)
         for i in range(10):
-            self.assertEqual(m.accounts['normal{:d}'.format(i)], user_accounts[i])
+            self.assertEqual(m.accounts[f'normal{i}'], user_accounts[i])
 
     def test_regression_internal_tx(self):
         m = self.mevm
@@ -978,6 +1020,50 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
         self.assertEqual( world.get_storage_data(0x111111111111111111111111111111111111111, 2), 0)
         self.assertFalse(world.has_storage(0x333333333333333333333333333333333333333))
 
+
+class EthPluginTests(unittest.TestCase):
+
+    def test_FilterFunctions_fallback_function_matching(self):
+        """
+        Tests that the FilterFunctions plugin matches the fallback function hash correctly. issue #1196
+        """
+        with disposable_mevm(procs=1) as m:
+            source_code = '''
+            contract FallbackCounter {
+                uint public fallbackCounter = 123;
+                uint public otherCounter = 456;
+    
+                function other() {
+                    otherCounter += 1;
+                }
+                function() public {
+                    fallbackCounter += 1;
+                }
+            }
+            '''
+            plugin = FilterFunctions(regexp=r'^$', fallback=True)  # Only matches the fallback function.
+            m.register_plugin(plugin)
+
+            creator_account = m.create_account(balance=1000)
+            contract_account = m.solidity_create_contract(source_code, owner=creator_account)
+
+            symbolic_data = m.make_symbolic_buffer(320)
+            m.transaction(caller=creator_account, address=contract_account, data=symbolic_data, value=0)
+
+            self.assertEqual(m.count_states(), 1)
+            self.assertEqual(m.count_running_states(), 1)
+
+            self.assertEqual(len(m.world.all_transactions), 2)
+
+            # The fallbackCounter value must have been increased by 1.
+            contract_account.fallbackCounter()
+            self.assertEqual(len(m.world.all_transactions), 3)
+            self.assertEqual(ABI.deserialize('uint', to_constant(m.world.transactions[-1].return_data)), 123 + 1)
+
+            # The otherCounter value must not have changed.
+            contract_account.otherCounter()
+            self.assertEqual(len(m.world.all_transactions), 4)
+            self.assertEqual(ABI.deserialize('uint', to_constant(m.world.transactions[-1].return_data)), 456)
 
 if __name__ == '__main__':
     unittest.main()

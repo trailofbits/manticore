@@ -178,7 +178,7 @@ class IntegrationTest(unittest.TestCase):
         ]
 
         for issue in issues:
-            self._simple_cli_run('{}.sol'.format(issue['number']),
+            self._simple_cli_run(f'{issue["number"]}.sol',
                                  contract=issue['contract'], tx_limit=issue['txlimit'])
 
     def test_eth_705(self):
@@ -194,7 +194,7 @@ class IntegrationTest(unittest.TestCase):
     def test_basic_arm(self):
         dirname = os.path.dirname(__file__)
         filename = os.path.abspath(os.path.join(dirname, 'binaries', 'basic_linux_armv7'))
-        workspace = os.path.join(self.test_dir,'workspace') 
+        workspace = os.path.join(self.test_dir, 'workspace')
         output = subprocess.check_output(['python', '-m', 'manticore', '--workspace', workspace, filename])
 
         with open(os.path.join(workspace, "test_00000000.stdout")) as f:
@@ -232,7 +232,7 @@ class IntegrationTest(unittest.TestCase):
         """
         dirname = os.path.dirname(__file__)
         filename = os.path.abspath(os.path.join(dirname, 'binaries/brk_static_amd64'))
-        workspace = '%s/workspace' % self.test_dir
+        workspace = f'{self.test_dir}/workspace'
         output = subprocess.check_output(['python', '-m', 'manticore', '--workspace', workspace, filename])
 
         with open(os.path.join(workspace, "test_00000000.messages")) as f:

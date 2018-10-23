@@ -53,6 +53,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=1000000000000000000,
                              code=bytecode,
+                             nonce=0
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x3b9aca00
@@ -75,7 +76,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        #Add pos checks for account hex(account_address)
+        #Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce, balance, code
         self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
@@ -114,6 +115,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=1000000000000000000,
                              code=bytecode,
+                             nonce=0
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x3b9aca00
@@ -136,7 +138,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        #Add pos checks for account hex(account_address)
+        #Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce, balance, code
         self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
@@ -177,6 +179,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=1000000000000000000,
                              code=bytecode,
+                             nonce=0
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x3b9aca00
@@ -197,10 +200,9 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
             result = e.result
             if e.result in ('RETURN', 'REVERT'):
                 returndata = to_constant(e.data)
-
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        #Add pos checks for account hex(account_address)
+        #Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce, balance, code
         self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
@@ -238,6 +240,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
                              code=bytecode,
+                             nonce=0
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x3b9aca00
@@ -260,7 +263,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        #Add pos checks for account hex(account_address)
+        #Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce, balance, code
         self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
@@ -294,6 +297,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
                              code=bytecode,
+                             nonce=0
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x3b9aca00
@@ -316,7 +320,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        #Add pos checks for account hex(account_address)
+        #Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce, balance, code
         self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
@@ -357,6 +361,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=1000000000000000000,
                              code=bytecode,
+                             nonce=0
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x3b9aca00
@@ -379,7 +384,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        #Add pos checks for account hex(account_address)
+        #Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce, balance, code
         self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
@@ -429,6 +434,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=1000000000000000000,
                              code=bytecode,
+                             nonce=0
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x3b9aca00
@@ -451,7 +457,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        #Add pos checks for account hex(account_address)
+        #Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce, balance, code
         self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
@@ -489,6 +495,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
                              code=bytecode,
+                             nonce=0
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x3b9aca00
@@ -511,7 +518,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        #Add pos checks for account hex(account_address)
+        #Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce, balance, code
         self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
@@ -542,6 +549,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
                              code=bytecode,
+                             nonce=0
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x3b9aca00
@@ -564,7 +572,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        #Add pos checks for account hex(account_address)
+        #Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce, balance, code
         self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
@@ -598,6 +606,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
                              code=bytecode,
+                             nonce=0
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x3b9aca00
@@ -620,7 +629,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        #Add pos checks for account hex(account_address)
+        #Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce, balance, code
         self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
@@ -654,6 +663,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
                              code=bytecode,
+                             nonce=0
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x3b9aca00
@@ -676,7 +686,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        #Add pos checks for account hex(account_address)
+        #Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce, balance, code
         self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
@@ -709,6 +719,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
                              code=bytecode,
+                             nonce=0
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x3b9aca00
@@ -759,6 +770,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=1000000000000000000,
                              code=bytecode,
+                             nonce=0
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x3b9aca00
@@ -781,7 +793,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        #Add pos checks for account hex(account_address)
+        #Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce, balance, code
         self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
@@ -817,6 +829,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
                              code=bytecode,
+                             nonce=0
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x3b9aca00
@@ -839,7 +852,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        #Add pos checks for account hex(account_address)
+        #Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce, balance, code
         self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
@@ -870,6 +883,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
                              code=bytecode,
+                             nonce=0
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x3b9aca00
@@ -892,7 +906,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        #Add pos checks for account hex(account_address)
+        #Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce, balance, code
         self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
@@ -930,6 +944,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
                              code=bytecode,
+                             nonce=0
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x3b9aca00
@@ -952,7 +967,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        #Add pos checks for account hex(account_address)
+        #Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce, balance, code
         self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
@@ -990,6 +1005,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
                              code=bytecode,
+                             nonce=0
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x3b9aca00
@@ -1012,7 +1028,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        #Add pos checks for account hex(account_address)
+        #Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce, balance, code
         self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
@@ -1048,6 +1064,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
                              code=bytecode,
+                             nonce=0
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x3b9aca00
@@ -1070,7 +1087,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        #Add pos checks for account hex(account_address)
+        #Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce, balance, code
         self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
@@ -1101,6 +1118,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
                              code=bytecode,
+                             nonce=0
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x3b9aca00
@@ -1123,7 +1141,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        #Add pos checks for account hex(account_address)
+        #Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce, balance, code
         self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
@@ -1161,6 +1179,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
                              code=bytecode,
+                             nonce=0
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x3b9aca00
@@ -1183,7 +1202,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        #Add pos checks for account hex(account_address)
+        #Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce, balance, code
         self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
@@ -1214,6 +1233,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
                              code=bytecode,
+                             nonce=0
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x3b9aca00
@@ -1236,7 +1256,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        #Add pos checks for account hex(account_address)
+        #Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce, balance, code
         self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
@@ -1270,6 +1290,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
                              code=bytecode,
+                             nonce=0
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x3b9aca00
@@ -1292,7 +1313,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        #Add pos checks for account hex(account_address)
+        #Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce, balance, code
         self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
@@ -1323,6 +1344,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         world.create_account(address=0xcd1722f3947def4cf144679da39c4c32bdc35681,
                              balance=100000000000000000000000,
                              code=bytecode,
+                             nonce=0
                             )
         address = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         price = 0x3b9aca00
@@ -1345,7 +1367,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        #Add pos checks for account hex(account_address)
+        #Add pos checks for account 0xcd1722f3947def4cf144679da39c4c32bdc35681
         #check nonce, balance, code
         self.assertEqual(world.get_nonce(0xcd1722f3947def4cf144679da39c4c32bdc35681), 0)
         self.assertEqual(to_constant(world.get_balance(0xcd1722f3947def4cf144679da39c4c32bdc35681)), 100000000000000000000000)
@@ -1378,6 +1400,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
                              code=bytecode,
+                             nonce=0
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x75bcd15
@@ -1400,7 +1423,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        #Add pos checks for account hex(account_address)
+        #Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce, balance, code
         self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
@@ -1433,6 +1456,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
                              code=bytecode,
+                             nonce=0
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x3b9aca00
@@ -1455,7 +1479,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        #Add pos checks for account hex(account_address)
+        #Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce, balance, code
         self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
@@ -1489,6 +1513,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
                              code=bytecode,
+                             nonce=0
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x3b9aca00
@@ -1511,7 +1536,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        #Add pos checks for account hex(account_address)
+        #Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce, balance, code
         self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
@@ -1543,6 +1568,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
                              code=bytecode,
+                             nonce=0
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x3b9aca00
@@ -1565,7 +1591,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        #Add pos checks for account hex(account_address)
+        #Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce, balance, code
         self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
@@ -1598,6 +1624,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
                              code=bytecode,
+                             nonce=0
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x3b9aca00
@@ -1620,7 +1647,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        #Add pos checks for account hex(account_address)
+        #Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce, balance, code
         self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
@@ -1658,6 +1685,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
                              code=bytecode,
+                             nonce=0
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x3b9aca00
@@ -1680,7 +1708,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        #Add pos checks for account hex(account_address)
+        #Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce, balance, code
         self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
@@ -1718,6 +1746,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
                              code=bytecode,
+                             nonce=0
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x3b9aca00
@@ -1740,7 +1769,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        #Add pos checks for account hex(account_address)
+        #Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce, balance, code
         self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
@@ -1771,6 +1800,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
                              code=bytecode,
+                             nonce=0
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x3b9aca00
@@ -1793,7 +1823,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        #Add pos checks for account hex(account_address)
+        #Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce, balance, code
         self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
@@ -1834,6 +1864,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=1000000000000000000,
                              code=bytecode,
+                             nonce=0
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x3b9aca00
@@ -1856,7 +1887,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        #Add pos checks for account hex(account_address)
+        #Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce, balance, code
         self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000)
@@ -1887,6 +1918,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
                              code=bytecode,
+                             nonce=0
                             )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x3b9aca00
@@ -1909,7 +1941,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        #Add pos checks for account hex(account_address)
+        #Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         #check nonce, balance, code
         self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)

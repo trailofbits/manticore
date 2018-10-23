@@ -50,7 +50,7 @@ class EthBenchmark(unittest.TestCase):
         mevm.register_detector(DetectIntegerOverflow())
         mevm.register_detector(DetectReentrancyAdvanced())
 
-        filename = os.path.join(THIS_DIR, 'binaries', 'benchmark', '{}.sol'.format(name))
+        filename = os.path.join(THIS_DIR, 'binaries', 'benchmark', f'{name}.sol')
 
 
         mevm.multi_tx_analysis(filename, contract_name='Benchmark', args=(mevm.make_symbolic_value(),))

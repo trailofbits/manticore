@@ -148,14 +148,14 @@ class BranchLimited(Policy):
         with self.locked_context() as policy_ctx:
             visited = policy_ctx.get('visited', dict())
             summaries = policy_ctx.get('summaries', dict())
-            lst = []
-            for id_, pc in summaries.items():
-                cnt = visited.get(pc, 0)
-                if id_ not in state_ids:
-                    continue
-                if cnt <= self._limit:
-                    lst.append((id_, visited.get(pc, 0)))
-            lst = sorted(lst, key=lambda x: x[1])
+        lst = []
+        for id_, pc in summaries.items():
+            cnt = visited.get(pc, 0)
+            if id_ not in state_ids:
+                continue
+            if cnt <= self._limit:
+                lst.append((id_, visited.get(pc, 0)))
+        lst = sorted(lst, key=lambda x: x[1])
 
         if lst:
             return lst[0][0]
@@ -393,7 +393,7 @@ class Executor(Eventful):
 
         logger.info("Forking. Policy: %s. Values: %s",
                     policy,
-                    ', '.join('0x{:x}'.format(sol) for sol in solutions))
+                    ', '.join(f'0x{sol:x}' for sol in solutions))
 
         self._publish('will_fork_state', state, expression, solutions, policy)
 

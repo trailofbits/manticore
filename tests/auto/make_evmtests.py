@@ -2,67 +2,10 @@
 # git clone https://github.com/ethereum/tests
 # for i in tests/VMTests/*; do python3.6 make_evmtests.py $i > $MANTICORE/tests/EVM/VMTests/eth_`basename $i`.py; done
 #MANTICORE is manticore source folder
-
-from pprint import pformat
 from io import StringIO
 from binascii import unhexlify
 import pyevmasm as EVMAsm
 import hashlib
-
-
-def pretty(value, htchar=' ', lfchar='\n', indent=0, width=100):
-    nlch = lfchar + htchar * (indent + 1)
-    if type(value) is dict:
-        items = [
-            nlch + repr(key) + ': ' + pretty(value[key], htchar, lfchar, indent +  1, width)
-            for key in value
-        ]
-        return '{%s}' % (','.join(items) + lfchar + htchar * indent)
-    elif type(value) is list:
-        items = [
-            nlch + pretty(item, htchar, lfchar, indent + 1, width)
-            for item in value
-        ]
-        return '[%s]' % (','.join(items) + lfchar + htchar * indent)
-    elif type(value) is tuple:
-        items = [
-            nlch + pretty(item, htchar, lfchar, indent + 1, width)
-            for item in value
-        ]
-        return '(%s)' % (','.join(items) + lfchar + htchar * indent)
-    elif type(value) in (str, str):
-        if len(value) ==0:
-            return repr(value)
-
-        if width is not None and isinstance(value, str):
-            width = width - indent
-            width = max(1, width)
-            o = []
-            for pos in range(0, len(value), width): 
-                o.append(repr(value[pos: pos+width]) )
-            return ('\\' + lfchar + htchar * indent).join(o)
-        return repr(value)
-    else:
-        return repr(value)
-
-pprint = pretty
-pp = pretty
-def spprint(x, indent=0, width=None,**kwargs):
-    if width is not None and isinstance(x, str):
-        o = ''
-        for pos in range(0, len(x), width): 
-            o += ' '*indent + repr(x[pos: pos+width]) + '\\'
-        return o
-    x = pformat(x, indent=0)
-    return (('\n'+' '*indent)).join(x.split('\n'))
-
-def i(x):
-    if isinstance(x, int):
-        return x
-    assert isinstance(x, str)
-    if not x.startswith('0x'):
-        x = '0x' + x
-    return int(x, 0)
 
 def gen_test(testcase, filename, skip):
 
@@ -102,21 +45,22 @@ def gen_test(testcase, filename, skip):
     '''
 
     for address, account in testcase['pre'].items():
-        account_address = i(address)
+        account_address = int(address, 0)
         account_code = account['code'][2:]
-        account_nonce = i(account['nonce'])
-        account_balance = i(account['balance'])
+        account_nonce = int(account['nonce'], 0)
+        account_balance = int(account['balance'], 0)
 
         output += f'''
         bytecode = unhexlify('{account_code}')
         world.create_account(address={hex(account_address)},
                              balance={account_balance},
                              code=bytecode,
+                             nonce={account_nonce}
                             )'''
 
         for key, value in account['storage'].items():
             output += f'''
-        world.set_storage_data({account_address}, {key}, {value})'''
+        world.set_storage_data({hex(account_address)}, {key}, {value})'''
 
     address = int(testcase['exec']['address'], 0)
     caller = int(testcase['exec']['caller'], 0)
@@ -129,7 +73,7 @@ def gen_test(testcase, filename, skip):
 
 
     #Need to check if origin is diff from caller. we do not support those tests
-    assert origin==caller, "test type not supported"
+    assert origin == caller, "test type not supported"
     assert testcase['pre']['0x{:040x}'.format(address)]['code'][2:] == code, "test type not supported"
 
     output += f'''
@@ -170,13 +114,13 @@ def gen_test(testcase, filename, skip):
     else:
 
         for address, account in testcase['post'].items():
-            account_address = i(address)
+            account_address = int(address, 0)
             account_code = account['code'][2:]
-            account_nonce = i(account['nonce'])
-            account_balance = i(account['balance'])
+            account_nonce = int(account['nonce'], 0)
+            account_balance = int(account['balance'], 0)
 
             output += f'''
-        #Add pos checks for account hex(account_address)
+        #Add pos checks for account {hex(account_address)}
         #check nonce, balance, code
         self.assertEqual(world.get_nonce({hex(account_address)}), {account_nonce})
         self.assertEqual(to_constant(world.get_balance({hex(account_address)})), {account_balance})

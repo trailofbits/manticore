@@ -143,7 +143,7 @@ class Eventful(object, metaclass=EventsGatherMetaclass):
 
     def forward_events_from(self, source, include_source=False):
         if not isinstance(source, Eventful):
-            raise TypeError('{} is not Eventful'.format(source.__class__.__name__))
+            raise TypeError(f'{source.__class__.__name__} is not Eventful')
         source.forward_events_to(self, include_source=include_source)
 
     def forward_events_to(self, sink, include_source=False):

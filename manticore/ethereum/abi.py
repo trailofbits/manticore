@@ -42,7 +42,9 @@ class ABI(object):
     def _check_and_warn_num_args(type_spec, *args):
         num_args = len(args)
         num_sig_args = len(type_spec.split(','))
-        if num_args != num_sig_args:
+        no_declared_args = '()' in type_spec
+
+        if no_declared_args and num_args or num_args != num_sig_args:
             logger.warning(f'Number of provided arguments ({num_args}) does not match number of arguments in signature: {type_spec}')
 
 
@@ -241,7 +243,7 @@ class ABI(object):
         """
         Translates a python integral or a BitVec into a 32 byte string, MSB first
         """
-        if size <= 0 and size > 32:
+        if size <= 0 or size > 32:
             raise ValueError
 
         from .account import EVMAccount  # because of circular import
@@ -267,7 +269,7 @@ class ABI(object):
         """
         Translates a signed python integral or a BitVec into a 32 byte string, MSB first
         """
-        if size <= 0 and size > 32:
+        if size <= 0 or size > 32:
             raise ValueError
         if not isinstance(value, (int, BitVec)):
             raise ValueError

@@ -44,4 +44,4 @@ m.transaction(caller=symbolic_caller,
 
 #Let seth know we are not sending more transactions 
 m.finalize()
-print("[+] Look for results in %s"% m.workspace)
+print(f"[+] Look for results in {m.workspace}")

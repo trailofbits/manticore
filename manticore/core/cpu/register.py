@@ -27,4 +27,4 @@ class Register(object):
             if self.is_flag():
                 self.value = bool(self.value)
         else:
-            raise TypeError('Cannot store {} in Register'.format(val.__class__.__name__))
+            raise TypeError(f'Cannot store {val.__class__.__name__} in Register')

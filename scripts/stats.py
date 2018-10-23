@@ -49,11 +49,11 @@ for filename in saved_states:
 if args.pcfreq:
     print('#PC:  frequency')
     for pc, freq in sorted(list(db.items()), key=lambda x: -x[1]):
-        print('%x: %d' % (pc, freq))
+        print(f'{pc:x}: {freq}')
 elif args.visited:
     print('#PC')
     for pc in list(db.keys()):
-        print('%x' % pc)
+        print(f'{pc:x}')
 elif args.bbs:
     assert len(set(edges['ROOT'])) == 1, "Something is wrong; there should be only one root"
     bbs = set()
@@ -75,9 +75,7 @@ elif args.bbs:
                     targets = ['END']
                     break
 
-
         def p(x):
-            return isinstance(x, int) and hex(x) or x
+            return hex(x) if isinstance(x, int) else x
 
-
-        print('%s -> [%s]' % (p(origin), ', '.join(map(p, targets))))
+        print(f'{p(origin)} -> [{", ".join(map(p, targets))}]')

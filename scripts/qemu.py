@@ -68,22 +68,25 @@ def start(arch, argv, port=1234, va_size=0xc0000000, stack_size=0x20000):
         with open(aslr_file, 'r') as f:
             if f.read().strip() != '0':
                 logger.warning("Disable ASLR before running qemu-user")
-                logger.warning("  sudo sh -c 'echo 0 > %s'", aslr_file)
+                logger.warning(f"  sudo sh -c 'echo 0 > {aslr_file}'")
     finally:
         pass
                     
-    args = ['qemu-%s'%(arch,), '-g', port, '-d', 'mmu', '-R', va_size, '-s', stack_size] + argv
+    args = [f'qemu-{arch}', '-g', port, '-d', 'mmu', '-R', va_size, '-s', stack_size] + argv
     args = map(str, args)
-    print("Running: %s"%(' '.join(args),))
-    subproc = subprocess.Popen(args, stdin=subprocess.PIPE,
-                                     stdout=subprocess.PIPE,
-                                     stderr=subprocess.STDOUT)
+    print(f"Running: {' '.join(args)}")
+    subproc = subprocess.Popen(
+        args,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT
+    )
     mmu_debug_output = get_lines(16)
 
     stats = parse_mmu_debug_output(mmu_debug_output)
     for m in stats['maps']:
-        start,  end, size, perms = m
-        print('{:x}-{:x}, {}, {}'.format(*m))
+        start, end, size, perms = m
+        print(f'{start:x}-{end:x}, {size}, {perms}')
 
 def correspond(text):
     """Communicate with the child process without closing stdin."""
