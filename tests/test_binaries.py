@@ -146,15 +146,22 @@ class IntegrationTest(unittest.TestCase):
         with open(assertions, 'w') as f:
             f.write('0x0000000000401003 ZF == 1')
 
-        output = subprocess.check_output([PYTHON_BIN, '-m', 'manticore',
-                                          '--workspace', workspace,
-                                          '--proc', '4',
-                                          '--no-color',
-                                          '--assertions', assertions,
-                                          filename,
-                                          '+++++++++',
-                                          '-vvv' # TODO / FIXME : remove me!
-                                          ])
+        cmd = [
+            PYTHON_BIN, '-m', 'manticore',
+            '--workspace', workspace,
+            '--proc', '4',
+            '--no-color',
+            '--assertions', assertions,
+            filename,
+            '+++++++++',
+        ]
+        if 'arm' in binname:
+            cmd += '-vvv'
+
+        output = subprocess.check_output(cmds)
+
+        if 'arm' in binname:
+            self.assertEquals(output, 'xxxxxx')
 
         print(output) # yolo, we need it printed out on travis
 
