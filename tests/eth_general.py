@@ -487,6 +487,36 @@ class EthTests(unittest.TestCase):
         with self.assertRaises(EthereumError):
             contract_account.ret(self.mevm.make_symbolic_value())
 
+    def test_gen_testcase_only_if(self):
+        source_code = '''
+        contract Test{
+            function f(uint x) returns(uint){
+                return x-2;
+            }
+        }
+        '''
+        user_account = self.mevm.create_account(balance=1000)
+        contract_account = self.mevm.solidity_create_contract(source_code, owner=user_account)
+        input_sym = self.mevm.make_symbolic_value()
+        contract_account.f(input_sym)
+        self.assertEqual(len(list(self.mevm.running_states)), 1)
+
+        state = next(self.mevm.running_states)
+        retval_array = state.platform.human_transactions[-1].return_data
+        retval = operators.CONCAT(256, *retval_array)
+
+        did_gen = self.mevm.generate_testcase(state, 'fail', 'return can be 0', only_if=retval == 0)
+        self.assertTrue(did_gen)
+
+        with state as tmp:
+            tmp.constrain(retval == 0)
+            inp = tmp.solve_one(input_sym)
+            self.assertEqual(inp, 2)
+
+        did_gen = self.mevm.generate_testcase(state, 'fail', 'return can be 0', only_if=operators.AND(retval != 0, retval == 0))
+        self.assertFalse(did_gen)
+
+
     def test_function_name_with_signature(self):
         source_code = '''
         contract Test{
@@ -721,6 +751,7 @@ class EthTests(unittest.TestCase):
                     break
             else:
                 self.fail('Could not find a function call summary in workspace output')
+
 
     def test_graceful_handle_no_alive_states(self):
         """
