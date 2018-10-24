@@ -145,6 +145,15 @@ class Z3Solver(Solver):
         else:
             logger.debug(' Please install Z3 4.4.1 or newer to get optimization support')
 
+    def init_timeout(self, solver_timeout=consts.timeout * 1000):
+        '''
+        Used as an interface to alter the Z3 solver timeout baser on user-specified
+        input. Defaults to consts.timeout * 1000.
+
+        :param solver_timeout: time (in ms) to stop current solver query
+        '''
+        self._command = f'{consts.z3_bin} -t:{solver_timeout} -memory:{consts.memory} -smt2 -in'
+
     def _solver_version(self):
         '''
         If we
