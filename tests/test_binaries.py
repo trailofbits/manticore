@@ -152,7 +152,11 @@ class IntegrationTest(unittest.TestCase):
                                           '--no-color',
                                           '--assertions', assertions,
                                           filename,
-                                          '+++++++++'])
+                                          '+++++++++',
+                                          '-vvv' # TODO / FIXME : remove me!
+                                          ])
+
+        print(output) # yolo, we need it printed out on travis
 
         expected_output_regex = b'.*m.manticore:INFO: Loading program .*binaries/%s\n' % bytes(binname, 'utf-8')
 
