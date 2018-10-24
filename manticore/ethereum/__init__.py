@@ -1256,8 +1256,24 @@ class ManticoreEVM(Manticore):
     def workspace(self):
         return self._executor._workspace._store.uri
 
-    def generate_testcase(self, state, name, message=''):
-        self._generate_testcase_callback(state, name, message)
+    def generate_testcase(self, state, name, message='', condition=None):
+        """
+
+        :param state:
+        :param name:
+        :param message:
+        :param condition: if condition can be violated, generate testcase
+        :return:
+        """
+        if condition is None:
+            self._generate_testcase_callback(state, name, message)
+        else:
+            with state as temp_state:
+                temp_state.constrain(condition == False)
+                if temp_state.is_feasible():
+                    self._generate_testcase_callback(temp_state, name, message)
+
+
 
     def current_location(self, state):
         world = state.platform
