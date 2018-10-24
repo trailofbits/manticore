@@ -889,20 +889,20 @@ class ManticoreEVM(Manticore):
         if isinstance(data, (str, bytes)):
             data = bytearray(data)
         if not isinstance(data, (bytearray, Array)):
-            raise EthereumError("code bad type")
+            raise TypeError("code bad type")
 
         # Check types
         if not isinstance(address, (int, BitVec)):
-            raise EthereumError("Caller invalid type")
+            raise TypeError("Caller invalid type")
 
         if not isinstance(value, (int, BitVec)):
-            raise EthereumError("Value invalid type")
+            raise TypeError("Value invalid type")
 
         if not isinstance(address, (int, BitVec)):
-            raise EthereumError("address invalid type")
+            raise TypeError("address invalid type")
 
         if not isinstance(price, int):
-            raise EthereumError("Price invalid type")
+            raise TypeError("Price invalid type")
 
         # Check argument consistency and set defaults ...
         if sort not in ('CREATE', 'CALL'):

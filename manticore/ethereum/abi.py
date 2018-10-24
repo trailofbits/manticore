@@ -78,7 +78,7 @@ class ABI(object):
 
         if parsed_ty[0] != 'tuple':
             if len(values) > 1:
-                raise EthereumError('too many values passed for non-tuple')
+                raise ValueError('too many values passed for non-tuple')
             values = values[0]
             if isinstance(values, str):
                 values = values.encode()
@@ -105,7 +105,7 @@ class ABI(object):
         elif ty[0] == 'bytesM':
             nbytes = ty[1]
             if len(value) > nbytes:
-                raise EthereumError('bytesM: value length exceeds size of bytes{} type'.format(nbytes))
+                raise ValueError('bytesM: value length exceeds size of bytes{} type'.format(nbytes))
             result += ABI._serialize_bytes(value)
         elif ty[0] in ('bytes', 'string'):
             result += ABI._serialize_uint(dyn_offset)
@@ -204,7 +204,7 @@ class ABI(object):
                 result = ABI._deserialize(abitypes.parse(ty), data)
             return result
         except Exception as e:
-            raise EthereumError("Error {} deserializing type {:s}".format(str(e), type_spec))
+            raise ValueError("Error {} deserializing type {:s}".format(str(e), type_spec))
 
     @staticmethod
     def _deserialize(ty, buf, offset=0):
