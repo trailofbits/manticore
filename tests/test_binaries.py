@@ -94,6 +94,7 @@ class IntegrationTest(unittest.TestCase):
             self.assertTrue(secs_used < timeout)
             sys.stderr.write("\n")
 
+    @unittest.skip('Debug')
     def test_timeout(self):
         filename = os.path.abspath(os.path.join(DIRPATH, 'binaries', 'arguments_linux_amd64'))
         self.assertTrue(filename.startswith(os.getcwd()))
@@ -118,6 +119,7 @@ class IntegrationTest(unittest.TestCase):
 
         self.assertTrue(time.time() - t < 20)
 
+    @unittest.skip('Debug')
     def test_logger_verbosity(self):
         """
         Tests that default verbosity produces the expected volume of output
@@ -146,7 +148,7 @@ class IntegrationTest(unittest.TestCase):
         with open(assertions, 'w') as f:
             f.write('0x0000000000401003 ZF == 1')
 
-        cmd = [
+        output = subprocess.check_output([
             PYTHON_BIN, '-m', 'manticore',
             '--workspace', workspace,
             '--proc', '4',
@@ -154,16 +156,10 @@ class IntegrationTest(unittest.TestCase):
             '--assertions', assertions,
             filename,
             '+++++++++',
-        ]
-        if 'arm' in binname:
-            cmd += '-vvv'
+        ])
 
-        output = subprocess.check_output(cmds)
-
-        if 'arm' in binname:
-            self.assertEquals(output, 'xxxxxx')
-
-        print(output) # yolo, we need it printed out on travis
+        # TODO / FIXME: Debug remove this
+        self.assertEquals(output, 'xxxxxx')
 
         expected_output_regex = b'.*m.manticore:INFO: Loading program .*binaries/%s\n' % bytes(binname, 'utf-8')
 
@@ -180,6 +176,7 @@ class IntegrationTest(unittest.TestCase):
 
         self.assertGreaterEqual(actual, expected)
 
+    @unittest.skip('Debug')
     def test_arguments_assertions_amd64(self):
         self._test_arguments_assertions_aux('arguments_linux_amd64', 'arguments_linux_amd64_visited.txt',
                                             testcases_number=1)
@@ -188,6 +185,7 @@ class IntegrationTest(unittest.TestCase):
         self._test_arguments_assertions_aux('arguments_linux_armv7', 'arguments_linux_armv7_visited.txt',
                                             testcases_number=19)
 
+    @unittest.skip('Debug')
     def test_decree(self):
         filename = os.path.abspath(os.path.join(DIRPATH, 'binaries', 'cadet_decree_x86'))
         self.assertTrue(filename.startswith(os.getcwd()))
@@ -204,6 +202,7 @@ class IntegrationTest(unittest.TestCase):
         actual = self._load_visited_set(os.path.join(DIRPATH, workspace, 'visited.txt'))
         self.assertTrue(len(actual) > 100)
 
+    @unittest.skip('Debug')
     def test_eth_regressions(self):
         issues = [
             {'number': 676, 'contract': None, 'txlimit': 1},
@@ -223,6 +222,7 @@ class IntegrationTest(unittest.TestCase):
             self._simple_cli_run(f'{issue["number"]}.sol',
                                  contract=issue['contract'], tx_limit=issue['txlimit'])
 
+    @unittest.skip('Debug')
     def test_eth_705(self):
         # This test needs to run inside tests/binaries because the contract imports a file
         # that is in the tests/binaries dir
@@ -232,6 +232,7 @@ class IntegrationTest(unittest.TestCase):
         finally:
             os.chdir(old_cwd)
 
+    @unittest.skip('Debug')
     def test_basic_arm(self):
         filename = os.path.abspath(os.path.join(DIRPATH, 'binaries', 'basic_linux_armv7'))
         workspace = os.path.join(self.test_dir, 'workspace')
@@ -253,6 +254,7 @@ class IntegrationTest(unittest.TestCase):
         with open(os.path.join(workspace, "test_00000001.stdout")) as f:
             self.assertIn("Message", f.read())
 
+    @unittest.skip('Debug')
     def test_brk_regression(self):
         """
         Tests for brk behavior. Source of brk_static_amd64:
