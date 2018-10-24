@@ -156,10 +156,8 @@ class IntegrationTest(unittest.TestCase):
             '--assertions', assertions,
             filename,
             '+++++++++',
+            '-vvv'  # todo / fixme: remove this after dbg
         ])
-
-        # TODO / FIXME: Debug remove this
-        self.assertEquals(output, 'xxxxxx')
 
         expected_output_regex = b'.*m.manticore:INFO: Loading program .*binaries/%s\n' % bytes(binname, 'utf-8')
 
