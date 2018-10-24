@@ -83,7 +83,7 @@ class EVMContract(EVMAccount):
             self._hashes = {}
             md = self._manticore.get_metadata(self._address)
             if md is not None:
-                for signature in md.functions:
+                for signature in md.function_signatures:
                     self.add_function(signature)
             # It was successful, no need to re-run. _init_hashes disabled
             self.__init_hashes = self.__null_func
