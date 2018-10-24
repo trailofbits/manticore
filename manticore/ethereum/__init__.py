@@ -1280,15 +1280,20 @@ class ManticoreEVM(Manticore):
         :param str name: short string used as the prefix for the workspace key (e.g. filename prefix for testcase files)
         :param str message: longer description of the testcase condition
         :param manticore.core.smtlib.Bool only_if: only if this expr can be true, generate testcase. if is None, generate testcase unconditionally.
-        :return:
+        :return: If a testcase was generated
+        :rtype: bool
         """
         if only_if is None:
             self._generate_testcase_callback(state, name, message)
+            return True
         else:
             with state as temp_state:
                 temp_state.constrain(only_if)
                 if temp_state.is_feasible():
                     self._generate_testcase_callback(temp_state, name, message)
+                    return True
+
+        return False
 
     def current_location(self, state):
         world = state.platform
