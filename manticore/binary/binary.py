@@ -8,14 +8,16 @@ class Binary:
 
     def __new__(cls, path):
         if cls is Binary:
-            cl = cls.magics[open(path, 'rb').read(4)]
+            with open(path, 'rb') as f:
+                cl = cls.magics[f.read(4)]
             return cl(path)
         else:
             return super(Binary, cls).__new__(cls)
 
     def __init__(self, path):
         self.path = path
-        self.magic = Binary.magics[open(path, 'rb').read(4)]
+        with open(path, 'rb') as f:
+            self.magic = Binary.magics[f.read(4)]
 
     def arch(self):
         pass

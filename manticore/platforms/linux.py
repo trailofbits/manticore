@@ -720,7 +720,8 @@ class Linux(Platform):
     def load_vdso(self, bits):
         # load vdso #TODO or #IGNORE
         vdso_top = {32: 0x7fff0000, 64: 0x7fff00007fff0000}[bits]
-        vdso_size = len(open(f'vdso{bits:2d}.dump').read())
+        with open(f'vdso{bits:2d}.dump') as f:
+            vdso_size = len(f.read())
         vdso_addr = self.memory.mmapFile(self.memory._floor(vdso_top - vdso_size),
                                          vdso_size,
                                          'r x',
