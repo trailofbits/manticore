@@ -647,7 +647,7 @@ class Manticore(Eventful):
         # XXX(yan) This is a bit obtuse; once PE support is updated this should
         # be refactored out
         if self._binary_type == 'ELF':
-            self._binary_obj = ELFFile(open(self._binary))
+            self._binary_obj = ELFFile(open(self._binary, 'rb'))
 
         if self._binary_obj is None:
             return NotImplementedError("Symbols aren't supported")

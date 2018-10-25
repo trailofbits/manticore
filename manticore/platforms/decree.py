@@ -467,7 +467,7 @@ class Decree(Platform):
                     logger.info("RANDOM: buf points to invalid address. Returning EFAULT")
                     return Decree.CGC_EFAULT
 
-                with open("/dev/urandom", "r") as f:
+                with open("/dev/urandom", "rb") as f:
                     data = f.read(count)
 
                 self.syscall_trace.append(("_random", -1, data))

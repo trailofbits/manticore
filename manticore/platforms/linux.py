@@ -899,7 +899,7 @@ class Linux(Platform):
                     interpreter_path_filename = os.path.join(mpath, os.path.basename(interpreter_filename))
                     logger.info(f"looking for interpreter {interpreter_path_filename}")
                     if os.path.exists(interpreter_path_filename):
-                        interpreter = ELFFile(open(interpreter_path_filename))
+                        interpreter = ELFFile(open(interpreter_path_filename, 'rb'))
                         break
             break
         if interpreter is not None:
