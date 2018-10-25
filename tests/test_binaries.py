@@ -27,6 +27,7 @@ class TestBinaryPackage(unittest.TestCase):
         )
         self.assertTrue([('Running', {'EIP': 4196624})], list(f.threads()))
         self.assertIsNone(f.getInterpreter())
+        f.elf.stream.close()
 
     def test_decree(self):
         filename = os.path.join(os.path.dirname(__file__), 'binaries', 'cadet_decree_x86')
@@ -36,6 +37,7 @@ class TestBinaryPackage(unittest.TestCase):
             list(f.maps())
         )
         self.assertTrue([('Running', {'EIP': 134513708})], list(f.threads()))
+        f.elf.stream.close()
 
 
 class IntegrationTest(unittest.TestCase):
