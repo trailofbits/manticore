@@ -428,6 +428,15 @@ class Linux(Platform):
             self._init_std_fds()
             self._execve(program, argv, envp)
 
+    def __del__(self):
+        elf = getattr(self, 'elf', None)
+        if elf is not None:
+            try:
+                # Prevents a ResourceWarning
+                elf.stream.close()
+            except IOError as e:
+               logger.error(str(e))
+
     @property
     def PC(self):
         return (self._current, self.procs[self._current].PC)
