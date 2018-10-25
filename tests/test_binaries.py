@@ -108,7 +108,7 @@ class IntegrationTest(unittest.TestCase):
 
         self.assertTrue(time.time()-t < 20)
 
-    def testSolidityTimeout(self):
+    def test_solidity_timeout(self):
         dirname = os.path.dirname(__file__)
         filename = os.path.abspath(os.path.join(dirname, 'binaries', 'int_overflow.sol'))
         self.assertTrue(filename.startswith(os.getcwd()))
