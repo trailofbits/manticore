@@ -23,11 +23,6 @@ class TerminateState(StateException):
         super().__init__(message)
         self.testcase = testcase
 
-class AbandonState(TerminateState):
-    ''' Exception returned for abandoned states when
-        execution is finished
-    '''
-
 
 class Concretize(StateException):
     ''' Base class for all exceptions that trigger the concretization
@@ -201,7 +196,7 @@ class State(Eventful):
 
         Note: This must be called from the Executor loop, or a :func:`~manticore.Manticore.hook`.
         '''
-        raise AbandonState
+        raise TerminateState("Abandoned state")
 
     def new_symbolic_buffer(self, nbytes, **options):
         '''Create and return a symbolic buffer of length `nbytes`. The buffer is
