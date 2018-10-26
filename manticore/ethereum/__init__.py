@@ -9,7 +9,7 @@ from .. import Manticore
 from ..exceptions import EthereumError, DependencyError, NoAliveStates
 from ..core.smtlib import ConstraintSet, Operators, solver, BitVec, Array, ArrayProxy
 from ..platforms import evm
-from ..core.state import State, TerminateState, AbandonState
+from ..core.state import State, TerminateState
 from ..utils.helpers import issymbolic, PickleSerializer
 from ..utils import config
 from ..utils.log import init_logging
@@ -1151,7 +1151,7 @@ class ManticoreEVM(Manticore):
             Every time a state finishes executing the last transaction, we save it in
             our private list
         """
-        if isinstance(e, AbandonState):
+        if str(e) == 'Abandoned state':
             #do nothing
             return
         world = state.platform
