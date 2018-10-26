@@ -15,7 +15,7 @@ env:
   global:
     - CC_TEST_REPORTER_ID=db72f1ed59628c16eb0c00cbcd629c4c71f68aa1892ef42d18c7c2b8326f460a
     - JOB_COUNT=2 # Two jobs generate test coverage
-    - PYTHONWARNINGS="ignore::ResourceWarning" # Ignore unclosed file warnings
+    - PYTHONWARNINGS="default::ResourceWarning" # Enable ResourceWarnings
   matrix:
     - TEST_TYPE=examples
     - TEST_TYPE=tests
