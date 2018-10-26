@@ -1,6 +1,9 @@
 # Minimal ethereum type signature parser.
 # This parses the signature and types used to calculate the function hash
+import warnings
+
 import ply.yacc as yacc
+
 # Lexer
 # ------------------------------------------------------------
 import ply.lex as lex
@@ -218,7 +221,10 @@ def p_error(p):
     #print(f"Syntax error at offset {lexer.lexpos:d}")
 
 
-parser = yacc.yacc()
+with warnings.catch_warnings():
+    # yacc.yacc() doesn't close the debuglog file after generating the parser table.
+    warnings.simplefilter('ignore', category='ResourceWarning')
+    parser = yacc.yacc()
 parse = parser.parse
 
 

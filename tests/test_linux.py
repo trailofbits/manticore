@@ -21,6 +21,11 @@ class LinuxTest(unittest.TestCase):
         self.linux = linux.Linux(self.BIN_PATH)
         self.symbolic_linux = linux.SLinux.empty_platform('armv7')
 
+    def tearDown(self):
+        for f in self.linux.files + self.symbolic_linux.files:
+            if isinstance(f, linux.File):
+                f.close()
+
     def test_regs_init_state_x86(self):
         x86_defaults = {
             'CS': 0x23,
@@ -199,29 +204,31 @@ class LinuxTest(unittest.TestCase):
         platform.current.R7 = nr_openat
         self.assertEqual(linux_syscalls.armv7[nr_openat], 'sys_openat')
 
-        return platform
+        return platform, dir_path
 
     def test_syscall_openat_concrete(self):
-        platform = self._create_openat_state()
-
-        platform.syscall()
-
-        self.assertGreater(platform.current.R0, 2)
+        platform, temp_dir = self._create_openat_state()
+        try:
+            platform.syscall()
+            self.assertGreater(platform.current.R0, 2)
+        finally:
+            shutil.rmtree(temp_dir)
 
     def test_syscall_openat_symbolic(self):
-        platform = self._create_openat_state()
+        platform, temp_dir = self._create_openat_state()
+        try:
+            platform.current.R0 = BitVecVariable(32, 'fd')
 
-        platform.current.R0 = BitVecVariable(32, 'fd')
+            with self.assertRaises(ConcretizeRegister) as cm:
+                platform.syscall()
 
-        with self.assertRaises(ConcretizeRegister) as cm:
-            platform.syscall()
+            e = cm.exception
 
-        e = cm.exception
-
-        _min, _max = solver.minmax(platform.constraints, e.cpu.read_register(e.reg_name))
-        self.assertLess(_min, len(platform.files))
-        self.assertGreater(_max, len(platform.files)-1)
-
+            _min, _max = solver.minmax(platform.constraints, e.cpu.read_register(e.reg_name))
+            self.assertLess(_min, len(platform.files))
+            self.assertGreater(_max, len(platform.files)-1)
+        finally:
+            shutil.rmtree(temp_dir)
 
     def test_chroot(self):
         # Create a minimal state

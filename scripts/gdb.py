@@ -104,7 +104,9 @@ def getPid():
 
 
 def getStack():
-    maps = open(f"/proc/{correspond('info proc\n').split('\n')[0].split(' ')[-1]}/maps").read().split("\n")
+    p = correspond('info proc\n').split('\n')[0].split(' ')[-1]
+    with open(f"/proc/{p}/maps") as f:
+        maps = f.read().split("\n")
     i, o = [int(x, 16) for x in maps[-3].split(" ")[0].split('-')]
 
 

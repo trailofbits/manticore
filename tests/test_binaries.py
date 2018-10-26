@@ -27,6 +27,7 @@ class TestBinaryPackage(unittest.TestCase):
         )
         self.assertTrue([('Running', {'EIP': 4196624})], list(f.threads()))
         self.assertIsNone(f.getInterpreter())
+        f.elf.stream.close()
 
     def test_decree(self):
         filename = os.path.join(os.path.dirname(__file__), 'binaries', 'cadet_decree_x86')
@@ -36,6 +37,7 @@ class TestBinaryPackage(unittest.TestCase):
             list(f.maps())
         )
         self.assertTrue([('Running', {'EIP': 134513708})], list(f.threads()))
+        f.elf.stream.close()
 
 
 class IntegrationTest(unittest.TestCase):
@@ -51,7 +53,8 @@ class IntegrationTest(unittest.TestCase):
     def _loadVisitedSet(self, visited):
 
         self.assertTrue(os.path.exists(visited))
-        vitems = open(visited, 'r').read().splitlines()
+        with open(visited, 'r') as f:
+            vitems = f.read().splitlines()
 
         vitems = [int(x[2:], 16) for x in vitems]
 
@@ -134,7 +137,8 @@ class IntegrationTest(unittest.TestCase):
         filename = filename[len(os.getcwd())+1:]
         workspace = os.path.join(self.test_dir, 'workspace')
         assertions = os.path.join(self.test_dir, 'assertions.txt')
-        open(assertions,'w').write('0x0000000000401003 ZF == 1')
+        with open(assertions, 'w') as output:
+            output.write('0x0000000000401003 ZF == 1')
         with open(os.path.join(os.pardir, self.test_dir, 'output.log'), "w") as output:
             subprocess.check_call(['python', '-m', 'manticore',
                                    '--workspace', workspace,
