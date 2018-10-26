@@ -580,13 +580,12 @@ class DetectUninitializedStorage(Detector):
 
 
 class DetectRaceCondition(Detector):
-    """Detects possible transaction race conditions (transaction order dependencies)"""
-    # At `setstoredaddress` in the `SSTORE` you taint the slot with 'taint_setstoredaddress'
-    # At `callstoredaddress` at the 'SLOAD' you read a value tainted with  'taint_setstoredaddress'
-    # (concrete or otherwise)
-    # at the `CALL` you check it taint(address) != 'taint_setstoredaddress'
-    # at the time of SSTORE or SLOAD the first 4 bytes in the CALLDATA must be constrained
-    # to a single solution / be concrete.
+    """Detects possible transaction race conditions (transaction order dependencies)
+
+    The RaceCondition detector might not work properly for contracts that have only a fallback function.
+    See the detector's implementation and it's `_in_user_func` method for more information.
+    """
+
     TAINT = 'written_storage_slots.'
 
     def __init__(self, *a, **kw):
@@ -594,18 +593,13 @@ class DetectRaceCondition(Detector):
         # we might try to report the same thing multiple times e.g. in consecutive instructions
         # so we need to make our own 'unique findings' set too.
         self.__findings = set()
-        import warnings
-        warnings.warn(
-            "The RaceCondition detector might not work properly for contracts that have only a fallback function. "
-            "See the detector's implementation and it's `_is_in_dispatcher` method for more information."
-        )
         super().__init__(*a, **kw)
 
     @staticmethod
-    def _is_in_dispatcher(state):
+    def _in_user_func(state):
         """
         :param state: current state
-        :return: whether the current execution is in a dispatcher function or not
+        :return: whether the current execution is in a user-defined function or not.
 
         NOTE / TODO / FIXME: As this may produce false postives, this is not in the base `Detector` class.
         It should be fixed at some point and moved there. See below.
@@ -618,19 +612,19 @@ class DetectRaceCondition(Detector):
         So: if we are in the dispatcher, *and contract have some functions* one of the first four tx data bytes
         will effectively have more than one solutions.
 
-        BUT if contract have only a fallback function, we will think we are not in dispatcher function when being
-        in there. <--- because of that, we warn that the detector is not that stable for contracts with
-        only a fallback function.
+        BUT if contract have only a fallback function, the equation below may return more solutions when we are
+        in a dispatcher function.  <--- because of that, we warn that the detector is not that stable
+        for contracts with only a fallback function.
         """
 
         # TODO / FIXME: Benchmark/check if doing it byte by byte and also returning the bytes is faster
-        return len(state.solve_n(state.platform.current_transaction.data[:4], 2)) > 1
+        return len(state.solve_n(state.platform.current_transaction.data[:4], 2)) == 1
 
     def did_evm_write_storage_callback(self, state, storage_address, offset, value):
         world = state.platform
         curr_tx = world.current_transaction
 
-        if curr_tx.sort == 'CREATE' or self._is_in_dispatcher(state):
+        if curr_tx.sort == 'CREATE' or not self._in_user_func(state):
             return
 
         key = self.TAINT + str(offset)  # offset is storage index/slot
@@ -647,7 +641,7 @@ class DetectRaceCondition(Detector):
         state.context.setdefault(key, set()).add(func_sig)
 
     def did_evm_execute_instruction_callback(self, state, instruction, arguments, result_ref):
-        if self._is_in_dispatcher(state):
+        if not self._in_user_func(state):
             return
 
         world = state.platform

@@ -34,8 +34,7 @@ class Plugin:
         return self.manticore.context[plugin_context_name]
 
     def __init__(self):
-        from manticore import Manticore
-        self.manticore: Optional[Manticore] = None
+        self.manticore = None
         self.last_reg_state = {}
 
     def on_register(self):
