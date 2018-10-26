@@ -435,7 +435,7 @@ class Linux(Platform):
                 # Prevents a ResourceWarning
                 elf.stream.close()
             except IOError as e:
-               logger.error(str(e))
+                logger.error(str(e))
 
     @property
     def PC(self):
