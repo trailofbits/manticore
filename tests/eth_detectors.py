@@ -3,19 +3,16 @@ File name is purposefully not test_* to run this test separately.
 """
 
 import inspect
-import shutil
-import struct
-import tempfile
 import unittest
+
 import os
+import shutil
+from eth_general import make_mock_evm_state
 
 from manticore.core.smtlib import operators
-from eth_general import make_mock_evm_state
-from manticore.ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, Detector, NoAliveStates, ABI, \
-    EthereumError, DetectReentrancySimple, DetectReentrancyAdvanced, DetectUnusedRetVal, DetectSelfdestruct, LoopDepthLimiter, DetectDelegatecall, \
-    DetectEnvInstruction, DetectExternalCallAndLeak, DetectEnvInstruction
-
-import shutil
+from manticore.ethereum import ManticoreEVM, DetectIntegerOverflow, DetectUnusedRetVal, DetectSelfdestruct, \
+    LoopDepthLimiter, DetectDelegatecall, \
+    DetectExternalCallAndLeak, DetectEnvInstruction, DetectRaceCondition
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -55,6 +52,7 @@ class EthDetectorTest(unittest.TestCase):
         expected_findings = set(((c, d) for b, c, d in should_find))
         actual_findings = set(((c, d) for a, b, c, d in mevm.global_findings))
         self.assertEqual(expected_findings, actual_findings)
+
 
 class EthRetVal(EthDetectorTest):
     """ Detect when a return value of a low level transaction instruction is ignored """
@@ -132,12 +130,14 @@ class EthExternalCallAndLeak(EthDetectorTest):
 
     def test_etherleak_true_pos_msgsender(self):
         name = inspect.currentframe().f_code.co_name[5:]
-        self._test(name, {(0x1c5, "Reachable external call to sender", False), (0x1c5, "Reachable ether leak to sender", False)})
+        self._test(name, {(0x1c5, "Reachable external call to sender", False),
+                          (0x1c5, "Reachable ether leak to sender", False)})
 
     def test_etherleak_true_pos_msgsender1(self):
         self.mevm.register_plugin(LoopDepthLimiter(5))
         name = inspect.currentframe().f_code.co_name[5:]
-        self._test(name, {(0x1c5, "Reachable external call to sender", False), (0x1c5, "Reachable ether leak to sender", False)})
+        self._test(name, {(0x1c5, "Reachable external call to sender", False),
+                          (0x1c5, "Reachable ether leak to sender", False)})
 
 
 class EthIntegerOverflow(unittest.TestCase):
@@ -171,13 +171,21 @@ class EthIntegerOverflow(unittest.TestCase):
         check = self.state.can_be_true(cond)
         self.assertTrue(check)
 
+
 class DetectEnvInstruction(EthDetectorTest):
     DETECTOR_CLASS = DetectEnvInstruction
 
     def test_predictable_not_ok(self):
         name = inspect.currentframe().f_code.co_name[5:]
-        self._test(name, {(174, 'Warning ORIGIN instruction used', False), (157, 'Warning DIFFICULTY instruction used', False), (129, 'Warning TIMESTAMP instruction used', False), (165, 'Warning NUMBER instruction used', False), (132, 'Warning COINBASE instruction used', False), (167, 'Warning BLOCKHASH instruction used', False), (160, 'Warning NUMBER instruction used', False), (199, 'Warning GASPRICE instruction used', False), (202, 'Warning GASLIMIT instruction used', False)})
-
+        self._test(name, {(174, 'Warning ORIGIN instruction used', False),
+                          (157, 'Warning DIFFICULTY instruction used', False),
+                          (129, 'Warning TIMESTAMP instruction used', False),
+                          (165, 'Warning NUMBER instruction used', False),
+                          (132, 'Warning COINBASE instruction used', False),
+                          (167, 'Warning BLOCKHASH instruction used', False),
+                          (160, 'Warning NUMBER instruction used', False),
+                          (199, 'Warning GASPRICE instruction used', False),
+                          (202, 'Warning GASLIMIT instruction used', False)})
 
 
 class EthDelegatecall(EthDetectorTest):
@@ -204,7 +212,8 @@ class EthDelegatecall(EthDetectorTest):
     def test_delegatecall_not_ok(self):
         self.mevm.register_plugin(LoopDepthLimiter())
         name = inspect.currentframe().f_code.co_name[5:]
-        self._test(name, {(179, 'Delegatecall to user controlled function', False), (179, 'Delegatecall to user controlled address', False)})
+        self._test(name, {(179, 'Delegatecall to user controlled function', False),
+                          (179, 'Delegatecall to user controlled address', False)})
 
     @unittest.skip("Too slow for this modern times")
     def test_delegatecall_not_ok1(self):
@@ -213,3 +222,37 @@ class EthDelegatecall(EthDetectorTest):
         self._test(name, {(179, 'Delegatecall to user controlled function', False)})
 
 
+class EthRaceCondition(EthDetectorTest):
+    DETECTOR_CLASS = DetectRaceCondition
+
+    def test_race_condition(self):
+        name = inspect.currentframe().f_code.co_name[5:]
+        self._test(name, {
+            (
+                422,
+                'Potential race condition (transaction order dependency):\n'
+                'Value has been stored in storage slot/index 0 in transaction that called setStoredAddress(address)'
+                ' and is now used in transaction that calls callStoredAddress().\n'
+                'An attacker seeing a transaction to callStoredAddress() could create a transaction to '
+                'setStoredAddress(address) with high gas and win a race.',
+                False
+            ),
+            (
+                344,
+                'Potential race condition (transaction order dependency):\n'
+                'Value has been stored in storage slot/index 0 in transaction that called setStoredAddress(address)'
+                ' and is now used in transaction that calls stored_address().\nAn attacker seeing a transaction to'
+                ' stored_address() could create a transaction to setStoredAddress(address) '
+                'with high gas and win a race.',
+                False
+            ),
+            (
+                360,
+                'Potential race condition (transaction order dependency):\n'
+                'Value has been stored in storage slot/index 0 in transaction that called setStoredAddress(address)'
+                ' and is now used in transaction that calls setStoredAddress(address).\n'
+                'An attacker seeing a transaction to setStoredAddress(address) could create a transaction to'
+                ' setStoredAddress(address) with high gas and win a race.',
+                False
+            )
+        })
