@@ -932,7 +932,7 @@ class ManticoreEVM(Manticore):
                 address = world.new_address(caller)
 
             # Migrate any expression to state specific constraint set
-            caller, address, value, data = self._migrate_tx_expressions(state, caller, address, value, data)
+            caller_migrated, address_migrated, value_migrated, data_migrated = self._migrate_tx_expressions(state, caller, address, value, data)
 
             # Different states may CREATE a different set of accounts. Accounts
             # that were crated by a human have the same address in all states.
@@ -943,7 +943,7 @@ class ManticoreEVM(Manticore):
                     # Address already used
                     raise EthereumError("This is bad. Same address is used for different contracts in different states")
 
-            state.context['_pending_transaction'] = (sort, caller, address, value, data, gaslimit, price)
+            state.context['_pending_transaction'] = (sort, caller_migrated, address_migrated, value_migrated, data_migrated, gaslimit, price)
 
         # run over potentially several states and
         # generating potentially several others
