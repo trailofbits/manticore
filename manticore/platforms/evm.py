@@ -1824,7 +1824,7 @@ class EVMWorld(Platform):
         else:
             self._deleted_accounts = deleted_accounts
 
-            if not issymbolic(tx.caller) and (tx.sort == 'CREATE' or not self._world_state[caller]['code']):
+            if not issymbolic(tx.caller) and (tx.sort == 'CREATE' or not self._world_state[tx.caller]['code']):
                 # Increment the nonce if this transaction created a contract, or if it was called by a non-contract account
                 self.increase_nonce(tx.caller)
 
