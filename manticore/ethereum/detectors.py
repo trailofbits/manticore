@@ -617,8 +617,17 @@ class DetectRaceCondition(Detector):
         for contracts with only a fallback function.
         """
 
-        # TODO / FIXME: Benchmark/check if doing it byte by byte and also returning the bytes is faster
-        return len(state.solve_n(state.platform.current_transaction.data[:4], 2)) == 1
+        # If we are already in user function (we cached it) let's just return True
+        in_function = state.context.get('in_function', False)
+        if in_function:
+            return True
+
+        # This is expensive call, so we cache it
+        in_function = len(state.solve_n(state.platform.current_transaction.data[:4], 2)) == 1
+
+        state.contet['in_function'] = in_function
+
+        return in_function
 
     def did_evm_write_storage_callback(self, state, storage_address, offset, value):
         world = state.platform
