@@ -31,7 +31,7 @@ def dump_gdb(cpu, addr, count):
     for offset in range(addr, addr+count, 4):
         val = int(gdb.getM(offset)  & 0xffffffff)
         val2 = int(cpu.read_int(offset))
-        print('{:x}: g{:08x} m{:08x}'.format(offset, val, val2))
+        print(f'{offset:x}: g{val:08x} m{val2:08x}')
 
 def cmp_regs(cpu, should_print=False):
     '''
@@ -50,7 +50,7 @@ def cmp_regs(cpu, should_print=False):
             name = 'apsr'
         v = cpu.read_register(name.upper())
         if should_print:
-            logger.debug('{} gdb:{:x} mcore:{:x}'.format(name, vg, v))
+            logger.debug(f'{name} gdb:{vg:x} mcore:{v:x}')
         if vg != v:
             if should_print:
                 logger.warning('^^ unequal')
@@ -82,8 +82,7 @@ def post_mcore(state, last_instruction):
         # Write return val to gdb
         gdb_r0 = gdb.getR('R0')
         if gdb_r0 != state.cpu.R0:
-            logger.debug("Writing 0x{:x} to R0 (overwriting 0x{:x})".format(
-                state.cpu.R0, gdb.getR('R0')))
+            logger.debug(f"Writing 0x{state.cpu.R0:x} to R0 (overwriting 0x{gdb.getR('R0'):x})")
         for reg in state.cpu.canonical_registers:
             if reg.endswith('PSR') or reg in ('R15', 'PC'):
                 continue
@@ -128,26 +127,26 @@ def sync_svc(state):
     syscall = state.cpu.R7 # Grab idx from manticore since qemu could have exited
     name = linux_syscalls.armv7[syscall]
 
-    logger.debug("Syncing syscall: {}".format(name))
+    logger.debug(f"Syncing syscall: {name}")
 
     try:
         # Make sure mmap returns the same address
         if 'mmap' in name:
             returned = gdb.getR('R0')
-            logger.debug("Syncing mmap ({:x})".format(returned))
+            logger.debug(f"Syncing mmap ({returned:x})")
             state.cpu.write_register('R0', returned)
         if 'exit' in name:
             return
     except ValueError:
         for reg in state.cpu.canonical_registers:
-            print('{}: {:x}'.format(reg, state.cpu.read_register(reg)))
+            print(f'{reg}: {state.cpu.read_register(reg):x}')
         raise
 
 def initialize(state):
     '''
     Synchronize the stack and register state (manticore->qemu)
     '''
-    logger.debug("Copying {} bytes in the stack..".format(stack_top - state.cpu.SP))
+    logger.debug(f"Copying {stack_top - state.cpu.SP} bytes in the stack..")
     stack_bottom = min(state.cpu.SP, gdb.getR('SP'))
     for address in range(stack_bottom, stack_top):
         b = state.cpu.read_int(address, 8)
@@ -170,7 +169,7 @@ def initialize(state):
         gdb.setR(gdb_reg, value)
 
 def verify(argv):
-    logger.debug("Verifying program \"{}\"".format(argv))
+    logger.debug(f"Verifying program \"{argv}\"")
 
     # Address and stack_size are from linux.py
     # TODO(yan): Refactor these constants into a reachable value in platform
@@ -228,7 +227,7 @@ if __name__ == "__main__":
     args = argv[1:]
 
     if len(args) == 0:
-        print("usage: python {} PROGRAM1 ...".format(argv[0]))
+        print(f"usage: python {argv[0]} PROGRAM1 ...")
         exit()
 
     verify(args)

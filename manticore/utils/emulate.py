@@ -57,7 +57,7 @@ class UnicornEmulator(object):
             }[self._cpu.mode]
 
         else:
-            raise NotImplementedError('Unsupported architecture: %s' % self._cpu.arch)
+            raise NotImplementedError(f'Unsupported architecture: {self._cpu.arch}')
 
     def reset(self):
         self._emu = Uc(self._uc_arch, self._uc_mode)
@@ -261,9 +261,11 @@ class UnicornEmulator(object):
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug("=" * 10)
             for register in self._cpu.canonical_registers:
-                logger.debug("Register % 3s  Manticore: %08x, Unicorn %08x",
-                             register, self._cpu.read_register(register),
-                             self._emu.reg_read(self._to_unicorn_id(register)))
+                logger.debug(
+                    f"Register {register:3s}  "
+                    f"Manticore: {self._cpu.read_register(register):08x}, "
+                    f"Unicorn {self._emu.reg_read(self._to_unicorn_id(register)):08x}"
+                )
             logger.debug(">" * 10)
 
         # Bring back Unicorn registers to Manticore

@@ -23,6 +23,14 @@ class TerminateState(StateException):
         super().__init__(message)
         self.testcase = testcase
 
+class AbandonState(TerminateState):
+    ''' Exception returned for abandoned states when
+        execution is finished
+    '''
+
+    def __init__(self, message='Abandoned state'):
+        super().__init__(message)
+
 
 class Concretize(StateException):
     ''' Base class for all exceptions that trigger the concretization
@@ -39,11 +47,11 @@ class Concretize(StateException):
         if policy is None:
             policy = 'ALL'
         if policy not in self._ValidPolicies:
-            raise Exception("Policy (%s) must be one of: %s" % (policy, ', '.join(self._ValidPolicies),))
+            raise Exception(f'Policy ({policy}) must be one of: {", ".join(self._ValidPolicies)}')
         self.expression = expression
         self.setstate = setstate
         self.policy = policy
-        self.message = "Concretize: %s (Policy: %s)" % (message, policy)
+        self.message = f'Concretize: {message} (Policy: {policy})'
         super().__init__(**kwargs)
 
 
@@ -196,7 +204,7 @@ class State(Eventful):
 
         Note: This must be called from the Executor loop, or a :func:`~manticore.Manticore.hook`.
         '''
-        raise TerminateState("Abandoned state")
+        raise AbandonState
 
     def new_symbolic_buffer(self, nbytes, **options):
         '''Create and return a symbolic buffer of length `nbytes`. The buffer is
@@ -309,17 +317,20 @@ class State(Eventful):
         expr = self.migrate_expression(expr)
         return not self._solver.can_be_true(self._constraints, expr == False)
 
-    def solve_one(self, expr):
+    def solve_one(self, expr, constrain=False):
         '''
         Concretize a symbolic :class:`~manticore.core.smtlib.expression.Expression` into
         one solution.
 
         :param manticore.core.smtlib.Expression expr: Symbolic value to concretize
+        :param bool constrain: If True, constrain expr to concretized value
         :return: Concrete value
         :rtype: int
         '''
         expr = self.migrate_expression(expr)
         value = self._solver.get_value(self._constraints, expr)
+        if constrain:
+            self.constrain(expr == value)
         #Include forgiveness here
         if isinstance(value, bytearray):
             value = bytes(value)
@@ -367,22 +378,24 @@ class State(Eventful):
 
     ################################################################################################
     # The following should be moved to specific class StatePosix?
-    def solve_buffer(self, addr, nbytes):
+    def solve_buffer(self, addr, nbytes, constrain=False):
         '''
         Reads `nbytes` of symbolic data from a buffer in memory at `addr` and attempts to
         concretize it
 
         :param int address: Address of buffer to concretize
         :param int nbytes: Size of buffer to concretize
+        :param bool constrain: If True, constrain the buffer to the concretized value
         :return: Concrete contents of buffer
         :rtype: list[int]
         '''
         buffer = self.cpu.read_bytes(addr, nbytes)
         result = []
         with self._constraints as temp_cs:
+            cs_to_use = self.constraints if constrain else temp_cs
             for c in buffer:
-                result.append(self._solver.get_value(temp_cs, c))
-                temp_cs.add(c == result[-1])
+                result.append(self._solver.get_value(cs_to_use, c))
+                cs_to_use.add(c == result[-1])
         return result
 
     def invoke_model(self, model):

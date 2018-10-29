@@ -41,7 +41,7 @@ class EthBenchmark(unittest.TestCase):
         self.mevm=None
         shutil.rmtree(self.worksp)
 
-    def _test(self, name, should_find):
+    def _test(self, name, should_find, use_ctor_sym_arg=False):
         """
         Tests DetectInvalid over the consensys benchmark suite
         """
@@ -50,10 +50,14 @@ class EthBenchmark(unittest.TestCase):
         mevm.register_detector(DetectIntegerOverflow())
         mevm.register_detector(DetectReentrancyAdvanced())
 
-        filename = os.path.join(THIS_DIR, 'binaries', 'benchmark', '{}.sol'.format(name))
+        filename = os.path.join(THIS_DIR, 'binaries', 'benchmark', f'{name}.sol')
 
+        if use_ctor_sym_arg:
+            ctor_arg = (mevm.make_symbolic_value(),)
+        else:
+            ctor_arg = ()
 
-        mevm.multi_tx_analysis(filename, contract_name='Benchmark', args=(mevm.make_symbolic_value(),))
+        mevm.multi_tx_analysis(filename, contract_name='Benchmark', args=ctor_arg)
 
         expected_findings = set(( (c, d) for b, c, d in should_find))
         actual_findings = set(( (c, d) for a, b, c, d in mevm.global_findings))
@@ -66,10 +70,10 @@ class EthBenchmark(unittest.TestCase):
         self._test('assert_constructor', {(23, 'INVALID instruction', True)})
 
     def test_assert_multitx_1(self):
-        self._test('assert_multitx_1', set())
+        self._test('assert_multitx_1', set(), True)
 
     def test_assert_multitx_2(self):
-        self._test('assert_multitx_2', {(150, 'INVALID instruction', False)})
+        self._test('assert_multitx_2', {(150, 'INVALID instruction', False)}, True)
 
     def test_integer_overflow_minimal(self):
         self._test('integer_overflow_minimal', {(163, 'Unsigned integer overflow at SUB instruction', False)})

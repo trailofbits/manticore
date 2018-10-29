@@ -9,8 +9,11 @@ from .. import Manticore
 from ..exceptions import EthereumError, DependencyError, NoAliveStates
 from ..core.smtlib import ConstraintSet, Operators, solver, BitVec, Array, ArrayProxy
 from ..platforms import evm
-from ..core.state import State, TerminateState
+from ..core.state import State, TerminateState, AbandonState
 from ..utils.helpers import issymbolic, PickleSerializer
+from ..utils import config
+from ..utils.log import init_logging
+from typing import Dict, Optional
 import tempfile
 from subprocess import Popen, PIPE, check_output
 from multiprocessing import Process, Queue
@@ -28,9 +31,17 @@ from .account import EVMAccount, EVMContract
 from .abi import ABI
 from .solidity import SolidityMetadata
 
+
 logger = logging.getLogger(__name__)
 
+init_logging()  # FIXME(mark): emitting a warning in abi.py does not work unless this is called a second time here
 
+
+def flagged(flag):
+    """
+    Return special character denoting concretization happened.
+    """
+    return '(*)' if flag else ''
 
 #
 # Plugins
@@ -89,21 +100,20 @@ class FilterFunctions(Plugin):
             #Let's compile  the list of interesting hashes
             selected_functions = []
 
-            for func_hsh in md.hashes:
-                if func_hsh == '00000000':
-                    continue
+            for func_hsh in md.function_selectors:
                 abi = md.get_abi(func_hsh)
-                func_name = md.get_func_name(func_hsh)
+                if abi['type'] == 'fallback':
+                    continue
                 if self._mutability == 'constant' and not abi.get('constant', False):
                     continue
                 if self._mutability == 'mutable' and abi.get('constant', False):
                     continue
-                if not re.match(self._regexp, func_name):
+                if not re.match(self._regexp, abi['name']):
                     continue
                 selected_functions.append(func_hsh)
 
-            if self._fallback:
-                selected_functions.append('00000000')
+            if self._fallback and md.has_non_default_fallback_function:
+                selected_functions.append(md.fallback_function_selector)
 
             if self._include:
                 # constrain the input so it can take only the interesting values
@@ -111,7 +121,7 @@ class FilterFunctions(Plugin):
                 state.constrain(constraint)
             else:
                 #Avoid all not selected hashes
-                for func_hsh in md.hashes:
+                for func_hsh in md.function_selectors:
                     if func_hsh in selected_functions:
                         constraint = tx.data[:4] != func_hsh
                         state.constrain(constraint)
@@ -139,6 +149,14 @@ class LoopDepthLimiter(Plugin):
                 state.abandon()
 
 
+class VerboseTrace(Plugin):
+    def will_evm_execute_instruction_callback(self, state, instruction, arguments):
+        current_vm = state.platform.current_vm
+        state.setdefault('str_trace', []).append(str(current_vm))
+
+    def on_finalize(self, state, testcase):
+        with testcase.open_stream('str_trace') as str_trace_f:
+            str_trace_f.write('\n'.join(state.context.get('str_trace', [])))
 
 
 def calculate_coverage(runtime_bytecode, seen):
@@ -446,7 +464,7 @@ class ManticoreEVM(Manticore):
 
         self.constraints = ConstraintSet()
         self.detectors = {}
-        self.metadata = {}
+        self.metadata: Dict[int, SolidityMetadata] = {}
 
         # The following should go to manticore.context so we can use multiprocessing
         self.context['ethereum'] = {}
@@ -466,7 +484,7 @@ class ManticoreEVM(Manticore):
     @property
     def world(self):
         """ The world instance or None if there is more than one state """
-        return self.get_world(None)
+        return self.get_world()
 
     @property
     def completed_transactions(self):
@@ -608,6 +626,11 @@ class ManticoreEVM(Manticore):
         state = self.load(state_id)
         return state.platform.transactions
 
+    def human_transactions(self, state_id=None):
+        """ Transactions list for state `state_id` """
+        state = self.load(state_id)
+        return state.platform.human_transactions
+
     def make_symbolic_arguments(self, types):
         """
             Make a reasonable serialization of the symbolic argument types
@@ -615,7 +638,7 @@ class ManticoreEVM(Manticore):
         # FIXME this is more naive than reasonable.
         return ABI.deserialize(types, self.make_symbolic_buffer(32, name="INITARGS"))
 
-    def solidity_create_contract(self, source_code, owner, name=None, contract_name=None, libraries=None, balance=0, address=None, args=(), solc_bin=None, solc_remaps=[]):
+    def solidity_create_contract(self, source_code, owner, name=None, contract_name=None, libraries=None, balance=0, address=None, args=(), solc_bin=None, solc_remaps=[], gas=90000):
         """ Creates a solidity contract and library dependencies
 
             :param str source_code: solidity source code
@@ -632,6 +655,8 @@ class ManticoreEVM(Manticore):
             :type solc_bin: str
             :param solc_remaps: solc import remaps
             :type solc_remaps: list of str
+            :param gas: gas budget for each contract creation needed (may be more than one if several related contracts defined in the solidity source)
+            :type gas: int
             :rtype: EVMAccount
         """
         if libraries is None:
@@ -653,7 +678,8 @@ class ManticoreEVM(Manticore):
                                                             balance=balance,
                                                             address=address,
                                                             init=md._init_bytecode + ABI.serialize(constructor_types, *args),
-                                                            name=name)
+                                                            name=name,
+                                                            gas=gas)
                 else:
                     contract_account = self.create_contract(owner=owner, init=md._init_bytecode)
 
@@ -884,20 +910,20 @@ class ManticoreEVM(Manticore):
         if isinstance(data, (str, bytes)):
             data = bytearray(data)
         if not isinstance(data, (bytearray, Array)):
-            raise EthereumError("code bad type")
+            raise TypeError("code bad type")
 
         # Check types
         if not isinstance(address, (int, BitVec)):
-            raise EthereumError("Caller invalid type")
+            raise TypeError("Caller invalid type")
 
         if not isinstance(value, (int, BitVec)):
-            raise EthereumError("Value invalid type")
+            raise TypeError("Value invalid type")
 
         if not isinstance(address, (int, BitVec)):
-            raise EthereumError("address invalid type")
+            raise TypeError("address invalid type")
 
         if not isinstance(price, int):
-            raise EthereumError("Price invalid type")
+            raise TypeError("Price invalid type")
 
         # Check argument consistency and set defaults ...
         if sort not in ('CREATE', 'CALL'):
@@ -972,7 +998,6 @@ class ManticoreEVM(Manticore):
 
         if contract_account is None:
             logger.info("Failed to create contract: exception in constructor")
-            self.finalize()
             return
 
         prev_coverage = 0
@@ -1117,7 +1142,7 @@ class ManticoreEVM(Manticore):
                 data_hash = int(s.hexdigest(), 16)
                 results.append((data_concrete, data_hash))
                 known_hashes_cond = data_concrete == data
-                known_sha3.append((data_concrete, data_hash))
+                known_sha3.add((data_concrete, data_hash))
             not_known_hashes_cond = Operators.NOT(known_hashes_cond)
 
             # We need to fork/save the state
@@ -1133,6 +1158,7 @@ class ManticoreEVM(Manticore):
 
             if not state.can_be_true(known_hashes_cond):
                 raise TerminateState("There is no matching sha3 pair, bailing out")
+            state.constrain(known_hashes_cond)
 
             #send known hashes to evm
             known_hashes.update(results)
@@ -1151,7 +1177,7 @@ class ManticoreEVM(Manticore):
             Every time a state finishes executing the last transaction, we save it in
             our private list
         """
-        if str(e) == 'Abandoned state':
+        if isinstance(e, AbandonState):
             #do nothing
             return
         world = state.platform
@@ -1225,7 +1251,7 @@ class ManticoreEVM(Manticore):
             for i in range(offset, offset + size):
                 code_data.add((state.platform.current_vm.address, i))
 
-    def get_metadata(self, address):
+    def get_metadata(self, address) -> Optional[SolidityMetadata]:
         """ Gets the solidity metadata for address.
             This is available only if address is a contract created from solidity
         """
@@ -1256,8 +1282,44 @@ class ManticoreEVM(Manticore):
     def workspace(self):
         return self._executor._workspace._store.uri
 
-    def generate_testcase(self, state, name, message=''):
-        self._generate_testcase_callback(state, name, message)
+    def generate_testcase(self, state, name, message='', only_if=None):
+        """
+        Generate a testcase to the workspace for the given program state. The details of what
+        a testcase is depends on the type of Platform the state is, but involves serializing the state,
+        and generating an input (concretizing symbolic variables) to trigger this state.
+
+        The only_if parameter should be a symbolic expression. If this argument is provided, and the expression
+        *can be true* in this state, a testcase is generated such that the expression will be true in the state.
+        If it *is impossible* for the expression to be true in the state, a testcase is not generated.
+
+        This is useful for conveniently checking a particular invariant in a state, and generating a testcase if
+        the invariant can be violated.
+
+        For example, invariant: "balance" must not be 0. We can check if this can be violated and generate a
+        testcase::
+
+            m.generate_testcase(state, 'balance', 'balance CAN be 0', only_if=balance == 0)
+            # testcase generated with an input that will violate invariant (make balance == 0)
+
+
+        :param manticore.core.state.State state:
+        :param str name: short string used as the prefix for the workspace key (e.g. filename prefix for testcase files)
+        :param str message: longer description of the testcase condition
+        :param manticore.core.smtlib.Bool only_if: only if this expr can be true, generate testcase. if is None, generate testcase unconditionally.
+        :return: If a testcase was generated
+        :rtype: bool
+        """
+        if only_if is None:
+            self._generate_testcase_callback(state, name, message)
+            return True
+        else:
+            with state as temp_state:
+                temp_state.constrain(only_if)
+                if temp_state.is_feasible():
+                    self._generate_testcase_callback(temp_state, name, message)
+                    return True
+
+        return False
 
     def current_location(self, state):
         world = state.platform
@@ -1275,171 +1337,6 @@ class ManticoreEVM(Manticore):
             output.write('\n')
         return output.getvalue()
 
-    def _emit_testcase_summary(self, stream, state, message, flagged):
-        blockchain = state.platform
-        last_tx = blockchain.last_transaction
-
-        stream.write("Message: %s\n" % message)
-        stream.write("Last exception: %s\n" % state.context.get('last_exception', 'None'))
-
-        if last_tx:
-            at_runtime = last_tx.sort != 'CREATE'
-            address, offset, at_init = state.context['evm.trace'][-1]
-            assert at_runtime != at_init
-
-            #Last instruction if last tx was valid
-            if str(state.context['last_exception']) != 'TXERROR':
-                metadata = self.get_metadata(blockchain.last_transaction.address)
-                if metadata is not None:
-                    stream.write('Last instruction at contract %x offset %x\n' % (address, offset))
-                    source_code_snippet = metadata.get_source_for(offset, at_runtime)
-                    if source_code_snippet:
-                        stream.write('    '.join(source_code_snippet.splitlines(True)))
-                    stream.write('\n')
-
-        # Accounts summary
-        is_something_symbolic = False
-        stream.write("%d accounts.\n" % len(blockchain.accounts))
-        for account_address in blockchain.accounts:
-            is_account_address_symbolic = issymbolic(account_address)
-            account_address = state.solve_one(account_address)
-
-            stream.write("* %s::\n" % self.account_name(account_address))
-            stream.write("Address: 0x%x %s\n" % (account_address, flagged(is_account_address_symbolic)))
-            balance = blockchain.get_balance(account_address)
-            is_balance_symbolic = issymbolic(balance)
-            is_something_symbolic = is_something_symbolic or is_balance_symbolic
-            balance = state.solve_one(balance)
-            stream.write("Balance: %d %s\n" % (balance, flagged(is_balance_symbolic)))
-            from ..core.smtlib.visitors import translate_to_smtlib
-
-            storage = blockchain.get_storage(account_address)
-            stream.write("Storage: %s\n" % translate_to_smtlib(storage, use_bindings=True))
-
-            all_used_indexes = []
-            with state.constraints as temp_cs:
-                index = temp_cs.new_bitvec(256)
-                storage = blockchain.get_storage(account_address)
-                temp_cs.add(storage.get(index) != 0)
-
-                try:
-                    while True:
-                        a_index = solver.get_value(temp_cs, index)
-                        all_used_indexes.append(a_index)
-
-                        temp_cs.add(storage.get(a_index) != 0)
-                        temp_cs.add(index != a_index)
-                except:
-                    pass
-
-            if all_used_indexes:
-                stream.write("Storage:\n")
-                for i in all_used_indexes:
-                    value = storage.get(i)
-                    is_storage_symbolic = issymbolic(value)
-                    stream.write("storage[%x] = %x %s\n" % (state.solve_one(i), state.solve_one(value), flagged(is_storage_symbolic)))
-            """if blockchain.has_storage(account_address):
-                stream.write("Storage:\n")
-                for offset, value in blockchain.get_storage_items(account_address):
-                    is_storage_symbolic = issymbolic(offset) or issymbolic(value)
-                    offset = state.solve_one(offset)
-                    value = state.solve_one(value)
-                    stream.write("\t%032x -> %032x %s\n" % (offset, value, flagged(is_storage_symbolic)))
-                    is_something_symbolic = is_something_symbolic or is_storage_symbolic
-            """
-
-            runtime_code = state.solve_one(blockchain.get_code(account_address))
-            if runtime_code:
-                stream.write("Code:\n")
-                fcode = io.BytesIO(runtime_code)
-                for chunk in iter(lambda: fcode.read(32), b''):
-                    stream.write('\t%s\n' % binascii.hexlify(chunk))
-                runtime_trace = set((pc for contract, pc, at_init in state.context['evm.trace'] if address == contract and not at_init))
-                stream.write("Coverage %d%% (on this state)\n" % calculate_coverage(runtime_code, runtime_trace))  # coverage % for address in this account/state
-            stream.write("\n")
-
-        with self.locked_context('ethereum') as context:
-            known_sha3 = context.get('_known_sha3', None)
-            if known_sha3:
-                stream.write("Known hashes:\n")
-                for key, value in known_sha3:
-                    stream.write('%s::%x\n' % (binascii.hexlify(key), value))
-
-        if is_something_symbolic:
-            stream.write('\n\n(*) Example solution given. Value is symbolic and may take other values\n')
-
-    def _emit_testcase_tx(self, stream, state, flagged):
-        blockchain = state.platform
-
-        is_something_symbolic = False
-        for tx in blockchain.human_transactions:  # external transactions
-            stream.write("Transactions No. %d\n" % blockchain.transactions.index(tx))
-
-            # The result if any RETURN or REVERT
-            stream.write("Type: %s (%d)\n" % (tx.sort, tx.depth))
-            caller_solution = state.solve_one(tx.caller)
-            caller_name = self.account_name(caller_solution)
-            stream.write("From: %s(0x%x) %s\n" % (caller_name, caller_solution, flagged(issymbolic(tx.caller))))
-            address_solution = state.solve_one(tx.address)
-            address_name = self.account_name(address_solution)
-            stream.write("To: %s(0x%x) %s\n" % (address_name, address_solution, flagged(issymbolic(tx.address))))
-            stream.write("Value: %d %s\n" % (state.solve_one(tx.value), flagged(issymbolic(tx.value))))
-            stream.write("Gas used: %d %s\n" % (state.solve_one(tx.gas), flagged(issymbolic(tx.gas))))
-            tx_data = state.solve_one(tx.data)
-            stream.write("Data: 0x{} {}\n".format(binascii.hexlify(tx_data).decode(), flagged(issymbolic(tx.data))))
-            if tx.return_data is not None:
-                return_data = state.solve_one(tx.return_data)
-                stream.write("Return_data: 0x{} {}\n".format(binascii.hexlify(return_data).decode(), flagged(issymbolic(tx.return_data))))
-            metadata = self.get_metadata(tx.address)
-            if tx.sort == 'CREATE':
-                if metadata is not None:
-                    args_data = tx.data[len(metadata._init_bytecode):]
-                    arguments = ABI.deserialize(metadata.get_constructor_arguments(), state.solve_one(args_data))
-                    is_argument_symbolic = any(map(issymbolic, arguments))
-                    stream.write('Function call:\n')
-                    stream.write("Constructor(")
-                    stream.write(','.join(map(repr, map(state.solve_one, arguments))))
-                    stream.write(') -> %s %s\n' % (tx.result, flagged(is_argument_symbolic)))
-
-            if tx.sort == 'CALL':
-                if metadata is not None:
-                    calldata = state.solve_one(tx.data)
-                    is_calldata_symbolic = issymbolic(tx.data)
-
-                    function_id = calldata[:4]  # hope there is enough data
-                    signature = metadata.get_func_signature(function_id)
-                    function_name = metadata.get_func_name(function_id)
-                    if signature:
-                        _, arguments = ABI.deserialize(signature, calldata)
-                    else:
-                        arguments = (calldata,)
-
-                    return_data = None
-                    if tx.result == 'RETURN':
-                        ret_types = metadata.get_func_return_types(function_id)
-                        return_data = state.solve_one(tx.return_data)
-                        return_values = ABI.deserialize(ret_types, return_data)  # function return
-
-                    is_return_symbolic = issymbolic(tx.return_data)
-
-                    stream.write('\n')
-                    stream.write("Function call:\n")
-                    stream.write("%s(" % function_name)
-                    stream.write(','.join(map(repr, arguments)))
-                    stream.write(') -> %s %s\n' % (tx.result, flagged(is_calldata_symbolic)))
-
-                    if return_data is not None:
-                        if len(return_values) == 1:
-                            return_values = return_values[0]
-
-                        stream.write('return: %r %s\n' % (return_values, flagged(is_return_symbolic)))
-                    is_something_symbolic = is_calldata_symbolic or is_return_symbolic
-
-            stream.write('\n\n')
-
-        if is_something_symbolic:
-            stream.write('\n\n(*) Example solution given. Value is symbolic and may take other values\n')
-
     def _generate_testcase_callback(self, state, name, message=''):
         """
         Create a serialized description of a given state.
@@ -1454,8 +1351,6 @@ class ManticoreEVM(Manticore):
         #  so this function can be fully ported to EVMWorld.generate_workspace_files.
         blockchain = state.platform
 
-        def flagged(flag):
-            return '(*)' if flag else ''
         testcase = self._output.testcase(name.replace(' ', '_'))
         last_tx = blockchain.last_transaction
         if last_tx:
@@ -1481,13 +1376,38 @@ class ManticoreEVM(Manticore):
                         findings.write(src.replace('\n', '\n    ').strip())
                         findings.write('\n')
 
-        with testcase.open_stream('summary') as summary:
-            self._emit_testcase_summary(summary, state, message, flagged)
+        with testcase.open_stream('summary') as stream:
+            is_something_symbolic = state.platform.dump(stream, state, self, message)
+
+            with self.locked_context('ethereum') as context:
+                known_sha3 = context.get('_known_sha3', None)
+                if known_sha3:
+                    stream.write("Known hashes:\n")
+                    for key, value in known_sha3:
+                        stream.write('%s::%x\n' % (binascii.hexlify(key), value))
+
+            if is_something_symbolic:
+                stream.write('\n\n(*) Example solution given. Value is symbolic and may take other values\n')
 
         # Transactions
 
         with testcase.open_stream('tx') as tx_summary:
-            self._emit_testcase_tx(tx_summary, state, flagged)
+            with testcase.open_stream('tx.json') as txjson:
+                txlist = []
+                is_something_symbolic = False
+
+                for sym_tx in blockchain.human_transactions:  # external transactions
+                    tx_summary.write("Transactions No. %d\n" % blockchain.transactions.index(sym_tx))
+
+                    conc_tx = sym_tx.concretize(state)
+                    txlist.append(conc_tx.to_dict(self))
+
+                    is_something_symbolic = sym_tx.dump(tx_summary, state, self, conc_tx=conc_tx)
+
+                if is_something_symbolic:
+                    tx_summary.write('\n\n(*) Example solution given. Value is symbolic and may take other values\n')
+
+                json.dump(txlist, txjson)
 
         # logs
         with testcase.open_stream('logs') as logs_summary:
@@ -1590,6 +1510,9 @@ class ManticoreEVM(Manticore):
                         global_findings.write('    '.join(source_code_snippet.splitlines(True)))
                         global_findings.write('\n')
 
+        with self._output.save_stream('manticore.yml') as f:
+            config.save(f)
+
         with self._output.save_stream('global.summary') as global_summary:
             # (accounts created by contract code are not in this list )
             global_summary.write("Global runtime coverage:\n")
@@ -1690,3 +1613,12 @@ class ManticoreEVM(Manticore):
     # We suppress because otherwise we log it many times and it looks weird.
     def _did_finish_run_callback(self):
         pass
+
+    def __repr__(self):
+        return self.__str__()
+
+    def __str__(self):
+        return "<ManticoreEVM | Alive States: {}; Terminated States: {}>".format(
+            self.count_running_states(),
+            self.count_terminated_states()
+        )

@@ -467,7 +467,9 @@ class Decree(Platform):
                     logger.info("RANDOM: buf points to invalid address. Returning EFAULT")
                     return Decree.CGC_EFAULT
 
-                data = open("/dev/urandom", "r").read(count)
+                with open("/dev/urandom", "rb") as f:
+                    data = f.read(count)
+
                 self.syscall_trace.append(("_random", -1, data))
                 cpu.write_bytes(buf, data)
 
@@ -604,7 +606,7 @@ class Decree(Platform):
         else:
             logger.info("TERMINATE PROC_%02d %x", procid, error_code)
         if len(self.running) == 0:
-            raise TerminateState('Process exited correctly. Code: {}'.format(error_code))
+            raise TerminateState(f'Process exited correctly. Code: {error_code}')
         return error_code
 
     def sys_deallocate(self, cpu, addr, size):
@@ -751,7 +753,7 @@ class Decree(Platform):
                     0x00000007: self.sys_random,
                     }
         if cpu.EAX not in syscalls.keys():
-            raise TerminateState("32 bit DECREE system call number {} Not Implemented".format(cpu.EAX))
+            raise TerminateState(f"32 bit DECREE system call number {cpu.EAX} Not Implemented")
         func = syscalls[cpu.EAX]
         logger.debug("SYSCALL32: %s (nargs: %d)", func.__name__, func.__code__.co_argcount)
         nargs = func.__code__.co_argcount

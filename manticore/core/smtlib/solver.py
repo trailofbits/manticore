@@ -27,11 +27,17 @@ import shlex
 import time
 from .visitors import *
 from ...utils.helpers import issymbolic, istainted, taint_with, get_taints
+from ...utils import config
 import io
 import collections
 
 logger = logging.getLogger(__name__)
 
+consts = config.get_group('smt')
+consts.add('timeout', default=240, description='Timeout, in seconds, for each Z3 invocation')
+consts.add('memory', default=16384, description='Max memory for Z3 to use (in Megabytes)')
+consts.add('maxsolutions', default=10000, description='Maximum solutions to provide when solving for all values')
+consts.add('z3_bin', default='z3', description='Z3 binary to use')
 
 class Solver(object, metaclass=ABCMeta):
     @abstractmethod
@@ -114,7 +120,7 @@ class Z3Solver(Solver):
         super().__init__()
         self._proc = None
 
-        self._command = 'z3 -t:240000 -memory:16384 -smt2 -in'
+        self._command = f'{consts.z3_bin} -t:{consts.timeout*1000} -memory:{consts.memory} -smt2 -in'
         self._init = ['(set-logic QF_AUFBV)', '(set-option :global-decls false)']
         self._get_value_fmt = (re.compile('\(\((?P<expr>(.*))\ #x(?P<value>([0-9a-fA-F]*))\)\)'), 16)
 
@@ -162,7 +168,7 @@ class Z3Solver(Solver):
         ''' Auxiliary method to spawn the external solver process'''
         assert '_proc' not in dir(self) or self._proc is None
         try:
-            self._proc = Popen(self._command.split(' '), stdin=PIPE, stdout=PIPE, bufsize=0, universal_newlines=True)
+            self._proc = Popen(shlex.split(self._command), stdin=PIPE, stdout=PIPE, bufsize=0, universal_newlines=True)
         except OSError as e:
             print(e, "Probably too many cached expressions? visitors._cache...")
             # Z3 was removed from the system in the middle of operation
@@ -174,21 +180,26 @@ class Z3Solver(Solver):
 
     def _stop_proc(self):
         ''' Auxiliary method to stop the external solver process'''
-        if self._proc is not None and self._proc.returncode is None:
+        if self._proc is None:
+            return
+        if self._proc.returncode is None:
             try:
                 self._send("(exit)")
-                self._proc.stdin.close()
-                self._proc.stdout.close()
-                self._proc.wait()
             except (SolverException, IOError) as e:
-                logger.debug(str(e))
                 # z3 was too fast to close
-                pass
-
-        try:
-            self._proc.kill()
-        except BaseException:
-            pass
+                logger.debug(str(e))
+            finally:
+                try:
+                    self._proc.stdin.close()
+                except IOError as e:
+                    logger.debug(str(e))
+                try:
+                    self._proc.stdout.close()
+                except IOError as e:
+                    logger.debug(str(e))
+                self._proc.kill()
+                # Wait for termination, to avoid zombies.
+                self._proc.wait()
         self._proc = None
 
     # marshaling/pickle
@@ -231,7 +242,7 @@ class Z3Solver(Solver):
         logger.debug('>%s', cmd)
         try:
             self._proc.stdout.flush()
-            self._proc.stdin.write('{}\n'.format(cmd))
+            self._proc.stdin.write(f'{cmd}\n')
         except IOError as e:
             raise SolverException(str(e))
 
@@ -255,7 +266,7 @@ class Z3Solver(Solver):
         buf = ''.join(bufl).strip()
         logger.debug('<%s', buf)
         if '(error' in bufl[0]:
-            raise Exception("Error in smtlib: {}".format(bufl[0]))
+            raise Exception(f"Error in smtlib: {bufl[0]}")
         return buf
 
     # UTILS: check-sat get-value
@@ -344,12 +355,15 @@ class Z3Solver(Solver):
 
     # get-all-values min max minmax
     #@memoized
-    def get_all_values(self, constraints, expression, maxcnt=30000, silent=False):
+    def get_all_values(self, constraints, expression, maxcnt=None, silent=False):
         ''' Returns a list with all the possible values for the symbol x'''
         if not isinstance(expression, Expression):
             return [expression]
         assert isinstance(constraints, ConstraintSet)
         assert isinstance(expression, Expression)
+
+        if maxcnt is None:
+            maxcnt = consts.maxsolutions
 
         with constraints as temp_cs:
             if isinstance(expression, Bool):
@@ -401,7 +415,7 @@ class Z3Solver(Solver):
             self._reset(temp_cs.to_string(related_to=X))
             self._send(aux.declaration)
 
-            if getattr(self, 'support_{}'.format(goal)):
+            if getattr(self, f'support_{goal}'):
                 self._push()
                 try:
                     self._assert(operation(X, aux))

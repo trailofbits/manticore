@@ -29,7 +29,7 @@ to make sure symbolic values get properly concretized.
 def assemble(asm):
     ords = ks.asm(asm)[0]
     if not ords:
-        raise Exception('bad assembly: {}'.format(asm))
+        raise Exception(f'bad assembly: {asm}')
     return ''.join(map(chr, ords))
 
 

@@ -405,7 +405,7 @@ class ExpressionTest(unittest.TestCase):
 
         c = a + b1
 
-        x = replace(c, {b1:b2})
+        x = replace(c, {b1: b2})
         self.assertEqual(translate_to_smtlib(x), '(bvadd #x00000064 VAR2)')
 
     def testBasicMigration(self):
@@ -413,7 +413,7 @@ class ExpressionTest(unittest.TestCase):
         cs2 = ConstraintSet()
         var1 = cs1.new_bitvec(32, 'var')
         var2 = cs2.new_bitvec(32, 'var')
-        cs1.add(Operators.ULT(var1, 3)) # var1 can be 0, 1, 2
+        cs1.add(Operators.ULT(var1, 3))  # var1 can be 0, 1, 2
 
         # make a migration map dict
         migration_map1 = {}

@@ -137,7 +137,7 @@ class BoolVariable(Bool, Variable):
 
     @property
     def declaration(self):
-        return '(declare-fun %s () Bool)' % self.name
+        return f'(declare-fun {self.name} () Bool)'
 
 
 class BoolConstant(Bool, Constant):
@@ -390,7 +390,7 @@ class BitVecVariable(BitVec, Variable):
 
     @property
     def declaration(self):
-        return '(declare-fun %s () (_ BitVec %d))' % (self.name, self.size)
+        return f'(declare-fun {self.name} () (_ BitVec {self.size}))'
 
 
 class BitVecConstant(BitVec, Constant):
@@ -757,7 +757,7 @@ class ArrayVariable(Array, Variable):
 
     @property
     def declaration(self):
-        return '(declare-fun %s () (Array (_ BitVec %d) (_ BitVec %d)))' % (self.name, self.index_bits, self.value_bits)
+        return f'(declare-fun {self.name} () (Array (_ BitVec {self.index_bits}) (_ BitVec {self.value_bits})))'
 
 
 class ArrayOperation(Array, Operation):

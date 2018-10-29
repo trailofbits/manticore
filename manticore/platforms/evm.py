@@ -1,13 +1,14 @@
 ''' Symbolic EVM implementation based on the yellow paper: http://gavwood.com/paper.pdf '''
 import binascii
 import random
+import io
 import copy
 import inspect
 from functools import wraps
 from ..exceptions import EthereumError
 from ..utils.helpers import issymbolic, get_taints, taint_with, istainted
 from ..platforms.platform import *
-from ..core.smtlib import solver, BitVec, Array, Operators, Constant, ArrayVariable, BitVecConstant, translate_to_smtlib
+from ..core.smtlib import solver, BitVec, Array, Operators, Constant, ArrayVariable, ArrayStore, BitVecConstant, translate_to_smtlib, to_constant
 from ..core.state import Concretize, TerminateState
 from ..utils.event import Eventful
 from ..utils.rlp import rlp_encode
@@ -61,6 +62,125 @@ class Transaction(object):
         self.gas = gas
         self.set_result(result, return_data)
 
+    def concretize(self, state):
+        conc_caller = state.solve_one(self.caller)
+        conc_address = state.solve_one(self.address)
+        conc_value = state.solve_one(self.value)
+        conc_gas = state.solve_one(self.gas)
+        conc_data = state.solve_one(self.data)
+        conc_return_data = state.solve_one(self.return_data)
+
+        return Transaction(self.sort, conc_address, self.price, conc_data, conc_caller, conc_value, conc_gas,
+                           depth=self.depth, result=self.result, return_data=bytearray(conc_return_data))
+
+    def to_dict(self, mevm):
+        """
+        Only meant to be used with concrete Transaction objects! (after calling .concretize())
+        """
+        return dict(type=self.sort,
+                    from_address=self.caller,
+                    from_name=mevm.account_name(self.caller),
+                    to_address=self.address,
+                    to_name=mevm.account_name(self.address),
+                    value=self.value,
+                    gas=self.gas,
+                    data=binascii.hexlify(self.data).decode())
+
+    def dump(self, stream, state, mevm, conc_tx=None):
+        """
+        Concretize and write a human readable version of the transaction into the stream. Used during testcase
+        generation.
+
+        :param stream: Output stream to write to. Typically a file.
+        :param manticore.core.state.State state: state that the tx exists in
+        :param manticore.ethereum.ManticoreEVM mevm: manticore instance
+        :return:
+        """
+        from ..ethereum import ABI, flagged  # circular imports
+
+        is_something_symbolic = False
+
+        if conc_tx is None:
+            conc_tx = self.concretize(state)
+
+        # The result if any RETURN or REVERT
+        stream.write("Type: %s (%d)\n" % (self.sort, self.depth))
+
+        caller_solution = conc_tx.caller
+
+        caller_name = mevm.account_name(caller_solution)
+        stream.write("From: %s(0x%x) %s\n" % (caller_name, caller_solution, flagged(issymbolic(self.caller))))
+
+        address_solution = conc_tx.address
+        address_name = mevm.account_name(address_solution)
+
+        stream.write("To: %s(0x%x) %s\n" % (address_name, address_solution, flagged(issymbolic(self.address))))
+        stream.write("Value: %d %s\n" % (conc_tx.value, flagged(issymbolic(self.value))))
+        stream.write("Gas used: %d %s\n" % (conc_tx.gas, flagged(issymbolic(self.gas))))
+
+        tx_data = conc_tx.data
+
+        stream.write("Data: 0x{} {}\n".format(binascii.hexlify(tx_data).decode(), flagged(issymbolic(self.data))))
+
+        if self.return_data is not None:
+            # return_data = state.solve_one(tx.return_data)
+            return_data = conc_tx.return_data
+
+            stream.write("Return_data: 0x{} {}\n".format(binascii.hexlify(return_data).decode(), flagged(issymbolic(self.return_data))))
+
+        metadata = mevm.get_metadata(self.address)
+        if self.sort == 'CREATE':
+            if metadata is not None:
+
+                conc_args_data = conc_tx.data[len(metadata._init_bytecode):]
+                arguments = ABI.deserialize(metadata.get_constructor_arguments(), conc_args_data)
+
+                # TODO confirm: arguments should all be concrete?
+
+                is_argument_symbolic = any(map(issymbolic, arguments))  # is this redundant since arguments are all concrete?
+                stream.write('Function call:\n')
+                stream.write("Constructor(")
+                stream.write(','.join(map(repr, map(state.solve_one, arguments))))  # is this redundant since arguments are all concrete?
+                stream.write(') -> %s %s\n' % (self.result, flagged(is_argument_symbolic)))
+
+        if self.sort == 'CALL':
+            if metadata is not None:
+                calldata = conc_tx.data
+                is_calldata_symbolic = issymbolic(self.data)
+
+                function_id = calldata[:4]  # hope there is enough data
+                signature = metadata.get_func_signature(function_id)
+                function_name = metadata.get_func_name(function_id)
+                if signature:
+                    _, arguments = ABI.deserialize(signature, calldata)
+                else:
+                    arguments = (calldata,)
+
+                return_data = None
+                if self.result == 'RETURN':
+                    ret_types = metadata.get_func_return_types(function_id)
+                    return_data = conc_tx.return_data
+                    return_values = ABI.deserialize(ret_types, return_data)  # function return
+
+                is_return_symbolic = issymbolic(self.return_data)
+
+                stream.write('\n')
+                stream.write("Function call:\n")
+                stream.write("%s(" % function_name)
+                stream.write(','.join(map(repr, arguments)))
+                stream.write(') -> %s %s\n' % (self.result, flagged(is_calldata_symbolic)))
+
+                if return_data is not None:
+                    if len(return_values) == 1:
+                        return_values = return_values[0]
+
+                    stream.write('return: %r %s\n' % (return_values, flagged(is_return_symbolic)))
+                is_something_symbolic = is_calldata_symbolic or is_return_symbolic
+
+        stream.write('\n\n')
+        return is_something_symbolic
+
+
     @property
     def sort(self):
         return self._sort
@@ -84,10 +204,10 @@ class Transaction(object):
 
     @property
     def return_value(self):
-        if self.result in {'RETURN', 'STOP'}:
+        if self.result in {'RETURN', 'STOP', 'SELFDESTRUCT'}:
             return 1
         else:
-            assert self.result in {'TXERROR', 'REVERT', 'THROW', 'SELFDESTRUCT'}
+            assert self.result in {'TXERROR', 'REVERT', 'THROW'}
             return 0
 
     def set_result(self, result, return_data=None):
@@ -97,7 +217,7 @@ class Transaction(object):
             raise EVMException('Invalid transaction result')
         if result in {'RETURN', 'REVERT'}:
             if not isinstance(return_data, (bytearray, Array)):
-                raise EVMException('Invalid transaction return_data')
+                raise EVMException('Invalid transaction return_data type:', type(return_data).__name__)
         elif result in {'STOP', 'THROW', 'SELFDESTRUCT'}:
             if return_data is None:
                 return_data = bytearray()
@@ -159,7 +279,8 @@ class EndTx(EVMException):
             assert self.result in {'THROW', 'TXERROR', 'REVERT'}
             return True
 
-
+    def __str__(self):
+        return f'EndTX<{self.result}>'
 class InvalidOpcode(EndTx):
     ''' Trying to execute invalid opcode '''
 
@@ -350,6 +471,32 @@ class EVM(Eventful):
             bytecode_symbolic[0:bytecode_size] = bytecode
             bytecode = bytecode_symbolic
 
+        #TODO: Handle the case in which bytecode is symbolic (This happens at
+        # CREATE instructions that has the arguments appended to the bytecode)
+        # This is a very cornered corner case in which code is actually symbolic
+        # We should simply not allow to jump to unconstrained(*) symbolic code.
+        # (*) bytecode that could take more than a single value
+        self._check_jumpdest = False
+        self._valid_jumpdests = set()
+
+        #Compile the list of valid jumpdests via linear dissassembly
+        def extend_with_zeroes(b):
+            try:
+                for x in b:
+                    x = to_constant(x)
+                    if isinstance(x, int):
+                        yield(x)
+                    else:
+                        yield(0)
+                for _ in range(32):
+                    yield(0)
+            except Exception as e:
+                return
+
+        for i in EVMAsm.disassemble_all(extend_with_zeroes(bytecode)):
+            if i.mnemonic == 'JUMPDEST':
+                self._valid_jumpdests.add(i.pc)
+
         #A no code VM is used to execute transactions to normal accounts.
         #I'll execute a STOP and close the transaction
         #if len(bytecode) == 0:
@@ -380,6 +527,8 @@ class EVM(Eventful):
         max_size = len(self.data)
         self._used_calldata_size = 0
         self._calldata_size = len(self.data)
+        self._valid_jmpdests = set()
+
 
     @property
     def bytecode(self):
@@ -418,6 +567,8 @@ class EVM(Eventful):
         state['_checkpoint_data'] = self._checkpoint_data
         state['_used_calldata_size'] = self._used_calldata_size
         state['_calldata_size'] = self._calldata_size
+        state['_valid_jumpdests'] = self._valid_jumpdests
+        state['_check_jumpdest'] = self._check_jumpdest
         return state
 
     def __setstate__(self, state):
@@ -439,7 +590,8 @@ class EVM(Eventful):
         self.suicides = state['suicides']
         self._used_calldata_size = state['_used_calldata_size']
         self._calldata_size = state['_calldata_size']
-
+        self._valid_jumpdests = state['_valid_jumpdests']
+        self._check_jumpdest = state['_check_jumpdest']
         super().__setstate__(state)
 
     def _get_memfee(self, address, size=1):
@@ -562,7 +714,7 @@ class EVM(Eventful):
                 raise ValueError
         elif isinstance(fee, BitVec):
             if (fee.size != 512):
-                raise EthereumError("Fees should be 512 bit long")
+                raise ValueError("Fees should be 512 bit long")
 
         #FIXME add configurable checks here
         config.out_of_gas = 3
@@ -682,6 +834,22 @@ class EVM(Eventful):
         self._pc = last_pc
         self._checkpoint_data = None
 
+    def _set_check_jmpdest(self, flag=True):
+        self._check_jumpdest = flag
+
+    def _check_jmpdest(self):
+        should_check_jumpdest = self._check_jumpdest
+        if issymbolic(should_check_jumpdest):
+            should_check_jumpdest_solutions = solver.get_all_values(self.constraints, self._check_jumpdest)
+            if len(should_check_jumpdest_solutions) != 1:
+                raise EthereumError("Conditional not concretized at JMPDEST check")
+            should_check_jumpdest = should_check_jumpdest_solutions[0]
+
+        if should_check_jumpdest:
+            self._check_jumpdest = False
+            if self.pc not in self._valid_jumpdests:
+                raise InvalidOpcode()
+
     def _advance(self, result=None, exception=False):
         if self._checkpoint_data is None:
             return
@@ -729,6 +897,7 @@ class EVM(Eventful):
                              setstate=setstate,
                              policy='ALL')
         try:
+            self._check_jmpdest()
             last_pc, last_gas, instruction, arguments = self._checkpoint()
             result = self._handler(*arguments)
             self._advance(result)
@@ -1244,11 +1413,15 @@ class EVM(Eventful):
     def JUMP(self, dest):
         '''Alter the program counter'''
         self.pc = dest
-        # TODO check for JUMPDEST on next iter?
+        #This set ups a check for JMPDEST in the next instruction
+        self._set_check_jmpdest()
 
     def JUMPI(self, dest, cond):
         '''Conditionally alter the program counter'''
         self.pc = Operators.ITEBV(256, cond != 0, dest, self.pc + self.instruction.size)
+        #This set ups a check for JMPDEST in the next instruction if cond != 0
+        self._set_check_jmpdest(cond != 0)
+
 
     def GETPC(self):
         '''Get the value of the program counter prior to the increment'''
@@ -1305,6 +1478,7 @@ class EVM(Eventful):
                                      caller=self.address,
                                      value=value,
                                      gas=self.gas)
+
         raise StartTx()
 
     @CREATE.pos
@@ -1345,7 +1519,7 @@ class EVM(Eventful):
     @concretized_args(in_offset='SAMPLED', in_size='SAMPLED')
     def CALLCODE(self, gas, _ignored_, value, in_offset, in_size, out_offset, out_size):
         '''Message-call into this account with alternative account's code'''
-        self.world.start_transaction('CALL',
+        self.world.start_transaction('CALLCODE',
                                      address=self.address,
                                      data=self.read_buffer(in_offset, in_size),
                                      caller=self.address,
@@ -1535,7 +1709,7 @@ class EVMWorld(Platform):
         self._world_state = {} if storage is None else storage
         self._constraints = constraints
         self._callstack = []
-        self._deleted_accounts = []
+        self._deleted_accounts = set()
         self._logs = list()
         self._pending_transaction = None
         self._transactions = list()
@@ -1620,10 +1794,13 @@ class EVMWorld(Platform):
             bytecode = self.get_code(address)
             data = bytecode_or_data
 
-        address = tx.address
         if tx.sort == 'DELEGATECALL':
-            address = tx.caller
+            # So at a DELEGATECALL the environment should look exactly the same as the original tx
+            # This means caller, value and address are the same as prev tx
             assert value == 0
+            address = self.current_transaction.address
+            caller = self.current_transaction.caller
+            value = self.current_transaction.value
 
         vm = EVM(self._constraints, address, data, caller, value, bytecode, world=self, gas=gas)
 
@@ -1641,16 +1818,20 @@ class EVMWorld(Platform):
         self.constraints = vm.constraints
 
         if rollback:
-            for address, account in self._deleted_accounts:
-                self._world_state[address] = account
-
             self._set_storage(vm.address, account_storage)
-            self._deleted_accounts = self._deleted_accounts
             self._logs = logs
             self.send_funds(tx.address, tx.caller, tx.value)
-        elif not issymbolic(tx.caller) and (tx.sort == 'CREATE' or not self._world_state[caller]['code']):
-            # Increment the nonce if this transaction created a contract, or if it was called by a non-contract account
-            self.increase_nonce(tx.caller)
+        else:
+            self._deleted_accounts = deleted_accounts
+
+            if not issymbolic(tx.caller) and (tx.sort == 'CREATE' or not self._world_state[caller]['code']):
+                # Increment the nonce if this transaction created a contract, or if it was called by a non-contract account
+                self.increase_nonce(tx.caller)
+
+        if tx.is_human():
+            for deleted_account in self._deleted_accounts:
+                if deleted_account in self._world_state:
+                    del self._world_state[deleted_account]
 
         tx.set_result(result, data)
         self._transactions.append(tx)
@@ -1760,9 +1941,7 @@ class EVMWorld(Platform):
 
     def delete_account(self, address):
         if address in self._world_state:
-            deleted_account = (address, self._world_state[address])
-            del self._world_state[address]
-            self._deleted_accounts.append(deleted_account)
+            self._deleted_accounts.add(address)
 
     def get_storage_data(self, storage_address, offset):
         """
@@ -2128,14 +2307,15 @@ class EVMWorld(Platform):
             return
         sort, address, price, data, caller, value, gas = self._pending_transaction
 
-        if sort not in {'CALL', 'CREATE', 'DELEGATECALL'}:
+        if sort not in {'CALL', 'CREATE', 'DELEGATECALL', 'CALLCODE'}:
             raise EVMException('Type of transaction not supported')
 
         if self.depth > 0:
+            assert price is None, "Price should not be used in internal transactions"
             price = self.tx_gasprice()
+
         if price is None:
             raise EVMException("Need to set a gas price on human tx")
-
         self._pending_transaction_concretize_address()
         self._pending_transaction_concretize_caller()
         if caller not in self.accounts:
@@ -2160,12 +2340,12 @@ class EVMWorld(Platform):
                                  setstate=lambda a, b: None,
                                  policy='ALL')
             failed = set(enough_balance_solutions) == {False}
-
         #processed
         self._pending_transaction = None
-
         #Here we have enough funds and room in the callstack
-        self.send_funds(caller, address, value)
+        # CALLCODE and  DELEGATECALL do not send funds
+        if sort in ('CALL', 'CREATE'):
+            self.send_funds(caller, address, value)
 
         self._open_transaction(sort, address, price, data, caller, value, gas=gas)
 
@@ -2173,5 +2353,90 @@ class EVMWorld(Platform):
             self._close_transaction('TXERROR', rollback=True)
 
         #Transaction to normal account
-        if sort in ('CALL', 'DELEGATECALL') and not self.get_code(address):
+        if sort in ('CALL', 'DELEGATECALL', 'CALLCODE') and not self.get_code(address):
             self._close_transaction('STOP')
+            
+    def dump(self, stream, state, mevm, message):
+        from ..ethereum import flagged, calculate_coverage
+        blockchain = state.platform
+        last_tx = blockchain.last_transaction
+
+        stream.write("Message: %s\n" % message)
+        stream.write("Last exception: %s\n" % state.context.get('last_exception', 'None'))
+
+        if last_tx:
+            at_runtime = last_tx.sort != 'CREATE'
+            address, offset, at_init = state.context['evm.trace'][-1]
+            assert at_runtime != at_init
+
+            #Last instruction if last tx was valid
+            if str(state.context['last_exception']) != 'TXERROR':
+                metadata = mevm.get_metadata(blockchain.last_transaction.address)
+                if metadata is not None:
+                    stream.write('Last instruction at contract %x offset %x\n' % (address, offset))
+                    source_code_snippet = metadata.get_source_for(offset, at_runtime)
+                    if source_code_snippet:
+                        stream.write('    '.join(source_code_snippet.splitlines(True)))
+                    stream.write('\n')
+
+        # Accounts summary
+        is_something_symbolic = False
+        stream.write("%d accounts.\n" % len(blockchain.accounts))
+        for account_address in blockchain.accounts:
+            is_account_address_symbolic = issymbolic(account_address)
+            account_address = state.solve_one(account_address)
+
+            stream.write("* %s::\n" % mevm.account_name(account_address))
+            stream.write("Address: 0x%x %s\n" % (account_address, flagged(is_account_address_symbolic)))
+            balance = blockchain.get_balance(account_address)
+            is_balance_symbolic = issymbolic(balance)
+            is_something_symbolic = is_something_symbolic or is_balance_symbolic
+            balance = state.solve_one(balance)
+            stream.write("Balance: %d %s\n" % (balance, flagged(is_balance_symbolic)))
+
+            storage = blockchain.get_storage(account_address)
+            stream.write("Storage: %s\n" % translate_to_smtlib(storage, use_bindings=True))
+
+            all_used_indexes = []
+            with state.constraints as temp_cs:
+                index = temp_cs.new_bitvec(256)
+                storage = blockchain.get_storage(account_address)
+                temp_cs.add(storage.get(index) != 0)
+
+                try:
+                    while True:
+                        a_index = solver.get_value(temp_cs, index)
+                        all_used_indexes.append(a_index)
+
+                        temp_cs.add(storage.get(a_index) != 0)
+                        temp_cs.add(index != a_index)
+                except:
+                    pass
+
+            if all_used_indexes:
+                stream.write("Storage:\n")
+                for i in all_used_indexes:
+                    value = storage.get(i)
+                    is_storage_symbolic = issymbolic(value)
+                    stream.write("storage[%x] = %x %s\n" % (state.solve_one(i), state.solve_one(value), flagged(is_storage_symbolic)))
+            """if blockchain.has_storage(account_address):
+                stream.write("Storage:\n")
+                for offset, value in blockchain.get_storage_items(account_address):
+                    is_storage_symbolic = issymbolic(offset) or issymbolic(value)
+                    offset = state.solve_one(offset)
+                    value = state.solve_one(value)
+                    stream.write("\t%032x -> %032x %s\n" % (offset, value, flagged(is_storage_symbolic)))
+                    is_something_symbolic = is_something_symbolic or is_storage_symbolic
+            """
+
+            runtime_code = state.solve_one(blockchain.get_code(account_address))
+            if runtime_code:
+                stream.write("Code:\n")
+                fcode = io.BytesIO(runtime_code)
+                for chunk in iter(lambda: fcode.read(32), b''):
+                    stream.write('\t%s\n' % binascii.hexlify(chunk))
+                runtime_trace = set((pc for contract, pc, at_init in state.context['evm.trace'] if address == contract and not at_init))
+                stream.write("Coverage %d%% (on this state)\n" % calculate_coverage(runtime_code, runtime_trace))  # coverage % for address in this account/state
+            stream.write("\n")
+        return is_something_symbolic
+

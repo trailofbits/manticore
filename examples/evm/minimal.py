@@ -26,10 +26,10 @@ contract NoDistpatcher {
 '''
 
 user_account = m.create_account(balance=1000, name='user_account')
-print("[+] Creating a user account", user_account.name)
+print("[+] Creating a user account", user_account.name_)
 
 contract_account = m.solidity_create_contract(source_code, owner=user_account, name='contract_account')
-print("[+] Creating a contract account", contract_account.name)
+print("[+] Creating a contract account", contract_account.name_)
 contract_account.named_func(1)
 
 print("[+] Now the symbolic values")
@@ -44,4 +44,4 @@ m.transaction(caller=symbolic_caller,
 
 #Let seth know we are not sending more transactions 
 m.finalize()
-print("[+] Look for results in %s"% m.workspace)
+print(f"[+] Look for results in {m.workspace}")
