@@ -713,7 +713,7 @@ class EVM(Eventful):
                 raise ValueError
         elif isinstance(fee, BitVec):
             if (fee.size != 512):
-                raise EthereumError("Fees should be 512 bit long")
+                raise ValueError("Fees should be 512 bit long")
 
         #FIXME add configurable checks here
         config.out_of_gas = 3

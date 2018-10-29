@@ -138,7 +138,7 @@ class Manticore(Eventful):
                 ws_path = workspace_url
         else:
             if workspace_url is not None:
-                raise Exception('Invalid workspace')
+                raise TypeError(f'Invalid workspace type: {type(workspace_url).__name__}')
             ws_path = None
 
         self._output = ManticoreOutput(ws_path)
@@ -156,7 +156,7 @@ class Manticore(Eventful):
 
         if isinstance(path_or_state, str):
             if not os.path.isfile(path_or_state):
-                raise Exception(f'{path_or_state} is not an existing regular file')
+                raise OSError(f'{path_or_state} is not an existing regular file')
             self._initial_state = make_initial_state(path_or_state, argv=argv, **kwargs)
         elif isinstance(path_or_state, State):
             self._initial_state = path_or_state
