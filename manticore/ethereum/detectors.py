@@ -644,12 +644,13 @@ class DetectRaceCondition(Detector):
         if not self._in_user_func(state):
             return
 
-        world = state.platform
+        # We won't be able to add a finding if pc is not a constant value
+        if not isinstance(state.platform.current_vm.pc, (int, Constant)):
+            return
 
-        # last_tx = world.last_transaction
+        world = state.platform
         curr_tx = world.current_transaction
 
-        # if last_tx is not None and curr_tx != last_tx and last_tx.sort != 'CREATE':
         if curr_tx.sort != 'CREATE':
             metadata = self.manticore.metadata[curr_tx.address]
             curr_func = metadata.get_func_signature(state.solve_one(curr_tx.data[:4]))
@@ -657,7 +658,14 @@ class DetectRaceCondition(Detector):
             for arg in arguments:
                 if istainted(arg):
                     for taint in get_taints(arg, self.TAINT + '*'):
-                        storage_index = int(taint[taint.rindex('.') + 1:])
+                        tainted_val = taint[taint.rindex('.') + 1:]
+
+                        try:
+                            storage_index = int(tainted_val)
+                            storage_index_key = storage_index
+                        except ValueError:
+                            storage_index = 'which is symbolic'
+                            storage_index_key = hash(tainted_val)
 
                         prev_funcs = state.context[taint]
 
@@ -672,10 +680,9 @@ class DetectRaceCondition(Detector):
                                    f'An attacker seeing a transaction to {curr_func} could create a transaction ' \
                                    f'to {prev_func} with high gas and win a race.'
 
-                            unique_key = (storage_index, prev_func, curr_func)
+                            unique_key = (storage_index_key, prev_func, curr_func)
                             if unique_key in self.__findings:
                                 continue
 
                             self.__findings.add(unique_key)
-
                             self.add_finding_here(state, msg)

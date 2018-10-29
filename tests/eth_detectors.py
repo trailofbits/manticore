@@ -49,8 +49,8 @@ class EthDetectorTest(unittest.TestCase):
         self.mevm.register_detector(self.DETECTOR_CLASS())
         mevm.multi_tx_analysis(filename, contract_name='DetectThis', args=(mevm.make_symbolic_value(),))
 
-        expected_findings = set(((c, d) for b, c, d in should_find))
-        actual_findings = set(((c, d) for a, b, c, d in mevm.global_findings))
+        expected_findings = set(((finding, at_init) for _pc, finding, at_init in should_find))
+        actual_findings = set(((finding, at_init) for _addr, _pc, finding, at_init in mevm.global_findings))
         self.assertEqual(expected_findings, actual_findings)
 
 
@@ -253,6 +253,69 @@ class EthRaceCondition(EthDetectorTest):
                 ' and is now used in transaction that calls setStoredAddress(address).\n'
                 'An attacker seeing a transaction to setStoredAddress(address) could create a transaction to'
                 ' setStoredAddress(address) with high gas and win a race.',
+                False
+            )
+        })
+
+    def test_race_condition2(self):
+        name = inspect.currentframe().f_code.co_name[5:]
+        self._test(name, {
+            (
+                1,
+                'Potential race condition (transaction order dependency):\n'
+                'Value has been stored in storage slot/index which is symbolic in transaction that called'
+                ' transfer(address,uint256) and is now used in transaction that calls withdrawBalance().\n'
+                'An attacker seeing a transaction to withdrawBalance() could create a transaction to'
+                ' transfer(address,uint256) with high gas and win a race.',
+                False
+            ),
+            (
+                2,
+                'Potential race condition (transaction order dependency):\n'
+                'Value has been stored in storage slot/index'
+                ' 78115272392584470974389034602766755727256711949031588331321780670270669005627 in transaction'
+                ' that called withdrawBalance() and is now used in transaction that calls transfer(address,uint256).\n'
+                'An attacker seeing a transaction to transfer(address,uint256) could create a transaction to'
+                ' withdrawBalance() with high gas and win a race.',
+                False
+            ),
+            (
+                3,
+                'Potential race condition (transaction order dependency):\n'
+                'Value has been stored in storage slot/index'
+                ' 78115272392584470974389034602766755727256711949031588331321780670270669005627 in transaction'
+                ' that called withdrawBalance() and is now used in transaction that calls withdrawBalance().\n'
+                'An attacker seeing a transaction to withdrawBalance() could create a transaction to withdrawBalance()'
+                ' with high gas and win a race.',
+                False
+            ),
+            (
+                4,
+                'Potential race condition (transaction order dependency):\n'
+                'Value has been stored in storage slot/index'
+                ' 78115272392584470974389034602766755727256711949031588331321780670270669005627 in transaction'
+                ' that called transfer(address,uint256) and is now used in transaction that calls withdrawBalance().\n'
+                'An attacker seeing a transaction to withdrawBalance() could create a transaction to'
+                ' transfer(address,uint256) with high gas and win a race.',
+                False
+            ),
+            (
+                5,
+                'Potential race condition (transaction order dependency):\n'
+                'Value has been stored in storage slot/index which is symbolic in transaction that called'
+                ' transfer(address,uint256) and is now used in transaction that calls transfer(address,uint256).\n'
+                'An attacker seeing a transaction to transfer(address,uint256) could create a transaction to'
+                ' transfer(address,uint256) with high gas and win a race.',
+                False
+            ),
+            (
+                6,
+                'Potential race condition (transaction order dependency):\n'
+                'Value has been stored in storage slot/index'
+                ' 78115272392584470974389034602766755727256711949031588331321780670270669005627 in transaction'
+                ' that called transfer(address,uint256) and is now used in transaction that calls'
+                ' transfer(address,uint256).\nAn attacker seeing a transaction to transfer(address,uint256)'
+                ' could create a transaction to transfer(address,uint256) with high gas and win a race.',
                 False
             )
         })
