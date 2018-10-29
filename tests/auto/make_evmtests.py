@@ -199,7 +199,8 @@ class EVMTest_{os.path.split(sys.argv[1][:-5])[1])}(unittest.TestCase):
     _multiprocess_can_split_ = True
     maxDiff=None\n''')
 
-    js = open(filename).read()
+    with open(filename) as f:
+        js = f.read()
     tests = dict(json.loads(js))
 
     #print "#processed ", len(tests.keys()), tests.keys()

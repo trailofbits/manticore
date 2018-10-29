@@ -64,7 +64,7 @@ class ABI(object):
         return result
 
     @staticmethod
-    def serialize(ty, *value, **kwargs):
+    def serialize(ty, *values, **kwargs):
         """
         Serialize value using type specification in ty.
         ABI.serialize('int256', 1000)
@@ -77,11 +77,17 @@ class ABI(object):
             raise EthereumError(str(e))
 
         if parsed_ty[0] != 'tuple':
-            if len(value) > 1:
-                raise ValueError
-            value = value[0]
+            if len(values) > 1:
+                raise ValueError('too many values passed for non-tuple')
+            values = values[0]
+            if isinstance(values, str):
+                values = values.encode()
+        else:
+            # implement type forgiveness for bytesM/string types
+            # allow python strs also to be used for Solidity bytesM/string types
+            values = tuple(val.encode() if isinstance(val, str) else val for val in values)
 
-        result, dyn_result = ABI._serialize(parsed_ty, value)
+        result, dyn_result = ABI._serialize(parsed_ty, values)
         return result + dyn_result
 
     @staticmethod
@@ -129,7 +135,7 @@ class ABI(object):
         Serializes the value and pads to multiple of 32 bytes
 
         :param value:
-        :type value: bytearray or Array
+        :type value: str or bytearray or Array
         """
         return value + bytearray(b'\x00' * (32 - len(value)))
 
@@ -137,6 +143,8 @@ class ABI(object):
     def _serialize_tuple(types, value, dyn_offset=None):
         result = bytearray()
         dyn_result = bytearray()
+        if len(types) != len(value):
+            raise ValueError(f"The number of values to serialize is {'less' if len(value) < len(types) else 'greater'} than the number of types")
         for ty_i, value_i in zip(types, value):
             result_i, dyn_result_i = ABI._serialize(ty_i, value_i, dyn_offset + len(dyn_result))
             result += result_i
@@ -209,7 +217,7 @@ class ABI(object):
         elif ty[0] == 'bytesM':
             result = buf[offset:offset + ty[1]]
         elif ty[0] == 'function':
-            address = Operators.ZEXTEND(ABI._readBE(buf[offset:offset + 20], 20, padding=False), 256)
+            address = Operators.ZEXTEND(ABI._readBE(buf[offset:offset + 20], 20), 256)
             func_id = buf[offset + 20:offset + 24]
             result = (address, func_id)
         elif ty[0] in ('bytes', 'string'):
@@ -252,7 +260,11 @@ class ABI(object):
         if issymbolic(value):
             # FIXME This temporary array variable should be obtained from a specific constraint store
             bytes = ArrayVariable(index_bits=256, index_max=32, value_bits=8, name='temp{}'.format(uuid.uuid1()))
-            value = Operators.ZEXTEND(value, size * 8)
+            if value.size <= size * 8:
+                value = Operators.ZEXTEND(value, size * 8)
+            else:
+                # automatically truncate, e.g. if they passed a BitVec(256) for an `address` argument (160 bits)
+                value = Operators.EXTRACT(value, 0, size * 8)
             bytes = ArrayProxy(bytes.write_BE(padding, value, size))
         else:
             value = int(value)
@@ -288,16 +300,25 @@ class ABI(object):
         return buf
 
     @staticmethod
-    def _readBE(data, nbytes, padding=True):
+    def _readBE(data, nbytes, padding=False, offset=0):
+        """
+
+        :param data:
+        :param nbytes:
+        :param padding: If True, treat data as padded at the beginning to multiple of 32
+        :param offset:
+        :return:
+        """
+        start = offset
+        size = nbytes
+
         if padding:
-            pos = 32 - nbytes
-            size = 32
-        else:
-            pos = 0
-            size = nbytes
+            start += 32 - nbytes
+
+        pos = start
 
         values = []
-        while pos < size:
+        while pos < start + size:
             if pos >= len(data):
                 values.append(0)
             else:
@@ -306,7 +327,7 @@ class ABI(object):
         return Operators.CONCAT(nbytes * 8, *values)
 
     @staticmethod
-    def _deserialize_uint(data, nbytes=32, padding=0):
+    def _deserialize_uint(data, nbytes=32, padding=0, offset=0):
         """
         Read a `nbytes` bytes long big endian unsigned integer from `data` starting at `offset`
 
@@ -315,7 +336,7 @@ class ABI(object):
         :rtype: int or Expression
         """
         assert isinstance(data, (bytearray, Array))
-        value = ABI._readBE(data, nbytes)
+        value = ABI._readBE(data, nbytes, padding=True, offset=offset)
         value = Operators.ZEXTEND(value, (nbytes + padding) * 8)
         return value
 
@@ -329,7 +350,7 @@ class ABI(object):
         :rtype: int or Expression
         """
         assert isinstance(data, (bytearray, Array))
-        value = ABI._readBE(data, nbytes)
+        value = ABI._readBE(data, nbytes, padding=True)
         value = Operators.SEXTEND(value, nbytes * 8, (nbytes + padding) * 8)
         if not issymbolic(value):
             # sign bit on

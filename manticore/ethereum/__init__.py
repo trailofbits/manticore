@@ -9,10 +9,11 @@ from .. import Manticore
 from ..exceptions import EthereumError, DependencyError, NoAliveStates
 from ..core.smtlib import ConstraintSet, Operators, solver, BitVec, Array, ArrayProxy
 from ..platforms import evm
-from ..core.state import State, TerminateState
+from ..core.state import State, TerminateState, AbandonState
 from ..utils.helpers import issymbolic, PickleSerializer
 from ..utils import config
 from ..utils.log import init_logging
+from typing import Dict, Optional
 import tempfile
 from subprocess import Popen, PIPE, check_output
 from multiprocessing import Process, Queue
@@ -101,21 +102,20 @@ class FilterFunctions(Plugin):
             #Let's compile  the list of interesting hashes
             selected_functions = []
 
-            for func_hsh in md.hashes:
-                if func_hsh == b'\0\0\0\0':
-                    continue
+            for func_hsh in md.function_selectors:
                 abi = md.get_abi(func_hsh)
-                func_name = md.get_func_name(func_hsh)
+                if abi['type'] == 'fallback':
+                    continue
                 if self._mutability == 'constant' and not abi.get('constant', False):
                     continue
                 if self._mutability == 'mutable' and abi.get('constant', False):
                     continue
-                if not re.match(self._regexp, func_name):
+                if not re.match(self._regexp, abi['name']):
                     continue
                 selected_functions.append(func_hsh)
 
-            if self._fallback:
-                selected_functions.append(b'\0\0\0\0')
+            if self._fallback and md.has_non_default_fallback_function:
+                selected_functions.append(md.fallback_function_selector)
 
             if self._include:
                 # constrain the input so it can take only the interesting values
@@ -123,7 +123,7 @@ class FilterFunctions(Plugin):
                 state.constrain(constraint)
             else:
                 #Avoid all not selected hashes
-                for func_hsh in md.hashes:
+                for func_hsh in md.function_selectors:
                     if func_hsh in selected_functions:
                         constraint = tx.data[:4] != func_hsh
                         state.constrain(constraint)
@@ -466,7 +466,7 @@ class ManticoreEVM(Manticore):
 
         self.constraints = ConstraintSet()
         self.detectors = {}
-        self.metadata = {}
+        self.metadata: Dict[int, SolidityMetadata] = {}
 
         # The following should go to manticore.context so we can use multiprocessing
         self.context['ethereum'] = {}
@@ -627,6 +627,11 @@ class ManticoreEVM(Manticore):
         """ Transactions list for state `state_id` """
         state = self.load(state_id)
         return state.platform.transactions
+
+    def human_transactions(self, state_id=None):
+        """ Transactions list for state `state_id` """
+        state = self.load(state_id)
+        return state.platform.human_transactions
 
     def make_symbolic_arguments(self, types):
         """
@@ -886,20 +891,20 @@ class ManticoreEVM(Manticore):
         if isinstance(data, (str, bytes)):
             data = bytearray(data)
         if not isinstance(data, (bytearray, Array)):
-            raise EthereumError("code bad type")
+            raise TypeError("code bad type")
 
         # Check types
         if not isinstance(address, (int, BitVec)):
-            raise EthereumError("Caller invalid type")
+            raise TypeError("Caller invalid type")
 
         if not isinstance(value, (int, BitVec)):
-            raise EthereumError("Value invalid type")
+            raise TypeError("Value invalid type")
 
         if not isinstance(address, (int, BitVec)):
-            raise EthereumError("address invalid type")
+            raise TypeError("address invalid type")
 
         if not isinstance(price, int):
-            raise EthereumError("Price invalid type")
+            raise TypeError("Price invalid type")
 
         # Check argument consistency and set defaults ...
         if sort not in ('CREATE', 'CALL'):
@@ -1148,7 +1153,7 @@ class ManticoreEVM(Manticore):
             Every time a state finishes executing the last transaction, we save it in
             our private list
         """
-        if str(e) == 'Abandoned state':
+        if isinstance(e, AbandonState):
             #do nothing
             return
         world = state.platform
@@ -1222,7 +1227,7 @@ class ManticoreEVM(Manticore):
             for i in range(offset, offset + size):
                 code_data.add((state.platform.current_vm.address, i))
 
-    def get_metadata(self, address):
+    def get_metadata(self, address) -> Optional[SolidityMetadata]:
         """ Gets the solidity metadata for address.
             This is available only if address is a contract created from solidity
         """
@@ -1253,8 +1258,44 @@ class ManticoreEVM(Manticore):
     def workspace(self):
         return self._executor._workspace._store.uri
 
-    def generate_testcase(self, state, name, message=''):
-        self._generate_testcase_callback(state, name, message)
+    def generate_testcase(self, state, name, message='', only_if=None):
+        """
+        Generate a testcase to the workspace for the given program state. The details of what
+        a testcase is depends on the type of Platform the state is, but involves serializing the state,
+        and generating an input (concretizing symbolic variables) to trigger this state.
+
+        The only_if parameter should be a symbolic expression. If this argument is provided, and the expression
+        *can be true* in this state, a testcase is generated such that the expression will be true in the state.
+        If it *is impossible* for the expression to be true in the state, a testcase is not generated.
+
+        This is useful for conveniently checking a particular invariant in a state, and generating a testcase if
+        the invariant can be violated.
+
+        For example, invariant: "balance" must not be 0. We can check if this can be violated and generate a
+        testcase::
+
+            m.generate_testcase(state, 'balance', 'balance CAN be 0', only_if=balance == 0)
+            # testcase generated with an input that will violate invariant (make balance == 0)
+
+
+        :param manticore.core.state.State state:
+        :param str name: short string used as the prefix for the workspace key (e.g. filename prefix for testcase files)
+        :param str message: longer description of the testcase condition
+        :param manticore.core.smtlib.Bool only_if: only if this expr can be true, generate testcase. if is None, generate testcase unconditionally.
+        :return: If a testcase was generated
+        :rtype: bool
+        """
+        if only_if is None:
+            self._generate_testcase_callback(state, name, message)
+            return True
+        else:
+            with state as temp_state:
+                temp_state.constrain(only_if)
+                if temp_state.is_feasible():
+                    self._generate_testcase_callback(temp_state, name, message)
+                    return True
+
+        return False
 
     def current_location(self, state):
         world = state.platform

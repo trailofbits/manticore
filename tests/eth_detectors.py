@@ -38,7 +38,7 @@ class EthDetectorTest(unittest.TestCase):
         self.mevm = None
         shutil.rmtree(self.worksp)
 
-    def _test(self, name, should_find):
+    def _test(self, name, should_find, use_ctor_sym_arg=False):
         """
         Tests DetectInvalid over the consensys benchmark suit
         """
@@ -46,8 +46,13 @@ class EthDetectorTest(unittest.TestCase):
 
         filename = os.path.join(THIS_DIR, 'binaries', 'detectors', f'{name}.sol')
 
+        if use_ctor_sym_arg:
+            ctor_arg = (mevm.make_symbolic_value(),)
+        else:
+            ctor_arg = ()
+
         self.mevm.register_detector(self.DETECTOR_CLASS())
-        mevm.multi_tx_analysis(filename, contract_name='DetectThis', args=(mevm.make_symbolic_value(),))
+        mevm.multi_tx_analysis(filename, contract_name='DetectThis', args=ctor_arg)
 
         expected_findings = set(((finding, at_init) for _pc, finding, at_init in should_find))
         actual_findings = set(((finding, at_init) for _addr, _pc, finding, at_init in mevm.global_findings))
