@@ -1648,8 +1648,10 @@ class EVMWorld(Platform):
             self._deleted_accounts = self._deleted_accounts
             self._logs = logs
             self.send_funds(tx.address, tx.caller, tx.value)
+        elif not issymbolic(tx.caller) and (tx.sort == 'CREATE' or not self._world_state[caller]['code']):
+            # Increment the nonce if this transaction created a contract, or if it was called by a non-contract account
+            self.increase_nonce(tx.caller)
 
-        self.increase_nonce(tx.caller)
         tx.set_result(result, data)
         self._transactions.append(tx)
 
@@ -1831,12 +1833,23 @@ class EVMWorld(Platform):
         self._world_state[address]['storage'] = storage
 
     def get_nonce(self, address):
-        if address not in self._world_state:
-            return None
-        return self._world_state[address]['nonce']
+        if issymbolic(address):
+            raise ValueError(f"Cannot retrieve the nonce of symbolic address {address}")
+        elif address not in self._world_state:
+            # assume that the caller is a regular account, so initialize its nonce to zero
+            ret = 0
+        elif 'nonce' not in self._world_state[address]:
+            if self._world_state[address]['code']:
+                # this is a contract account, so set the nonce to 1 per EIP 161
+                ret = 1
+            else:
+                ret = 0
+        else:
+            ret = self._world_state[address]['nonce']
+        return ret
 
     def increase_nonce(self, address):
-        new_nonce = self._world_state[address].get('nonce', 1) + 1
+        new_nonce = self.get_nonce(address) + 1
         self._world_state[address]['nonce'] = new_nonce
         return new_nonce
 
@@ -1955,7 +1968,7 @@ class EVMWorld(Platform):
             raise EthereumError('Manticore does not yet support contracts with symbolic addresses creating new contracts')
         else:
             if nonce is None:
-                # As per EIP 161, contract accounts are initialized with a nonce of 1
+                # assume that the sender is a contract account, which is initialized with a nonce of 1
                 nonce = 1
             new_address = int(sha3.keccak_256(rlp_encode([sender, nonce])).hexdigest()[24:], 16)
         return new_address
@@ -2158,12 +2171,6 @@ class EVMWorld(Platform):
 
         if failed:
             self._close_transaction('TXERROR', rollback=True)
-
-        if caller not in self._world_state:
-            self._world_state[caller] = {'nonce': 1}
-        elif sort == 'CREATE' or not self._world_state[caller]['code']:
-            # Increment the nonce if this transaction is creating a contract, or if it was called by a non-contract account
-            self.increase_nonce(caller)
 
         #Transaction to normal account
         if sort in ('CALL', 'DELEGATECALL') and not self.get_code(address):
