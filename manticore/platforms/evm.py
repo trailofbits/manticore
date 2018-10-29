@@ -1948,6 +1948,11 @@ class EVMWorld(Platform):
         if sender is None:
             # Just choose a random address for regular accounts:
             new_address = random.randint(100, pow(2, 160))
+        elif issymbolic(sender):
+            # TODO(Evan Sultanik): In the interim before we come up with a better solution,
+            #                      consider breaking Yellow Paper comability and just returning
+            #                      a random contract address here
+            raise EthereumError('Manticore does not yet support contracts with symbolic addresses creating new contracts')
         else:
             if nonce is None:
                 # As per EIP 161, contract accounts are initialized with a nonce of 1
