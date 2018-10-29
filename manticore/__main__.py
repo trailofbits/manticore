@@ -163,9 +163,9 @@ def parse_arguments():
 
 def ethereum_cli(args):
     from .ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, DetectUninitializedStorage, \
-            DetectUninitializedMemory, FilterFunctions, DetectReentrancySimple, DetectReentrancyAdvanced, \
-            DetectUnusedRetVal, DetectSelfdestruct, LoopDepthLimiter, DetectDelegatecall, \
-            DetectExternalCallAndLeak, DetectEnvInstruction, VerboseTrace, DetectRaceCondition
+        DetectUninitializedMemory, FilterFunctions, DetectReentrancySimple, DetectReentrancyAdvanced, \
+        DetectUnusedRetVal, DetectSelfdestruct, LoopDepthLimiter, DetectDelegatecall, \
+        DetectExternalCallAndLeak, DetectEnvInstruction, VerboseTrace, DetectRaceCondition
 
     log.init_logging()
 

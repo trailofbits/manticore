@@ -69,7 +69,7 @@ class EthRetVal(EthDetectorTest):
 
     def test_retval_not_ok(self):
         name = inspect.currentframe().f_code.co_name[5:]
-        self._test(name, {(337, 'Returned value at CALL instruction is not used', False)})
+        self._test(name, {('Returned value at CALL instruction is not used', False)})
 
     def test_retval_crazy(self):
         name = inspect.currentframe().f_code.co_name[5:]
@@ -85,12 +85,12 @@ class EthSelfdestruct(EthDetectorTest):
 
     def test_selfdestruct_true_pos(self):
         name = inspect.currentframe().f_code.co_name[5:]
-        self._test(name, {(307, 'Reachable SELFDESTRUCT', False)})
+        self._test(name, {('Reachable SELFDESTRUCT', False)})
 
     def test_selfdestruct_true_pos1(self):
         self.mevm.register_plugin(LoopDepthLimiter(2))
         name = inspect.currentframe().f_code.co_name[5:]
-        self._test(name, {(307, 'Reachable SELFDESTRUCT', False)})
+        self._test(name, {('Reachable SELFDESTRUCT', False)})
 
     def test_selfdestruct_true_neg(self):
         name = inspect.currentframe().f_code.co_name[5:]
@@ -114,35 +114,35 @@ class EthExternalCallAndLeak(EthDetectorTest):
 
     def test_etherleak_true_neg2(self):
         name = inspect.currentframe().f_code.co_name[5:]
-        self._test(name, {(0x1c5, "Reachable external call to sender", False)})
+        self._test(name, {("Reachable external call to sender", False)})
 
     def test_etherleak_true_neg3(self):
         name = inspect.currentframe().f_code.co_name[5:]
-        self._test(name, {(0x1c5, "Reachable external call to sender", False)})
+        self._test(name, {("Reachable external call to sender", False)})
 
     def test_etherleak_true_pos_argument(self):
         name = inspect.currentframe().f_code.co_name[5:]
-        self._test(name, {(0x1c5, "Reachable ether leak to sender via argument", False)})
+        self._test(name, {("Reachable ether leak to sender via argument", False)})
 
     def test_etherleak_true_pos_argument1(self):
         self.mevm.register_plugin(LoopDepthLimiter(5))
         name = inspect.currentframe().f_code.co_name[5:]
-        self._test(name, {(0x1c5, "Reachable ether leak to sender via argument", False)})
+        self._test(name, {("Reachable ether leak to sender via argument", False)})
 
     def test_etherleak_true_pos_argument2(self):
         name = inspect.currentframe().f_code.co_name[5:]
-        self._test(name, {(0x1c5, "Reachable ether leak to user controlled address via argument", False)})
+        self._test(name, {("Reachable ether leak to user controlled address via argument", False)})
 
     def test_etherleak_true_pos_msgsender(self):
         name = inspect.currentframe().f_code.co_name[5:]
-        self._test(name, {(0x1c5, "Reachable external call to sender", False),
-                          (0x1c5, "Reachable ether leak to sender", False)})
+        self._test(name, {("Reachable external call to sender", False),
+                          ("Reachable ether leak to sender", False)})
 
     def test_etherleak_true_pos_msgsender1(self):
         self.mevm.register_plugin(LoopDepthLimiter(5))
         name = inspect.currentframe().f_code.co_name[5:]
-        self._test(name, {(0x1c5, "Reachable external call to sender", False),
-                          (0x1c5, "Reachable ether leak to sender", False)})
+        self._test(name, {("Reachable external call to sender", False),
+                          ("Reachable ether leak to sender", False)})
 
 
 class EthIntegerOverflow(unittest.TestCase):
