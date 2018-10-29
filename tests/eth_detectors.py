@@ -54,7 +54,7 @@ class EthDetectorTest(unittest.TestCase):
         self.mevm.register_detector(self.DETECTOR_CLASS())
         mevm.multi_tx_analysis(filename, contract_name='DetectThis', args=ctor_arg)
 
-        expected_findings = set(((finding, at_init) for _pc, finding, at_init in should_find))
+        expected_findings = set(((finding, at_init) for finding, at_init in should_find))
         actual_findings = set(((finding, at_init) for _addr, _pc, finding, at_init in mevm.global_findings))
         self.assertEqual(expected_findings, actual_findings)
 
@@ -182,15 +182,15 @@ class DetectEnvInstruction(EthDetectorTest):
 
     def test_predictable_not_ok(self):
         name = inspect.currentframe().f_code.co_name[5:]
-        self._test(name, {(174, 'Warning ORIGIN instruction used', False),
-                          (157, 'Warning DIFFICULTY instruction used', False),
-                          (129, 'Warning TIMESTAMP instruction used', False),
-                          (165, 'Warning NUMBER instruction used', False),
-                          (132, 'Warning COINBASE instruction used', False),
-                          (167, 'Warning BLOCKHASH instruction used', False),
-                          (160, 'Warning NUMBER instruction used', False),
-                          (199, 'Warning GASPRICE instruction used', False),
-                          (202, 'Warning GASLIMIT instruction used', False)})
+        self._test(name, {('Warning ORIGIN instruction used', False),
+                          ('Warning DIFFICULTY instruction used', False),
+                          ('Warning TIMESTAMP instruction used', False),
+                          ('Warning NUMBER instruction used', False),
+                          ('Warning COINBASE instruction used', False),
+                          ('Warning BLOCKHASH instruction used', False),
+                          ('Warning NUMBER instruction used', False),
+                          ('Warning GASPRICE instruction used', False),
+                          ('Warning GASLIMIT instruction used', False)})
 
 
 class EthDelegatecall(EthDetectorTest):
@@ -217,14 +217,14 @@ class EthDelegatecall(EthDetectorTest):
     def test_delegatecall_not_ok(self):
         self.mevm.register_plugin(LoopDepthLimiter())
         name = inspect.currentframe().f_code.co_name[5:]
-        self._test(name, {(179, 'Delegatecall to user controlled function', False),
-                          (179, 'Delegatecall to user controlled address', False)})
+        self._test(name, {('Delegatecall to user controlled function', False),
+                          ('Delegatecall to user controlled address', False)})
 
     @unittest.skip("Too slow for this modern times")
     def test_delegatecall_not_ok1(self):
         self.mevm.register_plugin(LoopDepthLimiter(loop_count_threshold=500))
         name = inspect.currentframe().f_code.co_name[5:]
-        self._test(name, {(179, 'Delegatecall to user controlled function', False)})
+        self._test(name, {('Delegatecall to user controlled function', False)})
 
 
 class EthRaceCondition(EthDetectorTest):
@@ -234,7 +234,6 @@ class EthRaceCondition(EthDetectorTest):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, {
             (
-                422,
                 'Potential race condition (transaction order dependency):\n'
                 'Value has been stored in storage slot/index 0 in transaction that called setStoredAddress(address)'
                 ' and is now used in transaction that calls callStoredAddress().\n'
@@ -243,7 +242,6 @@ class EthRaceCondition(EthDetectorTest):
                 False
             ),
             (
-                344,
                 'Potential race condition (transaction order dependency):\n'
                 'Value has been stored in storage slot/index 0 in transaction that called setStoredAddress(address)'
                 ' and is now used in transaction that calls stored_address().\nAn attacker seeing a transaction to'
@@ -252,7 +250,6 @@ class EthRaceCondition(EthDetectorTest):
                 False
             ),
             (
-                360,
                 'Potential race condition (transaction order dependency):\n'
                 'Value has been stored in storage slot/index 0 in transaction that called setStoredAddress(address)'
                 ' and is now used in transaction that calls setStoredAddress(address).\n'
@@ -266,7 +263,6 @@ class EthRaceCondition(EthDetectorTest):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, {
             (
-                1,
                 'Potential race condition (transaction order dependency):\n'
                 'Value has been stored in storage slot/index which is symbolic in transaction that called'
                 ' transfer(address,uint256) and is now used in transaction that calls withdrawBalance().\n'
@@ -275,7 +271,6 @@ class EthRaceCondition(EthDetectorTest):
                 False
             ),
             (
-                2,
                 'Potential race condition (transaction order dependency):\n'
                 'Value has been stored in storage slot/index'
                 ' 78115272392584470974389034602766755727256711949031588331321780670270669005627 in transaction'
@@ -285,7 +280,6 @@ class EthRaceCondition(EthDetectorTest):
                 False
             ),
             (
-                3,
                 'Potential race condition (transaction order dependency):\n'
                 'Value has been stored in storage slot/index'
                 ' 78115272392584470974389034602766755727256711949031588331321780670270669005627 in transaction'
@@ -295,7 +289,6 @@ class EthRaceCondition(EthDetectorTest):
                 False
             ),
             (
-                4,
                 'Potential race condition (transaction order dependency):\n'
                 'Value has been stored in storage slot/index'
                 ' 78115272392584470974389034602766755727256711949031588331321780670270669005627 in transaction'
@@ -305,7 +298,6 @@ class EthRaceCondition(EthDetectorTest):
                 False
             ),
             (
-                5,
                 'Potential race condition (transaction order dependency):\n'
                 'Value has been stored in storage slot/index which is symbolic in transaction that called'
                 ' transfer(address,uint256) and is now used in transaction that calls transfer(address,uint256).\n'
@@ -314,7 +306,6 @@ class EthRaceCondition(EthDetectorTest):
                 False
             ),
             (
-                6,
                 'Potential race condition (transaction order dependency):\n'
                 'Value has been stored in storage slot/index'
                 ' 78115272392584470974389034602766755727256711949031588331321780670270669005627 in transaction'
