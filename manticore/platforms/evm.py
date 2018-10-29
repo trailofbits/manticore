@@ -2029,7 +2029,7 @@ class EVMWorld(Platform):
         if address is None:
             address = expected_address
         elif caller is not None and address != expected_address:
-            raise EthereumError("Error: contract created from address %x with nonce %d was expected to be at address %x, but create_contract was called with address=%x" % (caller, self.get_nonce(caller), expected_address, address))
+            raise EthereumError(f"Error: contract created from address {hex(caller)} with nonce {self.get_nonce(caller)} was expected to be at address {hex(expected_address)}, but create_contract was called with address={hex(address)}")
         self.start_transaction('CREATE', address, price, init, caller, balance, gas=gas)
         self._process_pending_transaction()
         return address
@@ -2121,7 +2121,7 @@ class EVMWorld(Platform):
         self._pending_transaction_concretize_address()
         self._pending_transaction_concretize_caller()
         if caller not in self.accounts:
-            raise EVMException("Caller account %x does not exist; valid accounts: %s" % (caller, list(map(hex, self.accounts))))
+            raise EVMException(f"Caller account {hex(caller)} does not exist; valid accounts: {list(map(hex, self.accounts))}")
 
         if address not in self.accounts:
             # Creating an unaccessible account
