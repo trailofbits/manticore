@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## 0.2.2 - 2018-10-30
 
+Thanks to our external contributors!
+
+- [s0b0lev](https://github.com/s0b0lev)
+- [redyoshi49q](https://github.com/redyoshi49q)
+
 ### Added
 
 - New API for generating a testcase only if a certain condition can be true in the state. Useful for conveniently
@@ -50,8 +55,12 @@ Please [contact us](opensource@trailofbits.com) if you're looking for an excepti
 
 Thanks to our external contributors!
 
-- [s0b0lev](https://github.com/s0b0lev)
+- [charliecjung](https://github.com/charliecjung)
 - [redyoshi49q](https://github.com/redyoshi49q)
+- [yeti-detective](https://github.com/yeti-detective)
+- [Srinivas11789](https://github.com/srinivas11789)
+- [stephan-tolksdorf](https://github.com/stephan-tolksdorf)
+- [catenacyber](https://github.com/catenacyber)
 
 ### Added
  
