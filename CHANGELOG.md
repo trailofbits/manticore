@@ -8,8 +8,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 Thanks to our external contributors!
 
-- [s0b0lev](https://github.com/s0b0lev)
+- [charliecjung](https://github.com/charliecjung)
 - [redyoshi49q](https://github.com/redyoshi49q)
+- [yeti-detective](https://github.com/yeti-detective)
+- [Srinivas11789](https://github.com/srinivas11789)
+- [stephan-tolksdorf](https://github.com/stephan-tolksdorf)
+- [catenacyber](https://github.com/catenacyber)
 
 ### Added
 
@@ -55,12 +59,8 @@ Please [contact us](opensource@trailofbits.com) if you're looking for an excepti
 
 Thanks to our external contributors!
 
-- [charliecjung](https://github.com/charliecjung)
+- [s0b0lev](https://github.com/s0b0lev)
 - [redyoshi49q](https://github.com/redyoshi49q)
-- [yeti-detective](https://github.com/yeti-detective)
-- [Srinivas11789](https://github.com/srinivas11789)
-- [stephan-tolksdorf](https://github.com/stephan-tolksdorf)
-- [catenacyber](https://github.com/catenacyber)
 
 ### Added
  
