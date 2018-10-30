@@ -130,9 +130,9 @@ def parse_arguments():
     eth_flags.add_argument('--avoid-constant', action='store_true',
                            help='Avoid exploring constant functions for human transactions')
 
-    parser.add_argument('--detect-race-condition', action='store_true',
-                        help='Enable detection of possible transaction race conditions (transaction order dependencies)'
-                             ' (Ethereum only)')
+    eth_flags.add_argument('--detect-race-condition', action='store_true',
+                           help='Enable detection of possible transaction race conditions'
+                                ' (transaction order dependencies) (Ethereum only)')
 
     eth_flags.add_argument('--limit-loops', action='store_true',
                            help='Avoid exploring constant functions for human transactions')
