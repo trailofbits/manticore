@@ -34,6 +34,7 @@ Thanks to our external contributors!
 - Support for some unimplemented x86 XMM instructions
 - Customizable symbolic stdin input buffer size
 - Support for [Etheno](https://github.com/trailofbits/etheno)
+- `RaceConditionDetector` that can be used to detect transaction order dependencies bugs
 
 ### Changed
 
