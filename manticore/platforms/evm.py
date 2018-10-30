@@ -1415,12 +1415,12 @@ class EVM(Eventful):
         previous_value = self.world.get_storage_data(storage_address, offset)
 
         gascost = Operators.ITEBV(512, previous_value != 0,
-                                          Operators.ITEBV(512, value != 0, GSTORAGEMOD, GSTORAGEKILL),
-                                          Operators.ITEBV(512, value != 0, GSTORAGEADD, GSTORAGEMOD))
+                                       Operators.ITEBV(512, value != 0, GSTORAGEMOD, GSTORAGEKILL),
+                                       Operators.ITEBV(512, value != 0, GSTORAGEADD, GSTORAGEMOD))
 
         refund = Operators.ITEBV(256, previous_value != 0,
-                                          Operators.ITEBV(256, value != 0, 0, GSTORAGEREFUND),
-                                          0)
+                                      Operators.ITEBV(256, value != 0, 0, GSTORAGEREFUND),
+                                      0)
         self._consume(gascost)
 
         if istainted(self.pc):
