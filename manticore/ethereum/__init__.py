@@ -700,6 +700,19 @@ class ManticoreEVM(Manticore):
             return None
         return contract_account
 
+    def get_nonce(self, address):
+        # type forgiveness:
+        address = int(address)
+        # get all nonces for states containing this address:
+        nonces = set(state.platform.get_nonce(address) for state in self.running_states if address in state.platform)
+        if not nonces:
+            raise NoAliveStates("There are no alive states containing address %x" % address)
+        elif len(nonces) != 1:
+            # if there are multiple states with this address, they all have to have the same nonce:
+            raise EthereumError("Cannot increase the nonce of address %x because it exists in multiple states with different nonces" % address)
+        else:
+            return next(iter(nonces))
+
     def create_contract(self, owner, balance=0, address=None, init=None, name=None, gas=21000):
         """ Creates a contract
 
@@ -716,13 +729,13 @@ class ManticoreEVM(Manticore):
         if not self.count_running_states():
             raise NoAliveStates
 
-        if address is not None and address in map(int, self.accounts.values()):
-            # Address already used
-            raise EthereumError("Address already used")
+        nonce = self.get_nonce(owner)
+        expected_address = evm.EVMWorld.calculate_new_address(int(owner), nonce=nonce)
 
-        # Let's just choose the address ourself. This is not yellow paper material
         if address is None:
-            address = self.new_address()
+            address = expected_address
+        elif address != expected_address:
+            raise EthereumError("Address was expected to be %x but was given %x" % (expected_address, address))
 
         # Name check
         if name is None:
@@ -749,12 +762,20 @@ class ManticoreEVM(Manticore):
         assert name not in self.accounts
         return name
 
+    def _all_addresses(self):
+        """ Returns all addresses in all running states """
+        ret = set()
+        for state in self.running_states:
+            ret |= set(state.platform.accounts)
+        return ret
+
     def new_address(self):
         """ Create a fresh 160bit address """
-        new_address = random.randint(100, pow(2, 160))
-        if new_address in map(int, self.accounts.values()):
-            return self.new_address()
-        return new_address
+        all_addresses = self._all_addresses()
+        while True:
+            new_address = random.randint(100, pow(2, 160))
+            if new_address not in all_addresses:
+                return new_address
 
     def transaction(self, caller, address, value, data, gas=21000):
         """ Issue a symbolic transaction in all running states
@@ -911,10 +932,6 @@ class ManticoreEVM(Manticore):
             raise ValueError('unsupported transaction type')
 
         if sort == 'CREATE':
-            #let's choose an address here for now #NOTYELLOW
-            if address is None:
-                address = self.new_address()
-
             # When creating data is the init_bytecode + arguments
             if len(data) == 0:
                 raise EthereumError("An initialization bytecode is needed for a CREATE")
@@ -933,8 +950,17 @@ class ManticoreEVM(Manticore):
             if '_pending_transaction' in state.context:
                 raise EthereumError("This is bad. It should not be a pending transaction")
 
+            # Choose an address here, because it will be dependent on the caller's nonce in this state
+            if address is None:
+                if issymbolic(caller):
+                    # TODO (ESultanik): In order to handle this case, we are going to have to do something like fork
+                    # over all possible caller addresses.
+                    # But this edge case will likely be extremely rare, if ever ecountered.
+                    raise EthereumError("Manticore does not currently support contracts with symbolic addresses creating new contracts")
+                address = world.new_address(caller)
+
             # Migrate any expression to state specific constraint set
-            caller, address, value, data = self._migrate_tx_expressions(state, caller, address, value, data)
+            caller_migrated, address_migrated, value_migrated, data_migrated = self._migrate_tx_expressions(state, caller, address, value, data)
 
             # Different states may CREATE a different set of accounts. Accounts
             # that were crated by a human have the same address in all states.
@@ -945,7 +971,7 @@ class ManticoreEVM(Manticore):
                     # Address already used
                     raise EthereumError("This is bad. Same address is used for different contracts in different states")
 
-            state.context['_pending_transaction'] = (sort, caller, address, value, data, gaslimit, price)
+            state.context['_pending_transaction'] = (sort, caller_migrated, address_migrated, value_migrated, data_migrated, gaslimit, price)
 
         # run over potentially several states and
         # generating potentially several others
