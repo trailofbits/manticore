@@ -1156,7 +1156,8 @@ class EVM(Eventful):
         # calculate hash on it/ maybe remember in some structure where that hash came from
         # http://gavwood.com/paper.pdf
         self._consume(GSHA3WORD * (ceil32(size) // 32))
-        self._allocate(start + size)
+        if size:
+            self._allocate(start + size)
         data = self.read_buffer(start, size)
         data = self.try_simplify_to_constant(data)
         if issymbolic(data):
