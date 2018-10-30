@@ -217,7 +217,7 @@ class ManticoreEVM(Manticore):
         if name is None:
             name = 'TXBUFFER'
             avoid_collisions = True
-        return self.constraints.new_array(index_bits=256, name=name, index_max=size, value_bits=8, taint=frozenset(), avoid_collisions=avoid_collisions, default=0)
+        return self.constraints.new_array(index_bits=256, name=name, index_max=size, value_bits=8, taint=frozenset(), avoid_collisions=avoid_collisions)
 
     def make_symbolic_value(self, nbits=256, name=None):
         """ Creates a symbolic value, normally a uint256, to be used in transactions.
@@ -858,7 +858,7 @@ class ManticoreEVM(Manticore):
                     data = data.array
                 data = state.migrate_expression(data)
                 if isinstance(data, Array):
-                    data = ArrayProxy(data, default=0)
+                    data = ArrayProxy(data)
 
             for c in global_constraints:
                 state.constrain(c)

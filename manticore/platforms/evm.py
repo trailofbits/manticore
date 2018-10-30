@@ -502,6 +502,7 @@ class EVM(Eventful):
         #if len(bytecode) == 0:
         #    raise EVMException("Need code")
         self._constraints = constraints
+        # Uninitialized values in memory are 0 by spec
         self.memory = constraints.new_array(index_bits=256, value_bits=8, name='EMPTY_MEMORY_{:x}'.format(address), avoid_collisions=True, default=0)
         self.address = address
         self.caller = caller  # address of the account that is directly responsible for this execution
@@ -2164,7 +2165,11 @@ class EVMWorld(Platform):
             # selfdestructed address, it can not be reused
             raise EthereumError('The account already exists')
         if storage is None:
+            # Uninitialized values in a storage are 0 by spec
             storage = self.constraints.new_array(index_bits=256, value_bits=256, name='STORAGE_{:x}'.format(address), avoid_collisions=True, default=0)
+        else:
+            # TODO: Check storage type/ dict from int/bitvec to int/bitvec
+            pass
         if code is None:
             code = bytes()
         if not isinstance(code, (bytes, Array)):
