@@ -33,11 +33,15 @@ Thanks to our external contributors!
   notably including solver parameters such as solver timeout, and memory limits.
 - Support for some unimplemented x86 XMM instructions
 - Customizable symbolic stdin input buffer size
+- Support for [Etheno](https://github.com/trailofbits/etheno)
 
 ### Changed
 
 - Improve the DetectExternalCallAndLeak detector and reduce false positives
 - Numerous improvements and changes to the SolidityMetadata API
+- Ethereum contract addresses are no longer random, but are deterministically calculated according to the Yellow Paper
+- Manticore no longer supports contracts with symbolic addresses creating new contracts. This is a consequence of
+  supporting determinstic contrat address calculation. There are plans for reenabling this capability in a future release.
 
 ### Deprecated
 
