@@ -619,13 +619,19 @@ class DetectRaceCondition(Detector):
 
         # If we are already in user function (we cached it) let's just return True
         in_function = state.context.get('in_function', False)
-        if in_function:
+        prev_tx_count = state.context.get('prev_tx_count', 0)
+        curr_tx_count = len(state.platform.transactions)
+
+        new_human_tx = prev_tx_count != curr_tx_count
+
+        if in_function and not new_human_tx:
             return True
 
         # This is expensive call, so we cache it
         in_function = len(state.solve_n(state.platform.current_transaction.data[:4], 2)) == 1
 
-        state.contet['in_function'] = in_function
+        state.context['in_function'] = in_function
+        state.context['prev_tx_count'] = curr_tx_count
 
         return in_function
 
