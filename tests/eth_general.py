@@ -2,6 +2,7 @@ import binascii
 import shutil
 import struct
 import tempfile
+from pathlib import Path
 import unittest
 import os
 import sys
@@ -703,8 +704,8 @@ class EthTests(unittest.TestCase):
         listdir = os.listdir(worksp)
 
         def get_concatenated_files(directory, suffix, init):
-            paths = [os.path.join(directory, f) for f in listdir if f.endswith(suffix)]
-            concatenated = ''.join(open(path).read() for path in paths)
+            paths = [Path(directory, f) for f in listdir if f.endswith(suffix)]
+            concatenated = ''.join(path.read_text() for path in paths)
             result = set()
             for x in concatenated.split('\n'):
                 if ':' in x:

@@ -965,7 +965,7 @@ class ArrayProxy(Array):
                 if isinstance(array, ArraySlice):
                     array = array._array
                     continue
-                written.add(array.index+offset)
+                written.add(array.index + offset)
                 array = array.array
             self._written = written
         return self._written

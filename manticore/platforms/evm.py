@@ -715,7 +715,7 @@ class EVM(Eventful):
                 raise ValueError
         elif isinstance(fee, BitVec):
             if (fee.size != 512):
-                raise EthereumError("Fees should be 512 bit long")
+                raise ValueError("Fees should be 512 bit long")
 
         #FIXME add configurable checks here
         config.out_of_gas = 3
@@ -822,7 +822,6 @@ class EVM(Eventful):
             pc = self.pc
             instruction = self.instruction
             old_gas = self.gas
-
 
             self._consume(instruction.fee)
             arguments = self._pop_arguments()
@@ -1068,11 +1067,9 @@ class EVM(Eventful):
         def nbytes(e):
             result = 0
             for i in range(32):
-                result = Operators.ITEBV(512, e > (1<< i*8)-1, i+1, result)
+                result = Operators.ITEBV(512, e > (1 << i * 8) - 1, i + 1, result)
             return result
         self._consume(10 * nbytes(exponent))
-
-
         return pow(base, exponent, TT256)
 
     def SIGNEXTEND(self, size, value):
@@ -1159,6 +1156,7 @@ class EVM(Eventful):
         # calculate hash on it/ maybe remember in some structure where that hash came from
         # http://gavwood.com/paper.pdf
         self._consume(GSHA3WORD * (ceil32(size) // 32))
+        self._allocate(start + size)
         data = self.read_buffer(start, size)
         data = self.try_simplify_to_constant(data)
         if issymbolic(data):
@@ -1408,7 +1406,6 @@ class EVM(Eventful):
         storage_address = self.address
         self._publish('will_evm_write_storage', storage_address, offset, value)
 
-
         GSTORAGEREFUND = 15000
         GSTORAGEKILL = 5000
         GSTORAGEMOD = 5000
@@ -1417,12 +1414,12 @@ class EVM(Eventful):
         previous_value = self.world.get_storage_data(storage_address, offset)
 
         gascost = Operators.ITEBV(512, previous_value != 0,
-                                                          Operators.ITEBV(512, value != 0, GSTORAGEMOD, GSTORAGEKILL),
-                                                          Operators.ITEBV(512, value != 0, GSTORAGEADD, GSTORAGEMOD))
+                                          Operators.ITEBV(512, value != 0, GSTORAGEMOD, GSTORAGEKILL),
+                                          Operators.ITEBV(512, value != 0, GSTORAGEADD, GSTORAGEMOD))
 
         refund = Operators.ITEBV(256, previous_value != 0,
-                                                          Operators.ITEBV(256, value != 0, 0, GSTORAGEREFUND),
-                                                          0)
+                                          Operators.ITEBV(256, value != 0, 0, GSTORAGEREFUND),
+                                          0)
         self._consume(gascost)
 
         if istainted(self.pc):
@@ -2090,10 +2087,10 @@ class EVMWorld(Platform):
         return self._coinbase
 
     def block_timestamp(self):
-        return self._timestamp + len(self.human_transactions)//2000
+        return self._timestamp + len(self.human_transactions) // 2000
 
     def block_number(self):
-        return self._blocknumber + len(self.human_transactions)//20
+        return self._blocknumber + len(self.human_transactions) // 20
 
     def block_difficulty(self):
         return self._difficulty

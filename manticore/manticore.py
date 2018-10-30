@@ -34,6 +34,9 @@ from .utils import log
 logger = logging.getLogger(__name__)
 log.init_logging()
 
+# Default symbolic input size
+STDIN_INPUT_DEFAULT_SIZE = 256
+
 
 def make_decree(program, concrete_start='', **kwargs):
     constraints = ConstraintSet()
@@ -48,7 +51,7 @@ def make_decree(program, concrete_start='', **kwargs):
     return initial_state
 
 
-def make_linux(program, argv=None, env=None, entry_symbol=None, symbolic_files=None, concrete_start=''):
+def make_linux(program, argv=None, env=None, entry_symbol=None, symbolic_files=None, concrete_start='', stdin_size=STDIN_INPUT_DEFAULT_SIZE):
     env = {} if env is None else env
     argv = [] if argv is None else argv
     env = [f'{k}={v}' for k, v in env.items()]
@@ -87,7 +90,7 @@ def make_linux(program, argv=None, env=None, entry_symbol=None, symbolic_files=N
     platform.input.write(concrete_start)
 
     # set stdin input...
-    platform.input.write(initial_state.symbolicate_buffer('+' * 256,
+    platform.input.write(initial_state.symbolicate_buffer('+' * stdin_size,
                                                           label='STDIN'))
     return initial_state
 
@@ -135,7 +138,7 @@ class Manticore(Eventful):
                 ws_path = workspace_url
         else:
             if workspace_url is not None:
-                raise Exception('Invalid workspace')
+                raise TypeError(f'Invalid workspace type: {type(workspace_url).__name__}')
             ws_path = None
 
         self._output = ManticoreOutput(ws_path)
@@ -153,7 +156,7 @@ class Manticore(Eventful):
 
         if isinstance(path_or_state, str):
             if not os.path.isfile(path_or_state):
-                raise Exception(f'{path_or_state} is not an existing regular file')
+                raise OSError(f'{path_or_state} is not an existing regular file')
             self._initial_state = make_initial_state(path_or_state, argv=argv, **kwargs)
         elif isinstance(path_or_state, State):
             self._initial_state = path_or_state
@@ -228,11 +231,11 @@ class Manticore(Eventful):
             plugins = list(self.plugins)
             for plugin in plugins:
                 self.unregister_plugin(plugin)
-        except:
+        except Exception:
             pass
 
     @classmethod
-    def linux(cls, path, argv=None, envp=None, entry_symbol=None, symbolic_files=None, concrete_start='', **kwargs):
+    def linux(cls, path, argv=None, envp=None, entry_symbol=None, symbolic_files=None, concrete_start='', stdin_size=STDIN_INPUT_DEFAULT_SIZE, **kwargs):
         """
         Constructor for Linux binary analysis.
 
@@ -246,12 +249,13 @@ class Manticore(Eventful):
         :param symbolic_files: Filenames to mark as having symbolic input
         :type symbolic_files: list[str]
         :param str concrete_start: Concrete stdin to use before symbolic input
+        :param int stdin_size: symbolic stdin size to use
         :param kwargs: Forwarded to the Manticore constructor
         :return: Manticore instance, initialized with a Linux State
         :rtype: Manticore
         """
         try:
-            return cls(make_linux(path, argv, envp, entry_symbol, symbolic_files, concrete_start), **kwargs)
+            return cls(make_linux(path, argv, envp, entry_symbol, symbolic_files, concrete_start, stdin_size), **kwargs)
         except elftools.common.exceptions.ELFError:
             raise Exception(f'Invalid binary: {path}')
 
@@ -650,7 +654,7 @@ class Manticore(Eventful):
         # XXX(yan) This is a bit obtuse; once PE support is updated this should
         # be refactored out
         if self._binary_type == 'ELF':
-            self._binary_obj = ELFFile(open(self._binary))
+            self._binary_obj = ELFFile(open(self._binary, 'rb'))
 
         if self._binary_obj is None:
             return NotImplementedError("Symbols aren't supported")

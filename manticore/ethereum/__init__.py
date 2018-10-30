@@ -9,7 +9,7 @@ from .. import Manticore
 from ..exceptions import EthereumError, DependencyError, NoAliveStates
 from ..core.smtlib import ConstraintSet, Operators, solver, BitVec, Array, ArrayProxy
 from ..platforms import evm
-from ..core.state import State, TerminateState
+from ..core.state import State, TerminateState, AbandonState
 from ..utils.helpers import issymbolic, PickleSerializer
 from ..utils import config
 from ..utils.log import init_logging
@@ -889,20 +889,20 @@ class ManticoreEVM(Manticore):
         if isinstance(data, (str, bytes)):
             data = bytearray(data)
         if not isinstance(data, (bytearray, Array)):
-            raise EthereumError("code bad type")
+            raise TypeError("code bad type")
 
         # Check types
         if not isinstance(address, (int, BitVec)):
-            raise EthereumError("Caller invalid type")
+            raise TypeError("Caller invalid type")
 
         if not isinstance(value, (int, BitVec)):
-            raise EthereumError("Value invalid type")
+            raise TypeError("Value invalid type")
 
         if not isinstance(address, (int, BitVec)):
-            raise EthereumError("address invalid type")
+            raise TypeError("address invalid type")
 
         if not isinstance(price, int):
-            raise EthereumError("Price invalid type")
+            raise TypeError("Price invalid type")
 
         # Check argument consistency and set defaults ...
         if sort not in ('CREATE', 'CALL'):
@@ -1151,7 +1151,7 @@ class ManticoreEVM(Manticore):
             Every time a state finishes executing the last transaction, we save it in
             our private list
         """
-        if str(e) == 'Abandoned state':
+        if isinstance(e, AbandonState):
             #do nothing
             return
         world = state.platform
