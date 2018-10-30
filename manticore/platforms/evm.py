@@ -899,6 +899,7 @@ class EVM(Eventful):
                              expression=expression,
                              setstate=setstate,
                              policy='ALL')
+
         try:
             self._check_jmpdest()
             last_pc, last_gas, instruction, arguments = self._checkpoint()
@@ -1414,13 +1415,17 @@ class EVM(Eventful):
         
         previous_value = self.world.get_storage_data(storage_address, offset)
 
-        gascost = Operators.ITEBV(512, previous_value != 0,
-                                       Operators.ITEBV(512, value != 0, GSTORAGEMOD, GSTORAGEKILL),
-                                       Operators.ITEBV(512, value != 0, GSTORAGEADD, GSTORAGEMOD))
+        gascost = Operators.ITEBV(
+                                 512,
+                                 previous_value != 0,
+                                 Operators.ITEBV(512, value != 0, GSTORAGEMOD, GSTORAGEKILL),
+                                 Operators.ITEBV(512, value != 0, GSTORAGEADD, GSTORAGEMOD))
 
-        refund = Operators.ITEBV(256, previous_value != 0,
-                                      Operators.ITEBV(256, value != 0, 0, GSTORAGEREFUND),
-                                      0)
+        refund = Operators.ITEBV(
+                                256,
+                                previous_value != 0,
+                                Operators.ITEBV(256, value != 0, 0, GSTORAGEREFUND),
+                                0)
         self._consume(gascost)
 
         if istainted(self.pc):

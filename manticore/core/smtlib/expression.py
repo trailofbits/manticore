@@ -909,7 +909,7 @@ class ArrayProxy(Array):
         index = simplify(index)
         if isinstance(index, Constant):
             self._concrete_cache[index.value] = value
-        self.written.add(index)
+        self.written.add(index)                         #update .written
         auxiliary = self._array.store(index, value)
         self._array = auxiliary
         return self
@@ -918,7 +918,6 @@ class ArrayProxy(Array):
         if isinstance(index, slice):
             start, stop = self._fix_index(index)
             size = self._get_size(index)
-            from manticore.core.smtlib.visitors import simplify, translate_to_smtlib
             return ArrayProxy(ArraySlice(self, start, size), default=self._default)
         else:
             if self.index_max is not None:
@@ -957,16 +956,21 @@ class ArrayProxy(Array):
 
     @property
     def written(self):
+        # Calculate only first time
         if self._written is None:
             written = set()
+            #take out Proxy sleve
             array = self._array
             offset = 0
+            if isinstance(array, ArraySlice):
+                #if it is a proxy over a slice take out the slice too
+                offset = array._slice_offset
+                array = array._array
             while not isinstance(array, ArrayVariable):
-                if isinstance(array, ArraySlice):
-                    array = array._array
-                    continue
-                written.add(array.index + offset)
+                # The index written to underlaying Array are displaced when sliced
+                written.add(array.index-offset)
                 array = array.array
+            assert isinstance(array, ArrayVariable)
             self._written = written
         return self._written
 
@@ -979,8 +983,6 @@ class ArrayProxy(Array):
                 if known_index.value == index.value:
                     return BoolConstant(True)
             is_known_index = BoolOr(is_known_index.cast(index == known_index), is_known_index)
-        from manticore.core.smtlib.visitors import translate_to_smtlib
-
         return is_known_index
 
     def get(self, index, default=None):
@@ -988,7 +990,6 @@ class ArrayProxy(Array):
             default = self._default
         index = self.cast_index(index)
         value = self.select(index)
-        from manticore.core.smtlib.visitors import simplify
         if default is None:
             return value
 
