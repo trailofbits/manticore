@@ -52,7 +52,7 @@ def parse_arguments():
     parser.add_argument('--workspace', type=str, default=None,
                         help=("A folder name for temporaries and results."
                               "(default mcore_?????)"))
-    parser.add_argument('--version', action='version', version='Manticore 0.2.1.1',
+    parser.add_argument('--version', action='version', version='Manticore 0.2.2',
                         help='Show program version information')
     parser.add_argument('--config', type=str,
                         help='Manticore config file (.yml) to use. (default config file pattern is: ./[.]m[anti]core.yml)')

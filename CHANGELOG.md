@@ -2,7 +2,17 @@
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
-## [Unreleased](https://github.com/trailofbits/manticore/compare/0.2.1.1...HEAD)
+## [Unreleased](https://github.com/trailofbits/manticore/compare/0.2.2...HEAD)
+
+## 0.2.2 - 2018-10-30
+
+### Added
+
+### Changed
+
+### Deprecated
+
+### Fixed
 
 ## 0.2.1.1 - 2018-09-01
 
