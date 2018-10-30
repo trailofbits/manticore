@@ -13,6 +13,8 @@ logger = logging.getLogger('manticore.main')
 consts = config.get_group('main')
 consts.add('recursionlimit', default=10000,
            description="Value to set for Python recursion limit")
+consts.add('timeout', default=0,
+           description='Timeout, in seconds, for Manticore invocation')
 
 
 def parse_arguments():
@@ -45,7 +47,7 @@ def parse_arguments():
                         help='Number of parallel processes to spawn')
     parser.add_argument('argv', type=str, nargs='*', default=[],
                         help="Path to program, and arguments ('+' in arguments indicates symbolic byte).")
-    parser.add_argument('--timeout', type=int, default=0,
+    parser.add_argument('--timeout', type=int, default=consts.timeout,
                         help='Timeout. Abort exploration after TIMEOUT seconds')
     parser.add_argument('-v', action='count', default=1,
                         help='Specify verbosity level from -v to -vvvv')
