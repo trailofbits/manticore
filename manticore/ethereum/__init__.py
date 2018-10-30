@@ -1071,9 +1071,12 @@ class ManticoreEVM(Manticore):
         state = None
         if state_id is None:
             #a single state was assumed
-            if self.count_running_states() == 1:
+            state_count = self.count_running_states()
+            if state_count == 1:
                 #Get the ID of the single running state
                 state_id = self._running_state_ids[0]
+            elif state_count == 0:
+                raise NoAliveStates
             else:
                 raise EthereumError("More than one state running; you must specify a state id.")
 
