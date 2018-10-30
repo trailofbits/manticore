@@ -26,7 +26,9 @@ from ..core.plugin import Plugin
 from functools import reduce
 
 # exported externally
-from .detectors import Detector, DetectEnvInstruction, DetectExternalCallAndLeak, DetectReentrancySimple, DetectSelfdestruct, DetectUnusedRetVal, DetectDelegatecall, DetectIntegerOverflow, DetectInvalid, DetectReentrancyAdvanced, DetectUninitializedMemory, DetectUninitializedStorage
+from .detectors import Detector, DetectEnvInstruction, DetectExternalCallAndLeak, DetectReentrancySimple, \
+    DetectSelfdestruct, DetectUnusedRetVal, DetectDelegatecall, DetectIntegerOverflow, DetectInvalid, \
+    DetectReentrancyAdvanced, DetectUninitializedMemory, DetectUninitializedStorage, DetectRaceCondition
 from .account import EVMAccount, EVMContract
 from .abi import ABI
 from .solidity import SolidityMetadata

@@ -1,5 +1,6 @@
 import logging
 from contextlib import contextmanager
+from typing import Optional
 
 from capstone import CS_GRP_JUMP
 
@@ -8,7 +9,7 @@ from ..utils.helpers import issymbolic
 logger = logging.getLogger(__name__)
 
 
-class Plugin(object):
+class Plugin:
     @contextmanager
     def locked_context(self, key=None, value_type=list):
         """
