@@ -26,7 +26,9 @@ setup(
         'unicorn',
         'ply',
         'pysha3',
-        'pyevmasm',
+        # In 0.1.1, pyevmasm changed its gas cost calculations, so Manticore will need to update its
+        # unit tests to match before we can upgrade pyevmasm
+        'pyevmasm==0.1.0',
         'pyyaml',
         'rlp',
     ] + rtd_dependent_deps(),

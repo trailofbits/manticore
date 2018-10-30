@@ -130,6 +130,10 @@ def parse_arguments():
     eth_flags.add_argument('--avoid-constant', action='store_true',
                            help='Avoid exploring constant functions for human transactions')
 
+    eth_flags.add_argument('--detect-race-condition', action='store_true',
+                           help='Enable detection of possible transaction race conditions'
+                                ' (transaction order dependencies) (Ethereum only)')
+
     eth_flags.add_argument('--limit-loops', action='store_true',
                            help='Avoid exploring constant functions for human transactions')
 
@@ -158,7 +162,10 @@ def parse_arguments():
 
 
 def ethereum_cli(args):
-    from .ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, DetectUninitializedStorage, DetectUninitializedMemory, FilterFunctions, DetectReentrancySimple, DetectReentrancyAdvanced, DetectUnusedRetVal, DetectSelfdestruct, LoopDepthLimiter, DetectDelegatecall, DetectExternalCallAndLeak, DetectEnvInstruction, VerboseTrace
+    from .ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, DetectUninitializedStorage, \
+        DetectUninitializedMemory, FilterFunctions, DetectReentrancySimple, DetectReentrancyAdvanced, \
+        DetectUnusedRetVal, DetectSelfdestruct, LoopDepthLimiter, DetectDelegatecall, \
+        DetectExternalCallAndLeak, DetectEnvInstruction, VerboseTrace, DetectRaceCondition
 
     log.init_logging()
 
@@ -186,6 +193,8 @@ def ethereum_cli(args):
         m.register_detector(DetectExternalCallAndLeak())
     if args.detect_all or args.detect_env_instr:
         m.register_detector(DetectEnvInstruction())
+    if args.detect_all or args.detect_race_condition:
+        m.register_detector(DetectRaceCondition())
 
     if args.verbose_trace:
         m.register_plugin(VerboseTrace())
