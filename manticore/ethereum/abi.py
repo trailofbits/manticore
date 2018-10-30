@@ -41,10 +41,14 @@ class ABI(object):
     @staticmethod
     def _check_and_warn_num_args(type_spec, *args):
         num_args = len(args)
-        num_sig_args = len(type_spec.split(','))
-        no_declared_args = '()' in type_spec
 
-        if no_declared_args and num_args or num_args != num_sig_args:
+        no_declared_args = '()' in type_spec
+        if no_declared_args:
+            num_sig_args = 0
+        else:
+            num_sig_args = len(type_spec.split(','))
+
+        if num_args != num_sig_args:
             logger.warning(f'Number of provided arguments ({num_args}) does not match number of arguments in signature: {type_spec}')
 
 
