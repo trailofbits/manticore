@@ -342,13 +342,16 @@ class ManticoreEVM(Manticore):
         relative_filepath = source_file.name
         working_dir = os.path.abspath(relative_filepath)[:-len(relative_filepath)]
 
+        # If someone pass an absolute path to the file, we don't have to put cwd
+        additional_kwargs = {'cwd': working_dir} if working_dir else {}
+
         solc_invocation = [solc] + list(solc_remaps) + [
             '--combined-json', 'abi,srcmap,srcmap-runtime,bin,hashes,bin-runtime',
             '--allow-paths', '.',
             relative_filepath
         ]
 
-        p = Popen(solc_invocation, stdout=PIPE, stderr=PIPE, cwd=working_dir)
+        p = Popen(solc_invocation, stdout=PIPE, stderr=PIPE, **additional_kwargs)
         stdout, stderr = p.communicate()
 
         stdout, stderr = stdout.decode(), stderr.decode()
