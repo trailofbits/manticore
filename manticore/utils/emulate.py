@@ -248,7 +248,10 @@ class UnicornEmulator(object):
         saved_PC = self._cpu.PC
 
         try:
-            self._emu.emu_start(self._cpu.PC, self._cpu.PC + instruction.size, count=1)
+            pc = self._cpu.PC
+            if self._uc_mode == UC_MODE_THUMB:
+                pc |= 1
+            self._emu.emu_start(pc, self._cpu.PC + instruction.size, count=1)
         except UcError as e:
             # We request re-execution by signaling error; if we we didn't set
             # _should_try_again, it was likely an actual error
