@@ -843,7 +843,8 @@ class EthTests(unittest.TestCase):
         source_code = '''
         contract C {
             constructor() public {}
-            function other() public {}
+            function f0() public {}
+            function f1(uint a) public payable {}
         }
         '''
         m: ManticoreEVM = self.mevm
@@ -855,24 +856,26 @@ class EthTests(unittest.TestCase):
         m.transaction(caller=creator_account, address=contract_account,
                       data=m.make_symbolic_buffer(320), value=m.make_symbolic_value())
 
-        self.assertEqual(m.count_states(), 1)
-        self.assertEqual(m.count_running_states(), 1)
+        self.assertEqual(m.count_states(), 2 + 1)
+        self.assertEqual(m.count_running_states(), 2)
 
-        m.preconstrains_symbolic_tx_data = False
+        contract_account.f1(m.make_symbolic_value())
+        self.assertEqual(m.count_states(), 2 + 1)
+        self.assertEqual(m.count_running_states(), 2)
+
+        m.preconstrain_symbolic_tx_data = False
 
         m.transaction(caller=creator_account, address=contract_account,
                       data=m.make_symbolic_buffer(320), value=m.make_symbolic_value())
 
-        self.assertEqual(m.count_states(), 4)
-        self.assertEqual(m.count_running_states(), 1)
+        self.assertEqual(m.count_states(), 2*(2 + 3) + 1)
+        self.assertEqual(m.count_running_states(), 4)
 
-        for state in m.all_states:
-            self.assertEqual(len(state.platform.all_transactions), 3)
         results = [state.platform.all_transactions[-1].result for state in m.all_states]
-        # The two REVERTs are triggered in the function dispatcher due to an invalid function selector
-        # and an non-zero value send to the non-payable function. The TXERROR is the state where the sent
-        # value is greater than the senders budget.
-        self.assertListEqual(sorted(results), ['REVERT', 'REVERT', 'STOP', 'TXERROR'])
+        # The REVERTs are triggered in the function dispatcher due to an invalid function selector
+        # or a non-zero value send to a non-payable function. The TXERRORs indicate states where the
+        # sent value is greater than the senders budget.
+        self.assertListEqual(sorted(results), ['REVERT']*(2*2) + ['STOP']*(2*2) + ['TXERROR']*3)
 
 class EthHelpersTest(unittest.TestCase):
     def setUp(self):

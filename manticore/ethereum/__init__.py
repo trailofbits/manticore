@@ -8,7 +8,7 @@ from typing import Optional
 
 from .. import Manticore
 from ..exceptions import EthereumError, DependencyError, NoAliveStates
-from ..core.smtlib import ConstraintSet, Operators, solver, BitVec, Array, ArrayProxy
+from ..core.smtlib import ConstraintSet, Operators, solver, BitVec, Array, ArrayProxy, BoolOperation, Constant
 from ..platforms import evm
 from ..core.state import State, TerminateState, AbandonState
 from ..utils.helpers import issymbolic, PickleSerializer
@@ -458,7 +458,10 @@ class ManticoreEVM(Manticore):
         self._serializer = PickleSerializer()
 
         self._config_procs = procs
-        self.preconstrains_symbolic_tx_data = preconstrain_symbolic_tx_data
+        self.preconstrain_symbolic_tx_data: bool = preconstrain_symbolic_tx_data
+        """Indicates whether the value and data of symbolic human transactions should be
+           preconstrained to avoid exceptions in the contract function dispatcher."""
+
         # Make the constraint store
         constraints = ConstraintSet()
         # make the ethereum world state
@@ -895,6 +898,42 @@ class ManticoreEVM(Manticore):
 
             return caller, address, value, data
 
+    def _preconstraint_for_call_transaction(self, address: int, value, data: Array,
+                                            contract_metadata: Optional[SolidityMetadata]) -> Optional[BoolOperation]:
+        if contract_metadata is None:
+            contract_metadata = self.metadata.get(address)
+            if contract_metadata is None:
+                return None
+
+        selectors = contract_metadata.function_selectors
+        if not selectors:
+            return None
+
+        if len(data) <= 4:
+            return None
+        # We need to iterate over data here and not data[:4],
+        # because the slice (currently) doesn't copy the original ArrayProxy's _concrete_cache.
+        for i in range(4):
+            # If (parts of) the selector are trivially constant, we don't bother with creating the preconstraint.
+            if isinstance(data[i], Constant):
+                return None
+
+        symbolic_selector = data[:4]
+
+        value_is_symbolic = issymbolic(value)
+
+        preconstraint = None
+        for selector in selectors:
+            c = symbolic_selector == selector
+            if value_is_symbolic and not contract_metadata.get_abi(selector)['payable']:
+                c = Operators.AND(c, value == 0)
+            if preconstraint is None:
+                preconstraint = c
+            else:
+                preconstraint = Operators.OR(preconstraint, c)
+
+        return preconstraint
+
     def _transaction(self, sort, caller, value=0, address=None, data=None, gaslimit=0, price=1,
                      contract_metadata: Optional[SolidityMetadata] = None):
         """ Initiates a transaction
@@ -947,27 +986,13 @@ class ManticoreEVM(Manticore):
             if len(data) == 0:
                 raise EthereumError("An initialization bytecode is needed for a CREATE")
 
-            if contract_metadata is not None and issymbolic(value) and self.preconstrains_symbolic_tx_data \
-                and not contract_metadata.constructor_abi['payable']:
-                    preconstraint = value == 0
-        else:
-            assert sort == 'CALL'
-            if not issymbolic(address) and issymbolic(data) and len(data) > 4 and self.preconstrains_symbolic_tx_data:
-                if contract_metadata is None:
-                    contract_metadata = self.metadata.get(address)
-                if contract_metadata is not None:
-                    selectors = contract_metadata.function_selectors
-                    if selectors:
-                        symbolic_selector = data[:4]
-                        value_is_symbolic = issymbolic(value)
-                        for selector in selectors:
-                            c = symbolic_selector == selector
-                            if value_is_symbolic and not contract_metadata.get_abi(selector)['payable']:
-                                c = Operators.AND(c, value == 0)
-                            if preconstraint is None:
-                                preconstraint = c
-                            else:
-                                preconstraint = Operators.OR(preconstraint, c)
+            if (contract_metadata is not None and issymbolic(value) and self.preconstrain_symbolic_tx_data
+                    and not contract_metadata.constructor_abi['payable']):
+                preconstraint = value == 0
+        elif sort == 'CALL':
+            if not issymbolic(address) and issymbolic(data) and self.preconstrain_symbolic_tx_data:
+                preconstraint = self._preconstraint_for_call_transaction(address=address, value=value, data=data,
+                                                                         contract_metadata=contract_metadata)
 
         assert address is not None
         assert caller is not None
