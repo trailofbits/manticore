@@ -9,10 +9,11 @@ from .. import Manticore
 from ..exceptions import EthereumError, DependencyError, NoAliveStates
 from ..core.smtlib import ConstraintSet, Operators, solver, BitVec, Array, ArrayProxy
 from ..platforms import evm
-from ..core.state import State, TerminateState
+from ..core.state import State, TerminateState, AbandonState
 from ..utils.helpers import issymbolic, PickleSerializer
 from ..utils import config
 from ..utils.log import init_logging
+from typing import Dict, Optional
 import tempfile
 from subprocess import Popen, PIPE, check_output
 from multiprocessing import Process, Queue
@@ -25,7 +26,9 @@ from ..core.plugin import Plugin
 from functools import reduce
 
 # exported externally
-from .detectors import Detector, DetectEnvInstruction, DetectExternalCallAndLeak, DetectReentrancySimple, DetectSelfdestruct, DetectUnusedRetVal, DetectDelegatecall, DetectIntegerOverflow, DetectInvalid, DetectReentrancyAdvanced, DetectUninitializedMemory, DetectUninitializedStorage
+from .detectors import Detector, DetectEnvInstruction, DetectExternalCallAndLeak, DetectReentrancySimple, \
+    DetectSelfdestruct, DetectUnusedRetVal, DetectDelegatecall, DetectIntegerOverflow, DetectInvalid, \
+    DetectReentrancyAdvanced, DetectUninitializedMemory, DetectUninitializedStorage, DetectRaceCondition
 from .account import EVMAccount, EVMContract
 from .abi import ABI
 from .solidity import SolidityMetadata
@@ -99,21 +102,20 @@ class FilterFunctions(Plugin):
             #Let's compile  the list of interesting hashes
             selected_functions = []
 
-            for func_hsh in md.hashes:
-                if func_hsh == '00000000':
-                    continue
+            for func_hsh in md.function_selectors:
                 abi = md.get_abi(func_hsh)
-                func_name = md.get_func_name(func_hsh)
+                if abi['type'] == 'fallback':
+                    continue
                 if self._mutability == 'constant' and not abi.get('constant', False):
                     continue
                 if self._mutability == 'mutable' and abi.get('constant', False):
                     continue
-                if not re.match(self._regexp, func_name):
+                if not re.match(self._regexp, abi['name']):
                     continue
                 selected_functions.append(func_hsh)
 
-            if self._fallback:
-                selected_functions.append('00000000')
+            if self._fallback and md.has_non_default_fallback_function:
+                selected_functions.append(md.fallback_function_selector)
 
             if self._include:
                 # constrain the input so it can take only the interesting values
@@ -121,7 +123,7 @@ class FilterFunctions(Plugin):
                 state.constrain(constraint)
             else:
                 #Avoid all not selected hashes
-                for func_hsh in md.hashes:
+                for func_hsh in md.function_selectors:
                     if func_hsh in selected_functions:
                         constraint = tx.data[:4] != func_hsh
                         state.constrain(constraint)
@@ -465,7 +467,7 @@ class ManticoreEVM(Manticore):
 
         self.constraints = ConstraintSet()
         self.detectors = {}
-        self.metadata = {}
+        self.metadata: Dict[int, SolidityMetadata] = {}
 
         # The following should go to manticore.context so we can use multiprocessing
         self.context['ethereum'] = {}
@@ -627,6 +629,11 @@ class ManticoreEVM(Manticore):
         state = self.load(state_id)
         return state.platform.transactions
 
+    def human_transactions(self, state_id=None):
+        """ Transactions list for state `state_id` """
+        state = self.load(state_id)
+        return state.platform.human_transactions
+
     def make_symbolic_arguments(self, types):
         """
             Make a reasonable serialization of the symbolic argument types
@@ -694,6 +701,19 @@ class ManticoreEVM(Manticore):
             return None
         return contract_account
 
+    def get_nonce(self, address):
+        # type forgiveness:
+        address = int(address)
+        # get all nonces for states containing this address:
+        nonces = set(state.platform.get_nonce(address) for state in self.running_states if address in state.platform)
+        if not nonces:
+            raise NoAliveStates("There are no alive states containing address %x" % address)
+        elif len(nonces) != 1:
+            # if there are multiple states with this address, they all have to have the same nonce:
+            raise EthereumError("Cannot increase the nonce of address %x because it exists in multiple states with different nonces" % address)
+        else:
+            return next(iter(nonces))
+
     def create_contract(self, owner, balance=0, address=None, init=None, name=None, gas=21000):
         """ Creates a contract
 
@@ -710,13 +730,13 @@ class ManticoreEVM(Manticore):
         if not self.count_running_states():
             raise NoAliveStates
 
-        if address is not None and address in map(int, self.accounts.values()):
-            # Address already used
-            raise EthereumError("Address already used")
+        nonce = self.get_nonce(owner)
+        expected_address = evm.EVMWorld.calculate_new_address(int(owner), nonce=nonce)
 
-        # Let's just choose the address ourself. This is not yellow paper material
         if address is None:
-            address = self.new_address()
+            address = expected_address
+        elif address != expected_address:
+            raise EthereumError("Address was expected to be %x but was given %x" % (expected_address, address))
 
         # Name check
         if name is None:
@@ -743,12 +763,20 @@ class ManticoreEVM(Manticore):
         assert name not in self.accounts
         return name
 
+    def _all_addresses(self):
+        """ Returns all addresses in all running states """
+        ret = set()
+        for state in self.running_states:
+            ret |= set(state.platform.accounts)
+        return ret
+
     def new_address(self):
         """ Create a fresh 160bit address """
-        new_address = random.randint(100, pow(2, 160))
-        if new_address in map(int, self.accounts.values()):
-            return self.new_address()
-        return new_address
+        all_addresses = self._all_addresses()
+        while True:
+            new_address = random.randint(100, pow(2, 160))
+            if new_address not in all_addresses:
+                return new_address
 
     def transaction(self, caller, address, value, data, gas=21000):
         """ Issue a symbolic transaction in all running states
@@ -885,30 +913,26 @@ class ManticoreEVM(Manticore):
         if isinstance(data, (str, bytes)):
             data = bytearray(data)
         if not isinstance(data, (bytearray, Array)):
-            raise EthereumError("code bad type")
+            raise TypeError("code bad type")
 
         # Check types
         if not isinstance(address, (int, BitVec)):
-            raise EthereumError("Caller invalid type")
+            raise TypeError("Caller invalid type")
 
         if not isinstance(value, (int, BitVec)):
-            raise EthereumError("Value invalid type")
+            raise TypeError("Value invalid type")
 
         if not isinstance(address, (int, BitVec)):
-            raise EthereumError("address invalid type")
+            raise TypeError("address invalid type")
 
         if not isinstance(price, int):
-            raise EthereumError("Price invalid type")
+            raise TypeError("Price invalid type")
 
         # Check argument consistency and set defaults ...
         if sort not in ('CREATE', 'CALL'):
             raise ValueError('unsupported transaction type')
 
         if sort == 'CREATE':
-            #let's choose an address here for now #NOTYELLOW
-            if address is None:
-                address = self.new_address()
-
             # When creating data is the init_bytecode + arguments
             if len(data) == 0:
                 raise EthereumError("An initialization bytecode is needed for a CREATE")
@@ -927,8 +951,17 @@ class ManticoreEVM(Manticore):
             if '_pending_transaction' in state.context:
                 raise EthereumError("This is bad. It should not be a pending transaction")
 
+            # Choose an address here, because it will be dependent on the caller's nonce in this state
+            if address is None:
+                if issymbolic(caller):
+                    # TODO (ESultanik): In order to handle this case, we are going to have to do something like fork
+                    # over all possible caller addresses.
+                    # But this edge case will likely be extremely rare, if ever ecountered.
+                    raise EthereumError("Manticore does not currently support contracts with symbolic addresses creating new contracts")
+                address = world.new_address(caller)
+
             # Migrate any expression to state specific constraint set
-            caller, address, value, data = self._migrate_tx_expressions(state, caller, address, value, data)
+            caller_migrated, address_migrated, value_migrated, data_migrated = self._migrate_tx_expressions(state, caller, address, value, data)
 
             # Different states may CREATE a different set of accounts. Accounts
             # that were crated by a human have the same address in all states.
@@ -939,7 +972,7 @@ class ManticoreEVM(Manticore):
                     # Address already used
                     raise EthereumError("This is bad. Same address is used for different contracts in different states")
 
-            state.context['_pending_transaction'] = (sort, caller, address, value, data, gaslimit, price)
+            state.context['_pending_transaction'] = (sort, caller_migrated, address_migrated, value_migrated, data_migrated, gaslimit, price)
 
         # run over potentially several states and
         # generating potentially several others
@@ -1065,9 +1098,12 @@ class ManticoreEVM(Manticore):
         state = None
         if state_id is None:
             #a single state was assumed
-            if self.count_running_states() == 1:
+            state_count = self.count_running_states()
+            if state_count == 1:
                 #Get the ID of the single running state
                 state_id = self._running_state_ids[0]
+            elif state_count == 0:
+                raise NoAliveStates
             else:
                 raise EthereumError("More than one state running; you must specify a state id.")
 
@@ -1147,7 +1183,7 @@ class ManticoreEVM(Manticore):
             Every time a state finishes executing the last transaction, we save it in
             our private list
         """
-        if str(e) == 'Abandoned state':
+        if isinstance(e, AbandonState):
             #do nothing
             return
         world = state.platform
@@ -1221,7 +1257,7 @@ class ManticoreEVM(Manticore):
             for i in range(offset, offset + size):
                 code_data.add((state.platform.current_vm.address, i))
 
-    def get_metadata(self, address):
+    def get_metadata(self, address) -> Optional[SolidityMetadata]:
         """ Gets the solidity metadata for address.
             This is available only if address is a contract created from solidity
         """
@@ -1252,8 +1288,44 @@ class ManticoreEVM(Manticore):
     def workspace(self):
         return self._executor._workspace._store.uri
 
-    def generate_testcase(self, state, name, message=''):
-        self._generate_testcase_callback(state, name, message)
+    def generate_testcase(self, state, name, message='', only_if=None):
+        """
+        Generate a testcase to the workspace for the given program state. The details of what
+        a testcase is depends on the type of Platform the state is, but involves serializing the state,
+        and generating an input (concretizing symbolic variables) to trigger this state.
+
+        The only_if parameter should be a symbolic expression. If this argument is provided, and the expression
+        *can be true* in this state, a testcase is generated such that the expression will be true in the state.
+        If it *is impossible* for the expression to be true in the state, a testcase is not generated.
+
+        This is useful for conveniently checking a particular invariant in a state, and generating a testcase if
+        the invariant can be violated.
+
+        For example, invariant: "balance" must not be 0. We can check if this can be violated and generate a
+        testcase::
+
+            m.generate_testcase(state, 'balance', 'balance CAN be 0', only_if=balance == 0)
+            # testcase generated with an input that will violate invariant (make balance == 0)
+
+
+        :param manticore.core.state.State state:
+        :param str name: short string used as the prefix for the workspace key (e.g. filename prefix for testcase files)
+        :param str message: longer description of the testcase condition
+        :param manticore.core.smtlib.Bool only_if: only if this expr can be true, generate testcase. if is None, generate testcase unconditionally.
+        :return: If a testcase was generated
+        :rtype: bool
+        """
+        if only_if is None:
+            self._generate_testcase_callback(state, name, message)
+            return True
+        else:
+            with state as temp_state:
+                temp_state.constrain(only_if)
+                if temp_state.is_feasible():
+                    self._generate_testcase_callback(temp_state, name, message)
+                    return True
+
+        return False
 
     def current_location(self, state):
         world = state.platform

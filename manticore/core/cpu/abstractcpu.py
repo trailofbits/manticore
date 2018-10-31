@@ -842,8 +842,8 @@ class Cpu(Eventful):
 
             else:
                 text_bytes = ' '.join('%02x' % x for x in insn.bytes)
-                logger.info("Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
-                            insn.address, text_bytes, insn.mnemonic, insn.op_str)
+                logger.warning("Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
+                               insn.address, text_bytes, insn.mnemonic, insn.op_str)
                 self.emulate(insn)
 
         except (Interruption, Syscall) as e:

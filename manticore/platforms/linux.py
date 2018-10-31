@@ -428,6 +428,15 @@ class Linux(Platform):
             self._init_std_fds()
             self._execve(program, argv, envp)
 
+    def __del__(self):
+        elf = getattr(self, 'elf', None)
+        if elf is not None:
+            try:
+                # Prevents a ResourceWarning
+                elf.stream.close()
+            except IOError as e:
+                logger.error(str(e))
+
     @property
     def PC(self):
         return (self._current, self.procs[self._current].PC)
@@ -720,7 +729,8 @@ class Linux(Platform):
     def load_vdso(self, bits):
         # load vdso #TODO or #IGNORE
         vdso_top = {32: 0x7fff0000, 64: 0x7fff00007fff0000}[bits]
-        vdso_size = len(open(f'vdso{bits:2d}.dump').read())
+        with open(f'vdso{bits:2d}.dump') as f:
+            vdso_size = len(f.read())
         vdso_addr = self.memory.mmapFile(self.memory._floor(vdso_top - vdso_size),
                                          vdso_size,
                                          'r x',
@@ -898,7 +908,7 @@ class Linux(Platform):
                     interpreter_path_filename = os.path.join(mpath, os.path.basename(interpreter_filename))
                     logger.info(f"looking for interpreter {interpreter_path_filename}")
                     if os.path.exists(interpreter_path_filename):
-                        interpreter = ELFFile(open(interpreter_path_filename))
+                        interpreter = ELFFile(open(interpreter_path_filename, 'rb'))
                         break
             break
         if interpreter is not None:

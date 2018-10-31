@@ -29,7 +29,11 @@ class EVMAccount(object):
         return super().__eq__(other)
 
     @property
-    def name(self):
+    def name_(self):
+        """
+        This is named this way to avoid naming collisions with Solidity functions/data, since EVMContract inherits
+        this.
+        """
         return self._name
 
     @property
@@ -63,7 +67,7 @@ class EVMContract(EVMAccount):
     def add_function(self, signature):
         func_id = ABI.function_selector(signature)
         func_name = str(signature.split('(')[0])
-        if func_name.startswith('__') or func_name in {'add_function', 'address', 'name'}:
+        if func_name.startswith('__') or func_name in {'add_function', 'address', 'name_'}:
             # TODO(mark): is this actually true? is there anything actually wrong with a solidity name beginning w/ an underscore?
             raise EthereumError("Function name ({}) is internally reserved".format(func_name))
         entry = HashesEntry(signature, func_id)
@@ -83,7 +87,7 @@ class EVMContract(EVMAccount):
             self._hashes = {}
             md = self._manticore.get_metadata(self._address)
             if md is not None:
-                for signature in md.functions:
+                for signature in md.function_signatures:
                     self.add_function(signature)
             # It was successful, no need to re-run. _init_hashes disabled
             self.__init_hashes = self.__null_func

@@ -2,7 +2,60 @@
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
-## [Unreleased](https://github.com/trailofbits/manticore/compare/0.2.1.1...HEAD)
+## [Unreleased](https://github.com/trailofbits/manticore/compare/0.2.2...HEAD)
+
+## 0.2.2 - 2018-10-30
+
+Thanks to our external contributors!
+
+- [charliecjung](https://github.com/charliecjung)
+- [redyoshi49q](https://github.com/redyoshi49q)
+- [yeti-detective](https://github.com/yeti-detective)
+- [Srinivas11789](https://github.com/srinivas11789)
+- [stephan-tolksdorf](https://github.com/stephan-tolksdorf)
+- [catenacyber](https://github.com/catenacyber)
+
+### Added
+
+- New API for generating a testcase only if a certain condition can be true in the state. Useful for conveniently
+  checking an invariant in a state, and  (`ManticoreEVM.generate_testcase(..., only_if=)`) generating a testcase if it
+  can be violated.
+- New `constrain=` optional parameter for `State.solve_one` and `State.solve_buffer`. After solving for a symbolic variable,
+  mutate the state by applying that solution as a constraint. Useful if concretizing a few symbolic variables, and later
+  concretizations should take into account previously solved for values.
+- `ManticoreEVM.human_transactions` top level API. Mirrors `ManticoreEVM.transactions`, but does not contain any internal
+  transactions.
+- Emit generated transaction data in human readable format (JSON)
+- Warning messages if number of passed arguments to a Solidity function is inconsistent with the number declared
+- CLI support for the ReentrancyAdvancedDetector
+- Colored CLI output
+- Configuration system. Allows configuration options to be specified in a config file. New configurations are available,
+  notably including solver parameters such as solver timeout, and memory limits.
+- Support for some unimplemented x86 XMM instructions
+- Customizable symbolic stdin input buffer size
+- Support for [Etheno](https://github.com/trailofbits/etheno)
+- `RaceConditionDetector` that can be used to detect transaction order dependencies bugs
+
+### Changed
+
+- Improve the DetectExternalCallAndLeak detector and reduce false positives
+- Numerous improvements and changes to the SolidityMetadata API
+- Ethereum contract addresses are no longer random, but are deterministically calculated according to the Yellow Paper
+- Manticore no longer supports contracts with symbolic addresses creating new contracts. This is a consequence of
+  supporting determinstic contrat address calculation. There are plans for reenabling this capability in a future release.
+
+### Deprecated
+
+- Several SolidityMetadata APIs: `.get_hash()`, `.functions`, `.hashes`
+
+### Fixed
+
+- Numerous fixes and enhancements to the Ethereum ABI implementation
+- Better handling of overloaded functions in SolidityMetadata, and other bug fixes
+- Fixes for the FilterFunctions plugin
+- Fixes for symbolic SHA3 handling
+- Many EVM correctness/consensus fixes
+- Numerous spelling errors
 
 ## 0.2.1.1 - 2018-09-01
 

@@ -714,10 +714,6 @@ def replace(expression, bindings):
     visitor = Replace(bindings)
     visitor.visit(expression, use_fixed_point=True)
     result_expression = visitor.result
-
-    #for var in get_variables(result_expression):
-    #    assert var not in bindings
-
     return result_expression
 
 

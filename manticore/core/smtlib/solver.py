@@ -168,7 +168,7 @@ class Z3Solver(Solver):
         ''' Auxiliary method to spawn the external solver process'''
         assert '_proc' not in dir(self) or self._proc is None
         try:
-            self._proc = Popen(self._command.split(' '), stdin=PIPE, stdout=PIPE, bufsize=0, universal_newlines=True)
+            self._proc = Popen(shlex.split(self._command), stdin=PIPE, stdout=PIPE, bufsize=0, universal_newlines=True)
         except OSError as e:
             print(e, "Probably too many cached expressions? visitors._cache...")
             # Z3 was removed from the system in the middle of operation
@@ -180,21 +180,26 @@ class Z3Solver(Solver):
 
     def _stop_proc(self):
         ''' Auxiliary method to stop the external solver process'''
-        if self._proc is not None and self._proc.returncode is None:
+        if self._proc is None:
+            return
+        if self._proc.returncode is None:
             try:
                 self._send("(exit)")
-                self._proc.stdin.close()
-                self._proc.stdout.close()
-                self._proc.wait()
             except (SolverException, IOError) as e:
-                logger.debug(str(e))
                 # z3 was too fast to close
-                pass
-
-        try:
-            self._proc.kill()
-        except BaseException:
-            pass
+                logger.debug(str(e))
+            finally:
+                try:
+                    self._proc.stdin.close()
+                except IOError as e:
+                    logger.debug(str(e))
+                try:
+                    self._proc.stdout.close()
+                except IOError as e:
+                    logger.debug(str(e))
+                self._proc.kill()
+                # Wait for termination, to avoid zombies.
+                self._proc.wait()
         self._proc = None
 
     # marshaling/pickle

@@ -4585,6 +4585,10 @@ class X86Cpu(Cpu):
 
     @instruction
     def PMINUB(cpu, dest, src):
+        """
+        PMINUB: returns minimum of packed unsigned byte integers in the dest operand
+        see PMAXUB
+        """
         dest_value = dest.read()
         src_value = src.read()
         result = 0
@@ -4592,6 +4596,30 @@ class X86Cpu(Cpu):
             itema = (dest_value >> pos) & 0xff
             itemb = (src_value >> pos) & 0xff
             result |= Operators.ITEBV(dest.size, itema < itemb, itema, itemb) << pos
+        dest.write(result)
+
+    @instruction
+    def PMAXUB(cpu, dest, src):
+        """
+        PMAXUB: returns maximum of packed unsigned byte integers in the dest operand
+
+        Performs a SIMD compare of the packed unsigned byte in the second source operand
+        and the first source operand and returns the maximum value for each pair of 
+        integers to the destination operand.
+
+        Example :
+        $xmm1.v16_int8 = {..., 0xf2, 0xd1}
+        $xmm2.v16_int8 = {..., 0xd2, 0xf1}
+        # after pmaxub xmm1, xmm2, we get
+        $xmm1.v16_int8 = {..., 0xf2, 0xf1}
+        """
+        dest_value = dest.read()
+        src_value = src.read()
+        result = 0
+        for pos in range(0, dest.size, 8):
+            itema = (dest_value >> pos) & 0xff
+            itemb = (src_value >> pos) & 0xff
+            result |= Operators.ITEBV(dest.size, itema > itemb, itema, itemb) << pos
         dest.write(result)
 
     @instruction
@@ -4881,6 +4909,108 @@ class X86Cpu(Cpu):
             res = Operators.ITEBV(op0.size, Operators.EXTRACT(arg0, i, 8) == Operators.EXTRACT(arg1, i, 8), res | (0xff << i), res)
             # if (arg0>>i)&0xff == (arg1>>i)&0xff:
             #    res = res | (0xff << i)
+        op0.write(res)
+
+    @instruction
+    def PCMPEQD(cpu, op0, op1):
+        """
+        PCMPEQD: Packed compare for equal with double words
+        see PCMPEQB
+        """
+        arg0 = op0.read()
+        arg1 = op1.read()
+        res = 0
+
+        for i in range(0, op0.size, 32):
+            res = Operators.ITEBV(op0.size, Operators.EXTRACT(arg0, i, 32) == Operators.EXTRACT(arg1, i, 32), res | (0xffffffff << i), res)
+        op0.write(res)
+
+    @instruction
+    def PCMPGTD(cpu, op0, op1):
+        """
+        PCMPGTD: Packed compare for greater than with double words
+        see PCMPEQB
+        """
+        arg0 = op0.read()
+        arg1 = op1.read()
+        res = 0
+
+        for i in range(0, op0.size, 32):
+            res = Operators.ITEBV(op0.size, Operators.EXTRACT(arg0, i, 32) > Operators.EXTRACT(arg1, i, 32), res | (0xffffffff << i), res)
+        op0.write(res)
+
+    @instruction
+    def PADDD(cpu, op0, op1):
+        """
+        PADDD: Packed add with double words
+
+        Performs a SIMD add of the packed integers from the source operand (second operand)
+        and the destination operand (first operand), and stores the packed integer results
+        in the destination operand
+
+        Example :
+        $xmm1.v16_int8 = {..., 0x00000003, 0x00000001}
+        $xmm2.v16_int8 = {..., 0x00000004, 0x00000002}
+        # after paddd xmm1, xmm2, we get
+        $xmm1.v16_int8 = {..., 0x00000007, 0x00000003}
+        """
+        arg0 = op0.read()
+        arg1 = op1.read()
+        res = 0
+
+        for i in range(0, op0.size, 32):
+            res |= ((Operators.EXTRACT(arg0, i, 32) + Operators.EXTRACT(arg1, i, 32)) & 0xFFFFFFFF) << i
+        op0.write(res)
+
+    @instruction
+    def PADDQ(cpu, op0, op1):
+        """
+        PADDQ: Packed add with quadruple words
+        see PADDD
+        """
+        arg0 = op0.read()
+        arg1 = op1.read()
+        res = 0
+
+        for i in range(0, op0.size, 64):
+            res |= ((Operators.EXTRACT(arg0, i, 64) + Operators.EXTRACT(arg1, i, 64)) & 0xFFFFFFFFFFFFFFFF) << i
+        op0.write(res)
+
+    @instruction
+    def PSLLD(cpu, op0, op1):
+        """
+        PSLLD: Packed shift left logical with double words
+
+        Shifts the destination operand (first operand) to the left by the number of bytes specified 
+        in the count operand (second operand). The empty low-order bytes are cleared (set to all 0s).
+        If the value specified by the count operand is greater than 15, the destination operand is
+        set to all 0s. The count operand is an 8-bit immediate.
+
+        Example :
+        $xmm1.v16_int8 = {..., 0x00000003, 0x00000001}
+        # after pslld xmm1, 2, we get
+        $xmm1.v16_int8 = {..., 0x0000000c, 0x00000004}
+        """
+        arg0 = op0.read()
+        arg1 = op1.read()
+        res = 0
+
+        for i in range(0, op0.size, 32):
+            res |= ((Operators.EXTRACT(arg0, i, 32) << arg1) & 0xFFFFFFFF) << i
+        op0.write(res)
+
+    @instruction
+    def PSLLQ(cpu, op0, op1):
+        """
+        PSLLQ: Packed shift left logical with quadruple words
+        see PSLLD
+        """
+        arg0 = op0.read()
+        arg1 = op1.read()
+        res = 0
+
+        for i in range(0, op0.size, 64):
+            res |= ((Operators.EXTRACT(arg0, i, 64) << arg1) & 0xFFFFFFFFFFFFFFFF) << i
         op0.write(res)
 
     ############################################################################
