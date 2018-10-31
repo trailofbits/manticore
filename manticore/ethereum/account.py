@@ -105,7 +105,7 @@ class EVMContract(EVMAccount):
         if not name.startswith('_'):
             self.__init_hashes()
             if self._hashes is not None and name in self._hashes.keys():
-                def f(*args, signature: Optional[str]=None, caller=None, value=0, **kwargs):
+                def f(*args, signature: Optional[str]=None, caller=None, value=0, gas=0xffffffffffff, **kwargs):
                     try:
                         if signature:
                             if f'{name}{signature}' not in {entry.signature for entries in self._hashes.values() for entry in entries}:
@@ -133,7 +133,8 @@ class EVMContract(EVMAccount):
                     self._manticore.transaction(caller=caller,
                                                 address=self._address,
                                                 value=value,
-                                                data=tx_data)
+                                                data=tx_data
+                                                gas=gas)
                 return f
 
         return object.__getattribute__(self, name)
