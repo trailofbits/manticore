@@ -308,7 +308,7 @@ class ManticoreEVM(Manticore):
         return bytearray(binascii.unhexlify(hex_contract))
 
     @staticmethod
-    def _run_solc(source_file, solc_bin=None, solc_remaps=[]):
+    def _run_solc(source_file, solc_bin=None, solc_remaps=[], working_dir=None):
         """ Compile a source file with the Solidity compiler
 
             :param source_file: a file object for the source file
@@ -340,7 +340,9 @@ class ManticoreEVM(Manticore):
         # https://solidity.readthedocs.io/en/latest/layout-of-source-files.html
 
         relative_filepath = source_file.name
-        working_dir = os.path.abspath(relative_filepath)[:-len(relative_filepath)]
+
+        if not working_dir:
+            working_dir = os.path.abspath(relative_filepath)[:-len(relative_filepath)]
 
         # If someone pass an absolute path to the file, we don't have to put cwd
         additional_kwargs = {'cwd': working_dir} if working_dir else {}
