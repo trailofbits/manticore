@@ -427,11 +427,16 @@ class EVM(Eventful):
             #return different version depending on obj._pending_transaction
             def _pre_func(my_obj, *args, **kwargs):
                 if my_obj._on_transaction:
+                    result = self._pos(my_obj, *args, **kwargs)
                     my_obj._on_transaction = False
-                    return self._pos(my_obj, *args, **kwargs)
+                    return result
                 else:
-                    my_obj._on_transaction = True
-                    return self._pre(my_obj, *args, **kwargs)
+                    try:
+                        self._pre(my_obj, *args, **kwargs)
+                        raise AssertionError("The pre-transaction handler must raise a StartTx transaction")
+                    except StartTx:
+                        my_obj._on_transaction = True
+                        raise
 
             return MethodType(_pre_func, obj)
 
