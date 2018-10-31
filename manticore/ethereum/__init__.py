@@ -915,7 +915,7 @@ class ManticoreEVM(Manticore):
             raise TypeError("code bad type")
 
         # Check types
-        if not isinstance(address, (int, BitVec)):
+        if not isinstance(caller, (int, BitVec)):
             raise TypeError("Caller invalid type")
 
         if not isinstance(value, (int, BitVec)):
