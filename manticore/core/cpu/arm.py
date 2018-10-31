@@ -952,6 +952,11 @@ class Armv7Cpu(Cpu):
                                  cpu.PC)
 
     @instruction
+    def CBZ(cpu, op, dest):
+        cpu.PC = Operators.ITEBV(cpu.address_bit_size,
+                                 op.read(), cpu.PC, dest.read())
+
+    @instruction
     def CBNZ(cpu, op, dest):
         cpu.PC = Operators.ITEBV(cpu.address_bit_size,
                                  op.read(), dest.read(), cpu.PC)
@@ -983,6 +988,26 @@ class Armv7Cpu(Cpu):
             cpu._swap_mode()
         elif dest.type == 'register':
             cpu._set_mode_by_val(dest.read())
+
+    @instruction
+    def TBB(cpu, dest):
+        base_addr = dest.get_mem_base_addr()
+        if dest.mem.base in ('PC', 'R15'):
+            base_addr = cpu.PC
+
+        offset = cpu.read_int(base_addr + dest.get_mem_offset(), 8)
+        offset = Operators.ZEXTEND(offset, cpu.address_bit_size)
+        cpu.PC += (offset << 1)
+
+    @instruction
+    def TBH(cpu, dest):
+        base_addr = dest.get_mem_base_addr()
+        if dest.mem.base in ('PC', 'R15'):
+            base_addr = cpu.PC
+
+        offset = cpu.read_int(base_addr + dest.get_mem_offset(), 16)
+        offset = Operators.ZEXTEND(offset, cpu.address_bit_size)
+        cpu.PC += (offset << 1)
 
     @instruction
     def CMP(cpu, reg, compare):
