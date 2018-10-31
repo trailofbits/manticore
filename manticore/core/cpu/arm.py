@@ -935,6 +935,29 @@ class Armv7Cpu(Cpu):
         return result, carry, overflow
 
     @instruction
+    def ADR(cpu, dest, src):
+        aligned_pc = (cpu.instruction.address + 4) & 0xfffffffc
+        dest.write(aligned_pc + src.read())
+
+    @instruction
+    def ADDW(cpu, dest, src, add):
+        aligned_pc = (cpu.instruction.address + 4) & 0xfffffffc
+        if src.type == 'register' and src.reg in ('PC', 'R15'):
+            src = aligned_pc
+        else:
+            src = src.read()
+        dest.write(src + add.read())
+
+    @instruction
+    def SUBW(cpu, dest, src, add):
+        aligned_pc = (cpu.instruction.address + 4) & 0xfffffffc
+        if src.type == 'register' and src.reg in ('PC', 'R15'):
+            src = aligned_pc
+        else:
+            src = src.read()
+        dest.write(src - add.read())
+
+    @instruction
     def B(cpu, dest):
         cpu.PC = dest.read()
 
