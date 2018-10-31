@@ -133,7 +133,7 @@ class EVMContract(EVMAccount):
                     self._manticore.transaction(caller=caller,
                                                 address=self._address,
                                                 value=value,
-                                                data=tx_data
+                                                data=tx_data,
                                                 gas=gas)
                 return f
 
