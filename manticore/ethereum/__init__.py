@@ -336,27 +336,26 @@ class ManticoreEVM(Manticore):
             #logger.warning("Unsupported solc version %s", installed_version)
             pass
 
-        #shorten the path size so library placeholders wont fail.
-        #solc path search is a mess #fixme
-        #https://solidity.readthedocs.io/en/latest/layout-of-source-files.html
-        current_folder = os.getcwd()
-        abs_filename = os.path.abspath(source_file.name)
-        working_folder, filename = os.path.split(abs_filename)
+        # solc path search is a mess
+        # https://solidity.readthedocs.io/en/latest/layout-of-source-files.html
+
+        relative_filepath = source_file.name
+        working_dir = os.path.abspath(relative_filepath)[:-len(relative_filepath)]
 
         solc_invocation = [solc] + list(solc_remaps) + [
             '--combined-json', 'abi,srcmap,srcmap-runtime,bin,hashes,bin-runtime',
             '--allow-paths', '.',
-            filename
+            relative_filepath
         ]
 
-        p = Popen(solc_invocation, stdout=PIPE, stderr=PIPE, cwd=working_folder)
+        p = Popen(solc_invocation, stdout=PIPE, stderr=PIPE, cwd=working_dir)
         stdout, stderr = p.communicate()
 
         stdout, stderr = stdout.decode(), stderr.decode()
 
         # See #1123 - solc fails when run within snap
         # and https://forum.snapcraft.io/t/interfaces-allow-access-tmp-directory/5129
-        if stdout == '' and '""%s"" is not found' % filename in stderr:
+        if stdout == '' and '""%s"" is not found' % relative_filepath in stderr:
             raise EthereumError(
                 'Solidity compilation failed with error: {}\n'
                 'Did you install solc from snap Linux universal packages?\n'
