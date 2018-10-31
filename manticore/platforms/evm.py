@@ -609,7 +609,11 @@ class EVM(Eventful):
         return Operators.ITEBV(512, flag, memfee, 0)
 
     def _allocate(self, address):
-        self._consume(self._get_memfee(address))
+        logger.error(f"1 {self._get_memfee(address)}")
+        import math
+        consume = self._get_memfee(address)
+        
+        self._consume(consume)
         address_c = Operators.ZEXTEND(Operators.UDIV(self.safe_add(address, 31), 32) * 32, 512)
         self._allocated = Operators.ITEBV(512, address_c > self._allocated, address_c, self.allocated)
 
@@ -818,12 +822,22 @@ class EVM(Eventful):
                 self._publish('will_execute_instruction', self.pc, self.instruction)
                 self._publish('will_evm_execute_instruction', self.instruction, self._top_arguments())
 
+
+
+
             pc = self.pc
             instruction = self.instruction
             old_gas = self.gas
 
+            if instruction.semantics == 'PUSH' and instruction.fee == 0:
+                 logger.error("2")
+                 self._consume(3)
 
             self._consume(instruction.fee)
+            #  logger.error(f'pc {pc}')
+            # logger.error(instruction.semantics)
+            logger.error(f'fee {instruction.fee}')
+            # logger.error(self.gas)
             arguments = self._pop_arguments()
             self._checkpoint_data = (pc, old_gas, instruction, arguments)
 
@@ -1069,6 +1083,7 @@ class EVM(Eventful):
             for i in range(32):
                 result = Operators.ITEBV(512, e > (1<< i*8)-1, i+1, result)
             return result
+        logger.error(f"3 {10 * nbytes(exponent)}")
         self._consume(10 * nbytes(exponent))
 
 
@@ -1157,6 +1172,7 @@ class EVM(Eventful):
         # read memory from start to end
         # calculate hash on it/ maybe remember in some structure where that hash came from
         # http://gavwood.com/paper.pdf
+        logger.error(f"4 {GSHA3WORD * (ceil32(size) // 32)}")
         self._consume(GSHA3WORD * (ceil32(size) // 32))
         data = self.read_buffer(start, size)
         data = self.try_simplify_to_constant(data)
@@ -1189,6 +1205,7 @@ class EVM(Eventful):
     def BALANCE(self, account):
         '''Get balance of the given account'''
         BALANCE_SUPPLEMENTAL_GAS = 380
+        logger.error(f"4 {BALANCE_SUPPLEMENTAL_GAS}")
         self._consume(BALANCE_SUPPLEMENTAL_GAS)
         return self.world.get_balance(account)
 
@@ -1255,6 +1272,8 @@ class EVM(Eventful):
         copyfee = self.safe_mul(GCOPY, self.safe_add(size, 31) // 32)
         memfee = self._get_memfee(mem_offset, size)
 
+        logger.error(f"5 {copyfee}")
+        logger.error(f"6 {memfee}")
         self._consume(copyfee)
         self._consume(memfee)
 
@@ -1315,6 +1334,7 @@ class EVM(Eventful):
         '''Copy an account's code to memory'''
         extbytecode = self.world.get_code(account)
         GCOPY = 3             # cost to copy one 32 byte word
+        logger.error(f"7 {GCOPY * ceil32(len(extbytecode)) // 32}")
         self._consume(GCOPY * ceil32(len(extbytecode)) // 32)
 
         self._allocate(address + size)
@@ -1422,6 +1442,7 @@ class EVM(Eventful):
         refund = Operators.ITEBV(256, previous_value != 0,
                                                           Operators.ITEBV(256, value != 0, 0, GSTORAGEREFUND),
                                                           0)
+        logger.error(f"8 {gascost}")
         self._consume(gascost)
 
         if istainted(self.pc):
