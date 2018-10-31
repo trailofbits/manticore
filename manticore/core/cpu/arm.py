@@ -1066,14 +1066,21 @@ class Armv7Cpu(Cpu):
         address = base.read()
         if insn_id == cs.arm.ARM_INS_STMIB:
             address += 4
+        if insn_id == cs.arm.ARM_INS_STMDB:
+            address -= 4
 
         for reg in regs:
             cpu.write_int(address, reg.read(), cpu.address_bit_size)
-            address += 4
+            if insn_id in (cs.arm.ARM_INS_STM, cs.arm.ARM_INS_STMIB):
+                address += 4
+            if insn_id in (cs.arm.ARM_INS_STMDA, cs.arm.ARM_INS_STMDB):
+                address -= 4
 
         # Undo the last addition if we're in STMIB
         if insn_id == cs.arm.ARM_INS_STMIB:
             address -= 4
+        if insn_id == cs.arm.ARM_INS_STMDB:
+            address += 4
 
         if cpu.instruction.writeback:
             base.writeback(address)
@@ -1085,6 +1092,14 @@ class Armv7Cpu(Cpu):
     @instruction
     def STMIB(cpu, base, *regs):
         cpu._STM(cs.arm.ARM_INS_STMIB, base, regs)
+
+    @instruction
+    def STMDA(cpu, base, *regs):
+        cpu._STM(cs.arm.ARM_INS_STMDA, base, regs)
+
+    @instruction
+    def STMDB(cpu, base, *regs):
+        cpu._STM(cs.arm.ARM_INS_STMDB, base, regs)
 
     def _bitwise_instruction(cpu, operation, dest, op1, *op2):
         if op2:
