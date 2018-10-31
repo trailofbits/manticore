@@ -897,20 +897,19 @@ class EthSolidityCompilerTest(unittest.TestCase):
             function fromA() public { revert(); }
         }
         '''
-        d = tempfile.mkdtemp()
+        tmp_dir = tempfile.mkdtemp()
         try:
-            with open(os.path.join(d, 'A.sol'), 'w') as a, open(os.path.join(d, 'B.sol'), 'w') as b:
+            with open(os.path.join(tmp_dir, 'A.sol'), 'w') as a, open(os.path.join(tmp_dir, 'B.sol'), 'w') as b:
                 a.write(source_a)
                 a.flush()
                 b.write(source_b)
                 b.flush()
-                output, warnings = ManticoreEVM._run_solc(a)
+                output, warnings = ManticoreEVM._run_solc(a, working_dir=tmp_dir)
                 source_list = output.get('sourceList', [])
                 self.assertIn(os.path.split(a.name)[-1], source_list)
                 self.assertIn(os.path.split(b.name)[-1], source_list)
         finally:
-            shutil.rmtree(d)
-
+            shutil.rmtree(tmp_dir)
 
     def test_run_solc_with_remappings(self):
         source_a = '''
