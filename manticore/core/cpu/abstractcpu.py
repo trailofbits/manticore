@@ -31,7 +31,7 @@ class DecodeException(CpuException):
     Raised when trying to decode an unknown or invalid instruction '''
 
     def __init__(self, pc, bytes):
-        super().__init__("Error decoding instruction @%08x", pc)
+        super().__init__("Error decoding instruction @%08x" % pc)
         self.pc = pc
         self.bytes = bytes
 
@@ -57,7 +57,7 @@ class Interruption(CpuException):
     ''' A software interrupt. '''
 
     def __init__(self, N):
-        super().__init__("CPU Software Interruption %08x", N)
+        super().__init__("CPU Software Interruption %08x" % N)
         self.N = N
 
 
