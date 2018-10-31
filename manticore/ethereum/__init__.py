@@ -707,7 +707,6 @@ class ManticoreEVM(Manticore):
             return None
         return contract_account
 
-
     def get_nonce(self, address):
         # type forgiveness:
         address = int(address)
@@ -986,8 +985,8 @@ class ManticoreEVM(Manticore):
             if len(data) == 0:
                 raise EthereumError("An initialization bytecode is needed for a CREATE")
 
-            if (contract_metadata is not None and issymbolic(value) and self.preconstrain_symbolic_tx_data
-                    and not contract_metadata.constructor_abi['payable']):
+            if (contract_metadata is not None and issymbolic(value) and self.preconstrain_symbolic_tx_data and
+                    not contract_metadata.constructor_abi['payable']):
                 preconstraint = value == 0
         elif sort == 'CALL':
             if not issymbolic(address) and issymbolic(data) and self.preconstrain_symbolic_tx_data:
