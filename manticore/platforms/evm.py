@@ -899,7 +899,7 @@ class EVM(Eventful):
                              expression=expression,
                              setstate=setstate,
                              policy='ALL')
-
+        #print (self)
         try:
             self._check_jmpdest()
             last_pc, last_gas, instruction, arguments = self._checkpoint()
@@ -1415,17 +1415,15 @@ class EVM(Eventful):
         
         previous_value = self.world.get_storage_data(storage_address, offset)
 
-        gascost = Operators.ITEBV(
-                                 512,
-                                 previous_value != 0,
-                                 Operators.ITEBV(512, value != 0, GSTORAGEMOD, GSTORAGEKILL),
-                                 Operators.ITEBV(512, value != 0, GSTORAGEADD, GSTORAGEMOD))
+        gascost = Operators.ITEBV(512,
+                                  previous_value != 0,
+                                  Operators.ITEBV(512, value != 0, GSTORAGEMOD, GSTORAGEKILL),
+                                  Operators.ITEBV(512, value != 0, GSTORAGEADD, GSTORAGEMOD))
 
-        refund = Operators.ITEBV(
-                                256,
-                                previous_value != 0,
-                                Operators.ITEBV(256, value != 0, 0, GSTORAGEREFUND),
-                                0)
+        refund = Operators.ITEBV(256,
+                                 previous_value != 0,
+                                 Operators.ITEBV(256, value != 0, 0, GSTORAGEREFUND),
+                                 0)
         self._consume(gascost)
 
         if istainted(self.pc):
@@ -1737,18 +1735,17 @@ class EVMWorld(Platform):
         self._pending_transaction = None
         self._transactions = list()
 
+
         if blocknumber is None:
-            #assume initial symbolic block
-            block_number = constraints.new_bitvec(256, "BLOCKNUMBER", avoid_collisions=True)
+            #assume initial byzantium block
+            blocknumber = 4370000
         self._blocknumber = blocknumber
 
         if timestamp is None:
             #1524785992; // Thu Apr 26 23:39:52 UTC 2018
-            timestamp = constraints.new_bitvec(256, "TIMESTAMP", avoid_collisions=True)
-            constraints.add(Operators.UGT(timestamp, 1000000000))
-            constraints.add(Operators.ULT(timestamp, 3000000000))
+            timestamp = 1524785992
         self._timestamp = timestamp
-        self._blocknumber = blocknumber
+
         self._difficulty = difficulty
         self._gaslimit = gaslimit
         self._coinbase = coinbase
@@ -2118,10 +2115,10 @@ class EVMWorld(Platform):
         return self._coinbase
 
     def block_timestamp(self):
-        return self._timestamp + len(self.human_transactions) // 2000
+        return self._timestamp
 
     def block_number(self):
-        return self._blocknumber + len(self.human_transactions) // 20
+        return self._blocknumber
 
     def block_difficulty(self):
         return self._difficulty

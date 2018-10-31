@@ -459,8 +459,17 @@ class ManticoreEVM(Manticore):
         self._config_procs = procs
         # Make the constraint store
         constraints = ConstraintSet()
+
+        #Todo: research how to make this two symbolic
+        blocknumber = 4370000
+        timestamp = 1524785992
+        #blocknumber = constraints.new_bitvec(256, "BLOCKNUMBER", avoid_collisions=True)
+        #timestamp = constraints.new_bitvec(256, "TIMESTAMP", avoid_collisions=True)
+        #constraints.add(Operators.UGT(timestamp, 1000000000))
+        #constraints.add(Operators.ULT(timestamp, 3000000000))
+
         # make the ethereum world state
-        world = evm.EVMWorld(constraints, timestamp=1524785992)
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp)
         initial_state = State(constraints, world)
         super().__init__(initial_state, **kwargs)
 

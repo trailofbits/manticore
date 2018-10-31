@@ -909,7 +909,9 @@ class ArrayProxy(Array):
         index = simplify(index)
         if isinstance(index, Constant):
             self._concrete_cache[index.value] = value
-        self.written.add(index)                         #update .written
+
+        # potentially generate and update .written set
+        self.written.add(index)
         auxiliary = self._array.store(index, value)
         self._array = auxiliary
         return self
@@ -968,7 +970,7 @@ class ArrayProxy(Array):
                 array = array._array
             while not isinstance(array, ArrayVariable):
                 # The index written to underlaying Array are displaced when sliced
-                written.add(array.index-offset)
+                written.add(array.index - offset)
                 array = array.array
             assert isinstance(array, ArrayVariable)
             self._written = written

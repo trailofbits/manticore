@@ -75,6 +75,7 @@ class IntegrationTest(unittest.TestCase):
             command.append(contract)
         command.append('--txlimit')
         command.append(str(tx_limit))
+        command.append('--no-testcases')
         command.append(filename)
 
         subprocess.check_call(command, stdout=subprocess.PIPE)
@@ -118,7 +119,7 @@ class IntegrationTest(unittest.TestCase):
 
         dirname = os.path.dirname(__file__)
         filename = os.path.join(dirname, 'binaries', 'basic_linux_amd64')
-        output = subprocess.check_output(['python', '-m', 'manticore', filename])
+        output = subprocess.check_output(['python', '-m', 'manticore', '--no-testcases', filename])
         output_lines = output.splitlines()
         start_info = output_lines[:2]
         testcase_info = output_lines[2:-5]
