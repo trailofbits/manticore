@@ -207,7 +207,6 @@ class IntegrationTest(unittest.TestCase):
                 in_directory=issue.get('in_directory')
             )
 
-
     def test_eth_705(self):
         # This test needs to run inside tests/binaries because the contract imports a file
         # that is in the tests/binaries dir
