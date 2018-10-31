@@ -1735,7 +1735,6 @@ class EVMWorld(Platform):
         self._pending_transaction = None
         self._transactions = list()
 
-
         if blocknumber is None:
             #assume initial byzantium block
             blocknumber = 4370000
