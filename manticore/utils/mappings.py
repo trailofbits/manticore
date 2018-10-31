@@ -46,10 +46,15 @@ def mmap(fd, offset, size):
 
     assert size > 0
 
-    result = mmap_function(0, size, prot, flags, fd, offset)
-    return ctypes.cast(result, ctypes.POINTER(ctypes.c_char))
+    aligned_offset = offset & ~0xfff
+    result = mmap_function(0, size, prot, flags, fd, aligned_offset)
+    return ctypes.cast(result + offset - aligned_offset, ctypes.POINTER(ctypes.c_char))
 
 
 def munmap(address, size):
-    result = munmap_function(address, size)
+    aligned_address = ctypes.cast(address, ctypes.c_void_p)
+    aligned_address = aligned_address.value & ~0xfff
+    aligned_address = ctypes.cast(aligned_address, ctypes.POINTER(ctypes.c_char))
+
+    result = munmap_function(aligned_address, size)
     assert result == 0
