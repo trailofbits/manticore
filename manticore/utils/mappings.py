@@ -67,6 +67,7 @@ def munmap(address, size):
     aligned_address = address & ~0xfff
     size += address - aligned_address
     assert size > 0
+    aligned_address = ctypes.cast(aligned_address, ctypes.POINTER(ctypes.c_char))
 
     result = munmap_function(aligned_address, size)
     assert result == 0
