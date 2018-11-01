@@ -41,9 +41,9 @@ def mmap(fd, offset, size):
     prot = MMAP.PROT_READ | MMAP.PROT_WRITE
     flags = MMAP.MAP_PRIVATE
 
-    # When trying to map the contents of a file into memory, the offset must be a multiple of the
-    # page size (see `man mmap`). So we need to align it before passing it to mmap(). Doing so also increases
-    # the size of the memory area needed, so we need to account for that difference.
+    # When trying to map the contents of a file into memory, the offset must be a multiple of the page size (see
+    # `man mmap`). So we need to align it before passing it to mmap(). Doing so also increases the size of the memory
+    # area needed, so we need to account for that difference.
     aligned_offset = offset & ~0xfff
     size += offset - aligned_offset
 
@@ -52,20 +52,21 @@ def mmap(fd, offset, size):
     assert size > 0
 
     result = mmap_function(0, size, prot, flags, fd, aligned_offset)
+    assert result != ctypes.c_void_p(-1).value
 
-    # Now when returning the pointer to the user, we need to skip the corrected offset so that the
-    # user doesn't end up with a pointer to other region of the file than the one they requested.
+    # Now when returning the pointer to the user, we need to skip the corrected offset so that the user doesn't end up
+    # with a pointer to another region of the file than the one they requested.
     return ctypes.cast(result + offset - aligned_offset, ctypes.POINTER(ctypes.c_char))
 
 
 def munmap(address, size):
-    # When unmapping the memory area, we need to recover the pointer and the size that were given
-    # to mmap(). The pointer can be recovered by aligning it on the page size. The size needs to be
-    # increased by that difference to account for cases where the requested memory area was larger.
+    # When unmapping the memory area, we need to recover the pointer and the size that were given to mmap(). The
+    # pointer can be recovered by aligning it on the page size. The size needs to be increased by that difference to
+    # account for cases where the requested memory area was larger.
     address = ctypes.cast(address, ctypes.c_void_p).value
     aligned_address = address & ~0xfff
     size += address - aligned_address
-    aligned_address = ctypes.cast(aligned_address, ctypes.POINTER(ctypes.c_char))
+    assert size > 0
 
     result = munmap_function(aligned_address, size)
     assert result == 0

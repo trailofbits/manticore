@@ -248,15 +248,11 @@ class IntegrationTest(unittest.TestCase):
         filename = os.path.join(os.path.dirname(__file__), 'binaries', 'basic_linux_amd64')
         with open(filename, 'rb') as f:
             for addr, size in [
-                (0x1, 0x1000),
-                (0x1, 0x1fffe),
-                (0x1, 0x1ffff),
-                (0xfff, 0x1),
-                (0xfff, 0x2),
-                (0xfff, 0x1000)
+                (0x0001, 0xfffe), (0x0001, 0x0fff), (0x0001, 0x1000),
+                (0x0fff, 0x0001), (0x0fff, 0x0002), (0x0fff, 0x1000),
             ]:
-                ret = mmap(f.fileno(), addr, size)
-                munmap(ret, size)  # assertion should not be triggered here
+                # No assert should be triggered on the following line
+                munmap(mmap(f.fileno(), addr, size), size)
 
 if __name__ == '__main__':
     unittest.main()
