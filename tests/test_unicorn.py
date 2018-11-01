@@ -1321,6 +1321,7 @@ class Armv7UnicornInstructions(unittest.TestCase):
         self.rf.write('R2', 0x5678)
         emulate_next(self.cpu)
         self.assertEqual(self.rf.read('R0'), 0x1234 + 0x5678)
+        self.assertEqual(self.cpu.mode, CS_MODE_THUMB)
 
 
 class UnicornConcretization(unittest.TestCase):
