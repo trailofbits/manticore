@@ -13,7 +13,9 @@ DEFAULT_FORK = "Byzantium"
 
 def gen_test(json_test_case, file_name, skip):
     output = ''
-    print(file_name)
+    #  print(file_name)
+    sys.stdout.write('.')
+    sys.stdout.flush()
     if skip:
         output += '''    @unittest.skip('Gas or performance related')\n'''
 
@@ -32,34 +34,36 @@ def gen_test(json_test_case, file_name, skip):
     #  pre-state setup
     block_headers = [x for x in json_test_case['blocks'] if 'blockHeader' in x]
     if len(block_headers) != 1:
-        print(block_headers)
-        print(json_test_case)
-        import sys
-        sys.exit(1)
+        output += f"""
+        #  This test case uses block_headers != 1. Not supported yet.
+        """
+        return output
 
     env = block_headers[0]['blockHeader']
-    print(env)
+    sys.stdout.write('.')
     gas_limit = int(env['gasLimit'], 0)
     block_number = int(env['number'], 0)
     timestamp = int(env['timestamp'], 0)
     difficulty = int(env['difficulty'], 0)
     coinbase = int(env['coinbase'], 0)
     output += f'''
+        #  m = ManticoreEVM()
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints, block_number={block_number}, timestamp={timestamp}, difficulty={difficulty}, coinbase={coinbase}, gas_limit={gas_limit})
+        m = ManticoreEVM(constraints, world)
         transaction_results = list()
     '''
 
     for address, account in json_test_case['pre'].items():
-        account_address = int(address, 0)
+        account_address = int(address[2:], 16)
         account_code = account['code'][2:]
-        account_nonce = int(account['nonce'], 0)
-        account_balance = int(account['balance'], 0)
+        account_nonce = int(account['nonce'][2:], 16)
+        account_balance = int(account['balance'][2:], 16)
 
         output += f'''
         account_address = {hex(account_address)}
         bytecode = unhexlify('{account_code}')
-        world.create_account(address={hex(account_address)},
+        m.create_account(address={hex(account_address)},
                              balance={account_balance},
                              code=bytecode,
                              nonce={account_nonce}
@@ -67,7 +71,7 @@ def gen_test(json_test_case, file_name, skip):
 
         for key, value in account['storage'].items():
             output += f'''
-        world.set_storage_data({hex(account_address)}, {key}, {value})'''
+        m.world.set_storage_data({hex(account_address)}, {key}, {value})'''
 
     for transaction in block_headers[0]['transactions']:
         call_data = transaction['data'][2:]
@@ -89,7 +93,7 @@ def gen_test(json_test_case, file_name, skip):
         nonce = int(transaction['nonce'][2:], 16)
 
         from ethereum.transactions import Transaction
-        print(f"nonce {nonce} gasprice {price} startgas {gas} to {to} value {value} data {call_data} v {v} r {r} s {s}")
+        #  print(f"nonce {nonce} gasprice {price} startgas {gas} to {to} value {value} data {call_data} v {v} r {r} s {s}")
         t = Transaction(nonce=nonce,
                         gasprice=price,
                         startgas=gas,
@@ -99,101 +103,121 @@ def gen_test(json_test_case, file_name, skip):
                         v=v, r=r, s=s)
 
         address = t.sender
-        print(address.hex())
+        #  print(address.hex())
 
         output += f'''
-        address = {address.hex()}
+        address = 0x{address.hex()}
         price = {hex(price)}'''
 
         if call_data:
             output += f'''
-        data = unhexlify('{call_data}')'''
+        data = unhexlify({call_data})'''
         else:
             output += f"""
         data = ''"""
 
         output += f'''
-        caller = {address.hex()}
+        caller = 0x{address.hex()}
         value = {value}
         gas = {gas}
+        to = 0x{to}
 
-        # open a fake tx, no funds send
-        world._open_transaction('CALL', to, price, data, caller, value, gas=gas)
-
-        result = None
-        return_data = b''
+        for acc in m.world.accounts:
+            print(hex(acc))
+            print(world.get_balance(acc))
+        print("++transaction")
         try:
-            while True:
-                world.current_vm.execute()
-        except evm.EndTx as e:
-            result = e.result
-            if e.result in ('RETURN', 'REVERT'):
-                return_data = to_constant(e.data)
+            m.transaction(caller=caller, address=to, price=price, data=data, value=value, gas=gas)
+            print()
+        except Exception as e:
+            print(str(e))
+        print("--transaction")
+        for acc in world.accounts:
+            print(hex(acc))
+            print(world.get_balance(acc))
+        # open a fake tx, no funds send
+        #m.world._open_transaction('CALL', to, price, data, caller, value, gas=gas)
+
+        #result = None
+        #return_data = b''
+        #try:
+        #    while True:
+        #        world.current_vm.execute()
+        #except evm.EndTx as e:
+        #    result = e.result
+        #    if e.result in ('RETURN', 'REVERT'):
+        #        return_data = to_constant(e.data)
         
-        transaction_results.append(return_data)
+        #transaction_results.append(return_data)
         '''
 
     for address, account in json_test_case['postState'].items():
-        account_address = int(address, 0)
+        account_address = int(address[2:], 16)
         account_code = account['code'][2:]
-        account_nonce = int(account['nonce'], 0)
-        account_balance = int(account['balance'], 0)
+        account_nonce = int(account['nonce'][2:], 16)
+        account_balance = int(account['balance'][2:], 16)
 
         output += f'''
-    # Add postState checks for account {hex(account_address)}
-    # check nonce, balance, code
-    self.assertEqual(world.get_nonce({hex(account_address)}), {account_nonce})
-    self.assertEqual(to_constant(world.get_balance({hex(account_address)})), {account_balance})
-    self.assertEqual(world.get_code({hex(account_address)}), unhexlify('{account_code}'))'''
+        # Add postState checks for account {hex(account_address)}
+        # check nonce, balance, code
+        
+        self.assertEqual(world.get_nonce({hex(account_address)}), {account_nonce})
+        self.assertEqual(to_constant(world.get_balance({hex(account_address)})), {account_balance})
+        self.assertEqual(world.get_code({hex(account_address)}), unhexlify('{account_code}'))
+        '''
 
         if account['storage']:
             output += '''
-    #  check storage'''
-
+        #  check storage'''
             for key, value in account['storage'].items():
                 output += f'''
-    self.assertEqual(to_constant(world.get_storage_data({hex(account_address)}, {key})), {value})'''
+        self.assertEqual(to_constant(world.get_storage_data({hex(account_address)}, {key})), {value})
+        '''
 
     return output
 
 
 def test_header(test_origin):
-    return f'''
-    #  Taken from {test_origin}
-    import struct
-    import unittest
-    import json
-    import os
-    import xmlrunner
-    from binascii import unhexlify
-    from manticore.platforms import evm
-    from manticore.core import state
-    from manticore.core.smtlib import Operators, ConstraintSet
-    from manticore.core.smtlib.visitors import to_constant
-    import sha3
-    import rlp
-    from rlp.sedes import (
-        CountableList,
-        BigEndianInt,
-        Binary,
-    )
-    class Log(rlp.Serializable):
-        fields = [
-            ('address', Binary.fixed_length(20, allow_empty=True)),
-            ('topics', CountableList(BigEndianInt(32))),
-            ('data', Binary())
-        ]
+    return f'''#  Taken from {test_origin}
 
-    class EVMTest_{os.path.splitext(os.path.basename(test_origin))[0]}(unittest.TestCase):
-        _multiprocess_can_split_ = True
-        maxDiff=None 
-    '''
+import struct
+import unittest
+import json
+import os
+import xmlrunner
+import sha3
+import rlp
+from binascii import unhexlify
+
+from manticore.ethereum import ManticoreEVM
+from manticore.platforms import evm
+from manticore.core import state
+from manticore.core.smtlib import Operators, ConstraintSet
+from manticore.core.smtlib.visitors import to_constant
+
+from rlp.sedes import (
+    CountableList,
+    BigEndianInt,
+    Binary,
+)
+
+class Log(rlp.Serializable):
+    fields = [
+        ('address', Binary.fixed_length(20, allow_empty=True)),
+        ('topics', CountableList(BigEndianInt(32))),
+        ('data', Binary())
+    ]
+
+class EVMTest_{os.path.splitext(os.path.basename(test_origin))[0]}(unittest.TestCase):
+    _multiprocess_can_split_ = True
+    maxDiff=None 
+'''
 
 
 def test_footer():
     return '''
-    if __name__ == '__main__':
-        unittest.main(testRunner = xmlrunner.XMLTestRunner(output='test-reports'))'''
+if __name__ == '__main__':
+    unittest.main(testRunner = xmlrunner.XMLTestRunner(output='test-reports'))'''
 
 
 def disabled(test):
@@ -211,14 +235,14 @@ def find_eth_tests(ethereum_tests_dir, fork):
     :return:
     """
     test_files = []
-
+    sys.stdout.write('-')
     for dirpath, dirnames, files in os.walk(os.path.join(ethereum_tests_dir, 'BlockchainTests')):
         for name in files:
             if name.lower().endswith('.json'):
                 json_test = dict(json.loads(open(os.path.join(dirpath, name)).read()))
                 if any(key.endswith(fork) for key in json_test.keys()):
                     test_files.append(os.path.join(dirpath, name))
-
+    sys.stdout.write('-')
     return test_files
 
 
@@ -262,7 +286,14 @@ if __name__ == '__main__':
                                                             test_file, disabled(relative_test_path)))
 
     for test in generated_tests.keys():
-        print(test_header)
-        for test_case in generated_tests[test]:
-            print(test_case)
-        print(test_footer)
+        generated_test_filename = os.path.split(test)[-1] + ".py"
+        generated_test_dir = os.path.split(test)[:-1][0]
+
+        if not os.path.exists(generated_test_dir):
+            os.makedirs(generated_test_dir)
+
+        with open(os.path.join(generated_test_dir, generated_test_filename), 'w') as test_file:
+            test_file.writelines(test_header(test))
+            for test_case in generated_tests[test]:
+                test_file.writelines(test_case)
+            test_file.writelines(test_footer())
