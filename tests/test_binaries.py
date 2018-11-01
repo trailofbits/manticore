@@ -1,11 +1,3 @@
-import unittest
-import sys
-import shutil
-import tempfile
-import os
-import subprocess
-import time
-from manticore.binary import Elf, CGCElf
 import subprocess
 import sys
 import time
@@ -16,7 +8,7 @@ import shutil
 import tempfile
 
 from manticore.binary import Elf, CGCElf
-
+from manticore.utils.mappings import mmap, munmap
 
 #logging.basicConfig(filename = "test.log",
 #                format = "%(asctime)s: %(name)s:%(levelname)s: %(message)s",
@@ -253,8 +245,6 @@ class IntegrationTest(unittest.TestCase):
 	    else
 		return 1;
 	}
-
-
         """
         dirname = os.path.dirname(__file__)
         filename = os.path.abspath(os.path.join(dirname, 'binaries/brk_static_amd64'))
@@ -263,6 +253,18 @@ class IntegrationTest(unittest.TestCase):
 
         with open(os.path.join(workspace, "test_00000000.messages")) as f:
             self.assertIn("finished with exit status: 0", f.read())
+
+    def test_unaligned_mappings(self):
+        # This test ensures that mapping file contents at non page-aligned offsets is possible.
+        filename = os.path.join(os.path.dirname(__file__), 'binaries', 'basic_linux_amd64')
+        with open(filename, 'rb') as f:
+            for addr, size in [
+                (0x0001, 0xfffe), (0x0001, 0x0fff), (0x0001, 0x1000),
+                (0x0fff, 0x0001), (0x0fff, 0x0002), (0x0fff, 0x1000),
+            ]:
+                # No assert should be triggered on the following line
+                munmap(mmap(f.fileno(), addr, size), size)
+
 
 if __name__ == '__main__':
     unittest.main()

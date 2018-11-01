@@ -18,7 +18,7 @@ setup(
     url='https://github.com/trailofbits/manticore',
     author='Trail of Bits',
     version='0.2.2',
-    packages=find_packages(),
+    packages=find_packages(exclude=['tests', 'tests.*']),
     python_requires='>=3.6',
     install_requires=[
         'capstone>=3.0.5',
