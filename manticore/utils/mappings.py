@@ -42,7 +42,7 @@ def mmap(fd, offset, size):
     flags = MMAP.MAP_PRIVATE
 
     # When trying to map the contents of a file into memory, the offset must be a multiple of the
-    # page size. So we need to align it before passing it to mmap(). But doing so also increases
+    # page size (see `man mmap`). So we need to align it before passing it to mmap(). Doing so also increases
     # the size of the memory area needed, so we need to account for that difference.
     aligned_offset = offset & ~0xfff
     size += offset - aligned_offset
@@ -54,7 +54,7 @@ def mmap(fd, offset, size):
     result = mmap_function(0, size, prot, flags, fd, aligned_offset)
 
     # Now when returning the pointer to the user, we need to skip the corrected offset so that the
-    # user doesn't end up with a pointer to an other region of the file than the one he requested.
+    # user doesn't end up with a pointer to other region of the file than the one they requested.
     return ctypes.cast(result + offset - aligned_offset, ctypes.POINTER(ctypes.c_char))
 
 
