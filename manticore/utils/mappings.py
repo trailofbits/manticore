@@ -59,10 +59,12 @@ def mmap(fd, offset, size):
 
 
 def munmap(address, size):
-    # When unmapping the memory area, we need to recover the pointer that was returned by mmap().
-    # It's only a matter of aligning it back to the page size, which requires some ctypes casting.
-    aligned_address = ctypes.cast(address, ctypes.c_void_p)
-    aligned_address = aligned_address.value & ~0xfff
+    # When unmapping the memory area, we need to recover the pointer and the size that were given
+    # to mmap(). The pointer can be recovered by aligning it on the page size. The size needs to be
+    # increased by that difference to account for cases where the requested memory area was larger.
+    address = ctypes.cast(address, ctypes.c_void_p).value
+    aligned_address = address & ~0xfff
+    size += address - aligned_address
     aligned_address = ctypes.cast(aligned_address, ctypes.POINTER(ctypes.c_char))
 
     result = munmap_function(aligned_address, size)
