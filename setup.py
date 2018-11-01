@@ -1,7 +1,23 @@
-import os
+import os, sys
 from setuptools import setup, find_packages
 
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
+
+# Dependencies that the user can specify, e.g. as:
+#   - pip install manticore[native]`        - install only native cpu's dependencies
+#   - pip install manticore[eth]            - install evm cpu's dependencies
+#   - pip install manticore[native,eth]     - install all
+#
+# If the user doesn't specify any of them, we assume they want everything
+# (as it was in previous Manticore versions)
+NATIVE = 'native'
+ETH = 'eth'
+
+with open('/tmp/xxx', 'a') as f:
+    f.write(repr(sys.argv) + '\n')
+print(sys.argv)
+# raise Exception(str(sys.argv))
+# asds
 
 
 def rtd_dependent_deps():
