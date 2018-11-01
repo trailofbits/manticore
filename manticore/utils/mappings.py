@@ -41,17 +41,26 @@ def mmap(fd, offset, size):
     prot = MMAP.PROT_READ | MMAP.PROT_WRITE
     flags = MMAP.MAP_PRIVATE
 
+    # When trying to map the contents of a file into memory, the offset must be a multiple of the
+    # page size. So we need to align it before passing it to mmap(). But doing so also increases
+    # the size of the memory area needed, so we need to account for that difference.
+    aligned_offset = offset & ~0xfff
+    size += offset - aligned_offset
+
     if size & 0xfff != 0:
         size = (size & ~0xfff) + 0x1000
-
     assert size > 0
 
-    aligned_offset = offset & ~0xfff
     result = mmap_function(0, size, prot, flags, fd, aligned_offset)
+
+    # Now when returning the pointer to the user, we need to skip the corrected offset so that the
+    # user doesn't end up with a pointer to an other region of the file than the one he requested.
     return ctypes.cast(result + offset - aligned_offset, ctypes.POINTER(ctypes.c_char))
 
 
 def munmap(address, size):
+    # When unmapping the memory area, we need to recover the pointer that was returned by mmap().
+    # It's only a matter of aligning it back to the page size, which requires some ctypes casting.
     aligned_address = ctypes.cast(address, ctypes.c_void_p)
     aligned_address = aligned_address.value & ~0xfff
     aligned_address = ctypes.cast(aligned_address, ctypes.POINTER(ctypes.c_char))
