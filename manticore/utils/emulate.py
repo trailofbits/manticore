@@ -249,7 +249,7 @@ class UnicornEmulator(object):
 
         try:
             pc = self._cpu.PC
-            if self._uc_mode == UC_MODE_THUMB:
+            if self._cpu.arch == CS_ARCH_ARM and self._uc_mode == UC_MODE_THUMB:
                 pc |= 1
             self._emu.emu_start(pc, self._cpu.PC + instruction.size, count=1)
         except UcError as e:
