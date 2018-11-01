@@ -200,6 +200,8 @@ class UnicornEmulator(object):
         '''
         A single attempt at executing an instruction.
         '''
+        logger.debug("0x%x:\t%s\t%s"
+                     % (instruction.address, instruction.mnemonic, instruction.op_str))
 
         registers = set(self._cpu.canonical_registers)
 
