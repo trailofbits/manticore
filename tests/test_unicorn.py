@@ -12,9 +12,10 @@ from manticore.platforms import linux
 from manticore.utils.emulate import UnicornEmulator
 
 from capstone.arm import *
+from capstone import CS_MODE_THUMB, CS_MODE_ARM
 from keystone import Ks, KS_ARCH_ARM, KS_MODE_ARM, KS_MODE_THUMB
 
-ks_arm = Ks(KS_ARCH_ARM, KS_MODE_ARM)
+ks = Ks(KS_ARCH_ARM, KS_MODE_ARM)
 ks_thumb = Ks(KS_ARCH_ARM, KS_MODE_THUMB)
 
 import logging
@@ -27,13 +28,16 @@ semantics from ARM tests to ensure that they match. UnicornConcretization tests
 to make sure symbolic values get properly concretized.
 '''
 
-def assemble(asm, thumb=False):
-    ks = ks_thumb if thumb else ks_arm
-    ords = ks.asm(asm)[0]
+def assemble(asm, mode=CS_MODE_ARM):
+    if CS_MODE_ARM == mode:
+        ords = ks.asm(asm)[0]
+    elif CS_MODE_THUMB == mode:
+        ords = ks_thumb.asm(asm)[0]
+    else:
+        raise Exception(f'bad processor mode for assembly: {mode}')
     if not ords:
         raise Exception(f'bad assembly: {asm}')
     return ''.join(map(chr, ords))
-
 
 def emulate_next(cpu):
     'Read the next instruction and emulate it with Unicorn '
@@ -98,16 +102,15 @@ class Armv7UnicornInstructions(unittest.TestCase):
         self.mem = self.cpu.memory
         self.rf = self.cpu.regfile
 
-    def _setupCpu(self, asm, thumb=False):
+    def _setupCpu(self, asm, mode=CS_MODE_ARM):
         self.code = self.mem.mmap(0x1000, 0x1000, 'rwx')
         self.data = self.mem.mmap(0xd000, 0x1000, 'rw')
         self.stack = self.mem.mmap(0xf000, 0x1000, 'rw')
         start = self.code + 4
-        self.mem.write(start, assemble(asm, thumb=thumb))
+        self.mem.write(start, assemble(asm, mode))
+        self.rf.write('PC', start)
         self.rf.write('SP', self.stack + 0x1000)
-        self.cpu.PC = start | 1 if thumb else start
-        self.cpu._set_mode_by_val(self.cpu.PC)
-        self.cpu.PC &= ~1
+        self.cpu.mode = mode
 
     def _checkFlagsNZCV(self, n, z, c, v):
         self.assertEqual(self.rf.read('APSR_N'), n)
@@ -1312,7 +1315,7 @@ class Armv7UnicornInstructions(unittest.TestCase):
 
     def test_thumb_mode_emulation(self):
         asm = "add r0, r1, r2"
-        self._setupCpu(asm, thumb=True)
+        self._setupCpu(asm, mode=CS_MODE_THUMB)
         self.rf.write('R0', 0)
         self.rf.write('R1', 0x1234)
         self.rf.write('R2', 0x5678)
