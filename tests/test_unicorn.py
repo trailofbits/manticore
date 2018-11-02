@@ -14,6 +14,7 @@ from manticore.utils.emulate import UnicornEmulator
 from capstone.arm import *
 from capstone import CS_MODE_THUMB, CS_MODE_ARM
 from keystone import Ks, KS_ARCH_ARM, KS_MODE_ARM, KS_MODE_THUMB
+from unicorn import UC_QUERY_MODE, UC_MODE_THUMB
 
 ks = Ks(KS_ARCH_ARM, KS_MODE_ARM)
 ks_thumb = Ks(KS_ARCH_ARM, KS_MODE_THUMB)
@@ -44,6 +45,7 @@ def emulate_next(cpu):
     cpu.decode_instruction(cpu.PC)
     emu = UnicornEmulator(cpu)
     emu.emulate(cpu.instruction)
+    return emu
 
 
 def itest(asm):
@@ -1319,9 +1321,9 @@ class Armv7UnicornInstructions(unittest.TestCase):
         self.rf.write('R0', 0)
         self.rf.write('R1', 0x1234)
         self.rf.write('R2', 0x5678)
-        emulate_next(self.cpu)
+        emu = emulate_next(self.cpu)
         self.assertEqual(self.rf.read('R0'), 0x1234 + 0x5678)
-        self.assertEqual(self.cpu.mode, CS_MODE_THUMB)
+        self.assertEqual(emu._emu.query(UC_QUERY_MODE), UC_MODE_THUMB)
 
 
 class UnicornConcretization(unittest.TestCase):
