@@ -195,6 +195,11 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.code = self.mem.mmap(0x1000, 0x1000, 'rwx')
         self.data = self.mem.mmap(0xd000, 0x1000, 'rw')
         self.stack = self.mem.mmap(0xf000, 0x1000, 'rw')
+
+        # it doesn't really matter what's the starting address of code
+        # as long as it's known and constant for all the tests;
+        # we start it at +4 as it is convenient for some tests to use pc-4 reference
+        # (see e.g. test_bl_neg test)
         start = self.code + 4
         if multiple_insts:
             offset = 0
