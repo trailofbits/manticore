@@ -362,7 +362,7 @@ class ManticoreEVM(Manticore):
 
         # See #1123 - solc fails when run within snap
         # and https://forum.snapcraft.io/t/interfaces-allow-access-tmp-directory/5129
-        if stdout == '' and '""%s"" is not found' % relative_filepath in stderr:
+        if stdout == '' and f'""{relative_filepath}"" is not found' in stderr:
             raise EthereumError(
                 'Solidity compilation failed with error: {}\n'
                 'Did you install solc from snap Linux universal packages?\n'
