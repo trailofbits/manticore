@@ -274,3 +274,21 @@ class LinuxTest(unittest.TestCase):
         fd = platform.sys_open(filename, os.O_RDONLY, 0o600)
         platform.sys_close(fd)
         pickle.dumps(platform)
+
+    def test_thumb_mode_entrypoint(self):
+        m = Manticore.linux(os.path.join(os.path.dirname(__file__), 'binaries', 'thumb_mode_entrypoint'))
+
+        @m.init
+        def init(state):
+            state.cpu.regfile.write('R0', 0)
+            state.cpu.regfile.write('R1', 0x1234)
+            state.cpu.regfile.write('R2', 0x5678)
+
+            @m.hook(None)
+            def success(state):
+                if state.cpu.PC < 0x1004:
+                    return
+                self.assertEqual(state.cpu.regfile.read('R0'), 0x68ac)
+                state.abandon()
+
+        m.run()
