@@ -2,6 +2,7 @@ import unittest
 import struct
 from functools import wraps
 
+from manticore.core.cpu.abstractcpu import ConcretizeRegister
 from manticore.core.cpu.arm import Armv7Cpu as Cpu, Mask, Interruption
 from manticore.core.memory import Memory32, SMemory32
 from manticore.core.smtlib import *
@@ -1694,4 +1695,36 @@ class Armv7CpuInstructions(unittest.TestCase):
         import pickle
         dumped_s = pickle.dumps(self.cpu)
         self.cpu = pickle.loads(dumped_s)
+
+    def test_symbolic_conditional(self):
+        asm = \
+        """
+          tst r0, r0
+          beq label
+          bne label
+        label:
+          nop
+        """
+        self._setupCpu(asm, mode=CS_MODE_THUMB)
+
+        self.cpu.R0 = BitVecVariable(32, 'val')
+        self.cpu.execute()
+        self.cpu.execute()
+
+        with self.assertRaises(ConcretizeRegister) as cm:
+            self.cpu.execute()
+
+        expression = self.cpu.read_register(cm.exception.reg_name)
+        all_values = solver.get_all_values(self.cpu.memory.constraints, expression)
+        self.assertEqual(sorted(all_values), [0x1006, 0x1008])
+
+        self.cpu.PC = 0x1008
+        self.cpu.execute()
+
+        with self.assertRaises(ConcretizeRegister) as cm:
+            self.cpu.execute()
+
+        expression = self.cpu.read_register(cm.exception.reg_name)
+        all_values = solver.get_all_values(self.cpu.memory.constraints, expression)
+        self.assertEqual(sorted(all_values), [0x1008, 0x100a])
 
