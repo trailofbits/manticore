@@ -9,25 +9,47 @@ from contextlib import contextmanager
 from multiprocessing import Process
 from threading import Timer
 
-# FIXME: remove this three
-import elftools
 import functools
 import os
 import types
-from elftools.elf.elffile import ELFFile
-from elftools.elf.sections import SymbolTableSection
 
 from .core.executor import Executor
 from .core.plugin import Plugin
 from .core.smtlib import solver, ConstraintSet
 from .core.state import State, TerminateState
 from .core.workspace import ManticoreOutput
-from .platforms import linux, evm, decree
 from .utils import config
 from .utils import log
 from .utils.event import Eventful
 from .utils.helpers import issymbolic
 from .utils.nointerrupt import WithKeyboardInterruptAs
+
+# Target-specific imports
+HAS_NATIVE_DEPENDENCIES = True
+HAS_ETHEREUM_DEPENDENCIES = True
+
+try:
+    import elftools
+    from elftools.elf.elffile import ELFFile
+    from elftools.elf.sections import SymbolTableSection
+
+    from .platforms import linux, decree
+except ImportError:
+    HAS_NATIVE_DEPENDENCIES = False
+
+try:
+    from .platforms import evm
+except ImportError:
+    HAS_ETHEREUM_DEPENDENCIES = False
+
+print('native', HAS_NATIVE_DEPENDENCIES)
+print('eth', HAS_ETHEREUM_DEPENDENCIES)
+
+# We don't have any dependencies, lets propose user to install one
+if not HAS_NATIVE_DEPENDENCIES and not HAS_ETHEREUM_DEPENDENCIES:
+    from .utils.install_helper import propose_install_deps
+    propose_install_deps()
+    exit(-1)
 
 logger = logging.getLogger(__name__)
 log.init_logging()

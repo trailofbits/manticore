@@ -41,12 +41,11 @@ setup(
             'unicorn',
             'ply',
         ],
-        'eth': [
+        'evm': [
             'pysha3',
             # In 0.1.1, pyevmasm changed its gas cost calculations, so Manticore will need to update its
             # unit tests to match before we can upgrade pyevmasm
             'pyevmasm==0.1.0',
-
         ],
         'dev': [
             'keystone-engine',
