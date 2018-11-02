@@ -2186,9 +2186,11 @@ class EVMWorld(Platform):
             raise EthereumError('The account already exists')
         if storage is None:
             storage = self.constraints.new_array(index_bits=256, value_bits=256, name='STORAGE_{:x}'.format(address), avoid_collisions=True, default=0)
+        print(type(code))
         if code is None:
             code = bytes()
-        if not isinstance(code, (bytes, Array)):
+        print(type(code))
+        if not isinstance(code, (bytes, Array, bytearray)):
             raise EthereumError('Wrong code type')
         self._world_state[address] = {}
         self._world_state[address]['nonce'] = 0

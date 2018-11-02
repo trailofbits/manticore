@@ -57,16 +57,15 @@ def gen_test(json_test_case, file_name, skip):
     for address, account in json_test_case['pre'].items():
         account_address = int(address[2:], 16)
         account_code = account['code'][2:]
-        account_nonce = int(account['nonce'][2:], 16)
         account_balance = int(account['balance'][2:], 16)
 
         output += f'''
         account_address = {hex(account_address)}
         bytecode = unhexlify('{account_code}')
+        #  print(type(bytecode))
         m.create_account(address={hex(account_address)},
                              balance={account_balance},
-                             code=bytecode,
-                             nonce={account_nonce}
+                             code=bytecode
                             )'''
 
         for key, value in account['storage'].items():
@@ -106,7 +105,6 @@ def gen_test(json_test_case, file_name, skip):
         #  print(address.hex())
 
         output += f'''
-        address = 0x{address.hex()}
         price = {hex(price)}'''
 
         if call_data:
@@ -114,7 +112,7 @@ def gen_test(json_test_case, file_name, skip):
         data = unhexlify({call_data})'''
         else:
             output += f"""
-        data = ''"""
+        data = bytes()"""
 
         output += f'''
         caller = 0x{address.hex()}
@@ -122,19 +120,20 @@ def gen_test(json_test_case, file_name, skip):
         gas = {gas}
         to = 0x{to}
 
+        print(hex(caller),"calling",hex(to))
         for acc in m.world.accounts:
             print(hex(acc))
-            print(world.get_balance(acc))
+            print(m.world.get_balance(acc))
         print("++transaction")
         try:
-            m.transaction(caller=caller, address=to, price=price, data=data, value=value, gas=gas)
+            m.transaction(caller=caller, address=to, data=bytearray(data), value=value, gas=gas)
             print()
         except Exception as e:
             print(str(e))
         print("--transaction")
         for acc in world.accounts:
             print(hex(acc))
-            print(world.get_balance(acc))
+            print(m.world.get_balance(acc))
         # open a fake tx, no funds send
         #m.world._open_transaction('CALL', to, price, data, caller, value, gas=gas)
 
@@ -161,9 +160,9 @@ def gen_test(json_test_case, file_name, skip):
         # Add postState checks for account {hex(account_address)}
         # check nonce, balance, code
         
-        self.assertEqual(world.get_nonce({hex(account_address)}), {account_nonce})
-        self.assertEqual(to_constant(world.get_balance({hex(account_address)})), {account_balance})
-        self.assertEqual(world.get_code({hex(account_address)}), unhexlify('{account_code}'))
+        self.assertEqual(m.world.get_nonce({hex(account_address)}), {account_nonce})
+        self.assertEqual(to_constant(m.world.get_balance({hex(account_address)})), {account_balance})
+        self.assertEqual(m.world.get_code({hex(account_address)}), unhexlify('{account_code}'))
         '''
 
         if account['storage']:
@@ -226,7 +225,7 @@ def disabled(test):
     return False
 
 
-def find_eth_tests(ethereum_tests_dir, fork):
+def find_eth_tests(ethereum_tests_dir, fork, filter_regex):
     """
     Return a list of files that contain Ethereum test case for a given fork.
 
@@ -239,6 +238,8 @@ def find_eth_tests(ethereum_tests_dir, fork):
     for dirpath, dirnames, files in os.walk(os.path.join(ethereum_tests_dir, 'BlockchainTests')):
         for name in files:
             if name.lower().endswith('.json'):
+                if filter_regex and filter_regex not in name:
+                    continue
                 json_test = dict(json.loads(open(os.path.join(dirpath, name)).read()))
                 if any(key.endswith(fork) for key in json_test.keys()):
                     test_files.append(os.path.join(dirpath, name))
@@ -249,6 +250,7 @@ def find_eth_tests(ethereum_tests_dir, fork):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Manticore test generator for Ethereum BlockchainTests")
     parser.add_argument('-i', '--eth-tests-path', nargs='?', help='Path to Ethereum tests', required=True)
+    parser.add_argument('-r', '--filter-regex', type=str, help='Filter by regex')
     parser.add_argument('-o', '--output-path', nargs='?', default='generated', help='Output path, default="."')
     parser.add_argument('-d', '--dry-run', default=False, action='store_true')
     parser.add_argument('-f', '--fork', default=DEFAULT_FORK, type=str,
@@ -271,7 +273,7 @@ if __name__ == '__main__':
 
     filename_or_folder = args.eth_tests_path
 
-    eth_test_files = find_eth_tests(args.eth_tests_path, arg_fork)
+    eth_test_files = find_eth_tests(args.eth_tests_path, arg_fork, args.filter_regex)
 
     generated_tests = defaultdict(list)
 

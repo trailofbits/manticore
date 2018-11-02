@@ -481,6 +481,37 @@ class ManticoreEVM(Manticore):
         self._executor.subscribe('on_symbolic_sha3', self._on_symbolic_sha3_callback)
         self._executor.subscribe('on_concrete_sha3', self._on_concrete_sha3_callback)
 
+    def __init__(self, constraints, world, procs=10, **kwargs):
+        """ A Manticore EVM manager
+            :param int procs: number of workers to use in the exploration
+        """
+        self._accounts = dict()
+        self._serializer = PickleSerializer()
+
+        self._config_procs = procs
+
+        initial_state = State(constraints, world)
+        super().__init__(initial_state, **kwargs)
+
+        self.constraints = ConstraintSet()
+        self.detectors = {}
+        self.metadata = {}
+
+        # The following should go to manticore.context so we can use multiprocessing
+        self.context['ethereum'] = {}
+        self.context['ethereum']['_saved_states'] = set()
+        self.context['ethereum']['_final_states'] = set()
+        self.context['ethereum']['_completed_transactions'] = 0
+        self.context['ethereum']['_sha3_states'] = dict()
+        self.context['ethereum']['_known_sha3'] = set()
+
+        self._executor.subscribe('did_load_state', self._load_state_callback)
+        self._executor.subscribe('will_terminate_state', self._terminate_state_callback)
+        self._executor.subscribe('did_evm_execute_instruction', self._did_evm_execute_instruction_callback)
+        self._executor.subscribe('did_read_code', self._did_evm_read_code)
+        self._executor.subscribe('on_symbolic_sha3', self._on_symbolic_sha3_callback)
+        self._executor.subscribe('on_concrete_sha3', self._on_concrete_sha3_callback)
+
     @property
     def world(self):
         """ The world instance or None if there is more than one state """
@@ -793,7 +824,8 @@ class ManticoreEVM(Manticore):
         if not isinstance(balance, int):
             raise EthereumError("Balance invalid type")
 
-        if isinstance(code, str):
+        print(type(code))
+        if isinstance(code, str) or isinstance(code, bytes):
             code = bytearray(code)
         if code is not None and not isinstance(code, (bytearray, Array)):
             raise EthereumError("code bad type")
