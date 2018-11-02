@@ -381,7 +381,7 @@ class ManticoreEVM(Manticore):
             raise EthereumError('Solidity compilation error:\n\n{}'.format(stderr))
 
     @staticmethod
-    def _compile(source_code, contract_name, libraries=None, solc_bin=None, solc_remaps=[]):
+    def _compile(source_code, contract_name, libraries=None, solc_bin=None, solc_remaps=[], working_dir=None):
         """ Compile a Solidity contract, used internally
 
             :param source_code: solidity source as either a string or a file handle
@@ -389,6 +389,7 @@ class ManticoreEVM(Manticore):
             :param libraries: an itemizable of pairs (library_name, address)
             :param solc_bin: path to solc binary
             :param solc_remaps: solc import remaps
+            :param working_dir: working directory for solc compilation (defaults to current)
             :return: name, source_code, bytecode, srcmap, srcmap_runtime, hashes
             :return: name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
         """
@@ -397,9 +398,9 @@ class ManticoreEVM(Manticore):
             with tempfile.NamedTemporaryFile('w+') as temp:
                 temp.write(source_code)
                 temp.flush()
-                output, warnings = ManticoreEVM._run_solc(temp, solc_bin, solc_remaps)
+                output, warnings = ManticoreEVM._run_solc(temp, solc_bin, solc_remaps, working_dir=working_dir)
         elif isinstance(source_code, io.IOBase):
-            output, warnings = ManticoreEVM._run_solc(source_code, solc_bin, solc_remaps)
+            output, warnings = ManticoreEVM._run_solc(source_code, solc_bin, solc_remaps, working_dir=working_dir)
             source_code.seek(0)
             source_code = source_code.read()
         else:
@@ -646,7 +647,9 @@ class ManticoreEVM(Manticore):
         # FIXME this is more naive than reasonable.
         return ABI.deserialize(types, self.make_symbolic_buffer(32, name="INITARGS"))
 
-    def solidity_create_contract(self, source_code, owner, name=None, contract_name=None, libraries=None, balance=0, address=None, args=(), solc_bin=None, solc_remaps=[], gas=90000):
+    def solidity_create_contract(self, source_code, owner, name=None, contract_name=None, libraries=None,
+                                 balance=0, address=None, args=(), solc_bin=None, solc_remaps=[],
+                                 working_dir=None, gas=90000):
         """ Creates a solidity contract and library dependencies
 
             :param str source_code: solidity source code
@@ -663,6 +666,8 @@ class ManticoreEVM(Manticore):
             :type solc_bin: str
             :param solc_remaps: solc import remaps
             :type solc_remaps: list of str
+            :param working_dir: working directory for solc compilation (defaults to current)
+            :type working_dir: str
             :param gas: gas budget for each contract creation needed (may be more than one if several related contracts defined in the solidity source)
             :type gas: int
             :rtype: EVMAccount
@@ -676,7 +681,9 @@ class ManticoreEVM(Manticore):
         while contract_names:
             contract_name_i = contract_names.pop()
             try:
-                compile_results = self._compile(source_code, contract_name_i, libraries=deps, solc_bin=solc_bin, solc_remaps=solc_remaps)
+                compile_results = self._compile(source_code, contract_name_i,
+                                                libraries=deps, solc_bin=solc_bin, solc_remaps=solc_remaps,
+                                                working_dir=working_dir)
                 md = SolidityMetadata(*compile_results)
                 if contract_name_i == contract_name:
                     constructor_types = md.get_constructor_arguments()
@@ -985,7 +992,9 @@ class ManticoreEVM(Manticore):
 
         return address
 
-    def multi_tx_analysis(self, solidity_filename, contract_name=None, tx_limit=None, tx_use_coverage=True, tx_send_ether=True, tx_account="attacker", args=None):
+    def multi_tx_analysis(self, solidity_filename, working_dir=None, contract_name=None,
+                          tx_limit=None, tx_use_coverage=True,
+                          tx_send_ether=True, tx_account="attacker", args=None):
         owner_account = self.create_account(balance=1000, name='owner')
         attacker_account = self.create_account(balance=1000, name='attacker')
 
@@ -993,7 +1002,8 @@ class ManticoreEVM(Manticore):
         logger.info("Starting symbolic create contract")
 
         with open(solidity_filename) as f:
-            contract_account = self.solidity_create_contract(f, contract_name=contract_name, owner=owner_account, args=args)
+            contract_account = self.solidity_create_contract(f, contract_name=contract_name, owner=owner_account,
+                                                             args=args, working_dir=working_dir)
 
         if tx_account == "attacker":
             tx_account = [attacker_account]
