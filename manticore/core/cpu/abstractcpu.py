@@ -898,6 +898,7 @@ class Cpu(Eventful):
         value = self.read_register(reg_name)
 
         if issymbolic(value):
+            value = str(value)  # coerce the value into a string
             aux = f"{reg_name:3s}: {value:16s}"
             result += aux
         elif isinstance(value, int):
