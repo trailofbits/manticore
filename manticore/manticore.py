@@ -1,35 +1,33 @@
 
-import os
+import cProfile
+import itertools
+import logging
+import pstats
 import sys
 import time
-import types
-import functools
-import cProfile
-import pstats
-import itertools
-from multiprocessing import Process
 from contextlib import contextmanager
-
+from multiprocessing import Process
 from threading import Timer
 
 # FIXME: remove this three
 import elftools
+import functools
+import os
+import types
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 
-
 from .core.executor import Executor
-from .core.state import State, TerminateState
+from .core.plugin import Plugin
 from .core.smtlib import solver, ConstraintSet
+from .core.state import State, TerminateState
 from .core.workspace import ManticoreOutput
 from .platforms import linux, evm, decree
 from .utils import config
+from .utils import log
+from .utils.event import Eventful
 from .utils.helpers import issymbolic
 from .utils.nointerrupt import WithKeyboardInterruptAs
-from .utils.event import Eventful
-from .core.plugin import Plugin, InstructionCounter, RecordSymbolicBranches, Visited, Tracer
-import logging
-from .utils import log
 
 logger = logging.getLogger(__name__)
 log.init_logging()
