@@ -1,18 +1,24 @@
-import io
-import unittest
+import subprocess
 import sys
+import time
+import unittest
+
+import os
 import shutil
 import tempfile
-import os
-import hashlib
-import subprocess
-import time
+
 from manticore.binary import Elf, CGCElf
 from manticore.utils.mappings import mmap, munmap
 
 #logging.basicConfig(filename = "test.log",
 #                format = "%(asctime)s: %(name)s:%(levelname)s: %(message)s",
 #                level = logging.DEBUG)
+
+
+# TLDR: when we launch `python -m manticore` and one uses PyCharm remote interpreter
+# the `python` might not refer to proper interpreter. The `/proc/self/exe` is a workaround
+# so one doesn't have to set up virtualenv in a remote interpreter.
+PYTHON_BIN = '/proc/self/exe'
 
 
 class TestBinaryPackage(unittest.TestCase):
@@ -61,15 +67,19 @@ class IntegrationTest(unittest.TestCase):
 
         return set(vitems)
 
-    def _simple_cli_run(self, filename, contract=None, tx_limit=1):
+    def _simple_cli_run(self, filename, contract=None, tx_limit=1, in_directory=None):
         """
         Simply run the Manticore command line with `filename`
         :param filename: Name of file inside the `tests/binaries` directory
         :return:
         """
         dirname = os.path.dirname(__file__)
-        filename = os.path.join(dirname, 'binaries', filename)
-        command = ['python', '-m', 'manticore']
+        working_dir = os.path.join(dirname, 'binaries')
+
+        if in_directory:
+            working_dir = os.path.join(working_dir, in_directory)
+
+        command = [PYTHON_BIN, '-m', 'manticore']
 
         if contract:
             command.append('--contract')
@@ -78,7 +88,7 @@ class IntegrationTest(unittest.TestCase):
         command.append(str(tx_limit))
         command.append(filename)
 
-        subprocess.check_call(command, stdout=subprocess.PIPE)
+        subprocess.check_call(command, stdout=subprocess.PIPE, cwd=working_dir)
 
     def _runWithTimeout(self, procargs, logfile, timeout=1200):
 
@@ -103,7 +113,7 @@ class IntegrationTest(unittest.TestCase):
         workspace = os.path.join(self.test_dir, 'workspace')
         t = time.time()
         with open(os.path.join(os.pardir, self.test_dir, 'output.log'), "w") as output:
-            subprocess.check_call(['python', '-m', 'manticore',
+            subprocess.check_call([PYTHON_BIN, '-m', 'manticore',
                                 '--workspace', workspace,
                                 '--timeout', '1',
                                 '--procs', '4',
@@ -119,7 +129,7 @@ class IntegrationTest(unittest.TestCase):
 
         dirname = os.path.dirname(__file__)
         filename = os.path.join(dirname, 'binaries', 'basic_linux_amd64')
-        output = subprocess.check_output(['python', '-m', 'manticore', filename])
+        output = subprocess.check_output([PYTHON_BIN, '-m', 'manticore', filename])
         output_lines = output.splitlines()
         start_info = output_lines[:2]
         testcase_info = output_lines[2:-5]
@@ -141,7 +151,7 @@ class IntegrationTest(unittest.TestCase):
         with open(assertions, 'w') as output:
             output.write('0x0000000000401003 ZF == 1')
         with open(os.path.join(os.pardir, self.test_dir, 'output.log'), "w") as output:
-            subprocess.check_call(['python', '-m', 'manticore',
+            subprocess.check_call([PYTHON_BIN, '-m', 'manticore',
                                    '--workspace', workspace,
                                    '--proc', '4',
                                    '--assertions', assertions,
@@ -157,7 +167,7 @@ class IntegrationTest(unittest.TestCase):
         self.assertTrue(filename.startswith(os.getcwd()))
         filename = filename[len(os.getcwd())+1:]
         workspace = os.path.join(self.test_dir, 'workspace')
-        self._runWithTimeout(['python', '-m', 'manticore',
+        self._runWithTimeout([PYTHON_BIN, '-m', 'manticore',
                     '--workspace', workspace,
                     '--timeout', '20',
                     '--proc', '4',
@@ -180,11 +190,14 @@ class IntegrationTest(unittest.TestCase):
             {'number': 799, 'contract': 'C', 'txlimit': 1},
             {'number': 807, 'contract': 'C', 'txlimit': 1},
             {'number': 808, 'contract': 'C', 'txlimit': 1},
+            {'number': 'main/main', 'contract': 'C', 'txlimit': 1, 'in_directory': 'imports_issue'}
         ]
 
         for issue in issues:
-            self._simple_cli_run(f'{issue["number"]}.sol',
-                                 contract=issue['contract'], tx_limit=issue['txlimit'])
+            self._simple_cli_run(
+                f'{issue["number"]}.sol', contract=issue['contract'], tx_limit=issue['txlimit'],
+                in_directory=issue.get('in_directory')
+            )
 
     def test_eth_705(self):
         # This test needs to run inside tests/binaries because the contract imports a file
@@ -200,7 +213,7 @@ class IntegrationTest(unittest.TestCase):
         dirname = os.path.dirname(__file__)
         filename = os.path.abspath(os.path.join(dirname, 'binaries', 'basic_linux_armv7'))
         workspace = os.path.join(self.test_dir, 'workspace')
-        output = subprocess.check_output(['python', '-m', 'manticore', '--workspace', workspace, filename])
+        output = subprocess.check_output([PYTHON_BIN, '-m', 'manticore', '--workspace', workspace, filename])
 
         with open(os.path.join(workspace, "test_00000000.stdout")) as f:
             self.assertIn("Message", f.read())
@@ -232,13 +245,11 @@ class IntegrationTest(unittest.TestCase):
 	    else
 		return 1;
 	}
-
-
         """
         dirname = os.path.dirname(__file__)
         filename = os.path.abspath(os.path.join(dirname, 'binaries/brk_static_amd64'))
         workspace = f'{self.test_dir}/workspace'
-        output = subprocess.check_output(['python', '-m', 'manticore', '--workspace', workspace, filename])
+        output = subprocess.check_output([PYTHON_BIN, '-m', 'manticore', '--workspace', workspace, filename])
 
         with open(os.path.join(workspace, "test_00000000.messages")) as f:
             self.assertIn("finished with exit status: 0", f.read())
@@ -253,6 +264,7 @@ class IntegrationTest(unittest.TestCase):
             ]:
                 # No assert should be triggered on the following line
                 munmap(mmap(f.fileno(), addr, size), size)
+
 
 if __name__ == '__main__':
     unittest.main()
