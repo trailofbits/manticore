@@ -30,14 +30,14 @@ def instruction(body):
 
         should_execute = cpu.should_execute_conditional()
 
-        if cpu._at_symbolic_conditional:
-            cpu._at_symbolic_conditional = False
+        if cpu._at_symbolic_conditional == cpu.instruction.address:
+            cpu._at_symbolic_conditional = None
             should_execute = True
         else:
             if issymbolic(should_execute):
                 # Let's remember next time we get here we should not do this again
-                cpu._at_symbolic_conditional = True
-                i_size = cpu.address_bit_size // 8
+                cpu._at_symbolic_conditional = cpu.instruction.address
+                i_size = cpu.instruction.size
                 cpu.PC = Operators.ITEBV(cpu.address_bit_size, should_execute, cpu.PC - i_size,
                                          cpu.PC)
                 return
@@ -358,7 +358,7 @@ class Armv7Cpu(Cpu):
     def __init__(self, memory):
         self._it_conditional = list()
         self._last_flags = {'C': 0, 'V': 0, 'N': 0, 'Z': 0, 'GE': 0}
-        self._at_symbolic_conditional = False
+        self._at_symbolic_conditional = None
         self._mode = cs.CS_MODE_ARM
         super().__init__(Armv7RegisterFile(), memory)
 

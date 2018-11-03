@@ -2,6 +2,7 @@ import unittest
 import struct
 from functools import wraps
 
+from manticore.core.cpu.abstractcpu import ConcretizeRegister
 from manticore.core.cpu.arm import Armv7Cpu as Cpu, Mask, Interruption
 from manticore.core.memory import Memory32, SMemory32
 from manticore.core.smtlib import *
@@ -194,6 +195,11 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.code = self.mem.mmap(0x1000, 0x1000, 'rwx')
         self.data = self.mem.mmap(0xd000, 0x1000, 'rw')
         self.stack = self.mem.mmap(0xf000, 0x1000, 'rw')
+
+        # it doesn't really matter what's the starting address of code
+        # as long as it's known and constant for all the tests;
+        # we start it at +4 as it is convenient for some tests to use pc-4 reference
+        # (see e.g. test_bl_neg test)
         start = self.code + 4
         if multiple_insts:
             offset = 0
@@ -1694,4 +1700,45 @@ class Armv7CpuInstructions(unittest.TestCase):
         import pickle
         dumped_s = pickle.dumps(self.cpu)
         self.cpu = pickle.loads(dumped_s)
+
+    def test_symbolic_conditional(self):
+        asm = ""
+        asm += "  tst r0, r0\n"  # 0x1004
+        asm += "  beq label\n"   # 0x1006
+        asm += "  bne label\n"   # 0x1008
+        asm += "label:\n"
+        asm += "  nop"           # 0x100a
+
+        self._setupCpu(asm, mode=CS_MODE_THUMB)  # code starts at 0x1004
+
+        # Set R0 as a symbolic value
+        self.cpu.R0 = BitVecVariable(32, 'val')
+        self.cpu.execute()  # tst r0, r0
+        self.cpu.execute()  # beq label
+
+        # Here the PC can have two values, one for each branch of the beq
+        with self.assertRaises(ConcretizeRegister) as cm:
+            self.cpu.execute()  # Should request concretizing the PC
+
+        # Get the symbolic expression of the PC
+        expression = self.cpu.read_register(cm.exception.reg_name)
+        # Get all possible values of the expression
+        all_values = solver.get_all_values(self.cpu.memory.constraints, expression)
+        # They should be either the beq instruction itself, or the next instruction
+        self.assertEqual(sorted(all_values), [0x1006, 0x1008])
+
+        # Move the PC to the second branch instruction
+        self.cpu.PC = 0x1008
+        self.cpu.execute()  # bne label
+
+        # Here the PC can have two values again, one for each branch of the bne
+        with self.assertRaises(ConcretizeRegister) as cm:
+            self.cpu.execute()  # Should request concretizing the PC
+
+        # Get the symbolic expression of the PC
+        expression = self.cpu.read_register(cm.exception.reg_name)
+        # Get all possible values of the PC
+        all_values = solver.get_all_values(self.cpu.memory.constraints, expression)
+        # They should be either the bne instruction itself, or the next instruction
+        self.assertEqual(sorted(all_values), [0x1008, 0x100a])
 
