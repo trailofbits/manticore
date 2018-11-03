@@ -348,6 +348,20 @@ class Manticore(Eventful):
                 yield ctx
                 context[key] = ctx
 
+    @contextmanager
+    def shutdown_timeout(self, timeout):
+        if timeout <= 0:
+            yield
+            return
+
+        timer = Timer(timeout, self.shutdown)
+        timer.start()
+
+        try:
+            yield
+        finally:
+            timer.cancel()
+
     @staticmethod
     def verbosity(level):
         """Convenience interface for setting logging verbosity to one of
@@ -608,16 +622,10 @@ class Manticore(Eventful):
         self._start_run()
 
         self._time_started = time.time()
-        if timeout > 0:
-            t = Timer(timeout, self.terminate)
-            t.start()
-        try:
+        with self.shutdown_timeout(timeout):
             self._start_workers(procs, profiling=should_profile)
 
             self._join_workers()
-        finally:
-            if timeout > 0:
-                t.cancel()
         self._finish_run(profiling=should_profile)
 
     #Fixme remove. terminate is used to TerminateState. May be confusing

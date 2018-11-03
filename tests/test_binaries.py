@@ -122,6 +122,23 @@ class IntegrationTest(unittest.TestCase):
 
         self.assertTrue(time.time()-t < 20)
 
+    def test_solidity_timeout(self):
+        dirname = os.path.dirname(__file__)
+        filename = os.path.abspath(os.path.join(dirname, 'binaries', 'int_overflow.sol'))
+        self.assertTrue(filename.startswith(os.getcwd()))
+        filename = filename[len(os.getcwd())+1:]
+        workspace = os.path.join(self.test_dir, 'workspace')
+        t = time.time()
+        with open(os.path.join(os.pardir, self.test_dir, 'output.log'), "w") as output:
+            subprocess.check_call(['python', '-m', 'manticore',
+                                '--workspace', workspace,
+                                '--timeout', '1',
+                                '--procs', '4',
+                                filename,
+                                '+++++++++'], stdout=output)
+
+        self.assertTrue(time.time()-t < 20)
+
     def test_logger_verbosity(self):
         """
         Tests that default verbosity produces the expected volume of output
