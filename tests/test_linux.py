@@ -280,7 +280,7 @@ class LinuxTest(unittest.TestCase):
         #   0x1000: add.w   r0, r1, r2
         # which is a Thumb instruction, so the entrypoint is set to 0x1001
         m = Manticore.linux(os.path.join(os.path.dirname(__file__), 'binaries', 'thumb_mode_entrypoint'))
-        m.success = True
+        m.success = False
 
         @m.init
         def init(state):
@@ -292,7 +292,6 @@ class LinuxTest(unittest.TestCase):
         def pre(state):
             # If the wrong PC value was used by the loader (0x1001 instead of 0x1000),
             # the wrong instruction bytes will have been fetched from memory
-            m.success = False
             state.abandon()
 
         @m.hook(0x1004)
