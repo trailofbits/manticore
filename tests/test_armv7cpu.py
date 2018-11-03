@@ -1702,34 +1702,43 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.cpu = pickle.loads(dumped_s)
 
     def test_symbolic_conditional(self):
-        asm = \
-        """
-          tst r0, r0
-          beq label
-          bne label
-        label:
-          nop
-        """
-        self._setupCpu(asm, mode=CS_MODE_THUMB)
+        asm = ""
+        asm += "  tst r0, r0\n"  # 0x1004
+        asm += "  beq label\n"   # 0x1006
+        asm += "  bne label\n"   # 0x1008
+        asm += "label:\n"
+        asm += "  nop"           # 0x100a
 
+        self._setupCpu(asm, mode=CS_MODE_THUMB)  # code starts at 0x1004
+
+        # Set R0 as a symbolic value
         self.cpu.R0 = BitVecVariable(32, 'val')
-        self.cpu.execute()
-        self.cpu.execute()
+        self.cpu.execute()  # tst r0, r0
+        self.cpu.execute()  # beq label
 
+        # Here the PC can have two values, one for each branch of the beq
         with self.assertRaises(ConcretizeRegister) as cm:
-            self.cpu.execute()
+            self.cpu.execute()  # Should request concretizing the PC
 
+        # Get the symbolic expression of the PC
         expression = self.cpu.read_register(cm.exception.reg_name)
+        # Get all possible values of the expression
         all_values = solver.get_all_values(self.cpu.memory.constraints, expression)
+        # They should be either the beq instruction itself, or the next instruction
         self.assertEqual(sorted(all_values), [0x1006, 0x1008])
 
+        # Move the PC to the second branch instruction
         self.cpu.PC = 0x1008
-        self.cpu.execute()
+        self.cpu.execute()  # bne label
 
+        # Here the PC can have two values again, one for each branch of the bne
         with self.assertRaises(ConcretizeRegister) as cm:
-            self.cpu.execute()
+            self.cpu.execute()  # Should request concretizing the PC
 
+        # Get the symbolic expression of the PC
         expression = self.cpu.read_register(cm.exception.reg_name)
+        # Get all possible values of the PC
         all_values = solver.get_all_values(self.cpu.memory.constraints, expression)
+        # They should be either the bne instruction itself, or the next instruction
         self.assertEqual(sorted(all_values), [0x1008, 0x100a])
 
