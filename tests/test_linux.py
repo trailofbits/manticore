@@ -274,3 +274,32 @@ class LinuxTest(unittest.TestCase):
         fd = platform.sys_open(filename, os.O_RDONLY, 0o600)
         platform.sys_close(fd)
         pickle.dumps(platform)
+
+    def test_thumb_mode_entrypoint(self):
+        # thumb_mode_entrypoint is a binary with only one instruction
+        #   0x1000: add.w   r0, r1, r2
+        # which is a Thumb instruction, so the entrypoint is set to 0x1001
+        m = Manticore.linux(os.path.join(os.path.dirname(__file__), 'binaries', 'thumb_mode_entrypoint'))
+        m.success = False
+
+        @m.init
+        def init(state):
+            state.cpu.regfile.write('R0', 0)
+            state.cpu.regfile.write('R1', 0x1234)
+            state.cpu.regfile.write('R2', 0x5678)
+
+        @m.hook(0x1001)
+        def pre(state):
+            # If the wrong PC value was used by the loader (0x1001 instead of 0x1000),
+            # the wrong instruction bytes will have been fetched from memory
+            state.abandon()
+
+        @m.hook(0x1004)
+        def post(state):
+            # If the wrong execution mode was set by the loader, the wrong instruction
+            # will have been executed, so the register value will be incorrect
+            m.success = state.cpu.regfile.read('R0') == 0x68ac
+            state.abandon()
+
+        m.run()
+        self.assertTrue(m.success)
