@@ -132,11 +132,11 @@ def itest_setregs(*preds):
 
     return instr_dec
 
-def itest_custom(asm):
+def itest_custom(asm, mode=CS_MODE_ARM):
     def instr_dec(custom_func):
         @wraps(custom_func)
         def wrapper(self):
-            self._setupCpu(asm)
+            self._setupCpu(asm, mode)
             custom_func(self)
 
         return wrapper
@@ -969,6 +969,40 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.cpu.execute()
         dr2 = self.cpu.read_int(r1, self.cpu.address_bit_size)
         self.assertEqual(dr2, r2)
+
+    # ADR
+
+    @itest_custom("adr r0, #16", mode=CS_MODE_THUMB)
+    def test_adr(self):
+        pre_pc = self.rf.read('PC')
+        self.cpu.execute()
+        self.assertEqual(self.rf.read('R0'), pre_pc + 4 + 16)
+
+    # ADDW
+
+    @itest_setregs("R1=0x1234")
+    @itest_thumb("addw r0, r1, 0x2a")
+    def test_addw(self):
+        self.assertEqual(self.rf.read('R0'), 0x1234 + 42)
+
+    @itest_custom("addw r0, pc, 0x2a", mode=CS_MODE_THUMB)
+    def test_addw_pc_relative(self):
+        pre_pc = self.rf.read('PC')
+        self.cpu.execute()
+        self.assertEqual(self.rf.read('R0'), pre_pc + 4 + 42)
+
+    # SUBW
+
+    @itest_setregs("R1=0x1234")
+    @itest_thumb("subw r0, r1, 0x2a")
+    def test_subw(self):
+        self.assertEqual(self.rf.read('R0'), 0x1234 - 42)
+
+    @itest_custom("subw r0, pc, 0x2a", mode=CS_MODE_THUMB)
+    def test_subw_pc_relative(self):
+        pre_pc = self.rf.read('PC')
+        self.cpu.execute()
+        self.assertEqual(self.rf.read('R0'), pre_pc + 4 - 42)
 
     # BL
 
