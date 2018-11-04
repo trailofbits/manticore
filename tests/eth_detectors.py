@@ -122,16 +122,19 @@ class EthExternalCallAndLeak(EthDetectorTest):
 
     def test_etherleak_true_pos_argument(self):
         name = inspect.currentframe().f_code.co_name[5:]
-        self._test(name, {("Reachable ether leak to sender via argument", False)})
+        self._test(name, {("Reachable ether leak to sender via argument", False),
+                          ("Reachable external call to sender via argument", False)})
 
     def test_etherleak_true_pos_argument1(self):
         self.mevm.register_plugin(LoopDepthLimiter(5))
         name = inspect.currentframe().f_code.co_name[5:]
-        self._test(name, {("Reachable ether leak to sender via argument", False)})
+        self._test(name, {("Reachable ether leak to sender via argument", False),
+                          ("Reachable external call to sender via argument", False)})
 
     def test_etherleak_true_pos_argument2(self):
         name = inspect.currentframe().f_code.co_name[5:]
-        self._test(name, {("Reachable ether leak to user controlled address via argument", False)})
+        self._test(name, {("Reachable ether leak to user controlled address via argument", False),
+                          ("Reachable external call to user controlled address via argument", False)})
 
     def test_etherleak_true_pos_msgsender(self):
         name = inspect.currentframe().f_code.co_name[5:]

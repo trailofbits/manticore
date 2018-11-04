@@ -526,6 +526,7 @@ class EVM(Eventful):
         self._allocated = 0
         self._on_transaction = False  # for @transact
         self._checkpoint_data = None
+        self._published_pre_instruction_events = False
 
         # Used calldata size
         min_size = 0
@@ -570,6 +571,7 @@ class EVM(Eventful):
         state['logs'] = self.logs
         state['_on_transaction'] = self._on_transaction
         state['_checkpoint_data'] = self._checkpoint_data
+        state['_published_pre_instruction_events'] = self._published_pre_instruction_events
         state['_used_calldata_size'] = self._used_calldata_size
         state['_calldata_size'] = self._calldata_size
         state['_valid_jumpdests'] = self._valid_jumpdests
@@ -578,6 +580,7 @@ class EVM(Eventful):
 
     def __setstate__(self, state):
         self._checkpoint_data = state['_checkpoint_data']
+        self._published_pre_instruction_events = state['_published_pre_instruction_events']
         self._on_transaction = state['_on_transaction']
         self._gas = state['gas']
         self.memory = state['memory']
@@ -818,7 +821,8 @@ class EVM(Eventful):
     def _checkpoint(self):
         #Fixme[felipe] add a with self.disabled_events context mangr to Eventful
         if self._checkpoint_data is None:
-            if self._on_transaction is False:
+            if not self._published_pre_instruction_events:
+                self._published_pre_instruction_events = True
                 self._publish('will_decode_instruction', self.pc)
                 self._publish('will_execute_instruction', self.pc, self.instruction)
                 self._publish('will_evm_execute_instruction', self.instruction, self._top_arguments())
@@ -867,6 +871,7 @@ class EVM(Eventful):
         self._publish('did_evm_execute_instruction', last_instruction, last_arguments, result)
         self._publish('did_execute_instruction', last_pc, self.pc, last_instruction)
         self._checkpoint_data = None
+        self._published_pre_instruction_events = False
 
     def change_last_result(self, result):
         last_pc, last_gas, last_instruction, last_arguments = self._checkpoint_data
