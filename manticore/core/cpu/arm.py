@@ -935,6 +935,62 @@ class Armv7Cpu(Cpu):
         return result, carry, overflow
 
     @instruction
+    def ADR(cpu, dest, src):
+        """
+        Address to Register adds an immediate value to the PC value, and writes the result to the destination register.
+
+        :param ARMv7Operand dest: Specifies the destination register.
+        :param ARMv7Operand src:
+            Specifies the label of an instruction or literal data item whose address is to be loaded into
+            <Rd>. The assembler calculates the required value of the offset from the Align(PC,4)
+            value of the ADR instruction to this label.
+        """
+        aligned_pc = (cpu.instruction.address + 4) & 0xfffffffc
+        dest.write(aligned_pc + src.read())
+
+    @instruction
+    def ADDW(cpu, dest, src, add):
+        """
+        This instruction adds an immediate value to a register value, and writes the result to the destination register.
+        It doesn't update the condition flags.
+
+        :param ARMv7Operand dest: Specifies the destination register. If omitted, this register is the same as src.
+        :param ARMv7Operand src:
+            Specifies the register that contains the first operand. If the SP is specified for dest, see ADD (SP plus
+            immediate). If the PC is specified for dest, see ADR.
+        :param ARMv7Operand add:
+            Specifies the immediate value to be added to the value obtained from src. The range of allowed values is
+            0-4095.
+        """
+        aligned_pc = (cpu.instruction.address + 4) & 0xfffffffc
+        if src.type == 'register' and src.reg in ('PC', 'R15'):
+            src = aligned_pc
+        else:
+            src = src.read()
+        dest.write(src + add.read())
+
+    @instruction
+    def SUBW(cpu, dest, src, add):
+        """
+        This instruction subtracts an immediate value from a register value, and writes the result to the destination
+        register. It can optionally update the condition flags based on the result.
+
+        :param ARMv7Operand dest: Specifies the destination register. If omitted, this register is the same as src.
+        :param ARMv7Operand src:
+            Specifies the register that contains the first operand. If the SP is specified for dest, see ADD (SP plus
+            immediate). If the PC is specified for dest, see ADR.
+        :param ARMv7Operand add:
+            Specifies the immediate value to be added to the value obtained from src. The range of allowed values is
+            0-4095.
+        """
+        aligned_pc = (cpu.instruction.address + 4) & 0xfffffffc
+        if src.type == 'register' and src.reg in ('PC', 'R15'):
+            src = aligned_pc
+        else:
+            src = src.read()
+        dest.write(src - add.read())
+
+    @instruction
     def B(cpu, dest):
         cpu.PC = dest.read()
 
