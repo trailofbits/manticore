@@ -1008,7 +1008,34 @@ class Armv7Cpu(Cpu):
                                  cpu.PC)
 
     @instruction
+    def CBZ(cpu, op, dest):
+        """
+        Compare and Branch on Zero compares the value in a register with zero, and conditionally branches forward
+        a constant value. It does not affect the condition flags.
+
+        :param ARMv7Operand op: Specifies the register that contains the first operand.
+        :param ARMv7Operand dest:
+            Specifies the label of the instruction that is to be branched to. The assembler calculates the
+            required value of the offset from the PC value of the CBZ instruction to this label, then
+            selects an encoding that will set imm32 to that offset. Allowed offsets are even numbers in
+            the range 0 to 126.
+        """
+        cpu.PC = Operators.ITEBV(cpu.address_bit_size,
+                                 op.read(), cpu.PC, dest.read())
+
+    @instruction
     def CBNZ(cpu, op, dest):
+        """
+        Compare and Branch on Non-Zero compares the value in a register with zero, and conditionally branches
+        forward a constant value. It does not affect the condition flags.
+
+        :param ARMv7Operand op: Specifies the register that contains the first operand.
+        :param ARMv7Operand dest:
+            Specifies the label of the instruction that is to be branched to. The assembler calculates the
+            required value of the offset from the PC value of the CBNZ instruction to this label, then
+            selects an encoding that will set imm32 to that offset. Allowed offsets are even numbers in
+            the range 0 to 126.
+        """
         cpu.PC = Operators.ITEBV(cpu.address_bit_size,
                                  op.read(), dest.read(), cpu.PC)
 
@@ -1039,6 +1066,54 @@ class Armv7Cpu(Cpu):
             cpu._swap_mode()
         elif dest.type == 'register':
             cpu._set_mode_by_val(dest.read())
+
+    @instruction
+    def TBB(cpu, dest):
+        """
+        Table Branch Byte causes a PC-relative forward branch using a table of single byte offsets. A base register
+        provides a pointer to the table, and a second register supplies an index into the table. The branch length is
+        twice the value of the byte returned from the table.
+
+        :param ARMv7Operand dest: see below; register
+        """
+        # Capstone merges the two registers values into one operand, so we need to extract them back
+
+        # Specifies the base register. This contains the address of the table of branch lengths. This
+        # register is allowed to be the PC. If it is, the table immediately follows this instruction.
+        base_addr = dest.get_mem_base_addr()
+        if dest.mem.base in ('PC', 'R15'):
+            base_addr = cpu.PC
+
+        # Specifies the index register. This contains an integer pointing to a single byte within the
+        # table. The offset within the table is the value of the index.
+        offset = cpu.read_int(base_addr + dest.get_mem_offset(), 8)
+        offset = Operators.ZEXTEND(offset, cpu.address_bit_size)
+
+        cpu.PC += (offset << 1)
+
+    @instruction
+    def TBH(cpu, dest):
+        """
+        Table Branch Halfword causes a PC-relative forward branch using a table of single halfword offsets. A base
+        register provides a pointer to the table, and a second register supplies an index into the table. The branch
+        length is twice the value of the halfword returned from the table.
+
+        :param ARMv7Operand dest: see below; register
+        """
+        # Capstone merges the two registers values into one operand, so we need to extract them back
+
+        # Specifies the base register. This contains the address of the table of branch lengths. This
+        # register is allowed to be the PC. If it is, the table immediately follows this instruction.
+        base_addr = dest.get_mem_base_addr()
+        if dest.mem.base in ('PC', 'R15'):
+            base_addr = cpu.PC
+
+        # Specifies the index register. This contains an integer pointing to a halfword within the table.
+        # The offset within the table is twice the value of the index.
+        offset = cpu.read_int(base_addr + dest.get_mem_offset(), 16)
+        offset = Operators.ZEXTEND(offset, cpu.address_bit_size)
+
+        cpu.PC += (offset << 1)
 
     @instruction
     def CMP(cpu, reg, compare):
