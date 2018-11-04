@@ -32,6 +32,7 @@ from .detectors import Detector, DetectEnvInstruction, DetectExternalCallAndLeak
 from .account import EVMAccount, EVMContract
 from .abi import ABI
 from .solidity import SolidityMetadata
+from .string_formatting import contract_addr, evm_program_counter
 
 
 logger = logging.getLogger(__name__)
@@ -1348,8 +1349,8 @@ class ManticoreEVM(Manticore):
         pc = world.current_vm.pc
         at_init = world.current_transaction.sort == 'CREATE'
         output = io.StringIO()
-        output.write('Contract: 0x{:x}\n'.format(address))
-        output.write('EVM Program counter: 0x{:x}{:s}\n'.format(pc, at_init and " (at constructor)" or ""))
+        output.write(contract_addr(address))
+        output.write(evm_program_counter(pc, at_init))
         md = self.get_metadata(address)
         if md is not None:
             src = md.get_source_for(pc, runtime=not at_init)
@@ -1388,8 +1389,8 @@ class ManticoreEVM(Manticore):
             with testcase.open_stream('findings') as findings:
                 for address, pc, finding, at_init, constraint in local_findings:
                     findings.write('- %s -\n' % finding)
-                    findings.write('  Contract: 0x%x\n' % address)
-                    findings.write('  EVM Program counter: 0x%x%s\n' % (pc, at_init and " (at constructor)" or ""))
+                    findings.write('  ' + contract_addr(address))
+                    findings.write('  ' + evm_program_counter(pc, at_init))
                     md = self.get_metadata(address)
                     if md is not None:
                         src = md.get_source_for(pc, runtime=not at_init)
@@ -1521,8 +1522,8 @@ class ManticoreEVM(Manticore):
             with self._output.save_stream('global.findings') as global_findings:
                 for address, pc, finding, at_init in self.global_findings:
                     global_findings.write('- %s -\n' % finding)
-                    global_findings.write('  Contract: %s\n' % address)
-                    global_findings.write('  EVM Program counter: 0x%x%s\n' % (pc, at_init and " (at constructor)" or ""))
+                    global_findings.write(contract_addr(address))
+                    global_findings.write('  ' + evm_program_counter(pc, at_init))
 
                     md = self.get_metadata(address)
                     if md is not None:
