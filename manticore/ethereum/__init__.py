@@ -1522,7 +1522,7 @@ class ManticoreEVM(Manticore):
             with self._output.save_stream('global.findings') as global_findings:
                 for address, pc, finding, at_init in self.global_findings:
                     global_findings.write('- %s -\n' % finding)
-                    global_findings.write(contract_addr(address))
+                    global_findings.write('  ' + contract_addr(address))
                     global_findings.write('  ' + evm_program_counter(pc, at_init))
 
                     md = self.get_metadata(address)
