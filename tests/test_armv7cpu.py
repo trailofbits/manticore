@@ -989,32 +989,32 @@ class Armv7CpuInstructions(unittest.TestCase):
     # CBZ/CBNZ
 
     @itest_setregs("R0=0")
-    @itest_custom("cbz r0, 0x2a", mode=CS_MODE_THUMB)
+    @itest_custom("cbz r0, #0x2a", mode=CS_MODE_THUMB)
     def test_cbz_taken(self):
         pre_pc = self.rf.read('PC')
         self.cpu.execute()
-        self.assertEqual(self.rf.read('PC'), pre_pc + 42)
+        self.assertEqual(self.rf.read('PC'), pre_pc + 0x2a)
 
     @itest_setregs("R0=1")
     @itest_custom("cbz r0, #0x2a", mode=CS_MODE_THUMB)
     def test_cbz_not_taken(self):
         pre_pc = self.rf.read('PC')
         self.cpu.execute()
-        self.assertEqual(self.rf.read('PC'), pre_pc + 2)
+        self.assertEqual(self.rf.read('PC'), pre_pc + 2)  # cbz is 2 bytes long
 
     @itest_setregs("R0=1")
-    @itest_custom("cbnz r0, 0x2a", mode=CS_MODE_THUMB)
+    @itest_custom("cbnz r0, #0x2a", mode=CS_MODE_THUMB)
     def test_cbnz_taken(self):
         pre_pc = self.rf.read('PC')
         self.cpu.execute()
-        self.assertEqual(self.rf.read('PC'), pre_pc + 42)
+        self.assertEqual(self.rf.read('PC'), pre_pc + 0x2a)
 
     @itest_setregs("R0=0")
     @itest_custom("cbnz r0, #0x2a", mode=CS_MODE_THUMB)
     def test_cbnz_not_taken(self):
         pre_pc = self.rf.read('PC')
         self.cpu.execute()
-        self.assertEqual(self.rf.read('PC'), pre_pc + 2)
+        self.assertEqual(self.rf.read('PC'), pre_pc + 2)  # cbnz is 2 bytes long
 
     # TBB/TBH
 
@@ -1022,49 +1022,49 @@ class Armv7CpuInstructions(unittest.TestCase):
     @itest_custom("tbb [r0, r1]", mode=CS_MODE_THUMB)
     def test_tbb(self):
         # Write the table of offsets at 0xd000 (R0)
-        # Index is 1 (R1), offset will be 2x21 = 42
+        # Index is 1 (R1), offset will be 2 x 21 = 42
         for i, offset in enumerate([11, 21, 31]):
             self.mem.write(0xd000 + i, struct.pack('<B', offset))
 
         pre_pc = self.rf.read('PC')
         self.cpu.execute()
-        self.assertEqual(self.rf.read('PC'), pre_pc + 4 + 42)
+        self.assertEqual(self.rf.read('PC'), (pre_pc + 4) + 42)  # tbb is 4 bytes long
 
     @itest_setregs("R1=1")
     @itest_custom("tbb [pc, r1]", mode=CS_MODE_THUMB)
     def test_tbb_pc_relative(self):
         # Write the table of offsets after the instruction
-        # Index is 1 (R1), offset will be 2x21 = 42
+        # Index is 1 (R1), offset will be 2 x 21 = 42
         for i, offset in enumerate([11, 21, 31]):
             self.mem.write(self.cpu.PC + 4 + i, struct.pack('<B', offset))
 
         pre_pc = self.rf.read('PC')
         self.cpu.execute()
-        self.assertEqual(self.rf.read('PC'), pre_pc + 4 + 42)
+        self.assertEqual(self.rf.read('PC'), (pre_pc + 4) + 42)  # tbb is 4 bytes long
 
     @itest_setregs("R0=0xd000", "R1=1")
     @itest_custom("tbh [r0, r1, lsl #1]", mode=CS_MODE_THUMB)
     def test_tbh(self):
         # Write the table of offsets at 0xd000 (R0)
-        # Index is 1 (R1), offset will be 2x21 = 42
+        # Index is 1 (R1), offset will be 2 x 21 = 42
         for i, offset in enumerate([11, 21, 31]):
             self.mem.write(0xd000 + i * 2, struct.pack('<H', offset))
 
         pre_pc = self.rf.read('PC')
         self.cpu.execute()
-        self.assertEqual(self.rf.read('PC'), pre_pc + 4 + 42)
+        self.assertEqual(self.rf.read('PC'), (pre_pc + 4) + 42)  # tbh is 4 bytes long
 
     @itest_setregs("R1=1")
     @itest_custom("tbh [pc, r1, lsl #1]", mode=CS_MODE_THUMB)
     def test_tbh_pc_relative(self):
         # Write the table of offsets after the instruction
-        # Index is 1 (R1), offset will be 2x21 = 42
+        # Index is 1 (R1), offset will be 2 x 21 = 42
         for i, offset in enumerate([11, 21, 31]):
             self.mem.write(self.cpu.PC + 4 + i * 2, struct.pack('<H', offset))
 
         pre_pc = self.rf.read('PC')
         self.cpu.execute()
-        self.assertEqual(self.rf.read('PC'), pre_pc + 4 + 42)
+        self.assertEqual(self.rf.read('PC'), (pre_pc + 4) + 42)  # tbh is 4 bytes long
 
     # CMP
 
