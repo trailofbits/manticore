@@ -976,33 +976,33 @@ class Armv7CpuInstructions(unittest.TestCase):
     def test_adr(self):
         pre_pc = self.rf.read('PC')
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R0'), pre_pc + 4 + 16)
+        self.assertEqual(self.rf.read('R0'), (pre_pc + 4) + 16)  # adr is 4 bytes long
 
     # ADDW
 
     @itest_setregs("R1=0x1234")
-    @itest_thumb("addw r0, r1, 0x2a")
+    @itest_thumb("addw r0, r1, #0x2a")
     def test_addw(self):
-        self.assertEqual(self.rf.read('R0'), 0x1234 + 42)
+        self.assertEqual(self.rf.read('R0'), 0x1234 + 0x2a)
 
-    @itest_custom("addw r0, pc, 0x2a", mode=CS_MODE_THUMB)
+    @itest_custom("addw r0, pc, #0x2a", mode=CS_MODE_THUMB)
     def test_addw_pc_relative(self):
         pre_pc = self.rf.read('PC')
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R0'), pre_pc + 4 + 42)
+        self.assertEqual(self.rf.read('R0'), (pre_pc + 4) + 0x2a)  # addw is 4 bytes long
 
     # SUBW
 
     @itest_setregs("R1=0x1234")
-    @itest_thumb("subw r0, r1, 0x2a")
+    @itest_thumb("subw r0, r1, #0x2a")
     def test_subw(self):
-        self.assertEqual(self.rf.read('R0'), 0x1234 - 42)
+        self.assertEqual(self.rf.read('R0'), 0x1234 - 0x2a)
 
-    @itest_custom("subw r0, pc, 0x2a", mode=CS_MODE_THUMB)
+    @itest_custom("subw r0, pc, #0x2a", mode=CS_MODE_THUMB)
     def test_subw_pc_relative(self):
         pre_pc = self.rf.read('PC')
         self.cpu.execute()
-        self.assertEqual(self.rf.read('R0'), pre_pc + 4 - 42)
+        self.assertEqual(self.rf.read('R0'), (pre_pc + 4) - 0x2a)  # subw is 4 bytes long
 
     # BL
 
