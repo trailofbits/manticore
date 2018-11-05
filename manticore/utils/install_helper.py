@@ -1,15 +1,48 @@
 import subprocess
 import sys
 
+# shall be set from manticore/__init__.py
+import functools
 
-def propose_install_deps():
-    print('''
+_has_evm = False
+_has_native = False
+
+
+def ensure_any_deps():
+    if not _has_evm and not _has_native:
+        _propose_install_deps()
+
+
+def ensure_evm(func):
+    @functools.wraps(func)
+    def _decorator(*a, **kw):
+        if not _has_evm:
+            _propose_install_deps()
+
+        return func(*a, **kw)
+
+    return _decorator
+
+
+def ensure_native(func):
+    @functools.wraps(func)
+    def _decorator(*a, **kw):
+        if not _has_native:
+            _propose_install_deps()
+
+        return func(*a, **kw)
+
+    return _decorator
+
+
+def _propose_install_deps():
+    print(f'''
 [*] It seems that your Manticore installation lacks targets dependencies.
 [*]
 [*] Choose your option:
 [*] 1) get more detailed information
-[*] 2) install Ethereum vm targets dependencies
-[*] 3) install native targets (x86, x86-64, armv7, decree) dependencies
+[*] 2) install Ethereum vm targets dependencies{' (installed)' if _has_evm else ''}
+[*] 3) install native targets (x86, x86-64, armv7, decree) dependencies{' (installed)' if _has_native else ''}
 [*] 4) install both native and evm targets dependencies
 [*] 5) exit
 ''')
@@ -58,4 +91,4 @@ Also, this message might reappear if you try to play with the target you don't h
                 'https://github.com/trailofbits/manticore/issues or send us one.'
             )
 
-        return result
+        sys.exit(result)

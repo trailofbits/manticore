@@ -23,10 +23,8 @@ from .utils import log
 from .utils.event import Eventful
 from .utils.helpers import issymbolic
 from .utils.nointerrupt import WithKeyboardInterruptAs
+from .utils import install_helper
 
-# Target-specific imports
-HAS_NATIVE_DEPENDENCIES = True
-HAS_ETHEREUM_DEPENDENCIES = True
 
 try:
     import elftools
@@ -34,22 +32,20 @@ try:
     from elftools.elf.sections import SymbolTableSection
 
     from .platforms import linux, decree
+    install_helper._has_native = True
 except ImportError:
-    HAS_NATIVE_DEPENDENCIES = False
+    pass
 
 try:
     from .platforms import evm
+    install_helper._has_evm = True
 except ImportError:
-    HAS_ETHEREUM_DEPENDENCIES = False
+    pass
 
-print('native', HAS_NATIVE_DEPENDENCIES)
-print('eth', HAS_ETHEREUM_DEPENDENCIES)
+print(install_helper._has_evm, install_helper._has_native)
 
-# We don't have any dependencies, lets propose user to install one
-if not HAS_NATIVE_DEPENDENCIES and not HAS_ETHEREUM_DEPENDENCIES:
-    from .utils.install_helper import propose_install_deps
-    propose_install_deps()
-    exit(-1)
+# If we don't have any dependencies, lets propose user to install one
+install_helper.ensure_any_deps()
 
 logger = logging.getLogger(__name__)
 log.init_logging()
@@ -58,6 +54,7 @@ log.init_logging()
 STDIN_INPUT_DEFAULT_SIZE = 256
 
 
+@install_helper.ensure_native
 def make_decree(program, concrete_start='', **kwargs):
     constraints = ConstraintSet()
     platform = decree.SDecree(constraints, program)
@@ -71,6 +68,7 @@ def make_decree(program, concrete_start='', **kwargs):
     return initial_state
 
 
+@install_helper.ensure_native
 def make_linux(program, argv=None, env=None, entry_symbol=None, symbolic_files=None, concrete_start='', stdin_size=STDIN_INPUT_DEFAULT_SIZE):
     env = {} if env is None else env
     argv = [] if argv is None else argv
@@ -115,6 +113,7 @@ def make_linux(program, argv=None, env=None, entry_symbol=None, symbolic_files=N
     return initial_state
 
 
+@install_helper.ensure_native
 def make_initial_state(binary_path, **kwargs):
     with open(binary_path, 'rb') as f:
         magic = f.read(4)
@@ -252,6 +251,7 @@ class Manticore(Eventful):
             self.unregister_plugin(plugin)
 
     @classmethod
+    @install_helper.ensure_native
     def linux(cls, path, argv=None, envp=None, entry_symbol=None, symbolic_files=None, concrete_start='', stdin_size=STDIN_INPUT_DEFAULT_SIZE, **kwargs):
         """
         Constructor for Linux binary analysis.
@@ -277,6 +277,7 @@ class Manticore(Eventful):
             raise Exception(f'Invalid binary: {path}')
 
     @classmethod
+    @install_helper.ensure_native
     def decree(cls, path, concrete_start='', **kwargs):
         """
         Constructor for Decree binary analysis.
@@ -293,6 +294,7 @@ class Manticore(Eventful):
             raise Exception(f'Invalid binary: {path}')
 
     @classmethod
+    @install_helper.ensure_evm
     def evm(cls, **kwargs):
         """
         Constructor for Ethereum virtual machine bytecode analysis.
