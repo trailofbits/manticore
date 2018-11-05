@@ -1025,8 +1025,20 @@ class BitVecExtract(BitVecOperation):
         assert isinstance(size, int)
         assert offset >= 0 and offset + size <= operand.size
         super().__init__(size, operand, *args, **kwargs)
-        self.begining = offset
-        self.end = offset + size - 1
+        self._begining = offset
+        self._end = offset + size - 1
+
+    @property
+    def value(self):
+        return self.operands[0]
+
+    @property
+    def begining(self):
+        return self._begining
+
+    @property
+    def end(self):
+        return self._end
 
 
 class BitVecConcat(BitVecOperation):

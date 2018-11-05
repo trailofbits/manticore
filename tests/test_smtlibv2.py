@@ -397,6 +397,16 @@ class ExpressionTest(unittest.TestCase):
         self.assertTrue(get_depth(exp) < 4)
         self.assertEqual(translate_to_smtlib(exp), '(bvand BV #x00000001)')
 
+
+    def test_arithmetic_simplify_extract(self):
+        cs = ConstraintSet()
+        arr = cs.new_array(name='MEM')
+        a = cs.new_bitvec(32, name='VARA')
+        b = Operators.CONCAT(32, Operators.EXTRACT(a,0,8), Operators.EXTRACT(a,8,8), Operators.EXTRACT(a,16,8), Operators.EXTRACT(a,24,8))
+        self.assertEqual( translate_to_smtlib(b), '(concat ((_ extract 7 0) VARA) ((_ extract 15 8) VARA) ((_ extract 23 16) VARA) ((_ extract 31 24) VARA))')
+        self.assertEqual( translate_to_smtlib(simplify(b)), 'VARA')
+
+
     def testBasicReplace(self):
         ''' Add '''
         a = BitVecConstant(32, 100)
