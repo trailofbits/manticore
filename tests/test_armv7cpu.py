@@ -1221,6 +1221,8 @@ class Armv7CpuInstructions(unittest.TestCase):
     def test_sbc_thumb(self):
         self.assertEqual(self.rf.read('R0'), 0)
 
+    # LDM/LDMIB/LDMDA/LDMDB
+
     @itest_custom("ldm sp, {r1, r2, r3}")
     def test_ldm(self):
         self.cpu.stack_push(0x41414141)
@@ -1245,37 +1247,139 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.assertEqual(self.rf.read('R3'), 0x41414141)
         self.assertEqual(self.cpu.STACK, pre_sp + 12)
 
-    @itest_setregs("R1=2", "R2=42", "R3=0x42424242")
+    @itest_setregs("R0=0xd100")
+    @itest_custom("ldmia r0!, {r1, r2, r3}")
+    def test_ldmia(self):
+        # IA - Increment After
+        # so the first value read should be at 0xd100
+        self.cpu.write_int(0xd100+0x0, 1, self.cpu.address_bit_size)
+        self.cpu.write_int(0xd100+0x4, 2, self.cpu.address_bit_size)
+        self.cpu.write_int(0xd100+0x8, 3, self.cpu.address_bit_size)
+        self.cpu.execute()
+        self.assertEqual(self.rf.read('R1'), 1)
+        self.assertEqual(self.rf.read('R2'), 2)
+        self.assertEqual(self.rf.read('R3'), 3)
+        # and the writeback should be 0xd10c
+        self.assertEqual(self.rf.read('R0'), 0xd100+0xc)
+
+    @itest_setregs("R0=0xd100")
+    @itest_custom("ldmib r0!, {r1, r2, r3}")
+    def test_ldmib(self):
+        # IB - Increment Before
+        # so the first value read should be at 0xd104
+        self.cpu.write_int(0xd100+0x4, 1, self.cpu.address_bit_size)
+        self.cpu.write_int(0xd100+0x8, 2, self.cpu.address_bit_size)
+        self.cpu.write_int(0xd100+0xc, 3, self.cpu.address_bit_size)
+        self.cpu.execute()
+        self.assertEqual(self.rf.read('R1'), 1)
+        self.assertEqual(self.rf.read('R2'), 2)
+        self.assertEqual(self.rf.read('R3'), 3)
+        # and the writeback should be 0xd10c
+        self.assertEqual(self.rf.read('R0'), 0xd100+0xc)
+
+    @itest_setregs("R0=0xd100")
+    @itest_custom("ldmda r0!, {r1, r2, r3}")
+    def test_ldmda(self):
+        # DA - Decrement After
+        # so the first value read should be at 0xd100
+        self.cpu.write_int(0xd100-0x0, 1, self.cpu.address_bit_size)
+        self.cpu.write_int(0xd100-0x4, 2, self.cpu.address_bit_size)
+        self.cpu.write_int(0xd100-0x8, 3, self.cpu.address_bit_size)
+        self.cpu.execute()
+        self.assertEqual(self.rf.read('R1'), 1)
+        self.assertEqual(self.rf.read('R2'), 2)
+        self.assertEqual(self.rf.read('R3'), 3)
+        # and the writeback should be 0xd0f8
+        self.assertEqual(self.rf.read('R0'), 0xd100-0xc)
+
+    @itest_setregs("R0=0xd100")
+    @itest_custom("ldmdb r0!, {r1, r2, r3}")
+    def test_ldmdb(self):
+        # DB - Decrement Before
+        # so the first value read should be at 0xd0fc
+        self.cpu.write_int(0xd100-0x4, 1, self.cpu.address_bit_size)
+        self.cpu.write_int(0xd100-0x8, 2, self.cpu.address_bit_size)
+        self.cpu.write_int(0xd100-0xc, 3, self.cpu.address_bit_size)
+        self.cpu.execute()
+        self.assertEqual(self.rf.read('R1'), 1)
+        self.assertEqual(self.rf.read('R2'), 2)
+        self.assertEqual(self.rf.read('R3'), 3)
+        # and the writeback should be 0xd0f8
+        self.assertEqual(self.rf.read('R0'), 0xd100-0xc)
+
+    # STM/STMIB/STMDA/STMDB
+
+    @itest_setregs("R1=42", "R2=2", "R3=0x42424242")
     @itest_custom("stm sp, {r1, r2, r3}")
     def test_stm(self):
         self.cpu.STACK -= 12
         pre_sp = self.cpu.STACK
         self.cpu.execute()
-        self.assertEqual(self.cpu.read_int(pre_sp, self.cpu.address_bit_size), 2)
-        self.assertEqual(self.cpu.read_int(pre_sp + 4, self.cpu.address_bit_size), 42)
-        self.assertEqual(self.cpu.read_int(pre_sp + 8, self.cpu.address_bit_size),
-                         0x42424242)
+        self.assertEqual(self.cpu.read_int(pre_sp, self.cpu.address_bit_size), 42)
+        self.assertEqual(self.cpu.read_int(pre_sp + 4, self.cpu.address_bit_size), 2)
+        self.assertEqual(self.cpu.read_int(pre_sp + 8, self.cpu.address_bit_size), 0x42424242)
         self.assertEqual(self.cpu.STACK, pre_sp)
 
-    @itest_setregs("R1=2", "R2=42", "R3=0x42424242")
+    @itest_setregs("R1=42", "R2=2", "R3=0x42424242")
     @itest_custom("stm sp!, {r1, r2, r3}")
     def test_stm_wb(self):
         self.cpu.STACK -= 12
         pre_sp = self.cpu.STACK
         self.cpu.execute()
-        self.assertEqual(self.cpu.read_int(pre_sp, self.cpu.address_bit_size), 2)
-        self.assertEqual(self.cpu.read_int(pre_sp + 4, self.cpu.address_bit_size), 42)
-        self.assertEqual(self.cpu.read_int(pre_sp + 8, self.cpu.address_bit_size),
-                         0x42424242)
+        self.assertEqual(self.cpu.read_int(pre_sp, self.cpu.address_bit_size), 42)
+        self.assertEqual(self.cpu.read_int(pre_sp + 4, self.cpu.address_bit_size), 2)
+        self.assertEqual(self.cpu.read_int(pre_sp + 8, self.cpu.address_bit_size), 0x42424242)
         self.assertEqual(self.cpu.STACK, pre_sp + 12)
 
-    @itest_custom("stmib   r3, {r2, r4}")
-    @itest_setregs("R1=1", "R2=2", "R4=4", "R3=0xd100")
-    def test_stmib_basic(self):
+    @itest_setregs("R0=0xd100", "R1=1", "R2=2", "R3=3")
+    @itest_custom("stmia r0!, {r1, r2, r3}")
+    def test_stmia(self):
+        # IA = Increment After
         self.cpu.execute()
-        addr = self.rf.read('R3')
-        self.assertEqual(self.cpu.read_int(addr + 4, self.cpu.address_bit_size), 2)
-        self.assertEqual(self.cpu.read_int(addr + 8, self.cpu.address_bit_size), 4)
+        # so the first value written should be at 0xd100
+        self.assertEqual(self.cpu.read_int(0xd100+0x0, self.cpu.address_bit_size), 1)
+        self.assertEqual(self.cpu.read_int(0xd100+0x4, self.cpu.address_bit_size), 2)
+        self.assertEqual(self.cpu.read_int(0xd100+0x8, self.cpu.address_bit_size), 3)
+        # and the writeback should be 0xd100c
+        self.assertEqual(self.rf.read('R0'), 0xd100+0xc)
+
+    @itest_setregs("R0=0xd100", "R1=1", "R2=2", "R3=3")
+    @itest_custom("stmib r0!, {r1, r2, r3}")
+    def test_stmib(self):
+        # IB = Increment Before
+        self.cpu.execute()
+        # so the first value written should be at 0xd104
+        self.assertEqual(self.cpu.read_int(0xd100+0x4, self.cpu.address_bit_size), 1)
+        self.assertEqual(self.cpu.read_int(0xd100+0x8, self.cpu.address_bit_size), 2)
+        self.assertEqual(self.cpu.read_int(0xd100+0xc, self.cpu.address_bit_size), 3)
+        # and the writeback should be 0xd100c
+        self.assertEqual(self.rf.read('R0'), 0xd100+0xc)
+
+    @itest_setregs("R0=0xd100", "R1=1", "R2=2", "R3=3")
+    @itest_custom("stmda r0!, {r1, r2, r3}")
+    def test_stmda(self):
+        # DA = Decrement After
+        self.cpu.execute()
+        # so the first value written should be at 0xd100
+        self.assertEqual(self.cpu.read_int(0xd100-0x0, self.cpu.address_bit_size), 1)
+        self.assertEqual(self.cpu.read_int(0xd100-0x4, self.cpu.address_bit_size), 2)
+        self.assertEqual(self.cpu.read_int(0xd100-0x8, self.cpu.address_bit_size), 3)
+        # and the writeback should be 0xd0f8
+        self.assertEqual(self.rf.read('R0'), 0xd100-0xc)
+
+    @itest_setregs("R0=0xd100", "R1=1", "R2=2", "R3=3")
+    @itest_custom("stmdb r0!, {r1, r2, r3}")
+    def test_stmdb(self):
+        # DB = Decrement Before
+        self.cpu.execute()
+        # so the first value written should be at 0xd0fc
+        self.assertEqual(self.cpu.read_int(0xd100-0x4, self.cpu.address_bit_size), 1)
+        self.assertEqual(self.cpu.read_int(0xd100-0x8, self.cpu.address_bit_size), 2)
+        self.assertEqual(self.cpu.read_int(0xd100-0xc, self.cpu.address_bit_size), 3)
+        # and the writeback should be 0xd0f8
+        self.assertEqual(self.rf.read('R0'), 0xd100-0xc)
+
+    # BX
 
     @itest_custom("bx r1")
     @itest_setregs("R1=0x1008")
