@@ -412,14 +412,13 @@ class ArithmeticSimplifier(Visitor):
                 end = o.end
             else:
                 # If concat of extracts of different values do not apply
-                if not value is o.value:
+                if value is not o.value:
                     return None
-                if end+1 != o.begining:
+                if end + 1 != o.begining:
                     return None
                 end = o.end
-        if end+1 == value.size:
+        if end + 1 == value.size:
             return value
-
 
 
     def visit_BitVecExtract(self, expression, *operands):
