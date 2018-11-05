@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-from core.smtlib import Operators
-from core.smtlib.expression import BitVec
+from ..smtlib import Operators
+from ..smtlib.expression import BitVec
 
 
 def Mask(width):
