@@ -125,10 +125,12 @@ class State(Eventful):
         self.platform.constraints = new_state.constraints
         new_state._input_symbols = list(self._input_symbols)
         new_state._context = copy.copy(self._context)
+
+        self.copy_eventful_state(new_state)
+
         self._child = new_state
         assert new_state.platform.constraints is new_state.constraints
 
-        # fixme NEW State won't inherit signals (pro: added signals to new_state wont affect parent)
         return new_state
 
     def __exit__(self, ty, value, traceback):
