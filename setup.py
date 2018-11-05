@@ -5,8 +5,8 @@ on_rtd = os.environ.get('READTHEDOCS') == 'True'
 
 # Dependencies that the user can specify, e.g. as:
 #   - pip install manticore[native]`        - install only native cpu's dependencies
-#   - pip install manticore[eth]            - install evm cpu's dependencies
-#   - pip install manticore[native,eth]     - install all
+#   - pip install manticore[evm]            - install evm cpu's dependencies
+#   - pip install manticore[native,evm]     - install all
 #
 # If the user doesn't specify any of them, we assume they want everything
 # (as it was in previous Manticore versions)
