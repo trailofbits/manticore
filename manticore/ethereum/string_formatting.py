@@ -10,4 +10,4 @@ def evm_program_counter(pc, at_init=""):
     Return string indicating EVM program counter and whether counter was read
     at constructor
     """
-    return 'EVM Program counter: 0x{}{}\n'.format(pc, at_init and " (at constructor)" or "")
+    return 'EVM Program counter: 0x{}{}\n'.format(pc, " (at constructor)" if at_init else "")
