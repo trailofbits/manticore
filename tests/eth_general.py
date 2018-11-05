@@ -666,6 +666,30 @@ class EthTests(unittest.TestCase):
         self.assertIn('RETURN', context)
         self.assertIn('REVERT', context)
 
+    def test_call_with_concretized_args(self):
+        """Test a CALL with symbolic arguments that will to be concretized.
+
+        https://github.com/trailofbits/manticore/issues/1237
+        """
+        m = self.mevm
+
+        contract_src = '''
+        contract C {
+          function transferHalfTo(address receiver) public payable {
+              receiver.transfer(this.balance/2);
+          }
+        }
+        '''
+
+        owner = m.create_account(balance=10**10)
+        contract = m.solidity_create_contract(contract_src, owner=owner)
+        receiver = m.create_account(0)
+        symbolic_address = m.make_symbolic_address()
+        m.constrain(symbolic_address == receiver.address)
+        contract.transferHalfTo(symbolic_address, caller=owner, value=m.make_symbolic_value())
+        self.assertTrue(any(state.can_be_true(state.platform.get_balance(receiver.address) > 0)
+                                for state in m.running_states))
+
     def test_end_instruction_trace(self):
         """
         Make sure that the trace files are correct, and include the end instructions.
