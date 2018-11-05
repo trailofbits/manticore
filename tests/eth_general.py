@@ -16,7 +16,7 @@ from manticore.core.smtlib import ConstraintSet, operators
 from manticore.core.smtlib.expression import BitVec
 from manticore.core.smtlib import solver
 from manticore.core.state import State, TerminateState
-from manticore.ethereum import ManticoreEVM, DetectIntegerOverflow, Detector, NoAliveStates, ABI, EthereumError, FilterFunctions
+from manticore.ethereum import ManticoreEVM, DetectExternalCallAndLeak, DetectIntegerOverflow, Detector, NoAliveStates, ABI, EthereumError, FilterFunctions
 from manticore.ethereum.solidity import SolidityMetadata
 from manticore.platforms.evm import EVMWorld, ConcretizeStack, concretized_args, Return, Stop
 from manticore.core.smtlib.visitors import pretty_print, translate_to_smtlib, simplify, to_constant
@@ -753,6 +753,47 @@ class EthTests(unittest.TestCase):
             else:
                 self.fail('Could not find a function call summary in workspace output')
 
+    def test_event_forwarding_after_state_fork_during_message_call(self):
+        # https://github.com/trailofbits/manticore/issues/1255
+        source_code = '''
+        pragma solidity ^0.4.24;
+
+        contract Lib {
+           function isSeven(uint a) public pure returns (bool) {
+               if (a == 7) {
+                   return true;
+               } else {
+                   return false;
+               }
+           }
+        }
+
+        contract Wallet {
+           Lib private lib;
+
+           constructor() public payable {
+               lib = new Lib();
+           }
+
+           function luckyNumber(uint a) public {
+               if (lib.isSeven(a)) {
+                   msg.sender.transfer(address(this).balance);
+               }
+           }
+        }
+        '''
+
+        m = self.mevm
+        m.register_detector(DetectExternalCallAndLeak())
+
+        owner = m.create_account(name='owner', balance=1000)
+        wallet = m.solidity_create_contract(source_code, name='wallet', contract_name='Wallet', owner=owner,
+                                            balance=1000)
+        attacker = m.create_account(name='attacker', balance=0)
+
+        wallet.luckyNumber(m.make_symbolic_value(), caller=attacker)
+
+        self.assertListEqual([x[2] for x in m.global_findings], ['Reachable ether leak to sender'])
 
     def test_graceful_handle_no_alive_states(self):
         """

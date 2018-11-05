@@ -5,10 +5,11 @@ import io
 import copy
 import inspect
 from functools import wraps
+from typing import List, Set, Tuple, Union
 from ..exceptions import EthereumError
 from ..utils.helpers import issymbolic, get_taints, taint_with, istainted
 from ..platforms.platform import *
-from ..core.smtlib import solver, BitVec, Array, Operators, Constant, ArrayVariable, ArrayStore, BitVecConstant, translate_to_smtlib, to_constant
+from ..core.smtlib import solver, BitVec, Array, ArrayProxy, Operators, Constant, ArrayVariable, ArrayStore, BitVecConstant, translate_to_smtlib, to_constant
 from ..core.state import Concretize, TerminateState
 from ..utils.event import Eventful
 from ..utils.rlp import rlp_encode
@@ -1708,11 +1709,11 @@ class EVMWorld(Platform):
         super().__init__(path="NOPATH", **kwargs)
         self._world_state = {} if storage is None else storage
         self._constraints = constraints
-        self._callstack = []
-        self._deleted_accounts = set()
-        self._logs = list()
+        self._callstack: List[Tuple[Transaction, List[EVMLog], Set[int], Union[bytearray, ArrayProxy], EVM]] = []
+        self._deleted_accounts: Set[int] = set()
+        self._logs: List[EVMLog] = list()
         self._pending_transaction = None
-        self._transactions = list()
+        self._transactions: List[Transaction] = list()
 
         if initial_block_number is None:
             #assume initial symbolic block
@@ -1724,7 +1725,6 @@ class EVMWorld(Platform):
             constraints.add(Operators.UGT(initial_timestamp, 1000000000))
             constraints.add(Operators.ULT(initial_timestamp, 3000000000))
         self._initial_timestamp = initial_timestamp
-        self._do_events()
 
     def __getstate__(self):
         state = super().__getstate__()
@@ -1750,15 +1750,13 @@ class EVMWorld(Platform):
         self._transactions = state['transactions']
         self._initial_block_number = state['initial_block_number']
         self._initial_timestamp = state['_initial_timestamp']
-        self._do_events()
+
+        for _, _, _, _, vm in self._callstack:
+            self.forward_events_from(vm)
 
     @property
     def PC(self):
         return (self.current_vm.address, self.current_vm.pc)
-
-    def _do_events(self):
-        if self.current_vm is not None:
-            self.forward_events_from(self.current_vm)
 
     def __getitem__(self, index):
         assert isinstance(index, int)
@@ -1806,9 +1804,8 @@ class EVMWorld(Platform):
 
         self._publish('will_open_transaction', tx)
         self._callstack.append((tx, self.logs, self.deleted_accounts, copy.copy(self.get_storage(address)), vm))
+        self.forward_events_from(vm)
         self._publish('did_open_transaction', tx)
-
-        self._do_events()
 
     def _close_transaction(self, result, data=None, rollback=False):
         self._publish('will_close_transaction', self._callstack[-1][0])
