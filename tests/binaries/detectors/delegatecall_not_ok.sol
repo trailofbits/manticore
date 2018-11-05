@@ -15,12 +15,17 @@ contract DetectThis {
      addr = a;
   }
 
-  function default_call(bytes data) public {
+  function default_call(bytes32 data) public {
         require(msg.sender == address(this));
         //do legal stuff on bytes
   }
 
-  function () public {
-        require(addr.delegatecall(msg.data));
+  function f(bytes4 selector, bytes32 data) public {
+      uint calldata0;
+      assembly {
+          calldata0 := calldataload(0)
+      }
+      require(selector != bytes4(calldata0 >> ((32 - 4)*8))); // Don't recurse.
+      require(addr.delegatecall(selector, data));
   }
 }

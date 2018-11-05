@@ -650,21 +650,18 @@ class EthTests(unittest.TestCase):
         class TestDetector(Detector):
             def did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
                 if instruction.is_endtx:
-                    with self.locked_context('insns', dict) as d:
-                        d[instruction.semantics] = True
+                    with self.locked_context('endtx_instructions', set) as d:
+                        d.add(instruction.name)
 
         mevm = self.mevm
         p = TestDetector()
         mevm.register_detector(p)
 
-        filename = os.path.join(THIS_DIR, 'binaries/int_overflow.sol')
+        filename = os.path.join(THIS_DIR, 'binaries/simple_int_overflow.sol')
         mevm.multi_tx_analysis(filename, tx_limit=2)
 
-        self.assertIn('insns', p.context)
-        context = p.context['insns']
-        self.assertIn('STOP', context)
-        self.assertIn('RETURN', context)
-        self.assertIn('REVERT', context)
+        self.assertIn('endtx_instructions', p.context)
+        self.assertSetEqual(p.context['endtx_instructions'], {'INVALID', 'RETURN', 'STOP'})
 
     def test_end_instruction_trace(self):
         """

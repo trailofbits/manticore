@@ -215,7 +215,6 @@ class EthDelegatecall(EthDetectorTest):
         self._test(name, set())
 
     def test_delegatecall_not_ok(self):
-        self.mevm.register_plugin(LoopDepthLimiter())
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, {('Delegatecall to user controlled function', False),
                           ('Delegatecall to user controlled address', False)})
