@@ -420,7 +420,6 @@ class ArithmeticSimplifier(Visitor):
         if end + 1 == value.size:
             return value
 
-
     def visit_BitVecExtract(self, expression, *operands):
         ''' extract(sizeof(a), 0)(a)  ==> a
             extract(16, 0)( concat(a,b,c,d) ) => concat(c, d)
