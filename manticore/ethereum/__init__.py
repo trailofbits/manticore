@@ -342,7 +342,7 @@ class ManticoreEVM(Manticore):
         relative_filepath = source_file.name
 
         if not working_dir:
-            working_dir = os.path.abspath(relative_filepath)[:-len(relative_filepath)]
+            working_dir = os.path.dirname(os.path.abspath(relative_filepath))
         elif relative_filepath.startswith(working_dir):
             relative_filepath = relative_filepath[len(working_dir) + 1:]
 
