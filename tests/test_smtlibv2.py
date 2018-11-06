@@ -402,8 +402,8 @@ class ExpressionTest(unittest.TestCase):
         cs = ConstraintSet()
         arr = cs.new_array(name='MEM')
         a = cs.new_bitvec(32, name='VARA')
-        b = Operators.CONCAT(32, Operators.EXTRACT(a,0,8), Operators.EXTRACT(a,8,8), Operators.EXTRACT(a,16,8), Operators.EXTRACT(a,24,8))
-        self.assertEqual( translate_to_smtlib(b), '(concat ((_ extract 7 0) VARA) ((_ extract 15 8) VARA) ((_ extract 23 16) VARA) ((_ extract 31 24) VARA))')
+        b = Operators.CONCAT(32, Operators.EXTRACT(a, 24, 8), Operators.EXTRACT(a, 16, 8), Operators.EXTRACT(a, 8, 8), Operators.EXTRACT(a, 0, 8))
+        self.assertEqual( translate_to_smtlib(b), '(concat ((_ extract 31 24) VARA) ((_ extract 23 16) VARA) ((_ extract 15 8) VARA) ((_ extract 7 0) VARA))')
         self.assertEqual( translate_to_smtlib(simplify(b)), 'VARA')
 
 

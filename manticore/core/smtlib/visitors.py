@@ -407,6 +407,7 @@ class ArithmeticSimplifier(Visitor):
             # Set the value for the first item
             if value is None:
                 value = o.value
+                begining = o.begining
                 end = o.end
             else:
                 # If concat of extracts of different values do not apply
