@@ -263,6 +263,8 @@ class State(Eventful):
             This raises TooManySolutions if more solutions than maxcount
         '''
         assert self.constraints == self.platform.constraints
+        symbolic = self.migrate_expression(symbolic)
+
         vals = []
         if policy == 'MINMAX':
             vals = self._solver.minmax(self._constraints, symbolic)
@@ -378,8 +380,23 @@ class State(Eventful):
         expr = self.migrate_expression(expr)
         return self._solver.min(self._constraints, expr)
 
+    def solve_minmax(self, expr):
+        '''
+        Solves a symbolic :class:`~manticore.core.smtlib.expression.Expression` into
+        its minimum and maximun solution. Only defined for bitvects.
+
+        :param manticore.core.smtlib.Expression expr: Symbolic value to solve
+        :return: Concrete value
+        :rtype: list[int]
+        '''
+        if isinstance(expr, int):
+            return expr
+        expr = self.migrate_expression(expr)
+        return self._solver.minmax(self._constraints, expr)
+
     ################################################################################################
     # The following should be moved to specific class StatePosix?
+
     def solve_buffer(self, addr, nbytes, constrain=False):
         '''
         Reads `nbytes` of symbolic data from a buffer in memory at `addr` and attempts to

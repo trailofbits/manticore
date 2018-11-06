@@ -1,6 +1,7 @@
 from io import BytesIO
 from manticore.core.smtlib import Solver, Operators
 import unittest
+from unittest import mock
 import tempfile, os
 import gc, pickle
 import fcntl
@@ -1770,6 +1771,27 @@ class MemoryTest(unittest.TestCase):
         with self.assertRaises(InvalidSymbolicMemoryAccess):
             mem.read(addr2, 5)
 
+    def test_getlibc(self):
+        import manticore.utils.mappings
+        import ctypes
+
+        ctypes.cdll = mock.MagicMock()
+        manticore.utils.mappings.sys = mock.MagicMock()
+        def mock_loadlib(x):
+            mock_loadlib.libname = x 
+        ctypes.cdll.configure_mock(LoadLibrary=mock_loadlib)
+
+        manticore.utils.mappings.sys.configure_mock(platform='darwin')
+        manticore.utils.mappings.get_libc()
+        self.assertEqual(mock_loadlib.libname, 'libc.dylib')
+
+        manticore.utils.mappings.sys.configure_mock(platform='LINUX')
+        manticore.utils.mappings.get_libc()
+        self.assertEqual(mock_loadlib.libname, 'libc.so.6')
+
+        manticore.utils.mappings.sys.configure_mock(platform='NETBSD')
+        manticore.utils.mappings.get_libc()
+        self.assertEqual(mock_loadlib.libname, 'libc.so')
 
 if __name__ == '__main__':
     unittest.main()
