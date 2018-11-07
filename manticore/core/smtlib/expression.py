@@ -910,8 +910,7 @@ class ArrayProxy(Array):
         if isinstance(index, Constant):
             self._concrete_cache[index.value] = value
         else:
-            # delete all cache as we do not not what this may overwrite.
-            # As an alternative we could delete a range min/max of it
+            # delete all cache as we do not know what this may overwrite.
             self._concrete_cache = {}
         self.written.add(index)
         auxiliary = self._array.store(index, value)
