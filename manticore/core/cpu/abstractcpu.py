@@ -603,11 +603,15 @@ class Cpu(Eventful):
         if size is None:
             size = self.address_bit_size
         assert size in SANE_SIZES
-        self._publish('will_read_memory', where, size)
+        out = self._publish('will_read_memory', where, size)
 
-        data = self._memory.read(where, size // 8, force)
-        assert (8 * len(data)) == size
-        value = Operators.CONCAT(size, *map(Operators.ORD, reversed(data)))
+        if not out:
+            data = self._memory.read(where, size // 8, force)
+            assert (8 * len(data)) == size
+            value = Operators.CONCAT(size, *map(Operators.ORD, reversed(data)))
+        else:
+            value = out
+
 
         self._publish('did_read_memory', where, value, size)
         return value
