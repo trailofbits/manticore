@@ -909,6 +909,9 @@ class ArrayProxy(Array):
         index = simplify(index)
         if isinstance(index, Constant):
             self._concrete_cache[index.value] = value
+        else:
+            # delete all cache as we do not know what this may overwrite.
+            self._concrete_cache = {}
         self.written.add(index)
         auxiliary = self._array.store(index, value)
         self._array = auxiliary
