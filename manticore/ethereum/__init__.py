@@ -32,8 +32,6 @@ from .detectors import Detector, DetectEnvInstruction, DetectExternalCallAndLeak
 from .account import EVMAccount, EVMContract
 from .abi import ABI
 from .solidity import SolidityMetadata
-from .string_formatting import contract_addr, evm_program_counter
-
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +43,21 @@ def flagged(flag):
     Return special character denoting concretization happened.
     """
     return '(*)' if flag else ''
+
+
+def contract_addr(address):
+    """
+    Return string indicating contact address
+    """
+    return f'Contract: 0x{address}'
+
+
+def evm_program_counter(pc, at_init=""):
+    """
+    Return string indicating EVM program counter and whether counter was read
+    at constructor
+    """
+    return f'EVM Program counter: 0x{pc}{" (at constructor)" if at_init else ""}\n'
 
 #
 # Plugins
