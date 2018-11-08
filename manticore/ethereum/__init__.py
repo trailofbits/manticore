@@ -1304,7 +1304,7 @@ class ManticoreEVM(Manticore):
     def workspace(self):
         return self._executor._workspace._store.uri
 
-    def generate_testcase(self, state, message='', only_if=None, name='custom'):
+    def generate_testcase(self, state, message='', only_if=None, name='user'):
         """
         Generate a testcase to the workspace for the given program state. The details of what
         a testcase is depends on the type of Platform the state is, but involves serializing the state,
@@ -1320,7 +1320,7 @@ class ManticoreEVM(Manticore):
         For example, invariant: "balance" must not be 0. We can check if this can be violated and generate a
         testcase::
 
-            m.generate_testcase(state, 'balance CAN be 0', only_if=balance == 0, name='balance')
+            m.generate_testcase(state, 'balance CAN be 0', only_if=balance == 0)
             # testcase generated with an input that will violate invariant (make balance == 0)
 
         :param manticore.core.state.State state:
