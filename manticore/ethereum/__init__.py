@@ -1304,7 +1304,7 @@ class ManticoreEVM(Manticore):
     def workspace(self):
         return self._executor._workspace._store.uri
 
-    def generate_testcase(self, state, message='', only_if=None, name='custom'):
+    def generate_testcase(self, state, message='', only_if=None, name='user'):
         """
         Generate a testcase to the workspace for the given program state. The details of what
         a testcase is depends on the type of Platform the state is, but involves serializing the state,
