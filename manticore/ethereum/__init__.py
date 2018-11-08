@@ -1320,7 +1320,7 @@ class ManticoreEVM(Manticore):
         For example, invariant: "balance" must not be 0. We can check if this can be violated and generate a
         testcase::
 
-            m.generate_testcase(state, 'balance CAN be 0', only_if=balance == 0, name='balance')
+            m.generate_testcase(state, 'balance CAN be 0', only_if=balance == 0)
             # testcase generated with an input that will violate invariant (make balance == 0)
 
         :param manticore.core.state.State state:
