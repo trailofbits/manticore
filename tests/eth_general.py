@@ -515,11 +515,11 @@ class EthTests(unittest.TestCase):
             inp = tmp.solve_one(input_sym)
             self.assertEqual(inp, 2)
 
-        expected_files = [
+        expected_files = {
             'user_00000000.' + ext for ext in ('summary', 'constraints', 'pkl', 'tx.json', 'tx', 'trace', 'logs')
-        ]
+        }
 
-        self.assertEqual(os.listdir(self.mevm.workspace), expected_files)
+        self.assertEqual(set(os.listdir(self.mevm.workspace)), expected_files)
 
         summary_path = os.path.join(self.mevm.workspace, 'user_00000000.summary')
         with open(summary_path) as summary:
