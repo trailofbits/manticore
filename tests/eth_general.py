@@ -531,7 +531,7 @@ class EthTests(unittest.TestCase):
         self.assertFalse(did_gen)
 
         # Just a sanity check: a generate testcase with not met condition shouldn't add any more files
-        self.assertEqual(os.listdir(self.mevm.workspace), expected_files)
+        self.assertEqual(set(os.listdir(self.mevm.workspace)), expected_files)
 
         # Since the condition was not met there should be no testcase in the summary
         with open(summary_path) as summary:
