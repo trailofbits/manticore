@@ -909,6 +909,9 @@ class ArrayProxy(Array):
         index = simplify(index)
         if isinstance(index, Constant):
             self._concrete_cache[index.value] = value
+        else:
+            # delete all cache as we do not know what this may overwrite.
+            self._concrete_cache = {}
 
         # potentially generate and update .written set
         self.written.add(index)
@@ -1039,8 +1042,20 @@ class BitVecExtract(BitVecOperation):
         assert isinstance(size, int)
         assert offset >= 0 and offset + size <= operand.size
         super().__init__(size, operand, *args, **kwargs)
-        self.begining = offset
-        self.end = offset + size - 1
+        self._begining = offset
+        self._end = offset + size - 1
+
+    @property
+    def value(self):
+        return self.operands[0]
+
+    @property
+    def begining(self):
+        return self._begining
+
+    @property
+    def end(self):
+        return self._end
 
 
 class BitVecConcat(BitVecOperation):

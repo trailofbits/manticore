@@ -308,7 +308,7 @@ class ManticoreEVM(Manticore):
         return bytearray(binascii.unhexlify(hex_contract))
 
     @staticmethod
-    def _run_solc(source_file, solc_bin=None, solc_remaps=[]):
+    def _run_solc(source_file, solc_bin=None, solc_remaps=[], working_dir=None):
         """ Compile a source file with the Solidity compiler
 
             :param source_file: a file object for the source file
@@ -336,27 +336,33 @@ class ManticoreEVM(Manticore):
             #logger.warning("Unsupported solc version %s", installed_version)
             pass
 
-        #shorten the path size so library placeholders wont fail.
-        #solc path search is a mess #fixme
-        #https://solidity.readthedocs.io/en/latest/layout-of-source-files.html
-        current_folder = os.getcwd()
-        abs_filename = os.path.abspath(source_file.name)
-        working_folder, filename = os.path.split(abs_filename)
+        # solc path search is a mess
+        # https://solidity.readthedocs.io/en/latest/layout-of-source-files.html
+
+        relative_filepath = source_file.name
+
+        if not working_dir:
+            working_dir = os.path.abspath(relative_filepath)[:-len(relative_filepath)]
+        elif relative_filepath.startswith(working_dir):
+            relative_filepath = relative_filepath[len(working_dir) + 1:]
+
+        # If someone pass an absolute path to the file, we don't have to put cwd
+        additional_kwargs = {'cwd': working_dir} if working_dir else {}
 
         solc_invocation = [solc] + list(solc_remaps) + [
             '--combined-json', 'abi,srcmap,srcmap-runtime,bin,hashes,bin-runtime',
             '--allow-paths', '.',
-            filename
+            relative_filepath
         ]
 
-        p = Popen(solc_invocation, stdout=PIPE, stderr=PIPE, cwd=working_folder)
+        p = Popen(solc_invocation, stdout=PIPE, stderr=PIPE, **additional_kwargs)
         stdout, stderr = p.communicate()
 
         stdout, stderr = stdout.decode(), stderr.decode()
 
         # See #1123 - solc fails when run within snap
         # and https://forum.snapcraft.io/t/interfaces-allow-access-tmp-directory/5129
-        if stdout == '' and '""%s"" is not found' % filename in stderr:
+        if stdout == '' and f'""{relative_filepath}"" is not found' in stderr:
             raise EthereumError(
                 'Solidity compilation failed with error: {}\n'
                 'Did you install solc from snap Linux universal packages?\n'
@@ -375,7 +381,7 @@ class ManticoreEVM(Manticore):
             raise EthereumError('Solidity compilation error:\n\n{}'.format(stderr))
 
     @staticmethod
-    def _compile(source_code, contract_name, libraries=None, solc_bin=None, solc_remaps=[]):
+    def _compile(source_code, contract_name, libraries=None, solc_bin=None, solc_remaps=[], working_dir=None):
         """ Compile a Solidity contract, used internally
 
             :param source_code: solidity source as either a string or a file handle
@@ -383,6 +389,7 @@ class ManticoreEVM(Manticore):
             :param libraries: an itemizable of pairs (library_name, address)
             :param solc_bin: path to solc binary
             :param solc_remaps: solc import remaps
+            :param working_dir: working directory for solc compilation (defaults to current)
             :return: name, source_code, bytecode, srcmap, srcmap_runtime, hashes
             :return: name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
         """
@@ -391,9 +398,9 @@ class ManticoreEVM(Manticore):
             with tempfile.NamedTemporaryFile('w+') as temp:
                 temp.write(source_code)
                 temp.flush()
-                output, warnings = ManticoreEVM._run_solc(temp, solc_bin, solc_remaps)
+                output, warnings = ManticoreEVM._run_solc(temp, solc_bin, solc_remaps, working_dir=working_dir)
         elif isinstance(source_code, io.IOBase):
-            output, warnings = ManticoreEVM._run_solc(source_code, solc_bin, solc_remaps)
+            output, warnings = ManticoreEVM._run_solc(source_code, solc_bin, solc_remaps, working_dir=working_dir)
             source_code.seek(0)
             source_code = source_code.read()
         else:
@@ -649,7 +656,9 @@ class ManticoreEVM(Manticore):
         # FIXME this is more naive than reasonable.
         return ABI.deserialize(types, self.make_symbolic_buffer(32, name="INITARGS"))
 
-    def solidity_create_contract(self, source_code, owner, name=None, contract_name=None, libraries=None, balance=0, address=None, args=(), solc_bin=None, solc_remaps=[], gas=90000):
+    def solidity_create_contract(self, source_code, owner, name=None, contract_name=None, libraries=None,
+                                 balance=0, address=None, args=(), solc_bin=None, solc_remaps=[],
+                                 working_dir=None, gas=90000):
         """ Creates a solidity contract and library dependencies
 
             :param str source_code: solidity source code
@@ -666,6 +675,8 @@ class ManticoreEVM(Manticore):
             :type solc_bin: str
             :param solc_remaps: solc import remaps
             :type solc_remaps: list of str
+            :param working_dir: working directory for solc compilation (defaults to current)
+            :type working_dir: str
             :param gas: gas budget for each contract creation needed (may be more than one if several related contracts defined in the solidity source)
             :type gas: int
             :rtype: EVMAccount
@@ -679,7 +690,9 @@ class ManticoreEVM(Manticore):
         while contract_names:
             contract_name_i = contract_names.pop()
             try:
-                compile_results = self._compile(source_code, contract_name_i, libraries=deps, solc_bin=solc_bin, solc_remaps=solc_remaps)
+                compile_results = self._compile(source_code, contract_name_i,
+                                                libraries=deps, solc_bin=solc_bin, solc_remaps=solc_remaps,
+                                                working_dir=working_dir)
                 md = SolidityMetadata(*compile_results)
                 if contract_name_i == contract_name:
                     constructor_types = md.get_constructor_arguments()
@@ -924,7 +937,7 @@ class ManticoreEVM(Manticore):
             raise TypeError("code bad type")
 
         # Check types
-        if not isinstance(address, (int, BitVec)):
+        if not isinstance(caller, (int, BitVec)):
             raise TypeError("Caller invalid type")
 
         if not isinstance(value, (int, BitVec)):
@@ -988,7 +1001,9 @@ class ManticoreEVM(Manticore):
 
         return address
 
-    def multi_tx_analysis(self, solidity_filename, contract_name=None, tx_limit=None, tx_use_coverage=True, tx_send_ether=True, tx_account="attacker", args=None):
+    def multi_tx_analysis(self, solidity_filename, working_dir=None, contract_name=None,
+                          tx_limit=None, tx_use_coverage=True,
+                          tx_send_ether=True, tx_account="attacker", args=None):
         owner_account = self.create_account(balance=1000, name='owner')
         attacker_account = self.create_account(balance=1000, name='attacker')
 
@@ -996,7 +1011,8 @@ class ManticoreEVM(Manticore):
         logger.info("Starting symbolic create contract")
 
         with open(solidity_filename) as f:
-            contract_account = self.solidity_create_contract(f, contract_name=contract_name, owner=owner_account, args=args)
+            contract_account = self.solidity_create_contract(f, contract_name=contract_name, owner=owner_account,
+                                                             args=args, working_dir=working_dir)
 
         if tx_account == "attacker":
             tx_account = [attacker_account]
@@ -1065,6 +1081,7 @@ class ManticoreEVM(Manticore):
         with self.locked_context('ethereum') as context:
             if len(context['_saved_states']) == 1:
                 self._initial_state = self._executor._workspace.load_state(context['_saved_states'].pop(), delete=True)
+                self._executor.forward_events_from(self._initial_state, True)
                 context['_saved_states'] = set()
                 assert self._running_state_ids == (-1,)
 

@@ -13,6 +13,8 @@ logger = logging.getLogger('manticore.main')
 consts = config.get_group('main')
 consts.add('recursionlimit', default=10000,
            description="Value to set for Python recursion limit")
+consts.add('timeout', default=0,
+           description='Timeout, in seconds, for Manticore invocation')
 
 
 def parse_arguments():
@@ -45,14 +47,14 @@ def parse_arguments():
                         help='Number of parallel processes to spawn')
     parser.add_argument('argv', type=str, nargs='*', default=[],
                         help="Path to program, and arguments ('+' in arguments indicates symbolic byte).")
-    parser.add_argument('--timeout', type=int, default=0,
+    parser.add_argument('--timeout', type=int, default=consts.timeout,
                         help='Timeout. Abort exploration after TIMEOUT seconds')
     parser.add_argument('-v', action='count', default=1,
                         help='Specify verbosity level from -v to -vvvv')
     parser.add_argument('--workspace', type=str, default=None,
                         help=("A folder name for temporaries and results."
                               "(default mcore_?????)"))
-    parser.add_argument('--version', action='version', version='Manticore 0.2.1.1',
+    parser.add_argument('--version', action='version', version='Manticore 0.2.2',
                         help='Show program version information')
     parser.add_argument('--config', type=str,
                         help='Manticore config file (.yml) to use. (default config file pattern is: ./[.]m[anti]core.yml)')
@@ -208,7 +210,8 @@ def ethereum_cli(args):
 
     logger.info("Beginning analysis")
 
-    m.multi_tx_analysis(args.argv[0], contract_name=args.contract, tx_limit=args.txlimit, tx_use_coverage=not args.txnocoverage, tx_send_ether=not args.txnoether, tx_account=args.txaccount)
+    with m.shutdown_timeout(args.timeout):
+        m.multi_tx_analysis(args.argv[0], contract_name=args.contract, tx_limit=args.txlimit, tx_use_coverage=not args.txnocoverage, tx_send_ether=not args.txnoether, tx_account=args.txaccount)
 
     #TODO unregister all plugins
 

@@ -44,7 +44,8 @@ class EthDetectorTest(unittest.TestCase):
         """
         mevm = self.mevm
 
-        filename = os.path.join(THIS_DIR, 'binaries', 'detectors', f'{name}.sol')
+        dir = os.path.join(THIS_DIR, 'binaries', 'detectors')
+        filepath = os.path.join(dir, f'{name}.sol')
 
         if use_ctor_sym_arg:
             ctor_arg = (mevm.make_symbolic_value(),)
@@ -52,7 +53,7 @@ class EthDetectorTest(unittest.TestCase):
             ctor_arg = ()
 
         self.mevm.register_detector(self.DETECTOR_CLASS())
-        mevm.multi_tx_analysis(filename, contract_name='DetectThis', args=ctor_arg)
+        mevm.multi_tx_analysis(filepath, contract_name='DetectThis', args=ctor_arg, working_dir=dir)
 
         expected_findings = set(((finding, at_init) for finding, at_init in should_find))
         actual_findings = set(((finding, at_init) for _addr, _pc, finding, at_init in mevm.global_findings))
@@ -122,16 +123,19 @@ class EthExternalCallAndLeak(EthDetectorTest):
 
     def test_etherleak_true_pos_argument(self):
         name = inspect.currentframe().f_code.co_name[5:]
-        self._test(name, {("Reachable ether leak to sender via argument", False)})
+        self._test(name, {("Reachable ether leak to sender via argument", False),
+                          ("Reachable external call to sender via argument", False)})
 
     def test_etherleak_true_pos_argument1(self):
         self.mevm.register_plugin(LoopDepthLimiter(5))
         name = inspect.currentframe().f_code.co_name[5:]
-        self._test(name, {("Reachable ether leak to sender via argument", False)})
+        self._test(name, {("Reachable ether leak to sender via argument", False),
+                          ("Reachable external call to sender via argument", False)})
 
     def test_etherleak_true_pos_argument2(self):
         name = inspect.currentframe().f_code.co_name[5:]
-        self._test(name, {("Reachable ether leak to user controlled address via argument", False)})
+        self._test(name, {("Reachable ether leak to user controlled address via argument", False),
+                          ("Reachable external call to user controlled address via argument", False)})
 
     def test_etherleak_true_pos_msgsender(self):
         name = inspect.currentframe().f_code.co_name[5:]

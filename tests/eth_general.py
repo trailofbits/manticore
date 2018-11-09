@@ -16,7 +16,7 @@ from manticore.core.smtlib import ConstraintSet, operators
 from manticore.core.smtlib.expression import BitVec
 from manticore.core.smtlib import solver
 from manticore.core.state import State, TerminateState
-from manticore.ethereum import ManticoreEVM, DetectIntegerOverflow, Detector, NoAliveStates, ABI, EthereumError, FilterFunctions
+from manticore.ethereum import ManticoreEVM, DetectExternalCallAndLeak, DetectIntegerOverflow, Detector, NoAliveStates, ABI, EthereumError, FilterFunctions
 from manticore.ethereum.solidity import SolidityMetadata
 from manticore.platforms.evm import EVMWorld, ConcretizeStack, concretized_args, Return, Stop
 from manticore.core.smtlib.visitors import pretty_print, translate_to_smtlib, simplify, to_constant
@@ -666,6 +666,30 @@ class EthTests(unittest.TestCase):
         self.assertIn('RETURN', context)
         self.assertIn('REVERT', context)
 
+    def test_call_with_concretized_args(self):
+        """Test a CALL with symbolic arguments that will to be concretized.
+
+        https://github.com/trailofbits/manticore/issues/1237
+        """
+        m = self.mevm
+
+        contract_src = '''
+        contract C {
+          function transferHalfTo(address receiver) public payable {
+              receiver.transfer(this.balance/2);
+          }
+        }
+        '''
+
+        owner = m.create_account(balance=10**10)
+        contract = m.solidity_create_contract(contract_src, owner=owner)
+        receiver = m.create_account(0)
+        symbolic_address = m.make_symbolic_address()
+        m.constrain(symbolic_address == receiver.address)
+        contract.transferHalfTo(symbolic_address, caller=owner, value=m.make_symbolic_value())
+        self.assertTrue(any(state.can_be_true(state.platform.get_balance(receiver.address) > 0)
+                                for state in m.running_states))
+
     def test_end_instruction_trace(self):
         """
         Make sure that the trace files are correct, and include the end instructions.
@@ -753,6 +777,47 @@ class EthTests(unittest.TestCase):
             else:
                 self.fail('Could not find a function call summary in workspace output')
 
+    def test_event_forwarding_after_state_fork_during_message_call(self):
+        # https://github.com/trailofbits/manticore/issues/1255
+        source_code = '''
+        pragma solidity ^0.4.24;
+
+        contract Lib {
+           function isSeven(uint a) public pure returns (bool) {
+               if (a == 7) {
+                   return true;
+               } else {
+                   return false;
+               }
+           }
+        }
+
+        contract Wallet {
+           Lib private lib;
+
+           constructor() public payable {
+               lib = new Lib();
+           }
+
+           function luckyNumber(uint a) public {
+               if (lib.isSeven(a)) {
+                   msg.sender.transfer(address(this).balance);
+               }
+           }
+        }
+        '''
+
+        m = self.mevm
+        m.register_detector(DetectExternalCallAndLeak())
+
+        owner = m.create_account(name='owner', balance=1000)
+        wallet = m.solidity_create_contract(source_code, name='wallet', contract_name='Wallet', owner=owner,
+                                            balance=1000)
+        attacker = m.create_account(name='attacker', balance=0)
+
+        wallet.luckyNumber(m.make_symbolic_value(), caller=attacker)
+
+        self.assertListEqual([x[2] for x in m.global_findings], ['Reachable ether leak to sender'])
 
     def test_graceful_handle_no_alive_states(self):
         """
@@ -897,20 +962,19 @@ class EthSolidityCompilerTest(unittest.TestCase):
             function fromA() public { revert(); }
         }
         '''
-        d = tempfile.mkdtemp()
+        tmp_dir = tempfile.mkdtemp()
         try:
-            with open(os.path.join(d, 'A.sol'), 'w') as a, open(os.path.join(d, 'B.sol'), 'w') as b:
+            with open(os.path.join(tmp_dir, 'A.sol'), 'w') as a, open(os.path.join(tmp_dir, 'B.sol'), 'w') as b:
                 a.write(source_a)
                 a.flush()
                 b.write(source_b)
                 b.flush()
-                output, warnings = ManticoreEVM._run_solc(a)
+                output, warnings = ManticoreEVM._run_solc(a, working_dir=tmp_dir)
                 source_list = output.get('sourceList', [])
                 self.assertIn(os.path.split(a.name)[-1], source_list)
                 self.assertIn(os.path.split(b.name)[-1], source_list)
         finally:
-            shutil.rmtree(d)
-
+            shutil.rmtree(tmp_dir)
 
     def test_run_solc_with_remappings(self):
         source_a = '''
@@ -927,21 +991,21 @@ class EthSolidityCompilerTest(unittest.TestCase):
             function fromA() public { revert(); }
         }
         '''
-        d = tempfile.mkdtemp()
-        lib_dir = os.path.join(d, 'lib')
+        tmp_dir = tempfile.mkdtemp()
+        lib_dir = os.path.join(tmp_dir, 'lib')
         os.makedirs(lib_dir)
         try:
-            with open(os.path.join(d, 'A.sol'), 'w') as a, open(os.path.join(lib_dir, 'B.sol'), 'w') as b:
+            with open(os.path.join(tmp_dir, 'A.sol'), 'w') as a, open(os.path.join(lib_dir, 'B.sol'), 'w') as b:
                 a.write(source_a)
                 a.flush()
                 b.write(source_b)
                 b.flush()
-                output, warnings = ManticoreEVM._run_solc(a, solc_remaps=['test=lib'])
+                output, warnings = ManticoreEVM._run_solc(a, solc_remaps=['test=lib'], working_dir=tmp_dir)
                 source_list = output.get('sourceList', [])
                 self.assertIn("A.sol", source_list)
                 self.assertIn("lib/B.sol", source_list)
         finally:
-            shutil.rmtree(d)
+            shutil.rmtree(tmp_dir)
 
 
 class EthSolidityMetadataTests(unittest.TestCase):
