@@ -490,8 +490,8 @@ class EthTests(unittest.TestCase):
 
     def test_gen_testcase_only_if(self):
         source_code = '''
-        contract Test{
-            function f(uint x) returns(uint){
+        contract Test {
+            function f(uint x) returns(uint) {
                 return x-2;
             }
         }
@@ -506,7 +506,8 @@ class EthTests(unittest.TestCase):
         retval_array = state.platform.human_transactions[-1].return_data
         retval = operators.CONCAT(256, *retval_array)
 
-        did_gen = self.mevm.generate_testcase(state, 'fail', 'return can be 0', only_if=retval == 0)
+        # Test 1: Generate a testcase (since the condition/constrain can be met/solved)
+        did_gen = self.mevm.generate_testcase(state, 'return can be 0', only_if=retval == 0)
         self.assertTrue(did_gen)
 
         with state as tmp:
@@ -514,22 +515,38 @@ class EthTests(unittest.TestCase):
             inp = tmp.solve_one(input_sym)
             self.assertEqual(inp, 2)
 
-        did_gen = self.mevm.generate_testcase(state, 'fail', 'return can be 0', only_if=operators.AND(retval != 0, retval == 0))
+        expected_files = {
+            'user_00000000.' + ext for ext in ('summary', 'constraints', 'pkl', 'tx.json', 'tx', 'trace', 'logs')
+        }
+
+        self.assertEqual(set(os.listdir(self.mevm.workspace)), expected_files)
+
+        summary_path = os.path.join(self.mevm.workspace, 'user_00000000.summary')
+        with open(summary_path) as summary:
+            self.assertIn('return can be 0', summary.read())
+
+        # Test 2: Don't generate a testcase (since the condition/constrain can't be met/solved)
+        did_gen = self.mevm.generate_testcase(state, 'return can be 0 again?',
+                                              only_if=operators.AND(retval != 0, retval == 0))
         self.assertFalse(did_gen)
 
+        # Just a sanity check: a generate testcase with not met condition shouldn't add any more files
+        self.assertEqual(set(os.listdir(self.mevm.workspace)), expected_files)
+
+        # Since the condition was not met there should be no testcase in the summary
+        with open(summary_path) as summary:
+            self.assertNotIn('return can be 0 again?', summary.read())
 
     def test_function_name_with_signature(self):
         source_code = '''
-        contract Test{
-
-            function ret(uint) returns(uint){
+        contract Test {
+            function ret(uint) returns(uint) {
                 return 1;
             }
 
-            function ret(uint,uint) returns(uint){
+            function ret(uint,uint) returns(uint) {
                 return 2;
             }
-
         }
         '''
         user_account = self.mevm.create_account(balance=1000)
@@ -665,6 +682,30 @@ class EthTests(unittest.TestCase):
         self.assertIn('STOP', context)
         self.assertIn('RETURN', context)
         self.assertIn('REVERT', context)
+
+    def test_call_with_concretized_args(self):
+        """Test a CALL with symbolic arguments that will to be concretized.
+
+        https://github.com/trailofbits/manticore/issues/1237
+        """
+        m = self.mevm
+
+        contract_src = '''
+        contract C {
+          function transferHalfTo(address receiver) public payable {
+              receiver.transfer(this.balance/2);
+          }
+        }
+        '''
+
+        owner = m.create_account(balance=10**10)
+        contract = m.solidity_create_contract(contract_src, owner=owner)
+        receiver = m.create_account(0)
+        symbolic_address = m.make_symbolic_address()
+        m.constrain(symbolic_address == receiver.address)
+        contract.transferHalfTo(symbolic_address, caller=owner, value=m.make_symbolic_value())
+        self.assertTrue(any(state.can_be_true(state.platform.get_balance(receiver.address) > 0)
+                                for state in m.running_states))
 
     def test_end_instruction_trace(self):
         """

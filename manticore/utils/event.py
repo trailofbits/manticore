@@ -1,3 +1,4 @@
+import copy
 import inspect
 import logging
 from itertools import takewhile
@@ -42,6 +43,10 @@ class Eventful(object, metaclass=EventsGatherMetaclass):
           - publish an event with arbitrary arguments to its subscribers
           - let foreign objects subscribe their methods to events emitted here
           - forward events to/from other eventful objects
+
+        Any time an Eventful object is unserialized:
+          - All previous subscriptions need to be resubscribed
+          - All objects that would previously receive forwarded events need to be reconnected
     '''
 
     # Maps an Eventful subclass with a set of all the events it publishes.
@@ -151,3 +156,7 @@ class Eventful(object, metaclass=EventsGatherMetaclass):
         if not isinstance(sink, Eventful):
             raise TypeError
         self._forwards[sink] = include_source
+
+    def copy_eventful_state(self, new_object: 'Eventful'):
+        new_object._forwards = copy.copy(self._forwards)
+        new_object._signals = copy.copy(self._signals)

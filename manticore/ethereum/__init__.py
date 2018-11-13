@@ -342,7 +342,7 @@ class ManticoreEVM(Manticore):
         relative_filepath = source_file.name
 
         if not working_dir:
-            working_dir = os.path.abspath(relative_filepath)[:-len(relative_filepath)]
+            working_dir = os.getcwd()
         elif relative_filepath.startswith(working_dir):
             relative_filepath = relative_filepath[len(working_dir) + 1:]
 
@@ -1072,6 +1072,7 @@ class ManticoreEVM(Manticore):
         with self.locked_context('ethereum') as context:
             if len(context['_saved_states']) == 1:
                 self._initial_state = self._executor._workspace.load_state(context['_saved_states'].pop(), delete=True)
+                self._executor.forward_events_from(self._initial_state, True)
                 context['_saved_states'] = set()
                 assert self._running_state_ids == (-1,)
 
@@ -1303,7 +1304,7 @@ class ManticoreEVM(Manticore):
     def workspace(self):
         return self._executor._workspace._store.uri
 
-    def generate_testcase(self, state, name, message='', only_if=None):
+    def generate_testcase(self, state, message='', only_if=None, name='user'):
         """
         Generate a testcase to the workspace for the given program state. The details of what
         a testcase is depends on the type of Platform the state is, but involves serializing the state,
@@ -1319,14 +1320,13 @@ class ManticoreEVM(Manticore):
         For example, invariant: "balance" must not be 0. We can check if this can be violated and generate a
         testcase::
 
-            m.generate_testcase(state, 'balance', 'balance CAN be 0', only_if=balance == 0)
+            m.generate_testcase(state, 'balance CAN be 0', only_if=balance == 0)
             # testcase generated with an input that will violate invariant (make balance == 0)
 
-
         :param manticore.core.state.State state:
-        :param str name: short string used as the prefix for the workspace key (e.g. filename prefix for testcase files)
         :param str message: longer description of the testcase condition
         :param manticore.core.smtlib.Bool only_if: only if this expr can be true, generate testcase. if is None, generate testcase unconditionally.
+        :param str name: short string used as the prefix for the workspace key (e.g. filename prefix for testcase files)
         :return: If a testcase was generated
         :rtype: bool
         """
