@@ -615,13 +615,13 @@ class EVM(Eventful):
         old_totalfee = self.safe_mul(old_size, GMEMORY) + Operators.UDIV(self.safe_mul(old_size, old_size), GQUADRATICMEMDENOM)
         new_totalfee = self.safe_mul(new_size, GMEMORY) + Operators.UDIV(self.safe_mul(new_size, new_size), GQUADRATICMEMDENOM)
         memfee = new_totalfee - old_totalfee
-        flag = Operators.UGT(new_totalfee, old_totalfee)
+        flag = Operators.AND(size != 0, Operators.UGT(new_totalfee, old_totalfee))
         return Operators.ITEBV(512, flag, memfee, 0)
 
-    def _allocate(self, address):
-        self._consume(self._get_memfee(address))
-        address_c = Operators.ZEXTEND(Operators.UDIV(self.safe_add(address, 31), 32) * 32, 512)
-        self._allocated = Operators.ITEBV(512, address_c > self._allocated, address_c, self.allocated)
+    def _allocate(self, address, size=1):
+        self._consume(self._get_memfee(address, size))
+        address_c = Operators.UDIV(Operators.ZEXTEND(address, 512) + size + 31, 32) * 32
+        self._allocated = Operators.ITEBV(512, Operators.UGT(address_c, self._allocated), address_c, self.allocated)
 
     @property
     def allocated(self):
@@ -910,7 +910,6 @@ class EVM(Eventful):
                              expression=expression,
                              setstate=setstate,
                              policy='ALL')
-        print (self)
         try:
             self._check_jmpdest()
             last_pc, last_gas, instruction, arguments = self._checkpoint()
@@ -937,11 +936,11 @@ class EVM(Eventful):
             raise EVMException("Symbolic size not supported")
         if size == 0:
             return b''
-        self._allocate(offset + size)
+        self._allocate(offset, size)
         return self.memory[offset: offset + size]
 
     def write_buffer(self, offset, data):
-        self._allocate(offset + len(data))
+        self._allocate(offset, len(data))
         for i, c in enumerate(data):
             self._store(offset + i, Operators.ORD(c))
 
@@ -1169,7 +1168,7 @@ class EVM(Eventful):
         # http://gavwood.com/paper.pdf
         self._consume(GSHA3WORD * (ceil32(size) // 32))
         if size:
-            self._allocate(start + size)
+            self._allocate(start, size)
         data = self.read_buffer(start, size)
         data = self.try_simplify_to_constant(data)
         if issymbolic(data):
@@ -1264,13 +1263,9 @@ class EVM(Eventful):
 
         GCOPY = 3             # cost to copy one 32 byte word
         self._use_calldata(data_offset + size)
-        copyfee = self.safe_mul(GCOPY, self.safe_add(size, 31) // 32)
-        memfee = self._get_memfee(mem_offset, size)
-
+        copyfee = self.safe_mul(GCOPY, Operators.UDIV(self.safe_add(size, 31), 32))
         self._consume(copyfee)
-        self._consume(memfee)
-
-        self._allocate(self.safe_add(mem_offset, size))
+        self._allocate(mem_offset, size)
         for i in range(size):
             try:
                 c = Operators.ITEBV(8, data_offset + i < len(self.data), Operators.ORD(self.data[data_offset + i]), 0)
@@ -1287,7 +1282,10 @@ class EVM(Eventful):
     def CODECOPY(self, mem_offset, code_offset, size):
         '''Copy code running in current environment to memory'''
 
-        self._allocate(mem_offset + size)
+        self._allocate(mem_offset, size)
+        GCOPY = 3             # cost to copy one 32 byte word
+        copyfee = self.safe_mul(GCOPY, Operators.UDIV(self.safe_add(size, 31), 32))
+        self._consume(copyfee)
 
         if issymbolic(size):
             max_size = solver.max(self.constraints, size)
@@ -1329,7 +1327,7 @@ class EVM(Eventful):
         GCOPY = 3             # cost to copy one 32 byte word
         self._consume(GCOPY * ceil32(len(extbytecode)) // 32)
 
-        self._allocate(address + size)
+        self._allocate(address, size)
 
         for i in range(size):
             if offset + i < len(extbytecode):
@@ -1340,7 +1338,7 @@ class EVM(Eventful):
     def RETURNDATACOPY(self, mem_offset, return_offset, size):
         return_data = self.world.last_transaction.return_data
 
-        self._allocate(mem_offset + size)
+        self._allocate(mem_offset, size)
         for i in range(size):
             if return_offset + i < len(return_data):
                 self._store(mem_offset + i, return_data[return_offset + i])
@@ -1386,7 +1384,7 @@ class EVM(Eventful):
 
     def MLOAD(self, address):
         '''Load word from memory'''
-        self._allocate(address + 32)
+        self._allocate(address, 32)
         value = self._load(address, 32)
         return value
 
@@ -1395,7 +1393,7 @@ class EVM(Eventful):
         if istainted(self.pc):
             for taint in get_taints(self.pc):
                 value = taint_with(value, taint)
-        self._allocate(address + 32)
+        self._allocate(address, 32)
         self._store(address, value, 32)
 
     def MSTORE8(self, address, value):
@@ -1403,7 +1401,7 @@ class EVM(Eventful):
         if istainted(self.pc):
             for taint in get_taints(self.pc):
                 value = taint_with(value, taint)
-        self._allocate(address)
+        self._allocate(address, 1)
         self._store(address, Operators.EXTRACT(value, 0, 8), 1)
 
     def SLOAD(self, offset):
@@ -1496,6 +1494,8 @@ class EVM(Eventful):
     # Logging Operations
     @concretized_args(size='ONE')
     def LOG(self, address, size, *topics):
+        GLOGBYTE = 8
+        self._consume(size * GLOGBYTE)
         memlog = self.read_buffer(address, size)
         self.world.log(self.address, topics, memlog)
 

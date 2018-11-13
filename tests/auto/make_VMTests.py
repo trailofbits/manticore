@@ -140,7 +140,7 @@ def gen_test(testcase, filename, skip):
 
         output += f'''
         #check logs
-        data = rlp.encode([Log(unhexlify('%040x'%l.address), l.topics, to_constant(l.memlog)) for l in world.logs])
+        data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '{testcase['logs'][2:]}')
         '''
 

@@ -361,7 +361,7 @@ class Z3Solver(Solver):
             return [expression]
         assert isinstance(constraints, ConstraintSet)
         assert isinstance(expression, Expression)
-
+        expression = simplify(expression)
         if maxcnt is None:
             maxcnt = consts.maxsolutions
 
