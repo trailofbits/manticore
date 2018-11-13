@@ -172,7 +172,7 @@ brew install capstone
 export MACOS_UNIVERSAL=no && pip install capstone
 
 brew install unicorn
-UNICORN_QEMU_FLAGS="--python=`whereis python`" pip install unicorn`
+UNICORN_QEMU_FLAGS="--python=`whereis python`" pip install unicorn
 ```
 
 Option 1: Perform a user install (requires `~/.local/bin` in your `PATH`).
