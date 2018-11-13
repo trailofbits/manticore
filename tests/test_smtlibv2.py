@@ -281,18 +281,19 @@ class ExpressionTest(unittest.TestCase):
 
     def testBasicArrayProxySymbIdx(self):
         cs =  ConstraintSet()
-        array = ArrayProxy(cs.new_array(index_bits=32, value_bits=32, name='array'))
+        array = ArrayProxy(cs.new_array(index_bits=32, value_bits=32, name='array'), default=0)
         key = cs.new_bitvec(32, name='key')
         index = cs.new_bitvec(32, name='index')
 
         array[key] = 1 # Write 1 to a single location
         cs.add(array.get(index) != 0) # Constrain index so it selects that location
         a_index = self.solver.get_value(cs, index)  # get a concrete solution for index
+
         cs.add(array.get(a_index) != 0)             # now storage must have something at that location
         cs.add(a_index != index)                    # remove it from the solutions
-
         # It should not be another solution for index
         self.assertFalse(self.solver.check(cs))
+
 
     def testBasicArrayProxySymbIdx2(self):
         cs =  ConstraintSet()
@@ -301,10 +302,18 @@ class ExpressionTest(unittest.TestCase):
         index = cs.new_bitvec(32, name='index')
 
         array[0] = 1 # Write 1 to first location
-        array[key] = 2 # Write 2 to a symbolic (potentially any)location
+        array[key] = 2 # Write 2 to a symbolic (potentially any (potentially 0))location
 
         solutions = self.solver.get_all_values(cs, array[0])  # get a concrete solution for index
         self.assertItemsEqual(solutions, (1,2))
+
+        solutions = self.solver.get_all_values(cs, array.get(0,100))  # get a concrete solution for index 0
+        self.assertItemsEqual(solutions, (1,2))
+
+        solutions = self.solver.get_all_values(cs, array.get(1, 100))  # get a concrete solution for index 1 (default 100)
+        self.assertItemsEqual(solutions, (100,2))
+
+        self.assertTrue(self.solver.can_be_true(cs, array[1]==12345))  # no default so it can be anything
 
 
     def testBasicPickle(self):
