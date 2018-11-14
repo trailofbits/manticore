@@ -45,19 +45,18 @@ def flagged(flag):
     return '(*)' if flag else ''
 
 
-def contract_addr(address):
+def write_findings(method, lead_space, address, pc, at_init=""):
     """
-    Return string indicating contact address
+    Writes contract address and EVM program counter indicating whether counter was read at constructor
+    :param method: pointer to the object with the write method
+    :param lead_space: leading white space
+    :param address: contract address
+    :param pc: program counter
+    :param at_init: Boolean
+    :return: pass
     """
-    return f'Contract: 0x{address}'
-
-
-def evm_program_counter(pc, at_init=""):
-    """
-    Return string indicating EVM program counter and whether counter was read
-    at constructor
-    """
-    return f'EVM Program counter: 0x{pc}{" (at constructor)" if at_init else ""}\n'
+    method.write(f'{lead_space}Contract: 0x:{address}')
+    method.write(f'{lead_space}EVM Program counter: 0x{pc}{" (at constructor)" if at_init else ""}\n')
 
 #
 # Plugins
@@ -1362,8 +1361,7 @@ class ManticoreEVM(Manticore):
         pc = world.current_vm.pc
         at_init = world.current_transaction.sort == 'CREATE'
         output = io.StringIO()
-        output.write(contract_addr(address))
-        output.write(evm_program_counter(pc, at_init))
+        write_findings(output, '', address, pc, at_init)
         md = self.get_metadata(address)
         if md is not None:
             src = md.get_source_for(pc, runtime=not at_init)
@@ -1402,8 +1400,7 @@ class ManticoreEVM(Manticore):
             with testcase.open_stream('findings') as findings:
                 for address, pc, finding, at_init, constraint in local_findings:
                     findings.write('- %s -\n' % finding)
-                    findings.write('  ' + contract_addr(address))
-                    findings.write('  ' + evm_program_counter(pc, at_init))
+                    write_findings(findings, '  ', address, pc, at_init)
                     md = self.get_metadata(address)
                     if md is not None:
                         src = md.get_source_for(pc, runtime=not at_init)
@@ -1535,9 +1532,7 @@ class ManticoreEVM(Manticore):
             with self._output.save_stream('global.findings') as global_findings:
                 for address, pc, finding, at_init in self.global_findings:
                     global_findings.write('- %s -\n' % finding)
-                    global_findings.write('  ' + contract_addr(address))
-                    global_findings.write('  ' + evm_program_counter(pc, at_init))
-
+                    write_findings(global_findings, '  ', address, pc, at_init)
                     md = self.get_metadata(address)
                     if md is not None:
                         source_code_snippet = md.get_source_for(pc, runtime=not at_init)
