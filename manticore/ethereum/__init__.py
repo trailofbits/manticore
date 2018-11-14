@@ -33,7 +33,6 @@ from .account import EVMAccount, EVMContract
 from .abi import ABI
 from .solidity import SolidityMetadata
 
-
 logger = logging.getLogger(__name__)
 
 init_logging()  # FIXME(mark): emitting a warning in abi.py does not work unless this is called a second time here
@@ -44,6 +43,20 @@ def flagged(flag):
     Return special character denoting concretization happened.
     """
     return '(*)' if flag else ''
+
+
+def write_findings(method, lead_space, address, pc, at_init=""):
+    """
+    Writes contract address and EVM program counter indicating whether counter was read at constructor
+    :param method: pointer to the object with the write method
+    :param lead_space: leading white space
+    :param address: contract address
+    :param pc: program counter
+    :param at_init: Boolean
+    :return: pass
+    """
+    method.write(f'{lead_space}Contract: 0x:{address}')
+    method.write(f'{lead_space}EVM Program counter: 0x{pc}{" (at constructor)" if at_init else ""}\n')
 
 #
 # Plugins
@@ -1348,8 +1361,7 @@ class ManticoreEVM(Manticore):
         pc = world.current_vm.pc
         at_init = world.current_transaction.sort == 'CREATE'
         output = io.StringIO()
-        output.write('Contract: 0x{:x}\n'.format(address))
-        output.write('EVM Program counter: 0x{:x}{:s}\n'.format(pc, at_init and " (at constructor)" or ""))
+        write_findings(output, '', address, pc, at_init)
         md = self.get_metadata(address)
         if md is not None:
             src = md.get_source_for(pc, runtime=not at_init)
@@ -1388,8 +1400,7 @@ class ManticoreEVM(Manticore):
             with testcase.open_stream('findings') as findings:
                 for address, pc, finding, at_init, constraint in local_findings:
                     findings.write('- %s -\n' % finding)
-                    findings.write('  Contract: 0x%x\n' % address)
-                    findings.write('  EVM Program counter: 0x%x%s\n' % (pc, at_init and " (at constructor)" or ""))
+                    write_findings(findings, '  ', address, pc, at_init)
                     md = self.get_metadata(address)
                     if md is not None:
                         src = md.get_source_for(pc, runtime=not at_init)
@@ -1521,9 +1532,7 @@ class ManticoreEVM(Manticore):
             with self._output.save_stream('global.findings') as global_findings:
                 for address, pc, finding, at_init in self.global_findings:
                     global_findings.write('- %s -\n' % finding)
-                    global_findings.write('  Contract: %s\n' % address)
-                    global_findings.write('  EVM Program counter: 0x%x%s\n' % (pc, at_init and " (at constructor)" or ""))
-
+                    write_findings(global_findings, '  ', address, pc, at_init)
                     md = self.get_metadata(address)
                     if md is not None:
                         source_code_snippet = md.get_source_for(pc, runtime=not at_init)
