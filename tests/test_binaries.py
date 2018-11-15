@@ -195,24 +195,87 @@ class IntegrationTest(unittest.TestCase):
         actual = self._loadVisitedSet(os.path.join(dirname, workspace, 'visited.txt'))
         self.assertTrue(len(actual) > 100 )
 
-    def test_eth_regressions(self):
-        issues = [
-            {'number': 676, 'contract': None, 'txlimit': 1},
-            {'number': 678, 'contract': None, 'txlimit': 1},
-            {'number': 701, 'contract': None, 'txlimit': 1},
-            {'number': 714, 'contract': None, 'txlimit': 1},
-            {'number': 735, 'contract': None, 'txlimit': 2},
-            {'number': 760, 'contract': None, 'txlimit': 1},
-            {'number': 780, 'contract': None, 'txlimit': 1},
-            {'number': 795, 'contract': None, 'txlimit': 1},
-            {'number': 799, 'contract': 'C', 'txlimit': 1},
-            {'number': 807, 'contract': 'C', 'txlimit': 1},
-            {'number': 808, 'contract': 'C', 'txlimit': 1},
-            {'number': 'main/main', 'contract': 'C', 'txlimit': 1, 'in_directory': 'imports_issue'}
-        ]
+    def test_eth_regressions_676(self):
+        issue = {'number': 676, 'contract': None, 'txlimit': 1}
+        self._simple_cli_run(
+                f'{issue["number"]}.sol', contract=issue['contract'], tx_limit=issue['txlimit'],
+                in_directory=issue.get('in_directory')
+            )
 
-        for issue in issues:
-            self._simple_cli_run(
+    def test_eth_regressions_678(self):
+        issue = {'number': 678, 'contract': None, 'txlimit': 1}
+        self._simple_cli_run(
+                f'{issue["number"]}.sol', contract=issue['contract'], tx_limit=issue['txlimit'],
+                in_directory=issue.get('in_directory')
+            )
+
+    def test_eth_regressions_701(self):
+        issue = {'number': 701, 'contract': None, 'txlimit': 1}
+        self._simple_cli_run(
+                f'{issue["number"]}.sol', contract=issue['contract'], tx_limit=issue['txlimit'],
+                in_directory=issue.get('in_directory')
+            )
+
+    def test_eth_regressions_714(self):
+        issue = {'number': 714, 'contract': None, 'txlimit': 1}
+        self._simple_cli_run(
+                f'{issue["number"]}.sol', contract=issue['contract'], tx_limit=issue['txlimit'],
+                in_directory=issue.get('in_directory')
+            )
+
+    def test_eth_regressions_735(self):
+        issue = {'number': 735, 'contract': None, 'txlimit': 2}
+        self._simple_cli_run(
+                f'{issue["number"]}.sol', contract=issue['contract'], tx_limit=issue['txlimit'],
+                in_directory=issue.get('in_directory')
+            )
+
+    def test_eth_regressions_760(self):
+        issue = {'number': 760, 'contract': None, 'txlimit': 1}
+        self._simple_cli_run(
+                f'{issue["number"]}.sol', contract=issue['contract'], tx_limit=issue['txlimit'],
+                in_directory=issue.get('in_directory')
+            )
+
+    def test_eth_regressions_780(self):
+        issue = {'number': 780, 'contract': None, 'txlimit': 1}
+        self._simple_cli_run(
+                f'{issue["number"]}.sol', contract=issue['contract'], tx_limit=issue['txlimit'],
+                in_directory=issue.get('in_directory')
+            )
+
+    def test_eth_regressions_795(self):
+        issue = {'number': 795, 'contract': None, 'txlimit': 1}
+
+        self._simple_cli_run(
+                f'{issue["number"]}.sol', contract=issue['contract'], tx_limit=issue['txlimit'],
+                in_directory=issue.get('in_directory')
+            )
+
+    def test_eth_regressions_799(self):
+        issue = {'number': 799, 'contract': 'C', 'txlimit': 1}
+        self._simple_cli_run(
+                f'{issue["number"]}.sol', contract=issue['contract'], tx_limit=issue['txlimit'],
+                in_directory=issue.get('in_directory')
+            )
+
+    def test_eth_regressions_807(self):
+        issue = {'number': 807, 'contract': 'C', 'txlimit': 1}
+        self._simple_cli_run(
+                f'{issue["number"]}.sol', contract=issue['contract'], tx_limit=issue['txlimit'],
+                in_directory=issue.get('in_directory')
+            )
+
+    def test_eth_regressions_80(self):
+        issue = {'number': 808, 'contract': 'C', 'txlimit': 1}
+        self._simple_cli_run(
+                f'{issue["number"]}.sol', contract=issue['contract'], tx_limit=issue['txlimit'],
+                in_directory=issue.get('in_directory')
+            )
+
+    def test_eth_regressions_mainmain(self):
+        issue = {'number': 'main/main', 'contract': 'C', 'txlimit': 1, 'in_directory': 'imports_issue'}
+        self._simple_cli_run(
                 f'{issue["number"]}.sol', contract=issue['contract'], tx_limit=issue['txlimit'],
                 in_directory=issue.get('in_directory')
             )
