@@ -23,6 +23,14 @@ class TerminateState(StateException):
         super().__init__(message)
         self.testcase = testcase
 
+class AbandonState(TerminateState):
+    ''' Exception returned for abandoned states when
+        execution is finished
+    '''
+
+    def __init__(self, message='Abandoned state'):
+        super().__init__(message)
+
 
 class Concretize(StateException):
     ''' Base class for all exceptions that trigger the concretization
@@ -117,10 +125,12 @@ class State(Eventful):
         self.platform.constraints = new_state.constraints
         new_state._input_symbols = list(self._input_symbols)
         new_state._context = copy.copy(self._context)
+
+        self.copy_eventful_state(new_state)
+
         self._child = new_state
         assert new_state.platform.constraints is new_state.constraints
 
-        # fixme NEW State won't inherit signals (pro: added signals to new_state wont affect parent)
         return new_state
 
     def __exit__(self, ty, value, traceback):
@@ -149,7 +159,7 @@ class State(Eventful):
             expression = self.cpu.read_int(e.address, e.size)
 
             def setstate(state, value):
-                state.cpu.write_int(setstate.e.address, value, e.size)
+                state.cpu.write_int(setstate.e.address, value, setstate.e.size)
             setstate.e = e
             raise Concretize(str(e),
                              expression=expression,
@@ -196,7 +206,7 @@ class State(Eventful):
 
         Note: This must be called from the Executor loop, or a :func:`~manticore.Manticore.hook`.
         '''
-        raise TerminateState("Abandoned state")
+        raise AbandonState
 
     def new_symbolic_buffer(self, nbytes, **options):
         '''Create and return a symbolic buffer of length `nbytes`. The buffer is
@@ -253,6 +263,8 @@ class State(Eventful):
             This raises TooManySolutions if more solutions than maxcount
         '''
         assert self.constraints == self.platform.constraints
+        symbolic = self.migrate_expression(symbolic)
+
         vals = []
         if policy == 'MINMAX':
             vals = self._solver.minmax(self._constraints, symbolic)
@@ -368,8 +380,23 @@ class State(Eventful):
         expr = self.migrate_expression(expr)
         return self._solver.min(self._constraints, expr)
 
+    def solve_minmax(self, expr):
+        '''
+        Solves a symbolic :class:`~manticore.core.smtlib.expression.Expression` into
+        its minimum and maximun solution. Only defined for bitvects.
+
+        :param manticore.core.smtlib.Expression expr: Symbolic value to solve
+        :return: Concrete value
+        :rtype: list[int]
+        '''
+        if isinstance(expr, int):
+            return expr
+        expr = self.migrate_expression(expr)
+        return self._solver.minmax(self._constraints, expr)
+
     ################################################################################################
     # The following should be moved to specific class StatePosix?
+
     def solve_buffer(self, addr, nbytes, constrain=False):
         '''
         Reads `nbytes` of symbolic data from a buffer in memory at `addr` and attempts to

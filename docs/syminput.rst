@@ -29,7 +29,8 @@ For API use, use the ``argv`` and ``envp`` arguments to the :meth:`manticore.Man
 Symbolic stdin
 --------------
 
-Manticore by default is configured with 256 bytes of symbolic stdin data, after an optional
+Manticore by default is configured with 256 bytes of symbolic stdin data which is configurable
+with the ``stdin_size`` kwarg of :meth:`manticore.Manticore.linux` , after an optional
 concrete data prefix, which can be provided with the ``concrete_start`` kwarg of
 :meth:`manticore.Manticore.linux`.
 

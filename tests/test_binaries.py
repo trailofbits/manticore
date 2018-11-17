@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import os
 import shutil
 import subprocess
@@ -6,13 +7,31 @@ import tempfile
 import time
 import unittest
 
+=======
+import subprocess
+import sys
+import time
+import unittest
+
+import os
+import shutil
+import tempfile
+
+>>>>>>> master
 from manticore.binary import Elf, CGCElf
+from manticore.utils.mappings import mmap, munmap
 
 DIRPATH = os.path.dirname(__file__)
 
 # Workaround for PyCharm's remote ssh interpreter that is in virtualenv
 # (it doesn't support venv on remote ssh, so `python` may point to system's Python)
 # and /proc/self/exe should always be the Python the tests have been run with.
+PYTHON_BIN = '/proc/self/exe'
+
+
+# TLDR: when we launch `python -m manticore` and one uses PyCharm remote interpreter
+# the `python` might not refer to proper interpreter. The `/proc/self/exe` is a workaround
+# so one doesn't have to set up virtualenv in a remote interpreter.
 PYTHON_BIN = '/proc/self/exe'
 
 
@@ -29,6 +48,7 @@ class TestBinaryPackage(unittest.TestCase):
         )
         self.assertTrue([('Running', {'EIP': 4196624})], list(f.threads()))
         self.assertIsNone(f.getInterpreter())
+        f.elf.stream.close()
 
     def test_decree(self):
         filename = os.path.join(os.path.dirname(__file__), 'binaries', 'cadet_decree_x86')
@@ -38,6 +58,7 @@ class TestBinaryPackage(unittest.TestCase):
             list(f.maps())
         )
         self.assertTrue([('Running', {'EIP': 134513708})], list(f.threads()))
+        f.elf.stream.close()
 
 
 class IntegrationTest(unittest.TestCase):
@@ -61,13 +82,17 @@ class IntegrationTest(unittest.TestCase):
 
         return set(vitems)
 
-    def _simple_cli_run(self, filename, contract=None, tx_limit=1):
+    def _simple_cli_run(self, filename, contract=None, tx_limit=1, in_directory=None):
         """
         Simply run the Manticore command line with `filename`
         :param filename: Name of file inside the `tests/binaries` directory
         :return:
         """
-        filename = os.path.join(DIRPATH, 'binaries', filename)
+        working_dir = os.path.join(DIRPATH, 'binaries')
+
+        if in_directory:
+            working_dir = os.path.join(working_dir, in_directory)
+
         command = [PYTHON_BIN, '-m', 'manticore']
 
         if contract:
@@ -77,7 +102,7 @@ class IntegrationTest(unittest.TestCase):
         command.append(str(tx_limit))
         command.append(filename)
 
-        subprocess.check_call(command, stdout=subprocess.PIPE)
+        subprocess.check_call(command, stdout=subprocess.PIPE, cwd=working_dir)
 
     def _run_with_timeout(self, procargs, logfile, timeout=1200):
 
@@ -101,6 +126,30 @@ class IntegrationTest(unittest.TestCase):
         filename = filename[len(os.getcwd()) + 1:]
         workspace = os.path.join(self.test_dir, 'workspace')
         t = time.time()
+        with open(os.path.join(os.pardir, self.test_dir, 'output.log'), "w") as output:
+            subprocess.check_call([PYTHON_BIN, '-m', 'manticore',
+                                '--workspace', workspace,
+                                '--timeout', '1',
+                                '--procs', '4',
+                                filename,
+                                '+++++++++'], stdout=output)
+
+        self.assertTrue(time.time()-t < 20)
+
+    def test_solidity_timeout(self):
+        filename = os.path.abspath(os.path.join(DIRPATH, 'binaries', 'int_overflow.sol'))
+        self.assertTrue(filename.startswith(os.getcwd()))
+        filename = filename[len(os.getcwd())+1:]
+        workspace = os.path.join(self.test_dir, 'workspace')
+        t = time.time()
+
+        with open(os.path.join(os.pardir, self.test_dir, 'output.log'), "w") as output:
+            subprocess.check_call(['python', '-m', 'manticore',
+                                '--workspace', workspace,
+                                '--timeout', '1',
+                                '--procs', '4',
+                                filename,
+                                '+++++++++'], stdout=output)
 
         output = subprocess.check_output([PYTHON_BIN, '-m', 'manticore',
                                           '--workspace', workspace,
@@ -124,9 +173,9 @@ class IntegrationTest(unittest.TestCase):
         """
         Tests that default verbosity produces the expected volume of output
         """
-
         filename = os.path.join(DIRPATH, 'binaries', 'basic_linux_amd64')
         output = subprocess.check_output([PYTHON_BIN, '-m', 'manticore', '--no-color', filename])
+
         output_lines = output.splitlines()
         start_info = output_lines[:2]
         testcase_info = output_lines[2:-5]
@@ -141,6 +190,7 @@ class IntegrationTest(unittest.TestCase):
     def _test_arguments_assertions_aux(self, binname, refname, testcases_number):
         filename = os.path.abspath(os.path.join(DIRPATH, 'binaries', binname))
         self.assertTrue(filename.startswith(os.getcwd()))
+
         filename = filename[len(os.getcwd()) + 1:]
         workspace = '%s/workspace' % self.test_dir
         assertions = '%s/assertions.txt' % self.test_dir
@@ -214,11 +264,14 @@ class IntegrationTest(unittest.TestCase):
             {'number': 799, 'contract': 'C', 'txlimit': 1},
             {'number': 807, 'contract': 'C', 'txlimit': 1},
             {'number': 808, 'contract': 'C', 'txlimit': 1},
+            {'number': 'main/main', 'contract': 'C', 'txlimit': 1, 'in_directory': 'imports_issue'}
         ]
 
         for issue in issues:
-            self._simple_cli_run(f'{issue["number"]}.sol',
-                                 contract=issue['contract'], tx_limit=issue['txlimit'])
+            self._simple_cli_run(
+                f'{issue["number"]}.sol', contract=issue['contract'], tx_limit=issue['txlimit'],
+                in_directory=issue.get('in_directory')
+            )
 
     @unittest.skip('Debug')
     def test_eth_705(self):
@@ -296,6 +349,16 @@ class IntegrationTest(unittest.TestCase):
         with open(os.path.join(workspace, "test_00000000.messages")) as f:
             self.assertIn("finished with exit status: 0", f.read())
 
+    def test_unaligned_mappings(self):
+        # This test ensures that mapping file contents at non page-aligned offsets is possible.
+        filename = os.path.join(os.path.dirname(__file__), 'binaries', 'basic_linux_amd64')
+        with open(filename, 'rb') as f:
+            for addr, size in [
+                (0x0001, 0xfffe), (0x0001, 0x0fff), (0x0001, 0x1000),
+                (0x0fff, 0x0001), (0x0fff, 0x0002), (0x0fff, 0x1000),
+            ]:
+                # No assert should be triggered on the following line
+                munmap(mmap(f.fileno(), addr, size), size)
 
 if __name__ == '__main__':
     unittest.main()

@@ -93,6 +93,14 @@ class StateTest(unittest.TestCase):
         solved = self.state.solve_n(expr, 5)
         self.assertEqual(len(solved), 5)
 
+    def test_solve_min_max(self):
+        expr = BitVecVariable(32, 'tmp')
+        self.state.constrain(expr > 4)
+        self.state.constrain(expr < 7)
+        self.assertEqual(self.state.solve_min(expr), 5)
+        self.assertEqual(self.state.solve_max(expr), 6)
+        self.assertEqual(self.state.solve_minmax(expr), (5,6))
+
     def test_policy_one(self):
         expr = BitVecVariable(32, 'tmp')
         self.state.constrain(expr > 0)

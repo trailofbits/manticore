@@ -30,14 +30,14 @@ def instruction(body):
 
         should_execute = cpu.should_execute_conditional()
 
-        if cpu._at_symbolic_conditional:
-            cpu._at_symbolic_conditional = False
+        if cpu._at_symbolic_conditional == cpu.instruction.address:
+            cpu._at_symbolic_conditional = None
             should_execute = True
         else:
             if issymbolic(should_execute):
                 # Let's remember next time we get here we should not do this again
-                cpu._at_symbolic_conditional = True
-                i_size = cpu.address_bit_size // 8
+                cpu._at_symbolic_conditional = cpu.instruction.address
+                i_size = cpu.instruction.size
                 cpu.PC = Operators.ITEBV(cpu.address_bit_size, should_execute, cpu.PC - i_size,
                                          cpu.PC)
                 return
@@ -358,7 +358,7 @@ class Armv7Cpu(Cpu):
     def __init__(self, memory):
         self._it_conditional = list()
         self._last_flags = {'C': 0, 'V': 0, 'N': 0, 'Z': 0, 'GE': 0}
-        self._at_symbolic_conditional = False
+        self._at_symbolic_conditional = None
         self._mode = cs.CS_MODE_ARM
         super().__init__(Armv7RegisterFile(), memory)
 
@@ -935,6 +935,62 @@ class Armv7Cpu(Cpu):
         return result, carry, overflow
 
     @instruction
+    def ADR(cpu, dest, src):
+        """
+        Address to Register adds an immediate value to the PC value, and writes the result to the destination register.
+
+        :param ARMv7Operand dest: Specifies the destination register.
+        :param ARMv7Operand src:
+            Specifies the label of an instruction or literal data item whose address is to be loaded into
+            <Rd>. The assembler calculates the required value of the offset from the Align(PC,4)
+            value of the ADR instruction to this label.
+        """
+        aligned_pc = (cpu.instruction.address + 4) & 0xfffffffc
+        dest.write(aligned_pc + src.read())
+
+    @instruction
+    def ADDW(cpu, dest, src, add):
+        """
+        This instruction adds an immediate value to a register value, and writes the result to the destination register.
+        It doesn't update the condition flags.
+
+        :param ARMv7Operand dest: Specifies the destination register. If omitted, this register is the same as src.
+        :param ARMv7Operand src:
+            Specifies the register that contains the first operand. If the SP is specified for dest, see ADD (SP plus
+            immediate). If the PC is specified for dest, see ADR.
+        :param ARMv7Operand add:
+            Specifies the immediate value to be added to the value obtained from src. The range of allowed values is
+            0-4095.
+        """
+        aligned_pc = (cpu.instruction.address + 4) & 0xfffffffc
+        if src.type == 'register' and src.reg in ('PC', 'R15'):
+            src = aligned_pc
+        else:
+            src = src.read()
+        dest.write(src + add.read())
+
+    @instruction
+    def SUBW(cpu, dest, src, add):
+        """
+        This instruction subtracts an immediate value from a register value, and writes the result to the destination
+        register. It can optionally update the condition flags based on the result.
+
+        :param ARMv7Operand dest: Specifies the destination register. If omitted, this register is the same as src.
+        :param ARMv7Operand src:
+            Specifies the register that contains the first operand. If the SP is specified for dest, see ADD (SP plus
+            immediate). If the PC is specified for dest, see ADR.
+        :param ARMv7Operand add:
+            Specifies the immediate value to be added to the value obtained from src. The range of allowed values is
+            0-4095.
+        """
+        aligned_pc = (cpu.instruction.address + 4) & 0xfffffffc
+        if src.type == 'register' and src.reg in ('PC', 'R15'):
+            src = aligned_pc
+        else:
+            src = src.read()
+        dest.write(src - add.read())
+
+    @instruction
     def B(cpu, dest):
         cpu.PC = dest.read()
 
@@ -952,7 +1008,34 @@ class Armv7Cpu(Cpu):
                                  cpu.PC)
 
     @instruction
+    def CBZ(cpu, op, dest):
+        """
+        Compare and Branch on Zero compares the value in a register with zero, and conditionally branches forward
+        a constant value. It does not affect the condition flags.
+
+        :param ARMv7Operand op: Specifies the register that contains the first operand.
+        :param ARMv7Operand dest:
+            Specifies the label of the instruction that is to be branched to. The assembler calculates the
+            required value of the offset from the PC value of the CBZ instruction to this label, then
+            selects an encoding that will set imm32 to that offset. Allowed offsets are even numbers in
+            the range 0 to 126.
+        """
+        cpu.PC = Operators.ITEBV(cpu.address_bit_size,
+                                 op.read(), cpu.PC, dest.read())
+
+    @instruction
     def CBNZ(cpu, op, dest):
+        """
+        Compare and Branch on Non-Zero compares the value in a register with zero, and conditionally branches
+        forward a constant value. It does not affect the condition flags.
+
+        :param ARMv7Operand op: Specifies the register that contains the first operand.
+        :param ARMv7Operand dest:
+            Specifies the label of the instruction that is to be branched to. The assembler calculates the
+            required value of the offset from the PC value of the CBNZ instruction to this label, then
+            selects an encoding that will set imm32 to that offset. Allowed offsets are even numbers in
+            the range 0 to 126.
+        """
         cpu.PC = Operators.ITEBV(cpu.address_bit_size,
                                  op.read(), dest.read(), cpu.PC)
 
@@ -983,6 +1066,54 @@ class Armv7Cpu(Cpu):
             cpu._swap_mode()
         elif dest.type == 'register':
             cpu._set_mode_by_val(dest.read())
+
+    @instruction
+    def TBB(cpu, dest):
+        """
+        Table Branch Byte causes a PC-relative forward branch using a table of single byte offsets. A base register
+        provides a pointer to the table, and a second register supplies an index into the table. The branch length is
+        twice the value of the byte returned from the table.
+
+        :param ARMv7Operand dest: see below; register
+        """
+        # Capstone merges the two registers values into one operand, so we need to extract them back
+
+        # Specifies the base register. This contains the address of the table of branch lengths. This
+        # register is allowed to be the PC. If it is, the table immediately follows this instruction.
+        base_addr = dest.get_mem_base_addr()
+        if dest.mem.base in ('PC', 'R15'):
+            base_addr = cpu.PC
+
+        # Specifies the index register. This contains an integer pointing to a single byte within the
+        # table. The offset within the table is the value of the index.
+        offset = cpu.read_int(base_addr + dest.get_mem_offset(), 8)
+        offset = Operators.ZEXTEND(offset, cpu.address_bit_size)
+
+        cpu.PC += (offset << 1)
+
+    @instruction
+    def TBH(cpu, dest):
+        """
+        Table Branch Halfword causes a PC-relative forward branch using a table of single halfword offsets. A base
+        register provides a pointer to the table, and a second register supplies an index into the table. The branch
+        length is twice the value of the halfword returned from the table.
+
+        :param ARMv7Operand dest: see below; register
+        """
+        # Capstone merges the two registers values into one operand, so we need to extract them back
+
+        # Specifies the base register. This contains the address of the table of branch lengths. This
+        # register is allowed to be the PC. If it is, the table immediately follows this instruction.
+        base_addr = dest.get_mem_base_addr()
+        if dest.mem.base in ('PC', 'R15'):
+            base_addr = cpu.PC
+
+        # Specifies the index register. This contains an integer pointing to a halfword within the table.
+        # The offset within the table is twice the value of the index.
+        offset = cpu.read_int(base_addr + dest.get_mem_offset(), 16)
+        offset = Operators.ZEXTEND(offset, cpu.address_bit_size)
+
+        cpu.PC += (offset << 1)
 
     @instruction
     def CMP(cpu, reg, compare):
@@ -1037,19 +1168,43 @@ class Armv7Cpu(Cpu):
 
     def _LDM(cpu, insn_id, base, regs):
         """
-        It's technically UNKNOWN if you writeback to a register you loaded into,
-        but we let it slide.
+        LDM (Load Multiple) loads a non-empty subset, or possibly all, of the general-purpose registers from
+        sequential memory locations. It is useful for block loads, stack operations and procedure exit sequences.
+
+        :param int insn_id: should be one of ARM_INS_LDM, ARM_INS_LDMIB, ARM_INS_LDMDA, ARM_INS_LDMDB
+        :param Armv7Operand base: Specifies the base register.
+        :param list[Armv7Operand] regs:
+            Is a list of registers. It specifies the set of registers to be loaded by the LDM instruction.
+            The registers are loaded in sequence, the lowest-numbered register from the lowest memory
+            address (start_address), through to the highest-numbered register from the highest memory
+            address (end_address). If the PC is specified in the register list (opcode bit[15] is set),
+            the instruction causes a branch to the address (data) loaded into the PC.
+
+        It's technically UNKNOWN if you writeback to a register you loaded into, but we let it slide.
         """
+        if cpu.instruction.usermode:
+            raise NotImplementedError("Use of the S bit is not supported")
+
+        increment = insn_id in (cs.arm.ARM_INS_LDM, cs.arm.ARM_INS_LDMIB)
+        after = insn_id in (cs.arm.ARM_INS_LDM, cs.arm.ARM_INS_LDMDA)
+
         address = base.read()
-        if insn_id == cs.arm.ARM_INS_LDMIB:
-            address += cpu.address_bit_size // 8
 
         for reg in regs:
-            reg.write(cpu.read_int(address, cpu.address_bit_size))
-            address += reg.size // 8
+            if not after:
+                address += (1 if increment else -1) * (reg.size // 8)
 
-        if insn_id == cs.arm.ARM_INS_LDMIB:
-            address -= reg.size // 8
+            reg.write(cpu.read_int(address, reg.size))
+            if reg.reg in ('PC', 'R15'):
+                # The general-purpose registers loaded can include the PC. If they do, the word loaded for the PC is
+                # treated as an address and a branch occurs to that address. In ARMv5 and above, bit[0] of the loaded
+                # value determines whether execution continues after this branch in ARM state or in Thumb state, as
+                # though a BX instruction had been executed.
+                cpu._set_mode_by_val(cpu.PC)
+                cpu.PC = cpu.PC & ~1
+
+            if after:
+                address += (1 if increment else -1) * (reg.size // 8)
 
         if cpu.instruction.writeback:
             base.writeback(address)
@@ -1062,18 +1217,43 @@ class Armv7Cpu(Cpu):
     def LDMIB(cpu, base, *regs):
         cpu._LDM(cs.arm.ARM_INS_LDMIB, base, regs)
 
+    @instruction
+    def LDMDA(cpu, base, *regs):
+        cpu._LDM(cs.arm.ARM_INS_LDMDA, base, regs)
+
+    @instruction
+    def LDMDB(cpu, base, *regs):
+        cpu._LDM(cs.arm.ARM_INS_LDMDB, base, regs)
+
     def _STM(cpu, insn_id, base, regs):
+        """
+        STM (Store Multiple) stores a non-empty subset (or possibly all) of the general-purpose registers to
+        sequential memory locations.
+
+        :param int insn_id: should be one of ARM_INS_STM, ARM_INS_STMIB, ARM_INS_STMDA, ARM_INS_STMDB
+        :param Armv7Operand base: Specifies the base register.
+        :param list[Armv7Operand] regs:
+            Is a list of registers. It specifies the set of registers to be stored by the STM instruction.
+            The registers are stored in sequence, the lowest-numbered register to the lowest
+            memory address (start_address), through to the highest-numbered register to the
+            highest memory address (end_address).
+        """
+        if cpu.instruction.usermode:
+            raise NotImplementedError("Use of the S bit is not supported")
+
+        increment = insn_id in (cs.arm.ARM_INS_STM, cs.arm.ARM_INS_STMIB)
+        after = insn_id in (cs.arm.ARM_INS_STM, cs.arm.ARM_INS_STMDA)
+
         address = base.read()
-        if insn_id == cs.arm.ARM_INS_STMIB:
-            address += 4
 
         for reg in regs:
-            cpu.write_int(address, reg.read(), cpu.address_bit_size)
-            address += 4
+            if not after:
+                address += (1 if increment else -1) * (reg.size // 8)
 
-        # Undo the last addition if we're in STMIB
-        if insn_id == cs.arm.ARM_INS_STMIB:
-            address -= 4
+            cpu.write_int(address, reg.read(), reg.size)
+
+            if after:
+                address += (1 if increment else -1) * (reg.size // 8)
 
         if cpu.instruction.writeback:
             base.writeback(address)
@@ -1085,6 +1265,14 @@ class Armv7Cpu(Cpu):
     @instruction
     def STMIB(cpu, base, *regs):
         cpu._STM(cs.arm.ARM_INS_STMIB, base, regs)
+
+    @instruction
+    def STMDA(cpu, base, *regs):
+        cpu._STM(cs.arm.ARM_INS_STMDA, base, regs)
+
+    @instruction
+    def STMDB(cpu, base, *regs):
+        cpu._STM(cs.arm.ARM_INS_STMDB, base, regs)
 
     def _bitwise_instruction(cpu, operation, dest, op1, *op2):
         if op2:
@@ -1263,7 +1451,7 @@ class Armv7Cpu(Cpu):
 
     @instruction
     def VLDMIA(cpu, base, *regs):
-        cpu._LDM(cs.arm.ARM_INS_VLDMIA, base, regs)
+        cpu._LDM(cs.arm.ARM_INS_LDM, base, regs)
 
     @instruction
     def STCL(cpu, *operands):

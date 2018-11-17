@@ -2,6 +2,7 @@ import binascii
 import shutil
 import struct
 import tempfile
+from pathlib import Path
 import unittest
 import os
 import sys
@@ -15,9 +16,11 @@ from manticore.core.smtlib import ConstraintSet, operators
 from manticore.core.smtlib.expression import BitVec
 from manticore.core.smtlib import solver
 from manticore.core.state import State, TerminateState
-from manticore.ethereum import ManticoreEVM, DetectIntegerOverflow, Detector, NoAliveStates, ABI, EthereumError, FilterFunctions
+from manticore.ethereum import ManticoreEVM, DetectExternalCallAndLeak, DetectIntegerOverflow, Detector, NoAliveStates, ABI, EthereumError, FilterFunctions
+from manticore.ethereum.solidity import SolidityMetadata
 from manticore.platforms.evm import EVMWorld, ConcretizeStack, concretized_args, Return, Stop
 from manticore.core.smtlib.visitors import pretty_print, translate_to_smtlib, simplify, to_constant
+from manticore.utils.deprecated import ManticoreDeprecationWarning
 import pyevmasm as EVMAsm
 
 
@@ -62,6 +65,10 @@ class EthAbiTests(unittest.TestCase):
     @staticmethod
     def _pack_int_to_32(x):
         return b'\x00' * 28 + struct.pack('>I', x)
+
+    def test_str_for_string_bytesM_arg(self):
+        self.assertEqual(ABI.serialize('(string,bytes32)', 'hi', 'qq'), bytearray(b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00@qq\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02hi\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'))
+        self.assertEqual(ABI.serialize('string', 'hi'), bytearray(b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 \x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02hi\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'))
 
     def test_parse_tx(self):
         m = ManticoreEVM()
@@ -481,18 +488,65 @@ class EthTests(unittest.TestCase):
         with self.assertRaises(EthereumError):
             contract_account.ret(self.mevm.make_symbolic_value())
 
+    def test_gen_testcase_only_if(self):
+        source_code = '''
+        contract Test {
+            function f(uint x) returns(uint) {
+                return x-2;
+            }
+        }
+        '''
+        user_account = self.mevm.create_account(balance=1000)
+        contract_account = self.mevm.solidity_create_contract(source_code, owner=user_account)
+        input_sym = self.mevm.make_symbolic_value()
+        contract_account.f(input_sym)
+        self.assertEqual(len(list(self.mevm.running_states)), 1)
+
+        state = next(self.mevm.running_states)
+        retval_array = state.platform.human_transactions[-1].return_data
+        retval = operators.CONCAT(256, *retval_array)
+
+        # Test 1: Generate a testcase (since the condition/constrain can be met/solved)
+        did_gen = self.mevm.generate_testcase(state, 'return can be 0', only_if=retval == 0)
+        self.assertTrue(did_gen)
+
+        with state as tmp:
+            tmp.constrain(retval == 0)
+            inp = tmp.solve_one(input_sym)
+            self.assertEqual(inp, 2)
+
+        expected_files = {
+            'user_00000000.' + ext for ext in ('summary', 'constraints', 'pkl', 'tx.json', 'tx', 'trace', 'logs')
+        }
+
+        self.assertEqual(set(os.listdir(self.mevm.workspace)), expected_files)
+
+        summary_path = os.path.join(self.mevm.workspace, 'user_00000000.summary')
+        with open(summary_path) as summary:
+            self.assertIn('return can be 0', summary.read())
+
+        # Test 2: Don't generate a testcase (since the condition/constrain can't be met/solved)
+        did_gen = self.mevm.generate_testcase(state, 'return can be 0 again?',
+                                              only_if=operators.AND(retval != 0, retval == 0))
+        self.assertFalse(did_gen)
+
+        # Just a sanity check: a generate testcase with not met condition shouldn't add any more files
+        self.assertEqual(set(os.listdir(self.mevm.workspace)), expected_files)
+
+        # Since the condition was not met there should be no testcase in the summary
+        with open(summary_path) as summary:
+            self.assertNotIn('return can be 0 again?', summary.read())
+
     def test_function_name_with_signature(self):
         source_code = '''
-        contract Test{
-
-            function ret(uint) returns(uint){
+        contract Test {
+            function ret(uint) returns(uint) {
                 return 1;
             }
 
-            function ret(uint,uint) returns(uint){
+            function ret(uint,uint) returns(uint) {
                 return 2;
             }
-
         }
         '''
         user_account = self.mevm.create_account(balance=1000)
@@ -629,6 +683,30 @@ class EthTests(unittest.TestCase):
         self.assertIn('RETURN', context)
         self.assertIn('REVERT', context)
 
+    def test_call_with_concretized_args(self):
+        """Test a CALL with symbolic arguments that will to be concretized.
+
+        https://github.com/trailofbits/manticore/issues/1237
+        """
+        m = self.mevm
+
+        contract_src = '''
+        contract C {
+          function transferHalfTo(address receiver) public payable {
+              receiver.transfer(this.balance/2);
+          }
+        }
+        '''
+
+        owner = m.create_account(balance=10**10)
+        contract = m.solidity_create_contract(contract_src, owner=owner)
+        receiver = m.create_account(0)
+        symbolic_address = m.make_symbolic_address()
+        m.constrain(symbolic_address == receiver.address)
+        contract.transferHalfTo(symbolic_address, caller=owner, value=m.make_symbolic_value())
+        self.assertTrue(any(state.can_be_true(state.platform.get_balance(receiver.address) > 0)
+                                for state in m.running_states))
+
     def test_end_instruction_trace(self):
         """
         Make sure that the trace files are correct, and include the end instructions.
@@ -667,8 +745,8 @@ class EthTests(unittest.TestCase):
         listdir = os.listdir(worksp)
 
         def get_concatenated_files(directory, suffix, init):
-            paths = [os.path.join(directory, f) for f in listdir if f.endswith(suffix)]
-            concatenated = ''.join(open(path).read() for path in paths)
+            paths = [Path(directory, f) for f in listdir if f.endswith(suffix)]
+            concatenated = ''.join(path.read_text() for path in paths)
             result = set()
             for x in concatenated.split('\n'):
                 if ':' in x:
@@ -715,6 +793,48 @@ class EthTests(unittest.TestCase):
                     break
             else:
                 self.fail('Could not find a function call summary in workspace output')
+
+    def test_event_forwarding_after_state_fork_during_message_call(self):
+        # https://github.com/trailofbits/manticore/issues/1255
+        source_code = '''
+        pragma solidity ^0.4.24;
+
+        contract Lib {
+           function isSeven(uint a) public pure returns (bool) {
+               if (a == 7) {
+                   return true;
+               } else {
+                   return false;
+               }
+           }
+        }
+
+        contract Wallet {
+           Lib private lib;
+
+           constructor() public payable {
+               lib = new Lib();
+           }
+
+           function luckyNumber(uint a) public {
+               if (lib.isSeven(a)) {
+                   msg.sender.transfer(address(this).balance);
+               }
+           }
+        }
+        '''
+
+        m = self.mevm
+        m.register_detector(DetectExternalCallAndLeak())
+
+        owner = m.create_account(name='owner', balance=1000)
+        wallet = m.solidity_create_contract(source_code, name='wallet', contract_name='Wallet', owner=owner,
+                                            balance=1000)
+        attacker = m.create_account(name='attacker', balance=0)
+
+        wallet.luckyNumber(m.make_symbolic_value(), caller=attacker)
+
+        self.assertListEqual([x[2] for x in m.global_findings], ['Reachable ether leak to sender'])
 
     def test_graceful_handle_no_alive_states(self):
         """
@@ -859,20 +979,19 @@ class EthSolidityCompilerTest(unittest.TestCase):
             function fromA() public { revert(); }
         }
         '''
-        d = tempfile.mkdtemp()
+        tmp_dir = tempfile.mkdtemp()
         try:
-            with open(os.path.join(d, 'A.sol'), 'w') as a, open(os.path.join(d, 'B.sol'), 'w') as b:
+            with open(os.path.join(tmp_dir, 'A.sol'), 'w') as a, open(os.path.join(tmp_dir, 'B.sol'), 'w') as b:
                 a.write(source_a)
                 a.flush()
                 b.write(source_b)
                 b.flush()
-                output, warnings = ManticoreEVM._run_solc(a)
+                output, warnings = ManticoreEVM._run_solc(a, working_dir=tmp_dir)
                 source_list = output.get('sourceList', [])
                 self.assertIn(os.path.split(a.name)[-1], source_list)
                 self.assertIn(os.path.split(b.name)[-1], source_list)
         finally:
-            shutil.rmtree(d)
-
+            shutil.rmtree(tmp_dir)
 
     def test_run_solc_with_remappings(self):
         source_a = '''
@@ -889,22 +1008,151 @@ class EthSolidityCompilerTest(unittest.TestCase):
             function fromA() public { revert(); }
         }
         '''
-        d = tempfile.mkdtemp()
-        lib_dir = os.path.join(d, 'lib')
+        tmp_dir = tempfile.mkdtemp()
+        lib_dir = os.path.join(tmp_dir, 'lib')
         os.makedirs(lib_dir)
         try:
-            with open(os.path.join(d, 'A.sol'), 'w') as a, open(os.path.join(lib_dir, 'B.sol'), 'w') as b:
+            with open(os.path.join(tmp_dir, 'A.sol'), 'w') as a, open(os.path.join(lib_dir, 'B.sol'), 'w') as b:
                 a.write(source_a)
                 a.flush()
                 b.write(source_b)
                 b.flush()
-                output, warnings = ManticoreEVM._run_solc(a, solc_remaps=['test=lib'])
+                output, warnings = ManticoreEVM._run_solc(a, solc_remaps=['test=lib'], working_dir=tmp_dir)
                 source_list = output.get('sourceList', [])
                 self.assertIn("A.sol", source_list)
                 self.assertIn("lib/B.sol", source_list)
         finally:
-            shutil.rmtree(d)
+            shutil.rmtree(tmp_dir)
 
+
+class EthSolidityMetadataTests(unittest.TestCase):
+
+    def test_tuple_signature_for_components(self):
+        self.assertEqual(SolidityMetadata.tuple_signature_for_components([]), '()')
+        self.assertEqual(SolidityMetadata.tuple_signature_for_components(
+                             [{'type': 'uint256'}, {'type': 'uint256[]'}]),
+                         '(uint256,uint256[])')
+        self.assertEqual(SolidityMetadata.tuple_signature_for_components(
+                            [{"type": "tuple[2]", "components": [{"type": "uint256"}, {"type": "uint256[]"}]},
+                             {"type": "tuple", "components": [
+                                 {"type": "tuple", "components": [{"type": "string"}]},
+                                 {"type": "string"},
+                                 {"type": "tuple[]", "components": [{"type": "uint256"}, {"type": "uint256[2]"}]}
+                             ]}]),
+                         '((uint256,uint256[])[2],((string),string,(uint256,uint256[2])[]))')
+
+    def test_abi_constructor_and_fallback_items(self):
+        with disposable_mevm() as m:
+            source_code = '''
+            contract C {
+                constructor(uint a) public {}
+                function() public payable {}
+            }
+            '''
+            user_account = m.create_account(balance=1000, name='user_account')
+            contract_account = m.solidity_create_contract(source_code, owner=user_account, name='contract_account', args = (0,))
+            md: SolidityMetadata = m.get_metadata(contract_account)
+
+            self.assertTrue(md.has_non_default_constructor)
+            self.assertDictEqual(md.constructor_abi,
+                                 {'inputs': [{'name': 'a', 'type': 'uint256'}],
+                                  'payable': False, 'stateMutability': 'nonpayable', 'type': 'constructor'})
+            self.assertEqual(md.get_constructor_arguments(), '(uint256)')
+
+            self.assertTrue(md.has_non_default_fallback_function)
+            self.assertTrue(md.fallback_function_selector, b'\0\0\0\0')
+            fallback = md.get_abi(b'')
+            self.assertDictEqual(fallback, md.get_abi(md.fallback_function_selector))
+            self.assertDictEqual(fallback, {'payable': True, 'stateMutability': 'payable', 'type': 'fallback'})
+
+            self.assertEqual(md.get_func_signature(md.fallback_function_selector), None)
+            self.assertEqual(md.get_func_signature(b''), None)
+
+            self.assertEqual(md.get_func_name(md.fallback_function_selector), '{fallback}')
+            self.assertEqual(md.get_func_name(b''), '{fallback}')
+
+            self.assertEqual(md.get_func_argument_types(md.fallback_function_selector), '()')
+            self.assertEqual(md.get_func_argument_types(b''), '()')
+
+            self.assertEqual(md.get_func_return_types(md.fallback_function_selector), '()')
+            self.assertEqual(md.get_func_return_types(b''), '()')
+
+            self.assertDictEqual(md.signatures, {})
+            self.assertSequenceEqual(md.function_selectors, [md.fallback_function_selector])
+            self.assertSequenceEqual(md.function_signatures, [])
+
+            with self.assertWarns(ManticoreDeprecationWarning):
+                self.assertSequenceEqual(md.hashes, [md.fallback_function_selector])
+
+            with self.assertWarns(ManticoreDeprecationWarning):
+                self.assertSequenceEqual(md.functions, ['{fallback}()'])
+
+    def test_overloaded_functions_and_events(self):
+        with disposable_mevm() as m:
+            source_code = '''
+            contract C {                
+                function f() public payable returns (uint) {}
+                function f(string a) public {}
+                
+                event E(uint);
+                event E(uint, string);
+            }
+            '''
+            user_account = m.create_account(balance=1000, name='user_account')
+            contract_account = m.solidity_create_contract(source_code, owner=user_account, name='contract_account')
+            md: SolidityMetadata = m.get_metadata(contract_account)
+
+            f0_sel = ABI.function_selector('f()')
+            f1_sel = ABI.function_selector('f(string)')
+
+            with self.assertWarns(ManticoreDeprecationWarning):
+                self.assertEqual(md.get_hash('f()'), f0_sel)
+
+            self.assertListEqual(sorted(md.function_selectors), sorted([f0_sel, f1_sel]))
+            with self.assertWarns(ManticoreDeprecationWarning):
+                self.assertListEqual(sorted(md.hashes), sorted([f0_sel, f1_sel, md.fallback_function_selector]))
+
+            e1_sel = ABI.function_selector('E(uint256)')
+
+            f0_abi = md.get_abi(f0_sel)
+            f1_abi = md.get_abi(f1_sel)
+            self.assertEqual(f0_abi['stateMutability'], 'payable')
+            self.assertEqual(f1_abi['stateMutability'], 'nonpayable')
+            self.assertFalse(md.has_non_default_fallback_function)
+            fallback_abi = md.get_abi(md.fallback_function_selector)
+            self.assertDictEqual(fallback_abi, {'payable': False, 'stateMutability': 'nonpayable', 'type': 'fallback'})
+            # get_abi is only for functions, not events.
+            self.assertEqual(md.get_abi(e1_sel), fallback_abi)
+
+            self.assertEqual(md.get_func_signature(f0_sel), 'f()')
+            self.assertEqual(md.get_func_signature(f1_sel), 'f(string)')
+            self.assertEqual(md.get_func_signature(md.fallback_function_selector), None)
+            self.assertEqual(md.get_func_signature(e1_sel), None)
+
+            self.assertDictEqual(md.signatures, {f0_sel: 'f()', f1_sel: 'f(string)'})
+
+            self.assertListEqual(sorted(md.function_signatures), ['f()', 'f(string)'])
+            with self.assertWarns(ManticoreDeprecationWarning):
+                self.assertListEqual(sorted(md.functions), ['f()', 'f(string)', '{fallback}()'])
+
+            self.assertEqual(md.get_func_name(f0_sel), 'f')
+            self.assertEqual(md.get_func_name(f1_sel), 'f')
+            self.assertEqual(md.get_func_name(md.fallback_function_selector), '{fallback}')
+            self.assertEqual(md.get_func_name(e1_sel), '{fallback}')
+
+            self.assertEqual(md.get_func_argument_types(f0_sel), '()')
+            self.assertEqual(md.get_func_argument_types(f1_sel), '(string)')
+            self.assertEqual(md.get_func_argument_types(md.fallback_function_selector), '()')
+            self.assertEqual(md.get_func_argument_types(e1_sel), '()')
+
+            self.assertEqual(md.get_func_return_types(f0_sel), '(uint256)')
+            self.assertEqual(md.get_func_return_types(f1_sel), '()')
+            self.assertEqual(md.get_func_return_types(md.fallback_function_selector), '()')
+            self.assertEqual(md.get_func_return_types(e1_sel), '()')
+
+            self.assertFalse(md.has_non_default_constructor)
+            self.assertDictEqual(md.constructor_abi,
+                                 {'inputs': [], 'payable': False, 'stateMutability': 'nonpayable', 'type': 'constructor'})
 
 
 class EthSpecificTxIntructionTests(unittest.TestCase):
