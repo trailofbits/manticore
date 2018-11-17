@@ -469,7 +469,7 @@ class ManticoreEVM(Manticore):
     def get_account(self, name):
         return self._accounts[name]
 
-    def __init__(self, procs=10, **kwargs):
+    def __init__(self, procs=10):
         """ A Manticore EVM manager
             :param int procs: number of workers to use in the exploration
         """
@@ -482,7 +482,7 @@ class ManticoreEVM(Manticore):
         # make the ethereum world state
         world = evm.EVMWorld(constraints, initial_timestamp=1524785992)
         initial_state = State(constraints, world)
-        super().__init__(initial_state, **kwargs)
+        super().__init__(initial_state)
 
         self.constraints = ConstraintSet()
         self.detectors = {}
