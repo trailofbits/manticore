@@ -1,13 +1,3 @@
-<<<<<<< HEAD
-import os
-import shutil
-import subprocess
-import sys
-import tempfile
-import time
-import unittest
-
-=======
 import subprocess
 import sys
 import time
@@ -17,7 +7,6 @@ import os
 import shutil
 import tempfile
 
->>>>>>> master
 from manticore.binary import Elf, CGCElf
 from manticore.utils.mappings import mmap, munmap
 
