@@ -469,9 +469,12 @@ class ManticoreEVM(Manticore):
     def get_account(self, name):
         return self._accounts[name]
 
-    def __init__(self, procs=10):
-        """ A Manticore EVM manager
-            :param int procs: number of workers to use in the exploration
+    def __init__(self, procs=10, workspace_url: str=None, policy: str='random'):
+        """
+        A Manticore EVM manager
+        :param procs:, number of workers to use in the exploration
+        :param workspace_url: workspace folder name
+        :param policy: scheduling priority
         """
         self._accounts = dict()
         self._serializer = PickleSerializer()
@@ -482,7 +485,7 @@ class ManticoreEVM(Manticore):
         # make the ethereum world state
         world = evm.EVMWorld(constraints, initial_timestamp=1524785992)
         initial_state = State(constraints, world)
-        super().__init__(initial_state)
+        super().__init__(initial_state, workspace_url=workspace_url, policy=policy)
 
         self.constraints = ConstraintSet()
         self.detectors = {}
