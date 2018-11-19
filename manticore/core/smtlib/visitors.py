@@ -419,7 +419,7 @@ class ArithmeticSimplifier(Visitor):
             if end + 1 == value.size and begining == 0:
                 return value
             else:
-                return BitVecExtract(value, begining, end, taint=expression.taint)
+                return BitVecExtract(value, begining, end - begining + 1, taint=expression.taint)
 
     def visit_BitVecExtract(self, expression, *operands):
         ''' extract(sizeof(a), 0)(a)  ==> a
@@ -429,10 +429,13 @@ class ArithmeticSimplifier(Visitor):
         op = expression.operands[0]
         begining = expression.begining
         end = expression.end
+        size = end - begining + 1
 
         # extract(sizeof(a), 0)(a)  ==> a
         if begining == 0 and end + 1 == op.size:
             return op
+        elif isinstance(op, BitVecExtract):
+            return BitVecExtract(op.value, op.begining + begining, size, taint=expression.taint)
         elif isinstance(op, BitVecConcat):
             new_operands = []
             bitcount = 0

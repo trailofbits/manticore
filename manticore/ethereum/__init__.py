@@ -1380,9 +1380,16 @@ class ManticoreEVM(Manticore):
         #super()._generate_testcase_callback(state, name, message)
         # TODO(mark): Refactor ManticoreOutput to let the platform be more in control
         #  so this function can be fully ported to EVMWorld.generate_workspace_files.
-        blockchain = state.platform
 
+        #Make the testcase. #todo #fixme. _output is private here? why
         testcase = self._output.testcase(name.replace(' ', '_'))
+
+        #Lets save the full state first just in case
+        with testcase.open_stream('pkl', binary=True) as statef:
+            self._serializer.serialize(state, statef)
+
+        #Now lets digest the state info and generate human readable files 
+        blockchain = state.platform
         last_tx = blockchain.last_transaction
         if last_tx:
             message = message + last_tx.result
@@ -1457,9 +1464,6 @@ class ManticoreEVM(Manticore):
 
         with testcase.open_stream('constraints') as smt_summary:
             smt_summary.write(str(state.constraints))
-
-        with testcase.open_stream('pkl', binary=True) as statef:
-            self._serializer.serialize(state, statef)
 
         trace = state.context.get('evm.trace')
         if trace:

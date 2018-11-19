@@ -481,7 +481,7 @@ class Z3Solver(Solver):
                 for i in range(expression.index_max):
                     subvar = temp_cs.new_bitvec(expression.value_bits)
                     var.append(subvar)
-                    temp_cs.add(subvar == expression[i])
+                    temp_cs.add(subvar == simplify(expression[i]))
 
                 self._reset(temp_cs)
                 if self._check() != 'sat':

@@ -731,8 +731,10 @@ class Array(Expression):
         new_arr = ArrayProxy(ArrayVariable(self.index_bits, self.index_max + len(other), self.value_bits, 'concatenation{}'.format(uuid.uuid1())))
         for index in range(self.index_max):
             new_arr[index] = simplify(self[index])
+        _concrete_cache = new_arr._concrete_cache
         for index in range(len(other)):
             new_arr[index + self.index_max] = simplify(other[index])
+        new_arr._concrete_cache.update(_concrete_cache)
         return new_arr
 
     def __radd__(self, other):
@@ -747,8 +749,10 @@ class Array(Expression):
         new_arr = ArrayProxy(ArrayVariable(self.index_bits, self.index_max + len(other), self.value_bits, 'concatenation{}'.format(uuid.uuid1())))
         for index in range(len(other)):
             new_arr[index] = simplify(other[index])
+        _concrete_cache = new_arr._concrete_cache
         for index in range(self.index_max):
             new_arr[index + len(other)] = simplify(self[index])
+        new_arr._concrete_cache.update(_concrete_cache)
         return new_arr
 
 
@@ -860,6 +864,7 @@ class ArrayProxy(Array):
             self._name = array.underlying_variable.name
             self._array = array
 
+
     @property
     def underlying_variable(self):
         return self._array.underlying_variable
@@ -916,15 +921,19 @@ class ArrayProxy(Array):
 
         # potentially generate and update .written set
         self.written.add(index)
-        auxiliary = self._array.store(index, value)
-        self._array = auxiliary
+        self._array = self._array.store(index, value)
         return self
 
     def __getitem__(self, index):
         if isinstance(index, slice):
             start, stop = self._fix_index(index)
             size = self._get_size(index)
-            return ArrayProxy(ArraySlice(self, start, size), default=self._default)
+            array_proxy_slice = ArrayProxy(ArraySlice(self, start, size), default=self._default)
+            array_proxy_slice._concrete_cache = {}
+            for k,v in self._concrete_cache.items():
+                if k >= start and k< start+size:
+                    array_proxy_slice._concrete_cache[k-start] = v
+            return array_proxy_slice
         else:
             if self.index_max is not None:
                 if not isinstance(index, Expression) and index >= self.index_max:
@@ -982,6 +991,9 @@ class ArrayProxy(Array):
 
     def is_known(self, index):
         # return reduce(BoolOr, map(lambda known_index: index == known_index, self.written), BoolConstant(False))
+        if isinstance(index, Constant) and index.value in self._concrete_cache:
+            return  BoolConstant(True)
+
         is_known_index = BoolConstant(False)
         written = self.written
         for known_index in written:

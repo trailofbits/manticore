@@ -157,10 +157,9 @@ class State(Eventful):
                              policy=e.policy)
         except ConcretizeMemory as e:
             expression = self.cpu.read_int(e.address, e.size)
-
+            exception = e
             def setstate(state, value):
-                state.cpu.write_int(setstate.e.address, value, e.size)
-            setstate.e = e
+                state.cpu.write_int(exception.address, value, exception.size)
             raise Concretize(str(e),
                              expression=expression,
                              setstate=setstate,

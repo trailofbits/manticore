@@ -124,7 +124,6 @@ class Transaction(object):
         stream.write("Data: 0x{} {}\n".format(binascii.hexlify(tx_data).decode(), flagged(issymbolic(self.data))))
 
         if self.return_data is not None:
-            # return_data = state.solve_one(tx.return_data)
             return_data = conc_tx.return_data
 
             stream.write("Return_data: 0x{} {}\n".format(binascii.hexlify(return_data).decode(), flagged(issymbolic(self.return_data))))
@@ -1869,7 +1868,6 @@ class EVMWorld(Platform):
             for deleted_account in self._deleted_accounts:
                 if deleted_account in self._world_state:
                     del self._world_state[deleted_account]
-
         tx.set_result(result, data)
         self._transactions.append(tx)
 
