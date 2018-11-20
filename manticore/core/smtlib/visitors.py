@@ -423,7 +423,7 @@ class ArithmeticSimplifier(Visitor):
             if end + 1 == value.size and begining == 0:
                 return value
             else:
-                return BitVecExtract(value, begining, end, taint=expression.taint)
+                return BitVecExtract(value, begining, end - begining + 1, taint=expression.taint)
 
     def visit_BitVecExtract(self, expression, *operands):
         ''' extract(sizeof(a), 0)(a)  ==> a
