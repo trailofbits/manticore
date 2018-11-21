@@ -394,6 +394,7 @@ class ArithmeticSimplifier(Visitor):
 
     def visit_BitVecConcat(self, expression, *operands):
         ''' concat( extract(k1, 0, a), extract(sizeof(a)-k1, k1, a))  ==> a
+            concat( extract(k1, beg, a), extract(end, k1, a))  ==> extract(beg, end, a)
         '''
         op = expression.operands[0]
 
