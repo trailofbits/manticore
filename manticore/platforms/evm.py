@@ -13,18 +13,32 @@ from ..core.smtlib import solver, BitVec, Array, ArrayProxy, Operators, Constant
 from ..core.state import Concretize, TerminateState
 from ..utils.event import Eventful
 from ..utils.rlp import rlp_encode
+from ..utils import config
 from ..core.smtlib.visitors import simplify
 import pyevmasm as EVMAsm
 import logging
 from collections import namedtuple
 import sha3
-
 logger = logging.getLogger(__name__)
 
-#fixme make it global using this https://docs.python.org/3/library/configparser.html
-#and save it at the workspace so results are reproducible
-config = namedtuple("config", "out_of_gas")
-config.out_of_gas = None  # 0: default not enough gas, 1 default to always enough gas, 2: for on both
+#Gas behaivor configuration
+# When gas is concrete the gas checks and calculation are pretty straigth forward
+# Though Gas can became symbolic in normal bytecode execution for example at instructions
+# MSTORE, MSTORE8, EXP, ... and every instruction with internal operation restricted by gas
+# This configuration variable allows the user to control and perhaps relax the gas calculation
+# 0: gas is faithfully accounted and checked at instruction level. State may get forked in OOG/NoOOG
+# 1: gas is faithfully accounted and checked at basic blocks limits. State may get forked in OOG/NoOOG
+# 2: Concretize gas. If the fee to be consumed gets to be symbolic. Choose some potential values and fork on those.
+# 3: Try not to OOG. If it may be enough gas we ignore the OOG case. A constraint is added to assert the gas is enough and the OOG state is ignored.
+# 4: OOG soon. If it may NOT be enough gas we ignore the normal case. A constraint is added to assert the gas is NOT enough and the other state is ignored.
+# 99: Ignore gas. Do not account for it. Do not OOG.
+consts = config.get_group('evm')
+consts.add('oog', default=0, description='Default behavior for symbolic gas. 0: Fully faithfull. Test at every instruction. Forks.'
+                                                                            '1: Mostly faithful. Test at BB limit. Forks.'
+                                                                            '2: Incomplete. Concretize gas to MIN/MAX values. Forks.'
+                                                                            '3: Try to not fail due to OOG. If it can be enough gas use it. Ignore the path to OOG. Wont fork'
+                                                                            '4: Try OOG only. Fail soon. Ignore the path with enough gas.'
+                                                                            '99: Ignore gas. Instructions wont consume gas' )
 
 # Auxiliary constants and functions
 TT256 = 2 ** 256
@@ -618,7 +632,6 @@ class EVM(Eventful):
         return Operators.ITEBV(512, flag, memfee, 0)
 
     def _allocate(self, address):
-        self._consume(self._get_memfee(address))
         address_c = Operators.ZEXTEND(Operators.UDIV(self.safe_add(address, 31), 32) * 32, 512)
         self._allocated = Operators.ITEBV(512, address_c > self._allocated, address_c, self.allocated)
 
@@ -725,45 +738,65 @@ class EVM(Eventful):
             if (fee.size != 512):
                 raise ValueError("Fees should be 512 bit long")
 
-        #FIXME add configurable checks here
-        config.out_of_gas = 3
-
         # If both are concrete values...
         if not issymbolic(self._gas) and not issymbolic(fee):
             if self._gas < fee:
                 logger.debug("Not enough gas for instruction")
                 raise NotEnoughGas()
         else:
-                if config.out_of_gas is None:
-                    # do nothing. gas could go negative.
-                    # memory could be accessed in great offsets
-                    pass
-                elif config.out_of_gas == 0:
-                    #explore only when OOG
-                    if solver.can_be_true(self.constraints, Operators.ULT(self.gas, fee)):
-                        self.constraints.add(Operators.UGT(fee, self.gas))
-                        logger.debug("Not enough gas for instruction")
-                        raise NotEnoughGas()
-                elif config.out_of_gas == 1:
-                    #explore only when there is enough gas if possible
-                    if solver.can_be_true(self.constraints, Operators.UGT(self.gas, fee)):
-                        self.constraints.add(Operators.UGT(self.gas, fee))
-                    else:
-                        logger.debug("Not enough gas for instruction")
-                        raise NotEnoughGas()
-                else:
+            # This configuration variable allows the user to control and perhaps relax the gas calculation
+            # 0: gas is faithfully accounted and checked at instruction level. State may get forked in OOG/NoOOG
+            # 1: gas is faithfully accounted and checked at basic blocks limits. State may get forked in OOG/NoOOG
+            # 2: Concretize gas. If the fee to be consumed gets to be symbolic. Choose some potential values and fork on those.
+            # 3: Try not to OOG. If it may be enough gas we ignore the OOG case. A constraint is added to assert the gas is enough and the OOG state is ignored.
+            # 4: OOG soon. If it may NOT be enough gas we ignore the normal case. A constraint is added to assert the gas is NOT enough and the other state is ignored.
+            # 99: Ignore gas. Do not account for it. Do not OOG.
+
+            if consts.oog is 99:
+                #do nothing. gas is not changed
+                return
+            elif consts.oog in (0, 1):
+                if not(consts.oog == 1 and self.current_instructoin.is_jump()):
                     #explore both options / fork
+                    #FIXME this will reenter here and generate redundant queries 
                     enough_gas_solutions = solver.get_all_values(self.constraints, Operators.UGT(self._gas, fee))
                     if len(enough_gas_solutions) == 2:
+                        #if gas can be both enough an insuficient, fork
                         raise Concretize("Concretize gas fee",
                                          expression=Operators.UGT(self._gas, fee),
                                          setstate=None,
                                          policy='ALL')
                     elif enough_gas_solutions[0] == False:
+                        #if gas if only insuficient OOG!
                         logger.debug("Not enough gas for instruction")
                         raise NotEnoughGas()
+                    else:
+                        assert enough_gas_solutions[0] == True
+                        #if there is enough gas keep going
+            elif consts.oog == 2:
+                if issymbolic(self._gas):
+                    def setstate(state, value):
+                        state.platform.current._gas=value
+                    raise Concretize("Concretize gas",
+                                     expression=self._gas,
+                                     setstate=setstate,
+                                     policy='MINMAX')                    
 
-        self._gas -= fee
+                #explore only when OOG
+                if solver.can_be_true(self.constraints, Operators.ULT(self.gas, fee)):
+                    self.constraints.add(Operators.UGT(fee, self.gas))
+                    logger.debug("Not enough gas for instruction")
+                    raise NotEnoughGas()
+            elif consts.oog == 33:
+                #explore only when there is enough gas if possible
+                if solver.can_be_true(self.constraints, Operators.UGT(self.gas, fee)):
+                    self.constraints.add(Operators.UGT(self.gas, fee))
+                else:
+                    logger.debug("Not enough gas for instruction")
+                    raise NotEnoughGas()
+            else:
+                pass
+            self._gas -= fee
         assert issymbolic(self._gas) or self._gas >= 0
 
     def _indemnify(self, fee):
@@ -812,6 +845,13 @@ class EVM(Eventful):
             assert instruction.pushes == 0
             assert result is None
 
+    def _calculate_extra_gas(self, *arguments):
+        current = self.instruction
+        implementation = getattr(self, f"{current.semantics}_gas", None)
+        if implementation is None:
+            return 0
+        return implementation(*arguments)
+
     def _handler(self, *arguments):
         current = self.instruction
         implementation = getattr(self, current.semantics, None)
@@ -831,8 +871,11 @@ class EVM(Eventful):
             pc = self.pc
             instruction = self.instruction
             old_gas = self.gas
-            self._consume(instruction.fee)
+            #FIXME Not clear which exception should trigger first. OOG or insuficient stack
+            # this could raise an insuficient stack exception
             arguments = self._pop_arguments()
+            # this could raise an OOG exception
+            self._consume(instruction.fee + self._calculate_extra_gas(*arguments))
             self._checkpoint_data = (pc, old_gas, instruction, arguments)
         return self._checkpoint_data
 
@@ -1066,21 +1109,23 @@ class EVM(Eventful):
             result = 0
         return result
 
+
+    def EXP_gas(self, base, exponent):
+        ''' Calculate extra gas fee '''
+        EXP_SUPPLEMENTAL_GAS = 50   # cost of EXP exponent per byte
+        def nbytes(e):
+            result = 32
+            for i in range(32):
+                result = Operators.ITEBV(512, Operators.EXTRACT(e, i, 8) == 0, i, result)
+            return result
+        return EXP_SUPPLEMENTAL_GAS * nbytes(exponent)
+
     def EXP(self, base, exponent):
         '''
             Exponential operation
             The zero-th power of zero 0^0 is defined to be one
         '''
         # fixme integer bitvec
-        EXP_SUPPLEMENTAL_GAS = 50   # cost of EXP exponent per byte
-
-        def nbytes(e):
-            result = 32
-            for i in range(32):
-                result = Operators.ITEBV(512, Operators.EXTRACT(e, i, 8) == 0, i, result)
-            return result
-        self._consume(EXP_SUPPLEMENTAL_GAS * nbytes(exponent))
-
         return pow(base, exponent, TT256)
 
     def SIGNEXTEND(self, size, value):
@@ -1159,14 +1204,18 @@ class EVM(Eventful):
             data = bytes(concrete_data)
         return data
 
+    def SHA3_gas(self, start, size):
+        GSHA3WORD = 6         # Cost of SHA3 per word
+        return GSHA3WORD * (ceil32(size) // 32)
+
+    def SHA3_gas(self, start, size):
+        return self._get_memfee(start, size)
+
     @concretized_args(size='SAMPLED')
     def SHA3(self, start, size):
         '''Compute Keccak-256 hash'''
-        GSHA3WORD = 6         # Cost of SHA3 per word
         # read memory from start to end
-        # calculate hash on it/ maybe remember in some structure where that hash came from
         # http://gavwood.com/paper.pdf
-        self._consume(GSHA3WORD * (ceil32(size) // 32))
         data = self.try_simplify_to_constant(self.read_buffer(start, size))
 
         if issymbolic(data):
@@ -1195,10 +1244,13 @@ class EVM(Eventful):
         '''Get address of currently executing account'''
         return self.address
 
+
+    def BALANCE_gas(self, account):
+        BALANCE_SUPPLEMENTAL_GAS = 380
+        return BALANCE_SUPPLEMENTAL_GAS
+
     def BALANCE(self, account):
         '''Get balance of the given account'''
-        BALANCE_SUPPLEMENTAL_GAS = 380
-        self._consume(BALANCE_SUPPLEMENTAL_GAS)
         return self.world.get_balance(account)
 
     def ORIGIN(self):
@@ -1246,6 +1298,14 @@ class EVM(Eventful):
         '''Get size of input data in current environment'''
         return self._calldata_size
 
+
+    def CALLDATACOPY_gas(self, mem_offset, data_offset, size):
+        GCOPY = 3             # cost to copy one 32 byte word
+        self._use_calldata(data_offset + size)
+        copyfee = self.safe_mul(GCOPY, self.safe_add(size, 31) // 32)
+        memfee = self._get_memfee(mem_offset, size)
+        return copyfee + memfee
+
     def CALLDATACOPY(self, mem_offset, data_offset, size):
         '''Copy input data in current environment to memory'''
 
@@ -1259,14 +1319,6 @@ class EVM(Eventful):
                 self.constraints.add(data_offset == self._used_calldata_size)
             raise ConcretizeStack(2, policy='SAMPLED')
 
-        GCOPY = 3             # cost to copy one 32 byte word
-        self._use_calldata(data_offset + size)
-        copyfee = self.safe_mul(GCOPY, self.safe_add(size, 31) // 32)
-        memfee = self._get_memfee(mem_offset, size)
-
-        self._consume(copyfee)
-        self._consume(memfee)
-
         self._allocate(self.safe_add(mem_offset, size))
         for i in range(size):
             try:
@@ -1279,6 +1331,9 @@ class EVM(Eventful):
     def CODESIZE(self):
         '''Get size of code running in current environment'''
         return len(self.bytecode)
+
+    def CODECOPY_gas(self, mem_offset, code_offset, size):
+        return self._get_memfee(mem_offset + size)
 
     @concretized_args(code_offset='SAMPLED', size='SAMPLED')
     def CODECOPY(self, mem_offset, code_offset, size):
@@ -1319,13 +1374,16 @@ class EVM(Eventful):
         '''Get size of an account's code'''
         return len(self.world.get_code(account))
 
+    def EXTCODECOPY_gas(self, account, address, offset, size):
+        GCOPY = 3             # cost to copy one 32 byte word
+        extbytecode = self.world.get_code(account)
+        memfee = self._get_memfee(address + size)
+        return GCOPY * (ceil32(len(extbytecode)) // 32) + memfee
+
     @concretized_args(account='ACCOUNTS')
     def EXTCODECOPY(self, account, address, offset, size):
         '''Copy an account's code to memory'''
         extbytecode = self.world.get_code(account)
-        GCOPY = 3             # cost to copy one 32 byte word
-        self._consume(GCOPY * ceil32(len(extbytecode)) // 32)
-
         self._allocate(address + size)
 
         for i in range(size):
@@ -1333,6 +1391,10 @@ class EVM(Eventful):
                 self._store(address + i, extbytecode[offset + i])
             else:
                 self._store(address + i, 0)
+
+    def RETURNDATACOPY_gas(self, mem_offset, return_offset, size):
+        memfee = self._get_memfee(mem_offset + size)
+        return mem_fee
 
     def RETURNDATACOPY(self, mem_offset, return_offset, size):
         return_data = self.world.last_transaction.return_data
@@ -1381,11 +1443,17 @@ class EVM(Eventful):
         # by the instruction dispatcher
         pass
 
+    def MLOAD_gas(self, address):
+        return self._get_memfee(address + 32)
+
     def MLOAD(self, address):
         '''Load word from memory'''
         self._allocate(address + 32)
         value = self._load(address, 32)
         return value
+
+    def MSTORE_gas(self, address, value):
+        return self._get_memfee(address + 32)
 
     def MSTORE(self, address, value):
         '''Save word to memory'''
@@ -1394,6 +1462,9 @@ class EVM(Eventful):
                 value = taint_with(value, taint)
         self._allocate(address + 32)
         self._store(address, value, 32)
+
+    def MSTORE8_gas(self, address):
+        return self._get_memfee(address + 1)
 
     def MSTORE8(self, address, value):
         '''Save byte to memory'''
@@ -1472,6 +1543,9 @@ class EVM(Eventful):
 
     ############################################################################
     # Logging Operations
+    def LOG_gas(self, address, size, *topics):
+        return self._get_memfee(address, size)
+
     @concretized_args(size='ONE')
     def LOG(self, address, size, *topics):
         memlog = self.read_buffer(address, size)
@@ -1479,6 +1553,10 @@ class EVM(Eventful):
 
     ############################################################################
     # System operations
+    def CREATE_gas(self, value, offset, size):
+        memfee = self._get_memfee(offset, size)
+        return memfee
+
     @transact
     def CREATE(self, value, offset, size):
         '''Create a new account with associated code'''
@@ -1504,6 +1582,10 @@ class EVM(Eventful):
             address = 0
         return address
 
+    def CALL_gas(self, gas, address, value, in_offset, in_size, out_offset, out_size):
+        memfee = self._get_memfee(in_offset, in_size)
+        return memfee
+
     @transact
     @concretized_args(address='ACCOUNTS', gas='MINMAX', in_offset='SAMPLED', in_size='SAMPLED')
     def CALL(self, gas, address, value, in_offset, in_size, out_offset, out_size):
@@ -1525,6 +1607,10 @@ class EVM(Eventful):
             self.write_buffer(out_offset, data[:size])
 
         return self.world.last_transaction.return_value
+
+    def CALLCODE_gas(self, gas, address, value, in_offset, in_size, out_offset, out_size):
+        memfee = self._get_memfee(in_offset, in_size)
+        return memfee
 
     @transact
     @concretized_args(in_offset='SAMPLED', in_size='SAMPLED')
@@ -1548,10 +1634,18 @@ class EVM(Eventful):
 
         return self.world.last_transaction.return_value
 
+    def RETURN_gas(self, offset, size):
+        memfee = self._get_memfee(offset, size)
+        return memfee
+
     def RETURN(self, offset, size):
         '''Halt execution returning output data'''
         data = self.read_buffer(offset, size)
         raise EndTx('RETURN', data)
+
+    def DELEGATECALL_gas(self, gas, address, in_offset, in_size, out_offset, out_size):
+        memfee = self._get_memfee(in_offset, in_size)
+        return memfee
 
     @transact
     @concretized_args(in_offset='SAMPLED', in_size='SAMPLED')
@@ -1575,6 +1669,10 @@ class EVM(Eventful):
 
         return self.world.last_transaction.return_value
 
+    def STATICCALL_gas(self, gas, address, in_offset, in_size, out_offset, out_size):
+        memfee = self._get_memfee(in_offset, in_size)
+        return memfee
+
     @transact
     @concretized_args(in_offset='SAMPLED', in_size='SAMPLED')
     def STATICCALL(self, gas, address, in_offset, in_size, out_offset, out_size):
@@ -1596,6 +1694,10 @@ class EVM(Eventful):
             self.write_buffer(out_offset, data[:size])
 
         return self.world.last_transaction.return_value
+
+    def REVERT_gas(self, offset, size):
+        memfee = self._get_memfee(offset, size)
+        return memfee
 
     def REVERT(self, offset, size):
         data = self.read_buffer(offset, size)

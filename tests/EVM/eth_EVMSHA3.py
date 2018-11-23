@@ -12,11 +12,11 @@ class EVMTest_SHA3(unittest.TestCase):
     _multiprocess_can_split_ = True
     maxDiff=None 
     def setUp(self):
-        self.saved_gas_config = evm.config.out_of_gas
-        evm.config.out_of_gas = 1
+        self.saved_gas_config = evm.config.oog
+        evm.config.oog = 1
 
     def tearDown(self):
-        evm.config.out_of_gas = self.saved_gas_config
+        evm.config.oog = self.saved_gas_config
 
     def _execute(self, new_vm):
         last_returned = None
