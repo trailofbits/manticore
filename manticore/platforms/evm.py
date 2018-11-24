@@ -1463,7 +1463,7 @@ class EVM(Eventful):
         self._allocate(address + 32)
         self._store(address, value, 32)
 
-    def MSTORE8_gas(self, address):
+    def MSTORE8_gas(self, address, value):
         return self._get_memfee(address + 1)
 
     def MSTORE8(self, address, value):
