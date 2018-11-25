@@ -166,6 +166,15 @@ manticore@8d456f662d0f:~/manticore/examples/script$ python3 count_instructions.p
 
 ## Installation
 
+NOTE: If you use Mac OS X you need to install dependencies manually (preferably in a manticore's python virtual environment):
+```
+brew install capstone
+export MACOS_UNIVERSAL=no && pip install capstone
+
+brew install unicorn
+UNICORN_QEMU_FLAGS="--python=`whereis python`" pip install unicorn
+```
+
 Option 1: Perform a user install (requires `~/.local/bin` in your `PATH`).
 
 ```

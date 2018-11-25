@@ -14,6 +14,7 @@ Thanks to our external contributors!
 - [Srinivas11789](https://github.com/srinivas11789)
 - [stephan-tolksdorf](https://github.com/stephan-tolksdorf)
 - [catenacyber](https://github.com/catenacyber)
+- [MJ10](https://github.com/MJ10)
 
 ### Added
 
