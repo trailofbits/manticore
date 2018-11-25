@@ -138,9 +138,10 @@ def gen_test(testcase, filename, skip):
         #check outs
         self.assertEqual(returndata, unhexlify('{testcase['out'][2:]}'))'''
 
-        output += f'''
+        output += '''
         #check logs
-        data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
+        data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])'''
+        output += f'''
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '{testcase['logs'][2:]}')
         '''
 
