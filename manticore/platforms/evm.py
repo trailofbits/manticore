@@ -693,7 +693,7 @@ class EVM(Eventful):
                 yield simplify(bytecode[pc_i]).value
             while True:
                 yield 0
-        instruction = EVMAsm.disassemble_one(getcode(), pc=pc, fork='byzantium')
+        instruction = EVMAsm.disassemble_one(getcode(), pc=pc)
         _decoding_cache[pc] = instruction
         return instruction
 
