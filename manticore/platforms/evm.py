@@ -33,12 +33,13 @@ logger = logging.getLogger(__name__)
 # 4: OOG soon. If it may NOT be enough gas we ignore the normal case. A constraint is added to assert the gas is NOT enough and the other state is ignored.
 # 99: Ignore gas. Do not account for it. Do not OOG.
 consts = config.get_group('evm')
-consts.add('oog', default=0, description='Default behavior for symbolic gas. 0: Fully faithfull. Test at every instruction. Forks.'
-                                                                            '1: Mostly faithful. Test at BB limit. Forks.'
-                                                                            '2: Incomplete. Concretize gas to MIN/MAX values. Forks.'
-                                                                            '3: Try to not fail due to OOG. If it can be enough gas use it. Ignore the path to OOG. Wont fork'
-                                                                            '4: Try OOG only. Fail soon. Ignore the path with enough gas.'
-                                                                            '99: Ignore gas. Instructions wont consume gas' )
+consts.add('oog', default=0, description='Default behavior for symbolic gas.'
+                                        '0: Fully faithfull. Test at every instruction. Forks.'
+                                        '1: Mostly faithful. Test at BB limit. Forks.'
+                                        '2: Incomplete. Concretize gas to MIN/MAX values. Forks.'
+                                        '3: Try to not fail due to OOG. If it can be enough gas use it. Ignore the path to OOG. Wont fork'
+                                        '4: Try OOG only. Fail soon. Ignore the path with enough gas.'
+                                        '99: Ignore gas. Instructions wont consume gas' )
 
 # Auxiliary constants and functions
 TT256 = 2 ** 256
@@ -780,7 +781,7 @@ class EVM(Eventful):
                     raise Concretize("Concretize gas",
                                      expression=self._gas,
                                      setstate=setstate,
-                                     policy='MINMAX')                    
+                                     policy='MINMAX')
 
                 #explore only when OOG
                 if solver.can_be_true(self.constraints, Operators.ULT(self.gas, fee)):
@@ -1114,6 +1115,7 @@ class EVM(Eventful):
     def EXP_gas(self, base, exponent):
         ''' Calculate extra gas fee '''
         EXP_SUPPLEMENTAL_GAS = 50   # cost of EXP exponent per byte
+
         def nbytes(e):
             result = 32
             for i in range(32):
