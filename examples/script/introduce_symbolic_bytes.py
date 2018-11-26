@@ -31,7 +31,7 @@ Usage:
 
 if __name__ == '__main__':
     if len(sys.argv) < 3:
-        sys.stderr.write("Usage: %s [binary] [address]\n"%(sys.argv[0],))
+        sys.stderr.write(f"Usage: {sys.argv[0]} [binary] [address]\n")
         sys.exit(2)
 
     # Passing a parameter to state_explore binary disables reading the value
@@ -56,7 +56,7 @@ if __name__ == '__main__':
         #  400a0e:       85 c0                   test   %eax,%eax
         #
 
-        print("introducing symbolic value to {:x}".format(state.cpu.RBP-0xc))
+        print(f"introducing symbolic value to {state.cpu.RBP-0xc:x}")
 
         val = state.new_symbolic_value(32, taint=(taint_id,))
         state.cpu.write_int(state.cpu.RBP - 0xc, val, 32)
@@ -77,9 +77,9 @@ if __name__ == '__main__':
             return
         if insn.mnemonic in ('cmp', 'test'):
             if has_tainted_operands(insn.operands, taint_id):
-                print('{:x}: {} {}'.format(insn.address, insn.mnemonic, insn.op_str))
+                print(f'{insn.address:x}: {insn.mnemonic} {insn.op_str}')
 
     print('Tainted Control Flow:')
     m.run()
 
-    print('Analysis finished. See {} for results.'.format(m.workspace))
+    print(f'Analysis finished. See {m.workspace} for results.')

@@ -4,7 +4,7 @@ Ideally you should be able to do something like
         from binary import Binary
         binary = Binary(filename)
         assert cpu.machine == binary.arch, "Not matching cpu"
-        logger.info("Loading %s as a %s elf"%(filename, binary.arch))
+        logger.info(f"Loading {filename} as a {binary.arch} elf")
         for mm in binary.maps():
             cpu.mem.mmapFile( mm )
         for th in binary.threads():

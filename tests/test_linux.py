@@ -21,6 +21,11 @@ class LinuxTest(unittest.TestCase):
         self.linux = linux.Linux(self.BIN_PATH)
         self.symbolic_linux = linux.SLinux.empty_platform('armv7')
 
+    def tearDown(self):
+        for f in self.linux.files + self.symbolic_linux.files:
+            if isinstance(f, linux.File):
+                f.close()
+
     def test_regs_init_state_x86(self):
         x86_defaults = {
             'CS': 0x23,
@@ -199,29 +204,31 @@ class LinuxTest(unittest.TestCase):
         platform.current.R7 = nr_openat
         self.assertEqual(linux_syscalls.armv7[nr_openat], 'sys_openat')
 
-        return platform
+        return platform, dir_path
 
     def test_syscall_openat_concrete(self):
-        platform = self._create_openat_state()
-
-        platform.syscall()
-
-        self.assertGreater(platform.current.R0, 2)
+        platform, temp_dir = self._create_openat_state()
+        try:
+            platform.syscall()
+            self.assertGreater(platform.current.R0, 2)
+        finally:
+            shutil.rmtree(temp_dir)
 
     def test_syscall_openat_symbolic(self):
-        platform = self._create_openat_state()
+        platform, temp_dir = self._create_openat_state()
+        try:
+            platform.current.R0 = BitVecVariable(32, 'fd')
 
-        platform.current.R0 = BitVecVariable(32, 'fd')
+            with self.assertRaises(ConcretizeRegister) as cm:
+                platform.syscall()
 
-        with self.assertRaises(ConcretizeRegister) as cm:
-            platform.syscall()
+            e = cm.exception
 
-        e = cm.exception
-
-        _min, _max = solver.minmax(platform.constraints, e.cpu.read_register(e.reg_name))
-        self.assertLess(_min, len(platform.files))
-        self.assertGreater(_max, len(platform.files)-1)
-
+            _min, _max = solver.minmax(platform.constraints, e.cpu.read_register(e.reg_name))
+            self.assertLess(_min, len(platform.files))
+            self.assertGreater(_max, len(platform.files)-1)
+        finally:
+            shutil.rmtree(temp_dir)
 
     def test_chroot(self):
         # Create a minimal state
@@ -231,13 +238,13 @@ class LinuxTest(unittest.TestCase):
 
         # should error with ENOENT
         this_file = os.path.realpath(__file__)
-        path = platform.current.push_bytes('{}\x00'.format(this_file))
+        path = platform.current.push_bytes(f'{this_file}\x00')
         fd = platform.sys_chroot(path)
         self.assertEqual(fd, -errno.ENOTDIR)
 
         # valid dir, but should always fail with EPERM
         this_dir = os.path.dirname(this_file)
-        path = platform.current.push_bytes('{}\x00'.format(this_dir))
+        path = platform.current.push_bytes(f'{this_dir}\x00')
         fd = platform.sys_chroot(path)
         self.assertEqual(fd, -errno.EPERM)
 
@@ -267,3 +274,32 @@ class LinuxTest(unittest.TestCase):
         fd = platform.sys_open(filename, os.O_RDONLY, 0o600)
         platform.sys_close(fd)
         pickle.dumps(platform)
+
+    def test_thumb_mode_entrypoint(self):
+        # thumb_mode_entrypoint is a binary with only one instruction
+        #   0x1000: add.w   r0, r1, r2
+        # which is a Thumb instruction, so the entrypoint is set to 0x1001
+        m = Manticore.linux(os.path.join(os.path.dirname(__file__), 'binaries', 'thumb_mode_entrypoint'))
+        m.success = False
+
+        @m.init
+        def init(state):
+            state.cpu.regfile.write('R0', 0)
+            state.cpu.regfile.write('R1', 0x1234)
+            state.cpu.regfile.write('R2', 0x5678)
+
+        @m.hook(0x1001)
+        def pre(state):
+            # If the wrong PC value was used by the loader (0x1001 instead of 0x1000),
+            # the wrong instruction bytes will have been fetched from memory
+            state.abandon()
+
+        @m.hook(0x1004)
+        def post(state):
+            # If the wrong execution mode was set by the loader, the wrong instruction
+            # will have been executed, so the register value will be incorrect
+            m.success = state.cpu.regfile.read('R0') == 0x68ac
+            state.abandon()
+
+        m.run()
+        self.assertTrue(m.success)

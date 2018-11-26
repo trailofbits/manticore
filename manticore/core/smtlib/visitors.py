@@ -134,12 +134,12 @@ class Translator(Visitor):
         assert expression.__class__.__mro__[-1] is object
         for cls in expression.__class__.__mro__:
             sort = cls.__name__
-            methodname = 'visit_{:s}'.format(sort)
+            methodname = f'visit_{sort:s}'
             if hasattr(self, methodname):
                 value = getattr(self, methodname)(expression, *args)
                 if value is not None:
                     return value
-        raise Exception("No translation for this {}".format(expression))
+        raise Exception(f"No translation for this {expression}")
 
 
 class GetDeclarations(Visitor):
@@ -391,6 +391,40 @@ class ArithmeticSimplifier(Visitor):
             return result
         if self._changed(expression, operands):
             return BitVecITE(expression.size, *operands, taint=expression.taint)
+
+    def visit_BitVecConcat(self, expression, *operands):
+        ''' concat( extract(k1, 0, a), extract(sizeof(a)-k1, k1, a))  ==> a
+            concat( extract(k1, beg, a), extract(end, k1, a))  ==> extract(beg, end, a)
+        '''
+        op = expression.operands[0]
+
+        value = None
+        end = None
+        begining = None
+        for o in operands:
+            # If found a non BitVecExtract, do not apply
+            if not isinstance(o, BitVecExtract):
+                return None
+            # Set the value for the first item
+            if value is None:
+                value = o.value
+                begining = o.begining
+                end = o.end
+            else:
+                # If concat of extracts of different values do not apply
+                if value is not o.value:
+                    return None
+                # If concat of non contiguous extracs do not apply
+                if begining != o.end + 1:
+                    return None
+                # update begining variable
+                begining = o.begining
+
+        if value is not None:
+            if end + 1 == value.size and begining == 0:
+                return value
+            else:
+                return BitVecExtract(value, begining, end - begining + 1, taint=expression.taint)
 
     def visit_BitVecExtract(self, expression, *operands):
         ''' extract(sizeof(a), 0)(a)  ==> a
@@ -714,10 +748,6 @@ def replace(expression, bindings):
     visitor = Replace(bindings)
     visitor.visit(expression, use_fixed_point=True)
     result_expression = visitor.result
-
-    #for var in get_variables(result_expression):
-    #    assert var not in bindings
-
     return result_expression
 
 

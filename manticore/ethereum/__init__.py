@@ -9,10 +9,11 @@ from .. import Manticore
 from ..exceptions import EthereumError, DependencyError, NoAliveStates
 from ..core.smtlib import ConstraintSet, Operators, solver, BitVec, Array, ArrayProxy
 from ..platforms import evm
-from ..core.state import State, TerminateState
+from ..core.state import State, TerminateState, AbandonState
 from ..utils.helpers import issymbolic, PickleSerializer
 from ..utils import config
 from ..utils.log import init_logging
+from typing import Dict, Optional
 import tempfile
 from subprocess import Popen, PIPE, check_output
 from multiprocessing import Process, Queue
@@ -25,11 +26,12 @@ from ..core.plugin import Plugin
 from functools import reduce
 
 # exported externally
-from .detectors import Detector, DetectEnvInstruction, DetectExternalCallAndLeak, DetectReentrancySimple, DetectSelfdestruct, DetectUnusedRetVal, DetectDelegatecall, DetectIntegerOverflow, DetectInvalid, DetectReentrancyAdvanced, DetectUninitializedMemory, DetectUninitializedStorage
+from .detectors import Detector, DetectEnvInstruction, DetectExternalCallAndLeak, DetectReentrancySimple, \
+    DetectSelfdestruct, DetectUnusedRetVal, DetectDelegatecall, DetectIntegerOverflow, DetectInvalid, \
+    DetectReentrancyAdvanced, DetectUninitializedMemory, DetectUninitializedStorage, DetectRaceCondition
 from .account import EVMAccount, EVMContract
 from .abi import ABI
 from .solidity import SolidityMetadata
-
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +43,20 @@ def flagged(flag):
     Return special character denoting concretization happened.
     """
     return '(*)' if flag else ''
+
+
+def write_findings(method, lead_space, address, pc, at_init=""):
+    """
+    Writes contract address and EVM program counter indicating whether counter was read at constructor
+    :param method: pointer to the object with the write method
+    :param lead_space: leading white space
+    :param address: contract address
+    :param pc: program counter
+    :param at_init: Boolean
+    :return: pass
+    """
+    method.write(f'{lead_space}Contract: 0x:{address}')
+    method.write(f'{lead_space}EVM Program counter: 0x{pc}{" (at constructor)" if at_init else ""}\n')
 
 #
 # Plugins
@@ -99,21 +115,20 @@ class FilterFunctions(Plugin):
             #Let's compile  the list of interesting hashes
             selected_functions = []
 
-            for func_hsh in md.hashes:
-                if func_hsh == '00000000':
-                    continue
+            for func_hsh in md.function_selectors:
                 abi = md.get_abi(func_hsh)
-                func_name = md.get_func_name(func_hsh)
+                if abi['type'] == 'fallback':
+                    continue
                 if self._mutability == 'constant' and not abi.get('constant', False):
                     continue
                 if self._mutability == 'mutable' and abi.get('constant', False):
                     continue
-                if not re.match(self._regexp, func_name):
+                if not re.match(self._regexp, abi['name']):
                     continue
                 selected_functions.append(func_hsh)
 
-            if self._fallback:
-                selected_functions.append('00000000')
+            if self._fallback and md.has_non_default_fallback_function:
+                selected_functions.append(md.fallback_function_selector)
 
             if self._include:
                 # constrain the input so it can take only the interesting values
@@ -121,7 +136,7 @@ class FilterFunctions(Plugin):
                 state.constrain(constraint)
             else:
                 #Avoid all not selected hashes
-                for func_hsh in md.hashes:
+                for func_hsh in md.function_selectors:
                     if func_hsh in selected_functions:
                         constraint = tx.data[:4] != func_hsh
                         state.constrain(constraint)
@@ -306,7 +321,7 @@ class ManticoreEVM(Manticore):
         return bytearray(binascii.unhexlify(hex_contract))
 
     @staticmethod
-    def _run_solc(source_file, solc_bin=None, solc_remaps=[]):
+    def _run_solc(source_file, solc_bin=None, solc_remaps=[], working_dir=None):
         """ Compile a source file with the Solidity compiler
 
             :param source_file: a file object for the source file
@@ -334,27 +349,33 @@ class ManticoreEVM(Manticore):
             #logger.warning("Unsupported solc version %s", installed_version)
             pass
 
-        #shorten the path size so library placeholders wont fail.
-        #solc path search is a mess #fixme
-        #https://solidity.readthedocs.io/en/latest/layout-of-source-files.html
-        current_folder = os.getcwd()
-        abs_filename = os.path.abspath(source_file.name)
-        working_folder, filename = os.path.split(abs_filename)
+        # solc path search is a mess
+        # https://solidity.readthedocs.io/en/latest/layout-of-source-files.html
+
+        relative_filepath = source_file.name
+
+        if not working_dir:
+            working_dir = os.getcwd()
+        elif relative_filepath.startswith(working_dir):
+            relative_filepath = relative_filepath[len(working_dir) + 1:]
+
+        # If someone pass an absolute path to the file, we don't have to put cwd
+        additional_kwargs = {'cwd': working_dir} if working_dir else {}
 
         solc_invocation = [solc] + list(solc_remaps) + [
             '--combined-json', 'abi,srcmap,srcmap-runtime,bin,hashes,bin-runtime',
             '--allow-paths', '.',
-            filename
+            relative_filepath
         ]
 
-        p = Popen(solc_invocation, stdout=PIPE, stderr=PIPE, cwd=working_folder)
+        p = Popen(solc_invocation, stdout=PIPE, stderr=PIPE, **additional_kwargs)
         stdout, stderr = p.communicate()
 
         stdout, stderr = stdout.decode(), stderr.decode()
 
         # See #1123 - solc fails when run within snap
         # and https://forum.snapcraft.io/t/interfaces-allow-access-tmp-directory/5129
-        if stdout == '' and '""%s"" is not found' % filename in stderr:
+        if stdout == '' and f'""{relative_filepath}"" is not found' in stderr:
             raise EthereumError(
                 'Solidity compilation failed with error: {}\n'
                 'Did you install solc from snap Linux universal packages?\n'
@@ -373,7 +394,7 @@ class ManticoreEVM(Manticore):
             raise EthereumError('Solidity compilation error:\n\n{}'.format(stderr))
 
     @staticmethod
-    def _compile(source_code, contract_name, libraries=None, solc_bin=None, solc_remaps=[]):
+    def _compile(source_code, contract_name, libraries=None, solc_bin=None, solc_remaps=[], working_dir=None):
         """ Compile a Solidity contract, used internally
 
             :param source_code: solidity source as either a string or a file handle
@@ -381,6 +402,7 @@ class ManticoreEVM(Manticore):
             :param libraries: an itemizable of pairs (library_name, address)
             :param solc_bin: path to solc binary
             :param solc_remaps: solc import remaps
+            :param working_dir: working directory for solc compilation (defaults to current)
             :return: name, source_code, bytecode, srcmap, srcmap_runtime, hashes
             :return: name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
         """
@@ -389,9 +411,9 @@ class ManticoreEVM(Manticore):
             with tempfile.NamedTemporaryFile('w+') as temp:
                 temp.write(source_code)
                 temp.flush()
-                output, warnings = ManticoreEVM._run_solc(temp, solc_bin, solc_remaps)
+                output, warnings = ManticoreEVM._run_solc(temp, solc_bin, solc_remaps, working_dir=working_dir)
         elif isinstance(source_code, io.IOBase):
-            output, warnings = ManticoreEVM._run_solc(source_code, solc_bin, solc_remaps)
+            output, warnings = ManticoreEVM._run_solc(source_code, solc_bin, solc_remaps, working_dir=working_dir)
             source_code.seek(0)
             source_code = source_code.read()
         else:
@@ -447,9 +469,12 @@ class ManticoreEVM(Manticore):
     def get_account(self, name):
         return self._accounts[name]
 
-    def __init__(self, procs=10, **kwargs):
-        """ A Manticore EVM manager
-            :param int procs: number of workers to use in the exploration
+    def __init__(self, procs=10, workspace_url: str=None, policy: str='random'):
+        """
+        A Manticore EVM manager
+        :param procs:, number of workers to use in the exploration
+        :param workspace_url: workspace folder name
+        :param policy: scheduling priority
         """
         self._accounts = dict()
         self._serializer = PickleSerializer()
@@ -460,11 +485,11 @@ class ManticoreEVM(Manticore):
         # make the ethereum world state
         world = evm.EVMWorld(constraints, initial_timestamp=1524785992)
         initial_state = State(constraints, world)
-        super().__init__(initial_state, **kwargs)
+        super().__init__(initial_state, workspace_url=workspace_url, policy=policy)
 
         self.constraints = ConstraintSet()
         self.detectors = {}
-        self.metadata = {}
+        self.metadata: Dict[int, SolidityMetadata] = {}
 
         # The following should go to manticore.context so we can use multiprocessing
         self.context['ethereum'] = {}
@@ -626,6 +651,11 @@ class ManticoreEVM(Manticore):
         state = self.load(state_id)
         return state.platform.transactions
 
+    def human_transactions(self, state_id=None):
+        """ Transactions list for state `state_id` """
+        state = self.load(state_id)
+        return state.platform.human_transactions
+
     def make_symbolic_arguments(self, types):
         """
             Make a reasonable serialization of the symbolic argument types
@@ -633,7 +663,9 @@ class ManticoreEVM(Manticore):
         # FIXME this is more naive than reasonable.
         return ABI.deserialize(types, self.make_symbolic_buffer(32, name="INITARGS"))
 
-    def solidity_create_contract(self, source_code, owner, name=None, contract_name=None, libraries=None, balance=0, address=None, args=(), solc_bin=None, solc_remaps=[], gas=90000):
+    def solidity_create_contract(self, source_code, owner, name=None, contract_name=None, libraries=None,
+                                 balance=0, address=None, args=(), solc_bin=None, solc_remaps=[],
+                                 working_dir=None, gas=90000):
         """ Creates a solidity contract and library dependencies
 
             :param str source_code: solidity source code
@@ -650,6 +682,8 @@ class ManticoreEVM(Manticore):
             :type solc_bin: str
             :param solc_remaps: solc import remaps
             :type solc_remaps: list of str
+            :param working_dir: working directory for solc compilation (defaults to current)
+            :type working_dir: str
             :param gas: gas budget for each contract creation needed (may be more than one if several related contracts defined in the solidity source)
             :type gas: int
             :rtype: EVMAccount
@@ -663,7 +697,9 @@ class ManticoreEVM(Manticore):
         while contract_names:
             contract_name_i = contract_names.pop()
             try:
-                compile_results = self._compile(source_code, contract_name_i, libraries=deps, solc_bin=solc_bin, solc_remaps=solc_remaps)
+                compile_results = self._compile(source_code, contract_name_i,
+                                                libraries=deps, solc_bin=solc_bin, solc_remaps=solc_remaps,
+                                                working_dir=working_dir)
                 md = SolidityMetadata(*compile_results)
                 if contract_name_i == contract_name:
                     constructor_types = md.get_constructor_arguments()
@@ -693,6 +729,19 @@ class ManticoreEVM(Manticore):
             return None
         return contract_account
 
+    def get_nonce(self, address):
+        # type forgiveness:
+        address = int(address)
+        # get all nonces for states containing this address:
+        nonces = set(state.platform.get_nonce(address) for state in self.running_states if address in state.platform)
+        if not nonces:
+            raise NoAliveStates("There are no alive states containing address %x" % address)
+        elif len(nonces) != 1:
+            # if there are multiple states with this address, they all have to have the same nonce:
+            raise EthereumError("Cannot increase the nonce of address %x because it exists in multiple states with different nonces" % address)
+        else:
+            return next(iter(nonces))
+
     def create_contract(self, owner, balance=0, address=None, init=None, name=None, gas=21000):
         """ Creates a contract
 
@@ -709,13 +758,13 @@ class ManticoreEVM(Manticore):
         if not self.count_running_states():
             raise NoAliveStates
 
-        if address is not None and address in map(int, self.accounts.values()):
-            # Address already used
-            raise EthereumError("Address already used")
+        nonce = self.get_nonce(owner)
+        expected_address = evm.EVMWorld.calculate_new_address(int(owner), nonce=nonce)
 
-        # Let's just choose the address ourself. This is not yellow paper material
         if address is None:
-            address = self.new_address()
+            address = expected_address
+        elif address != expected_address:
+            raise EthereumError("Address was expected to be %x but was given %x" % (expected_address, address))
 
         # Name check
         if name is None:
@@ -742,12 +791,20 @@ class ManticoreEVM(Manticore):
         assert name not in self.accounts
         return name
 
+    def _all_addresses(self):
+        """ Returns all addresses in all running states """
+        ret = set()
+        for state in self.running_states:
+            ret |= set(state.platform.accounts)
+        return ret
+
     def new_address(self):
         """ Create a fresh 160bit address """
-        new_address = random.randint(100, pow(2, 160))
-        if new_address in map(int, self.accounts.values()):
-            return self.new_address()
-        return new_address
+        all_addresses = self._all_addresses()
+        while True:
+            new_address = random.randint(100, pow(2, 160))
+            if new_address not in all_addresses:
+                return new_address
 
     def transaction(self, caller, address, value, data, gas=21000):
         """ Issue a symbolic transaction in all running states
@@ -884,30 +941,26 @@ class ManticoreEVM(Manticore):
         if isinstance(data, (str, bytes)):
             data = bytearray(data)
         if not isinstance(data, (bytearray, Array)):
-            raise EthereumError("code bad type")
+            raise TypeError("code bad type")
 
         # Check types
-        if not isinstance(address, (int, BitVec)):
-            raise EthereumError("Caller invalid type")
+        if not isinstance(caller, (int, BitVec)):
+            raise TypeError("Caller invalid type")
 
         if not isinstance(value, (int, BitVec)):
-            raise EthereumError("Value invalid type")
+            raise TypeError("Value invalid type")
 
         if not isinstance(address, (int, BitVec)):
-            raise EthereumError("address invalid type")
+            raise TypeError("address invalid type")
 
         if not isinstance(price, int):
-            raise EthereumError("Price invalid type")
+            raise TypeError("Price invalid type")
 
         # Check argument consistency and set defaults ...
         if sort not in ('CREATE', 'CALL'):
             raise ValueError('unsupported transaction type')
 
         if sort == 'CREATE':
-            #let's choose an address here for now #NOTYELLOW
-            if address is None:
-                address = self.new_address()
-
             # When creating data is the init_bytecode + arguments
             if len(data) == 0:
                 raise EthereumError("An initialization bytecode is needed for a CREATE")
@@ -926,8 +979,17 @@ class ManticoreEVM(Manticore):
             if '_pending_transaction' in state.context:
                 raise EthereumError("This is bad. It should not be a pending transaction")
 
+            # Choose an address here, because it will be dependent on the caller's nonce in this state
+            if address is None:
+                if issymbolic(caller):
+                    # TODO (ESultanik): In order to handle this case, we are going to have to do something like fork
+                    # over all possible caller addresses.
+                    # But this edge case will likely be extremely rare, if ever ecountered.
+                    raise EthereumError("Manticore does not currently support contracts with symbolic addresses creating new contracts")
+                address = world.new_address(caller)
+
             # Migrate any expression to state specific constraint set
-            caller, address, value, data = self._migrate_tx_expressions(state, caller, address, value, data)
+            caller_migrated, address_migrated, value_migrated, data_migrated = self._migrate_tx_expressions(state, caller, address, value, data)
 
             # Different states may CREATE a different set of accounts. Accounts
             # that were crated by a human have the same address in all states.
@@ -938,7 +1000,7 @@ class ManticoreEVM(Manticore):
                     # Address already used
                     raise EthereumError("This is bad. Same address is used for different contracts in different states")
 
-            state.context['_pending_transaction'] = (sort, caller, address, value, data, gaslimit, price)
+            state.context['_pending_transaction'] = (sort, caller_migrated, address_migrated, value_migrated, data_migrated, gaslimit, price)
 
         # run over potentially several states and
         # generating potentially several others
@@ -946,7 +1008,9 @@ class ManticoreEVM(Manticore):
 
         return address
 
-    def multi_tx_analysis(self, solidity_filename, contract_name=None, tx_limit=None, tx_use_coverage=True, tx_send_ether=True, tx_account="attacker", args=None):
+    def multi_tx_analysis(self, solidity_filename, working_dir=None, contract_name=None,
+                          tx_limit=None, tx_use_coverage=True,
+                          tx_send_ether=True, tx_account="attacker", args=None):
         owner_account = self.create_account(balance=1000, name='owner')
         attacker_account = self.create_account(balance=1000, name='attacker')
 
@@ -954,7 +1018,8 @@ class ManticoreEVM(Manticore):
         logger.info("Starting symbolic create contract")
 
         with open(solidity_filename) as f:
-            contract_account = self.solidity_create_contract(f, contract_name=contract_name, owner=owner_account, args=args)
+            contract_account = self.solidity_create_contract(f, contract_name=contract_name, owner=owner_account,
+                                                             args=args, working_dir=working_dir)
 
         if tx_account == "attacker":
             tx_account = [attacker_account]
@@ -1023,6 +1088,7 @@ class ManticoreEVM(Manticore):
         with self.locked_context('ethereum') as context:
             if len(context['_saved_states']) == 1:
                 self._initial_state = self._executor._workspace.load_state(context['_saved_states'].pop(), delete=True)
+                self._executor.forward_events_from(self._initial_state, True)
                 context['_saved_states'] = set()
                 assert self._running_state_ids == (-1,)
 
@@ -1064,9 +1130,12 @@ class ManticoreEVM(Manticore):
         state = None
         if state_id is None:
             #a single state was assumed
-            if self.count_running_states() == 1:
+            state_count = self.count_running_states()
+            if state_count == 1:
                 #Get the ID of the single running state
                 state_id = self._running_state_ids[0]
+            elif state_count == 0:
+                raise NoAliveStates
             else:
                 raise EthereumError("More than one state running; you must specify a state id.")
 
@@ -1146,7 +1215,7 @@ class ManticoreEVM(Manticore):
             Every time a state finishes executing the last transaction, we save it in
             our private list
         """
-        if str(e) == 'Abandoned state':
+        if isinstance(e, AbandonState):
             #do nothing
             return
         world = state.platform
@@ -1220,7 +1289,7 @@ class ManticoreEVM(Manticore):
             for i in range(offset, offset + size):
                 code_data.add((state.platform.current_vm.address, i))
 
-    def get_metadata(self, address):
+    def get_metadata(self, address) -> Optional[SolidityMetadata]:
         """ Gets the solidity metadata for address.
             This is available only if address is a contract created from solidity
         """
@@ -1251,8 +1320,43 @@ class ManticoreEVM(Manticore):
     def workspace(self):
         return self._executor._workspace._store.uri
 
-    def generate_testcase(self, state, name, message=''):
-        self._generate_testcase_callback(state, name, message)
+    def generate_testcase(self, state, message='', only_if=None, name='user'):
+        """
+        Generate a testcase to the workspace for the given program state. The details of what
+        a testcase is depends on the type of Platform the state is, but involves serializing the state,
+        and generating an input (concretizing symbolic variables) to trigger this state.
+
+        The only_if parameter should be a symbolic expression. If this argument is provided, and the expression
+        *can be true* in this state, a testcase is generated such that the expression will be true in the state.
+        If it *is impossible* for the expression to be true in the state, a testcase is not generated.
+
+        This is useful for conveniently checking a particular invariant in a state, and generating a testcase if
+        the invariant can be violated.
+
+        For example, invariant: "balance" must not be 0. We can check if this can be violated and generate a
+        testcase::
+
+            m.generate_testcase(state, 'balance CAN be 0', only_if=balance == 0)
+            # testcase generated with an input that will violate invariant (make balance == 0)
+
+        :param manticore.core.state.State state:
+        :param str message: longer description of the testcase condition
+        :param manticore.core.smtlib.Bool only_if: only if this expr can be true, generate testcase. if is None, generate testcase unconditionally.
+        :param str name: short string used as the prefix for the workspace key (e.g. filename prefix for testcase files)
+        :return: If a testcase was generated
+        :rtype: bool
+        """
+        if only_if is None:
+            self._generate_testcase_callback(state, name, message)
+            return True
+        else:
+            with state as temp_state:
+                temp_state.constrain(only_if)
+                if temp_state.is_feasible():
+                    self._generate_testcase_callback(temp_state, name, message)
+                    return True
+
+        return False
 
     def current_location(self, state):
         world = state.platform
@@ -1260,8 +1364,7 @@ class ManticoreEVM(Manticore):
         pc = world.current_vm.pc
         at_init = world.current_transaction.sort == 'CREATE'
         output = io.StringIO()
-        output.write('Contract: 0x{:x}\n'.format(address))
-        output.write('EVM Program counter: 0x{:x}{:s}\n'.format(pc, at_init and " (at constructor)" or ""))
+        write_findings(output, '', address, pc, at_init)
         md = self.get_metadata(address)
         if md is not None:
             src = md.get_source_for(pc, runtime=not at_init)
@@ -1300,8 +1403,7 @@ class ManticoreEVM(Manticore):
             with testcase.open_stream('findings') as findings:
                 for address, pc, finding, at_init, constraint in local_findings:
                     findings.write('- %s -\n' % finding)
-                    findings.write('  Contract: 0x%x\n' % address)
-                    findings.write('  EVM Program counter: 0x%x%s\n' % (pc, at_init and " (at constructor)" or ""))
+                    write_findings(findings, '  ', address, pc, at_init)
                     md = self.get_metadata(address)
                     if md is not None:
                         src = md.get_source_for(pc, runtime=not at_init)
@@ -1433,9 +1535,7 @@ class ManticoreEVM(Manticore):
             with self._output.save_stream('global.findings') as global_findings:
                 for address, pc, finding, at_init in self.global_findings:
                     global_findings.write('- %s -\n' % finding)
-                    global_findings.write('  Contract: %s\n' % address)
-                    global_findings.write('  EVM Program counter: 0x%x%s\n' % (pc, at_init and " (at constructor)" or ""))
-
+                    write_findings(global_findings, '  ', address, pc, at_init)
                     md = self.get_metadata(address)
                     if md is not None:
                         source_code_snippet = md.get_source_for(pc, runtime=not at_init)
@@ -1546,3 +1646,12 @@ class ManticoreEVM(Manticore):
     # We suppress because otherwise we log it many times and it looks weird.
     def _did_finish_run_callback(self):
         pass
+
+    def __repr__(self):
+        return self.__str__()
+
+    def __str__(self):
+        return "<ManticoreEVM | Alive States: {}; Terminated States: {}>".format(
+            self.count_running_states(),
+            self.count_terminated_states()
+        )

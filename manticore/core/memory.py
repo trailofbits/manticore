@@ -25,7 +25,7 @@ class MemoryException(Exception):
         self.address = address
         self.message = message
         if address is not None and not issymbolic(address):
-            self.message += ' <{:x}>'.format(address)
+            self.message += f' <{address:x}>'
 
     def __str__(self):
         return self.message
@@ -38,7 +38,7 @@ class ConcretizeMemory(MemoryException):
 
     def __init__(self, mem, address, size, message=None, policy='MINMAX'):
         if message is None:
-            self.message = "Concretizing memory address {} size {}".format(address, size)
+            self.message = f"Concretizing memory address {address} size {size}"
         else:
             self.message = message
         self.mem = mem
@@ -52,7 +52,7 @@ class InvalidMemoryAccess(MemoryException):
 
     def __init__(self, address, mode):
         assert mode in 'rwx'
-        suffix = ' (mode:{})'.format(mode)
+        suffix = f' (mode:{mode})'
         message = self._message + suffix
         super(InvalidMemoryAccess, self, ).__init__(message, address)
         self.mode = mode
@@ -158,7 +158,7 @@ class Map(object, metaclass=ABCMeta):
 
         :rtype: str
         '''
-        return '<%s 0x%016x-0x%016x %s>' % (self.__class__.__name__, self.start, self.end, self.perms)
+        return f'<{self.__class__.__name__} 0x{self.start:016x}-0x{self.end:016x} {self.perms}>'
 
     def __iter__(self):
         """
@@ -386,7 +386,7 @@ class FileMap(Map):
         munmap(self._data, self._mapped_size)
 
     def __repr__(self):
-        return '<%s [%s+%x] 0x%016x-0x%016x %s>' % (self.__class__.__name__, self._filename, self._offset, self.start, self.end, self.perms)
+        return f'<{self.__class__.__name__} [{self._filename}+{self._offset:x}] 0x{self.start:016x}-0x{self.end:016x} {self.perms}>'
 
     def __setitem__(self, index, value):
         assert not isinstance(index, slice) or \
@@ -753,7 +753,7 @@ class Memory(object, metaclass=ABCMeta):
         return sorted(result)
 
     def __str__(self):
-        return '\n'.join(['%016x-%016x % 4s %08x %s' % (start, end, p, offset, name or '') for start, end, p, offset, name in self.mappings()])
+        return '\n'.join([f'{start:016x}-{end:016x} {p:>4s} {offset:08x} {name or ""}' for start, end, p, offset, name in self.mappings()])
 
     def _maps_in_range(self, start, end):
         '''
@@ -792,7 +792,7 @@ class Memory(object, metaclass=ABCMeta):
             if tail:
                 self._add(tail)
 
-        logger.debug('Unmap memory @%x size:%x', start, size)
+        logger.debug(f'Unmap memory @{start:x} size:{size:x}')
 
     def mprotect(self, start, size, perms):
         assert size > 0
@@ -1021,13 +1021,13 @@ class SMemory(Memory):
 
         if issymbolic(address):
             assert solver.check(self.constraints)
-            logger.debug('Reading %d bytes from symbolic address %s', size, address)
+            logger.debug(f'Reading {size} bytes from symbolic address {address}')
             try:
                 solutions = self._try_get_solutions(address, size, 'r', force=force)
                 assert len(solutions) > 0
             except TooManySolutions as e:
                 m, M = solver.minmax(self.constraints, address)
-                logger.debug('Got TooManySolutions on a symbolic read. Range [%x, %x]. Not crashing!', m, M)
+                logger.debug(f'Got TooManySolutions on a symbolic read. Range [{m:x}, {M:x}]. Not crashing!')
 
                 # The force param shouldn't affect this, as this is checking for unmapped reads, not bad perms
                 crashing_condition = True
