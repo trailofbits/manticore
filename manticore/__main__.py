@@ -33,8 +33,7 @@ def main():
 
     sys.setrecursionlimit(consts.recursionlimit)
 
-    print('Todo fixme: set verbosity by evm/native')  # TODO / FIXME
-    # Manticore.verbosity(args.v)
+    log.set_verbosity(args.v)
 
     if args.argv[0].endswith('.sol'):
         from manticore.ethereum.cli import main as evm_main
