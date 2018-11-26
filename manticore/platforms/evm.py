@@ -693,7 +693,7 @@ class EVM(Eventful):
                 yield simplify(bytecode[pc_i]).value
             while True:
                 yield 0
-        instruction = EVMAsm.disassemble_one(getcode(), pc=pc)
+        instruction = EVMAsm.disassemble_one(getcode(), pc=pc, fork='byzantium')
         _decoding_cache[pc] = instruction
         return instruction
 
@@ -752,7 +752,7 @@ class EVM(Eventful):
             # 4: OOG soon. If it may NOT be enough gas we ignore the normal case. A constraint is added to assert the gas is NOT enough and the other state is ignored.
             # 99: Ignore gas. Do not account for it. Do not OOG.
 
-            if consts.oog is 99:
+            if consts.oog == 99:
                 #do nothing. gas is not changed
                 return
             elif consts.oog in (0, 1):
@@ -796,7 +796,8 @@ class EVM(Eventful):
                     raise NotEnoughGas()
             else:
                 pass
-            self._gas -= fee
+        self._gas -= fee
+
         assert issymbolic(self._gas) or self._gas >= 0
 
     def _indemnify(self, fee):
