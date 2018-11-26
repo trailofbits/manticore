@@ -1,15 +1,12 @@
-import copy
-import functools
-import collections
 import logging
 import pickle
-import re
 import sys
-import resource
-
 from collections import OrderedDict
-from ..core.smtlib import Expression, BitVecConstant
 
+import copy
+import re
+
+from ..core.smtlib import Expression, BitVecConstant
 
 logger = logging.getLogger(__name__)
 

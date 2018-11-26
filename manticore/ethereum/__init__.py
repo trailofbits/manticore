@@ -7,7 +7,7 @@ import pyevmasm as EVMAsm
 
 from .. import Manticore
 from ..exceptions import EthereumError, DependencyError, NoAliveStates
-from ..core.smtlib import ConstraintSet, Operators, solver, BitVec, Array, ArrayProxy
+from ..core.smtlib import ConstraintSet, Operators, BitVec, Array, ArrayProxy
 from ..platforms import evm
 from ..core.state import State, TerminateState, AbandonState
 from ..utils.helpers import issymbolic, PickleSerializer

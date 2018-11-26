@@ -1,6 +1,6 @@
 import logging
 
-from ..core.memory import MemoryException
+from manticore.native.memory import MemoryException
 
 from .helpers import issymbolic
 ######################################################################

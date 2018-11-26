@@ -1,5 +1,4 @@
 from io import BytesIO
-from manticore.core.smtlib import Solver, Operators
 import unittest
 from unittest import mock
 import tempfile, os
@@ -7,7 +6,7 @@ import gc, pickle
 import fcntl
 import resource
 import sys
-from manticore.core.memory import *
+from native.memory import *
 from manticore.core.smtlib import Expression
 from manticore.utils.helpers import issymbolic
 
@@ -1772,25 +1771,25 @@ class MemoryTest(unittest.TestCase):
             mem.read(addr2, 5)
 
     def test_getlibc(self):
-        import manticore.utils.mappings
+        import native.mappings
         import ctypes
 
         ctypes.cdll = mock.MagicMock()
-        manticore.utils.mappings.sys = mock.MagicMock()
+        native.mappings.sys = mock.MagicMock()
         def mock_loadlib(x):
             mock_loadlib.libname = x 
         ctypes.cdll.configure_mock(LoadLibrary=mock_loadlib)
 
-        manticore.utils.mappings.sys.configure_mock(platform='darwin')
-        manticore.utils.mappings.get_libc()
+        native.mappings.sys.configure_mock(platform='darwin')
+        native.mappings.get_libc()
         self.assertEqual(mock_loadlib.libname, 'libc.dylib')
 
-        manticore.utils.mappings.sys.configure_mock(platform='LINUX')
-        manticore.utils.mappings.get_libc()
+        native.mappings.sys.configure_mock(platform='LINUX')
+        native.mappings.get_libc()
         self.assertEqual(mock_loadlib.libname, 'libc.so.6')
 
-        manticore.utils.mappings.sys.configure_mock(platform='NETBSD')
-        manticore.utils.mappings.get_libc()
+        native.mappings.sys.configure_mock(platform='NETBSD')
+        native.mappings.get_libc()
         self.assertEqual(mock_loadlib.libname, 'libc.so')
 
 if __name__ == '__main__':

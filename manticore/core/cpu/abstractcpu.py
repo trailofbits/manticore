@@ -1,7 +1,6 @@
 import inspect
 import logging
 import io
-import string
 
 from functools import wraps
 from itertools import islice
@@ -10,7 +9,7 @@ import unicorn
 
 from .disasm import init_disassembler
 from ..smtlib import BitVec, Operators, Constant
-from ..memory import ConcretizeMemory, InvalidMemoryAccess
+from manticore.native.memory import ConcretizeMemory, InvalidMemoryAccess
 from ...utils.helpers import issymbolic
 from ...utils.emulate import UnicornEmulator
 from ...utils.event import Eventful

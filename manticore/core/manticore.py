@@ -12,17 +12,17 @@ import functools
 import os
 import types
 
-from .core.executor import Executor
-from .core.plugin import Plugin
-from .core.smtlib import solver, ConstraintSet
-from .core.state import State, TerminateState
-from .core.workspace import ManticoreOutput
-from .utils import config
-from .utils import log
-from .utils.event import Eventful
-from .utils.helpers import issymbolic
-from .utils.nointerrupt import WithKeyboardInterruptAs
-from .utils import install_helper
+from manticore.core.executor import Executor
+from manticore.core.plugin import Plugin
+from manticore.core.smtlib import solver, ConstraintSet
+from manticore.core.state import State, TerminateState
+from manticore.core.workspace import ManticoreOutput
+from manticore.utils import config
+from manticore.utils import log
+from manticore.utils.event import Eventful
+from manticore.utils.helpers import issymbolic
+from manticore.utils.nointerrupt import WithKeyboardInterruptAs
+from manticore.utils import install_helper
 
 
 try:
@@ -30,15 +30,17 @@ try:
     from elftools.elf.elffile import ELFFile
     from elftools.elf.sections import SymbolTableSection
 
-    from .platforms import linux, decree
+    from manticore.platforms import linux, decree
     install_helper._has_native = True
-except ImportError:
+except ImportError as e:
+    print("DEBUG %s" % e)
     pass
 
 try:
-    from .platforms import evm
+    from manticore.platforms import evm
     install_helper._has_evm = True
-except ImportError:
+except ImportError as e:
+    print("DEBUG %s" % e)
     pass
 
 print(install_helper._has_evm, install_helper._has_native)

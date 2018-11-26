@@ -5,7 +5,7 @@ from functools import wraps
 
 from manticore.core.cpu.arm import Armv7Cpu as Cpu, Mask, Interruption
 from manticore.core.cpu.abstractcpu import ConcretizeRegister
-from manticore.core.memory import ConcretizeMemory, Memory32, SMemory32
+from native.memory import ConcretizeMemory, Memory32, SMemory32
 from manticore.core.state import State
 from manticore.core.smtlib import BitVecVariable, ConstraintSet
 from manticore.platforms import linux

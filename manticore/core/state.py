@@ -6,7 +6,7 @@ from ..utils.helpers import issymbolic
 
 #import exceptions
 from .cpu.abstractcpu import ConcretizeRegister
-from .memory import ConcretizeMemory, MemoryException
+from manticore.native.memory import ConcretizeMemory, MemoryException
 from ..platforms.platform import *
 
 logger = logging.getLogger(__name__)
@@ -22,6 +22,7 @@ class TerminateState(StateException):
     def __init__(self, message, testcase=False):
         super().__init__(message)
         self.testcase = testcase
+
 
 class AbandonState(TerminateState):
     ''' Exception returned for abandoned states when

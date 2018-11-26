@@ -4,7 +4,7 @@ from functools import wraps
 
 from manticore.core.cpu.abstractcpu import ConcretizeRegister
 from manticore.core.cpu.arm import Armv7Cpu as Cpu, Mask, Interruption
-from manticore.core.memory import Memory32, SMemory32
+from native.memory import Memory32, SMemory32
 from manticore.core.smtlib import *
 from manticore.core.state import Concretize
 
