@@ -12,7 +12,7 @@ from multiprocessing.managers import SyncManager
 from manticore.utils import config
 from manticore.utils.helpers import PickleSerializer
 from .smtlib import solver
-from .state import BaseState
+from .state import StateBase
 
 logger = logging.getLogger(__name__)
 
@@ -373,7 +373,7 @@ class Workspace(object):
         :return: New state id
         :rtype: int
         """
-        assert isinstance(state, BaseState)
+        assert isinstance(state, StateBase)
         if state_id is None:
             state_id = self._get_id()
         else:

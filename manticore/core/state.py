@@ -66,7 +66,7 @@ class ForkState(Concretize):
         super().__init__(message, expression, policy='ALL', **kwargs)
 
 
-class BaseState(Eventful):
+class StateBase(Eventful):
     """
     Representation of a unique program state/path.
 

@@ -1,9 +1,9 @@
 from manticore.core.cpu.abstractcpu import ConcretizeRegister
-from manticore.core.state import BaseState, Concretize, TerminateState
+from manticore.core.state import StateBase, Concretize, TerminateState
 from manticore.native.memory import ConcretizeMemory, MemoryException
 
 
-class State(BaseState):
+class State(StateBase):
 
     def execute(self):
         try:

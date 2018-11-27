@@ -1,6 +1,6 @@
-from manticore.core.state import BaseState
+from manticore.core.state import StateBase
 
 
-class State(BaseState):
+class State(StateBase):
     def execute(self):
         return self._platform.execute()

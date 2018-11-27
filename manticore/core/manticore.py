@@ -15,7 +15,7 @@ import types
 from manticore.core.executor import Executor
 from manticore.core.plugin import Plugin
 from manticore.core.smtlib import solver, ConstraintSet
-from manticore.core.state import TerminateState, BaseState
+from manticore.core.state import TerminateState, StateBase
 from manticore.core.workspace import ManticoreOutput
 from manticore.utils import config
 from manticore.utils import log
@@ -97,7 +97,7 @@ class ManticoreBase(Eventful):
         # Link Executor events to default callbacks in manticore object
         self.forward_events_from(self._executor)
 
-        if not isinstance(initial_state, BaseState):
+        if not isinstance(initial_state, StateBase):
             raise TypeError(f'Invalid initial_state type: {type(initial_state).__name__}')
 
         self._initial_state = initial_state

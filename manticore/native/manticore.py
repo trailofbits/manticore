@@ -26,7 +26,7 @@ class Manticore(ManticoreBase):
             if not os.path.isfile(path_or_state):
                 raise OSError(f'{path_or_state} is not an existing regular file')
 
-            initial_state = make_initial_state(path_or_state, argv=argv, **kwargs)
+            initial_state = _make_initial_state(path_or_state, argv=argv, **kwargs)
         else:
             initial_state = path_or_state
 
@@ -76,7 +76,7 @@ class Manticore(ManticoreBase):
             raise Exception(f'Invalid binary: {path}')
 
 
-def make_initial_state(binary_path, **kwargs):
+def _make_initial_state(binary_path, **kwargs):
     with open(binary_path, 'rb') as f:
         magic = f.read(4)
     if magic == b'\x7fELF':
