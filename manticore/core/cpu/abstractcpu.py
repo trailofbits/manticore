@@ -9,12 +9,13 @@ from itertools import islice
 import unicorn
 
 from .disasm import init_disassembler
-from ..smtlib import BitVec, Operators, Constant
 from ..memory import ConcretizeMemory, InvalidMemoryAccess, LazySMemory
-from ...utils.helpers import issymbolic
+from ..smtlib import BitVec, Operators, Constant
+from ..smtlib import visitors
+from ..smtlib.solver import solver
 from ...utils.emulate import UnicornEmulator
 from ...utils.event import Eventful
-from ..smtlib import visitors
+from ...utils.helpers import issymbolic
 
 
 logger = logging.getLogger(__name__)
@@ -761,15 +762,13 @@ class Cpu(Eventful):
             if not self.memory.access_ok(address, 'x'):
                 break
 
-            # import ipdb
-            # ipdb.set_trace()
             c = self.memory[address]
 
             if issymbolic(c):
                 # In case of fully symbolic memory, eagerly get a valid ptr
                 if isinstance(self.memory, LazySMemory):
                     try:
-                        vals = simplify_array_select(c)
+                        vals = visitors.simplify_array_select(c)
                         c = bytes([vals[0]])
                     except visitors.ArraySelectSimplifier.ExpressionNotSimple:
                         c = struct.pack('B', solver.get_value(self.memory.constraints, c))
@@ -782,11 +781,6 @@ class Cpu(Eventful):
                                                address=pc,
                                                size=8 * self.max_instr_width,
                                                policy='INSTRUCTION')
-                # xxx = solver.get_all_values(ConstraintSet(), c)[0]
-                # xxx = solver.get_value(ConstraintSet(), c)
-                # print 'the bytes', xxx
-                # c =  struct.pack('B', solver.get_all_values(ConstraintSet(), c)[0])
-                # assert isinstance(c, BitVec) and c.size == 8
             text += c
 
         #Pad potentially incomplete instruction with zeroes

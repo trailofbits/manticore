@@ -163,7 +163,6 @@ class Map(object, metaclass=ABCMeta):
     def __iter__(self):
         """
         Iterate all valid addresses
-        :return:
         """
         return iter(range(self._start, self._end))
 
@@ -939,7 +938,6 @@ class Memory(object, metaclass=ABCMeta):
     def __iter__(self):
         """
         Iterate all valid addresses
-        :return:
         """
         for page_addr in sorted(self._page2map.keys()):
             start = page_addr * self.page_size
@@ -1206,12 +1204,11 @@ class LazySMemory(SMemory):
 
         return addr
 
-    def _deref_can_succeed(self, map, address, size):
+    def _deref_can_succeed(self, mapping, address, size):
         if not issymbolic(address):
-            return address >= map.start and address + size < map.end
+            return address >= mapping.start and address + size < mapping.end
         else:
-            # FIXME is address + size < map.end a bug? address + size is first oob of the access. address + size <= map.end?
-            constraint = Operators.AND(address >= map.start, address + size < map.end)
+            constraint = Operators.AND(address >= mapping.start, address + size < mapping.end)
             return solver.can_be_true(self.constraints, constraint)
 
     def _import_concrete_memory(self, from_addr, to_addr):
@@ -1240,10 +1237,8 @@ class LazySMemory(SMemory):
                 self.backing_array[addr] = Memory.read(self, addr, 1)[0]
                 self.backed_by_symbolic_store.add(addr)
 
-    def _map_deref_expr(self, map, address, size):
+    def _map_deref_expr(self, map, address):
         return Operators.AND(
-            # address >= map.start,
-            # address + size < map.end)
             Operators.UGE(address, map.start),
             Operators.ULT(address, map.end))
 
@@ -1254,7 +1249,7 @@ class LazySMemory(SMemory):
     def valid_ptr(self, address):
         assert issymbolic(address)
 
-        expressions = [self._map_deref_expr(m, address, 1) for m in self._maps]
+        expressions = [self._map_deref_expr(m, address) for m in self._maps]
         valid = functools.reduce(Operators.OR, expressions)
 
         return valid
@@ -1264,23 +1259,27 @@ class LazySMemory(SMemory):
 
     def read(self, address, size, force=False):
 
-        # if address is symbolic, self.valid_ptr(address) ? ?
         access_min, access_max = self._reachable_range(address, size)
 
         if issymbolic(address):
             self._import_concrete_memory(access_min, access_max)
 
         retvals = []
+        # Not range() because `address` can be symbolic.
         addrs_to_access = [address + i for i in range(size)]
         for addr in addrs_to_access:
-            from_array = False
 
+            # If the deref is symbolic, or it's backed by a symbolic store on a page
+            # that is writeable, go from backing_array. (if page is r-- or r-x, it would
+            # not have had symbolic data written to it.)
             if issymbolic(addr):
                 from_array = True
             elif addr in self.backed_by_symbolic_store:
                 m = self.map_containing(addr)
                 if not m or 'w' in m.perms:
                     from_array = True
+            else:
+                from_array = False
 
             if from_array:
                 val = self.backing_array[addr]
@@ -1318,8 +1317,8 @@ class LazySMemory(SMemory):
         # TODO: for the moment we just treat symbolic bytes as bytes that don't match.
         # for our simple test cases right now, the bytes we're interested in scanning
         # for will all just be there concretely
-        # TODO: Can probably do something smarter here like BM, but unnecessary if we're
-        # looking for short strings.
+        # TODO: Can probably do something smarter here like Boyer-Moore, but unnecessary
+        # if we're looking for short strings.
 
         # Querying mem with an index returns [bytes]
         if isinstance(data_to_find, bytes):
