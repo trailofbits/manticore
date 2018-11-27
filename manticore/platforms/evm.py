@@ -34,12 +34,12 @@ logger = logging.getLogger(__name__)
 # 99: Ignore gas. Do not account for it. Do not OOG.
 consts = config.get_group('evm')
 consts.add('oog', default=0, description='Default behavior for symbolic gas.'
-                                        '0: Fully faithfull. Test at every instruction. Forks.'
-                                        '1: Mostly faithful. Test at BB limit. Forks.'
-                                        '2: Incomplete. Concretize gas to MIN/MAX values. Forks.'
-                                        '3: Try to not fail due to OOG. If it can be enough gas use it. Ignore the path to OOG. Wont fork'
-                                        '4: Try OOG only. Fail soon. Ignore the path with enough gas.'
-                                        '99: Ignore gas. Instructions wont consume gas' )
+                                         '0: Fully faithfull. Test at every instruction. Forks.'
+                                         '1: Mostly faithful. Test at BB limit. Forks.'
+                                         '2: Incomplete. Concretize gas to MIN/MAX values. Forks.'
+                                         '3: Try to not fail due to OOG. If it can be enough gas use it. Ignore the path to OOG. Wont fork'
+                                         '4: Try OOG only. Fail soon. Ignore the path with enough gas.'
+                                         '99: Ignore gas. Instructions wont consume gas')
 
 # Auxiliary constants and functions
 TT256 = 2 ** 256
@@ -633,7 +633,7 @@ class EVM(Eventful):
         new_totalfee = self.safe_mul(new_size, GMEMORY) + Operators.UDIV(self.safe_mul(new_size, new_size), GQUADRATICMEMDENOM)
         memfee = new_totalfee - old_totalfee
         flag = Operators.UGT(new_totalfee, old_totalfee)
-        return Operators.ITEBV(512, size==0, 0, Operators.ITEBV(512, flag, memfee, 0))
+        return Operators.ITEBV(512, size == 0, 0, Operators.ITEBV(512, flag, memfee, 0))
 
     def _allocate(self, address):
         address_c = Operators.ZEXTEND(Operators.UDIV(self.safe_add(address, 31), 32) * 32, 512)
@@ -762,7 +762,7 @@ class EVM(Eventful):
             elif consts.oog in (0, 1):
                 if not(consts.oog == 1 and self.current_instructoin.is_jump()):
                     #explore both options / fork
-                    #FIXME this will reenter here and generate redundant queries 
+                    #FIXME this will reenter here and generate redundant queries
                     enough_gas_solutions = solver.get_all_values(self.constraints, Operators.UGT(self._gas, fee))
                     if len(enough_gas_solutions) == 2:
                         #if gas can be both enough an insuficient, fork
@@ -780,7 +780,7 @@ class EVM(Eventful):
             elif consts.oog == 2:
                 if issymbolic(self._gas):
                     def setstate(state, value):
-                        state.platform.current._gas=value
+                        state.platform.current._gas = value
                     raise Concretize("Concretize gas",
                                      expression=self._gas,
                                      setstate=setstate,
