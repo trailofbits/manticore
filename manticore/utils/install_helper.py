@@ -36,8 +36,7 @@ def _has_deps(deps):
     for pkg, import_name in REQUIREMENTS_TO_IMPORTS[deps].items():
         try:
             __import__(import_name)
-        except ImportError as e:
-            print(f"Failed to import {e!s}")
+        except ImportError:
             return False
 
     return True
