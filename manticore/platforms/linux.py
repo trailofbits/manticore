@@ -1450,7 +1450,7 @@ class Linux(Platform):
             f = self._sys_open_get_file(filename, flags)
             logger.debug(f"Opening file {filename} for real fd {f.fileno()}")
         except IOError as e:
-            logger.warning("Could not open file {filename}. Reason: {e!s}")
+            logger.warning(f"Could not open file {filename}. Reason: {e!s}")
             return -e.errno if e.errno is not None else -errno.EINVAL
 
         return self._open(f)
