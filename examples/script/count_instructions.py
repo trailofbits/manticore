@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import sys
-from manticore import Manticore
+from manticore.native import Manticore
 
 '''
 Count the number of emulated instructions.

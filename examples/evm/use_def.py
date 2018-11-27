@@ -1,5 +1,6 @@
-from manticore.ethereum import Plugin
-from ethereum.manticore import ManticoreEVM
+from manticore.core.plugin import Plugin
+
+from manticore.ethereum import ManticoreEVM
 
 ################ Script #######################
 

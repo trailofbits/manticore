@@ -1,4 +1,4 @@
-from ethereum.manticore import ManticoreEVM
+from manticore.ethereum import ManticoreEVM
 
 ################ Script #######################
 

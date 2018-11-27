@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import sys
-from manticore import Manticore, issymbolic
+from manticore.native import Manticore, issymbolic
 
 '''
 Replaces a variable that controls program flow with a tainted symbolic value. This

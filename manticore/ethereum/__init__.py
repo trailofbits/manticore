@@ -13,3 +13,4 @@ from .abi import ABI
 from .solidity import SolidityMetadata
 
 from ..exceptions import NoAliveStates, EthereumError
+from ..platforms import evm
