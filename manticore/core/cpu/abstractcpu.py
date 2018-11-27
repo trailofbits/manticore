@@ -1,7 +1,7 @@
 import inspect
 import logging
 import io
-import string
+import struct
 
 from functools import wraps
 from itertools import islice
@@ -16,9 +16,6 @@ from ...utils.emulate import UnicornEmulator
 from ...utils.event import Eventful
 from ..smtlib import visitors
 
-# tmp imports
-import struct
-from ..smtlib import *
 
 logger = logging.getLogger(__name__)
 register_logger = logging.getLogger(f'{__name__}.registers')
@@ -587,7 +584,7 @@ class Cpu(Eventful):
         '''
         if size is None:
             size = self.address_bit_size
-        # assert size in SANE_SIZES
+        assert size in SANE_SIZES
         self._publish('will_write_memory', where, expression, size)
 
         data = [Operators.CHR(Operators.EXTRACT(expression, offset, 8)) for offset in range(0, size, 8)]
@@ -607,7 +604,7 @@ class Cpu(Eventful):
         '''
         if size is None:
             size = self.address_bit_size
-        # assert size in SANE_SIZES
+        assert size in SANE_SIZES
         self._publish('will_read_memory', where, size)
 
         data = self._memory.read(where, size // 8, force)
