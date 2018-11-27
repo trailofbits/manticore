@@ -24,12 +24,10 @@ from manticore.ethereum.solidity import SolidityMetadata
 from manticore.ethereum.state import State
 from manticore.exceptions import EthereumError, DependencyError, NoAliveStates
 from manticore.platforms import evm
-from manticore.utils import config, log
+from manticore.utils import config
 from manticore.utils.helpers import PickleSerializer, issymbolic
 
 logger = logging.getLogger(__name__)
-
-log.init_logging()
 
 
 def flagged(flag):

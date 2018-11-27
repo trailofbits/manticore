@@ -24,8 +24,6 @@ def main():
     """
     Dispatches execution into one of Manticore's engines: evm or native.
     """
-    log.init_logging()
-
     args = parse_arguments()
 
     if args.no_colors:

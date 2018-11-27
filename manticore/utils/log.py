@@ -1,7 +1,6 @@
 import logging
 import sys
 import types
-from logging import DEBUG, WARNING, ERROR, INFO
 
 
 class ContextFilter(logging.Filter):
@@ -54,8 +53,10 @@ class ContextFilter(logging.Filter):
 manticore_verbosity = 0
 all_loggers = []
 
+
 def disable_colors():
     ContextFilter.colors_disabled = True
+
 
 def init_logging(default_level=logging.WARNING):
     global all_loggers
@@ -96,7 +97,8 @@ def set_verbosity(setting):
         [
             ('manticore.manticore', logging.INFO),
             ('manticore.main', logging.INFO),
-            ('manticore.ethereum', logging.INFO),
+            ('manticore.ethereum.*', logging.INFO),
+            ('manticore.native.*', logging.INFO)
         ],
         # 2 (-v)
         [
