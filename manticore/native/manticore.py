@@ -2,6 +2,8 @@ import logging
 
 import elftools
 import os
+from elftools.elf.elffile import ELFFile
+from elftools.elf.sections import SymbolTableSection
 
 from manticore.core.manticore import ManticoreBase
 from manticore import STDIN_INPUT_DEFAULT_SIZE
@@ -52,8 +54,6 @@ class Manticore(ManticoreBase):
         :return: Manticore instance, initialized with a Linux State
         :rtype: Manticore
         """
-        from manticore.native.manticore import _make_linux
-
         try:
             return cls(_make_linux(path, argv, envp, entry_symbol, symbolic_files, concrete_start, stdin_size), **kwargs)
         except elftools.common.exceptions.ELFError:
@@ -74,6 +74,33 @@ class Manticore(ManticoreBase):
             return cls(_make_decree(path, concrete_start), **kwargs)
         except KeyError:  # FIXME(mark) magic parsing for DECREE should raise better error
             raise Exception(f'Invalid binary: {path}')
+
+    #############################################################################
+    #############################################################################
+    #############################################################################
+    # Move all the following elsewhere Not all manticores have this
+    def _get_symbol_address(self, symbol):
+        '''
+        Return the address of |symbol| within the binary
+        '''
+
+        # XXX(yan) This is a bit obtuse; once PE support is updated this should
+        # be refactored out
+        if self._binary_type == 'ELF':
+            self._binary_obj = ELFFile(open(self._binary, 'rb'))
+
+        if self._binary_obj is None:
+            return NotImplementedError("Symbols aren't supported")
+
+        for section in self._binary_obj.iter_sections():
+            if not isinstance(section, SymbolTableSection):
+                continue
+
+            symbols = section.get_symbol_by_name(symbol)
+            if not symbols:
+                continue
+
+            return symbols[0].entry['st_value']
 
 
 def _make_initial_state(binary_path, **kwargs):

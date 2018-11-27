@@ -1,11 +1,20 @@
 import subprocess
 import sys
+import pkg_resources
 
-# shall be set from manticore/__init__.py
-import functools
 
-_has_evm = False
-_has_native = False
+REQUIREMENTS_TO_IMPORTS = {
+    'evm': {
+        'pysha3': 'sha3',
+        'pyevmasm': 'pyevmasm',
+        'ply': 'ply'
+    },
+    'native': {
+        'capstone': 'capstone',
+        'pyelftools': 'elftools',
+        'unicorn': 'unicorn'
+    }
+}
 
 
 def ensure_any_deps():
@@ -13,26 +22,29 @@ def ensure_any_deps():
         _propose_install_deps()
 
 
-def ensure_evm(func):
-    @functools.wraps(func)
-    def _decorator(*a, **kw):
-        if not _has_evm:
-            _propose_install_deps()
-
-        return func(*a, **kw)
-
-    return _decorator
+def ensure_evm_deps():
+    if not _has_evm:
+        _propose_install_deps()
 
 
-def ensure_native(func):
-    @functools.wraps(func)
-    def _decorator(*a, **kw):
-        if not _has_native:
-            _propose_install_deps()
+def ensure_native_deps():
+    if not _has_native:
+        _propose_install_deps()
 
-        return func(*a, **kw)
 
-    return _decorator
+def _has_deps(deps):
+    for pkg, import_name in REQUIREMENTS_TO_IMPORTS[deps].items():
+        try:
+            __import__(import_name)
+        except ImportError as e:
+            print(f"Failed to import {e!s}")
+            return False
+
+    return True
+
+
+_has_native = _has_deps('native')
+_has_evm = _has_deps('evm')
 
 
 def _propose_install_deps():
@@ -41,7 +53,7 @@ def _propose_install_deps():
 [*]
 [*] Choose your option:
 [*] 1) get more detailed information
-[*] 2) install Ethereum vm targets dependencies{' (installed)' if _has_evm else ''}
+[*] 2) install Ethereum vm target dependencies{' (installed)' if _has_evm else ''}
 [*] 3) install native targets (x86, x86-64, armv7, decree) dependencies{' (installed)' if _has_native else ''}
 [*] 4) install both native and evm targets dependencies
 [*] 5) exit
@@ -53,11 +65,11 @@ def _propose_install_deps():
     if choice == '1':
         print('''
 Since Manticore supports different targets and they have different dependencies
-we decided to not install all of them.
+we decided not to install all of them when `pip install manticore` is invoked.
 
-So we use `extra_requires` in `setup.py` so people can specify what they
-want to install, e.g.:
-- pip install manticore[evm]        - will install evm targets dependencies
+Instead, we use `extra_requires` in `setup.py` so it is possible to specify
+the dependencies to be installed with pip, e.g.:
+- pip install manticore[evm]        - will install evm target dependencies
 - pip install manticore[native]     - will install native targets (x86, x86-64, armv7, decree) dependencies
 - pip install manticore[native,evm] - will install both native and evm targets dependencies
 
@@ -68,7 +80,6 @@ Also, this message might reappear if you try to play with the target you don't h
 
     elif choice == '5':
         print('Nothing was installed. Bye!')
-        sys.exit(0)
     else:
 
         choice2depname = {
@@ -78,7 +89,10 @@ Also, this message might reappear if you try to play with the target you don't h
         }
         deps = choice2depname[choice]
 
-        cmd = [sys.executable, '-m', 'pip', 'install', f'.[{deps}]']
+        # We need to use (proper) `manticore==<version>` here
+        version = pkg_resources.get_distribution('manticore').version
+
+        cmd = [sys.executable, '-m', 'pip', 'install', f'manticore[{deps}]=={version}']
 
         print(f'[*] Launching: {cmd}')
 
@@ -92,3 +106,5 @@ Also, this message might reappear if you try to play with the target you don't h
             )
 
         sys.exit(result)
+
+    sys.exit(0)

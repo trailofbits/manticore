@@ -9,12 +9,11 @@ from multiprocessing import Process
 from threading import Timer
 
 import functools
-import os
 import types
 
 from manticore.core.executor import Executor
 from manticore.core.plugin import Plugin
-from manticore.core.smtlib import solver, ConstraintSet
+from manticore.core.smtlib import solver
 from manticore.core.state import TerminateState, StateBase
 from manticore.core.workspace import ManticoreOutput
 from manticore.utils import config
@@ -22,31 +21,6 @@ from manticore.utils import log
 from manticore.utils.event import Eventful
 from manticore.utils.helpers import issymbolic
 from manticore.utils.nointerrupt import WithKeyboardInterruptAs
-from manticore.utils import install_helper
-from manticore import STDIN_INPUT_DEFAULT_SIZE
-
-try:
-    import elftools
-    from elftools.elf.elffile import ELFFile
-    from elftools.elf.sections import SymbolTableSection
-
-    from manticore.platforms import linux, decree
-    install_helper._has_native = True
-except ImportError as e:
-    print("DEBUG %s" % e)
-    pass
-
-try:
-    from manticore.platforms import evm
-    install_helper._has_evm = True
-except ImportError as e:
-    print("DEBUG %s" % e)
-    pass
-
-print(install_helper._has_evm, install_helper._has_native)
-
-# If we don't have any dependencies, lets propose user to install one
-install_helper.ensure_any_deps()
 
 logger = logging.getLogger(__name__)
 log.init_logging()
@@ -54,13 +28,7 @@ log.init_logging()
 
 class ManticoreBase(Eventful):
     '''
-    The central analysis object.
-
-    This should generally not be invoked directly; the various
-    class method constructors should be preferred:
-    :meth:`~manticore.Manticore.linux`,
-    :meth:`~manticore.Manticore.decree`,
-    :meth:`~manticore.Manticore.evm`.
+    Base class for the central analysis object.
 
     :param path_or_state: Path to a binary to analyze (**deprecated**) or `State` object
     :type path_or_state: str or State
@@ -72,6 +40,13 @@ class ManticoreBase(Eventful):
     _published_events = {'start_run', 'finish_run'}
 
     def __init__(self, initial_state, workspace_url=None, policy='random', **kwargs):
+        """
+
+        :param initial_state: State to start from.
+        :param workspace_url: workspace folder name
+        :param policy: scheduling policy
+        :param kwargs: other kwargs, e.g.
+        """
         super().__init__()
 
         if isinstance(workspace_url, str):
@@ -162,7 +137,11 @@ class ManticoreBase(Eventful):
         plugin.manticore = None
 
     def __del__(self):
-        plugins = list(self.plugins)
+        # If an exception is thrown in a child/inherited class's __init__ before calling super().__init__
+        # the self.plugins is not assigned
+        # because of that, we need to use a `getattr` here, otherwise we might get two exceptions
+        # (and the one from here is irrelevant and confusing)
+        plugins = list(getattr(self, 'plugins', []))
         for plugin in plugins:
             self.unregister_plugin(plugin)
 
@@ -369,7 +348,7 @@ class ManticoreBase(Eventful):
         # Imported straight from __main__.py; this will be re-written once the new
         # event code is in place.
         import importlib
-        from . import platforms
+        from manticore import platforms
 
         with open(path, 'r') as fnames:
             for line in fnames.readlines():
@@ -526,33 +505,6 @@ class ManticoreBase(Eventful):
     def is_shutdown(self):
         ''' Returns True if shutdown was requested '''
         return self._executor.is_shutdown()
-
-    #############################################################################
-    #############################################################################
-    #############################################################################
-    # Move all the following elsewhere Not all manticores have this
-    def _get_symbol_address(self, symbol):
-        '''
-        Return the address of |symbol| within the binary
-        '''
-
-        # XXX(yan) This is a bit obtuse; once PE support is updated this should
-        # be refactored out
-        if self._binary_type == 'ELF':
-            self._binary_obj = ELFFile(open(self._binary, 'rb'))
-
-        if self._binary_obj is None:
-            return NotImplementedError("Symbols aren't supported")
-
-        for section in self._binary_obj.iter_sections():
-            if not isinstance(section, SymbolTableSection):
-                continue
-
-            symbols = section.get_symbol_by_name(symbol)
-            if not symbols:
-                continue
-
-            return symbols[0].entry['st_value']
 
     @property
     def coverage_file(self):
