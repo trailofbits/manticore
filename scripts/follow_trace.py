@@ -11,8 +11,9 @@ import time
 import argparse
 import itertools
 
-from manticore import Manticore, issymbolic
+from manticore.native import Manticore, issymbolic
 from manticore.core.plugin import ExtendedTracer, Plugin
+
 
 def _partition(pred, iterable):
     t1, t2 = itertools.tee(iterable)
@@ -113,6 +114,7 @@ def main():
     m2.verbosity(args.verbose)
     m2.register_plugin(f)
     m2.run()
+
 
 if __name__=='__main__':
     main()

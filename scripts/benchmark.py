@@ -1,10 +1,12 @@
 from __future__ import print_function
-from manticore import Manticore
+from manticore.native import Manticore
 from sys import argv, exit
+
 
 def display(results):
     for line in str(results).split('\n'):
         print("  " + line)
+
 
 def benchmark(program):
     print(f"[*] Benchmarking program \"{program}\"")
@@ -19,6 +21,7 @@ def benchmark(program):
 
     display(results)
     return results
+
 
 if __name__ == "__main__":
     args = argv[1:]
