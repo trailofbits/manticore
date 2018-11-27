@@ -240,7 +240,7 @@ def SMOD(a, b):
 def SREM(a, b):
     if isinstance(a, BitVec):
         return a.srem(b)
-    elif isinstance(a, BitVec):
+    elif isinstance(b, BitVec):
         return b.rsrem(a)
     return a % b
 
@@ -248,7 +248,7 @@ def SREM(a, b):
 def UREM(a, b):
     if isinstance(a, BitVec):
         return a.urem(b)
-    elif isinstance(a, BitVec):
+    elif isinstance(b, BitVec):
         return b.rurem(a)
     return a % b
 
