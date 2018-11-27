@@ -1,16 +1,13 @@
 
 import unittest
-import sys
+
+import os
 import shutil
 import tempfile
-import os
-import hashlib
-import subprocess
-import collections
-import time
 
-from manticore import Manticore, issymbolic
 from manticore.core.smtlib import BitVecVariable
+from manticore.native import Manticore, issymbolic
+
 
 class ManticoreDriverTest(unittest.TestCase):
     _multiprocess_can_split_ = True

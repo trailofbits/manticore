@@ -3,7 +3,7 @@ import unittest
 import functools
 from manticore.core.cpu.x86 import *
 from manticore.core.smtlib import Operators, Expression
-from native.memory import *
+from manticore.native.memory import *
 
 
 def skipIfNotImplemented(f):

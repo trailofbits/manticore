@@ -2,8 +2,7 @@
 import struct
 import unittest
 from manticore.core.cpu.x86 import *
-from manticore.core.smtlib import Operators
-from native.memory import *
+from manticore.native.memory import *
 from manticore.core.smtlib import BitVecOr
 from tests import mockmem
 from functools import reduce

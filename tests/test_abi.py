@@ -3,12 +3,13 @@
 
 import unittest
 
-from manticore import variadic
 from manticore.core.cpu.abstractcpu import ConcretizeArgument, ConcretizeRegister, ConcretizeMemory
 from manticore.core.cpu.arm import Armv7Cpu, Armv7LinuxSyscallAbi, Armv7CdeclAbi
 from manticore.core.cpu.x86 import I386Cpu, AMD64Cpu, I386LinuxSyscallAbi, I386StdcallAbi, I386CdeclAbi, AMD64LinuxSyscallAbi, SystemVAbi
-from native.memory import SMemory32, SMemory64
+from manticore.native.memory import SMemory32, SMemory64
 from manticore.core.smtlib import ConstraintSet, Operators
+from manticore.native.models import variadic
+
 
 class ABITest(unittest.TestCase):
     _multiprocess_can_split_ = True

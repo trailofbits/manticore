@@ -8,7 +8,7 @@ import shutil
 import tempfile
 
 from manticore.binary import Elf, CGCElf
-from native.mappings import mmap, munmap
+from manticore.native.mappings import mmap, munmap
 
 #logging.basicConfig(filename = "test.log",
 #                format = "%(asctime)s: %(name)s:%(levelname)s: %(message)s",

@@ -11,3 +11,5 @@ from .detectors import Detector, DetectEnvInstruction, DetectExternalCallAndLeak
 from .account import EVMAccount, EVMContract
 from .abi import ABI
 from .solidity import SolidityMetadata
+
+from ..exceptions import NoAliveStates, EthereumError

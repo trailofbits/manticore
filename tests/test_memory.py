@@ -1,14 +1,19 @@
-from io import BytesIO
-import unittest
-from unittest import mock
-import tempfile, os
-import gc, pickle
 import fcntl
+import gc
+import pickle
 import resource
 import sys
-from native.memory import *
+import unittest
+from unittest import mock
+
+import os
+import tempfile
+from io import BytesIO
+
 from manticore.core.smtlib import Expression
+from manticore.native.memory import *
 from manticore.utils.helpers import issymbolic
+
 
 def isconcrete(value):
     return not issymbolic(value)

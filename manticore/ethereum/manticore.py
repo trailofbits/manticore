@@ -16,7 +16,7 @@ import sha3
 import tempfile
 
 from manticore.core.manticore import ManticoreBase
-from manticore.core.smtlib import ConstraintSet, Array, ArrayProxy, BitVec
+from manticore.core.smtlib import ConstraintSet, Array, ArrayProxy, BitVec, Operators
 from manticore.core.state import TerminateState, AbandonState
 from manticore.ethereum.account import EVMContract, EVMAccount, ABI
 from manticore.ethereum.detectors import Detector

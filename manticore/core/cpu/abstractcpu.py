@@ -319,7 +319,7 @@ class Abi(object):
         argument_iter = map(resolve_argument, descriptors)
 
         # TODO(mark) this is here as a hack to avoid circular import issues
-        from ...models import isvariadic
+        from manticore.native.models import isvariadic
 
         if isvariadic(model):
             arguments = prefix_args + (argument_iter,)

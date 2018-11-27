@@ -1,11 +1,11 @@
 """
-Models here are intended to be passed to :meth:`~manticore.core.state.State.invoke_model`, not invoked directly.
+Models here are intended to be passed to :meth:`~manticore.native.state.State.invoke_model`, not invoked directly.
 """
 
-from .core.cpu.abstractcpu import ConcretizeArgument
-from .utils.helpers import issymbolic
-from .core.smtlib.solver import solver
-from .core.smtlib.operators import ITEBV, ZEXTEND
+from manticore.core.cpu.abstractcpu import ConcretizeArgument
+from manticore.utils.helpers import issymbolic
+from manticore.core.smtlib.solver import solver
+from manticore.core.smtlib.operators import ITEBV, ZEXTEND
 
 
 VARIADIC_FUNC_ATTR = '_variadic'
@@ -23,7 +23,7 @@ def isvariadic(model):
 def variadic(func):
     """
     A decorator used to mark a function model as variadic. This function should
-    take two parameters: a :class:`~manticore.core.state.State` object, and
+    take two parameters: a :class:`~manticore.native.state.State` object, and
     a generator object for the arguments.
 
     :param callable func: Function model

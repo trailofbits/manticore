@@ -3,6 +3,7 @@ import unittest
 from manticore.core.smtlib import Bool, BitVecConstant
 from manticore.core.cpu.register import Register
 
+
 class RegisterTest(unittest.TestCase):
     _multiprocess_can_split_ = True
     def test_rd(self):

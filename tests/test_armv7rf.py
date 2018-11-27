@@ -1,4 +1,3 @@
-import sys
 import unittest
 
 from manticore.core.cpu.arm import Armv7RegisterFile as RF
