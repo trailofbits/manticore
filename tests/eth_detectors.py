@@ -10,9 +10,11 @@ import shutil
 from eth_general import make_mock_evm_state
 
 from manticore.core.smtlib import operators
-from manticore.ethereum import ManticoreEVM, DetectIntegerOverflow, DetectUnusedRetVal, DetectSelfdestruct, \
-    LoopDepthLimiter, DetectDelegatecall, \
+from manticore.ethereum import DetectIntegerOverflow, DetectUnusedRetVal, DetectSelfdestruct, \
+    DetectDelegatecall, \
     DetectExternalCallAndLeak, DetectEnvInstruction, DetectRaceCondition
+from ethereum.manticore import ManticoreEVM
+from ethereum.plugins import LoopDepthLimiter
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 

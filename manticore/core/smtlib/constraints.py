@@ -3,7 +3,7 @@ import sys
 
 from manticore.utils.helpers import PickleSerializer
 from .expression import BitVecVariable, BoolVariable, ArrayVariable, Array, Bool, BitVec, BoolConstant, ArrayProxy, BoolEq, Variable, Constant
-from .visitors import GetDeclarations, TranslatorSmtlib, get_variables, simplify, replace, translate_to_smtlib
+from .visitors import GetDeclarations, TranslatorSmtlib, get_variables, simplify, replace
 import logging
 
 logger = logging.getLogger(__name__)

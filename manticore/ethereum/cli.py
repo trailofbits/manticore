@@ -1,7 +1,9 @@
-from manticore.ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, DetectUninitializedStorage, \
-    DetectUninitializedMemory, FilterFunctions, DetectReentrancySimple, DetectReentrancyAdvanced, \
-    DetectUnusedRetVal, DetectSelfdestruct, LoopDepthLimiter, DetectDelegatecall, \
-    DetectExternalCallAndLeak, DetectEnvInstruction, VerboseTrace, DetectRaceCondition
+from manticore.ethereum.detectors import DetectInvalid, DetectIntegerOverflow, DetectUninitializedStorage, \
+    DetectUninitializedMemory, DetectReentrancySimple, DetectReentrancyAdvanced, \
+    DetectUnusedRetVal, DetectSelfdestruct, DetectDelegatecall, \
+    DetectExternalCallAndLeak, DetectEnvInstruction, DetectRaceCondition
+from manticore.ethereum.manticore import ManticoreEVM
+from manticore.ethereum.plugins import FilterFunctions, LoopDepthLimiter, VerboseTrace
 
 
 def main(args, logger):
@@ -37,6 +39,7 @@ def main(args, logger):
 
     if args.limit_loops:
         m.register_plugin(LoopDepthLimiter())
+
     if args.avoid_constant:
         # avoid all human level tx that has no effect on the storage
         filter_nohuman_constants = FilterFunctions(regexp=r".*", depth='human', mutability='constant', include=False)
@@ -51,3 +54,4 @@ def main(args, logger):
 
     if not args.no_testcases:
         m.finalize()
+

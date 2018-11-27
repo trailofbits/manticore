@@ -5,8 +5,8 @@ import argparse
 import sys
 
 import logging
-
-from manticore.core.manticore import STDIN_INPUT_DEFAULT_SIZE
+from . import STDIN_INPUT_DEFAULT_SIZE
+# from manticore import STDIN_INPUT_DEFAULT_SIZE
 from .utils import config, log
 
 consts = config.get_group('main')

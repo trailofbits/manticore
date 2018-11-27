@@ -6,7 +6,6 @@ from collections import OrderedDict
 import copy
 import re
 
-from ..core.smtlib import Expression, BitVecConstant
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +19,7 @@ def issymbolic(value):
     :return: whether `value` is symbolic
     :rtype: bool
     '''
+    from manticore.core.smtlib import Expression  # prevent circular imports
     return isinstance(value, Expression)
 
 
@@ -66,6 +66,8 @@ def taint_with(arg, taint, value_bits=256, index_bits=256):
     :param arg: a value or Expression
     :param taint: a regular expression matching a taint value (eg. 'IMPORTANT.*'). If None, this function checks for any taint value.
     '''
+    from manticore.core.smtlib import BitVecConstant  # prevent circular imports
+
     tainted_fset = frozenset((taint,))
 
     if not issymbolic(arg):

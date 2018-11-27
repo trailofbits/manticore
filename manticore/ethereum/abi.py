@@ -5,7 +5,7 @@ import re
 import sha3
 
 from . import abitypes
-from .. import issymbolic
+from ..utils.helpers import issymbolic
 from ..core.smtlib import Array, Operators, BitVec, ArrayVariable, ArrayProxy
 from ..exceptions import EthereumError
 

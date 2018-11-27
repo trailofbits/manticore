@@ -1,4 +1,4 @@
-from manticore.core.manticore import Manticore
+from .manticore import Manticore
 from manticore.core.plugin import InstructionCounter, Visited, Tracer, RecordSymbolicBranches
 
 

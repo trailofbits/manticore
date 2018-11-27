@@ -1,4 +1,4 @@
-from manticore.ethereum import ManticoreEVM
+from ethereum.manticore import ManticoreEVM
 
 m = ManticoreEVM()
 m.verbosity(2)

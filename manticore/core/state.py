@@ -3,11 +3,7 @@ import logging
 
 from .smtlib import solver, Bool
 from ..utils.helpers import issymbolic
-
-#import exceptions
-from .cpu.abstractcpu import ConcretizeRegister
-from manticore.native.memory import ConcretizeMemory, MemoryException
-from ..platforms.platform import *
+from ..utils.event import Eventful
 
 logger = logging.getLogger(__name__)
 
@@ -70,15 +66,14 @@ class ForkState(Concretize):
         super().__init__(message, expression, policy='ALL', **kwargs)
 
 
-class State(Eventful):
-
-    '''
+class BaseState(Eventful):
+    """
     Representation of a unique program state/path.
 
     :param ConstraintSet constraints: Initial constraints
     :param Platform platform: Initial operating system state
     :ivar dict context: Local context for arbitrary data storage
-    '''
+    """
 
     _published_events = {'generate_testcase'}
 
@@ -122,7 +117,7 @@ class State(Eventful):
     def __enter__(self):
         assert self._child is None
         self._platform.constraints = None
-        new_state = State(self._constraints.__enter__(), self._platform)
+        new_state = self.__class__(self._constraints.__enter__(), self._platform)
         self.platform.constraints = new_state.constraints
         new_state._input_symbols = list(self._input_symbols)
         new_state._context = copy.copy(self._context)
@@ -138,40 +133,6 @@ class State(Eventful):
         self._constraints.__exit__(ty, value, traceback)
         self._child = None
         self.platform.constraints = self.constraints
-
-    def execute(self):
-        try:
-            result = self._platform.execute()
-
-        # Instead of State importing SymbolicRegisterException and SymbolicMemoryException
-        # from cpu/memory shouldn't we import Concretize from linux, cpu, memory ??
-        # We are forcing State to have abstractcpu
-        except ConcretizeRegister as e:
-            expression = self.cpu.read_register(e.reg_name)
-
-            def setstate(state, value):
-                state.cpu.write_register(setstate.e.reg_name, value)
-            setstate.e = e
-            raise Concretize(str(e),
-                             expression=expression,
-                             setstate=setstate,
-                             policy=e.policy)
-        except ConcretizeMemory as e:
-            expression = self.cpu.read_int(e.address, e.size)
-
-            def setstate(state, value):
-                state.cpu.write_int(setstate.e.address, value, setstate.e.size)
-            setstate.e = e
-            raise Concretize(str(e),
-                             expression=expression,
-                             setstate=setstate,
-                             policy=e.policy)
-        except MemoryException as e:
-            raise TerminateState(str(e), testcase=True)
-
-        # Remove when code gets stable?
-        assert self.platform.constraints is self.constraints
-        return result
 
     @property
     def input_symbols(self):

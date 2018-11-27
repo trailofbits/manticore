@@ -12,7 +12,7 @@ from multiprocessing.managers import SyncManager
 from manticore.utils import config
 from manticore.utils.helpers import PickleSerializer
 from .smtlib import solver
-from .state import State
+from .state import BaseState
 
 logger = logging.getLogger(__name__)
 
@@ -125,7 +125,7 @@ class Store(object):
         """
         Save a state to storage.
 
-        :param manticore.core.State state:
+        :param manticore.core.BaseState state:
         :param str key:
         :return:
         """
@@ -137,7 +137,7 @@ class Store(object):
         Load a state from storage.
 
         :param key: key that identifies state
-        :rtype: manticore.core.State
+        :rtype: manticore.core.BaseState
         """
         with self.load_stream(key, binary=True) as f:
             state = self._serializer.deserialize(f)
@@ -373,7 +373,7 @@ class Workspace(object):
         :return: New state id
         :rtype: int
         """
-        assert isinstance(state, State)
+        assert isinstance(state, BaseState)
         if state_id is None:
             state_id = self._get_id()
         else:
