@@ -166,22 +166,6 @@ class ManticoreBase(Eventful):
         for plugin in plugins:
             self.unregister_plugin(plugin)
 
-    @classmethod
-    @install_helper.ensure_evm
-    def evm(cls, **kwargs):
-        """
-        Constructor for Ethereum virtual machine bytecode analysis.
-
-        :param kwargs: Forwarded to the Manticore constructor
-        :return: Manticore instance, initialized with a EVM State
-        :rtype: Manticore
-        """
-        # Make the constraint store
-        constraints = ConstraintSet()
-        # make the ethereum world state
-        world = evm.EVMWorld(constraints)
-        return cls(State(constraints, world), **kwargs)
-
     @property
     def initial_state(self):
         return self._initial_state
