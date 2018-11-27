@@ -14,7 +14,7 @@ from manticore.ethereum import DetectIntegerOverflow, DetectUnusedRetVal, Detect
     DetectExternalCallAndLeak, DetectEnvInstruction, DetectRaceCondition
 from manticore.ethereum.manticore import ManticoreEVM
 from manticore.ethereum.plugins import LoopDepthLimiter
-from .eth_general import make_mock_evm_state
+from eth_general import make_mock_evm_state
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 

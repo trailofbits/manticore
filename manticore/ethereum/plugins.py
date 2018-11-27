@@ -3,7 +3,7 @@ from functools import reduce
 import re
 
 from manticore.core.plugin import Plugin
-from manticore.core.smtlib import operators
+from manticore.core.smtlib import Operators
 
 
 class FilterFunctions(Plugin):

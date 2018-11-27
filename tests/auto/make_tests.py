@@ -3,7 +3,10 @@ import sys
 import random
 
 tests = []
-tests_str = file(sys.argv[1], 'r').read().split('\n')
+
+with open(sys.argv[1], 'r') as f:
+    tests_str = f.read().split('\n')
+
 for t_str in tests_str:
     try:
         tests.append(eval(t_str))
@@ -33,7 +36,7 @@ import unittest
 import functools
 from manticore.core.cpu.x86 import *
 from manticore.core.smtlib import Operators
-from manticore.core.memory import *
+from manticore.native.memory import *
 
 
 def skipIfNotImplemented(f):

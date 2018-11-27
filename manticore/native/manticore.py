@@ -9,7 +9,6 @@ from manticore.core.manticore import ManticoreBase
 from manticore import STDIN_INPUT_DEFAULT_SIZE
 
 from manticore.core.smtlib import ConstraintSet
-from manticore.platforms import decree, linux
 from manticore.utils import log
 from manticore.utils.helpers import issymbolic
 from .state import State
@@ -132,6 +131,8 @@ def _make_initial_state(binary_path, **kwargs):
 
 
 def _make_decree(program, concrete_start='', **kwargs):
+    from manticore.platforms import decree
+
     constraints = ConstraintSet()
     platform = decree.SDecree(constraints, program)
     initial_state = State(constraints, platform)
@@ -146,6 +147,8 @@ def _make_decree(program, concrete_start='', **kwargs):
 
 # @install_helper.ensure_native
 def _make_linux(program, argv=None, env=None, entry_symbol=None, symbolic_files=None, concrete_start='', stdin_size=STDIN_INPUT_DEFAULT_SIZE):
+    from manticore.platforms import linux
+
     env = {} if env is None else env
     argv = [] if argv is None else argv
     env = [f'{k}={v}' for k, v in env.items()]
