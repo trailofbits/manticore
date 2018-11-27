@@ -619,6 +619,9 @@ class EVM(Eventful):
         super().__setstate__(state)
 
     def _get_memfee(self, address, size=1):
+        if not issymbolic(size) and size == 0:
+            return 0
+ 
         address = self.safe_add(address, size)
         allocated = self.allocated
         GMEMORY = 3
@@ -630,7 +633,7 @@ class EVM(Eventful):
         new_totalfee = self.safe_mul(new_size, GMEMORY) + Operators.UDIV(self.safe_mul(new_size, new_size), GQUADRATICMEMDENOM)
         memfee = new_totalfee - old_totalfee
         flag = Operators.UGT(new_totalfee, old_totalfee)
-        return Operators.ITEBV(512, flag, memfee, 0)
+        return Operators.ITEBV(512, size==0, 0, Operators.ITEBV(512, flag, memfee, 0))
 
     def _allocate(self, address):
         address_c = Operators.ZEXTEND(Operators.UDIV(self.safe_add(address, 31), 32) * 32, 512)
