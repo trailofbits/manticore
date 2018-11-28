@@ -5,16 +5,16 @@ import os
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 
-from manticore.core.manticore import ManticoreBase
-from manticore import STDIN_INPUT_DEFAULT_SIZE
-
-from manticore.core.smtlib import ConstraintSet
-from manticore.utils import log
-from manticore.utils.helpers import issymbolic
 from .state import State
+from ..core.manticore import ManticoreBase
+from ..core.smtlib import ConstraintSet
+from ..utils import log, config
+from ..utils.helpers import issymbolic
 
 logger = logging.getLogger(__name__)
 log.init_logging()
+
+consts = config.get_group('main')
 
 
 class Manticore(ManticoreBase):
@@ -34,7 +34,7 @@ class Manticore(ManticoreBase):
         super().__init__(initial_state, workspace_url=workspace_url, policy=policy, **kwargs)
 
     @classmethod
-    def linux(cls, path, argv=None, envp=None, entry_symbol=None, symbolic_files=None, concrete_start='', stdin_size=STDIN_INPUT_DEFAULT_SIZE, **kwargs):
+    def linux(cls, path, argv=None, envp=None, entry_symbol=None, symbolic_files=None, concrete_start='', stdin_size=consts.stdin_size, **kwargs):
         """
         Constructor for Linux binary analysis.
 
@@ -146,7 +146,7 @@ def _make_decree(program, concrete_start='', **kwargs):
 
 
 # @install_helper.ensure_native
-def _make_linux(program, argv=None, env=None, entry_symbol=None, symbolic_files=None, concrete_start='', stdin_size=STDIN_INPUT_DEFAULT_SIZE):
+def _make_linux(program, argv=None, env=None, entry_symbol=None, symbolic_files=None, concrete_start='', stdin_size=consts.stdin_size):
     from manticore.platforms import linux
 
     env = {} if env is None else env

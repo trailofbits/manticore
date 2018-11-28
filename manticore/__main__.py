@@ -5,7 +5,6 @@ import argparse
 import logging
 import sys
 
-from . import STDIN_INPUT_DEFAULT_SIZE
 from .utils import config, log
 
 consts = config.get_group('main')
@@ -13,6 +12,8 @@ consts.add('recursionlimit', default=10000,
            description="Value to set for Python recursion limit")
 consts.add('timeout', default=0,
            description='Timeout, in seconds, for Manticore invocation')
+consts.add('stdin_size', default=256,
+           description='Maximum symbolic stdin size')
 
 # XXX(yan): This would normally be __name__, but then logger output will be pre-
 # pended by 'm.__main__: ', which is not very pleasing. hard-coding to 'main'
@@ -81,7 +82,7 @@ def parse_arguments():
                         help='Show program version information')
     parser.add_argument('--config', type=str,
                         help='Manticore config file (.yml) to use. (default config file pattern is: ./[.]m[anti]core.yml)')
-    parser.add_argument('--stdin_size', type=int, default=STDIN_INPUT_DEFAULT_SIZE,
+    parser.add_argument('--stdin_size', type=int, default=consts.stdin_size,
                         help='Control the maximum symbolic stdin size')
 
     bin_flags = parser.add_argument_group('Binary flags')
