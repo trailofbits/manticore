@@ -156,7 +156,7 @@ class IntegrationTest(unittest.TestCase):
         self.assertIn(b'Generated testcase No. 0 - Program finished with exit status: 0', output_lines[2])
         self.assertIn(b'Generated testcase No. 1 - Program finished with exit status: 0', output_lines[3])
         self.assertIn(b'Results in ', output_lines[4])
-        self.assertIn(b'Total time ', output_lines[4])
+        self.assertIn(b'Total time ', output_lines[5])
 
     @unittest.skip('sloowww')
     def testArgumentsAssertions(self):
