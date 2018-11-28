@@ -98,7 +98,8 @@ def set_verbosity(setting):
             ('manticore.manticore', logging.INFO),
             ('manticore.main', logging.INFO),
             ('manticore.ethereum.*', logging.INFO),
-            ('manticore.native.*', logging.INFO)
+            ('manticore.native.*', logging.INFO),
+            ('manticore.core.manticore', logging.INFO)
         ],
         # 2 (-v)
         [
@@ -120,6 +121,8 @@ def set_verbosity(setting):
         # 5 (-vvvv)
         [
             ('manticore.manticore', logging.DEBUG),
+            ('manticore.ethereum.*', logging.DEBUG),
+            ('manticore.native.*', logging.DEBUG),
             ('manticore.core.smtlib', logging.DEBUG),
             ('manticore.core.smtlib.*', logging.DEBUG)
         ]
