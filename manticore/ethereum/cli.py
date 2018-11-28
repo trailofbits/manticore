@@ -6,7 +6,7 @@ from manticore.ethereum.manticore import ManticoreEVM
 from manticore.ethereum.plugins import FilterFunctions, LoopDepthLimiter, VerboseTrace
 
 
-def main(args, logger):
+def evm_main(args, logger):
     m = ManticoreEVM(procs=args.procs, workspace_url=args.workspace)
 
     m.verbosity(args.v)

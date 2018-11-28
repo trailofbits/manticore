@@ -2,7 +2,7 @@ from .manticore import Manticore
 from manticore.core.plugin import InstructionCounter, Visited, Tracer, RecordSymbolicBranches
 
 
-def main(args, logger_):
+def native_main(args, logger_):
     env = {key: val for key, val in [env[0].split('=') for env in args.env]}
 
     m = Manticore(args.argv[0], argv=args.argv[1:], env=env, entry_symbol=args.entrysymbol,
