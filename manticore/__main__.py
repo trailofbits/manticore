@@ -2,11 +2,10 @@
 This is the Manticore's CLI `manticore` script.
 """
 import argparse
+import logging
 import sys
 
-import logging
 from . import STDIN_INPUT_DEFAULT_SIZE
-# from manticore import STDIN_INPUT_DEFAULT_SIZE
 from .utils import config, log
 
 consts = config.get_group('main')

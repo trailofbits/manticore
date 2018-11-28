@@ -80,9 +80,7 @@ setup(
     version='0.2.2',
     packages=find_packages(exclude=['tests', 'tests.*']),
     python_requires='>=3.6',
-    install_requires=[
-                         'pyyaml',
-                     ] + rtd_dependent_deps(),
+    install_requires=['pyyaml'] + rtd_dependent_deps(),
     dependency_links=[
         'https://github.com/aquynh/capstone/archive/next.zip#egg=capstone-4&subdirectory=bindings/python',
     ],
