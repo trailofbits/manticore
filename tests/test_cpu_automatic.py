@@ -1,7 +1,7 @@
 
 import unittest
 from manticore.core.cpu.x86 import *
-from native.memory import *
+from manticore.native.memory import *
 
 class CPUTest(unittest.TestCase):
     _multiprocess_can_split_ = True

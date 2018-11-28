@@ -1776,26 +1776,35 @@ class MemoryTest(unittest.TestCase):
             mem.read(addr2, 5)
 
     def test_getlibc(self):
-        import native.mappings
+        from manticore.native import mappings
         import ctypes
 
+        old_cdll = ctypes.cdll
+        old_mapping_sys = mappings.sys
+
         ctypes.cdll = mock.MagicMock()
-        native.mappings.sys = mock.MagicMock()
+        mappings.sys = mock.MagicMock()
+
         def mock_loadlib(x):
             mock_loadlib.libname = x 
+
         ctypes.cdll.configure_mock(LoadLibrary=mock_loadlib)
 
-        native.mappings.sys.configure_mock(platform='darwin')
-        native.mappings.get_libc()
+        mappings.sys.configure_mock(platform='darwin')
+        mappings.get_libc()
         self.assertEqual(mock_loadlib.libname, 'libc.dylib')
 
-        native.mappings.sys.configure_mock(platform='LINUX')
-        native.mappings.get_libc()
+        mappings.sys.configure_mock(platform='LINUX')
+        mappings.get_libc()
         self.assertEqual(mock_loadlib.libname, 'libc.so.6')
 
-        native.mappings.sys.configure_mock(platform='NETBSD')
-        native.mappings.get_libc()
+        mappings.sys.configure_mock(platform='NETBSD')
+        mappings.get_libc()
         self.assertEqual(mock_loadlib.libname, 'libc.so')
+
+        ctypes.cdll = old_cdll
+        mappings.sys = old_mapping_sys
+
 
 if __name__ == '__main__':
     unittest.main()
