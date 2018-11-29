@@ -12,8 +12,7 @@ consts.add('recursionlimit', default=10000,
            description="Value to set for Python recursion limit")
 consts.add('timeout', default=0,
            description='Timeout, in seconds, for Manticore invocation')
-consts.add('stdin_size', default=256,
-           description='Maximum symbolic stdin size')
+
 
 # XXX(yan): This would normally be __name__, but then logger output will be pre-
 # pended by 'm.__main__: ', which is not very pleasing. hard-coding to 'main'
