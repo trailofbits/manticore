@@ -93,8 +93,8 @@ class Transaction(object):
         generation.
 
         :param stream: Output stream to write to. Typically a file.
-        :param manticore.core.state.State state: state that the tx exists in
-        :param ethereum.manticore.ManticoreEVM mevm: manticore instance
+        :param manticore.ethereum.State state: state that the tx exists in
+        :param manticore.ethereum.ManticoreEVM mevm: manticore instance
         :return:
         """
         from manticore.ethereum.abi import ABI  # circular imports
