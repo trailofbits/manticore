@@ -15,17 +15,17 @@ import re
 import sha3
 import tempfile
 
-from manticore.core.manticore import ManticoreBase
-from manticore.core.smtlib import ConstraintSet, Array, ArrayProxy, BitVec, Operators
-from manticore.core.state import TerminateState, AbandonState
-from manticore.ethereum.account import EVMContract, EVMAccount, ABI
-from manticore.ethereum.detectors import Detector
-from manticore.ethereum.solidity import SolidityMetadata
-from manticore.ethereum.state import State
-from manticore.exceptions import EthereumError, DependencyError, NoAliveStates
-from manticore.platforms import evm
-from manticore.utils import config
-from manticore.utils.helpers import PickleSerializer, issymbolic
+from ..core.manticore import ManticoreBase
+from ..core.smtlib import ConstraintSet, Array, ArrayProxy, BitVec, Operators
+from ..core.state import TerminateState, AbandonState
+from .account import EVMContract, EVMAccount, ABI
+from .detectors import Detector
+from .solidity import SolidityMetadata
+from .state import State
+from ..exceptions import EthereumError, DependencyError, NoAliveStates
+from ..platforms import evm
+from ..utils import config
+from ..utils.helpers import PickleSerializer, issymbolic
 
 logger = logging.getLogger(__name__)
 

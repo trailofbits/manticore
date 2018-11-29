@@ -9,8 +9,8 @@ import io
 from contextlib import contextmanager
 from multiprocessing.managers import SyncManager
 
-from manticore.utils import config
-from manticore.utils.helpers import PickleSerializer
+from ..utils import config
+from ..utils.helpers import PickleSerializer
 from .smtlib import solver
 from .state import StateBase
 

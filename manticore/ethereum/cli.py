@@ -1,9 +1,9 @@
-from manticore.ethereum.detectors import DetectInvalid, DetectIntegerOverflow, DetectUninitializedStorage, \
+from .detectors import DetectInvalid, DetectIntegerOverflow, DetectUninitializedStorage, \
     DetectUninitializedMemory, DetectReentrancySimple, DetectReentrancyAdvanced, \
     DetectUnusedRetVal, DetectSelfdestruct, DetectDelegatecall, \
     DetectExternalCallAndLeak, DetectEnvInstruction, DetectRaceCondition
-from manticore.ethereum.manticore import ManticoreEVM
-from manticore.ethereum.plugins import FilterFunctions, LoopDepthLimiter, VerboseTrace
+from .manticore import ManticoreEVM
+from .plugins import FilterFunctions, LoopDepthLimiter, VerboseTrace
 
 
 def evm_main(args, logger):

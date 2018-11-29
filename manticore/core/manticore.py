@@ -11,16 +11,16 @@ from threading import Timer
 import functools
 import types
 
-from manticore.core.executor import Executor
-from manticore.core.plugin import Plugin
-from manticore.core.smtlib import solver
-from manticore.core.state import TerminateState, StateBase
-from manticore.core.workspace import ManticoreOutput
-from manticore.utils import config
-from manticore.utils import log
-from manticore.utils.event import Eventful
-from manticore.utils.helpers import issymbolic
-from manticore.utils.nointerrupt import WithKeyboardInterruptAs
+from ..core.executor import Executor
+from ..core.plugin import Plugin
+from ..core.smtlib import solver
+from ..core.state import TerminateState, StateBase
+from ..core.workspace import ManticoreOutput
+from ..utils import config
+from ..utils import log
+from ..utils.event import Eventful
+from ..utils.helpers import issymbolic
+from ..utils.nointerrupt import WithKeyboardInterruptAs
 
 logger = logging.getLogger(__name__)
 log.init_logging()

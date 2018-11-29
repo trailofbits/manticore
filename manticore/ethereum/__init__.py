@@ -1,7 +1,8 @@
-from manticore.utils.install_helper import ensure_evm_deps
+from ..utils.install_helper import ensure_evm_deps
 
 ensure_evm_deps()  # This must be invoked before any imports
 
+# Exports (for `from manticore.ethereum import ...`)
 from .abi import ABI
 from .manticore import ManticoreEVM
 from .state import State

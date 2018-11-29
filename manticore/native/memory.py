@@ -1,9 +1,9 @@
 from abc import ABCMeta, abstractmethod
 from weakref import WeakValueDictionary
-from manticore.core.smtlib import Operators, ConstraintSet, arithmetic_simplify, solver, TooManySolutions, BitVec, BitVecConstant
+from ..core.smtlib import Operators, ConstraintSet, arithmetic_simplify, solver, TooManySolutions, BitVec, BitVecConstant
 import logging
-from manticore.native.mappings import mmap, munmap
-from manticore.utils.helpers import issymbolic
+from ..native.mappings import mmap, munmap
+from ..utils.helpers import issymbolic
 
 logger = logging.getLogger(__name__)
 
