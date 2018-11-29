@@ -208,6 +208,18 @@ class LazyMemoryTest(unittest.TestCase):
         ret = mem._deref_can_succeed(m, 0x800, 1)
         self.assertFalse(ret)
 
+        ret = mem._deref_can_succeed(m, 0xFFF, 2);
+        self.assertFalse(ret)
+
+        ret = mem._deref_can_succeed(m, 0x1000, 2);
+        self.assertTrue(ret)
+
+        ret = mem._deref_can_succeed(m, 0x1000, 0xFFF);
+        self.assertTrue(ret)
+
+        ret = mem._deref_can_succeed(m, 0x1000, 0x1000);
+        self.assertFalse(ret)
+
     @unittest.skip("Disabled because it takes 4+ minutes; get_all_values() isn't returning all possible addresses")
     def test_lazysymbolic_constrained_deref(self):
         cs = ConstraintSet()
