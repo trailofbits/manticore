@@ -1,6 +1,6 @@
-from ..utils.install_helper import ensure_native_deps
+from ..utils import install_helper
 
-ensure_native_deps()
+install_helper.ensure_native_deps()
 
 # Exports (for `from manticore.native import ...`)
 from .manticore import Manticore
