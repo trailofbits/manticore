@@ -125,7 +125,7 @@ class Store(object):
         """
         Save a state to storage.
 
-        :param manticore.core.BaseState state:
+        :param manticore.core.StateBase state:
         :param str key:
         :return:
         """
@@ -137,7 +137,7 @@ class Store(object):
         Load a state from storage.
 
         :param key: key that identifies state
-        :rtype: manticore.core.BaseState
+        :rtype: manticore.core.StateBase
         """
         with self.load_stream(key, binary=True) as f:
             state = self._serializer.deserialize(f)
