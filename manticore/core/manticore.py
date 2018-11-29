@@ -141,7 +141,7 @@ class ManticoreBase(Eventful):
         # the self.plugins is not assigned
         # because of that, we need to use a `getattr` here, otherwise we might get two exceptions
         # (and the one from here is irrelevant and confusing)
-        plugins = list(getattr(self, 'plugins', []))
+        plugins = getattr(self, 'plugins', [])
         for plugin in plugins:
             self.unregister_plugin(plugin)
 
