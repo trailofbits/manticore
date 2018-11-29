@@ -772,15 +772,14 @@ class Cpu(Eventful):
                         c = bytes([vals[0]])
                     except visitors.ArraySelectSimplifier.ExpressionNotSimple:
                         c = struct.pack('B', solver.get_value(self.memory.constraints, c))
+                elif isinstance(c, Constant):
+                    c = bytes([c.value])
                 else:
-                    if isinstance(c, Constant):
-                        c = bytes([c.value])
-                    else:
-                        logger.error('Concretize executable memory %r %r', c, text)
-                        raise ConcretizeMemory(self.memory,
-                                               address=pc,
-                                               size=8 * self.max_instr_width,
-                                               policy='INSTRUCTION')
+                    logger.error('Concretize executable memory %r %r', c, text)
+                    raise ConcretizeMemory(self.memory,
+                                           address=pc,
+                                           size=8 * self.max_instr_width,
+                                           policy='INSTRUCTION')
             text += c
 
         #Pad potentially incomplete instruction with zeroes
