@@ -295,10 +295,8 @@ class AnonMap(Map):
     def __getitem__(self, index):
         index = self._get_offset(index)
         if isinstance(index, slice):
-            # return [bytes([i]) for i in self._data[index]]
             return [Operators.CHR(i) for i in self._data[index]]
         return Operators.CHR(self._data[index])
-        # return bytes([self._data[index]])
 
 
 class ArrayMap(Map):
@@ -1309,8 +1307,9 @@ class LazySMemory(SMemory):
 
     def scan_mem(self, data_to_find):
         """
+        Scan for concrete bytes in all mapped memory. Successively yield addresses of all matches.
 
-        :param bytes data_to_find:
+        :param bytes data_to_find: String to locate
         :return:
         """
 
