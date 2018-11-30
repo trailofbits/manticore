@@ -10,7 +10,7 @@ REQUIREMENTS_TO_IMPORTS = {
 def ensure_native_deps():
     if not _has_native:
         raise ImportError(
-            'Missing manticore[native] extra package. Please install it with `pip install manticore[native]`.'
+            'Missing some packages for native binary analysis. Please install them with pip install manticore[native].'
         )
 
 

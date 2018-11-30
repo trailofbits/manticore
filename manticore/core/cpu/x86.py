@@ -12,7 +12,7 @@ from .abstractcpu import (
 
 
 from ..smtlib import Operators, BitVec, Bool, BitVecConstant, operator, visitors
-from manticore.native.memory import ConcretizeMemory
+from ..native.memory import ConcretizeMemory
 from ...utils.helpers import issymbolic
 from functools import reduce
 

@@ -97,8 +97,8 @@ class Transaction(object):
         :param manticore.ethereum.ManticoreEVM mevm: manticore instance
         :return:
         """
-        from manticore.ethereum.abi import ABI  # circular imports
-        from manticore.ethereum.manticore import flagged
+        from ..ethereum import ABI  # circular imports
+        from ..ethereum.manticore import flagged
 
         is_something_symbolic = False
 

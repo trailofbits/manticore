@@ -33,8 +33,8 @@ def main():
     log.set_verbosity(args.v)
 
     if args.argv[0].endswith('.sol'):
-        from manticore.ethereum.cli import evm_main
-        evm_main(args, logger)
+        from manticore.ethereum.cli import ethereum_main
+        ethereum_main(args, logger)
     else:
         from manticore.native.cli import native_main
         native_main(args, logger)
