@@ -308,6 +308,9 @@ class BitVec(Expression):
     def __invert__(self):
         return BitVecXor(self, self.cast(self.mask))
 
+    def __len__(self):
+        return self.size // 8
+
     # These are the so-called "rich comparison" methods, and are called
     # for comparison operators in preference to __cmp__() below. The
     # correspondence between operator symbols and method names is as
