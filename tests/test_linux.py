@@ -8,7 +8,7 @@ import os
 import shutil
 import tempfile
 
-from manticore.native.cpu import ConcretizeRegister
+from manticore.native.cpu.abstractcpu import ConcretizeRegister
 from manticore.core.smtlib import *
 from manticore.native import Manticore
 from manticore.platforms import linux, linux_syscalls

@@ -4,6 +4,7 @@ import errno
 import fcntl
 import logging
 import socket
+import struct
 from typing import Union, List, TypeVar, cast
 
 import io
@@ -16,10 +17,10 @@ from elftools.elf.sections import SymbolTableSection
 
 from . import linux_syscalls
 from ..core.executor import TerminateState
-from ..core.smtlib import ConstraintSet, solver
+from ..core.smtlib import ConstraintSet, solver, Operators
 from ..core.smtlib import Expression
 from ..exceptions import SolverException
-from ..native.cpu.abstractcpu import Syscall, ConcretizeArgument
+from ..native.cpu.abstractcpu import Syscall, ConcretizeArgument, Interruption
 from ..native.cpu.cpufactory import CpuFactory
 from ..native.memory import SMemory32, SMemory64, Memory32, Memory64
 from ..platforms.platform import Platform, SyscallNotImplemented

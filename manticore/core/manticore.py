@@ -142,7 +142,9 @@ class ManticoreBase(Eventful):
         # because of that, we need to use a `getattr` here, otherwise we might get two exceptions
         # (and the one from here is irrelevant and confusing)
         plugins = getattr(self, 'plugins', [])
-        for plugin in plugins:
+
+        # A `list` cast is needed, otherwise we delete items from the `self.plugins` set while iterating over it
+        for plugin in list(plugins):
             self.unregister_plugin(plugin)
 
     @property
