@@ -61,7 +61,7 @@ def rep(old_method):
             counter_name = {16: 'CX', 32: 'ECX', 64: 'RCX'}[cpu.instruction.addr_size * 8]
             count = cpu.read_register(counter_name)
             if issymbolic(count):
-                raise ConcretizeRegister(cpu, counter_name, "Concretizing {} on REP instruction".format(counter_name), policy='SAMPLED')
+                raise ConcretizeRegister(cpu, counter_name, f"Concretizing {counter_name} on REP instruction", policy='SAMPLED')
 
             FLAG = count != 0
 
@@ -90,7 +90,7 @@ def repe(old_method):
             counter_name = {16: 'CX', 32: 'ECX', 64: 'RCX'}[cpu.instruction.addr_size * 8]
             count = cpu.read_register(counter_name)
             if issymbolic(count):
-                raise ConcretizeRegister(cpu, counter_name, "Concretizing {} on REP instruction".format(counter_name), policy='SAMPLED')
+                raise ConcretizeRegister(cpu, counter_name, f"Concretizing {counter_name} on REP instruction", policy='SAMPLED')
 
             FLAG = count != 0
 
@@ -556,7 +556,7 @@ class AMD64RegFile(RegisterFile):
     def write(self, name, value):
         name = self._alias(name)
         if name in ('ST0', 'ST1', 'ST2', 'ST3', 'ST4', 'ST5', 'ST6', 'ST7'):
-            name = 'FP%d' % ((self.read('TOP') + int(name[2])) & 7)
+            name = f'FP{((self.read("TOP") + int(name[2])) & 7)}'
 
         # Special EFLAGS/RFLAGS case
         if 'FLAGS' in name:
@@ -587,7 +587,7 @@ class AMD64RegFile(RegisterFile):
         #print("Name:", type(name))
         name = str(name)
         if name in ('ST0', 'ST1', 'ST2', 'ST3', 'ST4', 'ST5', 'ST6', 'ST7'):
-            name = 'FP%d' % ((self.read('TOP') + int(name[2])) & 7)
+            name = f'FP{((self.read("TOP") + int(name[2])) & 7)}'
         if name in self._cache:
             return self._cache[name]
         if 'FLAGS' in name:
@@ -4079,7 +4079,7 @@ class X86Cpu(Cpu):
             value = cpu.read_int(addr + base, 8)
             cpu.CF = Operators.EXTRACT(value, pos, 1) == 1
         else:
-            raise NotImplementedError("Unknown operand for BT: {}".format(dest.type))
+            raise NotImplementedError(f"Unknown operand for BT: {dest.type}")
 
     @instruction
     def BTC(cpu, dest, src):
@@ -4109,7 +4109,7 @@ class X86Cpu(Cpu):
             value = value ^ (1 << pos)
             cpu.write_int(addr, value, 8)
         else:
-            raise NotImplementedError("Unknown operand for BTC: {}".format(dest.type))
+            raise NotImplementedError(f"Unknown operand for BTC: {dest.type}")
 
     @instruction
     def BTR(cpu, dest, src):
@@ -4139,7 +4139,7 @@ class X86Cpu(Cpu):
             value = value & ~(1 << pos)
             cpu.write_int(addr, value, 8)
         else:
-            raise NotImplementedError("Unknown operand for BTR: {}".format(dest.type))
+            raise NotImplementedError(f"Unknown operand for BTR: {dest.type}")
 
     @instruction
     def BTS(cpu, dest, src):
@@ -4171,7 +4171,7 @@ class X86Cpu(Cpu):
             value = value | (1 << pos)
             cpu.write_int(addr, value, 8)
         else:
-            raise NotImplementedError("Unknown operand for BTS: {}".format(dest.type))
+            raise NotImplementedError(f"Unknown operand for BTS: {dest.type}")
 
     @instruction
     def POPCNT(cpu, dest, src):
@@ -4587,6 +4587,10 @@ class X86Cpu(Cpu):
 
     @instruction
     def PMINUB(cpu, dest, src):
+        """
+        PMINUB: returns minimum of packed unsigned byte integers in the dest operand
+        see PMAXUB
+        """
         dest_value = dest.read()
         src_value = src.read()
         result = 0
@@ -4594,6 +4598,30 @@ class X86Cpu(Cpu):
             itema = (dest_value >> pos) & 0xff
             itemb = (src_value >> pos) & 0xff
             result |= Operators.ITEBV(dest.size, itema < itemb, itema, itemb) << pos
+        dest.write(result)
+
+    @instruction
+    def PMAXUB(cpu, dest, src):
+        """
+        PMAXUB: returns maximum of packed unsigned byte integers in the dest operand
+
+        Performs a SIMD compare of the packed unsigned byte in the second source operand
+        and the first source operand and returns the maximum value for each pair of 
+        integers to the destination operand.
+
+        Example :
+        $xmm1.v16_int8 = {..., 0xf2, 0xd1}
+        $xmm2.v16_int8 = {..., 0xd2, 0xf1}
+        # after pmaxub xmm1, xmm2, we get
+        $xmm1.v16_int8 = {..., 0xf2, 0xf1}
+        """
+        dest_value = dest.read()
+        src_value = src.read()
+        result = 0
+        for pos in range(0, dest.size, 8):
+            itema = (dest_value >> pos) & 0xff
+            itemb = (src_value >> pos) & 0xff
+            result |= Operators.ITEBV(dest.size, itema > itemb, itema, itemb) << pos
         dest.write(result)
 
     @instruction
@@ -4883,6 +4911,108 @@ class X86Cpu(Cpu):
             res = Operators.ITEBV(op0.size, Operators.EXTRACT(arg0, i, 8) == Operators.EXTRACT(arg1, i, 8), res | (0xff << i), res)
             # if (arg0>>i)&0xff == (arg1>>i)&0xff:
             #    res = res | (0xff << i)
+        op0.write(res)
+
+    @instruction
+    def PCMPEQD(cpu, op0, op1):
+        """
+        PCMPEQD: Packed compare for equal with double words
+        see PCMPEQB
+        """
+        arg0 = op0.read()
+        arg1 = op1.read()
+        res = 0
+
+        for i in range(0, op0.size, 32):
+            res = Operators.ITEBV(op0.size, Operators.EXTRACT(arg0, i, 32) == Operators.EXTRACT(arg1, i, 32), res | (0xffffffff << i), res)
+        op0.write(res)
+
+    @instruction
+    def PCMPGTD(cpu, op0, op1):
+        """
+        PCMPGTD: Packed compare for greater than with double words
+        see PCMPEQB
+        """
+        arg0 = op0.read()
+        arg1 = op1.read()
+        res = 0
+
+        for i in range(0, op0.size, 32):
+            res = Operators.ITEBV(op0.size, Operators.EXTRACT(arg0, i, 32) > Operators.EXTRACT(arg1, i, 32), res | (0xffffffff << i), res)
+        op0.write(res)
+
+    @instruction
+    def PADDD(cpu, op0, op1):
+        """
+        PADDD: Packed add with double words
+
+        Performs a SIMD add of the packed integers from the source operand (second operand)
+        and the destination operand (first operand), and stores the packed integer results
+        in the destination operand
+
+        Example :
+        $xmm1.v16_int8 = {..., 0x00000003, 0x00000001}
+        $xmm2.v16_int8 = {..., 0x00000004, 0x00000002}
+        # after paddd xmm1, xmm2, we get
+        $xmm1.v16_int8 = {..., 0x00000007, 0x00000003}
+        """
+        arg0 = op0.read()
+        arg1 = op1.read()
+        res = 0
+
+        for i in range(0, op0.size, 32):
+            res |= ((Operators.EXTRACT(arg0, i, 32) + Operators.EXTRACT(arg1, i, 32)) & 0xFFFFFFFF) << i
+        op0.write(res)
+
+    @instruction
+    def PADDQ(cpu, op0, op1):
+        """
+        PADDQ: Packed add with quadruple words
+        see PADDD
+        """
+        arg0 = op0.read()
+        arg1 = op1.read()
+        res = 0
+
+        for i in range(0, op0.size, 64):
+            res |= ((Operators.EXTRACT(arg0, i, 64) + Operators.EXTRACT(arg1, i, 64)) & 0xFFFFFFFFFFFFFFFF) << i
+        op0.write(res)
+
+    @instruction
+    def PSLLD(cpu, op0, op1):
+        """
+        PSLLD: Packed shift left logical with double words
+
+        Shifts the destination operand (first operand) to the left by the number of bytes specified 
+        in the count operand (second operand). The empty low-order bytes are cleared (set to all 0s).
+        If the value specified by the count operand is greater than 15, the destination operand is
+        set to all 0s. The count operand is an 8-bit immediate.
+
+        Example :
+        $xmm1.v16_int8 = {..., 0x00000003, 0x00000001}
+        # after pslld xmm1, 2, we get
+        $xmm1.v16_int8 = {..., 0x0000000c, 0x00000004}
+        """
+        arg0 = op0.read()
+        arg1 = op1.read()
+        res = 0
+
+        for i in range(0, op0.size, 32):
+            res |= ((Operators.EXTRACT(arg0, i, 32) << arg1) & 0xFFFFFFFF) << i
+        op0.write(res)
+
+    @instruction
+    def PSLLQ(cpu, op0, op1):
+        """
+        PSLLQ: Packed shift left logical with quadruple words
+        see PSLLD
+        """
+        arg0 = op0.read()
+        arg1 = op1.read()
+        res = 0
+
+        for i in range(0, op0.size, 64):
+            res |= ((Operators.EXTRACT(arg0, i, 64) << arg1) & 0xFFFFFFFFFFFFFFFF) << i
         op0.write(res)
 
     ############################################################################
@@ -6056,7 +6186,7 @@ class AMD64Cpu(X86Cpu):
         result = ""
         try:
             instruction = self.instruction
-            result += "Instruction: 0x%016x:\t%s\t%s\n" % (instruction.address, instruction.mnemonic, instruction.op_str)
+            result += f"Instruction: 0x{instruction.address:016x}:\t{instruction.mnemonic}\t{instruction.op_str}\n"
         except BaseException:
             result += "{can't decode instruction }\n"
 
@@ -6064,36 +6194,29 @@ class AMD64Cpu(X86Cpu):
         for reg_name in regs:
             value = self.read_register(reg_name)
             if issymbolic(value):
-                result += "%3s: " % reg_name + CFAIL
-                result += visitors.pretty_print(value, depth=10)
-                result += CEND
+                result += f'{reg_name:3s}: {CFAIL}{visitors.pretty_print(value, depth=10)}{CEND}\n'
             else:
-                result += "%3s: 0x%016x" % (reg_name, value)
+                result += f"{reg_name:3s}: 0x{value:016x}\n"
             pos = 0
-            result += '\n'
 
         pos = 0
         for reg_name in ('CF', 'SF', 'ZF', 'OF', 'AF', 'PF', 'IF', 'DF'):
             value = self.read_register(reg_name)
             if issymbolic(value):
-                result += "%s:" % reg_name + CFAIL
-                #"%16s"%value+CEND
-                result += visitors.pretty_print(value, depth=10) + CEND
+                result += f'{reg_name}: {CFAIL}{visitors.pretty_print(value, depth=10)}{CEND}\n'
             else:
-                result += "%s: %1x" % (reg_name, value)
+                result += f'{reg_name}: {value:1x}\n'
 
             pos = 0
-            result += '\n'
 
         for reg_name in ['CS', 'DS', 'ES', 'SS', 'FS', 'GS']:
             base, size, ty = self.get_descriptor(self.read_register(reg_name))
-            result += '%s: %x, %x (%s)\n' % (reg_name, base, size, ty)
+            result += f'{reg_name}: {base:x}, {size:x} ({ty})\n'
 
         for reg_name in ['FP0', 'FP1', 'FP2', 'FP3', 'FP4', 'FP5', 'FP6', 'FP7', 'TOP']:
             value = getattr(self, reg_name)
-            result += "%3s: %r" % (reg_name, value)
+            result += f'{reg_name:3s}: {value!r}\n'
             pos = 0
-            result += '\n'
 
         return result
 
@@ -6166,7 +6289,7 @@ class I386Cpu(X86Cpu):
         result = ""
         try:
             instruction = self.instruction
-            result += "Instruction: 0x%016x:\t%s\t%s\n" % (instruction.address, instruction.mnemonic, instruction.op_str)
+            result += f"Instruction: 0x{instruction.address:016x}:\t{instruction.mnemonic}\t{instruction.op_str}\n"
         except BaseException:
             result += "{can't decode instruction }\n"
 
@@ -6174,35 +6297,29 @@ class I386Cpu(X86Cpu):
         for reg_name in regs:
             value = self.read_register(reg_name)
             if issymbolic(value):
-                result += "%3s: " % reg_name + CFAIL
-                result += visitors.pretty_print(value, depth=10) + CEND
+                result += f'{reg_name:3s}: {CFAIL}{visitors.pretty_print(value, depth=10)}{CEND}\n'
             else:
-                result += "%3s: 0x%016x" % (reg_name, value)
+                result += f'{reg_name:3s}: 0x{value:016x}\n'
             pos = 0
-            result += '\n'
 
         pos = 0
         for reg_name in ['CF', 'SF', 'ZF', 'OF', 'AF', 'PF', 'IF', 'DF']:
             value = self.read_register(reg_name)
             if issymbolic(value):
-                result += "%s:" % reg_name + CFAIL
-                #"%16s"%value+CEND
-                result += visitors.pretty_print(value, depth=10) + CEND
+                result += f'{reg_name}: {CFAIL}{visitors.pretty_print(value, depth=10)}{CEND}\n'
             else:
-                result += "%s: %1x" % (reg_name, value)
+                result += f'{reg_name}: {value:1x}\n'
 
             pos = 0
-            result += '\n'
 
         for reg_name in ['CS', 'DS', 'ES', 'SS', 'FS', 'GS']:
             base, size, ty = self.get_descriptor(self.read_register(reg_name))
-            result += '%s: %x, %x (%s)\n' % (reg_name, base, size, ty)
+            result += f'{reg_name}: {base:x}, {size:x} ({ty})\n'
 
         for reg_name in ['FP0', 'FP1', 'FP2', 'FP3', 'FP4', 'FP5', 'FP6', 'FP7', 'TOP']:
             value = getattr(self, reg_name)
-            result += "%3s: %r" % (reg_name, value)
+            result += f'{reg_name:3s}: {value!r}\n'
             pos = 0
-            result += '\n'
 
         return result
 

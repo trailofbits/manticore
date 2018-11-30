@@ -6,28 +6,28 @@ from manticore.core.smtlib import *
 from manticore.core.smtlib.visitors import *
 from manticore.utils import log
 #log.set_verbosity(9)
-config.out_of_gas=1
+config.out_of_gas = 1
 
 def printi(instruction):
-    print('Instruction: %s'% instruction)
-    print('\tdescription:', instruction.description)
-    print('\tgroup:', instruction.group)
-    print('\taddress:', instruction.offset)
-    print('\tsize:', instruction.size)
-    print('\thas_operand:', instruction.has_operand)
-    print('\toperand_size:', instruction.operand_size)
-    print('\toperand:', instruction.operand)
-    print('\tsemantics:', instruction.semantics)
-    print('\tpops:', instruction.pops)
-    print('\tpushes:', instruction.pushes)
-    print('\tbytes:', '0x'+instruction.bytes.encode('hex'))
-    print('\twrites to stack:', instruction.writes_to_stack)
-    print('\treads from stack:', instruction.reads_from_stack)
-    print('\twrites to memory:', instruction.writes_to_memory)
-    print('\treads from memory:', instruction.reads_from_memory)
-    print('\twrites to storage:', instruction.writes_to_storage)
-    print('\treads from storage:', instruction.reads_from_storage)
-    print('\tis terminator', instruction.is_terminator)
+    print(f'Instruction: {instruction}')
+    print(f'\tdescription: {instruction.description}')
+    print(f'\tgroup: {instruction.group}')
+    print(f'\taddress: {instruction.offset}')
+    print(f'\tsize: {instruction.size}')
+    print(f'\thas_operand: {instruction.has_operand}')
+    print(f'\toperand_size: {instruction.operand_size}')
+    print(f'\toperand: {instruction.operand}')
+    print(f'\tsemantics: {instruction.semantics}')
+    print(f'\tpops: {instruction.pops}')
+    print(f'\tpushes:', instruction.pushes)
+    print(f'\tbytes: 0x{instruction.bytes.hex()}')
+    print(f'\twrites to stack: {instruction.writes_to_stack}')
+    print(f'\treads from stack: {instruction.reads_from_stack}')
+    print(f'\twrites to memory: {instruction.writes_to_memory}')
+    print(f'\treads from memory: {instruction.reads_from_memory}')
+    print(f'\twrites to storage: {instruction.writes_to_storage}')
+    print(f'\treads from storage: {instruction.reads_from_storage}')
+    print(f'\tis terminator {instruction.is_terminator}')
 
 
 
@@ -47,7 +47,7 @@ class callbacks():
     initial_stack = []
     def will_execute_instruction(self, pc, instr):
         for i in range(len(evm.stack), instr.pops):
-            e = constraints.new_bitvec(256, name='stack_%d'%len(self.initial_stack))
+            e = constraints.new_bitvec(256, name=f'stack_{len(self.initial_stack)}')
             self.initial_stack.append(e)
             evm.stack.insert(0, e)
 
@@ -64,7 +64,7 @@ class DummyWorld():
         self.number = constraints.new_bitvec(256, name='number')
 
     def get_balance(self, address):
-         return self.balances[address]
+        return self.balances[address]
     def tx_origin(self):
         return self.origin
     def tx_gasprice(self):
@@ -85,7 +85,7 @@ class DummyWorld():
         return self.storage[offset]
         
     def set_storage_data(self, address, offset, value):
-         self.storage[offset] = value
+        self.storage[offset] = value
 
     def log(self, address, topics, memlog):
         pass
@@ -109,7 +109,7 @@ evm.subscribe('will_execute_instruction', callbacks.will_execute_instruction)
 
 print("CODE:")
 while not issymbolic(evm.pc):
-    print('\t',evm.pc, evm.instruction)
+    print(f'\t {evm.pc} {evm.instruction}')
     try:
         evm.execute()
     except EndTx as e:
@@ -117,14 +117,14 @@ while not issymbolic(evm.pc):
         break
 
 #print translate_to_smtlib(arithmetic_simplifier(evm.stack[0]))
-print("STORAGE =",  translate_to_smtlib(world.storage))
-print("MEM =",  translate_to_smtlib(evm.memory))
+print(f"STORAGE = {translate_to_smtlib(world.storage)}")
+print(f"MEM = {translate_to_smtlib(evm.memory)}")
 
 
 for i in range(len(callbacks.initial_stack)):
-    print("STACK[%d] ="%i,  translate_to_smtlib(callbacks.initial_stack[i]))
+    print(f"STACK[{i}] = {translate_to_smtlib(callbacks.initial_stack[i]}")
 print("CONSTRAINTS:")
 print(constraints)
 
-print("PC:", translate_to_smtlib(evm.pc), solver.get_all_values(constraints, evm.pc, maxcnt=3, silent=True))
+print(f"PC: {translate_to_smtlib(evm.pc)} {solver.get_all_values(constraints, evm.pc, maxcnt=3, silent=True)}")
 

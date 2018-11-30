@@ -5,11 +5,14 @@ import io
 import copy
 import inspect
 from functools import wraps
+from typing import List, Set, Tuple, Union
+from ..exceptions import EthereumError
 from ..utils.helpers import issymbolic, get_taints, taint_with, istainted
 from ..platforms.platform import *
-from ..core.smtlib import solver, BitVec, Array, Operators, Constant, ArrayVariable, ArrayStore, BitVecConstant, translate_to_smtlib, to_constant
+from ..core.smtlib import solver, BitVec, Array, ArrayProxy, Operators, Constant, ArrayVariable, ArrayStore, BitVecConstant, translate_to_smtlib, to_constant
 from ..core.state import Concretize, TerminateState
 from ..utils.event import Eventful
+from ..utils.rlp import rlp_encode
 from ..core.smtlib.visitors import simplify
 import pyevmasm as EVMAsm
 import logging
@@ -236,7 +239,6 @@ class Transaction(object):
 
 
 # Exceptions...
-
 class EVMException(Exception):
     pass
 
@@ -426,11 +428,16 @@ class EVM(Eventful):
             #return different version depending on obj._pending_transaction
             def _pre_func(my_obj, *args, **kwargs):
                 if my_obj._on_transaction:
+                    result = self._pos(my_obj, *args, **kwargs)
                     my_obj._on_transaction = False
-                    return self._pos(my_obj, *args, **kwargs)
+                    return result
                 else:
-                    my_obj._on_transaction = True
-                    return self._pre(my_obj, *args, **kwargs)
+                    try:
+                        self._pre(my_obj, *args, **kwargs)
+                        raise AssertionError("The pre-transaction handler must raise a StartTx transaction")
+                    except StartTx:
+                        my_obj._on_transaction = True
+                        raise
 
             return MethodType(_pre_func, obj)
 
@@ -520,6 +527,7 @@ class EVM(Eventful):
         self._allocated = 0
         self._on_transaction = False  # for @transact
         self._checkpoint_data = None
+        self._published_pre_instruction_events = False
 
         # Used calldata size
         min_size = 0
@@ -564,6 +572,7 @@ class EVM(Eventful):
         state['logs'] = self.logs
         state['_on_transaction'] = self._on_transaction
         state['_checkpoint_data'] = self._checkpoint_data
+        state['_published_pre_instruction_events'] = self._published_pre_instruction_events
         state['_used_calldata_size'] = self._used_calldata_size
         state['_calldata_size'] = self._calldata_size
         state['_valid_jumpdests'] = self._valid_jumpdests
@@ -572,6 +581,7 @@ class EVM(Eventful):
 
     def __setstate__(self, state):
         self._checkpoint_data = state['_checkpoint_data']
+        self._published_pre_instruction_events = state['_published_pre_instruction_events']
         self._on_transaction = state['_on_transaction']
         self._gas = state['gas']
         self.memory = state['memory']
@@ -713,7 +723,7 @@ class EVM(Eventful):
                 raise ValueError
         elif isinstance(fee, BitVec):
             if (fee.size != 512):
-                raise EthereumError("Fees should be 512 bit long")
+                raise ValueError("Fees should be 512 bit long")
 
         #FIXME add configurable checks here
         config.out_of_gas = 3
@@ -812,7 +822,8 @@ class EVM(Eventful):
     def _checkpoint(self):
         #Fixme[felipe] add a with self.disabled_events context mangr to Eventful
         if self._checkpoint_data is None:
-            if self._on_transaction is False:
+            if not self._published_pre_instruction_events:
+                self._published_pre_instruction_events = True
                 self._publish('will_decode_instruction', self.pc)
                 self._publish('will_execute_instruction', self.pc, self.instruction)
                 self._publish('will_evm_execute_instruction', self.instruction, self._top_arguments())
@@ -861,6 +872,7 @@ class EVM(Eventful):
         self._publish('did_evm_execute_instruction', last_instruction, last_arguments, result)
         self._publish('did_execute_instruction', last_pc, self.pc, last_instruction)
         self._checkpoint_data = None
+        self._published_pre_instruction_events = False
 
     def change_last_result(self, result):
         last_pc, last_gas, last_instruction, last_arguments = self._checkpoint_data
@@ -1470,7 +1482,7 @@ class EVM(Eventful):
     @transact
     def CREATE(self, value, offset, size):
         '''Create a new account with associated code'''
-        address = self.world.create_account()
+        address = self.world.create_account(address=EVMWorld.calculate_new_address(sender=self.address, nonce=self.world.get_nonce(self.address)))
         self.world.start_transaction('CREATE',
                                      address,
                                      data=self.read_buffer(offset, size),
@@ -1707,11 +1719,11 @@ class EVMWorld(Platform):
         super().__init__(path="NOPATH", **kwargs)
         self._world_state = {} if storage is None else storage
         self._constraints = constraints
-        self._callstack = []
-        self._deleted_accounts = set()
-        self._logs = list()
+        self._callstack: List[Tuple[Transaction, List[EVMLog], Set[int], Union[bytearray, ArrayProxy], EVM]] = []
+        self._deleted_accounts: Set[int] = set()
+        self._logs: List[EVMLog] = list()
         self._pending_transaction = None
-        self._transactions = list()
+        self._transactions: List[Transaction] = list()
 
         if initial_block_number is None:
             #assume initial symbolic block
@@ -1723,7 +1735,6 @@ class EVMWorld(Platform):
             constraints.add(Operators.UGT(initial_timestamp, 1000000000))
             constraints.add(Operators.ULT(initial_timestamp, 3000000000))
         self._initial_timestamp = initial_timestamp
-        self._do_events()
 
     def __getstate__(self):
         state = super().__getstate__()
@@ -1749,15 +1760,13 @@ class EVMWorld(Platform):
         self._transactions = state['transactions']
         self._initial_block_number = state['initial_block_number']
         self._initial_timestamp = state['_initial_timestamp']
-        self._do_events()
+
+        for _, _, _, _, vm in self._callstack:
+            self.forward_events_from(vm)
 
     @property
     def PC(self):
         return (self.current_vm.address, self.current_vm.pc)
-
-    def _do_events(self):
-        if self.current_vm is not None:
-            self.forward_events_from(self.current_vm)
 
     def __getitem__(self, index):
         assert isinstance(index, int)
@@ -1805,9 +1814,8 @@ class EVMWorld(Platform):
 
         self._publish('will_open_transaction', tx)
         self._callstack.append((tx, self.logs, self.deleted_accounts, copy.copy(self.get_storage(address)), vm))
+        self.forward_events_from(vm)
         self._publish('did_open_transaction', tx)
-
-        self._do_events()
 
     def _close_transaction(self, result, data=None, rollback=False):
         self._publish('will_close_transaction', self._callstack[-1][0])
@@ -1822,6 +1830,10 @@ class EVMWorld(Platform):
             self.send_funds(tx.address, tx.caller, tx.value)
         else:
             self._deleted_accounts = deleted_accounts
+
+            if not issymbolic(tx.caller) and (tx.sort == 'CREATE' or not self._world_state[tx.caller]['code']):
+                # Increment the nonce if this transaction created a contract, or if it was called by a non-contract account
+                self.increase_nonce(tx.caller)
 
         if tx.is_human():
             for deleted_account in self._deleted_accounts:
@@ -2006,6 +2018,27 @@ class EVMWorld(Platform):
         """ Private auxiliary function to replace the storage """
         self._world_state[address]['storage'] = storage
 
+    def get_nonce(self, address):
+        if issymbolic(address):
+            raise ValueError(f"Cannot retrieve the nonce of symbolic address {address}")
+        elif address not in self._world_state:
+            # assume that the caller is a regular account, so initialize its nonce to zero
+            ret = 0
+        elif 'nonce' not in self._world_state[address]:
+            if self._world_state[address]['code']:
+                # this is a contract account, so set the nonce to 1 per EIP 161
+                ret = 1
+            else:
+                ret = 0
+        else:
+            ret = self._world_state[address]['nonce']
+        return ret
+
+    def increase_nonce(self, address):
+        new_nonce = self.get_nonce(address) + 1
+        self._world_state[address]['nonce'] = new_nonce
+        return new_nonce
+
     def set_balance(self, address, value):
         self._world_state[int(address)]['balance'] = value
 
@@ -2099,12 +2132,31 @@ class EVMWorld(Platform):
     def depth(self):
         return len(self._callstack)
 
-    def new_address(self):
+    def new_address(self, sender=None, nonce=None):
         ''' Create a fresh 160bit address '''
-        # Fix use more yellow solution
-        new_address = random.randint(100, pow(2, 160))
-        if new_address in self:
-            return self.new_address()
+        if sender is not None and nonce is None:
+            nonce = self.get_nonce(sender)
+
+        new_address = self.calculate_new_address(sender, nonce)
+        if sender is None and new_address in self:
+            return self.new_address(sender, nonce)
+        return new_address
+
+    @staticmethod
+    def calculate_new_address(sender=None, nonce=None):
+        if sender is None:
+            # Just choose a random address for regular accounts:
+            new_address = random.randint(100, pow(2, 160))
+        elif issymbolic(sender):
+            # TODO(Evan Sultanik): In the interim before we come up with a better solution,
+            #                      consider breaking Yellow Paper comability and just returning
+            #                      a random contract address here
+            raise EthereumError('Manticore does not yet support contracts with symbolic addresses creating new contracts')
+        else:
+            if nonce is None:
+                # assume that the sender is a contract account, which is initialized with a nonce of 1
+                nonce = 1
+            new_address = int(sha3.keccak_256(rlp_encode([sender, nonce])).hexdigest()[24:], 16)
         return new_address
 
     def execute(self):
@@ -2118,21 +2170,39 @@ class EVMWorld(Platform):
         except EndTx as ex:
             self._close_transaction(ex.result, ex.data, rollback=ex.is_rollback())
 
-    def create_account(self, address=None, balance=0, code='', storage=None, nonce=0):
-        ''' code is the runtime code '''
+    def create_account(self, address=None, balance=0, code=None, storage=None, nonce=None):
+        '''Low level account creation. No transaction is done.
+            :param address: the address of the account, if known. If omitted, a new address will be generated as closely to the Yellow Paper as possible.
+            :param balance: the initial balance of the account in Wei
+            :param code: the runtime code of the account, if a contract
+            :param storage: storage array
+            :param nonce: the nonce for the account; contracts should have a nonce greater than or equal to 1
+        '''
+        if code is None:
+            code = bytearray()
+
+        # nonce default to initial nonce
+        if nonce is None:
+            # As per EIP 161, contract accounts are initialized with a nonce of 1
+            nonce = 1 if code else 0
+
         if address is None:
             address = self.new_address()
+
+        if not isinstance(address, int):
+            raise EthereumError('You must provide an address')
+
         if address in self.accounts:
             # FIXME account may have been created via selfdestruct destination
             # or CALL and may contain some ether already, though if it was a
             # selfdestructed address, it can not be reused
             raise EthereumError('The account already exists')
+
         if storage is None:
-            storage = self.constraints.new_array(index_bits=256, value_bits=256, name='STORAGE_{:x}'.format(address), avoid_collisions=True)
-        if code is None:
-            code = bytearray()
+            storage = self.constraints.new_array(index_bits=256, value_bits=256, name='STORAGE_{:x}'.format(address))
+
         self._world_state[address] = {}
-        self._world_state[address]['nonce'] = 0
+        self._world_state[address]['nonce'] = nonce
         self._world_state[address]['balance'] = balance
         self._world_state[address]['storage'] = storage
         self._world_state[address]['code'] = code
@@ -2146,7 +2216,11 @@ class EVMWorld(Platform):
         return address
 
     def create_contract(self, price=0, address=None, caller=None, balance=0, init=None, gas=2300):
-        '''
+        ''' Create a contract account. Sends a transaction to initialize the contract
+            :param address: the address of the new account, if known. If omitted, a new address will be generated as closely to the Yellow Paper as possible.
+            :param balance: the initial balance of the account in Wei
+            :param init: the initialization code of the contract
+
         The way that the Solidity compiler expects the constructor arguments to
         be passed is by appending the arguments to the byte code produced by the
         Solidity compiler. The arguments are formatted as defined in the Ethereum
@@ -2155,7 +2229,11 @@ class EVMWorld(Platform):
         This is done when the byte code in the init byte array is actually run
         on the network.
         '''
-        address = self.create_account(address)
+        expected_address = self.create_account(self.new_address(sender=caller))
+        if address is None:
+            address = expected_address
+        elif caller is not None and address != expected_address:
+            raise EthereumError(f"Error: contract created from address {hex(caller)} with nonce {self.get_nonce(caller)} was expected to be at address {hex(expected_address)}, but create_contract was called with address={hex(address)}")
         self.start_transaction('CREATE', address, price, init, caller, balance, gas=gas)
         self._process_pending_transaction()
         return address
@@ -2174,7 +2252,6 @@ class EVMWorld(Platform):
             :param value: the value, in Wei, passed to this account as part of the same procedure as execution. One Ether is defined as being 10**18 Wei.
             :param bytecode: the byte array that is the machine code to be executed.
             :param gas: gas budget for this transaction.
-
         '''
         assert self._pending_transaction is None, "Already started tx"
         self._pending_transaction = PendingTransaction(sort, address, price, data, caller, value, gas)
@@ -2249,7 +2326,7 @@ class EVMWorld(Platform):
         self._pending_transaction_concretize_address()
         self._pending_transaction_concretize_caller()
         if caller not in self.accounts:
-            raise EVMException('Caller account does not exist')
+            raise EVMException(f"Caller account {hex(caller)} does not exist; valid accounts: {list(map(hex, self.accounts))}")
 
         if address not in self.accounts:
             # Creating an unaccessible account

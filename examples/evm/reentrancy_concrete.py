@@ -98,10 +98,10 @@ reentry_string = ABI.function_selector('withdrawBalance()')
 exploit_account.set_reentry_attack_string(reentry_string)
 
 print("[+] Initial world state")
-print(" attacker_account %x balance: %d"% (attacker_account.address, m.get_balance(attacker_account.address)))
-print(" exploit_account %x balance: %d"%  (exploit_account.address, m.get_balance(exploit_account.address)))
-print(" user_account %x balance: %d"%  (user_account.address, m.get_balance(user_account.address)))
-print(" contract_account %x balance: %d"%  (contract_account.address, m.get_balance(contract_account.address)))
+print(f" attacker_account {attacker_account.address:x} balance: {m.get_balance(attacker_account.address)}")
+print(f" exploit_account {exploit_account.address} balance: {m.get_balance(exploit_account.address)}")
+print(f" user_account {user_account.address:x} balance: {m.get_balance(user_account.address)}")
+print(f" contract_account {contract_account.address:x} balance: {m.get_balance(contract_account.address)}")
 
 
 #User deposits all in contract
@@ -118,10 +118,10 @@ exploit_account.proxycall(ABI.function_selector('withdrawBalance()'))
 print("[+] Let attacker destroy the exploit contract and profit") 
 exploit_account.get_money() 
 
-print(" attacker_account %x balance: %d"% (attacker_account.address, m.get_balance(attacker_account.address)))
-print(" user_account %x balance: %d"%  (user_account.address, m.get_balance(user_account.address)))
-print(" contract_account %x balance: %d"%  (contract_account.address, m.get_balance(contract_account.address)))
+print(f" attacker_account {attacker_account.address:x} balance: {m.get_balance(attacker_account.address)}")
+print(f" user_account {user_account.address:x} balance: {m.get_balance(user_account.address)}")
+print(f" contract_account {contract_account.address:x} balance: {m.get_balance(contract_account.address)}")
 
 m.finalize()
-print("[+] Look for results in %s"% m.workspace)
+print(f"[+] Look for results in {m.workspace}")
 

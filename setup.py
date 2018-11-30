@@ -17,8 +17,8 @@ setup(
     description='Manticore is a symbolic execution tool for analysis of binaries and smart contracts.',
     url='https://github.com/trailofbits/manticore',
     author='Trail of Bits',
-    version='0.2.1.1',
-    packages=find_packages(),
+    version='0.2.2',
+    packages=find_packages(exclude=['tests', 'tests.*']),
     python_requires='>=3.6',
     install_requires=[
         'capstone>=3.0.5',
@@ -26,7 +26,9 @@ setup(
         'unicorn',
         'ply',
         'pysha3',
-        'pyevmasm',
+        # In 0.1.1, pyevmasm changed its gas cost calculations, so Manticore will need to update its
+        # unit tests to match before we can upgrade pyevmasm
+        'pyevmasm==0.1.0',
         'pyyaml',
     ] + rtd_dependent_deps(),
     dependency_links=[

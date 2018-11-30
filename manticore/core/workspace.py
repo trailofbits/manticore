@@ -60,7 +60,7 @@ class Store(object):
         for subclass in cls.__subclasses__():
             if subclass.store_type == type_:
                 return subclass(uri)
-        raise NotImplementedError("Storage type '{0}' not supported.".format(type_))
+        raise NotImplementedError(f"Storage type '{type_}' not supported.")
 
     def __init__(self, uri, state_serialization_method='pickle'):
         assert self.__class__ != Store, "The Store class can not be instantiated (create a subclass)"
@@ -71,7 +71,7 @@ class Store(object):
         if state_serialization_method == 'pickle':
             self._serializer = PickleSerializer()
         else:
-            raise NotImplementedError("Pickling method '{}' not supported.".format(state_serialization_method))
+            raise NotImplementedError(f"Pickling method '{state_serialization_method}' not supported.")
 
     # save_value/load_value and save_stream/load_stream are implemented in terms of each other. A backing store
     # can choose the pair it's best optimized for.
@@ -329,7 +329,7 @@ class Workspace(object):
         self._suffix = '.pkl'
 
     def try_loading_workspace(self):
-        state_names = self._store.ls('{}*'.format(self._prefix))
+        state_names = self._store.ls(f'{self._prefix}*')
 
         def get_state_id(name):
             return int(name[len(self._prefix):-len(self._suffix)], 16)
@@ -362,7 +362,7 @@ class Workspace(object):
         :return: The deserialized state
         :rtype: State
         """
-        return self._store.load_state('{}{:08x}{}'.format(self._prefix, state_id, self._suffix), delete=delete)
+        return self._store.load_state(f'{self._prefix}{state_id:08x}{self._suffix}', delete=delete)
 
     def save_state(self, state, state_id=None):
         """
@@ -379,7 +379,7 @@ class Workspace(object):
         else:
             self.rm_state(state_id)
 
-        self._store.save_state(state, '{}{:08x}{}'.format(self._prefix, state_id, self._suffix))
+        self._store.save_state(state, f'{self._prefix}{state_id:08x}{self._suffix}')
         return state_id
 
     def rm_state(self, state_id):
@@ -388,7 +388,7 @@ class Workspace(object):
 
         :param state_id: The state reference of what to load
         """
-        return self._store.rm('{}{:08x}{}'.format(self._prefix, state_id, self._suffix))
+        return self._store.rm(f'{self._prefix}{state_id:08x}{self._suffix}')
 
 
 class ManticoreOutput(object):
@@ -425,7 +425,7 @@ class ManticoreOutput(object):
                 return self._num
 
             def open_stream(self, suffix='', binary=False):
-                stream_name = '{}_{:08x}.{}'.format(self._prefix, self._num, suffix)
+                stream_name = f'{self._prefix}_{self._num:08x}.{suffix}'
                 return self._ws.save_stream(stream_name, binary=binary)
 
         return Testcase(self, prefix)
@@ -445,7 +445,7 @@ class ManticoreOutput(object):
         :rtype: str
         """
         if self._descriptor is None:
-            self._descriptor = '{}:{}'.format(self._store.store_type, self._store.uri)
+            self._descriptor = f'{self._store.store_type}:{self._store.uri}'
 
         return self._descriptor
 
@@ -456,7 +456,7 @@ class ManticoreOutput(object):
         return self._last_id
 
     def _named_key(self, suffix):
-        return '{}_{:08x}.{}'.format(self._named_key_prefix, self._last_id, suffix)
+        return f'{self._named_key_prefix}_{self._last_id:08x}.{suffix}'
 
     def save_stream(self, key, *rest, **kwargs):
         return self._store.save_stream(key, *rest, **kwargs)
@@ -504,8 +504,8 @@ class ManticoreOutput(object):
 
     def save_summary(self, state, message):
         with self._named_stream('messages') as summary:
-            summary.write("Command line:\n  '{}'\n" .format(' '.join(sys.argv)))
-            summary.write('Status:\n  {}\n\n'.format(message))
+            summary.write(f"Command line:\n  '{' '.join(sys.argv)}'\n")
+            summary.write(f'Status:\n  {message}\n\n')
 
             # FIXME(mark) This is a temporary hack for EVM. We need to sufficiently
             # abstract the below code to work on many platforms, not just Linux. Then
@@ -519,18 +519,17 @@ class ManticoreOutput(object):
             memories = set()
             for cpu in filter(None, state.platform.procs):
                 idx = state.platform.procs.index(cpu)
-                summary.write("================ PROC: %02d ================\n" % idx)
+                summary.write(f"================ PROC: {idx:02d} ================\n")
                 summary.write("Memory:\n")
                 if hash(cpu.memory) not in memories:
                     summary.write(str(cpu.memory).replace('\n', '\n  '))
                     memories.add(hash(cpu.memory))
 
-                summary.write("CPU:\n{}".format(cpu))
+                summary.write(f"CPU:\n{cpu}")
 
                 if hasattr(cpu, "instruction") and cpu.instruction is not None:
                     i = cpu.instruction
-                    summary.write("  Instruction: 0x%x\t(%s %s)\n" % (
-                        i.address, i.mnemonic, i.op_str))
+                    summary.write(f"  Instruction: 0x{i.address:x}\t{i.mnemonic:s} {i.op_str:s})\n")
                 else:
                     summary.write("  Instruction: {symbolic}\n")
 
@@ -539,7 +538,7 @@ class ManticoreOutput(object):
             if 'trace' not in state.context:
                 return
             for entry in state.context['trace']:
-                f.write('0x{:x}\n'.format(entry))
+                f.write(f'0x{entry:x}\n')
 
     def save_constraints(self, state):
         # XXX(yan): We want to conditionally enable this check
@@ -552,4 +551,4 @@ class ManticoreOutput(object):
         with self._named_stream('input') as f:
             for symbol in state.input_symbols:
                 buf = solver.get_value(state.constraints, symbol)
-                f.write('%s: %s\n' % (symbol.name, repr(buf)))
+                f.write(f'{symbol.name}: {buf!r}\n')

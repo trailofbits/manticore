@@ -41,4 +41,4 @@ m.transaction(caller=user_account,
               )
 
 m.finalize()
-print("[+] Look for results in %s" % m.workspace)
+print(f"[+] Look for results in {m.workspace}")

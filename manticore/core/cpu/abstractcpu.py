@@ -16,7 +16,7 @@ from ...utils.emulate import UnicornEmulator
 from ...utils.event import Eventful
 
 logger = logging.getLogger(__name__)
-register_logger = logging.getLogger('{}.registers'.format(__name__))
+register_logger = logging.getLogger(f'{__name__}.registers')
 
 ###################################################################################
 # Exceptions
@@ -31,7 +31,7 @@ class DecodeException(CpuException):
     Raised when trying to decode an unknown or invalid instruction '''
 
     def __init__(self, pc, bytes):
-        super().__init__("Error decoding instruction @%08x", pc)
+        super().__init__("Error decoding instruction @%08x" % pc)
         self.pc = pc
         self.bytes = bytes
 
@@ -57,7 +57,7 @@ class Interruption(CpuException):
     ''' A software interrupt. '''
 
     def __init__(self, N):
-        super().__init__("CPU Software Interruption %08x", N)
+        super().__init__("CPU Software Interruption %08x" % N)
         self.N = N
 
 
@@ -74,7 +74,7 @@ class ConcretizeRegister(CpuException):
     '''
 
     def __init__(self, cpu, reg_name, message=None, policy='MINMAX'):
-        self.message = message if message else "Concretizing {}".format(reg_name)
+        self.message = message if message else f"Concretizing {reg_name}"
 
         self.cpu = cpu
         self.reg_name = reg_name
@@ -87,7 +87,7 @@ class ConcretizeArgument(CpuException):
     '''
 
     def __init__(self, cpu, argnum, policy='MINMAX'):
-        self.message = "Concretizing argument #%d." % (argnum,)
+        self.message = f"Concretizing argument #{argnum}."
         self.cpu = cpu
         self.policy = policy
         self.argnum = argnum
@@ -405,20 +405,20 @@ class SyscallAbi(Abi):
 
             args = []
             for arg in self._last_arguments:
-                arg_s = "0x{:x}".format(arg)
+                arg_s = f"0x{arg:x}"
                 if self._cpu.memory.access_ok(arg, 'r'):
                     try:
                         s = self._cpu.read_string(arg, max_arg_expansion)
-                        arg_s = '({})'.format(s.rstrip()) if s else arg_s
+                        arg_s = f'({s.rstrip()})' if s else arg_s
                     except UnicodeDecodeError:
                         pass
                 args.append(arg_s)
 
             args_s = ', '.join(args)
 
-            ret_s = '{}'.format(ret)
+            ret_s = f'{ret}'
             if ret > min_hex_expansion:
-                ret_s = ret_s + '(0x{:x})'.format(ret)
+                ret_s = ret_s + f'(0x{ret:x})'
 
             platform_logger.debug('%s(%s) -> %s', model.__func__.__name__, repr(args_s), ret_s)
 
@@ -846,8 +846,8 @@ class Cpu(Eventful):
 
             else:
                 text_bytes = ' '.join('%02x' % x for x in insn.bytes)
-                logger.info("Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
-                            insn.address, text_bytes, insn.mnemonic, insn.op_str)
+                logger.warning("Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
+                               insn.address, text_bytes, insn.mnemonic, insn.op_str)
                 self.emulate(insn)
 
         except (Interruption, Syscall) as e:
@@ -892,9 +892,7 @@ class Cpu(Eventful):
     def render_instruction(self, insn=None):
         try:
             insn = self.instruction
-            return "INSTRUCTION: 0x%016x:\t%s\t%s" % (insn.address,
-                                                      insn.mnemonic,
-                                                      insn.op_str)
+            return f"INSTRUCTION: 0x{insn.address:016x}:\t{insn.mnemonic}\t{insn.op_str}"
         except Exception as e:
             return "{can't decode instruction}"
 
@@ -904,12 +902,13 @@ class Cpu(Eventful):
         value = self.read_register(reg_name)
 
         if issymbolic(value):
-            aux = "%3s: " % reg_name + "%16s" % value
+            value = str(value)  # coerce the value into a string
+            aux = f"{reg_name:3s}: {value:16s}"
             result += aux
         elif isinstance(value, int):
-            result += "%3s: 0x%016x" % (reg_name, value)
+            result += f"{reg_name:3s}: 0x{value:016x}"
         else:
-            result += "%3s: %r" % (reg_name, value)
+            result += f"{reg_name:3s}: {value!r}"
         return result
 
     def render_registers(self):
@@ -927,7 +926,7 @@ class Cpu(Eventful):
         :rtype: str
         :return: name and current value for all the registers.
         '''
-        result = self.render_instruction() + "\n"
+        result = f'{self.render_instruction()}\n'
         result += '\n'.join(self.render_registers())
         return result
 

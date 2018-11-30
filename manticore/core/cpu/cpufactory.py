@@ -22,7 +22,7 @@ class CpuFactory(object):
         elif os == 'linux' and machine == 'armv7':
             return Armv7CdeclAbi(cpu)
         else:
-            return NotImplementedError("OS and machine combination not supported: {}/{}".format(os, machine))
+            return NotImplementedError(f"OS and machine combination not supported: {os}/{machine}")
 
     @staticmethod
     def get_syscall_abi(cpu, os, machine):
@@ -33,4 +33,4 @@ class CpuFactory(object):
         elif os == 'linux' and machine == 'armv7':
             return Armv7LinuxSyscallAbi(cpu)
         else:
-            return NotImplementedError("OS and machine combination not supported: {}/{}".format(os, machine))
+            return NotImplementedError(f"OS and machine combination not supported: {os}/{machine}")

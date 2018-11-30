@@ -1,6 +1,7 @@
 from io import BytesIO
 from manticore.core.smtlib import Solver, Operators
 import unittest
+from unittest import mock
 import tempfile, os
 import gc, pickle
 import fcntl
@@ -1290,7 +1291,7 @@ class MemoryTest(unittest.TestCase):
         self.assertEqual(mem[addr], b'a')
 
         mem.mprotect(addr, size, 'w')
-        with self.assertRaisesRegex(InvalidMemoryAccess, 'Invalid memory access \(mode:.\) <{:x}>'.format(addr)):
+        with self.assertRaisesRegex(InvalidMemoryAccess, f'Invalid memory access \(mode:.\) <{addr:x}>'):
             _ = mem[addr]
 
 
@@ -1361,7 +1362,7 @@ class MemoryTest(unittest.TestCase):
         addr = mem.mmap(None, size, 'wx')
         mem[addr] = 'a'
         mem.mprotect(addr, size, 'r')
-        with self.assertRaisesRegex(InvalidMemoryAccess, 'Invalid memory access \(mode:w\) <{:x}>'.format(addr)):
+        with self.assertRaisesRegex(InvalidMemoryAccess, f'Invalid memory access \(mode:w\) <{addr:x}>'):
             mem[addr] = 'a'
 
     def testmprotecNoReadthenOkRead(self):
@@ -1375,7 +1376,7 @@ class MemoryTest(unittest.TestCase):
         addr = mem.mmap(None, size, 'wx')
         mem[addr] = 'a'
 
-        with self.assertRaisesRegex(InvalidMemoryAccess, 'Invalid memory access \(mode:r\) <{:x}>'.format(addr)):
+        with self.assertRaisesRegex(InvalidMemoryAccess, f'Invalid memory access \(mode:r\) <{addr:x}>'):
             _ = mem[addr]
 
         mem.mprotect(addr, size, 'r')
@@ -1770,6 +1771,27 @@ class MemoryTest(unittest.TestCase):
         with self.assertRaises(InvalidSymbolicMemoryAccess):
             mem.read(addr2, 5)
 
+    def test_getlibc(self):
+        import manticore.utils.mappings
+        import ctypes
+
+        ctypes.cdll = mock.MagicMock()
+        manticore.utils.mappings.sys = mock.MagicMock()
+        def mock_loadlib(x):
+            mock_loadlib.libname = x 
+        ctypes.cdll.configure_mock(LoadLibrary=mock_loadlib)
+
+        manticore.utils.mappings.sys.configure_mock(platform='darwin')
+        manticore.utils.mappings.get_libc()
+        self.assertEqual(mock_loadlib.libname, 'libc.dylib')
+
+        manticore.utils.mappings.sys.configure_mock(platform='LINUX')
+        manticore.utils.mappings.get_libc()
+        self.assertEqual(mock_loadlib.libname, 'libc.so.6')
+
+        manticore.utils.mappings.sys.configure_mock(platform='NETBSD')
+        manticore.utils.mappings.get_libc()
+        self.assertEqual(mock_loadlib.libname, 'libc.so')
 
 if __name__ == '__main__':
     unittest.main()

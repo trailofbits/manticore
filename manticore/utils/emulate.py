@@ -57,7 +57,7 @@ class UnicornEmulator(object):
             }[self._cpu.mode]
 
         else:
-            raise NotImplementedError('Unsupported architecture: %s' % self._cpu.arch)
+            raise NotImplementedError(f'Unsupported architecture: {self._cpu.arch}')
 
     def reset(self):
         self._emu = Uc(self._uc_arch, self._uc_mode)
@@ -200,6 +200,8 @@ class UnicornEmulator(object):
         '''
         A single attempt at executing an instruction.
         '''
+        logger.debug("0x%x:\t%s\t%s"
+                     % (instruction.address, instruction.mnemonic, instruction.op_str))
 
         registers = set(self._cpu.canonical_registers)
 
@@ -248,7 +250,10 @@ class UnicornEmulator(object):
         saved_PC = self._cpu.PC
 
         try:
-            self._emu.emu_start(self._cpu.PC, self._cpu.PC + instruction.size, count=1)
+            pc = self._cpu.PC
+            if self._cpu.arch == CS_ARCH_ARM and self._uc_mode == UC_MODE_THUMB:
+                pc |= 1
+            self._emu.emu_start(pc, self._cpu.PC + instruction.size, count=1)
         except UcError as e:
             # We request re-execution by signaling error; if we we didn't set
             # _should_try_again, it was likely an actual error
@@ -261,9 +266,11 @@ class UnicornEmulator(object):
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug("=" * 10)
             for register in self._cpu.canonical_registers:
-                logger.debug("Register % 3s  Manticore: %08x, Unicorn %08x",
-                             register, self._cpu.read_register(register),
-                             self._emu.reg_read(self._to_unicorn_id(register)))
+                logger.debug(
+                    f"Register {register:3s}  "
+                    f"Manticore: {self._cpu.read_register(register):08x}, "
+                    f"Unicorn {self._emu.reg_read(self._to_unicorn_id(register)):08x}"
+                )
             logger.debug(">" * 10)
 
         # Bring back Unicorn registers to Manticore

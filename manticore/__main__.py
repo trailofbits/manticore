@@ -3,7 +3,7 @@ import sys
 import logging
 import argparse
 
-from . import Manticore
+from . import Manticore, STDIN_INPUT_DEFAULT_SIZE
 from .utils import log, config
 
 # XXX(yan): This would normally be __name__, but then logger output will be pre-
@@ -13,6 +13,8 @@ logger = logging.getLogger('manticore.main')
 consts = config.get_group('main')
 consts.add('recursionlimit', default=10000,
            description="Value to set for Python recursion limit")
+consts.add('timeout', default=0,
+           description='Timeout, in seconds, for Manticore invocation')
 
 
 def parse_arguments():
@@ -45,17 +47,19 @@ def parse_arguments():
                         help='Number of parallel processes to spawn')
     parser.add_argument('argv', type=str, nargs='*', default=[],
                         help="Path to program, and arguments ('+' in arguments indicates symbolic byte).")
-    parser.add_argument('--timeout', type=int, default=0,
+    parser.add_argument('--timeout', type=int, default=consts.timeout,
                         help='Timeout. Abort exploration after TIMEOUT seconds')
     parser.add_argument('-v', action='count', default=1,
                         help='Specify verbosity level from -v to -vvvv')
     parser.add_argument('--workspace', type=str, default=None,
                         help=("A folder name for temporaries and results."
                               "(default mcore_?????)"))
-    parser.add_argument('--version', action='version', version='Manticore 0.2.1.1',
+    parser.add_argument('--version', action='version', version='Manticore 0.2.2',
                         help='Show program version information')
     parser.add_argument('--config', type=str,
                         help='Manticore config file (.yml) to use. (default config file pattern is: ./[.]m[anti]core.yml)')
+    parser.add_argument('--stdin_size', type=int, default=STDIN_INPUT_DEFAULT_SIZE,
+                        help='Control the maximum symbolic stdin size')
 
     bin_flags = parser.add_argument_group('Binary flags')
     bin_flags.add_argument('--entrysymbol', type=str, default=None,
@@ -128,6 +132,10 @@ def parse_arguments():
     eth_flags.add_argument('--avoid-constant', action='store_true',
                            help='Avoid exploring constant functions for human transactions')
 
+    eth_flags.add_argument('--detect-race-condition', action='store_true',
+                           help='Enable detection of possible transaction race conditions'
+                                ' (transaction order dependencies) (Ethereum only)')
+
     eth_flags.add_argument('--limit-loops', action='store_true',
                            help='Avoid exploring constant functions for human transactions')
 
@@ -156,7 +164,10 @@ def parse_arguments():
 
 
 def ethereum_cli(args):
-    from .ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, DetectUninitializedStorage, DetectUninitializedMemory, FilterFunctions, DetectReentrancySimple, DetectReentrancyAdvanced, DetectUnusedRetVal, DetectSelfdestruct, LoopDepthLimiter, DetectDelegatecall, DetectExternalCallAndLeak, DetectEnvInstruction, VerboseTrace
+    from .ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, DetectUninitializedStorage, \
+        DetectUninitializedMemory, FilterFunctions, DetectReentrancySimple, DetectReentrancyAdvanced, \
+        DetectUnusedRetVal, DetectSelfdestruct, LoopDepthLimiter, DetectDelegatecall, \
+        DetectExternalCallAndLeak, DetectEnvInstruction, VerboseTrace, DetectRaceCondition
 
     log.init_logging()
 
@@ -184,6 +195,8 @@ def ethereum_cli(args):
         m.register_detector(DetectExternalCallAndLeak())
     if args.detect_all or args.detect_env_instr:
         m.register_detector(DetectEnvInstruction())
+    if args.detect_all or args.detect_race_condition:
+        m.register_detector(DetectRaceCondition())
 
     if args.verbose_trace:
         m.register_plugin(VerboseTrace())
@@ -197,7 +210,8 @@ def ethereum_cli(args):
 
     logger.info("Beginning analysis")
 
-    m.multi_tx_analysis(args.argv[0], contract_name=args.contract, tx_limit=args.txlimit, tx_use_coverage=not args.txnocoverage, tx_send_ether=not args.txnoether, tx_account=args.txaccount)
+    with m.shutdown_timeout(args.timeout):
+        m.multi_tx_analysis(args.argv[0], contract_name=args.contract, tx_limit=args.txlimit, tx_use_coverage=not args.txnocoverage, tx_send_ether=not args.txnoether, tx_account=args.txaccount)
 
     #TODO unregister all plugins
 
@@ -224,7 +238,7 @@ def main():
 
     env = {key: val for key, val in [env[0].split('=') for env in args.env]}
 
-    m = Manticore(args.argv[0], argv=args.argv[1:], env=env, entry_symbol=args.entrysymbol, workspace_url=args.workspace, policy=args.policy, concrete_start=args.data)
+    m = Manticore(args.argv[0], argv=args.argv[1:], env=env, entry_symbol=args.entrysymbol, workspace_url=args.workspace, policy=args.policy, concrete_start=args.data, stdin_size=args.stdin_size)
 
     # Default plugins for now.. FIXME REMOVE!
     m.register_plugin(InstructionCounter())

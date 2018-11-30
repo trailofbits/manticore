@@ -137,7 +137,7 @@ class BoolVariable(Bool, Variable):
 
     @property
     def declaration(self):
-        return '(declare-fun %s () Bool)' % self.name
+        return f'(declare-fun {self.name} () Bool)'
 
 
 class BoolConstant(Bool, Constant):
@@ -390,7 +390,7 @@ class BitVecVariable(BitVec, Variable):
 
     @property
     def declaration(self):
-        return '(declare-fun %s () (_ BitVec %d))' % (self.name, self.size)
+        return f'(declare-fun {self.name} () (_ BitVec {self.size}))'
 
 
 class BitVecConstant(BitVec, Constant):
@@ -757,7 +757,7 @@ class ArrayVariable(Array, Variable):
 
     @property
     def declaration(self):
-        return '(declare-fun %s () (Array (_ BitVec %d) (_ BitVec %d)))' % (self.name, self.index_bits, self.value_bits)
+        return f'(declare-fun {self.name} () (Array (_ BitVec {self.index_bits}) (_ BitVec {self.value_bits})))'
 
 
 class ArrayOperation(Array, Operation):
@@ -909,6 +909,9 @@ class ArrayProxy(Array):
         index = simplify(index)
         if isinstance(index, Constant):
             self._concrete_cache[index.value] = value
+        else:
+            # delete all cache as we do not know what this may overwrite.
+            self._concrete_cache = {}
         self.written.add(index)
         auxiliary = self._array.store(index, value)
         self._array = auxiliary
@@ -1025,8 +1028,20 @@ class BitVecExtract(BitVecOperation):
         assert isinstance(size, int)
         assert offset >= 0 and offset + size <= operand.size
         super().__init__(size, operand, *args, **kwargs)
-        self.begining = offset
-        self.end = offset + size - 1
+        self._begining = offset
+        self._end = offset + size - 1
+
+    @property
+    def value(self):
+        return self.operands[0]
+
+    @property
+    def begining(self):
+        return self._begining
+
+    @property
+    def end(self):
+        return self._end
 
 
 class BitVecConcat(BitVecOperation):
