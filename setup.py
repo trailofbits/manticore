@@ -12,20 +12,22 @@ def rtd_dependent_deps():
         return ['z3-solver']
 
 
+native_deps = [
+    'capstone>=3.0.5',
+    'pyelftools',
+    'unicorn',
+]
+
 extra_require = {
-    'native': [
-        'capstone>=3.0.5',
-        'pyelftools',
-        'unicorn',
-    ],
-    'dev': [
+    'native': native_deps,
+    'dev': native_deps + [
         'keystone-engine',
         'coverage',
         'nose',
         'Sphinx',
     ],
     # noks - no keystone
-    'dev-noks': [
+    'dev-noks': native_deps + [
         'coverage',
         'nose',
         'Sphinx',
