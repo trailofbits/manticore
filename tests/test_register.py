@@ -1,7 +1,7 @@
 import unittest
 
 from manticore.core.smtlib import Bool, BitVecConstant
-from manticore.core.cpu.register import Register
+from manticore.native.cpu import Register
 
 
 class RegisterTest(unittest.TestCase):

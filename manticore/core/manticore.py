@@ -390,7 +390,7 @@ class ManticoreBase(Eventful):
         if pc not in self._assertions:
             return
 
-        from manticore.core.parser.parser import parse
+        from .parser.parser import parse
 
         program = self._assertions[pc]
 

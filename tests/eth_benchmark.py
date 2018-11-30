@@ -8,8 +8,7 @@ import unittest
 import os
 import shutil
 
-from manticore.ethereum import DetectInvalid, DetectIntegerOverflow, DetectReentrancyAdvanced
-from manticore.ethereum.manticore import ManticoreEVM
+from manticore.ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, DetectReentrancyAdvanced
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 

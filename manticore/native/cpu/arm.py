@@ -8,7 +8,7 @@ from .abstractcpu import Abi, Cpu, Interruption, Operand, RegisterFile, SyscallA
 from .abstractcpu import instruction as abstract_instruction
 from .bitwise import *
 from .register import Register
-from ..smtlib import Operators, BitVecConstant
+from ...core.smtlib import Operators, BitVecConstant
 from ...utils.helpers import issymbolic
 
 logger = logging.getLogger(__name__)

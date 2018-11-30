@@ -1,6 +1,4 @@
 import unittest
-from manticore.core.cpu.x86 import *
-from manticore.core.smtlib import Operators
 from manticore.native.memory import *
 
 

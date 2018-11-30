@@ -7,8 +7,8 @@ from functools import wraps
 from keystone import Ks, KS_ARCH_ARM, KS_MODE_ARM, KS_MODE_THUMB
 from unicorn import UC_QUERY_MODE, UC_MODE_THUMB
 
-from manticore.core.cpu.abstractcpu import ConcretizeRegister
-from manticore.core.cpu.arm import Armv7Cpu as Cpu, Mask, Interruption
+from manticore.native.cpu import ConcretizeRegister
+from manticore.native.cpu import Armv7Cpu as Cpu, Mask, Interruption
 from manticore.core.smtlib import ConstraintSet
 from manticore.native.state import State
 from manticore.native.memory import ConcretizeMemory, Memory32

@@ -2365,8 +2365,7 @@ class EVMWorld(Platform):
             self._close_transaction('STOP')
             
     def dump(self, stream, state, mevm, message):
-        from manticore.ethereum.manticore import calculate_coverage
-        from manticore.ethereum.manticore import flagged
+        from ..ethereum.manticore import calculate_coverage, flagged
         blockchain = state.platform
         last_tx = blockchain.last_transaction
 

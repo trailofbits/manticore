@@ -1,7 +1,6 @@
 
 import struct
 import unittest
-from manticore.core.cpu.x86 import *
 from manticore.native.memory import *
 from manticore.core.smtlib import BitVecOr
 from tests import mockmem
@@ -570,7 +569,6 @@ class SymCPUTest(unittest.TestCase):
 
 
     def test_cache_005(self):
-        import random
         cs = ConstraintSet()
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)

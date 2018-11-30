@@ -1,6 +1,5 @@
 
 import unittest
-from manticore.core.cpu.x86 import *
 from manticore.native.memory import *
 
 class CPUTest(unittest.TestCase):

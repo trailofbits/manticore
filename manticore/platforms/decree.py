@@ -1,8 +1,8 @@
 
 from . import cgcrandom
 # TODO use cpu factory
-from ..core.cpu.x86 import I386Cpu
-from ..core.cpu.abstractcpu import Interruption, ConcretizeRegister, ConcretizeArgument
+from ..native.cpu.x86 import I386Cpu
+from ..native.cpu.abstractcpu import Interruption, ConcretizeRegister, ConcretizeArgument
 from ..native.memory import SMemory32, Memory32
 from ..core.smtlib import *
 from ..core.executor import TerminateState

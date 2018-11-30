@@ -9,10 +9,8 @@ import os
 import shutil
 
 from manticore.core.smtlib import operators
-from manticore.ethereum import DetectIntegerOverflow, DetectUnusedRetVal, DetectSelfdestruct, \
-    DetectDelegatecall, \
-    DetectExternalCallAndLeak, DetectEnvInstruction, DetectRaceCondition
-from manticore.ethereum.manticore import ManticoreEVM
+from manticore.ethereum import ManticoreEVM, DetectIntegerOverflow, DetectUnusedRetVal, DetectSelfdestruct, \
+    DetectDelegatecall, DetectExternalCallAndLeak, DetectEnvInstruction, DetectRaceCondition
 from manticore.ethereum.plugins import LoopDepthLimiter
 from eth_general import make_mock_evm_state
 

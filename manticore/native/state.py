@@ -5,7 +5,7 @@ from ..native.memory import ConcretizeMemory, MemoryException
 class State(StateBase):
 
     def execute(self):
-        from manticore.core.cpu.abstractcpu import ConcretizeRegister  # must be here, otherwise we get circular imports
+        from .cpu.abstractcpu import ConcretizeRegister  # must be here, otherwise we get circular imports
 
         try:
             result = self._platform.execute()

@@ -1,8 +1,7 @@
 
 import unittest
 import functools
-from manticore.core.cpu.x86 import *
-from manticore.core.smtlib import Operators, Expression
+from manticore.core.smtlib import Expression
 from manticore.native.memory import *
 
 

@@ -11,8 +11,8 @@ from .abstractcpu import (
 )
 
 
-from ..smtlib import Operators, BitVec, Bool, BitVecConstant, operator, visitors
-from ..native.memory import ConcretizeMemory
+from ...core.smtlib import Operators, BitVec, Bool, BitVecConstant, operator, visitors
+from ..memory import ConcretizeMemory
 from ...utils.helpers import issymbolic
 from functools import reduce
 

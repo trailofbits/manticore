@@ -1,18 +1,17 @@
 import inspect
 import logging
-import io
-
-from functools import wraps
 from itertools import islice
 
+import io
 import unicorn
+from functools import wraps
 
 from .disasm import init_disassembler
-from ..smtlib import BitVec, Operators, Constant
-from ...native.memory import ConcretizeMemory, InvalidMemoryAccess
-from ...utils.helpers import issymbolic
+from ..memory import ConcretizeMemory, InvalidMemoryAccess
+from ...core.smtlib import BitVec, Operators, Constant
 from ...utils.emulate import UnicornEmulator
 from ...utils.event import Eventful
+from ...utils.helpers import issymbolic
 
 logger = logging.getLogger(__name__)
 register_logger = logging.getLogger(f'{__name__}.registers')
@@ -318,8 +317,7 @@ class Abi(object):
         descriptors = self.get_arguments()
         argument_iter = map(resolve_argument, descriptors)
 
-        # TODO(mark) this is here as a hack to avoid circular import issues
-        from manticore.native.models import isvariadic
+        from ..models import isvariadic  # prevent circular imports
 
         if isvariadic(model):
             arguments = prefix_args + (argument_iter,)

@@ -1,4 +1,4 @@
-from ..smtlib import Operators, BitVec, Bool
+from ...core.smtlib import Operators, BitVec, Bool
 
 
 class Register(object):

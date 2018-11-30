@@ -1,6 +1,6 @@
 import unittest
 
-from manticore.core.cpu.arm import Armv7RegisterFile as RF
+from manticore.native.cpu import Armv7RegisterFile as RF
 
 
 class Armv7RFTest(unittest.TestCase):

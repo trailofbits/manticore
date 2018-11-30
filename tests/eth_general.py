@@ -16,9 +16,8 @@ from manticore.core.smtlib import solver
 from manticore.core.smtlib.expression import BitVec
 from manticore.core.smtlib.visitors import to_constant
 from manticore.core.state import TerminateState
-from manticore.ethereum import State, DetectExternalCallAndLeak, DetectIntegerOverflow, Detector, NoAliveStates, ABI, \
-    EthereumError
-from manticore.ethereum.manticore import ManticoreEVM
+from manticore.ethereum import ManticoreEVM, State, DetectExternalCallAndLeak, DetectIntegerOverflow, Detector, \
+    NoAliveStates, ABI, EthereumError
 from manticore.ethereum.plugins import FilterFunctions
 from manticore.ethereum.solidity import SolidityMetadata
 from manticore.platforms import evm
