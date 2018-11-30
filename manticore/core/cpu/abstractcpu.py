@@ -603,15 +603,14 @@ class Cpu(Eventful):
         if size is None:
             size = self.address_bit_size
         assert size in SANE_SIZES
-        out = self._publish('will_read_memory', where, size)
+        self._publish('will_read_memory', where, size)
 
-        if not out:
-            data = self._memory.read(where, size // 8, force)
+        data = self._memory.read(where, size // 8, force)
+        if not issymbolic(data):
             assert (8 * len(data)) == size
             value = Operators.CONCAT(size, *map(Operators.ORD, reversed(data)))
         else:
-            value = out
-
+            value = data  # TODO: Validation?
 
         self._publish('did_read_memory', where, value, size)
         return value

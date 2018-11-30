@@ -119,23 +119,24 @@ class Eventful(object, metaclass=EventsGatherMetaclass):
     # The underscore _name is to avoid naming collisions with callback params
     def _publish(self, _name, *args, **kwargs):
         self._check_event(_name)
-        return self._publish_impl(_name, *args, **kwargs)
+        self._publish_impl(_name, *args, **kwargs)
 
     # Separate from _publish since the recursive method call to forward an event
     # shouldn't check the event.
     def _publish_impl(self, _name, *args, **kwargs):
-        out = None
         bucket = self._get_signal_bucket(_name)
         for robj, methods in bucket.items():
             for callback in methods:
-                out = callback(robj(), *args, **kwargs)
+                callback(robj(), *args, **kwargs)
 
         # The include_source flag indicates to prepend the source of the event in
         # the callback signature. This is set on forward_events_from/to
         items = tuple(self._forwards.items())
         for sink, include_source in items:
-            out = sink._publish_impl(_name, self, *args, **kwargs) if include_source else sink._publish_impl(_name, *args, **kwargs)
-        return out
+            if include_source:
+                sink._publish_impl(_name, self, *args, **kwargs)
+            else:
+                sink._publish_impl(_name, *args, **kwargs)
 
     def subscribe(self, name, method):
         if not inspect.ismethod(method):
