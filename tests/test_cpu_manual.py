@@ -2,7 +2,7 @@
 import struct
 import unittest
 
-from manticore.core.cpu.x86 import I386Cpu
+from manticore.native.cpu.x86 import I386Cpu
 
 from manticore.native.cpu.abstractcpu import ConcretizeRegister
 from manticore.native.cpu.x86 import AMD64Cpu

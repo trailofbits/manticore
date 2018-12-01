@@ -1,4 +1,7 @@
 import unittest
+
+from manticore.native.cpu.abstractcpu import ConcretizeRegister
+from manticore.native.cpu.x86 import AMD64Cpu
 from manticore.native.memory import *
 
 
@@ -6307,8 +6310,6 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-
-
 
 
 if __name__ == '__main__':
