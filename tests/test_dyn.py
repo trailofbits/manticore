@@ -1,5 +1,8 @@
 
 import unittest
+
+from manticore.native.cpu.abstractcpu import ConcretizeRegister
+from manticore.native.cpu.x86 import AMD64Cpu
 from manticore.native.memory import *
 
 
