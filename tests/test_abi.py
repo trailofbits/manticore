@@ -3,9 +3,9 @@
 
 import unittest
 
-from manticore.native.cpu import ConcretizeArgument, ConcretizeRegister, ConcretizeMemory
-from manticore.native.cpu import Armv7Cpu, Armv7LinuxSyscallAbi, Armv7CdeclAbi
-from manticore.native.cpu import I386Cpu, AMD64Cpu, I386LinuxSyscallAbi, I386StdcallAbi, I386CdeclAbi, AMD64LinuxSyscallAbi, SystemVAbi
+from manticore.native.cpu.abstractcpu import ConcretizeArgument, ConcretizeRegister, ConcretizeMemory
+from manticore.native.cpu.arm import Armv7Cpu, Armv7LinuxSyscallAbi, Armv7CdeclAbi
+from manticore.native.cpu.x86 import I386Cpu, AMD64Cpu, I386LinuxSyscallAbi, I386StdcallAbi, I386CdeclAbi, AMD64LinuxSyscallAbi, SystemVAbi
 from manticore.native.memory import SMemory32, SMemory64
 from manticore.core.smtlib import ConstraintSet, Operators
 from manticore.native.models import variadic
