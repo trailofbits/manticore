@@ -5,8 +5,9 @@ import os
 import shutil
 import tempfile
 
+from manticore import issymbolic
 from manticore.core.smtlib import BitVecVariable
-from manticore.native import Manticore, issymbolic
+from manticore.native import Manticore
 
 
 class ManticoreDriverTest(unittest.TestCase):

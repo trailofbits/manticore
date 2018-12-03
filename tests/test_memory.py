@@ -12,7 +12,7 @@ from io import BytesIO
 
 from manticore.core.smtlib import Expression
 from manticore.native.memory import *
-from manticore.utils.helpers import issymbolic
+from manticore import issymbolic
 
 
 def isconcrete(value):
