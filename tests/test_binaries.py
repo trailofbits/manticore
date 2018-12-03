@@ -61,15 +61,13 @@ class IntegrationTest(unittest.TestCase):
         # Remove the directory after the test
         shutil.rmtree(self.test_dir)
 
-    def _load_visited_set(self, visited):
+    def _load_visited(self, visited):
         self.assertTrue(os.path.exists(visited))
 
         with open(visited, 'r') as f:
             vitems = f.read().splitlines()
 
-        vitems = [int(x[2:], 16) for x in vitems]
-
-        return set(vitems)
+        return [int(x[2:], 16) for x in vitems]
 
     def _simple_cli_run(self, filename, contract=None, tx_limit=1, in_directory=None):
         """
@@ -187,7 +185,7 @@ class IntegrationTest(unittest.TestCase):
         with open(assertions, 'w') as f:
             f.write('0x0000000000401003 ZF == 1')
 
-        output = subprocess.check_output([
+        cmd = [
             PYTHON_BIN, '-m', 'manticore',
             '--workspace', workspace,
             '--proc', '4',
@@ -195,8 +193,9 @@ class IntegrationTest(unittest.TestCase):
             '--assertions', assertions,
             filename,
             '+++++++++',
-            '-vvv'  # todo / fixme: remove this after dbg
-        ])
+        ]
+
+        output = subprocess.check_output(cmd)
 
         expected_output_regex = b'.*m.manticore:INFO: Loading program .*binaries/%s\n' % bytes(binname, 'utf-8')
 
@@ -208,10 +207,10 @@ class IntegrationTest(unittest.TestCase):
 
         self.assertRegex(output, expected_output_regex)
 
-        actual = self._load_visited_set(os.path.join(DIRPATH, workspace, 'visited.txt'))
-        expected = self._load_visited_set(os.path.join(DIRPATH, 'reference', refname))
+        actual = self._load_visited(os.path.join(DIRPATH, workspace, 'visited.txt'))
+        expected = self._load_visited(os.path.join(DIRPATH, 'reference', refname))
 
-        self.assertGreaterEqual(actual, expected)
+        self.assertEqual(actual, expected)
 
     @unittest.skip('Debug')
     def test_arguments_assertions_amd64(self):
@@ -236,7 +235,7 @@ class IntegrationTest(unittest.TestCase):
                               '--policy', 'uncovered',
                                 filename], os.path.join(self.test_dir, 'output.log'))
 
-        actual = self._load_visited_set(os.path.join(DIRPATH, workspace, 'visited.txt'))
+        actual = self._load_visited(os.path.join(DIRPATH, workspace, 'visited.txt'))
         self.assertTrue(len(actual) > 100)
 
     @unittest.skip('Debug')

@@ -5,11 +5,6 @@ RV=0
 set -o errexit
 set -o pipefail
 
-# vv remove this
-coverage run -m unittest discover tests/ -p test_binaries.py 2>&1 >/dev/null | tee travis_tests.log
-exit $?
-# ^^ REMOVE THIS
-
 # Run all examples; this assumes PWD is examples/script
 run_examples() {
     # concolic assumes presence of ../linux/simpleassert
