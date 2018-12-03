@@ -11,24 +11,24 @@ logger = logging.getLogger(__name__)
 
 
 def issymbolic(value):
-    '''
+    """
     Helper to determine whether an object is symbolic (e.g checking
     if data read from memory is symbolic)
 
     :param object value: object to check
     :return: whether `value` is symbolic
     :rtype: bool
-    '''
+    """
     from ..core.smtlib import Expression  # prevent circular imports
     return isinstance(value, Expression)
 
 
 def istainted(arg, taint=None):
-    '''
+    """
     Helper to determine whether an object if tainted.
     :param arg: a value or Expression
     :param taint: a regular expression matching a taint value (eg. 'IMPORTANT.*'). If None, this function checks for any taint value.
-    '''
+    """
 
     if not issymbolic(arg):
         return False
@@ -42,11 +42,11 @@ def istainted(arg, taint=None):
 
 
 def get_taints(arg, taint=None):
-    '''
+    """
     Helper to list an object taints.
     :param arg: a value or Expression
     :param taint: a regular expression matching a taint value (eg. 'IMPORTANT.*'). If None, this function checks for any taint value.
-    '''
+    """
 
     if not issymbolic(arg):
         return
@@ -61,11 +61,11 @@ def get_taints(arg, taint=None):
 
 
 def taint_with(arg, taint, value_bits=256, index_bits=256):
-    '''
+    """
     Helper to taint a value.
     :param arg: a value or Expression
     :param taint: a regular expression matching a taint value (eg. 'IMPORTANT.*'). If None, this function checks for any taint value.
-    '''
+    """
     from ..core.smtlib import BitVecConstant  # prevent circular imports
 
     tainted_fset = frozenset((taint,))
