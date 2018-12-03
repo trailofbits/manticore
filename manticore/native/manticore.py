@@ -34,7 +34,7 @@ class Manticore(ManticoreBase):
         super().__init__(initial_state, workspace_url=workspace_url, policy=policy, **kwargs)
 
     @classmethod
-    def linux(cls, path, argv=None, envp=None, entry_symbol=None, symbolic_files=None, concrete_start='', stdin_size=consts.stdin_size, **kwargs):
+    def linux(cls, path, argv=None, envp=None, entry_symbol=None, symbolic_files=None, concrete_start='', pure_symbolic=False, stdin_size=consts.stdin_size, **kwargs):
         """
         Constructor for Linux binary analysis.
 
@@ -54,7 +54,7 @@ class Manticore(ManticoreBase):
         :rtype: Manticore
         """
         try:
-            return cls(_make_linux(path, argv, envp, entry_symbol, symbolic_files, concrete_start, stdin_size), **kwargs)
+            return cls(_make_linux(path, argv, envp, entry_symbol, symbolic_files, concrete_start, pure_symbolic, stdin_size), **kwargs)
         except elftools.common.exceptions.ELFError:
             raise Exception(f'Invalid binary: {path}')
 
@@ -131,7 +131,7 @@ def _make_decree(program, concrete_start='', **kwargs):
     return initial_state
 
 
-def _make_linux(program, argv=None, env=None, entry_symbol=None, symbolic_files=None, concrete_start='', stdin_size=consts.stdin_size):
+def _make_linux(program, argv=None, env=None, entry_symbol=None, symbolic_files=None, concrete_start='', pure_symbolic=False, stdin_size=consts.stdin_size):
     from ..platforms import linux
 
     env = {} if env is None else env
@@ -142,7 +142,8 @@ def _make_linux(program, argv=None, env=None, entry_symbol=None, symbolic_files=
 
     constraints = ConstraintSet()
     platform = linux.SLinux(program, argv=argv, envp=env,
-                            symbolic_files=symbolic_files)
+                            symbolic_files=symbolic_files,
+                            pure_symbolic=pure_symbolic)
     if entry_symbol is not None:
         entry_pc = platform._find_symbol(entry_symbol)
         if entry_pc is None:
@@ -157,6 +158,9 @@ def _make_linux(program, argv=None, env=None, entry_symbol=None, symbolic_files=
 
     if concrete_start != '':
         logger.info('Starting with concrete input: %s', concrete_start)
+
+    if pure_symbolic:
+        logger.warning('[EXPERIMENTAL] Using purely symbolic memory.')
 
     for i, arg in enumerate(argv):
         argv[i] = initial_state.symbolicate_buffer(arg, label=f'ARGV{i + 1}')

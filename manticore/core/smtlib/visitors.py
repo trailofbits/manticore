@@ -751,6 +751,30 @@ def replace(expression, bindings):
     return result_expression
 
 
+class ArraySelectSimplifier(Visitor):
+    class ExpressionNotSimple(RuntimeError):
+        pass
+
+    def __init__(self, target_index, **kwargs):
+        super().__init__(**kwargs)
+        self._target_index = target_index
+        self.stores = []
+
+    def visit_ArrayStore(self, exp, target, where, what):
+        if not isinstance(what, BitVecConstant):
+            raise self.ExpressionNotSimple
+
+        if where.value == self._target_index:
+            self.stores.append(what.value)
+
+
+def simplify_array_select(array_exp):
+    assert isinstance(array_exp, ArraySelect)
+    simplifier = ArraySelectSimplifier(array_exp.index.value)
+    simplifier.visit(array_exp)
+    return simplifier.stores
+
+
 def get_variables(expression):
     visitor = GetDeclarations()
     visitor.visit(expression)

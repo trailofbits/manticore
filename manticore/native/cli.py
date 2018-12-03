@@ -7,7 +7,7 @@ def native_main(args, logger_):
 
     m = Manticore(args.argv[0], argv=args.argv[1:], env=env, entry_symbol=args.entrysymbol,
                   workspace_url=args.workspace, policy=args.policy,
-                  concrete_start=args.data, stdin_size=args.stdin_size)
+                  concrete_start=args.data, pure_symbolic=args.pure_symbolic, stdin_size=args.stdin_size)
 
     # Default plugins for now.. FIXME REMOVE!
     m.register_plugin(InstructionCounter())

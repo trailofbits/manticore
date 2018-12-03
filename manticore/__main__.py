@@ -98,6 +98,8 @@ def parse_arguments():
                            help='Specify symbolic input file, \'+\' marks symbolic bytes')
     bin_flags.add_argument('--env', type=str, nargs=1, default=[], action='append',
                            help='Add an environment variable. Use "+" for symbolic bytes. (VARNAME=++++)')
+    bin_flags.add_argument('--pure-symbolic', action='store_true',
+                           help='Treat all writable memory as symbolic')
 
     eth_flags = parser.add_argument_group('Ethereum flags')
     eth_flags.add_argument('--verbose-trace', action='store_true',

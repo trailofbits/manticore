@@ -15,6 +15,7 @@ from manticore.native.memory import *
 from manticore import issymbolic
 
 
+
 def isconcrete(value):
     return not issymbolic(value)
 
@@ -1057,6 +1058,18 @@ class MemoryTest(unittest.TestCase):
         os.unlink(r_file.name)
         os.unlink(w_file.name)
 
+    def test_mem_iter(self):
+        cs = ConstraintSet()
+        mem = SMemory32(cs)
+
+        mem.mmap(0x1000, 0x2000, 'rw ')
+        mem.mmap(0x4000, 0x1000, 'rw ')
+
+        all_addresses = [x for x in mem]
+
+        self.assertEqual(len(all_addresses), 0x2000 + 0x1000)
+        self.assertIn(0x1000, all_addresses)
+        self.assertNotIn(0x3000, all_addresses)
 
     def test_mix_of_concrete_and_symbolic__push_pop_cleaning_store(self):
         #global mainsolver
