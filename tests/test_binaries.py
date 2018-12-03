@@ -195,24 +195,32 @@ class IntegrationTest(unittest.TestCase):
             '+++++++++',
         ]
 
-        output = subprocess.check_output(cmd)
+        output = subprocess.check_output(cmd).splitlines()
 
-        expected_output_regex = b'.*m.manticore:INFO: Loading program .*binaries/%s\n' % bytes(binname, 'utf-8')
+        self.assertIn(b'm.manticore:INFO: Verbosity set to 1.', output[0])
 
-        expected_output_regex += b'.*m.manticore:INFO: Generated testcase No. [0-9][0-9]? -' \
-                                 b' Program finished with exit status: [01]\n' * testcases_number
+        self.assertIn(b'm.manticore:INFO: Loading program', output[1])
+        self.assertIn(bytes(binname, 'utf-8'), output[1])  # the binname should be in the path
 
-        expected_output_regex += b'.*m.manticore:INFO: Results in /tmp/[a-z0-9_]+/workspace\n'
-        expected_output_regex += b'.*m.manticore:INFO: Total time: [0-9]+.[0-9]+\n'
+        for i in range(testcases_number):
+            line = output[2+i]
 
-        self.assertRegex(output, expected_output_regex)
+            # After `expected1` there's the testcase id; because we fork use `--proc 4`
+            # it might not be in the increasing order
+            expected1 = b'm.manticore:INFO: Generated testcase No. '
+            expected2 = b'- Program finished with exit status: '
+
+            self.assertIn(expected1, line)
+            self.assertIn(expected2, line)
+
+        self.assertIn(b'm.manticore:INFO: Results in /tmp', output[2+testcases_number])
+        self.assertIn(b'm.manticore:INFO: Total time: ', output[2+testcases_number+1])
 
         actual = self._load_visited(os.path.join(DIRPATH, workspace, 'visited.txt'))
         expected = self._load_visited(os.path.join(DIRPATH, 'reference', refname))
 
         self.assertEqual(actual, expected)
 
-    @unittest.skip('Debug')
     def test_arguments_assertions_amd64(self):
         self._test_arguments_assertions_aux('arguments_linux_amd64', 'arguments_linux_amd64_visited.txt',
                                             testcases_number=1)
