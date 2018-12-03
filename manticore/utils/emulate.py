@@ -141,7 +141,7 @@ class UnicornEmulator(object):
         Handle software interrupt (SVC/INT)
         '''
 
-        from ..native.cpu import Interruption  # prevent circular imports
+        from ..native.cpu.abstractcpu import Interruption  # prevent circular imports
         self._to_raise = Interruption(number)
         return True
 
