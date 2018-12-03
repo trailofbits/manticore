@@ -145,10 +145,26 @@ for test_name in sorted(test_dic.keys()):
         cpu = {cpu}(mem)""")
 
     for addr, size in get_maps(test):
-        print(f'''        mem.mmap(0x{addr:08x}, 0x{size:x}, 'rwx')''')
+        print('''        mem.mmap(0x%08x, 0x%x, 'rwx')''' % (addr, size))
 
-    for addr, byte in test['pre']['memory'].items():
-        print(f'''        mem[0x{addr:08x}] = {byte!r}''')
+
+    memoryContents = ""
+    currentAddr = 0
+    beginAddr = 0
+    for addr in sorted(test['pre']['memory'].iterkeys()):
+        if len(memoryContents) == 0:
+            memoryContents = "%s" % test['pre']['memory'][addr]
+            beginAddr = addr
+        elif addr == currentAddr+1:
+            memoryContents = memoryContents + "%s" % test['pre']['memory'][addr]
+        else:
+            print('''        mem.write(0x%08x, %r)''' % (beginAddr, memoryContents))
+            memoryContents = "%s" % test['pre']['memory'][addr]
+            beginAddr = addr
+        currentAddr = addr
+    if len(memoryContents) > 0:
+        print('''        mem.write(0x%08x, %r)''' % (beginAddr, memoryContents))
+
 
     for reg_name, value in test['pre']['registers'].items():
         if isFlag(reg_name):
@@ -159,8 +175,22 @@ for test_name in sorted(test_dic.keys()):
     print("""        cpu.execute()
     """)
 
-    for addr, byte in test['pos']['memory'].items():
-        print("""        self.assertEqual(mem[0x%x], %r)"""%(addr, byte))
+    memoryContents = ""
+    currentAddr = 0
+    beginAddr = 0
+    for addr in sorted(test['pre']['memory'].iterkeys()):
+        if len(memoryContents) == 0:
+            memoryContents = "%s" % test['pre']['memory'][addr]
+            beginAddr = addr
+        elif addr == currentAddr+1:
+            memoryContents = memoryContents + "%s" % test['pre']['memory'][addr]
+        else:
+            print('''        self.assertEqual(mem[0x%08x:0x%08x], %r)''' % (beginAddr, beginAddr+len(memoryContents), memoryContents))
+            memoryContents = "%s" % test['pre']['memory'][addr]
+            beginAddr = addr
+        currentAddr = addr
+    if len(memoryContents) > 0:
+        print('''        self.assertEqual(mem[0x%08x:0x%08x], %r)''' % (beginAddr, beginAddr+len(memoryContents), memoryContents))
 
     for reg_name, value in test['pos']['registers'].items():
         print("""        self.assertEqual(cpu.%s, %r)"""%(reg_name, value))
