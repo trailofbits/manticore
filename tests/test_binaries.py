@@ -151,8 +151,8 @@ class IntegrationTest(unittest.TestCase):
 
         self.assertEqual(len(output_lines), 6)
 
-        self.assertIn(b'Loading program', output_lines[0])
-        self.assertIn(b'Verbosity set to 1.', output_lines[1])
+        self.assertIn(b'Verbosity set to 1.', output_lines[0])
+        self.assertIn(b'Loading program', output_lines[1])
         self.assertIn(b'Generated testcase No. 0 - Program finished with exit status: 0', output_lines[2])
         self.assertIn(b'Generated testcase No. 1 - Program finished with exit status: 0', output_lines[3])
         self.assertIn(b'Results in ', output_lines[4])
