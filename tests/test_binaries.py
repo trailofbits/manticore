@@ -106,7 +106,6 @@ class IntegrationTest(unittest.TestCase):
             self.assertTrue(secs_used < timeout)
             sys.stderr.write("\n")
 
-    @unittest.skip('Debug')
     def test_timeout(self):
         filename = os.path.abspath(os.path.join(DIRPATH, 'binaries', 'arguments_linux_amd64'))
         self.assertTrue(filename.startswith(os.getcwd()))
@@ -155,7 +154,6 @@ class IntegrationTest(unittest.TestCase):
 
         self.assertTrue(time.time() - t < 20)
 
-    @unittest.skip('Debug')
     def test_logger_verbosity(self):
         """
         Tests that default verbosity produces the expected volume of output
@@ -229,7 +227,6 @@ class IntegrationTest(unittest.TestCase):
         self._test_arguments_assertions_aux('arguments_linux_armv7', 'arguments_linux_armv7_visited.txt',
                                             testcases_number=19)
 
-    @unittest.skip('Debug')
     def test_decree(self):
         filename = os.path.abspath(os.path.join(DIRPATH, 'binaries', 'cadet_decree_x86'))
         self.assertTrue(filename.startswith(os.getcwd()))
@@ -246,7 +243,6 @@ class IntegrationTest(unittest.TestCase):
         actual = self._load_visited(os.path.join(DIRPATH, workspace, 'visited.txt'))
         self.assertTrue(len(actual) > 100)
 
-    @unittest.skip('Debug')
     def test_eth_regressions(self):
         issues = [
             {'number': 676, 'contract': None, 'txlimit': 1},
@@ -269,7 +265,6 @@ class IntegrationTest(unittest.TestCase):
                 in_directory=issue.get('in_directory')
             )
 
-    @unittest.skip('Debug')
     def test_eth_705(self):
         # This test needs to run inside tests/binaries because the contract imports a file
         # that is in the tests/binaries dir
@@ -279,29 +274,32 @@ class IntegrationTest(unittest.TestCase):
         finally:
             os.chdir(old_cwd)
 
-    @unittest.skip('Debug')
     def test_basic_arm(self):
         filename = os.path.abspath(os.path.join(DIRPATH, 'binaries', 'basic_linux_armv7'))
         workspace = os.path.join(self.test_dir, 'workspace')
+        cmd = [PYTHON_BIN, '-m', 'manticore', '--no-color', '--workspace', workspace, filename]
 
-        output = subprocess.check_output([PYTHON_BIN, '-m', 'manticore', '--no-color', '--workspace', workspace, filename])
+        output = subprocess.check_output(cmd).splitlines()
 
-        expected_output_regex = (
-            b'.*m.manticore:INFO: Loading program .*tests/binaries/basic_linux_armv7\n'
-            b'.*m.manticore:INFO: Generated testcase No. 0 - Program finished with exit status: 0\n'
-            b'.*m.manticore:INFO: Generated testcase No. 1 - Program finished with exit status: 0\n'
-            b'.*m.manticore:INFO: Results in /tmp/[a-z0-9_]+/workspace\n'
-            b'.*m.manticore:INFO: Total time: [0-9]+.[0-9]+\n'
-        )
+        self.assertEqual(len(output), 6)
 
-        self.assertRegex(output, expected_output_regex)
+        self.assertIn(b'm.manticore:INFO: Verbosity set to 1.', output[0])
+        self.assertIn(b'm.manticore:INFO: Loading program ', output[1])
+
+        self.assertIn(b'm.manticore:INFO: Generated testcase No.', output[2])
+        self.assertIn(b'- Program finished with exit status: 0', output[2])
+
+        self.assertIn(b'm.manticore:INFO: Generated testcase No.', output[3])
+        self.assertIn(b'- Program finished with exit status: 0', output[3])
+
+        self.assertIn(b'm.manticore:INFO: Results in ', output[4])
+        self.assertIn(b'm.manticore:INFO: Total time: ', output[5])
 
         with open(os.path.join(workspace, "test_00000000.stdout")) as f:
             self.assertIn("Message", f.read())
         with open(os.path.join(workspace, "test_00000001.stdout")) as f:
             self.assertIn("Message", f.read())
 
-    @unittest.skip('Debug')
     def test_brk_regression(self):
         """
         Tests for brk behavior. Source of brk_static_amd64:
@@ -355,6 +353,7 @@ class IntegrationTest(unittest.TestCase):
             ]:
                 # No assert should be triggered on the following line
                 munmap(mmap(f.fileno(), addr, size), size)
+
 
 if __name__ == '__main__':
     unittest.main()
