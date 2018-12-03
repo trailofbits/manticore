@@ -13,7 +13,7 @@ class ConfigTest(unittest.TestCase):
     def test_create_group(self):
         consts = config.get_group('smt')
         self.assertIsInstance(consts, config._Group)
-        self.assertEquals(consts.name, 'smt')
+        self.assertEqual(consts.name, 'smt')
 
     def test_repeated_get(self):
         g1 = config.get_group('name')
@@ -25,8 +25,8 @@ class ConfigTest(unittest.TestCase):
         g.add('runtime', default='def', description='This value controls something')
 
         # this should not raise
-        self.assertEquals(g.runtime, 'def')
-        self.assertEquals(g.get_description('runtime'), 'This value controls something')
+        self.assertEqual(g.runtime, 'def')
+        self.assertEqual(g.get_description('runtime'), 'This value controls something')
 
         with self.assertRaises(config.ConfigError):
             g.get_description('nonexistent')
@@ -183,10 +183,10 @@ class ConfigTest(unittest.TestCase):
 
         # Make sure that cmdline flags get precedence
         g = config.get_group('cli')
-        self.assertEquals(g.overwritten, 42)
-        self.assertEquals(g.unchanged, 'val')
+        self.assertEqual(g.overwritten, 42)
+        self.assertEqual(g.unchanged, 'val')
 
         # Make sure that we can update defined vars
         g = config.get_group('grp')
-        self.assertEquals(g.val, 1)
-        self.assertEquals(g.shouldchange, 23)
+        self.assertEqual(g.val, 1)
+        self.assertEqual(g.shouldchange, 23)

@@ -90,7 +90,7 @@ class DummyWorld():
     def log(self, address, topics, memlog):
         pass
 
-    def send_funds(address, recipient, value):
+    def send_funds(self, address, recipient, value):
         orig = self.balances[address] - value
         dest = self.balances[recipient] + value
         self.balances[address] = orig
@@ -122,7 +122,7 @@ print(f"MEM = {translate_to_smtlib(evm.memory)}")
 
 
 for i in range(len(callbacks.initial_stack)):
-    print(f"STACK[{i}] = {translate_to_smtlib(callbacks.initial_stack[i]}")
+    print(f"STACK[{i}] = {translate_to_smtlib(callbacks.initial_stack[i])}")
 print("CONSTRAINTS:")
 print(constraints)
 

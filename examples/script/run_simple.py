@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import sys
-from manticore import Manticore
+from manticore.native import Manticore
 
 # This example demonstrates loading a simple binary in Manticore,
 # running it to completion without any callbacks or instrumentation

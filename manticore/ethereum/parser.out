@@ -1,0 +1,415 @@
+Created by PLY version 3.11 (http://www.dabeaz.com/ply)
+
+Grammar
+
+Rule 0     S' -> T
+Rule 1     T -> UINTN
+Rule 2     T -> UINT
+Rule 3     T -> INTN
+Rule 4     T -> INT
+Rule 5     T -> ADDRESS
+Rule 6     T -> BOOL
+Rule 7     T -> FIXEDMN
+Rule 8     T -> UFIXEDMN
+Rule 9     T -> FIXED
+Rule 10    T -> UFIXED
+Rule 11    T -> BYTESM
+Rule 12    T -> FUNCTION
+Rule 13    T -> BYTES
+Rule 14    T -> STRING
+Rule 15    TL -> T
+Rule 16    TL -> T COMMA TL
+Rule 17    T -> LPAREN TL RPAREN
+Rule 18    T -> LPAREN RPAREN
+Rule 19    T -> T LBRAKET RBRAKET
+Rule 20    T -> T LBRAKET NUMBER RBRAKET
+
+Terminals, with rules where they appear
+
+ADDRESS              : 5
+BOOL                 : 6
+BYTES                : 13
+BYTESM               : 11
+COMMA                : 16
+FIXED                : 9
+FIXEDMN              : 7
+FUNCTION             : 12
+INT                  : 4
+INTN                 : 3
+LBRAKET              : 19 20
+LPAREN               : 17 18
+NUMBER               : 20
+RBRAKET              : 19 20
+RPAREN               : 17 18
+STRING               : 14
+UFIXED               : 10
+UFIXEDMN             : 8
+UINT                 : 2
+UINTN                : 1
+error                : 
+
+Nonterminals, with rules where they appear
+
+T                    : 15 16 19 20 0
+TL                   : 16 17
+
+Parsing method: LALR
+
+state 0
+
+    (0) S' -> . T
+    (1) T -> . UINTN
+    (2) T -> . UINT
+    (3) T -> . INTN
+    (4) T -> . INT
+    (5) T -> . ADDRESS
+    (6) T -> . BOOL
+    (7) T -> . FIXEDMN
+    (8) T -> . UFIXEDMN
+    (9) T -> . FIXED
+    (10) T -> . UFIXED
+    (11) T -> . BYTESM
+    (12) T -> . FUNCTION
+    (13) T -> . BYTES
+    (14) T -> . STRING
+    (17) T -> . LPAREN TL RPAREN
+    (18) T -> . LPAREN RPAREN
+    (19) T -> . T LBRAKET RBRAKET
+    (20) T -> . T LBRAKET NUMBER RBRAKET
+
+    UINTN           shift and go to state 2
+    UINT            shift and go to state 3
+    INTN            shift and go to state 4
+    INT             shift and go to state 5
+    ADDRESS         shift and go to state 6
+    BOOL            shift and go to state 7
+    FIXEDMN         shift and go to state 8
+    UFIXEDMN        shift and go to state 9
+    FIXED           shift and go to state 10
+    UFIXED          shift and go to state 11
+    BYTESM          shift and go to state 12
+    FUNCTION        shift and go to state 13
+    BYTES           shift and go to state 14
+    STRING          shift and go to state 15
+    LPAREN          shift and go to state 16
+
+    T                              shift and go to state 1
+
+state 1
+
+    (0) S' -> T .
+    (19) T -> T . LBRAKET RBRAKET
+    (20) T -> T . LBRAKET NUMBER RBRAKET
+
+    LBRAKET         shift and go to state 17
+
+
+state 2
+
+    (1) T -> UINTN .
+
+    LBRAKET         reduce using rule 1 (T -> UINTN .)
+    $end            reduce using rule 1 (T -> UINTN .)
+    COMMA           reduce using rule 1 (T -> UINTN .)
+    RPAREN          reduce using rule 1 (T -> UINTN .)
+
+
+state 3
+
+    (2) T -> UINT .
+
+    LBRAKET         reduce using rule 2 (T -> UINT .)
+    $end            reduce using rule 2 (T -> UINT .)
+    COMMA           reduce using rule 2 (T -> UINT .)
+    RPAREN          reduce using rule 2 (T -> UINT .)
+
+
+state 4
+
+    (3) T -> INTN .
+
+    LBRAKET         reduce using rule 3 (T -> INTN .)
+    $end            reduce using rule 3 (T -> INTN .)
+    COMMA           reduce using rule 3 (T -> INTN .)
+    RPAREN          reduce using rule 3 (T -> INTN .)
+
+
+state 5
+
+    (4) T -> INT .
+
+    LBRAKET         reduce using rule 4 (T -> INT .)
+    $end            reduce using rule 4 (T -> INT .)
+    COMMA           reduce using rule 4 (T -> INT .)
+    RPAREN          reduce using rule 4 (T -> INT .)
+
+
+state 6
+
+    (5) T -> ADDRESS .
+
+    LBRAKET         reduce using rule 5 (T -> ADDRESS .)
+    $end            reduce using rule 5 (T -> ADDRESS .)
+    COMMA           reduce using rule 5 (T -> ADDRESS .)
+    RPAREN          reduce using rule 5 (T -> ADDRESS .)
+
+
+state 7
+
+    (6) T -> BOOL .
+
+    LBRAKET         reduce using rule 6 (T -> BOOL .)
+    $end            reduce using rule 6 (T -> BOOL .)
+    COMMA           reduce using rule 6 (T -> BOOL .)
+    RPAREN          reduce using rule 6 (T -> BOOL .)
+
+
+state 8
+
+    (7) T -> FIXEDMN .
+
+    LBRAKET         reduce using rule 7 (T -> FIXEDMN .)
+    $end            reduce using rule 7 (T -> FIXEDMN .)
+    COMMA           reduce using rule 7 (T -> FIXEDMN .)
+    RPAREN          reduce using rule 7 (T -> FIXEDMN .)
+
+
+state 9
+
+    (8) T -> UFIXEDMN .
+
+    LBRAKET         reduce using rule 8 (T -> UFIXEDMN .)
+    $end            reduce using rule 8 (T -> UFIXEDMN .)
+    COMMA           reduce using rule 8 (T -> UFIXEDMN .)
+    RPAREN          reduce using rule 8 (T -> UFIXEDMN .)
+
+
+state 10
+
+    (9) T -> FIXED .
+
+    LBRAKET         reduce using rule 9 (T -> FIXED .)
+    $end            reduce using rule 9 (T -> FIXED .)
+    COMMA           reduce using rule 9 (T -> FIXED .)
+    RPAREN          reduce using rule 9 (T -> FIXED .)
+
+
+state 11
+
+    (10) T -> UFIXED .
+
+    LBRAKET         reduce using rule 10 (T -> UFIXED .)
+    $end            reduce using rule 10 (T -> UFIXED .)
+    COMMA           reduce using rule 10 (T -> UFIXED .)
+    RPAREN          reduce using rule 10 (T -> UFIXED .)
+
+
+state 12
+
+    (11) T -> BYTESM .
+
+    LBRAKET         reduce using rule 11 (T -> BYTESM .)
+    $end            reduce using rule 11 (T -> BYTESM .)
+    COMMA           reduce using rule 11 (T -> BYTESM .)
+    RPAREN          reduce using rule 11 (T -> BYTESM .)
+
+
+state 13
+
+    (12) T -> FUNCTION .
+
+    LBRAKET         reduce using rule 12 (T -> FUNCTION .)
+    $end            reduce using rule 12 (T -> FUNCTION .)
+    COMMA           reduce using rule 12 (T -> FUNCTION .)
+    RPAREN          reduce using rule 12 (T -> FUNCTION .)
+
+
+state 14
+
+    (13) T -> BYTES .
+
+    LBRAKET         reduce using rule 13 (T -> BYTES .)
+    $end            reduce using rule 13 (T -> BYTES .)
+    COMMA           reduce using rule 13 (T -> BYTES .)
+    RPAREN          reduce using rule 13 (T -> BYTES .)
+
+
+state 15
+
+    (14) T -> STRING .
+
+    LBRAKET         reduce using rule 14 (T -> STRING .)
+    $end            reduce using rule 14 (T -> STRING .)
+    COMMA           reduce using rule 14 (T -> STRING .)
+    RPAREN          reduce using rule 14 (T -> STRING .)
+
+
+state 16
+
+    (17) T -> LPAREN . TL RPAREN
+    (18) T -> LPAREN . RPAREN
+    (15) TL -> . T
+    (16) TL -> . T COMMA TL
+    (1) T -> . UINTN
+    (2) T -> . UINT
+    (3) T -> . INTN
+    (4) T -> . INT
+    (5) T -> . ADDRESS
+    (6) T -> . BOOL
+    (7) T -> . FIXEDMN
+    (8) T -> . UFIXEDMN
+    (9) T -> . FIXED
+    (10) T -> . UFIXED
+    (11) T -> . BYTESM
+    (12) T -> . FUNCTION
+    (13) T -> . BYTES
+    (14) T -> . STRING
+    (17) T -> . LPAREN TL RPAREN
+    (18) T -> . LPAREN RPAREN
+    (19) T -> . T LBRAKET RBRAKET
+    (20) T -> . T LBRAKET NUMBER RBRAKET
+
+    RPAREN          shift and go to state 19
+    UINTN           shift and go to state 2
+    UINT            shift and go to state 3
+    INTN            shift and go to state 4
+    INT             shift and go to state 5
+    ADDRESS         shift and go to state 6
+    BOOL            shift and go to state 7
+    FIXEDMN         shift and go to state 8
+    UFIXEDMN        shift and go to state 9
+    FIXED           shift and go to state 10
+    UFIXED          shift and go to state 11
+    BYTESM          shift and go to state 12
+    FUNCTION        shift and go to state 13
+    BYTES           shift and go to state 14
+    STRING          shift and go to state 15
+    LPAREN          shift and go to state 16
+
+    TL                             shift and go to state 18
+    T                              shift and go to state 20
+
+state 17
+
+    (19) T -> T LBRAKET . RBRAKET
+    (20) T -> T LBRAKET . NUMBER RBRAKET
+
+    RBRAKET         shift and go to state 21
+    NUMBER          shift and go to state 22
+
+
+state 18
+
+    (17) T -> LPAREN TL . RPAREN
+
+    RPAREN          shift and go to state 23
+
+
+state 19
+
+    (18) T -> LPAREN RPAREN .
+
+    LBRAKET         reduce using rule 18 (T -> LPAREN RPAREN .)
+    $end            reduce using rule 18 (T -> LPAREN RPAREN .)
+    COMMA           reduce using rule 18 (T -> LPAREN RPAREN .)
+    RPAREN          reduce using rule 18 (T -> LPAREN RPAREN .)
+
+
+state 20
+
+    (15) TL -> T .
+    (16) TL -> T . COMMA TL
+    (19) T -> T . LBRAKET RBRAKET
+    (20) T -> T . LBRAKET NUMBER RBRAKET
+
+    RPAREN          reduce using rule 15 (TL -> T .)
+    COMMA           shift and go to state 24
+    LBRAKET         shift and go to state 17
+
+
+state 21
+
+    (19) T -> T LBRAKET RBRAKET .
+
+    LBRAKET         reduce using rule 19 (T -> T LBRAKET RBRAKET .)
+    $end            reduce using rule 19 (T -> T LBRAKET RBRAKET .)
+    COMMA           reduce using rule 19 (T -> T LBRAKET RBRAKET .)
+    RPAREN          reduce using rule 19 (T -> T LBRAKET RBRAKET .)
+
+
+state 22
+
+    (20) T -> T LBRAKET NUMBER . RBRAKET
+
+    RBRAKET         shift and go to state 25
+
+
+state 23
+
+    (17) T -> LPAREN TL RPAREN .
+
+    LBRAKET         reduce using rule 17 (T -> LPAREN TL RPAREN .)
+    $end            reduce using rule 17 (T -> LPAREN TL RPAREN .)
+    COMMA           reduce using rule 17 (T -> LPAREN TL RPAREN .)
+    RPAREN          reduce using rule 17 (T -> LPAREN TL RPAREN .)
+
+
+state 24
+
+    (16) TL -> T COMMA . TL
+    (15) TL -> . T
+    (16) TL -> . T COMMA TL
+    (1) T -> . UINTN
+    (2) T -> . UINT
+    (3) T -> . INTN
+    (4) T -> . INT
+    (5) T -> . ADDRESS
+    (6) T -> . BOOL
+    (7) T -> . FIXEDMN
+    (8) T -> . UFIXEDMN
+    (9) T -> . FIXED
+    (10) T -> . UFIXED
+    (11) T -> . BYTESM
+    (12) T -> . FUNCTION
+    (13) T -> . BYTES
+    (14) T -> . STRING
+    (17) T -> . LPAREN TL RPAREN
+    (18) T -> . LPAREN RPAREN
+    (19) T -> . T LBRAKET RBRAKET
+    (20) T -> . T LBRAKET NUMBER RBRAKET
+
+    UINTN           shift and go to state 2
+    UINT            shift and go to state 3
+    INTN            shift and go to state 4
+    INT             shift and go to state 5
+    ADDRESS         shift and go to state 6
+    BOOL            shift and go to state 7
+    FIXEDMN         shift and go to state 8
+    UFIXEDMN        shift and go to state 9
+    FIXED           shift and go to state 10
+    UFIXED          shift and go to state 11
+    BYTESM          shift and go to state 12
+    FUNCTION        shift and go to state 13
+    BYTES           shift and go to state 14
+    STRING          shift and go to state 15
+    LPAREN          shift and go to state 16
+
+    T                              shift and go to state 20
+    TL                             shift and go to state 26
+
+state 25
+
+    (20) T -> T LBRAKET NUMBER RBRAKET .
+
+    LBRAKET         reduce using rule 20 (T -> T LBRAKET NUMBER RBRAKET .)
+    $end            reduce using rule 20 (T -> T LBRAKET NUMBER RBRAKET .)
+    COMMA           reduce using rule 20 (T -> T LBRAKET NUMBER RBRAKET .)
+    RPAREN          reduce using rule 20 (T -> T LBRAKET NUMBER RBRAKET .)
+
+
+state 26
+
+    (16) TL -> T COMMA TL .
+
+    RPAREN          reduce using rule 16 (TL -> T COMMA TL .)
+

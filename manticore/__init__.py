@@ -1,3 +1,7 @@
-from .manticore import Manticore, STDIN_INPUT_DEFAULT_SIZE  # noqa
-from .models import variadic  # noqa
-from .utils.helpers import issymbolic  # noqa
+from .utils import config, log
+from .utils.helpers import issymbolic, istainted
+
+log.init_logging()
+
+consts = config.get_group('main')
+consts.add('stdin_size', default=256, description='Maximum symbolic stdin size')

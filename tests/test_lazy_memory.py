@@ -1,7 +1,4 @@
 from io import BytesIO
-from manticore.core.smtlib import Solver, Operators
-from manticore.core.smtlib.expression import *
-from manticore.core.smtlib.visitors import *
 import unittest
 import tempfile
 import os
@@ -11,8 +8,12 @@ import fcntl
 import resource
 from itertools import *
 import sys
-from manticore.core.memory import *
+
+from manticore.native.memory import *
 from manticore.utils.helpers import issymbolic
+from manticore.core.smtlib import Solver, Operators
+from manticore.core.smtlib.expression import *
+from manticore.core.smtlib.visitors import *
 
 
 class LazyMemoryTest(unittest.TestCase):

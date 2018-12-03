@@ -1,9 +1,8 @@
-from manticore.core.smtlib import *
 import unittest
-import fcntl
-import resource
-import gc
-import sys
+
+from manticore.core.smtlib import *
+
+
 #logging.basicConfig(filename = "test.log",
 #                format = "%(asctime)s: %(name)s:%(levelname)s: %(message)s",
 #                level = logging.DEBUG)

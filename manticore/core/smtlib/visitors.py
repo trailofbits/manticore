@@ -1,4 +1,4 @@
-from manticore.utils.helpers import CacheDict
+from ...utils.helpers import CacheDict
 from .expression import *
 from functools import lru_cache
 import logging

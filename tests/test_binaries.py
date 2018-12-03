@@ -8,7 +8,7 @@ import shutil
 import tempfile
 
 from manticore.binary import Elf, CGCElf
-from manticore.utils.mappings import mmap, munmap
+from manticore.native.mappings import mmap, munmap
 
 #logging.basicConfig(filename = "test.log",
 #                format = "%(asctime)s: %(name)s:%(levelname)s: %(message)s",
@@ -146,17 +146,18 @@ class IntegrationTest(unittest.TestCase):
 
         dirname = os.path.dirname(__file__)
         filename = os.path.join(dirname, 'binaries', 'basic_linux_amd64')
-        output = subprocess.check_output([PYTHON_BIN, '-m', 'manticore', filename])
+        output = subprocess.check_output([PYTHON_BIN, '-m', 'manticore', '--no-colors', filename])
         output_lines = output.splitlines()
-        start_info = output_lines[:2]
-        testcase_info = output_lines[2:-5]
-        stop_info = output_lines[-5:]
 
-        self.assertEqual(len(start_info), 2)
-        self.assertEqual(len(stop_info), 5)
+        self.assertEqual(len(output_lines), 6)
 
-        for line in testcase_info:
-            self.assertIn('Generated testcase', line)
+        self.assertIn(b'Verbosity set to 1.', output_lines[0])
+        self.assertIn(b'Loading program', output_lines[1])
+        self.assertIn(b'Generated testcase No. 0 - Program finished with exit status: 0', output_lines[2])
+        self.assertIn(b'Generated testcase No. 1 - Program finished with exit status: 0', output_lines[3])
+        self.assertIn(b'Results in ', output_lines[4])
+        self.assertIn(b'Total time: ', output_lines[5])
+
     @unittest.skip('sloowww')
     def testArgumentsAssertions(self):
         dirname = os.path.dirname(__file__)

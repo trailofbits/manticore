@@ -7,19 +7,19 @@ This API is under active development, and should be considered unstable.
 Helpers
 -------
 
-.. automodule:: manticore
+.. automodule:: manticore.native
    :members: issymbolic, variadic
 
 Manticore
 ---------
 
-.. autoclass:: manticore.Manticore
+.. autoclass:: manticore.core.manticore.ManticoreBase
    :members: add_hook, hook, run, terminate, verbosity, locked_context, linux, decree, evm, init
 
 State
 -----
 
-.. autoclass:: manticore.core.state.State
+.. autoclass:: manticore.core.state.StateBase
    :members: abandon, constrain, new_symbolic_buffer, new_symbolic_value, solve_n, solve_one, solve_buffer, symbolicate_buffer, invoke_model, generate_testcase
 
 SLinux
@@ -33,13 +33,13 @@ Symbolic Linux
 Cpu
 ---
 
-.. autoclass:: manticore.core.cpu.abstractcpu.Cpu
+.. autoclass:: manticore.native.cpu.abstractcpu.Cpu
    :members: read_int, read_bytes, write_int, write_bytes, write_register, read_register, all_registers
 
 Models
 ------
 
-.. automodule:: manticore.models
+.. automodule:: manticore.native.models
 
    .. function:: strlen
 

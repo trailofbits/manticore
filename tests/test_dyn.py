@@ -1,8 +1,9 @@
 
 import unittest
-from manticore.core.cpu.x86 import *
-from manticore.core.smtlib import Operators
-from manticore.core.memory import *
+
+from manticore.native.cpu.abstractcpu import ConcretizeRegister
+from manticore.native.cpu.x86 import AMD64Cpu
+from manticore.native.memory import *
 
 
 class CPUTest(unittest.TestCase):

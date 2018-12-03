@@ -1,30 +1,28 @@
 import binascii
+import unittest
+from contextlib import contextmanager
+from pathlib import Path
+
+import os
+import pyevmasm as EVMAsm
+import re
 import shutil
 import struct
 import tempfile
-from pathlib import Path
-import unittest
-import os
-import sys
-import resource
-import re
-from contextlib import contextmanager
 
-from manticore.platforms import evm
 from manticore.core.plugin import Plugin
 from manticore.core.smtlib import ConstraintSet, operators
-from manticore.core.smtlib.expression import BitVec
 from manticore.core.smtlib import solver
-from manticore.core.state import State, TerminateState
-from manticore.ethereum import ManticoreEVM, DetectExternalCallAndLeak, DetectIntegerOverflow, Detector, NoAliveStates, ABI, EthereumError, FilterFunctions
+from manticore.core.smtlib.expression import BitVec
+from manticore.core.smtlib.visitors import to_constant
+from manticore.core.state import TerminateState
+from manticore.ethereum import ManticoreEVM, State, DetectExternalCallAndLeak, DetectIntegerOverflow, Detector, \
+    NoAliveStates, ABI, EthereumError
+from manticore.ethereum.plugins import FilterFunctions
 from manticore.ethereum.solidity import SolidityMetadata
+from manticore.platforms import evm
 from manticore.platforms.evm import EVMWorld, ConcretizeStack, concretized_args, Return, Stop
-from manticore.core.smtlib.visitors import pretty_print, translate_to_smtlib, simplify, to_constant
 from manticore.utils.deprecated import ManticoreDeprecationWarning
-import pyevmasm as EVMAsm
-
-
-import shutil
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
