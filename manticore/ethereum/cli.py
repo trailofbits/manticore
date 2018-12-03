@@ -9,8 +9,6 @@ from .plugins import FilterFunctions, LoopDepthLimiter, VerboseTrace
 def ethereum_main(args, logger):
     m = ManticoreEVM(procs=args.procs, workspace_url=args.workspace)
 
-    m.verbosity(args.v)
-
     if args.detect_all or args.detect_invalid:
         m.register_detector(DetectInvalid())
     if args.detect_all or args.detect_overflow:

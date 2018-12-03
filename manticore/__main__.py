@@ -6,6 +6,7 @@ import logging
 import sys
 
 from .utils import config, log
+from .core.manticore import ManticoreBase
 
 consts = config.get_group('main')
 consts.add('recursionlimit', default=10000,
@@ -30,7 +31,7 @@ def main():
 
     sys.setrecursionlimit(consts.recursionlimit)
 
-    log.set_verbosity(args.v)
+    ManticoreBase.verbosity(args.v)
 
     if args.argv[0].endswith('.sol'):
         from manticore.ethereum.cli import ethereum_main

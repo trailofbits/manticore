@@ -9,8 +9,6 @@ def native_main(args, logger_):
                   workspace_url=args.workspace, policy=args.policy,
                   concrete_start=args.data, stdin_size=args.stdin_size)
 
-    m.verbosity(args.v)
-
     # Default plugins for now.. FIXME REMOVE!
     m.register_plugin(InstructionCounter())
     m.register_plugin(Visited())
