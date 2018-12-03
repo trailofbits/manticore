@@ -368,6 +368,7 @@ class Manticore(Eventful):
         several predefined logging presets. Valid values: 0-5.
         """
         log.set_verbosity(level)
+        logger.info(f'Verbosity set to {level}.')
 
     @property
     def running(self):
