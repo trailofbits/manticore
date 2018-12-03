@@ -4,23 +4,42 @@ API Reference
 
 This API is under active development, and should be considered unstable.
 
-Helpers
--------
+Core Helpers
+------------
+
+.. automodule:: manticore
+   :members: issymbolic, istainted
+
+Native Helpers
+--------------
 
 .. automodule:: manticore.native
-   :members: issymbolic, variadic
+   :members: variadic
 
-Manticore
----------
+ManticoreBase
+-------------
 
 .. autoclass:: manticore.core.manticore.ManticoreBase
-   :members: add_hook, hook, run, terminate, verbosity, locked_context, linux, decree, evm, init
+   :members: add_hook, hook, run, terminate, verbosity, locked_context, init
 
-State
------
+native.Manticore
+----------------
+
+.. autoclass:: manticore.native.Manticore
+   :members: linux, decree
+
+BaseState
+---------
 
 .. autoclass:: manticore.core.state.StateBase
-   :members: abandon, constrain, new_symbolic_buffer, new_symbolic_value, solve_n, solve_one, solve_buffer, symbolicate_buffer, invoke_model, generate_testcase
+   :members: abandon, constrain, new_symbolic_buffer, new_symbolic_value, solve_n, solve_one, solve_buffer, symbolicate_buffer, generate_testcase
+
+
+native.State
+------------
+
+.. autoclass:: manticore.native.state.State
+   :members: invoke_model
 
 SLinux
 ------
