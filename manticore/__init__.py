@@ -1,4 +1,5 @@
 from .utils import config, log
+from .utils.helpers import issymbolic, istainted
 
 log.init_logging()
 

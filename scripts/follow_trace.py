@@ -1,18 +1,18 @@
 #!/usr/bin/env python
 
-'''
+"""
 A simple trace following execution driver script. Only supports passing symbolic arguments via argv.
+"""
 
-'''
 
-
-import sys
-import time
 import argparse
 import itertools
+import sys
+import time
 
-from manticore.native import Manticore, issymbolic
+from manticore import issymbolic
 from manticore.core.plugin import ExtendedTracer, Plugin
+from manticore.native import Manticore
 
 
 def _partition(pred, iterable):
