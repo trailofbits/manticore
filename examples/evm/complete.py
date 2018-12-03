@@ -44,4 +44,4 @@ for state in m.running_states:
     print(state.solve_one(balance))
 
 m.finalize()
-print(f"[+] Look for results in {m.workspace}" % )
+print(f"[+] Look for results in {m.workspace}")

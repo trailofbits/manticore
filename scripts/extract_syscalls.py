@@ -36,7 +36,6 @@ additional_syscalls = {
 }
 
 
-
 if __name__=='__main__':
     parser = argparse.ArgumentParser(description='Generate syscall tables')
     parser.add_argument('output', help='Python output to generate tables')

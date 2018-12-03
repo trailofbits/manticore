@@ -3,7 +3,6 @@ from typing import Any, Dict, Mapping, Optional, Sequence, Iterable, Tuple
 import pyevmasm as EVMAsm
 
 from .abi import ABI
-from ..exceptions import EthereumError
 from ..utils.deprecated import deprecated
 
 

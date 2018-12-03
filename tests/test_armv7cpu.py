@@ -1,16 +1,15 @@
 import unittest
-import struct
-from functools import wraps
 
-from manticore.core.cpu.abstractcpu import ConcretizeRegister
-from manticore.core.cpu.arm import Armv7Cpu as Cpu, Mask, Interruption
-from manticore.core.memory import Memory32, SMemory32
+import struct
+from capstone import CS_MODE_THUMB, CS_MODE_ARM
+from functools import wraps
+from keystone import Ks, KS_ARCH_ARM, KS_MODE_ARM, KS_MODE_THUMB
+
+from manticore.native.cpu.abstractcpu import ConcretizeRegister
+from manticore.native.cpu.arm import Armv7Cpu as Cpu, Mask, Interruption
 from manticore.core.smtlib import *
 from manticore.core.state import Concretize
-
-from capstone.arm import *
-from capstone import CS_MODE_THUMB, CS_MODE_ARM
-from keystone import Ks, KS_ARCH_ARM, KS_MODE_ARM, KS_MODE_THUMB
+from manticore.native.memory import SMemory32
 
 ks = Ks(KS_ARCH_ARM, KS_MODE_ARM)
 ks_thumb = Ks(KS_ARCH_ARM, KS_MODE_THUMB)

@@ -1,10 +1,13 @@
 
 import struct
 import unittest
-from manticore.core.cpu.x86 import *
-from manticore.core.smtlib import Operators
-from manticore.core.memory import *
-from manticore.core.smtlib import BitVecOr
+
+from manticore.native.cpu.x86 import I386Cpu
+
+from manticore.native.cpu.abstractcpu import ConcretizeRegister
+from manticore.native.cpu.x86 import AMD64Cpu
+from manticore.native.memory import *
+from manticore.core.smtlib import BitVecOr, operator, Bool
 from tests import mockmem
 from functools import reduce
 
@@ -571,7 +574,6 @@ class SymCPUTest(unittest.TestCase):
 
 
     def test_cache_005(self):
-        import random
         cs = ConstraintSet()
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)

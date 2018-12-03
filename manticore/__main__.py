@@ -1,20 +1,44 @@
-
-import sys
-import logging
+"""
+This is the Manticore's CLI `manticore` script.
+"""
 import argparse
+import logging
+import sys
 
-from . import Manticore, STDIN_INPUT_DEFAULT_SIZE
-from .utils import log, config
-
-# XXX(yan): This would normally be __name__, but then logger output will be pre-
-# pended by 'm.__main__: ', which is not very pleasing. hard-coding to 'main'
-logger = logging.getLogger('manticore.main')
+from .utils import config, log
+from .core.manticore import ManticoreBase
 
 consts = config.get_group('main')
 consts.add('recursionlimit', default=10000,
            description="Value to set for Python recursion limit")
 consts.add('timeout', default=0,
            description='Timeout, in seconds, for Manticore invocation')
+
+
+# XXX(yan): This would normally be __name__, but then logger output will be pre-
+# pended by 'm.__main__: ', which is not very pleasing. hard-coding to 'main'
+logger = logging.getLogger('manticore.main')
+
+
+def main():
+    """
+    Dispatches execution into one of Manticore's engines: evm or native.
+    """
+    args = parse_arguments()
+
+    if args.no_colors:
+        log.disable_colors()
+
+    sys.setrecursionlimit(consts.recursionlimit)
+
+    ManticoreBase.verbosity(args.v)
+
+    if args.argv[0].endswith('.sol'):
+        from manticore.ethereum.cli import ethereum_main
+        ethereum_main(args, logger)
+    else:
+        from manticore.native.cli import native_main
+        native_main(args, logger)
 
 
 def parse_arguments():
@@ -58,7 +82,7 @@ def parse_arguments():
                         help='Show program version information')
     parser.add_argument('--config', type=str,
                         help='Manticore config file (.yml) to use. (default config file pattern is: ./[.]m[anti]core.yml)')
-    parser.add_argument('--stdin_size', type=int, default=STDIN_INPUT_DEFAULT_SIZE,
+    parser.add_argument('--stdin_size', type=int, default=consts.stdin_size,
                         help='Control the maximum symbolic stdin size')
 
     bin_flags = parser.add_argument_group('Binary flags')
@@ -161,106 +185,6 @@ def parse_arguments():
         parsed.policy = '+' + parsed.policy[3:]
 
     return parsed
-
-
-def ethereum_cli(args):
-    from .ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, DetectUninitializedStorage, \
-        DetectUninitializedMemory, FilterFunctions, DetectReentrancySimple, DetectReentrancyAdvanced, \
-        DetectUnusedRetVal, DetectSelfdestruct, LoopDepthLimiter, DetectDelegatecall, \
-        DetectExternalCallAndLeak, DetectEnvInstruction, VerboseTrace, DetectRaceCondition
-
-    log.init_logging()
-
-    m = ManticoreEVM(procs=args.procs, workspace_url=args.workspace)
-
-    if args.detect_all or args.detect_invalid:
-        m.register_detector(DetectInvalid())
-    if args.detect_all or args.detect_overflow:
-        m.register_detector(DetectIntegerOverflow())
-    if args.detect_all or args.detect_uninitialized_storage:
-        m.register_detector(DetectUninitializedStorage())
-    if args.detect_all or args.detect_uninitialized_memory:
-        m.register_detector(DetectUninitializedMemory())
-    if args.detect_all or args.detect_reentrancy:
-        m.register_detector(DetectReentrancySimple())
-    if args.detect_reentrancy_advanced:
-        m.register_detector(DetectReentrancyAdvanced())
-    if args.detect_all or args.detect_unused_retval:
-        m.register_detector(DetectUnusedRetVal())
-    if args.detect_all or args.detect_delegatecall:
-        m.register_detector(DetectDelegatecall())
-    if args.detect_all or args.detect_selfdestruct:
-        m.register_detector(DetectSelfdestruct())
-    if args.detect_all or args.detect_externalcall:
-        m.register_detector(DetectExternalCallAndLeak())
-    if args.detect_all or args.detect_env_instr:
-        m.register_detector(DetectEnvInstruction())
-    if args.detect_all or args.detect_race_condition:
-        m.register_detector(DetectRaceCondition())
-
-    if args.verbose_trace:
-        m.register_plugin(VerboseTrace())
-
-    if args.limit_loops:
-        m.register_plugin(LoopDepthLimiter())
-    if args.avoid_constant:
-        # avoid all human level tx that has no effect on the storage
-        filter_nohuman_constants = FilterFunctions(regexp=r".*", depth='human', mutability='constant', include=False)
-        m.register_plugin(filter_nohuman_constants)
-
-    logger.info("Beginning analysis")
-
-    with m.shutdown_timeout(args.timeout):
-        m.multi_tx_analysis(args.argv[0], contract_name=args.contract, tx_limit=args.txlimit, tx_use_coverage=not args.txnocoverage, tx_send_ether=not args.txnoether, tx_account=args.txaccount)
-
-    #TODO unregister all plugins
-
-    if not args.no_testcases:
-        m.finalize()
-
-
-def main():
-    from .manticore import InstructionCounter, Visited, Tracer, RecordSymbolicBranches
-
-    log.init_logging()
-    args = parse_arguments()
-    if args.no_colors:
-        log.disable_colors()
-
-    sys.setrecursionlimit(consts.recursionlimit)
-
-    Manticore.verbosity(args.v)
-
-    # TODO(mark): Temporarily hack ethereum support into manticore cli
-    if args.argv[0].endswith('.sol'):
-        ethereum_cli(args)
-        return
-
-    env = {key: val for key, val in [env[0].split('=') for env in args.env]}
-
-    m = Manticore(args.argv[0], argv=args.argv[1:], env=env, entry_symbol=args.entrysymbol, workspace_url=args.workspace, policy=args.policy, concrete_start=args.data, stdin_size=args.stdin_size)
-
-    # Default plugins for now.. FIXME REMOVE!
-    m.register_plugin(InstructionCounter())
-    m.register_plugin(Visited())
-    m.register_plugin(Tracer())
-    m.register_plugin(RecordSymbolicBranches())
-
-    # Fixme(felipe) remove this, move to plugin
-    m.coverage_file = args.coverage
-
-    if args.names is not None:
-        m.apply_model_hooks(args.names)
-
-    if args.assertions:
-        m.load_assertions(args.assertions)
-
-    @m.init
-    def init(initial_state):
-        for file in args.files:
-            initial_state.platform.add_symbolic_file(file)
-
-    m.run(procs=args.procs, timeout=args.timeout, should_profile=args.profile)
 
 
 if __name__ == '__main__':

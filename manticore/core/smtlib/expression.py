@@ -1,5 +1,4 @@
 from functools import reduce
-import numbers
 import uuid
 
 
@@ -575,7 +574,7 @@ class Array(Expression):
         start, stop = self._fix_index(index)
         size = stop - start
         if isinstance(size, BitVec):
-            from manticore.core.smtlib.visitors import simplify
+            from .visitors import simplify
             size = simplify(size)
         else:
             size = BitVecConstant(self.index_bits, size)
@@ -725,7 +724,7 @@ class Array(Expression):
             if self.index_bits != other.index_bits or self.value_bits != other.value_bits:
                 raise ValueError('Array sizes do not match for concatenation')
 
-        from manticore.core.smtlib.visitors import simplify
+        from .visitors import simplify
         #FIXME This should be related to a constrainSet
         new_arr = ArrayProxy(ArrayVariable(self.index_bits, self.index_max + len(other), self.value_bits, 'concatenation{}'.format(uuid.uuid1())))
         for index in range(self.index_max):
@@ -741,7 +740,7 @@ class Array(Expression):
             if self.index_bits != other.index_bits or self.value_bits != other.value_bits:
                 raise ValueError('Array sizes do not match for concatenation')
 
-        from manticore.core.smtlib.visitors import simplify
+        from .visitors import simplify
         #FIXME This should be related to a constrainSet
         new_arr = ArrayProxy(ArrayVariable(self.index_bits, self.index_max + len(other), self.value_bits, 'concatenation{}'.format(uuid.uuid1())))
         for index in range(len(other)):
@@ -892,7 +891,7 @@ class ArrayProxy(Array):
     def select(self, index):
         index = self.cast_index(index)
         if self.index_max is not None:
-            from manticore.core.smtlib.visitors import simplify
+            from .visitors import simplify
             index = simplify(BitVecITE(self.index_bits, index < 0, self.index_max + index + 1, index))
 
         if isinstance(index, Constant) and index.value in self._concrete_cache:
@@ -905,7 +904,7 @@ class ArrayProxy(Array):
             index = self.cast_index(index)
         if not isinstance(value, Expression):
             value = self.cast_value(value)
-        from manticore.core.smtlib.visitors import simplify
+        from .visitors import simplify
         index = simplify(index)
         if isinstance(index, Constant):
             self._concrete_cache[index.value] = value

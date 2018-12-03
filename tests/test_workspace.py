@@ -1,13 +1,9 @@
-import signal
 import unittest
-import os
 
-from multiprocessing.managers import SyncManager
-
-from manticore.platforms import linux
-from manticore.core.state import State
-from manticore.core.smtlib import BitVecVariable, ConstraintSet
+from manticore.core.smtlib import ConstraintSet
 from manticore.core.workspace import *
+from manticore.native.state import State
+from manticore.platforms import linux
 from manticore.utils.event import Eventful
 
 

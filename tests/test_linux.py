@@ -1,17 +1,18 @@
 
-import os
 import errno
 import pickle
+import unittest
+from binascii import hexlify
+
+import os
 import shutil
 import tempfile
-import unittest
 
-from manticore import Manticore
+from manticore.native.cpu.abstractcpu import ConcretizeRegister
+from manticore.core.smtlib import *
+from manticore.native import Manticore
 from manticore.platforms import linux, linux_syscalls
-from manticore.core.smtlib import *
-from manticore.core.smtlib import *
-from manticore.core.cpu.abstractcpu import ConcretizeRegister
-from binascii import hexlify
+
 
 class LinuxTest(unittest.TestCase):
     _multiprocess_can_split_ = True
