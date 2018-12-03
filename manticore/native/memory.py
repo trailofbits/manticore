@@ -1274,8 +1274,7 @@ class LazySMemory(SMemory):
                 from_array = True
             elif addr in self.backed_by_symbolic_store:
                 m = self.map_containing(addr)
-                if not m or 'w' in m.perms:
-                    from_array = True
+                from_array = not m or 'w' in m.perms
             else:
                 from_array = False
 
