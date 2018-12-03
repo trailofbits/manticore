@@ -204,7 +204,6 @@ class ExpressionTest(unittest.TestCase):
             self.assertTrue(self.solver.check(temp_cs))
 
 
-
     def testBasicArraySymbIdx(self):
         cs =  ConstraintSet()
         array = cs.new_array(index_bits=32, value_bits=32, name='array')
@@ -263,6 +262,35 @@ class ExpressionTest(unittest.TestCase):
         for c in array[6:11]:
             results.append(c)
         self.assertTrue(len(results) == 5)
+
+
+    def testBasicArrayProxySymbIdx(self):
+        cs =  ConstraintSet()
+        array = ArrayProxy(cs.new_array(index_bits=32, value_bits=32, name='array'))
+        key = cs.new_bitvec(32, name='key')
+        index = cs.new_bitvec(32, name='index')
+
+        array[key] = 1 # Write 1 to a single location
+        cs.add(array.get(index) != 0) # Constrain index so it selects that location
+        a_index = self.solver.get_value(cs, index)  # get a concrete solution for index
+        cs.add(array.get(a_index) != 0)             # now storage must have something at that location
+        cs.add(a_index != index)                    # remove it from the solutions
+
+        # It should not be another solution for index
+        self.assertFalse(self.solver.check(cs))
+
+    def testBasicArrayProxySymbIdx2(self):
+        cs =  ConstraintSet()
+        array = ArrayProxy(cs.new_array(index_bits=32, value_bits=32, name='array'))
+        key = cs.new_bitvec(32, name='key')
+        index = cs.new_bitvec(32, name='index')
+
+        array[0] = 1 # Write 1 to first location
+        array[key] = 2 # Write 2 to a symbolic (potentially any)location
+
+        solutions = self.solver.get_all_values(cs, array[0])  # get a concrete solution for index
+        self.assertItemsEqual(solutions, (1,2))
+
 
     def testBasicPickle(self):
         import pickle
@@ -397,6 +425,20 @@ class ExpressionTest(unittest.TestCase):
         self.assertTrue(get_depth(exp) < 4)
         self.assertEqual(translate_to_smtlib(exp), '(bvand BV #x00000001)')
 
+
+    def test_arithmetic_simplify_extract(self):
+        cs = ConstraintSet()
+        arr = cs.new_array(name='MEM')
+        a = cs.new_bitvec(32, name='VARA')
+        b = Operators.CONCAT(32, Operators.EXTRACT(a, 24, 8), Operators.EXTRACT(a, 16, 8), Operators.EXTRACT(a, 8, 8), Operators.EXTRACT(a, 0, 8))
+        self.assertEqual( translate_to_smtlib(b), '(concat ((_ extract 31 24) VARA) ((_ extract 23 16) VARA) ((_ extract 15 8) VARA) ((_ extract 7 0) VARA))')
+        self.assertEqual( translate_to_smtlib(simplify(b)), 'VARA')
+
+        c = Operators.CONCAT(16, Operators.EXTRACT(a, 16, 8), Operators.EXTRACT(a, 8, 8))
+        self.assertEqual( translate_to_smtlib(c), '(concat ((_ extract 23 16) VARA) ((_ extract 15 8) VARA))')
+        self.assertEqual( translate_to_smtlib(simplify(c)), '((_ extract 23 8) VARA)')
+
+
     def testBasicReplace(self):
         ''' Add '''
         a = BitVecConstant(32, 100)
@@ -405,7 +447,7 @@ class ExpressionTest(unittest.TestCase):
 
         c = a + b1
 
-        x = replace(c, {b1:b2})
+        x = replace(c, {b1: b2})
         self.assertEqual(translate_to_smtlib(x), '(bvadd #x00000064 VAR2)')
 
     def testBasicMigration(self):
@@ -413,7 +455,7 @@ class ExpressionTest(unittest.TestCase):
         cs2 = ConstraintSet()
         var1 = cs1.new_bitvec(32, 'var')
         var2 = cs2.new_bitvec(32, 'var')
-        cs1.add(Operators.ULT(var1, 3)) # var1 can be 0, 1, 2
+        cs1.add(Operators.ULT(var1, 3))  # var1 can be 0, 1, 2
 
         # make a migration map dict
         migration_map1 = {}

@@ -20332,6 +20332,230 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.XMM0, 0)
         self.assertEqual(cpu.XMM1, 0)
 
+    def test_PADDD(self):
+        ''' Instruction PADDD
+            Groups: sse2
+            0x8065f84:	paddd    xmm2, xmm7
+        '''
+        mem = Memory32()
+        cpu = I386Cpu(mem)
+        mem.mmap(0x08065000, 0x1000, 'rwx')
+        mem[0x08065f84] = '\x66'
+        mem[0x08065f85] = '\x0f'
+        mem[0x08065f86] = '\xfe'
+        mem[0x08065f87] = '\xd7'
+        cpu.EIP = 0x8065f84
+        cpu.XMM2 = 0x4000000030000000200000001
+        cpu.XMM7 = 0x4000000040000000400000004
+        cpu.execute()
+
+        self.assertEqual(mem[0x8065f84], '\x66')
+        self.assertEqual(mem[0x8065f85], '\x0f')
+        self.assertEqual(mem[0x8065f86], '\xfe')
+        self.assertEqual(mem[0x8065f87], '\xd7')
+        self.assertEqual(cpu.EIP, 134635400)
+        self.assertEqual(cpu.XMM2, 0x8000000070000000600000005)
+        self.assertEqual(cpu.XMM7, 0x4000000040000000400000004)
+
+    def test_PADDQ(self):
+        ''' Instruction PADDQ
+            Groups: sse2
+            0x8065f84:	paddq    xmm1, xmm4
+        '''
+        mem = Memory32()
+        cpu = I386Cpu(mem)
+        mem.mmap(0x08065000, 0x1000, 'rwx')
+        mem[0x08065f84] = '\x66'
+        mem[0x08065f85] = '\x0f'
+        mem[0x08065f86] = '\xd4'
+        mem[0x08065f87] = '\xcc'
+        cpu.EIP = 0x8065f84
+        cpu.XMM1 = 0x20000000000000000
+        cpu.XMM4 = 0xe000000000000000e
+        cpu.execute()
+
+        self.assertEqual(mem[0x8065f84], '\x66')
+        self.assertEqual(mem[0x8065f85], '\x0f')
+        self.assertEqual(mem[0x8065f86], '\xd4')
+        self.assertEqual(mem[0x8065f87], '\xcc')
+        self.assertEqual(cpu.EIP, 134635400)
+        self.assertEqual(cpu.XMM1, 0x10000000000000000e)
+        self.assertEqual(cpu.XMM4, 0xe000000000000000e)
+
+    def test_PSLLD(self):
+        ''' Instruction PSLLD
+            Groups: sse2
+            0x8065f83:	psllq    xmm0, 1
+        '''
+        mem = Memory32()
+        cpu = I386Cpu(mem)
+        mem.mmap(0x08065000, 0x1000, 'rwx')
+        mem[0x08065f83] = '\x66'
+        mem[0x08065f84] = '\x0f'
+        mem[0x08065f85] = '\x72'
+        mem[0x08065f86] = '\xf0'
+        mem[0x08065f87] = '\x01'
+        cpu.EIP = 0x8065f83
+        cpu.XMM0 = 0x7000000060000000500000004
+        cpu.execute()
+
+        self.assertEqual(mem[0x8065f83], '\x66')
+        self.assertEqual(mem[0x8065f84], '\x0f')
+        self.assertEqual(mem[0x8065f85], '\x72')
+        self.assertEqual(mem[0x8065f86], '\xf0')
+        self.assertEqual(mem[0x8065f87], '\x01')
+        self.assertEqual(cpu.EIP, 134635400)
+        self.assertEqual(cpu.XMM0, 0xe0000000c0000000a00000008)
+
+    def test_PSLLQ(self):
+        ''' Instruction PSLLQ
+            Groups: sse2
+            0x8065f83:	psllq    xmm1, 3
+        '''
+        mem = Memory32()
+        cpu = I386Cpu(mem)
+        mem.mmap(0x08065000, 0x1000, 'rwx')
+        mem[0x08065f83] = '\x66'
+        mem[0x08065f84] = '\x0f'
+        mem[0x08065f85] = '\x73'
+        mem[0x08065f86] = '\xf1'
+        mem[0x08065f87] = '\x03'
+        cpu.EIP = 0x8065f83
+        cpu.XMM1 = 0x10000000000000000e
+        cpu.execute()
+
+        self.assertEqual(mem[0x8065f83], '\x66')
+        self.assertEqual(mem[0x8065f84], '\x0f')
+        self.assertEqual(mem[0x8065f85], '\x73')
+        self.assertEqual(mem[0x8065f86], '\xf1')
+        self.assertEqual(mem[0x8065f87], '\x03')
+        self.assertEqual(cpu.EIP, 134635400)
+        self.assertEqual(cpu.XMM1, 0x800000000000000070)
+
+    def test_PCMPGTD(self):
+        ''' Instruction PCMPGTD
+            Groups: sse2
+            0x8065f83:	pcmpgtd    xmm8, xmm0
+        '''
+        mem = Memory32()
+        cpu = AMD64Cpu(mem)
+        mem.mmap(0x08065000, 0x1000, 'rwx')
+        mem[0x08065f83] = '\x66'
+        mem[0x08065f84] = '\x44'
+        mem[0x08065f85] = '\x0f'
+        mem[0x08065f86] = '\x66'
+        mem[0x08065f87] = '\xc0'
+        cpu.EIP = 0x8065f83
+        cpu.XMM0 = 0x66000000640000006200000060
+        cpu.XMM8 = 0
+        cpu.execute()
+
+        self.assertEqual(mem[0x8065f83], '\x66')
+        self.assertEqual(mem[0x8065f84], '\x44')
+        self.assertEqual(mem[0x8065f85], '\x0f')
+        self.assertEqual(mem[0x8065f86], '\x66')
+        self.assertEqual(mem[0x8065f87], '\xc0')
+        self.assertEqual(cpu.EIP, 134635400)
+        self.assertEqual(cpu.XMM0, 0x66000000640000006200000060)
+        self.assertEqual(cpu.XMM8, 0)
+
+    def test_PMAXUB(self):
+        ''' Instruction PMAXUB
+            Groups: sse2
+            0x8065f84:	pmaxub    xmm4, xmm3
+        '''
+        mem = Memory32()
+        cpu = I386Cpu(mem)
+        mem.mmap(0x08065000, 0x1000, 'rwx')
+        mem[0x08065f84] = '\x66'
+        mem[0x08065f85] = '\x0f'
+        mem[0x08065f86] = '\xde'
+        mem[0x08065f87] = '\xe3'
+        cpu.EIP = 0x8065f84
+        cpu.XMM3 = 0xff0000000000
+        cpu.XMM4 = 0xff00
+        cpu.execute()
+
+        self.assertEqual(mem[0x8065f84], '\x66')
+        self.assertEqual(mem[0x8065f85], '\x0f')
+        self.assertEqual(mem[0x8065f86], '\xde')
+        self.assertEqual(mem[0x8065f87], '\xe3')
+        self.assertEqual(cpu.EIP, 134635400)
+        self.assertEqual(cpu.XMM3, 0xff0000000000)
+        self.assertEqual(cpu.XMM4, 0xff000000ff00)
+
+    def test_PMAXUB_symbolic(self):
+        ''' Instruction PMAXUB
+            Groups: sse2
+            0x8065f84:    pmaxub    xmm4, xmm3
+            '''
+        cs = ConstraintSet()
+        mem = SMemory32(cs)
+        cpu = I386Cpu(mem)
+        mem.mmap(0x08065000, 0x1000, 'rwx')
+        mem[0x08065f84] = '\x66'
+        mem[0x08065f85] = '\x0f'
+        mem[0x08065f86] = '\xde'
+        mem[0x08065f87] = '\xe3'
+        cpu.EIP = 0x8065f84
+        cpu.XMM3 = 0xff0000000000
+        cpu.XMM4 = 0xff00
+
+        cpu.XMM3 = cs.new_bitvec(128)
+        cs.add(cpu.XMM3 == 0xff0000000000)
+        cpu.XMM4 = cs.new_bitvec(128)
+        cs.add(cpu.XMM4 == 0xff00)
+
+        done = False
+        while not done:
+            try:
+                cpu.execute()
+                done = True
+            except ConcretizeRegister as e:
+                symbol = getattr(cpu, e.reg_name)
+                values = solver.get_all_values(cs, symbol)
+                self.assertEqual(len(values), 1)
+                setattr(cpu, e.reg_name, values[0])
+
+        condition = True
+        condition = Operators.AND(condition, cpu.read_int(0x8065f84, 8)== ord('\x66'))
+        condition = Operators.AND(condition, cpu.read_int(0x8065f85, 8)== ord('\x0f'))
+        condition = Operators.AND(condition, cpu.read_int(0x8065f86, 8)== ord('\xde'))
+        condition = Operators.AND(condition, cpu.read_int(0x8065f87, 8)== ord('\xe3'))
+        condition = Operators.AND(condition, cpu.EIP == 134635400)
+        condition = Operators.AND(condition, cpu.XMM3 == 0xff0000000000)
+        condition = Operators.AND(condition, cpu.XMM4 == 0xff000000ff00)
+
+        with cs as temp_cs:
+            temp_cs.add(condition)
+            self.assertTrue(solver.check(temp_cs))
+        with cs as temp_cs:
+            temp_cs.add(condition == False)
+            self.assertFalse(solver.check(temp_cs))
+
+    def test_PCMPEQD(self):
+        ''' Instruction PCMPEQD
+            Groups: sse2
+            0x8065f84:	pcmpeqd    xmm6, xmm6
+        '''
+        mem = Memory32()
+        cpu = I386Cpu(mem)
+        mem.mmap(0x08065000, 0x1000, 'rwx')
+        mem[0x08065f84] = '\x66'
+        mem[0x08065f85] = '\x0f'
+        mem[0x08065f86] = '\x76'
+        mem[0x08065f87] = '\xf6'
+        cpu.EIP = 0x8065f84
+        cpu.XMM6 = 0
+        cpu.execute()
+
+        self.assertEqual(mem[0x8065f84], '\x66')
+        self.assertEqual(mem[0x8065f85], '\x0f')
+        self.assertEqual(mem[0x8065f86], '\x76')
+        self.assertEqual(mem[0x8065f87], '\xf6')
+        self.assertEqual(cpu.EIP, 134635400)
+        self.assertEqual(cpu.XMM6, 0xffffffffffffffffffffffffffffffff)
+
     def test_PMOVMSKB_1(self):
         ''' Instruction PMOVMSKB_1
             Groups: sse2

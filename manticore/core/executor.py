@@ -4,9 +4,11 @@ import random
 import logging
 import signal
 
+from ..exceptions import ExecutorError, SolverException
 from ..utils.nointerrupt import WithKeyboardInterruptAs
 from ..utils.event import Eventful
-from .smtlib import Z3Solver, Expression, SolverException
+from ..utils import config
+from .smtlib import Z3Solver, Expression
 from .state import Concretize, TerminateState
 
 from .workspace import Workspace
@@ -15,9 +17,13 @@ from contextlib import contextmanager
 
 # This is the single global manager that will handle all shared memory among workers
 
+consts = config.get_group('executor')
+consts.add('seed', default=1337, description='The seed to use when randomly selecting states')
+
 
 def mgr_init():
     signal.signal(signal.SIGINT, signal.SIG_IGN)
+
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +83,7 @@ class Policy(object):
 class Random(Policy):
     def __init__(self, executor, *args, **kwargs):
         super().__init__(executor, *args, **kwargs)
-        random.seed(1337)  # For repeatable results
+        random.seed(consts.seed)  # For repeatable results
 
     def choice(self, state_ids):
         return random.choice(state_ids)
@@ -142,14 +148,14 @@ class BranchLimited(Policy):
         with self.locked_context() as policy_ctx:
             visited = policy_ctx.get('visited', dict())
             summaries = policy_ctx.get('summaries', dict())
-            lst = []
-            for id_, pc in summaries.items():
-                cnt = visited.get(pc, 0)
-                if id_ not in state_ids:
-                    continue
-                if cnt <= self._limit:
-                    lst.append((id_, visited.get(pc, 0)))
-            lst = sorted(lst, key=lambda x: x[1])
+        lst = []
+        for id_, pc in summaries.items():
+            cnt = visited.get(pc, 0)
+            if id_ not in state_ids:
+                continue
+            if cnt <= self._limit:
+                lst.append((id_, visited.get(pc, 0)))
+        lst = sorted(lst, key=lambda x: x[1])
 
         if lst:
             return lst[0][0]
@@ -379,7 +385,7 @@ class Executor(Eventful):
         solutions = state.concretize(expression, policy)
 
         if not solutions:
-            logger.info("Forking on unfeasible constraint set")
+            raise ExecutorError("Forking on unfeasible constraint set")
 
         if len(solutions) == 1:
             setstate(state, solutions[0])
@@ -387,7 +393,7 @@ class Executor(Eventful):
 
         logger.info("Forking. Policy: %s. Values: %s",
                     policy,
-                    ', '.join('0x{:x}'.format(sol) for sol in solutions))
+                    ', '.join(f'0x{sol:x}' for sol in solutions))
 
         self._publish('will_fork_state', state, expression, solutions, policy)
 

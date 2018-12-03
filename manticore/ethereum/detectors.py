@@ -126,9 +126,16 @@ class DetectExternalCallAndLeak(Detector):
                 if state.can_be_true(msg_sender == dest_address):
                     self.add_finding_here(state, f"Reachable {msg} to sender via argument", constraint=msg_sender == dest_address)
                 else:
-                    # This might be a false positive if the dest_address can't actually be solved to anything
-                    # useful/exploitable
-                    self.add_finding_here(state, f"Reachable {msg} to user controlled address via argument", constraint=msg_sender != dest_address)
+                    # ok it can't go to the sender, but can it go to arbitrary addresses? (> 1 other address?)
+                    # we report nothing if it can't go to > 1 other addresses since that means the code constrained
+                    # to a specific address at some point, and that was probably intentional. attacker has basically
+                    # no control.
+
+                    possible_destinations = state.solve_n(dest_address, 2)
+                    if len(possible_destinations) > 1:
+                        # This might be a false positive if the dest_address can't actually be solved to anything
+                        # useful/exploitable, even though it can be solved to more than 1 thing
+                        self.add_finding_here(state, f"Reachable {msg} to user controlled address via argument", constraint=msg_sender != dest_address)
             else:
                 if msg_sender == dest_address:
                     self.add_finding_here(state, f"Reachable {msg} to sender")
@@ -570,3 +577,127 @@ class DetectUninitializedStorage(Detector):
     def did_evm_write_storage_callback(self, state, address, offset, value):
         # concrete or symbolic write
         state.context.setdefault('{:s}.initialized_storage'.format(self.name), set()).add((address, offset))
+
+
+class DetectRaceCondition(Detector):
+    """Detects possible transaction race conditions (transaction order dependencies)
+
+    The RaceCondition detector might not work properly for contracts that have only a fallback function.
+    See the detector's implementation and it's `_in_user_func` method for more information.
+    """
+
+    TAINT = 'written_storage_slots.'
+
+    def __init__(self, *a, **kw):
+        # Normally `add_finding_here` makes it unique reporting but
+        # we might try to report the same thing multiple times e.g. in consecutive instructions
+        # so we need to make our own 'unique findings' set too.
+        self.__findings = set()
+        super().__init__(*a, **kw)
+
+    @staticmethod
+    def _in_user_func(state):
+        """
+        :param state: current state
+        :return: whether the current execution is in a user-defined function or not.
+
+        NOTE / TODO / FIXME: As this may produce false postives, this is not in the base `Detector` class.
+        It should be fixed at some point and moved there. See below.
+
+        The first 4 bytes of tx data is keccak256 hash of the function signature that is called by given tx.
+
+        All transactions start within Solidity dispatcher function: it takes passed hash and dispatches
+        the execution to given function based on it.
+
+        So: if we are in the dispatcher, *and contract have some functions* one of the first four tx data bytes
+        will effectively have more than one solutions.
+
+        BUT if contract have only a fallback function, the equation below may return more solutions when we are
+        in a dispatcher function.  <--- because of that, we warn that the detector is not that stable
+        for contracts with only a fallback function.
+        """
+
+        # If we are already in user function (we cached it) let's just return True
+        in_function = state.context.get('in_function', False)
+        prev_tx_count = state.context.get('prev_tx_count', 0)
+        curr_tx_count = len(state.platform.transactions)
+
+        new_human_tx = prev_tx_count != curr_tx_count
+
+        if in_function and not new_human_tx:
+            return True
+
+        # This is expensive call, so we cache it
+        in_function = len(state.solve_n(state.platform.current_transaction.data[:4], 2)) == 1
+
+        state.context['in_function'] = in_function
+        state.context['prev_tx_count'] = curr_tx_count
+
+        return in_function
+
+    def did_evm_write_storage_callback(self, state, storage_address, offset, value):
+        world = state.platform
+        curr_tx = world.current_transaction
+
+        if curr_tx.sort == 'CREATE' or not self._in_user_func(state):
+            return
+
+        key = self.TAINT + str(offset)  # offset is storage index/slot
+
+        # Taint stored value so we will know if it is used later on
+        result = taint_with(value, key)
+        world.set_storage_data(storage_address, offset, result)
+
+        metadata = self.manticore.metadata[curr_tx.address]
+
+        func_sig = metadata.get_func_signature(state.solve_one(curr_tx.data[:4]))
+
+        # Save signature of function that tainted the value at given storage index
+        state.context.setdefault(key, set()).add(func_sig)
+
+    def did_evm_execute_instruction_callback(self, state, instruction, arguments, result_ref):
+        if not self._in_user_func(state):
+            return
+
+        # We won't be able to add a finding if pc is not a constant value
+        if not isinstance(state.platform.current_vm.pc, (int, Constant)):
+            return
+
+        world = state.platform
+        curr_tx = world.current_transaction
+
+        if curr_tx.sort != 'CREATE':
+            metadata = self.manticore.metadata[curr_tx.address]
+            curr_func = metadata.get_func_signature(state.solve_one(curr_tx.data[:4]))
+
+            for arg in arguments:
+                if istainted(arg):
+                    for taint in get_taints(arg, self.TAINT + '*'):
+                        tainted_val = taint[taint.rindex('.') + 1:]
+
+                        try:
+                            storage_index = int(tainted_val)
+                            storage_index_key = storage_index
+                        except ValueError:
+                            storage_index = 'which is symbolic'
+                            storage_index_key = hash(tainted_val)
+
+                        prev_funcs = state.context[taint]
+
+                        for prev_func in prev_funcs:
+                            # if prev_func is None, it didn't have a signature (so it was a dispatcher function)
+                            if prev_func is None:
+                                continue
+
+                            msg = 'Potential race condition (transaction order dependency):\n'
+                            msg += f'Value has been stored in storage slot/index {storage_index} in transaction that ' \
+                                   f'called {prev_func} and is now used in transaction that calls {curr_func}.\n' \
+                                   f'An attacker seeing a transaction to {curr_func} could create a transaction ' \
+                                   f'to {prev_func} with high gas and win a race.'
+
+                            unique_key = (storage_index_key, prev_func, curr_func)
+                            if unique_key in self.__findings:
+                                continue
+
+                            self.__findings.add(unique_key)
+                            self.add_finding_here(state, msg)

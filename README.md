@@ -113,7 +113,7 @@ m.run()
 
 ## Quickstart
 
-Install and try Manticore in a few shell commands (see an [asciinema](https://asciinema.org/a/567nko3eh2yzit099s0nq4e8z)):
+Install and try Manticore in a few shell commands:
 
 ```
 # Install system dependencies
@@ -141,32 +141,39 @@ python3 count_instructions.py ../linux/helloworld
 You can also use Docker to quickly install and try Manticore:
 
 ```
-# Download the Manticore image
-docker pull trailofbits/manticore
-
-# Download the examples
-git clone https://github.com/trailofbits/manticore.git && cd manticore
-
 # Run container with a shared examples/ directory
-docker run -it -v $PWD/examples:/home/manticore/examples trailofbits/manticore
+# Note that `--rm` will make the container be deleted if you exit it
+# (if you want to persist data from the container, use docker volumes)
+$ docker run --rm -it trailofbits/manticore bash
 
 # Change to examples directory
-manticore@80d441275ebf$ cd examples/linux
+manticore@8d456f662d0f:~$ cd manticore/examples/linux/
 
 # Build the examples
-manticore@80d441275ebf$ make
+manticore@8d456f662d0f:~/manticore/examples/linux$ make
 
 # Use the Manticore CLI
-manticore@80d441275ebf$ manticore basic
-manticore@80d441275ebf$ cat mcore_*/*0.stdin | ./basic
-manticore@80d441275ebf$ cat mcore_*/*1.stdin | ./basic
+manticore@8d456f662d0f:~/manticore/examples/linux$ manticore basic
+
+
+manticore@8d456f662d0f:~/manticore/examples/linux$ cat mcore_*/*0.stdin | ./basic
+manticore@8d456f662d0f:~/manticore/examples/linux$ cat mcore_*/*1.stdin | ./basic
 
 # Use the Manticore API
-manticore@80d441275ebf$ cd ../script
-manticore@80d441275ebf$ python3 count_instructions.py ../linux/helloworld
+manticore@8d456f662d0f:~/manticore/examples/linux$ cd ../script
+manticore@8d456f662d0f:~/manticore/examples/script$ python3 count_instructions.py ../linux/helloworld
 ```
 
 ## Installation
+
+NOTE: If you use Mac OS X you need to install dependencies manually (preferably in a manticore's python virtual environment):
+```
+brew install capstone
+export MACOS_UNIVERSAL=no && pip install capstone
+
+brew install unicorn
+UNICORN_QEMU_FLAGS="--python=`whereis python`" pip install unicorn
+```
 
 Option 1: Perform a user install (requires `~/.local/bin` in your `PATH`).
 

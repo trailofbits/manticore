@@ -3,7 +3,8 @@ from manticore.ethereum import ManticoreEVM
 m = ManticoreEVM()
 m.verbosity(3)
 # And now make the contract account to analyze
-source_code = open('coverage.sol').read()
+with open('coverage.sol') as f:
+    source_code = f.read()
 
 user_account = m.create_account(balance=1000)
 
@@ -27,10 +28,10 @@ m.transaction(caller=user_account,
               data=m.make_symbolic_buffer(164),
               )
 
-print("[+] There are %d reverted states now" % m.count_terminated_states())
-print("[+] There are %d alive states now" % m.count_running_states())
+print(f"[+] There are {m.count_terminated_states()} reverted states now")
+print(f"[+] There are {m.count_running_states()} alive states now")
 # for state_id in m.running_state_ids:
 #     print(m.report(state_id))
 
-print("[+] Global coverage: %x" % contract_account.address)
+print(f"[+] Global coverage: {contract_account.address:x}")
 print(m.global_coverage(contract_account))

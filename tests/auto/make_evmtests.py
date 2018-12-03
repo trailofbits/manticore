@@ -6,32 +6,32 @@ def pretty(value, htchar=' ', lfchar='\n', indent=0, width=100):
     nlch = lfchar + htchar * (indent + 1)
     if type(value) is dict:
         items = [
-            nlch + repr(key) + ': ' + pretty(value[key], htchar, lfchar, indent +  1, width)
+            nlch + repr(key) + ': ' + pretty(value[key], htchar, lfchar, indent + 1, width)
             for key in value
         ]
-        return '{%s}' % (','.join(items) + lfchar + htchar * indent)
+        return f'{{{",".join(items) + lfchar + htchar * indent}}}'
     elif type(value) is list:
         items = [
             nlch + pretty(item, htchar, lfchar, indent + 1, width)
             for item in value
         ]
-        return '[%s]' % (','.join(items) + lfchar + htchar * indent)
+        return f'[{",".join(items) + lfchar + htchar * indent}]'
     elif type(value) is tuple:
         items = [
             nlch + pretty(item, htchar, lfchar, indent + 1, width)
             for item in value
         ]
-        return '(%s)' % (','.join(items) + lfchar + htchar * indent)
+        return f'({",".join(items) + lfchar + htchar * indent})'
     elif type(value) in (str, str):
-        if len(value) ==0:
+        if len(value) == 0:
             return repr(value)
 
         if width is not None and isinstance(value, str):
             width = width - indent
             width = max(1, width)
             o = []
-            for pos in range(0, len(value), width): 
-                o.append(repr(value[pos: pos+width]) )
+            for pos in range(0, len(value), width):
+                o.append(repr(value[pos: pos + width]))
             return ('\\' + lfchar + htchar * indent).join(o)
         return repr(value)
 
@@ -39,14 +39,17 @@ def pretty(value, htchar=' ', lfchar='\n', indent=0, width=100):
         return repr(value)
 pprint = pretty
 pp = pretty
-def spprint(x, indent=0, width=None,**kwargs):
+
+
+def spprint(x, indent=0, width=None, **kwargs):
     if width is not None and isinstance(x, str):
         o = ''
-        for pos in range(0, len(x), width): 
-            o += ' '*indent + repr(x[pos: pos+width]) + '\\'
+        for pos in range(0, len(x), width):
+            o += ' ' * indent + repr(x[pos: pos + width]) + '\\'
         return o
     x = pformat(x, indent=0)
-    return (('\n'+' '*indent)).join(x.split('\n'))
+    return ((f'\n{"":{indent}s}')).join(x.split('\n'))
+
 
 def i(x):
     if isinstance(x, int):
@@ -55,12 +58,14 @@ def i(x):
     if not x.startswith('0x'):
         x = '0x' + x
     return int(x, 0)
+
+
 def gen_test(testcase, testname, skip):
     output = ''
     if skip:
         output += '''    @unittest.skip('Gas or performance related')\n'''
 
-    output += '    def test_%s(self):\n'% (os.path.split(testname)[1].replace('-','_'))
+    output += f'    def test_{os.path.split(testname)[1].replace("-", "_")}(self):\n'
     header = {}
     env = testcase['env']
     for key in env:
@@ -71,8 +76,8 @@ def gen_test(testcase, testname, skip):
         try:
             header[_key] = i(env[key])
         except:
-            print("XXXXXX" , key, env[key])
-    output += '        header =' + pprint (header, indent=18) +'\n'
+            print(f"XXXXXX {key} {env[key]}")
+    output += f'        header ={pprint(header, indent=18)}\n'
 
     pre = testcase['pre']
     world = {}
@@ -125,53 +130,41 @@ def gen_test(testcase, testname, skip):
     output += '''
         constraints = ConstraintSet()
         platform = evm.EVMWorld(constraints)'''
-    
+
     for address, contract in pre_world.items():
-        output +='''           
-        platform.create_account(address=%s, 
-                                balance=%s, 
-                                code=%s, 
-                                storage=%s
-                                )''' % (pp(address),
-                                        pp(contract['balance']), 
-                                        pp(contract['code'],width=60, indent=37), 
-                                        pp(contract['storage'],width=80, indent=40))
+        output += f'''
+        platform.create_account(address={pp(address)},
+                                balance={pp(contract['balance'])},
+                                code={pp(contract['code'], width=60, indent=37)},
+                                storage={pp(contract['storage'], width=80, indent=40)}
+                                )'''
 
-        output +='''           
-        platform.create_account(address=%s, 
-                                balance=%s, 
-                                code=%s, 
-                                storage=%s
-                                )''' % (pp(transaction['caller']),
-                                        pp(contract['balance']), 
-                                        pp(contract['code'],width=60, indent=37), 
-                                        pp(contract['storage'],width=80, indent=40))
+        output += f'''
+        platform.create_account(address={pp(transaction['caller'])},
+                                balance={pp(contract['balance'])},
+                                code={pp(contract['code'],width=60, indent=37)},
+                                storage={pp(contract['storage'], width=80, indent=40)}
+                                )'''
 
+    output += f'''
+        address = {pp(transaction['address'])}
+        origin = {pp(transaction['origin'])}
+        price = {pp(transaction['price'])}
+        data = {pp(transaction['data'])}
+        caller = {pp(transaction['caller'])}
+        value = {pp(transaction['value'])}'''
 
-    output += '''        
-        address = %s
-        origin = %s
-        price = %s
-        data = %s
-        caller = %s
-        value = %s''' % (
-    pp(transaction['address']),
-    pp(transaction['origin']),
-    pp(transaction['price']),
-    pp(transaction['data']),
-    pp(transaction['caller']),
-    pp(transaction['value']) )
-    output += '''        
+    output += '''
         #platform.transaction(address, origin, price, data, caller, value, header)
         bytecode = platform.storage[address]['code']
         new_vm = EVM(constraints, address, origin, price, data, caller, value, bytecode, header, global_storage=platform.storage)
-        
-  
+
+
         throw = False
         try:
             #platform.run()
             new_vm.run()
-        except state.TerminateState as e:                
+        except state.TerminateState as e:
             if e.message != 'STOP':
                 throw = True
 
@@ -181,16 +174,18 @@ def gen_test(testcase, testname, skip):
             self.assertEqual( pos_world, platform.storage)
 '''
 
-    
     return output
 
-import sys, os, json
 if __name__ == '__main__':
+    import sys
+    import os
+    import json
+
     filename = os.path.abspath(sys.argv[1])
 
     assert filename.endswith('.json')
 
-    print('''
+    print(f'''
 import struct
 import unittest
 import json
@@ -200,18 +195,18 @@ from manticore.core.smtlib import Operators, ConstraintSet
 import os
 
 
-class EVMTest_%s(unittest.TestCase):
+class EVMTest_{os.path.split(sys.argv[1][:-5])[1])}(unittest.TestCase):
     _multiprocess_can_split_ = True
-    maxDiff=None 
-'''%  os.path.split(sys.argv[1][:-5])[1]) 
+    maxDiff=None\n''')
 
-    js = open(filename).read()
+    with open(filename) as f:
+        js = f.read()
     tests = dict(json.loads(js))
 
     #print "#processed ", len(tests.keys()), tests.keys()
     count = 0
     for test_name, testcase in tests.items():
-        count +=1
+        count += 1
         #print "#count", count , test_name, '0c423e4e26c7938c2a82ce40d05a549d617b32303a824ba5a93cb2fb0b037dfd'
         skip = False
         if test_name in ('BlockNumberDynamicJump0_foreverOutOfGas','jump0_foreverOutOfGas', '01a5cf9db140969b2a2410361164fc41c64c070805b82116d217240d4e304f6f', '08d5011d0a278a4d86298cf5a49d99df2662e279100f62fcdbd994df3fe58fbe','3a537f4a02067e6c5a8cf348bdffdb4e6b25475055503a8a5c16690cd51d1060',
@@ -236,11 +231,11 @@ class EVMTest_%s(unittest.TestCase):
 'd197d4181060d54d4ce3965aca77fc97809b613b42ba95698d146907fd0946d8', 'd9c6725e08f795f167d187609ab9b356e737841c56744069ad581e80071dc6c3',
 'da5e09e2db0ad1cf1d68bd8f0b780cbd2f26f454f37d887bdac9e9fd42e2b1a1', 'e434a52cc9af21ef1204b5cdb333b376900fc5c2ece63b9d34fa4902908a455e',
 'e434a52cc9af21ef1204b5cdb333b376900fc5c2ece63b9d34fa4902908a455e', 'e7c8c8665467646d68964497d222df12d6db05efbc5d5de1bf27c471023c1932',
-'f76b7c41b0a7d2879851037f8eea928fc7302bd60fd6af4b6e4030a3a24436b4','f8660436772f63f5cd6bb20e12150cdc66f5238f78d872196f49bc9bf7b5d68d',
-'fa78200fce12b17e9c320d743ddd7d32094326376fe9f6bf9964b285a9350a7e', 'DynamicJump0_foreverOutOfGas', 'JDfromStorageDynamicJump0_foreverOutOfGas', 'ABAcalls1', 'ABAcalls3', 'CallToNameRegistratorTooMuchMemory1','callcodeToNameRegistrator0'):
+'f76b7c41b0a7d2879851037f8eea928fc7302bd60fd6af4b6e4030a3a24436b4', 'f8660436772f63f5cd6bb20e12150cdc66f5238f78d872196f49bc9bf7b5d68d',
+'fa78200fce12b17e9c320d743ddd7d32094326376fe9f6bf9964b285a9350a7e', 'DynamicJump0_foreverOutOfGas', 'JDfromStorageDynamicJump0_foreverOutOfGas', 'ABAcalls1', 'ABAcalls3', 'CallToNameRegistratorTooMuchMemory1', 'callcodeToNameRegistrator0'):
             skip = True
-        #print filename, test_name, tests[test_name]    
-        name = 'test_%s_%s'%(filename[:-5],test_name)
+        # print filename, test_name, tests[test_name]    
+        name = f'test_{filename[:-5]}_{test_name}'
         name = str(name.replace('.', '_'))
         print(gen_test(testcase, test_name, skip))
 

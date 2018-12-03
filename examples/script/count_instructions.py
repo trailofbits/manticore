@@ -13,7 +13,7 @@ share data when running with multiple worker processes.
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
-        sys.stderr.write("Usage: %s [binary]\n"%(sys.argv[0],))
+        sys.stderr.write(f"Usage: {sys.argv[0]} [binary]\n")
         sys.exit(2)
 
     m = Manticore(sys.argv[1])
@@ -27,4 +27,4 @@ if __name__ == '__main__':
 
     m.run(procs=1)
 
-    print("Executed ", m.context['count'], " instructions.")
+    print(f"Executed {m.context['count']} instructions.")

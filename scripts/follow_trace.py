@@ -34,8 +34,7 @@ class TraceReceiver(Plugin):
 
         instructions, writes = _partition(lambda x: x['type'] == 'regs', self._trace)
         total = len(self._trace)
-        print('Recorded concrete trace: {}/{} instructions, {}/{} writes'.format(
-            len(instructions), total, len(writes), total))
+        print(f'Recorded concrete trace: {len(instructions)}/{total} instructions, {len(writes)}/{total} writes')
 
 
 class Follower(Plugin):

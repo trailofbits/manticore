@@ -2,7 +2,7 @@
 import unittest
 import functools
 from manticore.core.cpu.x86 import *
-from manticore.core.smtlib import Operators
+from manticore.core.smtlib import Operators, Expression
 from manticore.core.memory import *
 
 
