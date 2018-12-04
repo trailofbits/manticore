@@ -1,4 +1,4 @@
-from manticore.ethereum import ManticoreEVM, evm
+from manticore.ethereum import evm, ManticoreEVM
 from binascii import unhexlify, hexlify
 ################ Script #######################
 # Bytecode only based analysis

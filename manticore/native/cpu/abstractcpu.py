@@ -1,19 +1,19 @@
 import inspect
 import logging
-import io
-import string
-
-from functools import wraps
 from itertools import islice
 
+import io
+import struct
 import unicorn
+from functools import wraps
 
 from .disasm import init_disassembler
-from ..smtlib import BitVec, Operators, Constant
-from ..memory import ConcretizeMemory, InvalidMemoryAccess
-from ...utils.helpers import issymbolic
+from ..memory import ConcretizeMemory, InvalidMemoryAccess, LazySMemory
+from ...core.smtlib import BitVec, Operators, Constant, visitors
+from ...core.smtlib.solver import solver
 from ...utils.emulate import UnicornEmulator
 from ...utils.event import Eventful
+from ...utils.helpers import issymbolic
 
 logger = logging.getLogger(__name__)
 register_logger = logging.getLogger(f'{__name__}.registers')
@@ -31,7 +31,7 @@ class DecodeException(CpuException):
     Raised when trying to decode an unknown or invalid instruction '''
 
     def __init__(self, pc, bytes):
-        super().__init__("Error decoding instruction @%08x" % pc)
+        super().__init__("Error decoding instruction @ 0x{:x}".format(pc))
         self.pc = pc
         self.bytes = bytes
 
@@ -319,8 +319,7 @@ class Abi(object):
         descriptors = self.get_arguments()
         argument_iter = map(resolve_argument, descriptors)
 
-        # TODO(mark) this is here as a hack to avoid circular import issues
-        from ...models import isvariadic
+        from ..models import isvariadic  # prevent circular imports
 
         if isvariadic(model):
             arguments = prefix_args + (argument_iter,)
@@ -762,8 +761,14 @@ class Cpu(Eventful):
             c = self.memory[address]
 
             if issymbolic(c):
-                assert isinstance(c, BitVec) and c.size == 8
-                if isinstance(c, Constant):
+                # In case of fully symbolic memory, eagerly get a valid ptr
+                if isinstance(self.memory, LazySMemory):
+                    try:
+                        vals = visitors.simplify_array_select(c)
+                        c = bytes([vals[0]])
+                    except visitors.ArraySelectSimplifier.ExpressionNotSimple:
+                        c = struct.pack('B', solver.get_value(self.memory.constraints, c))
+                elif isinstance(c, Constant):
                     c = bytes([c.value])
                 else:
                     logger.error('Concretize executable memory %r %r', c, text)

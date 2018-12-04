@@ -13,16 +13,14 @@ Bugs
 
 '''
 
-import sys
 import queue
 import struct
 import itertools
 
-from manticore import Manticore
+from manticore.native import Manticore
 from manticore.core.plugin import ExtendedTracer, Follower, Plugin
 from manticore.core.smtlib.constraints import ConstraintSet
-from manticore.core.smtlib import Z3Solver, solver
-from manticore.core.smtlib.visitors import pretty_print as pp
+from manticore.core.smtlib import solver
 
 import copy
 from manticore.core.smtlib.expression import *

@@ -1,5 +1,5 @@
 from __future__ import print_function
-from manticore import Manticore
+from manticore.native import Manticore
 from manticore.platforms import linux_syscalls
 
 import logging

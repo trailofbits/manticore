@@ -1,7 +1,7 @@
 import unittest
 import os
 
-from manticore import Manticore
+from manticore.native import Manticore
 
 
 class ManticoreTest(unittest.TestCase):
