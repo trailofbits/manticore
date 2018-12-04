@@ -251,7 +251,7 @@ class IntegrationTest(unittest.TestCase):
             0x004002f1,  # ret in _init
             0x0049124c,  # _fini
             0x00491254,  # ret in _fini
-        ])
+        ], add_assertion=True)
 
     def test_arguments_assertions_armv7(self):
         self._test_arguments_assertions_aux('arguments_linux_armv7', testcases_number=19, visited=[
