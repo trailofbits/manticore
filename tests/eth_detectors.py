@@ -181,7 +181,7 @@ class EthIntegerOverflow(unittest.TestCase):
         self.assertTrue(check)
 
 
-class DetectEnvInstruction(EthDetectorTest):
+class EthEnvInstruction(EthDetectorTest):
     DETECTOR_CLASS = DetectEnvInstruction
 
     def test_predictable_not_ok(self):
