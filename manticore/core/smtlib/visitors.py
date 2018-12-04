@@ -1,4 +1,4 @@
-from manticore.utils.helpers import CacheDict
+from ...utils.helpers import CacheDict
 from .expression import *
 from functools import lru_cache
 import logging
@@ -390,6 +390,7 @@ class ArithmeticSimplifier(Visitor):
 
     def visit_BitVecConcat(self, expression, *operands):
         ''' concat( extract(k1, 0, a), extract(sizeof(a)-k1, k1, a))  ==> a
+            concat( extract(k1, beg, a), extract(end, k1, a))  ==> extract(beg, end, a)
         '''
         op = expression.operands[0]
 
@@ -748,6 +749,30 @@ def replace(expression, bindings):
     visitor.visit(expression, use_fixed_point=True)
     result_expression = visitor.result
     return result_expression
+
+
+class ArraySelectSimplifier(Visitor):
+    class ExpressionNotSimple(RuntimeError):
+        pass
+
+    def __init__(self, target_index, **kwargs):
+        super().__init__(**kwargs)
+        self._target_index = target_index
+        self.stores = []
+
+    def visit_ArrayStore(self, exp, target, where, what):
+        if not isinstance(what, BitVecConstant):
+            raise self.ExpressionNotSimple
+
+        if where.value == self._target_index:
+            self.stores.append(what.value)
+
+
+def simplify_array_select(array_exp):
+    assert isinstance(array_exp, ArraySelect)
+    simplifier = ArraySelectSimplifier(array_exp.index.value)
+    simplifier.visit(array_exp)
+    return simplifier.stores
 
 
 def get_variables(expression):

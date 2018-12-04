@@ -1,30 +1,28 @@
 import binascii
+import unittest
+from contextlib import contextmanager
+from pathlib import Path
+
+import os
+import pyevmasm as EVMAsm
+import re
 import shutil
 import struct
 import tempfile
-from pathlib import Path
-import unittest
-import os
-import sys
-import resource
-import re
-from contextlib import contextmanager
 
-from manticore.platforms import evm
 from manticore.core.plugin import Plugin
 from manticore.core.smtlib import ConstraintSet, operators
-from manticore.core.smtlib.expression import BitVec
 from manticore.core.smtlib import solver
-from manticore.core.state import State, TerminateState
-from manticore.ethereum import ManticoreEVM, DetectExternalCallAndLeak, DetectIntegerOverflow, Detector, NoAliveStates, ABI, EthereumError, FilterFunctions
+from manticore.core.smtlib.expression import BitVec
+from manticore.core.smtlib.visitors import to_constant
+from manticore.core.state import TerminateState
+from manticore.ethereum import ManticoreEVM, State, DetectExternalCallAndLeak, DetectIntegerOverflow, Detector, \
+    NoAliveStates, ABI, EthereumError
+from manticore.ethereum.plugins import FilterFunctions
 from manticore.ethereum.solidity import SolidityMetadata
+from manticore.platforms import evm
 from manticore.platforms.evm import EVMWorld, ConcretizeStack, concretized_args, Return, Stop
-from manticore.core.smtlib.visitors import pretty_print, translate_to_smtlib, simplify, to_constant
 from manticore.utils.deprecated import ManticoreDeprecationWarning
-import pyevmasm as EVMAsm
-
-
-import shutil
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -490,8 +488,8 @@ class EthTests(unittest.TestCase):
 
     def test_gen_testcase_only_if(self):
         source_code = '''
-        contract Test{
-            function f(uint x) returns(uint){
+        contract Test {
+            function f(uint x) returns(uint) {
                 return x-2;
             }
         }
@@ -506,7 +504,8 @@ class EthTests(unittest.TestCase):
         retval_array = state.platform.human_transactions[-1].return_data
         retval = operators.CONCAT(256, *retval_array)
 
-        did_gen = self.mevm.generate_testcase(state, 'fail', 'return can be 0', only_if=retval == 0)
+        # Test 1: Generate a testcase (since the condition/constrain can be met/solved)
+        did_gen = self.mevm.generate_testcase(state, 'return can be 0', only_if=retval == 0)
         self.assertTrue(did_gen)
 
         with state as tmp:
@@ -514,22 +513,38 @@ class EthTests(unittest.TestCase):
             inp = tmp.solve_one(input_sym)
             self.assertEqual(inp, 2)
 
-        did_gen = self.mevm.generate_testcase(state, 'fail', 'return can be 0', only_if=operators.AND(retval != 0, retval == 0))
+        expected_files = {
+            'user_00000000.' + ext for ext in ('summary', 'constraints', 'pkl', 'tx.json', 'tx', 'trace', 'logs')
+        }
+
+        self.assertEqual(set(os.listdir(self.mevm.workspace)), expected_files)
+
+        summary_path = os.path.join(self.mevm.workspace, 'user_00000000.summary')
+        with open(summary_path) as summary:
+            self.assertIn('return can be 0', summary.read())
+
+        # Test 2: Don't generate a testcase (since the condition/constrain can't be met/solved)
+        did_gen = self.mevm.generate_testcase(state, 'return can be 0 again?',
+                                              only_if=operators.AND(retval != 0, retval == 0))
         self.assertFalse(did_gen)
 
+        # Just a sanity check: a generate testcase with not met condition shouldn't add any more files
+        self.assertEqual(set(os.listdir(self.mevm.workspace)), expected_files)
+
+        # Since the condition was not met there should be no testcase in the summary
+        with open(summary_path) as summary:
+            self.assertNotIn('return can be 0 again?', summary.read())
 
     def test_function_name_with_signature(self):
         source_code = '''
-        contract Test{
-
-            function ret(uint) returns(uint){
+        contract Test {
+            function ret(uint) returns(uint) {
                 return 1;
             }
 
-            function ret(uint,uint) returns(uint){
+            function ret(uint,uint) returns(uint) {
                 return 2;
             }
-
         }
         '''
         user_account = self.mevm.create_account(balance=1000)
@@ -1175,7 +1190,6 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
                 returndata = e.data
 
         self.assertEqual(result, 'THROW')
-        self.assertEqual(new_vm.gas, 99986)
         
 
     def test_delegatecall_env(self):

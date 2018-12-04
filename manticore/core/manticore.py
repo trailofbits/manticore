@@ -1,123 +1,34 @@
-
-import os
+import cProfile
+import itertools
+import logging
+import pstats
 import sys
 import time
-import types
-import functools
-import cProfile
-import pstats
-import itertools
-from multiprocessing import Process
 from contextlib import contextmanager
-
+from multiprocessing import Process
 from threading import Timer
 
-# FIXME: remove this three
-import elftools
-from elftools.elf.elffile import ELFFile
-from elftools.elf.sections import SymbolTableSection
+import functools
+import types
 
-
-from .core.executor import Executor
-from .core.state import State, TerminateState
-from .core.smtlib import solver, ConstraintSet
-from .core.workspace import ManticoreOutput
-from .platforms import linux, evm, decree
-from .utils import config
-from .utils.helpers import issymbolic
-from .utils.nointerrupt import WithKeyboardInterruptAs
-from .utils.event import Eventful
-from .core.plugin import Plugin, InstructionCounter, RecordSymbolicBranches, Visited, Tracer
-import logging
-from .utils import log
+from ..core.executor import Executor
+from ..core.plugin import Plugin
+from ..core.smtlib import solver
+from ..core.state import TerminateState, StateBase
+from ..core.workspace import ManticoreOutput
+from ..utils import config
+from ..utils import log
+from ..utils.event import Eventful
+from ..utils.helpers import issymbolic
+from ..utils.nointerrupt import WithKeyboardInterruptAs
 
 logger = logging.getLogger(__name__)
 log.init_logging()
 
-# Default symbolic input size
-STDIN_INPUT_DEFAULT_SIZE = 256
 
-
-def make_decree(program, concrete_start='', **kwargs):
-    constraints = ConstraintSet()
-    platform = decree.SDecree(constraints, program)
-    initial_state = State(constraints, platform)
-    logger.info('Loading program %s', program)
-
-    if concrete_start != '':
-        logger.info(f'Starting with concrete input: {concrete_start}')
-    platform.input.transmit(concrete_start)
-    platform.input.transmit(initial_state.symbolicate_buffer('+' * 14, label='RECEIVE'))
-    return initial_state
-
-
-def make_linux(program, argv=None, env=None, entry_symbol=None, symbolic_files=None, concrete_start='', stdin_size=STDIN_INPUT_DEFAULT_SIZE):
-    env = {} if env is None else env
-    argv = [] if argv is None else argv
-    env = [f'{k}={v}' for k, v in env.items()]
-
-    logger.info('Loading program %s', program)
-
-    constraints = ConstraintSet()
-    platform = linux.SLinux(program, argv=argv, envp=env,
-                            symbolic_files=symbolic_files)
-    if entry_symbol is not None:
-        entry_pc = platform._find_symbol(entry_symbol)
-        if entry_pc is None:
-            logger.error("No symbol for '%s' in %s", entry_symbol, program)
-            raise Exception("Symbol not found")
-        else:
-            logger.info("Found symbol '%s' (%x)", entry_symbol, entry_pc)
-            #TODO: use argv as arguments for function
-            platform.set_entry(entry_pc)
-
-    initial_state = State(constraints, platform)
-
-    if concrete_start != '':
-        logger.info('Starting with concrete input: %s', concrete_start)
-
-    for i, arg in enumerate(argv):
-        argv[i] = initial_state.symbolicate_buffer(arg, label=f'ARGV{i + 1}')
-
-    for i, evar in enumerate(env):
-        env[i] = initial_state.symbolicate_buffer(evar, label=f'ENV{i + 1}')
-
-    # If any of the arguments or environment refer to symbolic values, re-
-    # initialize the stack
-    if any(issymbolic(x) for val in argv + env for x in val):
-        platform.setup_stack([program] + argv, env)
-
-    platform.input.write(concrete_start)
-
-    # set stdin input...
-    platform.input.write(initial_state.symbolicate_buffer('+' * stdin_size,
-                                                          label='STDIN'))
-    return initial_state
-
-
-def make_initial_state(binary_path, **kwargs):
-    with open(binary_path, 'rb') as f:
-        magic = f.read(4)
-    if magic == b'\x7fELF':
-        # Linux
-        state = make_linux(binary_path, **kwargs)
-    elif magic == b'\x7fCGC':
-        # Decree
-        state = make_decree(binary_path, **kwargs)
-    else:
-        raise NotImplementedError(f"Binary {binary_path} not supported.")
-    return state
-
-
-class Manticore(Eventful):
+class ManticoreBase(Eventful):
     '''
-    The central analysis object.
-
-    This should generally not be invoked directly; the various
-    class method constructors should be preferred:
-    :meth:`~manticore.Manticore.linux`,
-    :meth:`~manticore.Manticore.decree`,
-    :meth:`~manticore.Manticore.evm`.
+    Base class for the central analysis object.
 
     :param path_or_state: Path to a binary to analyze (**deprecated**) or `State` object
     :type path_or_state: str or State
@@ -128,7 +39,14 @@ class Manticore(Eventful):
 
     _published_events = {'start_run', 'finish_run'}
 
-    def __init__(self, path_or_state, argv=None, workspace_url=None, policy='random', **kwargs):
+    def __init__(self, initial_state, workspace_url=None, policy='random', **kwargs):
+        """
+
+        :param initial_state: State to start from.
+        :param workspace_url: workspace folder name
+        :param policy: scheduling policy
+        :param kwargs: other kwargs, e.g.
+        """
         super().__init__()
 
         if isinstance(workspace_url, str):
@@ -154,19 +72,11 @@ class Manticore(Eventful):
         # Link Executor events to default callbacks in manticore object
         self.forward_events_from(self._executor)
 
-        if isinstance(path_or_state, str):
-            if not os.path.isfile(path_or_state):
-                raise OSError(f'{path_or_state} is not an existing regular file')
-            self._initial_state = make_initial_state(path_or_state, argv=argv, **kwargs)
-        elif isinstance(path_or_state, State):
-            self._initial_state = path_or_state
-            #froward events from newly loaded object
-            self._executor.forward_events_from(self._initial_state, True)
-        else:
-            raise TypeError(f'path_or_state must be either a str or State, not {type(path_or_state).__name__}')
+        if not isinstance(initial_state, StateBase):
+            raise TypeError(f'Invalid initial_state type: {type(initial_state).__name__}')
 
-        if not isinstance(self._initial_state, State):
-            raise TypeError("Manticore must be initialized with either a State or a path to a binary")
+        self._initial_state = initial_state
+        self._executor.forward_events_from(self._initial_state, True)
 
         # Move the following into a linux plugin
 
@@ -227,68 +137,15 @@ class Manticore(Eventful):
         plugin.manticore = None
 
     def __del__(self):
-        try:
-            plugins = list(self.plugins)
-            for plugin in plugins:
-                self.unregister_plugin(plugin)
-        except Exception:
-            pass
+        # If an exception is thrown in a child/inherited class's __init__ before calling super().__init__
+        # the self.plugins is not assigned
+        # because of that, we need to use a `getattr` here, otherwise we might get two exceptions
+        # (and the one from here is irrelevant and confusing)
+        plugins = getattr(self, 'plugins', [])
 
-    @classmethod
-    def linux(cls, path, argv=None, envp=None, entry_symbol=None, symbolic_files=None, concrete_start='', stdin_size=STDIN_INPUT_DEFAULT_SIZE, **kwargs):
-        """
-        Constructor for Linux binary analysis.
-
-        :param str path: Path to binary to analyze
-        :param argv: Arguments to provide to the binary
-        :type argv: list[str]
-        :param envp: Environment to provide to the binary
-        :type envp: dict[str, str]
-        :param entry_symbol: Entry symbol to resolve to start execution
-        :type envp: str
-        :param symbolic_files: Filenames to mark as having symbolic input
-        :type symbolic_files: list[str]
-        :param str concrete_start: Concrete stdin to use before symbolic input
-        :param int stdin_size: symbolic stdin size to use
-        :param kwargs: Forwarded to the Manticore constructor
-        :return: Manticore instance, initialized with a Linux State
-        :rtype: Manticore
-        """
-        try:
-            return cls(make_linux(path, argv, envp, entry_symbol, symbolic_files, concrete_start, stdin_size), **kwargs)
-        except elftools.common.exceptions.ELFError:
-            raise Exception(f'Invalid binary: {path}')
-
-    @classmethod
-    def decree(cls, path, concrete_start='', **kwargs):
-        """
-        Constructor for Decree binary analysis.
-
-        :param str path: Path to binary to analyze
-        :param str concrete_start: Concrete stdin to use before symbolic input
-        :param kwargs: Forwarded to the Manticore constructor
-        :return: Manticore instance, initialized with a Decree State
-        :rtype: Manticore
-        """
-        try:
-            return cls(make_decree(path, concrete_start), **kwargs)
-        except KeyError:  # FIXME(mark) magic parsing for DECREE should raise better error
-            raise Exception(f'Invalid binary: {path}')
-
-    @classmethod
-    def evm(cls, **kwargs):
-        """
-        Constructor for Ethereum virtual machine bytecode analysis.
-
-        :param kwargs: Forwarded to the Manticore constructor
-        :return: Manticore instance, initialized with a EVM State
-        :rtype: Manticore
-        """
-        # Make the constraint store
-        constraints = ConstraintSet()
-        # make the ethereum world state
-        world = evm.EVMWorld(constraints)
-        return cls(State(constraints, world), **kwargs)
+        # A `list` cast is needed, otherwise we delete items from the `self.plugins` set while iterating over it
+        for plugin in list(plugins):
+            self.unregister_plugin(plugin)
 
     @property
     def initial_state(self):
@@ -371,6 +228,7 @@ class Manticore(Eventful):
         several predefined logging presets. Valid values: 0-5.
         """
         log.set_verbosity(level)
+        logger.info(f'Verbosity set to {level}.')
 
     @property
     def running(self):
@@ -492,7 +350,7 @@ class Manticore(Eventful):
         # Imported straight from __main__.py; this will be re-written once the new
         # event code is in place.
         import importlib
-        from . import platforms
+        from manticore import platforms
 
         with open(path, 'r') as fnames:
             for line in fnames.readlines():
@@ -534,7 +392,7 @@ class Manticore(Eventful):
         if pc not in self._assertions:
             return
 
-        from .core.parser.parser import parse
+        from .parser.parser import parse
 
         program = self._assertions[pc]
 
@@ -649,33 +507,6 @@ class Manticore(Eventful):
     def is_shutdown(self):
         ''' Returns True if shutdown was requested '''
         return self._executor.is_shutdown()
-
-    #############################################################################
-    #############################################################################
-    #############################################################################
-    # Move all the following elsewhere Not all manticores have this
-    def _get_symbol_address(self, symbol):
-        '''
-        Return the address of |symbol| within the binary
-        '''
-
-        # XXX(yan) This is a bit obtuse; once PE support is updated this should
-        # be refactored out
-        if self._binary_type == 'ELF':
-            self._binary_obj = ELFFile(open(self._binary, 'rb'))
-
-        if self._binary_obj is None:
-            return NotImplementedError("Symbols aren't supported")
-
-        for section in self._binary_obj.iter_sections():
-            if not isinstance(section, SymbolTableSection):
-                continue
-
-            symbols = section.get_symbol_by_name(symbol)
-            if not symbols:
-                continue
-
-            return symbols[0].entry['st_value']
 
     @property
     def coverage_file(self):

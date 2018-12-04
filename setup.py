@@ -12,6 +12,34 @@ def rtd_dependent_deps():
         return ['z3-solver']
 
 
+# If you update native_deps please update the `REQUIREMENTS_TO_IMPORTS` dict in `utils/install_helper.py`
+# (we need to know how to import a given native dependency so we can check if native dependencies are installed)
+native_deps = [
+    'capstone>=3.0.5',
+    'pyelftools',
+    'unicorn',
+]
+
+extra_require = {
+    'native': native_deps,
+    'dev': native_deps + [
+        'keystone-engine',
+        'coverage',
+        'nose',
+        'Sphinx',
+    ],
+    # noks - no keystone
+    'dev-noks': native_deps + [
+        'coverage',
+        'nose',
+        'Sphinx',
+    ],
+    'redis': [
+        'redis',
+    ]
+}
+
+
 setup(
     name='manticore',
     description='Manticore is a symbolic execution tool for analysis of binaries and smart contracts.',
@@ -21,36 +49,19 @@ setup(
     packages=find_packages(exclude=['tests', 'tests.*']),
     python_requires='>=3.6',
     install_requires=[
-        'capstone>=3.0.5',
-        'pyelftools',
-        'unicorn',
-        'ply',
+        'pyyaml',
+        # evm dependencies
         'pysha3',
         # In 0.1.1, pyevmasm changed its gas cost calculations, so Manticore will need to update its
         # unit tests to match before we can upgrade pyevmasm
         'pyevmasm==0.1.0',
-        'pyyaml',
         'rlp',
+        'ply'
     ] + rtd_dependent_deps(),
     dependency_links=[
         'https://github.com/aquynh/capstone/archive/next.zip#egg=capstone-4&subdirectory=bindings/python',
     ],
-    extras_require={
-        'dev': [
-            'keystone-engine',
-            'coverage',
-            'nose',
-            'Sphinx',
-        ],
-        'dev-noks': [
-            'coverage',
-            'nose',
-            'Sphinx',
-        ],
-        'redis': [
-            'redis',
-        ]
-    },
+    extras_require=extra_require,
     entry_points={
         'console_scripts': [
             'manticore = manticore.__main__:main'

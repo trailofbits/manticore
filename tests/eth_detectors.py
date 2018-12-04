@@ -7,12 +7,12 @@ import unittest
 
 import os
 import shutil
-from eth_general import make_mock_evm_state
 
 from manticore.core.smtlib import operators
 from manticore.ethereum import ManticoreEVM, DetectIntegerOverflow, DetectUnusedRetVal, DetectSelfdestruct, \
-    LoopDepthLimiter, DetectDelegatecall, \
-    DetectExternalCallAndLeak, DetectEnvInstruction, DetectRaceCondition
+    DetectDelegatecall, DetectExternalCallAndLeak, DetectEnvInstruction, DetectRaceCondition
+from manticore.ethereum.plugins import LoopDepthLimiter
+from eth_general import make_mock_evm_state
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -144,7 +144,7 @@ class EthExternalCallAndLeak(EthDetectorTest):
         self._test(name, {("Reachable external call to sender", False),
                           ("Reachable ether leak to sender", False)})
 
-    def test_etherleak_true_pos_argument2(self):
+    @unittest.skip("Too slow for this modern times")
     def test_etherleak_true_pos_msgsender1(self):
         self.mevm.register_plugin(LoopDepthLimiter(5))
         name = inspect.currentframe().f_code.co_name[5:]

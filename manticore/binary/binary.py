@@ -12,7 +12,7 @@ class Binary:
                 cl = cls.magics[f.read(4)]
             return cl(path)
         else:
-            return super(Binary, cls).__new__(cls)
+            return super().__new__(cls)
 
     def __init__(self, path):
         self.path = path

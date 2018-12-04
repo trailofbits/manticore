@@ -93,11 +93,12 @@ class Transaction(object):
         generation.
 
         :param stream: Output stream to write to. Typically a file.
-        :param manticore.core.state.State state: state that the tx exists in
+        :param manticore.ethereum.State state: state that the tx exists in
         :param manticore.ethereum.ManticoreEVM mevm: manticore instance
         :return:
         """
-        from ..ethereum import ABI, flagged  # circular imports
+        from ..ethereum import ABI  # circular imports
+        from ..ethereum.manticore import flagged
 
         is_something_symbolic = False
 
@@ -2404,7 +2405,7 @@ class EVMWorld(Platform):
             self._close_transaction('STOP')
             
     def dump(self, stream, state, mevm, message):
-        from ..ethereum import flagged, calculate_coverage
+        from ..ethereum.manticore import calculate_coverage, flagged
         blockchain = state.platform
         last_tx = blockchain.last_transaction
 

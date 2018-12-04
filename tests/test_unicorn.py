@@ -1,20 +1,19 @@
 import unittest
-import struct
+
 import os
-from functools import wraps
-
-from manticore.core.cpu.arm import Armv7Cpu as Cpu, Mask, Interruption
-from manticore.core.cpu.abstractcpu import ConcretizeRegister
-from manticore.core.memory import ConcretizeMemory, Memory32, SMemory32
-from manticore.core.state import State
-from manticore.core.smtlib import BitVecVariable, ConstraintSet
-from manticore.platforms import linux
-from manticore.utils.emulate import UnicornEmulator
-
-from capstone.arm import *
+import struct
 from capstone import CS_MODE_THUMB, CS_MODE_ARM
+from functools import wraps
 from keystone import Ks, KS_ARCH_ARM, KS_MODE_ARM, KS_MODE_THUMB
 from unicorn import UC_QUERY_MODE, UC_MODE_THUMB
+
+from manticore.native.cpu.abstractcpu import ConcretizeRegister
+from manticore.native.cpu.arm import Armv7Cpu as Cpu, Mask, Interruption
+from manticore.core.smtlib import ConstraintSet
+from manticore.native.state import State
+from manticore.native.memory import ConcretizeMemory, Memory32
+from manticore.platforms import linux
+from manticore.utils.emulate import UnicornEmulator
 
 ks = Ks(KS_ARCH_ARM, KS_MODE_ARM)
 ks_thumb = Ks(KS_ARCH_ARM, KS_MODE_THUMB)

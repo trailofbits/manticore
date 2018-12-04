@@ -281,7 +281,7 @@ class Z3Solver(Solver):
             raise SolverException(_status)
         if consider_unknown_as_unsat:
             if _status == 'unknown':
-                logger.warning('Found an unknown core, probably a solver timeout')
+                logger.info('Found an unknown core, probably a solver timeout')
                 _status = 'unsat'
 
         if _status == 'unknown':

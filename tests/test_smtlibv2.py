@@ -1,9 +1,8 @@
-from manticore.core.smtlib import *
 import unittest
-import fcntl
-import resource
-import gc
-import sys
+
+from manticore.core.smtlib import *
+
+
 #logging.basicConfig(filename = "test.log",
 #                format = "%(asctime)s: %(name)s:%(levelname)s: %(message)s",
 #                level = logging.DEBUG)
@@ -457,6 +456,10 @@ class ExpressionTest(unittest.TestCase):
         b = Operators.CONCAT(32, Operators.EXTRACT(a, 24, 8), Operators.EXTRACT(a, 16, 8), Operators.EXTRACT(a, 8, 8), Operators.EXTRACT(a, 0, 8))
         self.assertEqual( translate_to_smtlib(b), '(concat ((_ extract 31 24) VARA) ((_ extract 23 16) VARA) ((_ extract 15 8) VARA) ((_ extract 7 0) VARA))')
         self.assertEqual( translate_to_smtlib(simplify(b)), 'VARA')
+
+        c = Operators.CONCAT(16, Operators.EXTRACT(a, 16, 8), Operators.EXTRACT(a, 8, 8))
+        self.assertEqual( translate_to_smtlib(c), '(concat ((_ extract 23 16) VARA) ((_ extract 15 8) VARA))')
+        self.assertEqual( translate_to_smtlib(simplify(c)), '((_ extract 23 8) VARA)')
 
 
     def testBasicReplace(self):

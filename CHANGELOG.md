@@ -4,6 +4,16 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## [Unreleased](https://github.com/trailofbits/manticore/compare/0.2.2...HEAD)
 
+### Changed
+
+- Linux/binary analysis has been moved to `manticore.native`, `manticore.core.cpu` has been moved to `manticore.native.cpu`. Please update your imports.
+- The binary analysis dependencies are now not installed by default. They can be installed with `pip install manticore[native]`.
+- The symbolic `stdin_size` is now a config variable (in `main` config group) with a default of 256 (it was like this before).
+
+
+### Removed
+- `Manticore.evm` static method
+
 ## 0.2.2 - 2018-10-30
 
 Thanks to our external contributors!
@@ -14,6 +24,7 @@ Thanks to our external contributors!
 - [Srinivas11789](https://github.com/srinivas11789)
 - [stephan-tolksdorf](https://github.com/stephan-tolksdorf)
 - [catenacyber](https://github.com/catenacyber)
+- [MJ10](https://github.com/MJ10)
 
 ### Added
 

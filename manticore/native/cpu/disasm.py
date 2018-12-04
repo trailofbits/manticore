@@ -1,4 +1,4 @@
-from abc import abstractproperty, abstractmethod
+from abc import abstractmethod
 
 import capstone as cs
 
