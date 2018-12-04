@@ -139,7 +139,7 @@ class SolidityMetadata(object):
             return ''
 
         output = ''
-        nl = self.source_code[:beg].count('\n')
+        nl = self.source_code[:beg].count('\n') + 1
         snippet = self.source_code[beg:beg + size]
         for l in snippet.split('\n'):
             output += '    %s  %s\n' % (nl, l)
