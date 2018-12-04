@@ -121,32 +121,30 @@ class IntegrationTest(unittest.TestCase):
         self.assertTrue(filename.startswith(os.getcwd()))
         filename = filename[len(os.getcwd())+1:]
         workspace = os.path.join(self.test_dir, 'workspace')
-        t = time.time()
 
-        with open(os.path.join(os.pardir, self.test_dir, 'output.log'), "w") as output:
-            subprocess.check_call(['python', '-m', 'manticore',
-                                '--workspace', workspace,
-                                '--timeout', '1',
-                                '--procs', '4',
-                                filename,
-                                '+++++++++'], stdout=output)
+        timeout_secs = 1
 
-        output = subprocess.check_output([PYTHON_BIN, '-m', 'manticore',
-                                          '--workspace', workspace,
-                                          '--timeout', '1',
-                                          '--procs', '4',
-                                          '--no-color',
-                                          filename,
-                                          '+++++++++'])
-        expected_output_regex = (
-            b'.*m.manticore:INFO: Loading program .*tests/binaries/arguments_linux_amd64\n'
-            b'.*m.manticore:INFO: Results in /tmp/[a-z0-9_]+/workspace\n'
-            b'.*m.manticore:INFO: Total time: [0-9]+.[0-9]+\n'
-        )
+        cmd = [
+            PYTHON_BIN, '-m', 'manticore',
+            '--workspace', workspace,
+            '--timeout', str(timeout_secs),
+            '--no-color',
+            filename,
+            '+++++++++'
+        ]
 
-        self.assertRegex(output, expected_output_regex)
+        start = time.time()
+        output = subprocess.check_output(cmd)
+        end = time.time()
 
-        self.assertTrue(time.time() - t < 20)
+        output = output.splitlines()
+
+        self.assertEqual(len(output), 1)
+        self.assertIn(b'm.c.manticore:INFO: Verbosity set to 1.', output[0])
+
+        # Since we count the total time of Python process that runs Manticore, it takes a bit more time
+        # than the timeout value, so we just assert two seconds here (1.5s should also be fine)
+        self.assertLessEqual(end - start, timeout_secs+1)
 
     def test_logger_verbosity(self):
         """
