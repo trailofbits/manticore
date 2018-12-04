@@ -126,6 +126,7 @@ class EthExternalCallAndLeak(EthDetectorTest):
         self._test(name, {("Reachable ether leak to sender via argument", False),
                           ("Reachable external call to sender via argument", False)})
 
+    @unittest.skip("Too slow for this modern times")
     def test_etherleak_true_pos_argument1(self):
         self.mevm.register_plugin(LoopDepthLimiter(5))
         name = inspect.currentframe().f_code.co_name[5:]

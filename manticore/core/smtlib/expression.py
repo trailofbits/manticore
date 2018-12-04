@@ -864,7 +864,6 @@ class ArrayProxy(Array):
             self._name = array.underlying_variable.name
             self._array = array
 
-
     @property
     def underlying_variable(self):
         return self._array.underlying_variable
@@ -930,9 +929,9 @@ class ArrayProxy(Array):
             size = self._get_size(index)
             array_proxy_slice = ArrayProxy(ArraySlice(self, start, size), default=self._default)
             array_proxy_slice._concrete_cache = {}
-            for k,v in self._concrete_cache.items():
-                if k >= start and k< start+size:
-                    array_proxy_slice._concrete_cache[k-start] = v
+            for k, v in self._concrete_cache.items():
+                if k >= start and k < start + size:
+                    array_proxy_slice._concrete_cache[k - start] = v
             return array_proxy_slice
         else:
             if self.index_max is not None:
@@ -992,7 +991,7 @@ class ArrayProxy(Array):
     def is_known(self, index):
         # return reduce(BoolOr, map(lambda known_index: index == known_index, self.written), BoolConstant(False))
         if isinstance(index, Constant) and index.value in self._concrete_cache:
-            return  BoolConstant(True)
+            return BoolConstant(True)
 
         is_known_index = BoolConstant(False)
         written = self.written
