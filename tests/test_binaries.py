@@ -12,16 +12,10 @@ from manticore.native.mappings import mmap, munmap
 
 DIRPATH = os.path.dirname(__file__)
 
-# Workaround for PyCharm's remote ssh interpreter that is in virtualenv
-# (it doesn't support venv on remote ssh, so `python` may point to system's Python)
-# and /proc/self/exe should always be the Python the tests have been run with.
-PYTHON_BIN = '/proc/self/exe'
-
-
 # TLDR: when we launch `python -m manticore` and one uses PyCharm remote interpreter
 # the `python` might not refer to proper interpreter. The `/proc/self/exe` is a workaround
 # so one doesn't have to set up virtualenv in a remote interpreter.
-PYTHON_BIN = '/proc/self/exe'
+PYTHON_BIN = sys.executable
 
 
 class TestBinaryPackage(unittest.TestCase):
