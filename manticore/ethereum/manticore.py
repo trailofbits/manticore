@@ -24,10 +24,11 @@ from .solidity import SolidityMetadata
 from .state import State
 from ..exceptions import EthereumError, DependencyError, NoAliveStates
 from ..platforms import evm
-from ..utils import config
+from ..utils import config, log
 from ..utils.helpers import PickleSerializer, issymbolic
 
 logger = logging.getLogger(__name__)
+log.init_logging()
 
 
 def flagged(flag):
