@@ -110,13 +110,13 @@ def set_verbosity(setting):
         ],
         # 3 (-vv)
         [
-            ('manticore.core.cpu.*', logging.DEBUG)
+            ('manticore.native.cpu.*', logging.DEBUG)
         ],
         # 4 (-vvv)
         [
-            ('manticore.core.memory', logging.DEBUG),
-            ('manticore.core.cpu.*', logging.DEBUG),
-            ('manticore.core.cpu.*.registers', logging.DEBUG)
+            ('manticore.native.memory', logging.DEBUG),
+            ('manticore.native.cpu.*', logging.DEBUG),
+            ('manticore.native.cpu.*.registers', logging.DEBUG)
         ],
         # 5 (-vvvv)
         [
