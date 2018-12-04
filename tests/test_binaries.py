@@ -122,15 +122,14 @@ class IntegrationTest(unittest.TestCase):
         filename = filename[len(os.getcwd())+1:]
         workspace = os.path.join(self.test_dir, 'workspace')
 
-        timeout_secs = 1
+        timeout_secs = 4
 
         cmd = [
             PYTHON_BIN, '-m', 'manticore',
             '--workspace', workspace,
             '--timeout', str(timeout_secs),
             '--no-color',
-            filename,
-            '+++++++++'
+            filename
         ]
 
         start = time.time()
@@ -139,12 +138,18 @@ class IntegrationTest(unittest.TestCase):
 
         output = output.splitlines()
 
-        self.assertEqual(len(output), 1)
+        # Because the run will timeout, we don't know the exact line numbers that will appear
+        # but this seems as a good default
+        self.assertGreaterEqual(len(output), 4)
         self.assertIn(b'm.c.manticore:INFO: Verbosity set to 1.', output[0])
+        self.assertIn(b'm.main:INFO: Beginning analysis', output[1])
+        self.assertIn(b'm.e.manticore:INFO: Starting symbolic create contract', output[2])
+
+        self.assertIn(b'm.e.manticore:INFO: Results in ', output[-1])
 
         # Since we count the total time of Python process that runs Manticore, it takes a bit more time
-        # than the timeout value, so we just assert two seconds here (1.5s should also be fine)
-        self.assertLessEqual(end - start, timeout_secs+1)
+        # e.g. for some finalization like generation of testcases
+        self.assertLessEqual(end - start, timeout_secs+20)
 
     def test_logger_verbosity(self):
         """
