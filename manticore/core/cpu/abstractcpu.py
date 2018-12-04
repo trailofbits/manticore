@@ -606,11 +606,8 @@ class Cpu(Eventful):
         self._publish('will_read_memory', where, size)
 
         data = self._memory.read(where, size // 8, force)
-        if not issymbolic(data):
-            assert (8 * len(data)) == size
-            value = Operators.CONCAT(size, *map(Operators.ORD, reversed(data)))
-        else:
-            value = data  # TODO: Validation?
+        assert (8 * len(data)) == size
+        value = Operators.CONCAT(size, *map(Operators.ORD, reversed(data)))
 
         self._publish('did_read_memory', where, value, size)
         return value
