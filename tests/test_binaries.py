@@ -68,7 +68,7 @@ class IntegrationTest(unittest.TestCase):
         Simply run the Manticore command line with `filename`
         :param filename: Name of file inside the `tests/binaries` directory
         """
-        assert isinstance(args, (list, None))
+        assert isinstance(args, (list, type(None)))
 
         working_dir = os.path.join(DIRPATH, 'binaries')
 
