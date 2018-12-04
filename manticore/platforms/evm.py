@@ -258,15 +258,35 @@ class EVMException(Exception):
     pass
 
 
-class ConcretizeStack(EVMException):
+class ConcretizeArgument(EVMException):
     '''
-    Raised when a symbolic memory cell needs to be concretized.
+    Raised when a symbolic argument needs to be concretized.
     '''
 
-    def __init__(self, pos, expression=None, policy='MINMAX'):
+    def __init__(self, pos, expression=None, policy='SAMPLED'):
         self.message = "Concretizing evm stack item {}".format(pos)
         self.pos = pos
         self.expression = expression
+        self.policy = policy
+
+
+class ConcretizeFee(EVMException):
+    '''
+    Raised when a symbolic gas fee needs to be concretized.
+    '''
+
+    def __init__(self, policy='MINMAX'):
+        self.message = "Concretizing evm instruction gas fee {}"
+        self.policy = policy
+
+class ConcretizeGas(EVMException):
+
+    '''
+    Raised when a symbolic gas needs to be concretized.
+    '''
+
+    def __init__(self, policy='MINMAX'):
+        self.message = "Concretizing evm gas {}"
         self.policy = policy
 
 
@@ -390,7 +410,7 @@ def concretized_args(**policies):
                 if not issymbolic(args[index]):
                     continue
                 if not policy:
-                    policy = 'MINMAX'
+                    policy = 'SAMPLED'
 
                 if policy == "ACCOUNTS":
                     value = args[index]
@@ -399,8 +419,7 @@ def concretized_args(**policies):
                     cond = world._constraint_to_accounts(value, ty='both', include_zero=True)
                     world.constraints.add(cond)
                     policy = 'ALL'
-
-                raise ConcretizeStack(index, policy=policy)
+                raise ConcretizeArgument(index, policy=policy)
             return func(*args, **kwargs)
         wrapper.__signature__ = inspect.signature(func)
         return wrapper
@@ -735,6 +754,8 @@ class EVM(Eventful):
         return self.stack.pop()
 
     def _consume(self, fee):
+
+        #Check type and bitvec size
         if isinstance(fee, int):
             if fee > (1 << 512) - 1:
                 raise ValueError
@@ -742,64 +763,66 @@ class EVM(Eventful):
             if (fee.size != 512):
                 raise ValueError("Fees should be 512 bit long")
 
-        # If both are concrete values...
-        if not issymbolic(self._gas) and not issymbolic(fee):
-            if self._gas < fee:
+        def get_possible_solutions():
+            if not issymbolic(self._gas) and not issymbolic(fee):
+                return (self._gas - fee >= 0,)
+            else:
+                return solver.get_all_values(self.constraints, Operators.UGT(self._gas, fee))
+        
+
+        # This configuration variable allows the user to control and perhaps relax the gas calculation
+        # 0: gas is faithfully accounted and checked at instruction level. State may get forked in OOG/NoOOG
+        # 1: gas is faithfully accounted and checked at basic blocks limits. State may get forked in OOG/NoOOG
+        # 2: Keep gas concrete. If the fee to be consumed gets to be symbolic. Choose some potential values and fork on those.
+        # 3: Try not to OOG. If it may be enough gas we ignore the OOG case. A constraint is added to assert the gas is enough and the OOG state is ignored.
+        # 4: OOG soon. If it may NOT be enough gas we ignore the normal case. A constraint is added to assert the gas is NOT enough and the other state is ignored.
+        # 99: Ignore gas. Do not account for it. Do not OOG.
+
+        if consts.oog == 99:
+            #do nothing. gas is not even changed
+            return
+        elif consts.oog in (0, 1):
+            #gas is faithfully accounted and ogg checked at instruction/BB level.
+            if consts.oog != 1 or not self.current_instructoin.is_terminator:
+                #explore both options / fork
+                #FIXME this will reenter here and generate redundant queries
+                enough_gas_solutions = get_possible_solutions()
+                if len(enough_gas_solutions) == 2:
+                    #if gas can be both enough an insuficient, fork
+                    raise Concretize("Concretize gas fee",
+                                     expression=Operators.UGT(self._gas, fee),
+                                     setstate=None,
+                                     policy='ALL')
+                elif enough_gas_solutions[0] == False:
+                    #if gas if only insuficient OOG!
+                    logger.debug("Not enough gas for instruction")
+                    raise NotEnoughGas()
+                else:
+                    assert enough_gas_solutions[0] == True
+                    #if there is enough gas keep going
+        elif consts.oog == 2:
+            # Keep gas concrete. Concretize symbolic fees to some values.
+            #this can happen only if symblic gas is provided for the TX
+            if issymbolic(self._gas):
+                raise ConcretizeGas()
+            if issymbolic(fee):
+                raise ConcretizeFee()
+        elif consts.oog == 3:
+            #Try not to OOG. If it may be enough gas we ignore the OOG case. A constraint is added to assert the gas is enough and the OOG state is ignored.
+            #explore only when there is enough gas if possible
+            if solver.can_be_true(self.constraints, Operators.UGT(self.gas, fee)):
+                self.constraints.add(Operators.UGT(self.gas, fee))
+            else:
                 logger.debug("Not enough gas for instruction")
                 raise NotEnoughGas()
+        elif consts.oog == 4:
+            # OOG soon. If it may NOT be enough gas we ignore the normal case. A constraint is added to assert the gas is NOT enough and the other state is ignored.
+            #explore only when there is enough gas if possible
+            if solver.can_be_true(self.constraints, Operators.ULE(self.gas, fee)):
+                self.constraints.add(Operators.ULE(self.gas, fee))
+                raise NotEnoughGas()
         else:
-            # This configuration variable allows the user to control and perhaps relax the gas calculation
-            # 0: gas is faithfully accounted and checked at instruction level. State may get forked in OOG/NoOOG
-            # 1: gas is faithfully accounted and checked at basic blocks limits. State may get forked in OOG/NoOOG
-            # 2: Concretize gas. If the fee to be consumed gets to be symbolic. Choose some potential values and fork on those.
-            # 3: Try not to OOG. If it may be enough gas we ignore the OOG case. A constraint is added to assert the gas is enough and the OOG state is ignored.
-            # 4: OOG soon. If it may NOT be enough gas we ignore the normal case. A constraint is added to assert the gas is NOT enough and the other state is ignored.
-            # 99: Ignore gas. Do not account for it. Do not OOG.
-
-            if consts.oog == 99:
-                #do nothing. gas is not changed
-                return
-            elif consts.oog in (0, 1):
-                if not(consts.oog == 1 and self.current_instructoin.is_jump()):
-                    #explore both options / fork
-                    #FIXME this will reenter here and generate redundant queries
-                    enough_gas_solutions = solver.get_all_values(self.constraints, Operators.UGT(self._gas, fee))
-                    if len(enough_gas_solutions) == 2:
-                        #if gas can be both enough an insuficient, fork
-                        raise Concretize("Concretize gas fee",
-                                         expression=Operators.UGT(self._gas, fee),
-                                         setstate=None,
-                                         policy='ALL')
-                    elif enough_gas_solutions[0] == False:
-                        #if gas if only insuficient OOG!
-                        logger.debug("Not enough gas for instruction")
-                        raise NotEnoughGas()
-                    else:
-                        assert enough_gas_solutions[0] == True
-                        #if there is enough gas keep going
-            elif consts.oog == 2:
-                if issymbolic(self._gas):
-                    def setstate(state, value):
-                        state.platform.current._gas = value
-                    raise Concretize("Concretize gas",
-                                     expression=self._gas,
-                                     setstate=setstate,
-                                     policy='MINMAX')
-
-                #explore only when OOG
-                if solver.can_be_true(self.constraints, Operators.ULT(self.gas, fee)):
-                    self.constraints.add(Operators.UGT(fee, self.gas))
-                    logger.debug("Not enough gas for instruction")
-                    raise NotEnoughGas()
-            elif consts.oog == 33:
-                #explore only when there is enough gas if possible
-                if solver.can_be_true(self.constraints, Operators.UGT(self.gas, fee)):
-                    self.constraints.add(Operators.UGT(self.gas, fee))
-                else:
-                    logger.debug("Not enough gas for instruction")
-                    raise NotEnoughGas()
-            else:
-                pass
+            pass
         self._gas -= fee
 
         assert issymbolic(self._gas) or self._gas >= 0
@@ -865,6 +888,7 @@ class EVM(Eventful):
         return implementation(*arguments)
 
     def _checkpoint(self):
+        ''' Save and/or get a state checkpoint previous to current instruction '''
         #Fixme[felipe] add a with self.disabled_events context mangr to Eventful
         if self._checkpoint_data is None:
             if not self._published_pre_instruction_events:
@@ -876,23 +900,25 @@ class EVM(Eventful):
             pc = self.pc
             instruction = self.instruction
             old_gas = self.gas
+            allocated = self._allocated
             #FIXME Not clear which exception should trigger first. OOG or insuficient stack
             # this could raise an insuficient stack exception
             arguments = self._pop_arguments()
-            # this could raise an OOG exception
-            self._consume(instruction.fee + self._calculate_extra_gas(*arguments))
-            self._checkpoint_data = (pc, old_gas, instruction, arguments)
+            fee = instruction.fee + self._calculate_extra_gas(*arguments)
+            self._checkpoint_data = (pc, old_gas, instruction, arguments, fee, allocated)
         return self._checkpoint_data
 
     def _rollback(self):
-        #Revert the stack, gas and pc so it looks like before executing the instruction
-        last_pc, last_gas, last_instruction, last_arguments = self._checkpoint_data
+        ''' Revert the stack, gas, pc and memory allocation so it looks like before executing the instruction '''
+        last_pc, last_gas, last_instruction, last_arguments, fee, allocated = self._checkpoint_data
         self._push_arguments(last_arguments)
         self._gas = last_gas
         self._pc = last_pc
+        self._allocated = allocated
         self._checkpoint_data = None
 
     def _set_check_jmpdest(self, flag=True):
+        # TODO: Document. This enables the check that the next instruction must be a JUMPDEST
         self._check_jumpdest = flag
 
     def _check_jmpdest(self):
@@ -911,7 +937,7 @@ class EVM(Eventful):
     def _advance(self, result=None, exception=False):
         if self._checkpoint_data is None:
             return
-        last_pc, last_gas, last_instruction, last_arguments = self._checkpoint_data
+        last_pc, last_gas, last_instruction, last_arguments, fee, allocated = self._checkpoint_data
         if not exception:
             if not last_instruction.is_branch:
                 #advance pc pointer
@@ -923,7 +949,7 @@ class EVM(Eventful):
         self._published_pre_instruction_events = False
 
     def change_last_result(self, result):
-        last_pc, last_gas, last_instruction, last_arguments = self._checkpoint_data
+        last_pc, last_gas, last_instruction, last_arguments, fee, allocated = self._checkpoint_data
 
         # Check result (push)\
         if last_instruction.pushes > 1:
@@ -957,19 +983,44 @@ class EVM(Eventful):
                              policy='ALL')
         try:
             self._check_jmpdest()
-            last_pc, last_gas, instruction, arguments = self._checkpoint()
+            last_pc, last_gas, instruction, arguments, fee, allocated = self._checkpoint()
+            self._consume(fee)
             result = self._handler(*arguments)
             self._advance(result)
-        except ConcretizeStack as ex:
-            self._rollback()
-            pos = -ex.pos
 
+        except ConcretizeGas as ex:
             def setstate(state, value):
-                self.stack[pos] = value
-            raise Concretize("Concretize Stack Variable",
-                             expression=self.stack[pos],
+                state.platform.current._gas = value
+            raise Concretize("Concretize gas",
+                             expression=self._gas,
+                             setstate=setstate,
+                             policy='MINMAX')
+        except ConcretizeFee as ex:
+            def setstate(state, value):
+                current_vm = state.platform.current_vm
+                _pc, _old_gas, _instruction, _arguments, _fee, _allocated = current_vm._checkpoint_data
+                current_vm._checkpoint_data = (_pc, _old_gas, _instruction, _arguments, _value, _allocated)
+            raise Concretize("Concretize current instruction fee",
+                             expression=fee,
                              setstate=setstate,
                              policy=ex.policy)
+        except ConcretizeArgument as ex:
+            pos = ex.pos-1
+            def setstate(state, value):
+                current_vm = state.platform.current_vm
+                _pc, _old_gas, _instruction, _arguments, _fee, _allocated = current_vm._checkpoint_data
+                new_arguments = []
+                for old_arg in _arguments:
+                    if len(new_arguments) == pos:
+                        new_arguments.append(value)
+                    else:
+                        new_arguments.append(old_arg)
+                    current_vm._checkpoint_data = (_pc, _old_gas, _instruction, new_arguments, _fee, _allocated)
+            raise Concretize("Concretize Instruction Argument",
+                             expression=arguments[pos],
+                             setstate=setstate,
+                             policy=ex.policy)
+
         except StartTx:
             raise
         except EndTx as ex:
@@ -1277,7 +1328,7 @@ class EVM(Eventful):
         if issymbolic(offset):
             if solver.can_be_true(self._constraints, offset == self._used_calldata_size):
                 self.constraints.add(offset == self._used_calldata_size)
-            raise ConcretizeStack(1, policy='SAMPLED')
+            raise ConcretizeArgument(1, policy='SAMPLED')
 
         self._use_calldata(offset + 32)
 
@@ -1307,7 +1358,6 @@ class EVM(Eventful):
 
     def CALLDATACOPY_gas(self, mem_offset, data_offset, size):
         GCOPY = 3             # cost to copy one 32 byte word
-        self._use_calldata(data_offset + size)
         copyfee = self.safe_mul(GCOPY, self.safe_add(size, 31) // 32)
         memfee = self._get_memfee(mem_offset, size)
         return copyfee + memfee
@@ -1325,6 +1375,8 @@ class EVM(Eventful):
                 self.constraints.add(data_offset == self._used_calldata_size)
             raise ConcretizeStack(2, policy='SAMPLED')
 
+        #account for calldata usage
+        self._use_calldata(data_offset + size)
         self._allocate(self.safe_add(mem_offset, size))
         for i in range(size):
             try:
@@ -1400,7 +1452,7 @@ class EVM(Eventful):
 
     def RETURNDATACOPY_gas(self, mem_offset, return_offset, size):
         memfee = self._get_memfee(mem_offset + size)
-        return mem_fee
+        return memfee
 
     def RETURNDATACOPY(self, mem_offset, return_offset, size):
         return_data = self.world.last_transaction.return_data

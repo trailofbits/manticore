@@ -18,7 +18,7 @@ from manticore.core.smtlib import solver
 from manticore.core.state import State, TerminateState
 from manticore.ethereum import ManticoreEVM, DetectExternalCallAndLeak, DetectIntegerOverflow, Detector, NoAliveStates, ABI, EthereumError, FilterFunctions
 from manticore.ethereum.solidity import SolidityMetadata
-from manticore.platforms.evm import EVMWorld, ConcretizeStack, concretized_args, Return, Stop
+from manticore.platforms.evm import EVMWorld, ConcretizeArgument, concretized_args, Return, Stop
 from manticore.core.smtlib.visitors import pretty_print, translate_to_smtlib, simplify, to_constant
 from manticore.utils.deprecated import ManticoreDeprecationWarning
 import pyevmasm as EVMAsm
@@ -703,7 +703,9 @@ class EthTests(unittest.TestCase):
         receiver = m.create_account(0)
         symbolic_address = m.make_symbolic_address()
         m.constrain(symbolic_address == receiver.address)
+        self.assertTrue(m.count_running_states() > 0 )
         contract.transferHalfTo(symbolic_address, caller=owner, value=m.make_symbolic_value())
+        self.assertTrue(m.count_running_states() > 0 )
         self.assertTrue(any(state.can_be_true(state.platform.get_balance(receiver.address) > 0)
                                 for state in m.running_states))
 
@@ -932,7 +934,7 @@ class EthHelpersTest(unittest.TestCase):
         def inner_func(self, a, b):
             return a, b
 
-        with self.assertRaises(ConcretizeStack) as cm:
+        with self.assertRaises(ConcretizeArgument) as cm:
             inner_func(None, self.bv, 34)
 
         self.assertEqual(cm.exception.pos, 1)
@@ -943,7 +945,7 @@ class EthHelpersTest(unittest.TestCase):
         def inner_func(self, a, b):
             return a, b
 
-        with self.assertRaises(ConcretizeStack) as cm:
+        with self.assertRaises(ConcretizeArgument) as cm:
             inner_func(None, 34, self.bv)
 
         self.assertEqual(cm.exception.pos, 2)
@@ -1192,7 +1194,6 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
                 returndata = e.data
 
         self.assertEqual(result, 'THROW')
-        self.assertEqual(new_vm.gas, 99992)
         
 
     def test_delegatecall_env(self):
