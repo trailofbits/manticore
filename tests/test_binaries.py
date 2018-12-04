@@ -288,7 +288,7 @@ class IntegrationTest(unittest.TestCase):
                               '--policy', 'uncovered',
                                 filename], os.path.join(self.test_dir, 'output.log'))
 
-        actual = self._load_visited(os.path.join(DIRPATH, workspace, 'visited.txt'))
+        actual = self._load_visited_set(os.path.join(DIRPATH, workspace, 'visited.txt'))
         self.assertTrue(len(actual) > 100)
 
     def test_eth_regressions(self):
