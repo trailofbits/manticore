@@ -1,12 +1,13 @@
-import re
-import uuid
-import sha3
 import logging
+import uuid
 
-from .. import abitypes, issymbolic
+import re
+import sha3
+
+from . import abitypes
+from ..utils.helpers import issymbolic
 from ..core.smtlib import Array, Operators, BitVec, ArrayVariable, ArrayProxy
 from ..exceptions import EthereumError
-
 
 logger = logging.getLogger(__name__)
 

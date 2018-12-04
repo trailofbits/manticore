@@ -1,31 +1,30 @@
-import io
+import binascii
+import ctypes
 import errno
 import fcntl
 import logging
+import socket
+import struct
+from typing import Union, List, TypeVar, cast
+
+import io
 import os
 import random
-import struct
-import ctypes
-import socket
-import binascii
-
-from typing import Union, List, TypeVar, Iterable, ByteString, Sequence, Generic, cast, Collection
+from elftools.elf.descriptions import describe_symbol_type
 # Remove in favor of binary.py
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
-from elftools.elf.descriptions import describe_symbol_type
 
-from ..core.smtlib import Expression
-from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeArgument
-from ..core.cpu.cpufactory import CpuFactory
-from ..core.memory import SMemory32, SMemory64, Memory32, Memory64
-from ..core.smtlib import Operators, ConstraintSet, solver
-from ..exceptions import SolverException
-from ..core.cpu.arm import *
+from . import linux_syscalls
 from ..core.executor import TerminateState
+from ..core.smtlib import ConstraintSet, solver, Operators
+from ..core.smtlib import Expression
+from ..exceptions import SolverException
+from ..native.cpu.abstractcpu import Syscall, ConcretizeArgument, Interruption
+from ..native.cpu.cpufactory import CpuFactory
+from ..native.memory import SMemory32, SMemory64, Memory32, Memory64, LazySMemory32, LazySMemory64
 from ..platforms.platform import Platform, SyscallNotImplemented
 from ..utils.helpers import issymbolic
-from . import linux_syscalls
 
 logger = logging.getLogger(__name__)
 
@@ -2451,21 +2450,28 @@ class SLinux(Linux):
     """
 
     def __init__(self, programs, argv=None, envp=None, symbolic_files=None,
-                 disasm='capstone'):
+                 disasm='capstone', pure_symbolic=False):
         argv = [] if argv is None else argv
         envp = [] if envp is None else envp
         symbolic_files = [] if symbolic_files is None else symbolic_files
 
         self._constraints = ConstraintSet()
+        self._pure_symbolic = pure_symbolic
         self.random = 0
         self.symbolic_files = symbolic_files
         super().__init__(programs, argv=argv, envp=envp, disasm=disasm)
 
     def _mk_proc(self, arch):
         if arch in {'i386', 'armv7'}:
-            mem = SMemory32(self.constraints)
+            if self._pure_symbolic:
+                mem = LazySMemory32(self.constraints)
+            else:
+                mem = SMemory32(self.constraints)
         else:
-            mem = SMemory64(self.constraints)
+            if self._pure_symbolic:
+                mem = LazySMemory64(self.constraints)
+            else:
+                mem = SMemory64(self.constraints)
 
         cpu = CpuFactory.get_cpu(mem, arch)
         return cpu

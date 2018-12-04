@@ -8,7 +8,7 @@ import shutil
 import tempfile
 
 from manticore.binary import Elf, CGCElf
-from manticore.utils.mappings import mmap, munmap
+from manticore.native.mappings import mmap, munmap
 
 DIRPATH = os.path.dirname(__file__)
 
@@ -162,18 +162,19 @@ class IntegrationTest(unittest.TestCase):
         output = subprocess.check_output([PYTHON_BIN, '-m', 'manticore', '--no-color', filename])
 
         output_lines = output.splitlines()
-        start_info = output_lines[:2]
-        testcase_info = output_lines[2:-5]
-        stop_info = output_lines[-5:]
 
-        self.assertEqual(len(start_info), 2)
-        self.assertEqual(len(stop_info), 5)
+        self.assertEqual(len(output_lines), 6)
 
-        for line in testcase_info:
-            self.assertIn('Generated testcase', line)
+        self.assertIn(b'Verbosity set to 1.', output_lines[0])
+        self.assertIn(b'Loading program', output_lines[1])
+        self.assertIn(b'Generated testcase No. 0 - Program finished with exit status: 0', output_lines[2])
+        self.assertIn(b'Generated testcase No. 1 - Program finished with exit status: 0', output_lines[3])
+        self.assertIn(b'Results in ', output_lines[4])
+        self.assertIn(b'Total time: ', output_lines[5])
 
     def _test_arguments_assertions_aux(self, binname, refname, testcases_number):
         filename = os.path.abspath(os.path.join(DIRPATH, 'binaries', binname))
+
         self.assertTrue(filename.startswith(os.getcwd()))
 
         filename = filename[len(os.getcwd()) + 1:]

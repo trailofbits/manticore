@@ -9,9 +9,9 @@ Wildcard byte
 
 Throughout these various interfaces, the '+' character is defined to designate a byte
 of input as symbolic. This allows the user to make input that mixes symbolic and concrete
-bytes (e.g. known file magic bytes).::
+bytes (e.g. known file magic bytes).
 
-For example: "concretedata++++++++moreconcretedata++++++++++"
+For example: ``"concretedata++++++++moreconcretedata++++++++++"``
 
 Symbolic arguments/environment
 ------------------------------
@@ -22,7 +22,7 @@ use the wildcard byte where arguments and environment are specified.::
     $ manticore ./binary +++++ +++++
     $ manticore ./binary --env VAR1=+++++ --env VAR2=++++++
 
-For API use, use the ``argv`` and ``envp`` arguments to the :meth:`manticore.Manticore.linux` classmethod.::
+For API use, use the ``argv`` and ``envp`` arguments to the :meth:`manticore.native.Manticore.linux` classmethod.::
 
     Manticore.linux('./binary', ['++++++', '++++++'], dict(VAR1='+++++', VAR2='++++++'))
 
@@ -30,9 +30,9 @@ Symbolic stdin
 --------------
 
 Manticore by default is configured with 256 bytes of symbolic stdin data which is configurable
-with the ``stdin_size`` kwarg of :meth:`manticore.Manticore.linux` , after an optional
+with the ``stdin_size`` kwarg of :meth:`manticore.native.Manticore.linux` , after an optional
 concrete data prefix, which can be provided with the ``concrete_start`` kwarg of
-:meth:`manticore.Manticore.linux`.
+:meth:`manticore.native.Manticore.linux`.
 
 Symbolic file input
 -------------------
@@ -46,7 +46,7 @@ For command line use, invoke Manticore with the ``--file`` argument.::
     $ manticore ./binary --file my_symbolic_file1.txt --file my_symbolic_file2.txt
 
 For API use, use the :meth:`~manticore.platforms.linux.SLinux.add_symbolic_file` interface to customize the initial
-execution state from an :meth:`~manticore.Manticore.init` hook.::
+execution state from an :meth:`~manticore.core.manticore.ManticoreBase.init` hook.::
 
     @m.init
     def init(initial_state):

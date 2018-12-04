@@ -1,15 +1,20 @@
-from io import BytesIO
-from manticore.core.smtlib import Solver, Operators
-import unittest
-from unittest import mock
-import tempfile, os
-import gc, pickle
 import fcntl
+import gc
+import pickle
 import resource
 import sys
-from manticore.core.memory import *
+import unittest
+from unittest import mock
+
+import os
+import tempfile
+from io import BytesIO
+
 from manticore.core.smtlib import Expression
-from manticore.utils.helpers import issymbolic
+from manticore.native.memory import *
+from manticore import issymbolic
+
+
 
 def isconcrete(value):
     return not issymbolic(value)
@@ -1053,6 +1058,18 @@ class MemoryTest(unittest.TestCase):
         os.unlink(r_file.name)
         os.unlink(w_file.name)
 
+    def test_mem_iter(self):
+        cs = ConstraintSet()
+        mem = SMemory32(cs)
+
+        mem.mmap(0x1000, 0x2000, 'rw ')
+        mem.mmap(0x4000, 0x1000, 'rw ')
+
+        all_addresses = [x for x in mem]
+
+        self.assertEqual(len(all_addresses), 0x2000 + 0x1000)
+        self.assertIn(0x1000, all_addresses)
+        self.assertNotIn(0x3000, all_addresses)
 
     def test_mix_of_concrete_and_symbolic__push_pop_cleaning_store(self):
         #global mainsolver
@@ -1772,26 +1789,35 @@ class MemoryTest(unittest.TestCase):
             mem.read(addr2, 5)
 
     def test_getlibc(self):
-        import manticore.utils.mappings
+        from manticore.native import mappings
         import ctypes
 
+        old_cdll = ctypes.cdll
+        old_mapping_sys = mappings.sys
+
         ctypes.cdll = mock.MagicMock()
-        manticore.utils.mappings.sys = mock.MagicMock()
+        mappings.sys = mock.MagicMock()
+
         def mock_loadlib(x):
             mock_loadlib.libname = x 
+
         ctypes.cdll.configure_mock(LoadLibrary=mock_loadlib)
 
-        manticore.utils.mappings.sys.configure_mock(platform='darwin')
-        manticore.utils.mappings.get_libc()
+        mappings.sys.configure_mock(platform='darwin')
+        mappings.get_libc()
         self.assertEqual(mock_loadlib.libname, 'libc.dylib')
 
-        manticore.utils.mappings.sys.configure_mock(platform='LINUX')
-        manticore.utils.mappings.get_libc()
+        mappings.sys.configure_mock(platform='LINUX')
+        mappings.get_libc()
         self.assertEqual(mock_loadlib.libname, 'libc.so.6')
 
-        manticore.utils.mappings.sys.configure_mock(platform='NETBSD')
-        manticore.utils.mappings.get_libc()
+        mappings.sys.configure_mock(platform='NETBSD')
+        mappings.get_libc()
         self.assertEqual(mock_loadlib.libname, 'libc.so')
+
+        ctypes.cdll = old_cdll
+        mappings.sys = old_mapping_sys
+
 
 if __name__ == '__main__':
     unittest.main()

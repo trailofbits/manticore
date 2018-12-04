@@ -2,10 +2,11 @@ import unittest
 import os
 
 from manticore.core.smtlib import ConstraintSet, solver
-from manticore.core.state import State
+from manticore.native.state import State
 from manticore.platforms import linux
 
-from manticore.models import variadic, isvariadic, strcmp, strlen
+from manticore.native.models import variadic, isvariadic, strcmp, strlen
+
 
 class ModelMiscTest(unittest.TestCase):
     def test_variadic_dec(self):

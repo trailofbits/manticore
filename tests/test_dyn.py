@@ -1,8 +1,9 @@
 
 import unittest
-from manticore.core.cpu.x86 import *
-from manticore.core.smtlib import Operators
-from manticore.core.memory import *
+
+from manticore.native.cpu.abstractcpu import ConcretizeRegister
+from manticore.native.cpu.x86 import AMD64Cpu
+from manticore.native.memory import *
 
 
 class CPUTest(unittest.TestCase):
@@ -32,37 +33,15 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df294e] = b'f'
-        mem[0x7ffff7df294f] = b'\x0f'
-        mem[0x7ffff7df2950] = b'\x16'
-        mem[0x7ffff7a249d1] = b'I'
-        mem[0x7ffff7a249d2] = b'V'
-        mem[0x7ffff7a249d3] = b'A'
-        mem[0x7ffff7a249d4] = b'T'
-        mem[0x7ffff7a249d5] = b'E'
-        mem[0x7ffff7a249d6] = b'\x00'
-        mem[0x7ffff7a249d7] = b'\x00'
-        mem[0x7ffff7a249d8] = b'\x00'
-        mem[0x7ffff7df2951] = b'O'
-        mem[0x7ffff7df2952] = b'\x08'
+        mem.write(0x7ffff7a249d1, 'IVATE\x00\x00\x00')
+        mem.write(0x7ffff7df294e, 'f\x0f\x16O\x08')
         cpu.XMM1 = 0xffffffffffff00ff52505f4342494c47
         cpu.RDI = 0x7ffff7a249c9
         cpu.RIP = 0x7ffff7df294e
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df294e],  b'f')
-        self.assertEqual(mem[0x7ffff7df294f],  b'\x0f')
-        self.assertEqual(mem[0x7ffff7df2950],  b'\x16')
-        self.assertEqual(mem[0x7ffff7df2951],  b'O')
-        self.assertEqual(mem[0x7ffff7df2952],  b'\x08')
-        self.assertEqual(mem[0x7ffff7a249d3],  b'A')
-        self.assertEqual(mem[0x7ffff7a249d4],  b'T')
-        self.assertEqual(mem[0x7ffff7a249d5],  b'E')
-        self.assertEqual(mem[0x7ffff7a249d6],  b'\x00')
-        self.assertEqual(mem[0x7ffff7a249d7],  b'\x00')
-        self.assertEqual(mem[0x7ffff7a249d8],  b'\x00')
-        self.assertEqual(mem[0x7ffff7a249d1],  b'I')
-        self.assertEqual(mem[0x7ffff7a249d2],  b'V')
+        self.assertEqual(mem[0x7ffff7a249d1:0x7ffff7a249d9], [b'I',b'V',b'A',b'T',b'E',b'\x00',b'\x00',b'\x00'])
+        self.assertEqual(mem[0x7ffff7df294e:0x7ffff7df2953], [b'f',b'\x0f',b'\x16',b'O',b'\x08'])
         self.assertEqual(cpu.XMM1, 5492818941963568420245782219847)
         self.assertEqual(cpu.RDI, 140737347996105)
         self.assertEqual(cpu.RIP, 140737351985491)
@@ -76,37 +55,15 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df294e] = b'f'
-        mem[0x7ffff7df294f] = b'\x0f'
-        mem[0x7ffff7df2950] = b'\x16'
-        mem[0x7ffff7df2951] = b'O'
-        mem[0x7ffff7df2952] = b'\x08'
-        mem[0x7ffff7a248d6] = b'2'
-        mem[0x7ffff7a248d7] = b'.'
-        mem[0x7ffff7a248d8] = b'5'
-        mem[0x7ffff7a248d9] = b'\x00'
-        mem[0x7ffff7a248da] = b'G'
-        mem[0x7ffff7a248db] = b'L'
-        mem[0x7ffff7a248dc] = b'I'
-        mem[0x7ffff7a248dd] = b'B'
+        mem.write(0x7ffff7a248d6, '2.5\x00GLIB')
+        mem.write(0x7ffff7df294e, 'f\x0f\x16O\x08')
         cpu.XMM1 = 0xffffffff00ffffff2e325f4342494c47
         cpu.RDI = 0x7ffff7a248ce
         cpu.RIP = 0x7ffff7df294e
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df294e],  b'f')
-        self.assertEqual(mem[0x7ffff7df294f],  b'\x0f')
-        self.assertEqual(mem[0x7ffff7df2950],  b'\x16')
-        self.assertEqual(mem[0x7ffff7df2951],  b'O')
-        self.assertEqual(mem[0x7ffff7df2952],  b'\x08')
-        self.assertEqual(mem[0x7ffff7a248d6],  b'2')
-        self.assertEqual(mem[0x7ffff7a248d7],  b'.')
-        self.assertEqual(mem[0x7ffff7a248d8],  b'5')
-        self.assertEqual(mem[0x7ffff7a248d9],  b'\x00')
-        self.assertEqual(mem[0x7ffff7a248da],  b'G')
-        self.assertEqual(mem[0x7ffff7a248db],  b'L')
-        self.assertEqual(mem[0x7ffff7a248dc],  b'I')
-        self.assertEqual(mem[0x7ffff7a248dd],  b'B')
+        self.assertEqual(mem[0x7ffff7a248d6:0x7ffff7a248de], [b'2',b'.',b'5',b'\x00',b'G',b'L',b'I',b'B'])
+        self.assertEqual(mem[0x7ffff7df294e:0x7ffff7df2953], [b'f',b'\x0f',b'\x16',b'O',b'\x08'])
         self.assertEqual(cpu.XMM1, 88109632480871197291218000195730623559)
         self.assertEqual(cpu.RDI, 140737347995854)
         self.assertEqual(cpu.RIP, 140737351985491)
@@ -120,37 +77,15 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df2956] = b'V'
-        mem[0x7ffff7df2957] = b'\x08'
-        mem[0x7ffff7df2953] = b'f'
-        mem[0x7ffff7df2954] = b'\x0f'
-        mem[0x7ffff7df2955] = b'\x16'
-        mem[0x7ffff7a248d6] = b'2'
-        mem[0x7ffff7a248d7] = b'.'
-        mem[0x7ffff7a248d8] = b'5'
-        mem[0x7ffff7a248d9] = b'\x00'
-        mem[0x7ffff7a248da] = b'G'
-        mem[0x7ffff7a248db] = b'L'
-        mem[0x7ffff7a248dc] = b'I'
-        mem[0x7ffff7a248dd] = b'B'
+        mem.write(0x7ffff7a248d6, '2.5\x00GLIB')
+        mem.write(0x7ffff7df2953, 'f\x0f\x16V\x08')
         cpu.XMM2 = 0x42494c4700352e322e325f4342494c47
         cpu.RSI = 0x7ffff7a248ce
         cpu.RIP = 0x7ffff7df2953
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df2956],  b'V')
-        self.assertEqual(mem[0x7ffff7a248d7],  b'.')
-        self.assertEqual(mem[0x7ffff7df2953],  b'f')
-        self.assertEqual(mem[0x7ffff7df2954],  b'\x0f')
-        self.assertEqual(mem[0x7ffff7df2955],  b'\x16')
-        self.assertEqual(mem[0x7ffff7a248d6],  b'2')
-        self.assertEqual(mem[0x7ffff7df2957],  b'\x08')
-        self.assertEqual(mem[0x7ffff7a248d8],  b'5')
-        self.assertEqual(mem[0x7ffff7a248d9],  b'\x00')
-        self.assertEqual(mem[0x7ffff7a248da],  b'G')
-        self.assertEqual(mem[0x7ffff7a248db],  b'L')
-        self.assertEqual(mem[0x7ffff7a248dc],  b'I')
-        self.assertEqual(mem[0x7ffff7a248dd],  b'B')
+        self.assertEqual(mem[0x7ffff7a248d6:0x7ffff7a248de], [b'2',b'.',b'5',b'\x00',b'G',b'L',b'I',b'B'])
+        self.assertEqual(mem[0x7ffff7df2953:0x7ffff7df2958], [b'f',b'\x0f',b'\x16',b'V',b'\x08'])
         self.assertEqual(cpu.XMM2, 88109632480871197291218000195730623559)
         self.assertEqual(cpu.RSI, 140737347995854)
         self.assertEqual(cpu.RIP, 140737351985496)
@@ -164,37 +99,15 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df294e] = b'f'
-        mem[0x7ffff7df294f] = b'\x0f'
-        mem[0x7ffff7df2950] = b'\x16'
-        mem[0x7ffff7df2951] = b'O'
-        mem[0x7ffff7df2952] = b'\x08'
-        mem[0x7ffff7a248d6] = b'2'
-        mem[0x7ffff7a248d7] = b'.'
-        mem[0x7ffff7a248d8] = b'5'
-        mem[0x7ffff7a248d9] = b'\x00'
-        mem[0x7ffff7a248da] = b'G'
-        mem[0x7ffff7a248db] = b'L'
-        mem[0x7ffff7a248dc] = b'I'
-        mem[0x7ffff7a248dd] = b'B'
+        mem.write(0x7ffff7a248d6, '2.5\x00GLIB')
+        mem.write(0x7ffff7df294e, 'f\x0f\x16O\x08')
         cpu.XMM1 = 0xffffffff00ffffff2e325f4342494c47
         cpu.RDI = 0x7ffff7a248ce
         cpu.RIP = 0x7ffff7df294e
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df294e],  b'f')
-        self.assertEqual(mem[0x7ffff7df294f],  b'\x0f')
-        self.assertEqual(mem[0x7ffff7df2950],  b'\x16')
-        self.assertEqual(mem[0x7ffff7df2951],  b'O')
-        self.assertEqual(mem[0x7ffff7df2952],  b'\x08')
-        self.assertEqual(mem[0x7ffff7a248d6],  b'2')
-        self.assertEqual(mem[0x7ffff7a248d7],  b'.')
-        self.assertEqual(mem[0x7ffff7a248d8],  b'5')
-        self.assertEqual(mem[0x7ffff7a248d9],  b'\x00')
-        self.assertEqual(mem[0x7ffff7a248da],  b'G')
-        self.assertEqual(mem[0x7ffff7a248db],  b'L')
-        self.assertEqual(mem[0x7ffff7a248dc],  b'I')
-        self.assertEqual(mem[0x7ffff7a248dd],  b'B')
+        self.assertEqual(mem[0x7ffff7a248d6:0x7ffff7a248de], [b'2',b'.',b'5',b'\x00',b'G',b'L',b'I',b'B'])
+        self.assertEqual(mem[0x7ffff7df294e:0x7ffff7df2953], [b'f',b'\x0f',b'\x16',b'O',b'\x08'])
         self.assertEqual(cpu.XMM1, 88109632480871197291218000195730623559)
         self.assertEqual(cpu.RDI, 140737347995854)
         self.assertEqual(cpu.RIP, 140737351985491)
@@ -208,37 +121,15 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a21000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df294e] = b'f'
-        mem[0x7ffff7df294f] = b'\x0f'
-        mem[0x7ffff7df2950] = b'\x16'
-        mem[0x7ffff7df2951] = b'O'
-        mem[0x7ffff7df2952] = b'\x08'
-        mem[0x7ffff7a218da] = b't'
-        mem[0x7ffff7a218db] = b'a'
-        mem[0x7ffff7a218dc] = b'r'
-        mem[0x7ffff7a218dd] = b't'
-        mem[0x7ffff7a218de] = b'_'
-        mem[0x7ffff7a218df] = b'm'
-        mem[0x7ffff7a218e0] = b'a'
-        mem[0x7ffff7a218e1] = b'i'
+        mem.write(0x7ffff7a218da, 'tart_mai')
+        mem.write(0x7ffff7df294e, 'f\x0f\x16O\x08')
         cpu.XMM1 = 0x735f6362696c5f5f
         cpu.RDI = 0x7ffff7a218d2
         cpu.RIP = 0x7ffff7df294e
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df294e],  b'f')
-        self.assertEqual(mem[0x7ffff7df294f],  b'\x0f')
-        self.assertEqual(mem[0x7ffff7df2950],  b'\x16')
-        self.assertEqual(mem[0x7ffff7df2951],  b'O')
-        self.assertEqual(mem[0x7ffff7df2952],  b'\x08')
-        self.assertEqual(mem[0x7ffff7a218da],  b't')
-        self.assertEqual(mem[0x7ffff7a218db],  b'a')
-        self.assertEqual(mem[0x7ffff7a218dc],  b'r')
-        self.assertEqual(mem[0x7ffff7a218dd],  b't')
-        self.assertEqual(mem[0x7ffff7a218de],  b'_')
-        self.assertEqual(mem[0x7ffff7a218df],  b'm')
-        self.assertEqual(mem[0x7ffff7a218e0],  b'a')
-        self.assertEqual(mem[0x7ffff7a218e1],  b'i')
+        self.assertEqual(mem[0x7ffff7a218da:0x7ffff7a218e2], [b't',b'a',b'r',b't',b'_',b'm',b'a',b'i'])
+        self.assertEqual(mem[0x7ffff7df294e:0x7ffff7df2953], [b'f',b'\x0f',b'\x16',b'O',b'\x08'])
         self.assertEqual(cpu.XMM1, 140074810698054820722452200425796689759)
         self.assertEqual(cpu.RDI, 140737347983570)
         self.assertEqual(cpu.RIP, 140737351985491)
@@ -252,37 +143,15 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a20000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df2953] = b'f'
-        mem[0x7ffff7df2954] = b'\x0f'
-        mem[0x7ffff7df2955] = b'\x16'
-        mem[0x7ffff7df2956] = b'V'
-        mem[0x7ffff7df2957] = b'\x08'
-        mem[0x7ffff7a20a9b] = b'\x00'
-        mem[0x7ffff7a20a9c] = b'a'
-        mem[0x7ffff7a20a9d] = b'c'
-        mem[0x7ffff7a20a9e] = b'c'
-        mem[0x7ffff7a20a9f] = b't'
-        mem[0x7ffff7a20aa0] = b'\x00'
-        mem[0x7ffff7a20aa1] = b'_'
-        mem[0x7ffff7a20aa2] = b'n'
+        mem.write(0x7ffff7a20a9b, '\x00acct\x00_n')
+        mem.write(0x7ffff7df2953, 'f\x0f\x16V\x08')
         cpu.XMM2 = 0x36766772615f6c645f
         cpu.RSI = 0x7ffff7a20a93
         cpu.RIP = 0x7ffff7df2953
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df2953],  b'f')
-        self.assertEqual(mem[0x7ffff7df2954],  b'\x0f')
-        self.assertEqual(mem[0x7ffff7df2955],  b'\x16')
-        self.assertEqual(mem[0x7ffff7df2956],  b'V')
-        self.assertEqual(mem[0x7ffff7df2957],  b'\x08')
-        self.assertEqual(mem[0x7ffff7a20a9b],  b'\x00')
-        self.assertEqual(mem[0x7ffff7a20a9c],  b'a')
-        self.assertEqual(mem[0x7ffff7a20a9d],  b'c')
-        self.assertEqual(mem[0x7ffff7a20a9e],  b'c')
-        self.assertEqual(mem[0x7ffff7a20a9f],  b't')
-        self.assertEqual(mem[0x7ffff7a20aa0],  b'\x00')
-        self.assertEqual(mem[0x7ffff7a20aa1],  b'_')
-        self.assertEqual(mem[0x7ffff7a20aa2],  b'n')
+        self.assertEqual(mem[0x7ffff7a20a9b:0x7ffff7a20aa3], [b'\x00',b'a',b'c',b'c',b't',b'\x00',b'_',b'n'])
+        self.assertEqual(mem[0x7ffff7df2953:0x7ffff7df2958], [b'f',b'\x0f',b'\x16',b'V',b'\x08'])
         self.assertEqual(cpu.XMM2, 146708356959127564005328096862462043231)
         self.assertEqual(cpu.RSI, 140737347979923)
         self.assertEqual(cpu.RIP, 140737351985496)
@@ -296,37 +165,15 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a23000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df2953] = b'f'
-        mem[0x7ffff7df2954] = b'\x0f'
-        mem[0x7ffff7df2955] = b'\x16'
-        mem[0x7ffff7df2956] = b'V'
-        mem[0x7ffff7df2957] = b'\x08'
-        mem[0x7ffff7a232ee] = b'n'
-        mem[0x7ffff7a232ef] = b'a'
-        mem[0x7ffff7a232f0] = b'b'
-        mem[0x7ffff7a232f1] = b'l'
-        mem[0x7ffff7a232f2] = b'e'
-        mem[0x7ffff7a232f3] = b'_'
-        mem[0x7ffff7a232f4] = b's'
-        mem[0x7ffff7a232f5] = b'e'
+        mem.write(0x7ffff7a232ee, 'nable_se')
+        mem.write(0x7ffff7df2953, 'f\x0f\x16V\x08')
         cpu.XMM2 = 0x36655f6362696c5f5f
         cpu.RSI = 0x7ffff7a232e6
         cpu.RIP = 0x7ffff7df2953
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df2953],  b'f')
-        self.assertEqual(mem[0x7ffff7df2954],  b'\x0f')
-        self.assertEqual(mem[0x7ffff7df2955],  b'\x16')
-        self.assertEqual(mem[0x7ffff7df2956],  b'V')
-        self.assertEqual(mem[0x7ffff7df2957],  b'\x08')
-        self.assertEqual(mem[0x7ffff7a232ee],  b'n')
-        self.assertEqual(mem[0x7ffff7a232ef],  b'a')
-        self.assertEqual(mem[0x7ffff7a232f0],  b'b')
-        self.assertEqual(mem[0x7ffff7a232f1],  b'l')
-        self.assertEqual(mem[0x7ffff7a232f2],  b'e')
-        self.assertEqual(mem[0x7ffff7a232f3],  b'_')
-        self.assertEqual(mem[0x7ffff7a232f4],  b's')
-        self.assertEqual(mem[0x7ffff7a232f5],  b'e')
+        self.assertEqual(mem[0x7ffff7a232ee:0x7ffff7a232f6], [b'n',b'a',b'b',b'l',b'e',b'_',b's',b'e'])
+        self.assertEqual(mem[0x7ffff7df2953:0x7ffff7df2958], [b'f',b'\x0f',b'\x16',b'V',b'\x08'])
         self.assertEqual(cpu.XMM2, 134851076577508085086976746042965122911)
         self.assertEqual(cpu.RSI, 140737347990246)
         self.assertEqual(cpu.RIP, 140737351985496)
@@ -340,37 +187,15 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df2956] = b'V'
-        mem[0x7ffff7df2957] = b'\x08'
-        mem[0x7ffff7df2953] = b'f'
-        mem[0x7ffff7df2954] = b'\x0f'
-        mem[0x7ffff7df2955] = b'\x16'
-        mem[0x7ffff7a248d6] = b'2'
-        mem[0x7ffff7a248d7] = b'.'
-        mem[0x7ffff7a248d8] = b'5'
-        mem[0x7ffff7a248d9] = b'\x00'
-        mem[0x7ffff7a248da] = b'G'
-        mem[0x7ffff7a248db] = b'L'
-        mem[0x7ffff7a248dc] = b'I'
-        mem[0x7ffff7a248dd] = b'B'
+        mem.write(0x7ffff7a248d6, '2.5\x00GLIB')
+        mem.write(0x7ffff7df2953, 'f\x0f\x16V\x08')
         cpu.XMM2 = 0x42494c4700352e322e325f4342494c47
         cpu.RSI = 0x7ffff7a248ce
         cpu.RIP = 0x7ffff7df2953
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df2956],  b'V')
-        self.assertEqual(mem[0x7ffff7a248d7],  b'.')
-        self.assertEqual(mem[0x7ffff7df2953],  b'f')
-        self.assertEqual(mem[0x7ffff7df2954],  b'\x0f')
-        self.assertEqual(mem[0x7ffff7df2955],  b'\x16')
-        self.assertEqual(mem[0x7ffff7a248d6],  b'2')
-        self.assertEqual(mem[0x7ffff7df2957],  b'\x08')
-        self.assertEqual(mem[0x7ffff7a248d8],  b'5')
-        self.assertEqual(mem[0x7ffff7a248d9],  b'\x00')
-        self.assertEqual(mem[0x7ffff7a248da],  b'G')
-        self.assertEqual(mem[0x7ffff7a248db],  b'L')
-        self.assertEqual(mem[0x7ffff7a248dc],  b'I')
-        self.assertEqual(mem[0x7ffff7a248dd],  b'B')
+        self.assertEqual(mem[0x7ffff7a248d6:0x7ffff7a248de], [b'2',b'.',b'5',b'\x00',b'G',b'L',b'I',b'B'])
+        self.assertEqual(mem[0x7ffff7df2953:0x7ffff7df2958], [b'f',b'\x0f',b'\x16',b'V',b'\x08'])
         self.assertEqual(cpu.XMM2, 88109632480871197291218000195730623559)
         self.assertEqual(cpu.RSI, 140737347995854)
         self.assertEqual(cpu.RIP, 140737351985496)
@@ -384,37 +209,15 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7dd7000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df294e] = b'f'
-        mem[0x7ffff7df294f] = b'\x0f'
-        mem[0x7ffff7df2950] = b'\x16'
-        mem[0x7ffff7df2951] = b'O'
-        mem[0x7ffff7df2952] = b'\x08'
-        mem[0x7ffff7dd7671] = b'_'
-        mem[0x7ffff7dd7672] = b'd'
-        mem[0x7ffff7dd7673] = b's'
-        mem[0x7ffff7dd7674] = b'o'
-        mem[0x7ffff7dd7675] = b'_'
-        mem[0x7ffff7dd7676] = b'f'
-        mem[0x7ffff7dd7677] = b'o'
-        mem[0x7ffff7dd7678] = b'r'
+        mem.write(0x7ffff7dd7671, '_dso_for')
+        mem.write(0x7ffff7df294e, 'f\x0f\x16O\x08')
         cpu.XMM1 = 0x646e69665f6c645f
         cpu.RDI = 0x7ffff7dd7669
         cpu.RIP = 0x7ffff7df294e
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df294e],  b'f')
-        self.assertEqual(mem[0x7ffff7df294f],  b'\x0f')
-        self.assertEqual(mem[0x7ffff7df2950],  b'\x16')
-        self.assertEqual(mem[0x7ffff7df2951],  b'O')
-        self.assertEqual(mem[0x7ffff7df2952],  b'\x08')
-        self.assertEqual(mem[0x7ffff7dd7671],  b'_')
-        self.assertEqual(mem[0x7ffff7dd7672],  b'd')
-        self.assertEqual(mem[0x7ffff7dd7673],  b's')
-        self.assertEqual(mem[0x7ffff7dd7674],  b'o')
-        self.assertEqual(mem[0x7ffff7dd7675],  b'_')
-        self.assertEqual(mem[0x7ffff7dd7676],  b'f')
-        self.assertEqual(mem[0x7ffff7dd7677],  b'o')
-        self.assertEqual(mem[0x7ffff7dd7678],  b'r')
+        self.assertEqual(mem[0x7ffff7dd7671:0x7ffff7dd7679], [b'_',b'd',b's',b'o',b'_',b'f',b'o',b'r'])
+        self.assertEqual(mem[0x7ffff7df294e:0x7ffff7df2953], [b'f',b'\x0f',b'\x16',b'O',b'\x08'])
         self.assertEqual(cpu.XMM1, 152110412837725123259047000460919333983)
         self.assertEqual(cpu.RDI, 140737351874153)
         self.assertEqual(cpu.RIP, 140737351985491)
@@ -428,37 +231,15 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df2956] = b'V'
-        mem[0x7ffff7df2957] = b'\x08'
-        mem[0x7ffff7df2953] = b'f'
-        mem[0x7ffff7df2954] = b'\x0f'
-        mem[0x7ffff7df2955] = b'\x16'
-        mem[0x7ffff7a248d6] = b'2'
-        mem[0x7ffff7a248d7] = b'.'
-        mem[0x7ffff7a248d8] = b'5'
-        mem[0x7ffff7a248d9] = b'\x00'
-        mem[0x7ffff7a248da] = b'G'
-        mem[0x7ffff7a248db] = b'L'
-        mem[0x7ffff7a248dc] = b'I'
-        mem[0x7ffff7a248dd] = b'B'
+        mem.write(0x7ffff7a248d6, '2.5\x00GLIB')
+        mem.write(0x7ffff7df2953, 'f\x0f\x16V\x08')
         cpu.XMM2 = 0x42494c4700352e322e325f4342494c47
         cpu.RSI = 0x7ffff7a248ce
         cpu.RIP = 0x7ffff7df2953
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df2956],  b'V')
-        self.assertEqual(mem[0x7ffff7a248d7],  b'.')
-        self.assertEqual(mem[0x7ffff7df2953],  b'f')
-        self.assertEqual(mem[0x7ffff7df2954],  b'\x0f')
-        self.assertEqual(mem[0x7ffff7df2955],  b'\x16')
-        self.assertEqual(mem[0x7ffff7a248d6],  b'2')
-        self.assertEqual(mem[0x7ffff7df2957],  b'\x08')
-        self.assertEqual(mem[0x7ffff7a248d8],  b'5')
-        self.assertEqual(mem[0x7ffff7a248d9],  b'\x00')
-        self.assertEqual(mem[0x7ffff7a248da],  b'G')
-        self.assertEqual(mem[0x7ffff7a248db],  b'L')
-        self.assertEqual(mem[0x7ffff7a248dc],  b'I')
-        self.assertEqual(mem[0x7ffff7a248dd],  b'B')
+        self.assertEqual(mem[0x7ffff7a248d6:0x7ffff7a248de], [b'2',b'.',b'5',b'\x00',b'G',b'L',b'I',b'B'])
+        self.assertEqual(mem[0x7ffff7df2953:0x7ffff7df2958], [b'f',b'\x0f',b'\x16',b'V',b'\x08'])
         self.assertEqual(cpu.XMM2, 88109632480871197291218000195730623559)
         self.assertEqual(cpu.RSI, 140737347995854)
         self.assertEqual(cpu.RIP, 140737351985496)
@@ -472,37 +253,15 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7dd7000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df294e] = b'f'
-        mem[0x7ffff7df294f] = b'\x0f'
-        mem[0x7ffff7dd7750] = b'o'
-        mem[0x7ffff7dd7751] = b'b'
-        mem[0x7ffff7dd7752] = b'a'
-        mem[0x7ffff7dd7753] = b'l'
-        mem[0x7ffff7dd7754] = b'_'
-        mem[0x7ffff7dd7755] = b'r'
-        mem[0x7ffff7dd7756] = b'o'
-        mem[0x7ffff7dd7757] = b'\x00'
-        mem[0x7ffff7df2950] = b'\x16'
-        mem[0x7ffff7df2951] = b'O'
-        mem[0x7ffff7df2952] = b'\x08'
+        mem.write(0x7ffff7dd7750, 'obal_ro\x00')
+        mem.write(0x7ffff7df294e, 'f\x0f\x16O\x08')
         cpu.XMM1 = 0x6c675f646c74725f
         cpu.RDI = 0x7ffff7dd7748
         cpu.RIP = 0x7ffff7df294e
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df294e],  b'f')
-        self.assertEqual(mem[0x7ffff7df294f],  b'\x0f')
-        self.assertEqual(mem[0x7ffff7df2950],  b'\x16')
-        self.assertEqual(mem[0x7ffff7df2951],  b'O')
-        self.assertEqual(mem[0x7ffff7df2952],  b'\x08')
-        self.assertEqual(mem[0x7ffff7dd7753],  b'l')
-        self.assertEqual(mem[0x7ffff7dd7754],  b'_')
-        self.assertEqual(mem[0x7ffff7dd7755],  b'r')
-        self.assertEqual(mem[0x7ffff7dd7756],  b'o')
-        self.assertEqual(mem[0x7ffff7dd7757],  b'\x00')
-        self.assertEqual(mem[0x7ffff7dd7750],  b'o')
-        self.assertEqual(mem[0x7ffff7dd7751],  b'b')
-        self.assertEqual(mem[0x7ffff7dd7752],  b'a')
+        self.assertEqual(mem[0x7ffff7dd7750:0x7ffff7dd7758], [b'o',b'b',b'a',b'l',b'_',b'r',b'o',b'\x00'])
+        self.assertEqual(mem[0x7ffff7df294e:0x7ffff7df2953], [b'f',b'\x0f',b'\x16',b'O',b'\x08'])
         self.assertEqual(cpu.XMM1, 578664706209732724830403288697696863)
         self.assertEqual(cpu.RDI, 140737351874376)
         self.assertEqual(cpu.RIP, 140737351985491)
@@ -516,37 +275,15 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df294e] = b'f'
-        mem[0x7ffff7df294f] = b'\x0f'
-        mem[0x7ffff7df2950] = b'\x16'
-        mem[0x7ffff7df2951] = b'O'
-        mem[0x7ffff7df2952] = b'\x08'
-        mem[0x7ffff7a248d6] = b'2'
-        mem[0x7ffff7a248d7] = b'.'
-        mem[0x7ffff7a248d8] = b'5'
-        mem[0x7ffff7a248d9] = b'\x00'
-        mem[0x7ffff7a248da] = b'G'
-        mem[0x7ffff7a248db] = b'L'
-        mem[0x7ffff7a248dc] = b'I'
-        mem[0x7ffff7a248dd] = b'B'
+        mem.write(0x7ffff7a248d6, '2.5\x00GLIB')
+        mem.write(0x7ffff7df294e, 'f\x0f\x16O\x08')
         cpu.XMM1 = 0xffffffff00ffffff2e325f4342494c47
         cpu.RDI = 0x7ffff7a248ce
         cpu.RIP = 0x7ffff7df294e
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df294e],  b'f')
-        self.assertEqual(mem[0x7ffff7df294f],  b'\x0f')
-        self.assertEqual(mem[0x7ffff7df2950],  b'\x16')
-        self.assertEqual(mem[0x7ffff7df2951],  b'O')
-        self.assertEqual(mem[0x7ffff7df2952],  b'\x08')
-        self.assertEqual(mem[0x7ffff7a248d6],  b'2')
-        self.assertEqual(mem[0x7ffff7a248d7],  b'.')
-        self.assertEqual(mem[0x7ffff7a248d8],  b'5')
-        self.assertEqual(mem[0x7ffff7a248d9],  b'\x00')
-        self.assertEqual(mem[0x7ffff7a248da],  b'G')
-        self.assertEqual(mem[0x7ffff7a248db],  b'L')
-        self.assertEqual(mem[0x7ffff7a248dc],  b'I')
-        self.assertEqual(mem[0x7ffff7a248dd],  b'B')
+        self.assertEqual(mem[0x7ffff7a248d6:0x7ffff7a248de], [b'2',b'.',b'5',b'\x00',b'G',b'L',b'I',b'B'])
+        self.assertEqual(mem[0x7ffff7df294e:0x7ffff7df2953], [b'f',b'\x0f',b'\x16',b'O',b'\x08'])
         self.assertEqual(cpu.XMM1, 88109632480871197291218000195730623559)
         self.assertEqual(cpu.RDI, 140737347995854)
         self.assertEqual(cpu.RIP, 140737351985491)
@@ -560,37 +297,15 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df294e] = b'f'
-        mem[0x7ffff7df294f] = b'\x0f'
-        mem[0x7ffff7df2950] = b'\x16'
-        mem[0x7ffff7df2951] = b'O'
-        mem[0x7ffff7df2952] = b'\x08'
-        mem[0x7ffff7a248b7] = b'-'
-        mem[0x7ffff7a248b8] = b'x'
-        mem[0x7ffff7a248b9] = b'8'
-        mem[0x7ffff7a248ba] = b'6'
-        mem[0x7ffff7a248bb] = b'-'
-        mem[0x7ffff7a248bc] = b'6'
-        mem[0x7ffff7a248bd] = b'4'
-        mem[0x7ffff7a248be] = b'.'
+        mem.write(0x7ffff7a248b7, '-x86-64.')
+        mem.write(0x7ffff7df294e, 'f\x0f\x16O\x08')
         cpu.XMM1 = 0x78756e696c2d646c
         cpu.RDI = 0x7ffff7a248af
         cpu.RIP = 0x7ffff7df294e
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df294e],  b'f')
-        self.assertEqual(mem[0x7ffff7df294f],  b'\x0f')
-        self.assertEqual(mem[0x7ffff7df2950],  b'\x16')
-        self.assertEqual(mem[0x7ffff7df2951],  b'O')
-        self.assertEqual(mem[0x7ffff7df2952],  b'\x08')
-        self.assertEqual(mem[0x7ffff7a248b7],  b'-')
-        self.assertEqual(mem[0x7ffff7a248b8],  b'x')
-        self.assertEqual(mem[0x7ffff7a248b9],  b'8')
-        self.assertEqual(mem[0x7ffff7a248ba],  b'6')
-        self.assertEqual(mem[0x7ffff7a248bb],  b'-')
-        self.assertEqual(mem[0x7ffff7a248bc],  b'6')
-        self.assertEqual(mem[0x7ffff7a248bd],  b'4')
-        self.assertEqual(mem[0x7ffff7a248be],  b'.')
+        self.assertEqual(mem[0x7ffff7a248b7:0x7ffff7a248bf], [b'-',b'x',b'8',b'6',b'-',b'6',b'4',b'.'])
+        self.assertEqual(mem[0x7ffff7df294e:0x7ffff7df2953], [b'f',b'\x0f',b'\x16',b'O',b'\x08'])
         self.assertEqual(cpu.XMM1, 61415586074916309421369241318231729260)
         self.assertEqual(cpu.RDI, 140737347995823)
         self.assertEqual(cpu.RIP, 140737351985491)
@@ -604,37 +319,15 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7b99000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df2953] = b'f'
-        mem[0x7ffff7df2954] = b'\x0f'
-        mem[0x7ffff7df2955] = b'\x16'
-        mem[0x7ffff7df2956] = b'V'
-        mem[0x7ffff7df2957] = b'\x08'
-        mem[0x7ffff7b99a30] = b'6'
-        mem[0x7ffff7b99a31] = b'\x00'
-        mem[0x7ffff7b99a32] = b'_'
-        mem[0x7ffff7b99a33] = b'_'
-        mem[0x7ffff7b99a34] = b'v'
-        mem[0x7ffff7b99a35] = b'd'
-        mem[0x7ffff7b99a36] = b's'
-        mem[0x7ffff7b99a37] = b'o'
+        mem.write(0x7ffff7b99a30, '6\x00__vdso')
+        mem.write(0x7ffff7df2953, 'f\x0f\x16V\x08')
         cpu.XMM2 = 0x64765f5f00656d692e325f58554e494c
         cpu.RSI = 0x7ffff7b99a28
         cpu.RIP = 0x7ffff7df2953
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df2953],  b'f')
-        self.assertEqual(mem[0x7ffff7df2954],  b'\x0f')
-        self.assertEqual(mem[0x7ffff7df2955],  b'\x16')
-        self.assertEqual(mem[0x7ffff7df2956],  b'V')
-        self.assertEqual(mem[0x7ffff7df2957],  b'\x08')
-        self.assertEqual(mem[0x7ffff7b99a30],  b'6')
-        self.assertEqual(mem[0x7ffff7b99a31],  b'\x00')
-        self.assertEqual(mem[0x7ffff7b99a32],  b'_')
-        self.assertEqual(mem[0x7ffff7b99a33],  b'_')
-        self.assertEqual(mem[0x7ffff7b99a34],  b'v')
-        self.assertEqual(mem[0x7ffff7b99a35],  b'd')
-        self.assertEqual(mem[0x7ffff7b99a36],  b's')
-        self.assertEqual(mem[0x7ffff7b99a37],  b'o')
+        self.assertEqual(mem[0x7ffff7b99a30:0x7ffff7b99a38], [b'6',b'\x00',b'_',b'_',b'v',b'd',b's',b'o'])
+        self.assertEqual(mem[0x7ffff7df2953:0x7ffff7df2958], [b'f',b'\x0f',b'\x16',b'V',b'\x08'])
         self.assertEqual(cpu.XMM2, 148143459290256633805182000720633547084)
         self.assertEqual(cpu.RSI, 140737349524008)
         self.assertEqual(cpu.RIP, 140737351985496)
@@ -648,37 +341,15 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df294e] = b'f'
-        mem[0x7ffff7df294f] = b'\x0f'
-        mem[0x7ffff7df2950] = b'\x16'
-        mem[0x7ffff7df2951] = b'O'
-        mem[0x7ffff7df2952] = b'\x08'
-        mem[0x7ffff7a248d6] = b'2'
-        mem[0x7ffff7a248d7] = b'.'
-        mem[0x7ffff7a248d8] = b'5'
-        mem[0x7ffff7a248d9] = b'\x00'
-        mem[0x7ffff7a248da] = b'G'
-        mem[0x7ffff7a248db] = b'L'
-        mem[0x7ffff7a248dc] = b'I'
-        mem[0x7ffff7a248dd] = b'B'
+        mem.write(0x7ffff7a248d6, '2.5\x00GLIB')
+        mem.write(0x7ffff7df294e, 'f\x0f\x16O\x08')
         cpu.XMM1 = 0xffffffff00ffffff2e325f4342494c47
         cpu.RDI = 0x7ffff7a248ce
         cpu.RIP = 0x7ffff7df294e
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df294e],  b'f')
-        self.assertEqual(mem[0x7ffff7df294f],  b'\x0f')
-        self.assertEqual(mem[0x7ffff7df2950],  b'\x16')
-        self.assertEqual(mem[0x7ffff7df2951],  b'O')
-        self.assertEqual(mem[0x7ffff7df2952],  b'\x08')
-        self.assertEqual(mem[0x7ffff7a248d6],  b'2')
-        self.assertEqual(mem[0x7ffff7a248d7],  b'.')
-        self.assertEqual(mem[0x7ffff7a248d8],  b'5')
-        self.assertEqual(mem[0x7ffff7a248d9],  b'\x00')
-        self.assertEqual(mem[0x7ffff7a248da],  b'G')
-        self.assertEqual(mem[0x7ffff7a248db],  b'L')
-        self.assertEqual(mem[0x7ffff7a248dc],  b'I')
-        self.assertEqual(mem[0x7ffff7a248dd],  b'B')
+        self.assertEqual(mem[0x7ffff7a248d6:0x7ffff7a248de], [b'2',b'.',b'5',b'\x00',b'G',b'L',b'I',b'B'])
+        self.assertEqual(mem[0x7ffff7df294e:0x7ffff7df2953], [b'f',b'\x0f',b'\x16',b'O',b'\x08'])
         self.assertEqual(cpu.XMM1, 88109632480871197291218000195730623559)
         self.assertEqual(cpu.RDI, 140737347995854)
         self.assertEqual(cpu.RIP, 140737351985491)
@@ -692,37 +363,15 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df2956] = b'V'
-        mem[0x7ffff7df2957] = b'\x08'
-        mem[0x7ffff7df2953] = b'f'
-        mem[0x7ffff7df2954] = b'\x0f'
-        mem[0x7ffff7df2955] = b'\x16'
-        mem[0x7ffff7a248d6] = b'2'
-        mem[0x7ffff7a248d7] = b'.'
-        mem[0x7ffff7a248d8] = b'5'
-        mem[0x7ffff7a248d9] = b'\x00'
-        mem[0x7ffff7a248da] = b'G'
-        mem[0x7ffff7a248db] = b'L'
-        mem[0x7ffff7a248dc] = b'I'
-        mem[0x7ffff7a248dd] = b'B'
+        mem.write(0x7ffff7a248d6, '2.5\x00GLIB')
+        mem.write(0x7ffff7df2953, 'f\x0f\x16V\x08')
         cpu.XMM2 = 0x42494c4700352e322e325f4342494c47
         cpu.RSI = 0x7ffff7a248ce
         cpu.RIP = 0x7ffff7df2953
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df2956],  b'V')
-        self.assertEqual(mem[0x7ffff7a248d7],  b'.')
-        self.assertEqual(mem[0x7ffff7df2953],  b'f')
-        self.assertEqual(mem[0x7ffff7df2954],  b'\x0f')
-        self.assertEqual(mem[0x7ffff7df2955],  b'\x16')
-        self.assertEqual(mem[0x7ffff7a248d6],  b'2')
-        self.assertEqual(mem[0x7ffff7df2957],  b'\x08')
-        self.assertEqual(mem[0x7ffff7a248d8],  b'5')
-        self.assertEqual(mem[0x7ffff7a248d9],  b'\x00')
-        self.assertEqual(mem[0x7ffff7a248da],  b'G')
-        self.assertEqual(mem[0x7ffff7a248db],  b'L')
-        self.assertEqual(mem[0x7ffff7a248dc],  b'I')
-        self.assertEqual(mem[0x7ffff7a248dd],  b'B')
+        self.assertEqual(mem[0x7ffff7a248d6:0x7ffff7a248de], [b'2',b'.',b'5',b'\x00',b'G',b'L',b'I',b'B'])
+        self.assertEqual(mem[0x7ffff7df2953:0x7ffff7df2958], [b'f',b'\x0f',b'\x16',b'V',b'\x08'])
         self.assertEqual(cpu.XMM2, 88109632480871197291218000195730623559)
         self.assertEqual(cpu.RSI, 140737347995854)
         self.assertEqual(cpu.RIP, 140737351985496)
@@ -736,37 +385,15 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7ffa000, 0x1000, 'rwx')
-        mem[0x7ffff7ffa30c] = b'6'
-        mem[0x7ffff7ffa30d] = b'\x00'
-        mem[0x7ffff7ffa30e] = b'\x00'
-        mem[0x7ffff7df294f] = b'\x0f'
-        mem[0x7ffff7ffa310] = b'\x00'
-        mem[0x7ffff7ffa311] = b'\x00'
-        mem[0x7ffff7df2952] = b'\x08'
-        mem[0x7ffff7ffa313] = b'\x00'
-        mem[0x7ffff7df294e] = b'f'
-        mem[0x7ffff7ffa30f] = b'\x00'
-        mem[0x7ffff7df2950] = b'\x16'
-        mem[0x7ffff7df2951] = b'O'
-        mem[0x7ffff7ffa312] = b'\x02'
+        mem.write(0x7ffff7df294e, 'f\x0f\x16O\x08')
+        mem.write(0x7ffff7ffa30c, '6\x00\x00\x00\x00\x00\x02\x00')
         cpu.XMM1 = 0xffffffff00ffffff2e325f58554e494c
         cpu.RDI = 0x7ffff7ffa304
         cpu.RIP = 0x7ffff7df294e
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7ffa30c],  b'6')
-        self.assertEqual(mem[0x7ffff7ffa30d],  b'\x00')
-        self.assertEqual(mem[0x7ffff7ffa30e],  b'\x00')
-        self.assertEqual(mem[0x7ffff7df294f],  b'\x0f')
-        self.assertEqual(mem[0x7ffff7df2950],  b'\x16')
-        self.assertEqual(mem[0x7ffff7df2951],  b'O')
-        self.assertEqual(mem[0x7ffff7df2952],  b'\x08')
-        self.assertEqual(mem[0x7ffff7ffa313],  b'\x00')
-        self.assertEqual(mem[0x7ffff7df294e],  b'f')
-        self.assertEqual(mem[0x7ffff7ffa30f],  b'\x00')
-        self.assertEqual(mem[0x7ffff7ffa310],  b'\x00')
-        self.assertEqual(mem[0x7ffff7ffa311],  b'\x00')
-        self.assertEqual(mem[0x7ffff7ffa312],  b'\x02')
+        self.assertEqual(mem[0x7ffff7df294e:0x7ffff7df2953], [b'f',b'\x0f',b'\x16',b'O',b'\x08'])
+        self.assertEqual(mem[0x7ffff7ffa30c:0x7ffff7ffa314], [b'6',b'\x00',b'\x00',b'\x00',b'\x00',b'\x00',b'\x02',b'\x00'])
         self.assertEqual(cpu.XMM1, 10384593717070654710068880547400012)
         self.assertEqual(cpu.RDI, 140737354113796)
         self.assertEqual(cpu.RIP, 140737351985491)
@@ -780,37 +407,15 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df2956] = b'V'
-        mem[0x7ffff7df2957] = b'\x08'
-        mem[0x7ffff7df2953] = b'f'
-        mem[0x7ffff7df2954] = b'\x0f'
-        mem[0x7ffff7df2955] = b'\x16'
-        mem[0x7ffff7a248d6] = b'2'
-        mem[0x7ffff7a248d7] = b'.'
-        mem[0x7ffff7a248d8] = b'5'
-        mem[0x7ffff7a248d9] = b'\x00'
-        mem[0x7ffff7a248da] = b'G'
-        mem[0x7ffff7a248db] = b'L'
-        mem[0x7ffff7a248dc] = b'I'
-        mem[0x7ffff7a248dd] = b'B'
+        mem.write(0x7ffff7a248d6, '2.5\x00GLIB')
+        mem.write(0x7ffff7df2953, 'f\x0f\x16V\x08')
         cpu.XMM2 = 0x42494c4700352e322e325f4342494c47
         cpu.RSI = 0x7ffff7a248ce
         cpu.RIP = 0x7ffff7df2953
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df2956],  b'V')
-        self.assertEqual(mem[0x7ffff7a248d7],  b'.')
-        self.assertEqual(mem[0x7ffff7df2953],  b'f')
-        self.assertEqual(mem[0x7ffff7df2954],  b'\x0f')
-        self.assertEqual(mem[0x7ffff7df2955],  b'\x16')
-        self.assertEqual(mem[0x7ffff7a248d6],  b'2')
-        self.assertEqual(mem[0x7ffff7df2957],  b'\x08')
-        self.assertEqual(mem[0x7ffff7a248d8],  b'5')
-        self.assertEqual(mem[0x7ffff7a248d9],  b'\x00')
-        self.assertEqual(mem[0x7ffff7a248da],  b'G')
-        self.assertEqual(mem[0x7ffff7a248db],  b'L')
-        self.assertEqual(mem[0x7ffff7a248dc],  b'I')
-        self.assertEqual(mem[0x7ffff7a248dd],  b'B')
+        self.assertEqual(mem[0x7ffff7a248d6:0x7ffff7a248de], [b'2',b'.',b'5',b'\x00',b'G',b'L',b'I',b'B'])
+        self.assertEqual(mem[0x7ffff7df2953:0x7ffff7df2958], [b'f',b'\x0f',b'\x16',b'V',b'\x08'])
         self.assertEqual(cpu.XMM2, 88109632480871197291218000195730623559)
         self.assertEqual(cpu.RSI, 140737347995854)
         self.assertEqual(cpu.RIP, 140737351985496)
@@ -824,37 +429,15 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df2956] = b'V'
-        mem[0x7ffff7df2957] = b'\x08'
-        mem[0x7ffff7df2953] = b'f'
-        mem[0x7ffff7df2954] = b'\x0f'
-        mem[0x7ffff7df2955] = b'\x16'
-        mem[0x7ffff7a248d6] = b'2'
-        mem[0x7ffff7a248d7] = b'.'
-        mem[0x7ffff7a248d8] = b'5'
-        mem[0x7ffff7a248d9] = b'\x00'
-        mem[0x7ffff7a248da] = b'G'
-        mem[0x7ffff7a248db] = b'L'
-        mem[0x7ffff7a248dc] = b'I'
-        mem[0x7ffff7a248dd] = b'B'
+        mem.write(0x7ffff7a248d6, '2.5\x00GLIB')
+        mem.write(0x7ffff7df2953, 'f\x0f\x16V\x08')
         cpu.XMM2 = 0x42494c4700352e322e325f4342494c47
         cpu.RSI = 0x7ffff7a248ce
         cpu.RIP = 0x7ffff7df2953
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df2956],  b'V')
-        self.assertEqual(mem[0x7ffff7a248d7],  b'.')
-        self.assertEqual(mem[0x7ffff7df2953],  b'f')
-        self.assertEqual(mem[0x7ffff7df2954],  b'\x0f')
-        self.assertEqual(mem[0x7ffff7df2955],  b'\x16')
-        self.assertEqual(mem[0x7ffff7a248d6],  b'2')
-        self.assertEqual(mem[0x7ffff7df2957],  b'\x08')
-        self.assertEqual(mem[0x7ffff7a248d8],  b'5')
-        self.assertEqual(mem[0x7ffff7a248d9],  b'\x00')
-        self.assertEqual(mem[0x7ffff7a248da],  b'G')
-        self.assertEqual(mem[0x7ffff7a248db],  b'L')
-        self.assertEqual(mem[0x7ffff7a248dc],  b'I')
-        self.assertEqual(mem[0x7ffff7a248dd],  b'B')
+        self.assertEqual(mem[0x7ffff7a248d6:0x7ffff7a248de], [b'2',b'.',b'5',b'\x00',b'G',b'L',b'I',b'B'])
+        self.assertEqual(mem[0x7ffff7df2953:0x7ffff7df2958], [b'f',b'\x0f',b'\x16',b'V',b'\x08'])
         self.assertEqual(cpu.XMM2, 88109632480871197291218000195730623559)
         self.assertEqual(cpu.RSI, 140737347995854)
         self.assertEqual(cpu.RIP, 140737351985496)
@@ -868,37 +451,15 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7ff7000, 0x1000, 'rwx')
-        mem[0x7ffff7df2953] = b'f'
-        mem[0x7ffff7df2954] = b'\x0f'
-        mem[0x7ffff7df2955] = b'\x16'
-        mem[0x7ffff7df2956] = b'V'
-        mem[0x7ffff7df2957] = b'\x08'
-        mem[0x7ffff7ff74a8] = b'_'
-        mem[0x7ffff7ff74a9] = b'6'
-        mem[0x7ffff7ff74aa] = b'4'
-        mem[0x7ffff7ff74ab] = b'-'
-        mem[0x7ffff7ff74ac] = b'l'
-        mem[0x7ffff7ff74ad] = b'i'
-        mem[0x7ffff7ff74ae] = b'n'
-        mem[0x7ffff7ff74af] = b'u'
+        mem.write(0x7ffff7df2953, 'f\x0f\x16V\x08')
+        mem.write(0x7ffff7ff74a8, '_64-linu')
         cpu.XMM2 = 0x3638782f62696c2f
         cpu.RSI = 0x7ffff7ff74a0
         cpu.RIP = 0x7ffff7df2953
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df2953],  b'f')
-        self.assertEqual(mem[0x7ffff7df2954],  b'\x0f')
-        self.assertEqual(mem[0x7ffff7df2955],  b'\x16')
-        self.assertEqual(mem[0x7ffff7df2956],  b'V')
-        self.assertEqual(mem[0x7ffff7df2957],  b'\x08')
-        self.assertEqual(mem[0x7ffff7ff74a8],  b'_')
-        self.assertEqual(mem[0x7ffff7ff74a9],  b'6')
-        self.assertEqual(mem[0x7ffff7ff74aa],  b'4')
-        self.assertEqual(mem[0x7ffff7ff74ab],  b'-')
-        self.assertEqual(mem[0x7ffff7ff74ac],  b'l')
-        self.assertEqual(mem[0x7ffff7ff74ad],  b'i')
-        self.assertEqual(mem[0x7ffff7ff74ae],  b'n')
-        self.assertEqual(mem[0x7ffff7ff74af],  b'u')
+        self.assertEqual(mem[0x7ffff7df2953:0x7ffff7df2958], [b'f',b'\x0f',b'\x16',b'V',b'\x08'])
+        self.assertEqual(mem[0x7ffff7ff74a8:0x7ffff7ff74b0], [b'_',b'6',b'4',b'-',b'l',b'i',b'n',b'u'])
         self.assertEqual(cpu.XMM2, 156092966384913869483545010807748783151)
         self.assertEqual(cpu.RSI, 140737354101920)
         self.assertEqual(cpu.RIP, 140737351985496)
@@ -912,37 +473,15 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a21000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df294e] = b'f'
-        mem[0x7ffff7df294f] = b'\x0f'
-        mem[0x7ffff7df2950] = b'\x16'
-        mem[0x7ffff7df2951] = b'O'
-        mem[0x7ffff7df2952] = b'\x08'
-        mem[0x7ffff7a21315] = b'e'
-        mem[0x7ffff7a21316] = b'm'
-        mem[0x7ffff7a21317] = b'a'
-        mem[0x7ffff7a21318] = b'l'
-        mem[0x7ffff7a21319] = b'i'
-        mem[0x7ffff7a2131a] = b'g'
-        mem[0x7ffff7a2131b] = b'n'
-        mem[0x7ffff7a2131c] = b'\x00'
+        mem.write(0x7ffff7a21315, 'emalign\x00')
+        mem.write(0x7ffff7df294e, 'f\x0f\x16O\x08')
         cpu.XMM1 = 0xffffffff00ffffff6d5f6362696c5f5f
         cpu.RDI = 0x7ffff7a2130d
         cpu.RIP = 0x7ffff7df294e
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df294e],  b'f')
-        self.assertEqual(mem[0x7ffff7df294f],  b'\x0f')
-        self.assertEqual(mem[0x7ffff7df2950],  b'\x16')
-        self.assertEqual(mem[0x7ffff7df2951],  b'O')
-        self.assertEqual(mem[0x7ffff7df2952],  b'\x08')
-        self.assertEqual(mem[0x7ffff7a21315],  b'e')
-        self.assertEqual(mem[0x7ffff7a21316],  b'm')
-        self.assertEqual(mem[0x7ffff7a21317],  b'a')
-        self.assertEqual(mem[0x7ffff7a21318],  b'l')
-        self.assertEqual(mem[0x7ffff7a21319],  b'i')
-        self.assertEqual(mem[0x7ffff7a2131a],  b'g')
-        self.assertEqual(mem[0x7ffff7a2131b],  b'n')
-        self.assertEqual(mem[0x7ffff7a2131c],  b'\x00')
+        self.assertEqual(mem[0x7ffff7a21315:0x7ffff7a2131d], [b'e',b'm',b'a',b'l',b'i',b'g',b'n',b'\x00'])
+        self.assertEqual(mem[0x7ffff7df294e:0x7ffff7df2953], [b'f',b'\x0f',b'\x16',b'O',b'\x08'])
         self.assertEqual(cpu.XMM1, 573250095127234633104266320675626847)
         self.assertEqual(cpu.RDI, 140737347982093)
         self.assertEqual(cpu.RIP, 140737351985491)
@@ -955,20 +494,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df3470] = b'f'
-        mem[0x7ffff7df3471] = b'\x0f'
-        mem[0x7ffff7df3472] = b's'
-        mem[0x7ffff7df3473] = b'\xfa'
-        mem[0x7ffff7df3474] = b'\x07'
+        mem.write(0x7ffff7df3470, 'f\x0fs\xfa\x07')
         cpu.XMM2 = 0x1
         cpu.RIP = 0x7ffff7df3470
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df3470],  b'f')
-        self.assertEqual(mem[0x7ffff7df3471],  b'\x0f')
-        self.assertEqual(mem[0x7ffff7df3472],  b's')
-        self.assertEqual(mem[0x7ffff7df3473],  b'\xfa')
-        self.assertEqual(mem[0x7ffff7df3474],  b'\x07')
+        self.assertEqual(mem[0x7ffff7df3470:0x7ffff7df3475], [b'f',b'\x0f',b's',b'\xfa',b'\x07'])
         self.assertEqual(cpu.XMM2, 72057594037927936)
         self.assertEqual(cpu.RIP, 140737351988341)
 
@@ -980,20 +511,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df3470] = b'f'
-        mem[0x7ffff7df3471] = b'\x0f'
-        mem[0x7ffff7df3472] = b's'
-        mem[0x7ffff7df3473] = b'\xfa'
-        mem[0x7ffff7df3474] = b'\x07'
+        mem.write(0x7ffff7df3470, 'f\x0fs\xfa\x07')
         cpu.XMM2 = 0x6972705f5f00362e6f732e6362696c00
         cpu.RIP = 0x7ffff7df3470
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df3470],  b'f')
-        self.assertEqual(mem[0x7ffff7df3471],  b'\x0f')
-        self.assertEqual(mem[0x7ffff7df3472],  b's')
-        self.assertEqual(mem[0x7ffff7df3473],  b'\xfa')
-        self.assertEqual(mem[0x7ffff7df3474],  b'\x07')
+        self.assertEqual(mem[0x7ffff7df3470:0x7ffff7df3475], [b'f',b'\x0f',b's',b'\xfa',b'\x07'])
         self.assertEqual(cpu.XMM2, 61723168909761380161964749838612430848)
         self.assertEqual(cpu.RIP, 140737351988341)
 
@@ -1005,20 +528,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df3470] = b'f'
-        mem[0x7ffff7df3471] = b'\x0f'
-        mem[0x7ffff7df3472] = b's'
-        mem[0x7ffff7df3473] = b'\xfa'
-        mem[0x7ffff7df3474] = b'\x07'
+        mem.write(0x7ffff7df3470, 'f\x0fs\xfa\x07')
         cpu.XMM2 = 0x6972705f5f00362e6f732e6362696c00
         cpu.RIP = 0x7ffff7df3470
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df3470],  b'f')
-        self.assertEqual(mem[0x7ffff7df3471],  b'\x0f')
-        self.assertEqual(mem[0x7ffff7df3472],  b's')
-        self.assertEqual(mem[0x7ffff7df3473],  b'\xfa')
-        self.assertEqual(mem[0x7ffff7df3474],  b'\x07')
+        self.assertEqual(mem[0x7ffff7df3470:0x7ffff7df3475], [b'f',b'\x0f',b's',b'\xfa',b'\x07'])
         self.assertEqual(cpu.XMM2, 61723168909761380161964749838612430848)
         self.assertEqual(cpu.RIP, 140737351988341)
 
@@ -1030,20 +545,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df3470] = b'f'
-        mem[0x7ffff7df3471] = b'\x0f'
-        mem[0x7ffff7df3472] = b's'
-        mem[0x7ffff7df3473] = b'\xfa'
-        mem[0x7ffff7df3474] = b'\x07'
+        mem.write(0x7ffff7df3470, 'f\x0fs\xfa\x07')
         cpu.XMM2 = 0x6972705f5f00362e6f732e6362696c00
         cpu.RIP = 0x7ffff7df3470
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df3470],  b'f')
-        self.assertEqual(mem[0x7ffff7df3471],  b'\x0f')
-        self.assertEqual(mem[0x7ffff7df3472],  b's')
-        self.assertEqual(mem[0x7ffff7df3473],  b'\xfa')
-        self.assertEqual(mem[0x7ffff7df3474],  b'\x07')
+        self.assertEqual(mem[0x7ffff7df3470:0x7ffff7df3475], [b'f',b'\x0f',b's',b'\xfa',b'\x07'])
         self.assertEqual(cpu.XMM2, 61723168909761380161964749838612430848)
         self.assertEqual(cpu.RIP, 140737351988341)
 
@@ -1055,20 +562,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df3470] = b'f'
-        mem[0x7ffff7df3471] = b'\x0f'
-        mem[0x7ffff7df3472] = b's'
-        mem[0x7ffff7df3473] = b'\xfa'
-        mem[0x7ffff7df3474] = b'\x07'
+        mem.write(0x7ffff7df3470, 'f\x0fs\xfa\x07')
         cpu.XMM2 = 0x1
         cpu.RIP = 0x7ffff7df3470
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df3470],  b'f')
-        self.assertEqual(mem[0x7ffff7df3471],  b'\x0f')
-        self.assertEqual(mem[0x7ffff7df3472],  b's')
-        self.assertEqual(mem[0x7ffff7df3473],  b'\xfa')
-        self.assertEqual(mem[0x7ffff7df3474],  b'\x07')
+        self.assertEqual(mem[0x7ffff7df3470:0x7ffff7df3475], [b'f',b'\x0f',b's',b'\xfa',b'\x07'])
         self.assertEqual(cpu.XMM2, 72057594037927936)
         self.assertEqual(cpu.RIP, 140737351988341)
 
@@ -1080,20 +579,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df3470] = b'f'
-        mem[0x7ffff7df3471] = b'\x0f'
-        mem[0x7ffff7df3472] = b's'
-        mem[0x7ffff7df3473] = b'\xfa'
-        mem[0x7ffff7df3474] = b'\x07'
+        mem.write(0x7ffff7df3470, 'f\x0fs\xfa\x07')
         cpu.XMM2 = 0x6972705f5f00362e6f732e6362696c00
         cpu.RIP = 0x7ffff7df3470
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df3470],  b'f')
-        self.assertEqual(mem[0x7ffff7df3471],  b'\x0f')
-        self.assertEqual(mem[0x7ffff7df3472],  b's')
-        self.assertEqual(mem[0x7ffff7df3473],  b'\xfa')
-        self.assertEqual(mem[0x7ffff7df3474],  b'\x07')
+        self.assertEqual(mem[0x7ffff7df3470:0x7ffff7df3475], [b'f',b'\x0f',b's',b'\xfa',b'\x07'])
         self.assertEqual(cpu.XMM2, 61723168909761380161964749838612430848)
         self.assertEqual(cpu.RIP, 140737351988341)
 
@@ -1105,20 +596,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df38a0] = b'\xfa'
-        mem[0x7ffff7df38a1] = b'\x04'
-        mem[0x7ffff7df389d] = b'f'
-        mem[0x7ffff7df389e] = b'\x0f'
-        mem[0x7ffff7df389f] = b's'
+        mem.write(0x7ffff7df389d, 'f\x0fs\xfa\x04')
         cpu.XMM2 = 0x3000000020002000000352e322e32
         cpu.RIP = 0x7ffff7df389d
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df38a0],  b'\xfa')
-        self.assertEqual(mem[0x7ffff7df38a1],  b'\x04')
-        self.assertEqual(mem[0x7ffff7df389d],  b'f')
-        self.assertEqual(mem[0x7ffff7df389e],  b'\x0f')
-        self.assertEqual(mem[0x7ffff7df389f],  b's')
+        self.assertEqual(mem[0x7ffff7df389d:0x7ffff7df38a2], [b'f',b'\x0f',b's',b'\xfa',b'\x04'])
         self.assertEqual(cpu.XMM2, 10384752173395664791945953216036864)
         self.assertEqual(cpu.RIP, 140737351989410)
 
@@ -1130,20 +613,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df3470] = b'f'
-        mem[0x7ffff7df3471] = b'\x0f'
-        mem[0x7ffff7df3472] = b's'
-        mem[0x7ffff7df3473] = b'\xfa'
-        mem[0x7ffff7df3474] = b'\x07'
+        mem.write(0x7ffff7df3470, 'f\x0fs\xfa\x07')
         cpu.XMM2 = 0x6972705f5f00362e6f732e6362696c00
         cpu.RIP = 0x7ffff7df3470
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df3470],  b'f')
-        self.assertEqual(mem[0x7ffff7df3471],  b'\x0f')
-        self.assertEqual(mem[0x7ffff7df3472],  b's')
-        self.assertEqual(mem[0x7ffff7df3473],  b'\xfa')
-        self.assertEqual(mem[0x7ffff7df3474],  b'\x07')
+        self.assertEqual(mem[0x7ffff7df3470:0x7ffff7df3475], [b'f',b'\x0f',b's',b'\xfa',b'\x07'])
         self.assertEqual(cpu.XMM2, 61723168909761380161964749838612430848)
         self.assertEqual(cpu.RIP, 140737351988341)
 
@@ -1155,20 +630,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df39e0] = b'\xfa'
-        mem[0x7ffff7df39e1] = b'\x03'
-        mem[0x7ffff7df39dd] = b'f'
-        mem[0x7ffff7df39de] = b'\x0f'
-        mem[0x7ffff7df39df] = b's'
+        mem.write(0x7ffff7df39dd, 'f\x0fs\xfa\x03')
         cpu.XMM2 = 0x494c4700352e322e325f4342494c4700
         cpu.RIP = 0x7ffff7df39dd
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df39e0],  b'\xfa')
-        self.assertEqual(mem[0x7ffff7df39e1],  b'\x03')
-        self.assertEqual(mem[0x7ffff7df39dd],  b'f')
-        self.assertEqual(mem[0x7ffff7df39de],  b'\x0f')
-        self.assertEqual(mem[0x7ffff7df39df],  b's')
+        self.assertEqual(mem[0x7ffff7df39dd:0x7ffff7df39e2], [b'f',b'\x0f',b's',b'\xfa',b'\x03'])
         self.assertEqual(cpu.XMM2, 276128700049446162655260478745346048)
         self.assertEqual(cpu.RIP, 140737351989730)
 
@@ -1180,20 +647,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df38a0] = b'\xfa'
-        mem[0x7ffff7df38a1] = b'\x04'
-        mem[0x7ffff7df389d] = b'f'
-        mem[0x7ffff7df389e] = b'\x0f'
-        mem[0x7ffff7df389f] = b's'
+        mem.write(0x7ffff7df389d, 'f\x0fs\xfa\x04')
         cpu.XMM2 = 0x665f4f495f006f6c6c657466006b6863
         cpu.RIP = 0x7ffff7df389d
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df38a0],  b'\xfa')
-        self.assertEqual(mem[0x7ffff7df38a1],  b'\x04')
-        self.assertEqual(mem[0x7ffff7df389d],  b'f')
-        self.assertEqual(mem[0x7ffff7df389e],  b'\x0f')
-        self.assertEqual(mem[0x7ffff7df389f],  b's')
+        self.assertEqual(mem[0x7ffff7df389d:0x7ffff7df38a2], [b'f',b'\x0f',b's',b'\xfa',b'\x04'])
         self.assertEqual(cpu.XMM2, 126278919537221597046423674937331941376)
         self.assertEqual(cpu.RIP, 140737351989410)
 
@@ -1205,20 +664,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df3470] = b'f'
-        mem[0x7ffff7df3471] = b'\x0f'
-        mem[0x7ffff7df3472] = b's'
-        mem[0x7ffff7df3473] = b'\xfa'
-        mem[0x7ffff7df3474] = b'\x07'
+        mem.write(0x7ffff7df3470, 'f\x0fs\xfa\x07')
         cpu.XMM2 = 0x1
         cpu.RIP = 0x7ffff7df3470
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df3470],  b'f')
-        self.assertEqual(mem[0x7ffff7df3471],  b'\x0f')
-        self.assertEqual(mem[0x7ffff7df3472],  b's')
-        self.assertEqual(mem[0x7ffff7df3473],  b'\xfa')
-        self.assertEqual(mem[0x7ffff7df3474],  b'\x07')
+        self.assertEqual(mem[0x7ffff7df3470:0x7ffff7df3475], [b'f',b'\x0f',b's',b'\xfa',b'\x07'])
         self.assertEqual(cpu.XMM2, 72057594037927936)
         self.assertEqual(cpu.RIP, 140737351988341)
 
@@ -1230,20 +681,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df2f70] = b'f'
-        mem[0x7ffff7df2f71] = b'\x0f'
-        mem[0x7ffff7df2f72] = b's'
-        mem[0x7ffff7df2f73] = b'\xfa'
-        mem[0x7ffff7df2f74] = b'\x0b'
+        mem.write(0x7ffff7df2f70, 'f\x0fs\xfa\x0b')
         cpu.XMM2 = 0x6972705f5f00362e6f732e6362696c00
         cpu.RIP = 0x7ffff7df2f70
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df2f70],  b'f')
-        self.assertEqual(mem[0x7ffff7df2f71],  b'\x0f')
-        self.assertEqual(mem[0x7ffff7df2f72],  b's')
-        self.assertEqual(mem[0x7ffff7df2f73],  b'\xfa')
-        self.assertEqual(mem[0x7ffff7df2f74],  b'\x0b')
+        self.assertEqual(mem[0x7ffff7df2f70:0x7ffff7df2f75], [b'f',b'\x0f',b's',b'\xfa',b'\x0b'])
         self.assertEqual(cpu.XMM2, 132104554884493019491015862172149350400)
         self.assertEqual(cpu.RIP, 140737351987061)
 
@@ -1255,20 +698,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df3970] = b'f'
-        mem[0x7ffff7df3971] = b'\x0f'
-        mem[0x7ffff7df3972] = b's'
-        mem[0x7ffff7df3973] = b'\xfa'
-        mem[0x7ffff7df3974] = b'\x03'
+        mem.write(0x7ffff7df3970, 'f\x0fs\xfa\x03')
         cpu.XMM2 = 0x322e6f732e34362d3638782d78756e69
         cpu.RIP = 0x7ffff7df3970
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df3970],  b'f')
-        self.assertEqual(mem[0x7ffff7df3971],  b'\x0f')
-        self.assertEqual(mem[0x7ffff7df3972],  b's')
-        self.assertEqual(mem[0x7ffff7df3973],  b'\xfa')
-        self.assertEqual(mem[0x7ffff7df3974],  b'\x03')
+        self.assertEqual(mem[0x7ffff7df3970:0x7ffff7df3975], [b'f',b'\x0f',b's',b'\xfa',b'\x03'])
         self.assertEqual(cpu.XMM2, 153101124148370467217615035531131879424)
         self.assertEqual(cpu.RIP, 140737351989621)
 
@@ -1280,20 +715,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df3830] = b'f'
-        mem[0x7ffff7df3831] = b'\x0f'
-        mem[0x7ffff7df3832] = b's'
-        mem[0x7ffff7df3833] = b'\xfa'
-        mem[0x7ffff7df3834] = b'\x04'
+        mem.write(0x7ffff7df3830, 'f\x0fs\xfa\x04')
         cpu.XMM2 = 0x5f4342494c4700342e332e325f434249
         cpu.RIP = 0x7ffff7df3830
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df3830],  b'f')
-        self.assertEqual(mem[0x7ffff7df3831],  b'\x0f')
-        self.assertEqual(mem[0x7ffff7df3832],  b's')
-        self.assertEqual(mem[0x7ffff7df3833],  b'\xfa')
-        self.assertEqual(mem[0x7ffff7df3834],  b'\x04')
+        self.assertEqual(mem[0x7ffff7df3830:0x7ffff7df3835], [b'f',b'\x0f',b's',b'\xfa',b'\x04'])
         self.assertEqual(cpu.XMM2, 101389984890772213670702594761716400128)
         self.assertEqual(cpu.RIP, 140737351989301)
 
@@ -1305,20 +732,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df3ab0] = b'f'
-        mem[0x7ffff7df3ab1] = b'\x0f'
-        mem[0x7ffff7df3ab2] = b's'
-        mem[0x7ffff7df3ab3] = b'\xfa'
-        mem[0x7ffff7df3ab4] = b'\x02'
+        mem.write(0x7ffff7df3ab0, 'f\x0fs\xfa\x02')
         cpu.XMM2 = 0x63007463656a626f5f726f665f6f7364
         cpu.RIP = 0x7ffff7df3ab0
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df3ab0],  b'f')
-        self.assertEqual(mem[0x7ffff7df3ab1],  b'\x0f')
-        self.assertEqual(mem[0x7ffff7df3ab2],  b's')
-        self.assertEqual(mem[0x7ffff7df3ab3],  b'\xfa')
-        self.assertEqual(mem[0x7ffff7df3ab4],  b'\x02')
+        self.assertEqual(mem[0x7ffff7df3ab0:0x7ffff7df3ab5], [b'f',b'\x0f',b's',b'\xfa',b'\x02'])
         self.assertEqual(cpu.XMM2, 154706541852064556987039687627872927744)
         self.assertEqual(cpu.RIP, 140737351989941)
 
@@ -1330,20 +749,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df3470] = b'f'
-        mem[0x7ffff7df3471] = b'\x0f'
-        mem[0x7ffff7df3472] = b's'
-        mem[0x7ffff7df3473] = b'\xfa'
-        mem[0x7ffff7df3474] = b'\x07'
+        mem.write(0x7ffff7df3470, 'f\x0fs\xfa\x07')
         cpu.XMM2 = 0x6972705f5f00362e6f732e6362696c00
         cpu.RIP = 0x7ffff7df3470
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df3470],  b'f')
-        self.assertEqual(mem[0x7ffff7df3471],  b'\x0f')
-        self.assertEqual(mem[0x7ffff7df3472],  b's')
-        self.assertEqual(mem[0x7ffff7df3473],  b'\xfa')
-        self.assertEqual(mem[0x7ffff7df3474],  b'\x07')
+        self.assertEqual(mem[0x7ffff7df3470:0x7ffff7df3475], [b'f',b'\x0f',b's',b'\xfa',b'\x07'])
         self.assertEqual(cpu.XMM2, 61723168909761380161964749838612430848)
         self.assertEqual(cpu.RIP, 140737351988341)
 
@@ -1355,20 +766,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df3470] = b'f'
-        mem[0x7ffff7df3471] = b'\x0f'
-        mem[0x7ffff7df3472] = b's'
-        mem[0x7ffff7df3473] = b'\xfa'
-        mem[0x7ffff7df3474] = b'\x07'
+        mem.write(0x7ffff7df3470, 'f\x0fs\xfa\x07')
         cpu.XMM2 = 0x6972705f5f00362e6f732e6362696c00
         cpu.RIP = 0x7ffff7df3470
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df3470],  b'f')
-        self.assertEqual(mem[0x7ffff7df3471],  b'\x0f')
-        self.assertEqual(mem[0x7ffff7df3472],  b's')
-        self.assertEqual(mem[0x7ffff7df3473],  b'\xfa')
-        self.assertEqual(mem[0x7ffff7df3474],  b'\x07')
+        self.assertEqual(mem[0x7ffff7df3470:0x7ffff7df3475], [b'f',b'\x0f',b's',b'\xfa',b'\x07'])
         self.assertEqual(cpu.XMM2, 61723168909761380161964749838612430848)
         self.assertEqual(cpu.RIP, 140737351988341)
 
@@ -1380,20 +783,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df38a0] = b'\xfa'
-        mem[0x7ffff7df38a1] = b'\x04'
-        mem[0x7ffff7df389d] = b'f'
-        mem[0x7ffff7df389e] = b'\x0f'
-        mem[0x7ffff7df389f] = b's'
+        mem.write(0x7ffff7df389d, 'f\x0fs\xfa\x04')
         cpu.XMM2 = 0x3000000020002000000352e322e32
         cpu.RIP = 0x7ffff7df389d
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df38a0],  b'\xfa')
-        self.assertEqual(mem[0x7ffff7df38a1],  b'\x04')
-        self.assertEqual(mem[0x7ffff7df389d],  b'f')
-        self.assertEqual(mem[0x7ffff7df389e],  b'\x0f')
-        self.assertEqual(mem[0x7ffff7df389f],  b's')
+        self.assertEqual(mem[0x7ffff7df389d:0x7ffff7df38a2], [b'f',b'\x0f',b's',b'\xfa',b'\x04'])
         self.assertEqual(cpu.XMM2, 10384752173395664791945953216036864)
         self.assertEqual(cpu.RIP, 140737351989410)
 
@@ -1405,20 +800,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df3470] = b'f'
-        mem[0x7ffff7df3471] = b'\x0f'
-        mem[0x7ffff7df3472] = b's'
-        mem[0x7ffff7df3473] = b'\xfa'
-        mem[0x7ffff7df3474] = b'\x07'
+        mem.write(0x7ffff7df3470, 'f\x0fs\xfa\x07')
         cpu.XMM2 = 0x1
         cpu.RIP = 0x7ffff7df3470
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df3470],  b'f')
-        self.assertEqual(mem[0x7ffff7df3471],  b'\x0f')
-        self.assertEqual(mem[0x7ffff7df3472],  b's')
-        self.assertEqual(mem[0x7ffff7df3473],  b'\xfa')
-        self.assertEqual(mem[0x7ffff7df3474],  b'\x07')
+        self.assertEqual(mem[0x7ffff7df3470:0x7ffff7df3475], [b'f',b'\x0f',b's',b'\xfa',b'\x07'])
         self.assertEqual(cpu.XMM2, 72057594037927936)
         self.assertEqual(cpu.RIP, 140737351988341)
 
@@ -1430,20 +817,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df39e0] = b'\xfa'
-        mem[0x7ffff7df39e1] = b'\x03'
-        mem[0x7ffff7df39dd] = b'f'
-        mem[0x7ffff7df39de] = b'\x0f'
-        mem[0x7ffff7df39df] = b's'
+        mem.write(0x7ffff7df39dd, 'f\x0fs\xfa\x03')
         cpu.XMM2 = 0x7461636f6c6c6165645f6c645f00636f
         cpu.RIP = 0x7ffff7df39dd
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df39e0],  b'\xfa')
-        self.assertEqual(mem[0x7ffff7df39e1],  b'\x03')
-        self.assertEqual(mem[0x7ffff7df39dd],  b'f')
-        self.assertEqual(mem[0x7ffff7df39de],  b'\x0f')
-        self.assertEqual(mem[0x7ffff7df39df],  b's')
+        self.assertEqual(mem[0x7ffff7df39dd:0x7ffff7df39e2], [b'f',b'\x0f',b's',b'\xfa',b'\x03'])
         self.assertEqual(cpu.XMM2, 148107273809595710738464457560820809728)
         self.assertEqual(cpu.RIP, 140737351989730)
 
@@ -1455,20 +834,12 @@ class CPUTest(unittest.TestCase):
         mem = Memory64()
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df3c60] = b'\xfa'
-        mem[0x7ffff7df3c61] = b'\x01'
-        mem[0x7ffff7df3c5d] = b'f'
-        mem[0x7ffff7df3c5e] = b'\x0f'
-        mem[0x7ffff7df3c5f] = b's'
+        mem.write(0x7ffff7df3c5d, 'f\x0fs\xfa\x01')
         cpu.XMM2 = 0x68252e7568254d00796164666f656d69
         cpu.RIP = 0x7ffff7df3c5d
         cpu.execute()
 
-        self.assertEqual(mem[0x7ffff7df3c60],  b'\xfa')
-        self.assertEqual(mem[0x7ffff7df3c61],  b'\x01')
-        self.assertEqual(mem[0x7ffff7df3c5d],  b'f')
-        self.assertEqual(mem[0x7ffff7df3c5e],  b'\x0f')
-        self.assertEqual(mem[0x7ffff7df3c5f],  b's')
+        self.assertEqual(mem[0x7ffff7df3c5d:0x7ffff7df3c62], [b'f',b'\x0f',b's',b'\xfa',b'\x01'])
         self.assertEqual(cpu.XMM2, 49422662792731052987857949274592340224)
         self.assertEqual(cpu.RIP, 140737351990370)
 
@@ -1482,9 +853,7 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df294e] = b'f'
-        mem[0x7ffff7df294f] = b'\x0f'
-        mem[0x7ffff7df2950] = b'\x16'
+        mem.write(0x7ffff7df294e, 'f\x0f\x16')
         addr = cs.new_bitvec(64)
         cs.add(addr == 0x7ffff7a249d1)
         value = cs.new_bitvec(8)
@@ -1525,8 +894,7 @@ class CPUTest(unittest.TestCase):
         value = cs.new_bitvec(8)
         cs.add(value == 0x0)
         mem[addr] = value
-        mem[0x7ffff7df2951] = b'O'
-        mem[0x7ffff7df2952] = b'\x08'
+        mem.write(0x7ffff7df2951, 'O\x08')
         cpu.XMM1 = cs.new_bitvec(128)
         cs.add(cpu.XMM1 == 0xffffffffffff00ff52505f4342494c47)
         cpu.RDI = cs.new_bitvec(64)
@@ -1580,11 +948,7 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df294e] = b'f'
-        mem[0x7ffff7df294f] = b'\x0f'
-        mem[0x7ffff7df2950] = b'\x16'
-        mem[0x7ffff7df2951] = b'O'
-        mem[0x7ffff7df2952] = b'\x08'
+        mem.write(0x7ffff7df294e, 'f\x0f\x16O\x08')
         addr = cs.new_bitvec(64)
         cs.add(addr == 0x7ffff7a248d6)
         value = cs.new_bitvec(8)
@@ -1678,11 +1042,7 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df2956] = b'V'
-        mem[0x7ffff7df2957] = b'\x08'
-        mem[0x7ffff7df2953] = b'f'
-        mem[0x7ffff7df2954] = b'\x0f'
-        mem[0x7ffff7df2955] = b'\x16'
+        mem.write(0x7ffff7df2953, 'f\x0f\x16V\x08')
         addr = cs.new_bitvec(64)
         cs.add(addr == 0x7ffff7a248d6)
         value = cs.new_bitvec(8)
@@ -1776,11 +1136,7 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df294e] = b'f'
-        mem[0x7ffff7df294f] = b'\x0f'
-        mem[0x7ffff7df2950] = b'\x16'
-        mem[0x7ffff7df2951] = b'O'
-        mem[0x7ffff7df2952] = b'\x08'
+        mem.write(0x7ffff7df294e, 'f\x0f\x16O\x08')
         addr = cs.new_bitvec(64)
         cs.add(addr == 0x7ffff7a248d6)
         value = cs.new_bitvec(8)
@@ -1874,11 +1230,7 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a21000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df294e] = b'f'
-        mem[0x7ffff7df294f] = b'\x0f'
-        mem[0x7ffff7df2950] = b'\x16'
-        mem[0x7ffff7df2951] = b'O'
-        mem[0x7ffff7df2952] = b'\x08'
+        mem.write(0x7ffff7df294e, 'f\x0f\x16O\x08')
         addr = cs.new_bitvec(64)
         cs.add(addr == 0x7ffff7a218da)
         value = cs.new_bitvec(8)
@@ -1972,11 +1324,7 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a20000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df2953] = b'f'
-        mem[0x7ffff7df2954] = b'\x0f'
-        mem[0x7ffff7df2955] = b'\x16'
-        mem[0x7ffff7df2956] = b'V'
-        mem[0x7ffff7df2957] = b'\x08'
+        mem.write(0x7ffff7df2953, 'f\x0f\x16V\x08')
         addr = cs.new_bitvec(64)
         cs.add(addr == 0x7ffff7a20a9b)
         value = cs.new_bitvec(8)
@@ -2070,11 +1418,7 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a23000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df2953] = b'f'
-        mem[0x7ffff7df2954] = b'\x0f'
-        mem[0x7ffff7df2955] = b'\x16'
-        mem[0x7ffff7df2956] = b'V'
-        mem[0x7ffff7df2957] = b'\x08'
+        mem.write(0x7ffff7df2953, 'f\x0f\x16V\x08')
         addr = cs.new_bitvec(64)
         cs.add(addr == 0x7ffff7a232ee)
         value = cs.new_bitvec(8)
@@ -2168,11 +1512,7 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df2956] = b'V'
-        mem[0x7ffff7df2957] = b'\x08'
-        mem[0x7ffff7df2953] = b'f'
-        mem[0x7ffff7df2954] = b'\x0f'
-        mem[0x7ffff7df2955] = b'\x16'
+        mem.write(0x7ffff7df2953, 'f\x0f\x16V\x08')
         addr = cs.new_bitvec(64)
         cs.add(addr == 0x7ffff7a248d6)
         value = cs.new_bitvec(8)
@@ -2266,11 +1606,7 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7dd7000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df294e] = b'f'
-        mem[0x7ffff7df294f] = b'\x0f'
-        mem[0x7ffff7df2950] = b'\x16'
-        mem[0x7ffff7df2951] = b'O'
-        mem[0x7ffff7df2952] = b'\x08'
+        mem.write(0x7ffff7df294e, 'f\x0f\x16O\x08')
         addr = cs.new_bitvec(64)
         cs.add(addr == 0x7ffff7dd7671)
         value = cs.new_bitvec(8)
@@ -2364,11 +1700,7 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df2956] = b'V'
-        mem[0x7ffff7df2957] = b'\x08'
-        mem[0x7ffff7df2953] = b'f'
-        mem[0x7ffff7df2954] = b'\x0f'
-        mem[0x7ffff7df2955] = b'\x16'
+        mem.write(0x7ffff7df2953, 'f\x0f\x16V\x08')
         addr = cs.new_bitvec(64)
         cs.add(addr == 0x7ffff7a248d6)
         value = cs.new_bitvec(8)
@@ -2462,8 +1794,7 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7dd7000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df294e] = b'f'
-        mem[0x7ffff7df294f] = b'\x0f'
+        mem.write(0x7ffff7df294e, 'f\x0f')
         addr = cs.new_bitvec(64)
         cs.add(addr == 0x7ffff7dd7750)
         value = cs.new_bitvec(8)
@@ -2504,9 +1835,7 @@ class CPUTest(unittest.TestCase):
         value = cs.new_bitvec(8)
         cs.add(value == 0x0)
         mem[addr] = value
-        mem[0x7ffff7df2950] = b'\x16'
-        mem[0x7ffff7df2951] = b'O'
-        mem[0x7ffff7df2952] = b'\x08'
+        mem.write(0x7ffff7df2950, '\x16O\x08')
         cpu.XMM1 = cs.new_bitvec(128)
         cs.add(cpu.XMM1 == 0x6c675f646c74725f)
         cpu.RDI = cs.new_bitvec(64)
@@ -2560,11 +1889,7 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df294e] = b'f'
-        mem[0x7ffff7df294f] = b'\x0f'
-        mem[0x7ffff7df2950] = b'\x16'
-        mem[0x7ffff7df2951] = b'O'
-        mem[0x7ffff7df2952] = b'\x08'
+        mem.write(0x7ffff7df294e, 'f\x0f\x16O\x08')
         addr = cs.new_bitvec(64)
         cs.add(addr == 0x7ffff7a248d6)
         value = cs.new_bitvec(8)
@@ -2658,11 +1983,7 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df294e] = b'f'
-        mem[0x7ffff7df294f] = b'\x0f'
-        mem[0x7ffff7df2950] = b'\x16'
-        mem[0x7ffff7df2951] = b'O'
-        mem[0x7ffff7df2952] = b'\x08'
+        mem.write(0x7ffff7df294e, 'f\x0f\x16O\x08')
         addr = cs.new_bitvec(64)
         cs.add(addr == 0x7ffff7a248b7)
         value = cs.new_bitvec(8)
@@ -2756,11 +2077,7 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7b99000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df2953] = b'f'
-        mem[0x7ffff7df2954] = b'\x0f'
-        mem[0x7ffff7df2955] = b'\x16'
-        mem[0x7ffff7df2956] = b'V'
-        mem[0x7ffff7df2957] = b'\x08'
+        mem.write(0x7ffff7df2953, 'f\x0f\x16V\x08')
         addr = cs.new_bitvec(64)
         cs.add(addr == 0x7ffff7b99a30)
         value = cs.new_bitvec(8)
@@ -2854,11 +2171,7 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df294e] = b'f'
-        mem[0x7ffff7df294f] = b'\x0f'
-        mem[0x7ffff7df2950] = b'\x16'
-        mem[0x7ffff7df2951] = b'O'
-        mem[0x7ffff7df2952] = b'\x08'
+        mem.write(0x7ffff7df294e, 'f\x0f\x16O\x08')
         addr = cs.new_bitvec(64)
         cs.add(addr == 0x7ffff7a248d6)
         value = cs.new_bitvec(8)
@@ -2952,11 +2265,7 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df2956] = b'V'
-        mem[0x7ffff7df2957] = b'\x08'
-        mem[0x7ffff7df2953] = b'f'
-        mem[0x7ffff7df2954] = b'\x0f'
-        mem[0x7ffff7df2955] = b'\x16'
+        mem.write(0x7ffff7df2953, 'f\x0f\x16V\x08')
         addr = cs.new_bitvec(64)
         cs.add(addr == 0x7ffff7a248d6)
         value = cs.new_bitvec(8)
@@ -3065,7 +2374,7 @@ class CPUTest(unittest.TestCase):
         value = cs.new_bitvec(8)
         cs.add(value == 0x0)
         mem[addr] = value
-        mem[0x7ffff7df294f] = b'\x0f'
+        mem.write(0x7ffff7df294f, '\x0f')
         addr = cs.new_bitvec(64)
         cs.add(addr == 0x7ffff7ffa310)
         value = cs.new_bitvec(8)
@@ -3076,20 +2385,19 @@ class CPUTest(unittest.TestCase):
         value = cs.new_bitvec(8)
         cs.add(value == 0x0)
         mem[addr] = value
-        mem[0x7ffff7df2952] = b'\x08'
+        mem.write(0x7ffff7df2952, '\x08')
         addr = cs.new_bitvec(64)
         cs.add(addr == 0x7ffff7ffa313)
         value = cs.new_bitvec(8)
         cs.add(value == 0x0)
         mem[addr] = value
-        mem[0x7ffff7df294e] = b'f'
+        mem.write(0x7ffff7df294e, 'f')
         addr = cs.new_bitvec(64)
         cs.add(addr == 0x7ffff7ffa30f)
         value = cs.new_bitvec(8)
         cs.add(value == 0x0)
         mem[addr] = value
-        mem[0x7ffff7df2950] = b'\x16'
-        mem[0x7ffff7df2951] = b'O'
+        mem.write(0x7ffff7df2950, '\x16O')
         addr = cs.new_bitvec(64)
         cs.add(addr == 0x7ffff7ffa312)
         value = cs.new_bitvec(8)
@@ -3148,11 +2456,7 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df2956] = b'V'
-        mem[0x7ffff7df2957] = b'\x08'
-        mem[0x7ffff7df2953] = b'f'
-        mem[0x7ffff7df2954] = b'\x0f'
-        mem[0x7ffff7df2955] = b'\x16'
+        mem.write(0x7ffff7df2953, 'f\x0f\x16V\x08')
         addr = cs.new_bitvec(64)
         cs.add(addr == 0x7ffff7a248d6)
         value = cs.new_bitvec(8)
@@ -3246,11 +2550,7 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a24000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df2956] = b'V'
-        mem[0x7ffff7df2957] = b'\x08'
-        mem[0x7ffff7df2953] = b'f'
-        mem[0x7ffff7df2954] = b'\x0f'
-        mem[0x7ffff7df2955] = b'\x16'
+        mem.write(0x7ffff7df2953, 'f\x0f\x16V\x08')
         addr = cs.new_bitvec(64)
         cs.add(addr == 0x7ffff7a248d6)
         value = cs.new_bitvec(8)
@@ -3344,11 +2644,7 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7ff7000, 0x1000, 'rwx')
-        mem[0x7ffff7df2953] = b'f'
-        mem[0x7ffff7df2954] = b'\x0f'
-        mem[0x7ffff7df2955] = b'\x16'
-        mem[0x7ffff7df2956] = b'V'
-        mem[0x7ffff7df2957] = b'\x08'
+        mem.write(0x7ffff7df2953, 'f\x0f\x16V\x08')
         addr = cs.new_bitvec(64)
         cs.add(addr == 0x7ffff7ff74a8)
         value = cs.new_bitvec(8)
@@ -3442,11 +2738,7 @@ class CPUTest(unittest.TestCase):
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7a21000, 0x1000, 'rwx')
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df294e] = b'f'
-        mem[0x7ffff7df294f] = b'\x0f'
-        mem[0x7ffff7df2950] = b'\x16'
-        mem[0x7ffff7df2951] = b'O'
-        mem[0x7ffff7df2952] = b'\x08'
+        mem.write(0x7ffff7df294e, 'f\x0f\x16O\x08')
         addr = cs.new_bitvec(64)
         cs.add(addr == 0x7ffff7a21315)
         value = cs.new_bitvec(8)
@@ -3539,11 +2831,7 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df3470] = b'f'
-        mem[0x7ffff7df3471] = b'\x0f'
-        mem[0x7ffff7df3472] = b's'
-        mem[0x7ffff7df3473] = b'\xfa'
-        mem[0x7ffff7df3474] = b'\x07'
+        mem.write(0x7ffff7df3470, 'f\x0fs\xfa\x07')
         cpu.XMM2 = cs.new_bitvec(128)
         cs.add(cpu.XMM2 == 0x1)
         cpu.RIP = 0x7ffff7df3470
@@ -3585,11 +2873,7 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df3470] = b'f'
-        mem[0x7ffff7df3471] = b'\x0f'
-        mem[0x7ffff7df3472] = b's'
-        mem[0x7ffff7df3473] = b'\xfa'
-        mem[0x7ffff7df3474] = b'\x07'
+        mem.write(0x7ffff7df3470, 'f\x0fs\xfa\x07')
         cpu.XMM2 = cs.new_bitvec(128)
         cs.add(cpu.XMM2 == 0x6972705f5f00362e6f732e6362696c00)
         cpu.RIP = 0x7ffff7df3470
@@ -3631,11 +2915,7 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df3470] = b'f'
-        mem[0x7ffff7df3471] = b'\x0f'
-        mem[0x7ffff7df3472] = b's'
-        mem[0x7ffff7df3473] = b'\xfa'
-        mem[0x7ffff7df3474] = b'\x07'
+        mem.write(0x7ffff7df3470, 'f\x0fs\xfa\x07')
         cpu.XMM2 = cs.new_bitvec(128)
         cs.add(cpu.XMM2 == 0x6972705f5f00362e6f732e6362696c00)
         cpu.RIP = 0x7ffff7df3470
@@ -3677,11 +2957,7 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df3470] = b'f'
-        mem[0x7ffff7df3471] = b'\x0f'
-        mem[0x7ffff7df3472] = b's'
-        mem[0x7ffff7df3473] = b'\xfa'
-        mem[0x7ffff7df3474] = b'\x07'
+        mem.write(0x7ffff7df3470, 'f\x0fs\xfa\x07')
         cpu.XMM2 = cs.new_bitvec(128)
         cs.add(cpu.XMM2 == 0x6972705f5f00362e6f732e6362696c00)
         cpu.RIP = 0x7ffff7df3470
@@ -3723,11 +2999,7 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df3470] = b'f'
-        mem[0x7ffff7df3471] = b'\x0f'
-        mem[0x7ffff7df3472] = b's'
-        mem[0x7ffff7df3473] = b'\xfa'
-        mem[0x7ffff7df3474] = b'\x07'
+        mem.write(0x7ffff7df3470, 'f\x0fs\xfa\x07')
         cpu.XMM2 = cs.new_bitvec(128)
         cs.add(cpu.XMM2 == 0x1)
         cpu.RIP = 0x7ffff7df3470
@@ -3769,11 +3041,7 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df3470] = b'f'
-        mem[0x7ffff7df3471] = b'\x0f'
-        mem[0x7ffff7df3472] = b's'
-        mem[0x7ffff7df3473] = b'\xfa'
-        mem[0x7ffff7df3474] = b'\x07'
+        mem.write(0x7ffff7df3470, 'f\x0fs\xfa\x07')
         cpu.XMM2 = cs.new_bitvec(128)
         cs.add(cpu.XMM2 == 0x6972705f5f00362e6f732e6362696c00)
         cpu.RIP = 0x7ffff7df3470
@@ -3815,11 +3083,7 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df38a0] = b'\xfa'
-        mem[0x7ffff7df38a1] = b'\x04'
-        mem[0x7ffff7df389d] = b'f'
-        mem[0x7ffff7df389e] = b'\x0f'
-        mem[0x7ffff7df389f] = b's'
+        mem.write(0x7ffff7df389d, 'f\x0fs\xfa\x04')
         cpu.XMM2 = cs.new_bitvec(128)
         cs.add(cpu.XMM2 == 0x3000000020002000000352e322e32)
         cpu.RIP = 0x7ffff7df389d
@@ -3861,11 +3125,7 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df3470] = b'f'
-        mem[0x7ffff7df3471] = b'\x0f'
-        mem[0x7ffff7df3472] = b's'
-        mem[0x7ffff7df3473] = b'\xfa'
-        mem[0x7ffff7df3474] = b'\x07'
+        mem.write(0x7ffff7df3470, 'f\x0fs\xfa\x07')
         cpu.XMM2 = cs.new_bitvec(128)
         cs.add(cpu.XMM2 == 0x6972705f5f00362e6f732e6362696c00)
         cpu.RIP = 0x7ffff7df3470
@@ -3907,11 +3167,7 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df39e0] = b'\xfa'
-        mem[0x7ffff7df39e1] = b'\x03'
-        mem[0x7ffff7df39dd] = b'f'
-        mem[0x7ffff7df39de] = b'\x0f'
-        mem[0x7ffff7df39df] = b's'
+        mem.write(0x7ffff7df39dd, 'f\x0fs\xfa\x03')
         cpu.XMM2 = cs.new_bitvec(128)
         cs.add(cpu.XMM2 == 0x494c4700352e322e325f4342494c4700)
         cpu.RIP = 0x7ffff7df39dd
@@ -3953,11 +3209,7 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df38a0] = b'\xfa'
-        mem[0x7ffff7df38a1] = b'\x04'
-        mem[0x7ffff7df389d] = b'f'
-        mem[0x7ffff7df389e] = b'\x0f'
-        mem[0x7ffff7df389f] = b's'
+        mem.write(0x7ffff7df389d, 'f\x0fs\xfa\x04')
         cpu.XMM2 = cs.new_bitvec(128)
         cs.add(cpu.XMM2 == 0x665f4f495f006f6c6c657466006b6863)
         cpu.RIP = 0x7ffff7df389d
@@ -3999,11 +3251,7 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df3470] = b'f'
-        mem[0x7ffff7df3471] = b'\x0f'
-        mem[0x7ffff7df3472] = b's'
-        mem[0x7ffff7df3473] = b'\xfa'
-        mem[0x7ffff7df3474] = b'\x07'
+        mem.write(0x7ffff7df3470, 'f\x0fs\xfa\x07')
         cpu.XMM2 = cs.new_bitvec(128)
         cs.add(cpu.XMM2 == 0x1)
         cpu.RIP = 0x7ffff7df3470
@@ -4045,11 +3293,7 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df2000, 0x1000, 'rwx')
-        mem[0x7ffff7df2f70] = b'f'
-        mem[0x7ffff7df2f71] = b'\x0f'
-        mem[0x7ffff7df2f72] = b's'
-        mem[0x7ffff7df2f73] = b'\xfa'
-        mem[0x7ffff7df2f74] = b'\x0b'
+        mem.write(0x7ffff7df2f70, 'f\x0fs\xfa\x0b')
         cpu.XMM2 = cs.new_bitvec(128)
         cs.add(cpu.XMM2 == 0x6972705f5f00362e6f732e6362696c00)
         cpu.RIP = 0x7ffff7df2f70
@@ -4091,11 +3335,7 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df3970] = b'f'
-        mem[0x7ffff7df3971] = b'\x0f'
-        mem[0x7ffff7df3972] = b's'
-        mem[0x7ffff7df3973] = b'\xfa'
-        mem[0x7ffff7df3974] = b'\x03'
+        mem.write(0x7ffff7df3970, 'f\x0fs\xfa\x03')
         cpu.XMM2 = cs.new_bitvec(128)
         cs.add(cpu.XMM2 == 0x322e6f732e34362d3638782d78756e69)
         cpu.RIP = 0x7ffff7df3970
@@ -4137,11 +3377,7 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df3830] = b'f'
-        mem[0x7ffff7df3831] = b'\x0f'
-        mem[0x7ffff7df3832] = b's'
-        mem[0x7ffff7df3833] = b'\xfa'
-        mem[0x7ffff7df3834] = b'\x04'
+        mem.write(0x7ffff7df3830, 'f\x0fs\xfa\x04')
         cpu.XMM2 = cs.new_bitvec(128)
         cs.add(cpu.XMM2 == 0x5f4342494c4700342e332e325f434249)
         cpu.RIP = 0x7ffff7df3830
@@ -4183,11 +3419,7 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df3ab0] = b'f'
-        mem[0x7ffff7df3ab1] = b'\x0f'
-        mem[0x7ffff7df3ab2] = b's'
-        mem[0x7ffff7df3ab3] = b'\xfa'
-        mem[0x7ffff7df3ab4] = b'\x02'
+        mem.write(0x7ffff7df3ab0, 'f\x0fs\xfa\x02')
         cpu.XMM2 = cs.new_bitvec(128)
         cs.add(cpu.XMM2 == 0x63007463656a626f5f726f665f6f7364)
         cpu.RIP = 0x7ffff7df3ab0
@@ -4229,11 +3461,7 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df3470] = b'f'
-        mem[0x7ffff7df3471] = b'\x0f'
-        mem[0x7ffff7df3472] = b's'
-        mem[0x7ffff7df3473] = b'\xfa'
-        mem[0x7ffff7df3474] = b'\x07'
+        mem.write(0x7ffff7df3470, 'f\x0fs\xfa\x07')
         cpu.XMM2 = cs.new_bitvec(128)
         cs.add(cpu.XMM2 == 0x6972705f5f00362e6f732e6362696c00)
         cpu.RIP = 0x7ffff7df3470
@@ -4275,11 +3503,7 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df3470] = b'f'
-        mem[0x7ffff7df3471] = b'\x0f'
-        mem[0x7ffff7df3472] = b's'
-        mem[0x7ffff7df3473] = b'\xfa'
-        mem[0x7ffff7df3474] = b'\x07'
+        mem.write(0x7ffff7df3470, 'f\x0fs\xfa\x07')
         cpu.XMM2 = cs.new_bitvec(128)
         cs.add(cpu.XMM2 == 0x6972705f5f00362e6f732e6362696c00)
         cpu.RIP = 0x7ffff7df3470
@@ -4321,11 +3545,7 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df38a0] = b'\xfa'
-        mem[0x7ffff7df38a1] = b'\x04'
-        mem[0x7ffff7df389d] = b'f'
-        mem[0x7ffff7df389e] = b'\x0f'
-        mem[0x7ffff7df389f] = b's'
+        mem.write(0x7ffff7df389d, 'f\x0fs\xfa\x04')
         cpu.XMM2 = cs.new_bitvec(128)
         cs.add(cpu.XMM2 == 0x3000000020002000000352e322e32)
         cpu.RIP = 0x7ffff7df389d
@@ -4367,11 +3587,7 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df3470] = b'f'
-        mem[0x7ffff7df3471] = b'\x0f'
-        mem[0x7ffff7df3472] = b's'
-        mem[0x7ffff7df3473] = b'\xfa'
-        mem[0x7ffff7df3474] = b'\x07'
+        mem.write(0x7ffff7df3470, 'f\x0fs\xfa\x07')
         cpu.XMM2 = cs.new_bitvec(128)
         cs.add(cpu.XMM2 == 0x1)
         cpu.RIP = 0x7ffff7df3470
@@ -4413,11 +3629,7 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df39e0] = b'\xfa'
-        mem[0x7ffff7df39e1] = b'\x03'
-        mem[0x7ffff7df39dd] = b'f'
-        mem[0x7ffff7df39de] = b'\x0f'
-        mem[0x7ffff7df39df] = b's'
+        mem.write(0x7ffff7df39dd, 'f\x0fs\xfa\x03')
         cpu.XMM2 = cs.new_bitvec(128)
         cs.add(cpu.XMM2 == 0x7461636f6c6c6165645f6c645f00636f)
         cpu.RIP = 0x7ffff7df39dd
@@ -4459,11 +3671,7 @@ class CPUTest(unittest.TestCase):
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
         mem.mmap(0x7ffff7df3000, 0x1000, 'rwx')
-        mem[0x7ffff7df3c60] = b'\xfa'
-        mem[0x7ffff7df3c61] = b'\x01'
-        mem[0x7ffff7df3c5d] = b'f'
-        mem[0x7ffff7df3c5e] = b'\x0f'
-        mem[0x7ffff7df3c5f] = b's'
+        mem.write(0x7ffff7df3c5d, 'f\x0fs\xfa\x01')
         cpu.XMM2 = cs.new_bitvec(128)
         cs.add(cpu.XMM2 == 0x68252e7568254d00796164666f656d69)
         cpu.RIP = 0x7ffff7df3c5d

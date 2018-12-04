@@ -1,4 +1,5 @@
-from manticore.ethereum import ManticoreEVM, evm, Operators
+from manticore.ethereum import ManticoreEVM
+
 ################ Script #######################
 
 m = ManticoreEVM()
