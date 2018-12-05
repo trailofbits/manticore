@@ -30,7 +30,7 @@ def profile(program, sort='cumulative'):
 if __name__ == "__main__":
     if len(argv) != 2:
         print(f"usage: python {argv[0]} PROGRAM [SORT_METHOD]")
-        print('SORT_METHOD default is cumulative')
+        print('The default SORT_METHOD is cumulative')
         print('SORT_METHODs can be seen on https://docs.python.org/3/library/profile.html#pstats.Stats.sort_stats')
         exit()
 
