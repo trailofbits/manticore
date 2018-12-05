@@ -56,7 +56,7 @@ setup(
         # unit tests to match before we can upgrade pyevmasm
         'pyevmasm==0.1.0',
         'ply',
-        'prettyable'
+        'prettytable'
     ] + rtd_dependent_deps(),
     dependency_links=[
         'https://github.com/aquynh/capstone/archive/next.zip#egg=capstone-4&subdirectory=bindings/python',
