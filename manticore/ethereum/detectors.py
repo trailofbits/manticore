@@ -31,7 +31,7 @@ class Detector(Plugin):
             return global_findings
 
     def add_finding(self, state, address, pc, finding, at_init, constraint=True):
-        '''
+        """
         Logs a finding at specified contract and assembler line.
         :param state: current state
         :param address: contract address of the finding
@@ -39,7 +39,7 @@ class Detector(Plugin):
         :param at_init: true if executing the constructor
         :param finding: textual description of the finding
         :param constraint: finding is considered reproducible only when constraint is True
-        '''
+        """
 
         if isinstance(pc, Constant):
             pc = pc.value
@@ -52,12 +52,12 @@ class Detector(Plugin):
         logger.warning(finding)
 
     def add_finding_here(self, state, finding, constraint=True):
-        '''
+        """
         Logs a finding in current contract and assembler line.
         :param state: current state
         :param finding: textual description of the finding
         :param constraint: finding is considered reproducible only when constraint is True
-        '''
+        """
         address = state.platform.current_vm.address
         pc = state.platform.current_vm.pc
         if isinstance(pc, Constant):
@@ -68,14 +68,14 @@ class Detector(Plugin):
         self.add_finding(state, address, pc, finding, at_init, constraint)
 
     def _save_current_location(self, state, finding, condition=True):
-        '''
+        """
         Save current location in the internal locations list and returns a textual id for it.
         This is used to save locations that could later be promoted to a finding if other conditions hold
         See _get_location()
         :param state: current state
         :param finding: textual description of the finding
         :param condition: general purpose constraint
-        '''
+        """
         address = state.platform.current_vm.address
         pc = state.platform.current_vm.pc
         at_init = state.platform.current_transaction.sort == 'CREATE'
@@ -85,9 +85,10 @@ class Detector(Plugin):
         return hash_id
 
     def _get_location(self, state, hash_id):
-        ''' Get previously saved location
-            A location is composed of: address, pc, finding, at_init, condition
-        '''
+        """
+        Get previously saved location
+        A location is composed of: address, pc, finding, at_init, condition
+        """
         return state.context.setdefault('{:s}.locations'.format(self.name), {})[hash_id]
 
     def _get_src(self, address, pc):
@@ -95,13 +96,14 @@ class Detector(Plugin):
 
 
 class DetectEnvInstruction(Detector):
-    ''' Detect the usage of instructions that query environmental/block information:
-        BLOCKHASH, COINBASE, TIMESTAMP, NUMBER, DIFFICULTY, GASLIMIT, ORIGIN, GASPRICE
+    """
+    Detect the usage of instructions that query environmental/block information:
+    BLOCKHASH, COINBASE, TIMESTAMP, NUMBER, DIFFICULTY, GASLIMIT, ORIGIN, GASPRICE
 
-        Sometimes environmental information can be manipulated. Contracts should avoid
-        using it. Unless special situations. Notably to programatically detect human transactions
-        `sender == origin`
-    '''
+    Sometimes environmental information can be manipulated. Contracts should avoid
+    using it. Unless special situations. Notably to programatically detect human transactions
+    `sender == origin`
+    """
 
     def will_evm_execute_instruction_callback(self, state, instruction, arguments):
         if instruction.semantics in ('BLOCKHASH', 'COINBASE', 'TIMESTAMP', 'NUMBER', 'DIFFICULTY', 'GASLIMIT', 'ORIGIN', 'GASPRICE'):
@@ -505,12 +507,12 @@ class DetectUnusedRetVal(Detector):
 
 
 class DetectDelegatecall(Detector):
-    '''
-        Detects DELEGATECALLs to controlled addresses and or with controlled function id.
-        This detector finds and reports on any delegatecall instruction any the following propositions are hold:
-            * the destination address can be controlled by the caller
-            * the first 4 bytes of the calldata are controlled by the caller
-    '''
+    """
+    Detects DELEGATECALLs to controlled addresses and or with controlled function id.
+    This detector finds and reports on any delegatecall instruction any the following propositions are hold:
+        * the destination address can be controlled by the caller
+        * the first 4 bytes of the calldata are controlled by the caller
+    """
 
     def will_evm_execute_instruction_callback(self, state, instruction, arguments):
         world = state.platform
@@ -538,7 +540,7 @@ class DetectDelegatecall(Detector):
 
 class DetectUninitializedMemory(Detector):
     """
-        Detects uses of uninitialized memory
+    Detects uses of uninitialized memory
     """
 
     def did_evm_read_memory_callback(self, state, offset, value):
@@ -560,7 +562,7 @@ class DetectUninitializedMemory(Detector):
 
 class DetectUninitializedStorage(Detector):
     """
-        Detects uses of uninitialized storage
+    Detects uses of uninitialized storage
     """
 
     def did_evm_read_storage_callback(self, state, address, offset, value):
@@ -582,7 +584,8 @@ class DetectUninitializedStorage(Detector):
 
 
 class DetectRaceCondition(Detector):
-    """Detects possible transaction race conditions (transaction order dependencies)
+    """
+    Detects possible transaction race conditions (transaction order dependencies)
 
     The RaceCondition detector might not work properly for contracts that have only a fallback function.
     See the detector's implementation and it's `_in_user_func` method for more information.
