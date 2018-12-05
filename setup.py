@@ -55,7 +55,8 @@ setup(
         # In 0.1.1, pyevmasm changed its gas cost calculations, so Manticore will need to update its
         # unit tests to match before we can upgrade pyevmasm
         'pyevmasm==0.1.0',
-        'ply'
+        'ply',
+        'prettyable'
     ] + rtd_dependent_deps(),
     dependency_links=[
         'https://github.com/aquynh/capstone/archive/next.zip#egg=capstone-4&subdirectory=bindings/python',
