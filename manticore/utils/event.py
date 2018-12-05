@@ -1,8 +1,11 @@
+import copy
 import inspect
 import logging
-from weakref import ref, WeakSet, WeakKeyDictionary, WeakValueDictionary
+from itertools import takewhile
+from weakref import WeakKeyDictionary, ref
 
 logger = logging.getLogger(__name__)
+
 
 class EventsGatherMetaclass(type):
     '''
@@ -13,14 +16,13 @@ class EventsGatherMetaclass(type):
         eventful_sub = super(EventsGatherMetaclass, cls).__new__(cls, name, parents, d)
 
         bases = inspect.getmro(parents[0])
-        if len(bases) < 2:
+
+        if name is 'Eventful':
             return eventful_sub
 
-        # bases[-1] is always 'object', bases[-2] is next super class, which
-        # will always be Eventful.
-        eventful_cls = bases[-2]
-        subclasses = bases[:-2]
+        subclasses = takewhile(lambda c: c is not Eventful, bases)
         relevant_classes = [eventful_sub] + list(subclasses)
+
         # Add a class that defines '_published_events' classmethod to a dict for
         # later lookup. Aggregate the events of all subclasses.
         relevant_events = set()
@@ -29,19 +31,23 @@ class EventsGatherMetaclass(type):
             # defined.
             if '_published_events' in sub.__dict__:
                 relevant_events.update(sub._published_events)
-        eventful_cls.__all_events__[eventful_sub] = relevant_events
+        Eventful.__all_events__[eventful_sub] = relevant_events
 
         return eventful_sub
 
-class Eventful(object):
+
+class Eventful(object, metaclass=EventsGatherMetaclass):
     '''
         Abstract class for objects emitting and receiving events
         An eventful object can:
           - publish an event with arbitrary arguments to its subscribers
           - let foreign objects subscribe their methods to events emitted here
           - forward events to/from other eventful objects
+
+        Any time an Eventful object is unserialized:
+          - All previous subscriptions need to be resubscribed
+          - All objects that would previously receive forwarded events need to be reconnected
     '''
-    __metaclass__ = EventsGatherMetaclass
 
     # Maps an Eventful subclass with a set of all the events it publishes.
     __all_events__ = dict()
@@ -49,7 +55,7 @@ class Eventful(object):
     # Set in subclass to advertise the events it plans to publish
     _published_events = set()
 
-    #Event names prefixes
+    # Event names prefixes
     prefixes = ('will_', 'did_', 'on_')
 
     @classmethod
@@ -68,7 +74,7 @@ class Eventful(object):
         self._signals = dict()
         # a set of sink eventful objects (see forward_events_from())
         self._forwards = WeakKeyDictionary()
-        super(Eventful, self).__init__()
+        super().__init__(*args, **kwargs)
 
     def __setstate__(self, state):
         ''' It wont get serialized by design, user is responsible to reconnect'''
@@ -85,7 +91,7 @@ class Eventful(object):
         # This simply removes all callback methods associated with that object
         # Also if no more callbacks at all for an event name it deletes the event entry
         remove = set()
-        for name, bucket in self._signals.iteritems():
+        for name, bucket in self._signals.items():
             if robj in bucket:
                 del bucket[robj]
             if len(bucket) == 0:
@@ -94,20 +100,19 @@ class Eventful(object):
             del self._signals[name]
 
     def _get_signal_bucket(self, name):
-        #Each event name has a bucket of callback methods
-        #A bucket is a dictionary obj -> set(method1, method2...)
-        return self._signals.setdefault(name,  dict())
+        # Each event name has a bucket of callback methods
+        # A bucket is a dictionary obj -> set(method1, method2...)
+        return self._signals.setdefault(name, dict())
 
     def _check_event(self, _name):
         basename = _name
         for prefix in self.prefixes:
             if _name.startswith(prefix):
                 basename = _name[len(prefix):]
-        
+
         cls = self.__class__
         if basename not in cls.__all_events__[cls]:
             logger.warning("Event '%s' not pre-declared. (self: %s)", _name, repr(self))
-
 
     # Wrapper for _publish_impl that also makes sure the event is published from
     # a class that supports it.
@@ -120,13 +125,14 @@ class Eventful(object):
     # shouldn't check the event.
     def _publish_impl(self, _name, *args, **kwargs):
         bucket = self._get_signal_bucket(_name)
-        for robj, methods in bucket.iteritems():
+        for robj, methods in bucket.items():
             for callback in methods:
                 callback(robj(), *args, **kwargs)
 
-        #The include_source flag indicates to prepend the source of the event in
+        # The include_source flag indicates to prepend the source of the event in
         # the callback signature. This is set on forward_events_from/to
-        for sink, include_source in self._forwards.items():
+        items = tuple(self._forwards.items())
+        for sink, include_source in items:
             if include_source:
                 sink._publish_impl(_name, self, *args, **kwargs)
             else:
@@ -137,12 +143,12 @@ class Eventful(object):
             raise TypeError
         obj, callback = method.__self__, method.__func__
         bucket = self._get_signal_bucket(name)
-        robj = ref(obj, self._unref)  #see unref() for explanation
+        robj = ref(obj, self._unref)  # see unref() for explanation
         bucket.setdefault(robj, set()).add(callback)
 
     def forward_events_from(self, source, include_source=False):
         if not isinstance(source, Eventful):
-            raise TypeError
+            raise TypeError(f'{source.__class__.__name__} is not Eventful')
         source.forward_events_to(self, include_source=include_source)
 
     def forward_events_to(self, sink, include_source=False):
@@ -150,3 +156,7 @@ class Eventful(object):
         if not isinstance(sink, Eventful):
             raise TypeError
         self._forwards[sink] = include_source
+
+    def copy_eventful_state(self, new_object: 'Eventful'):
+        new_object._forwards = copy.copy(self._forwards)
+        new_object._signals = copy.copy(self._signals)

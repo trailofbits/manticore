@@ -2,53 +2,33 @@ import os
 import sys
 import glob
 import signal
-import cPickle
 import logging
 import tempfile
-try:
-    import cStringIO as StringIO
-except ImportError:
-    import StringIO
+import io
 
 from contextlib import contextmanager
 from multiprocessing.managers import SyncManager
 
+from ..utils import config
+from ..utils.helpers import PickleSerializer
 from .smtlib import solver
-from .smtlib.solver import SolverException
+from .state import StateBase
 
 logger = logging.getLogger(__name__)
 
-manager = SyncManager()
-manager.start(lambda: signal.signal(signal.SIGINT, signal.SIG_IGN))
+consts = config.get_group('workspace')
+consts.add('prefix', default='mcore_', description="The prefix to use for output and workspace directories")
+consts.add('dir', default='.', description="Location of where to create workspace directories")
+
+_manager = None
 
 
-class StateSerializer(object):
-    """
-    StateSerializer can serialize and deserialize :class:`~manticore.core.state.State` objects from and to
-    stream-like objects.
-    """
-    def __init__(self):
-        pass
-
-    def serialize(self, state, f):
-        raise NotImplementedError
-
-    def deserialize(self, f):
-        raise NotImplementedError
-
-
-class PickleSerializer(StateSerializer):
-    def serialize(self, state, f):
-        try:
-            f.write(cPickle.dumps(state, 2))
-        except RuntimeError:
-            # recursion exceeded. try a slower, iterative solution
-            from ..utils import iterpickle
-            logger.debug("Using iterpickle to dump state")
-            f.write(iterpickle.dumps(state, 2))
-
-    def deserialize(self, f):
-        return cPickle.load(f)
+def manager():
+    global _manager
+    if _manager is None:
+        _manager = SyncManager()
+        _manager.start(lambda: signal.signal(signal.SIGINT, signal.SIG_IGN))
+    return _manager
 
 
 class Store(object):
@@ -65,22 +45,22 @@ class Store(object):
 
     @classmethod
     def fromdescriptor(cls, desc):
-	"""
-	Create a :class:`~manticore.core.workspace.Store` instance depending on the descriptor.
+        """
+        Create a :class:`~manticore.core.workspace.Store` instance depending on the descriptor.
 
-	Valid descriptors:
-	  * fs:<path>
-	  * redis:<hostname>:<port>
-	  * mem:
+        Valid descriptors:
+          * fs:<path>
+          * redis:<hostname>:<port>
+          * mem:
 
-	:param str desc: Store descriptor
-	:return: Store instance
-	"""
+        :param str desc: Store descriptor
+        :return: Store instance
+        """
         type_, uri = ('fs', None) if desc is None else desc.split(':', 1)
         for subclass in cls.__subclasses__():
             if subclass.store_type == type_:
                 return subclass(uri)
-        raise NotImplementedError("Storage type '{0}' not supported.".format(type_))
+        raise NotImplementedError(f"Storage type '{type_}' not supported.")
 
     def __init__(self, uri, state_serialization_method='pickle'):
         assert self.__class__ != Store, "The Store class can not be instantiated (create a subclass)"
@@ -91,7 +71,7 @@ class Store(object):
         if state_serialization_method == 'pickle':
             self._serializer = PickleSerializer()
         else:
-            raise NotImplementedError("Pickling method '{}' not supported.".format(state_serialization_method))
+            raise NotImplementedError(f"Pickling method '{state_serialization_method}' not supported.")
 
     # save_value/load_value and save_stream/load_stream are implemented in terms of each other. A backing store
     # can choose the pair it's best optimized for.
@@ -106,18 +86,18 @@ class Store(object):
         with self.save_stream(key) as s:
             s.write(value)
 
-    def load_value(self, key):
+    def load_value(self, key, binary=False):
         """
         Load an arbitrary value identified by `key`.
 
         :param str key: The key that identifies the value
         :return: The loaded value
         """
-        with self.load_stream(key) as s:
+        with self.load_stream(key, binary=binary) as s:
             return s.read()
 
     @contextmanager
-    def save_stream(self, key, *rest, **kwargs):
+    def save_stream(self, key, binary=False):
         """
         Return a managed file-like object into which the calling code can write
         arbitrary data.
@@ -125,12 +105,12 @@ class Store(object):
         :param key:
         :return: A managed stream-like object
         """
-        s = StringIO.StringIO()
+        s = io.BytesIO() if binary else io.StringIO()
         yield s
         self.save_value(key, s.getvalue())
 
     @contextmanager
-    def load_stream(self, key):
+    def load_stream(self, key, binary=False):
         """
         Return a managed file-like object from which the calling code can read
         previously-serialized data.
@@ -138,18 +118,18 @@ class Store(object):
         :param key:
         :return: A managed stream-like object
         """
-        value = self.load_value(key)
-        yield StringIO.StringIO(value)
+        value = self.load_value(key, binary=binary)
+        yield io.BytesIO(value) if binary else io.StringIO(value)
 
     def save_state(self, state, key):
         """
         Save a state to storage.
 
-        :param manticore.core.State state:
+        :param manticore.core.StateBase state:
         :param str key:
         :return:
         """
-        with self.save_stream(key) as f:
+        with self.save_stream(key, binary=True) as f:
             self._serializer.serialize(state, f)
 
     def load_state(self, key, delete=True):
@@ -157,9 +137,9 @@ class Store(object):
         Load a state from storage.
 
         :param key: key that identifies state
-        :rtype: manticore.core.State
+        :rtype: manticore.core.StateBase
         """
-        with self.load_stream(key) as f:
+        with self.load_stream(key, binary=True) as f:
             state = self._serializer.deserialize(f)
             if delete:
                 self.rm(key)
@@ -193,14 +173,14 @@ class FilesystemStore(Store):
         :param uri: The path to on-disk workspace, or None.
         """
         if not uri:
-            uri = os.path.abspath(tempfile.mkdtemp(prefix="mcore_", dir='./'))
+            uri = os.path.abspath(tempfile.mkdtemp(prefix=consts.prefix, dir=consts.dir))
 
         if os.path.exists(uri):
             assert os.path.isdir(uri), 'Store must be a directory'
         else:
             os.mkdir(uri)
 
-        super(FilesystemStore, self).__init__(uri)
+        super().__init__(uri)
 
     @contextmanager
     def save_stream(self, key, binary=False):
@@ -216,12 +196,13 @@ class FilesystemStore(Store):
             yield f
 
     @contextmanager
-    def load_stream(self, key):
+    def load_stream(self, key, binary=False):
         """
-        :param key:
+        :param str key: name of stream to load
+        :param bool binary: Whether we should treat it as binary
         :return:
         """
-        with open(os.path.join(self.uri, key), 'r') as f:
+        with open(os.path.join(self.uri, key), 'rb' if binary else 'r') as f:
             yield f
 
     def rm(self, key):
@@ -241,29 +222,29 @@ class FilesystemStore(Store):
         :return: list of matched keys
         """
         path = os.path.join(self.uri, glob_str)
-        return map(lambda s: os.path.split(s)[1], glob.glob(path))
+        return [os.path.split(s)[1] for s in glob.glob(path)]
 
 
 class MemoryStore(Store):
     """
     An in-memory (dict) Manticore workspace.
 
-    NOTE: This is mostly used for experimentation and testing funcionality.
+    NOTE: This is mostly used for experimentation and testing functionality.
     Can not be used with multiple workers!
     """
     store_type = 'mem'
 
-    #TODO(yan): Once we get a global config store, check it to make sure
+    # TODO(yan): Once we get a global config store, check it to make sure
     # we're executing in a single-worker or test environment.
 
     def __init__(self, uri=None):
         self._data = {}
-        super(MemoryStore, self).__init__(None)
+        super().__init__(None)
 
     def save_value(self, key, value):
         self._data[key] = value
 
-    def load_value(self, key):
+    def load_value(self, key, binary=False):
         return self._data.get(key)
 
     def rm(self, key):
@@ -271,6 +252,7 @@ class MemoryStore(Store):
 
     def ls(self, glob_str):
         return list(self._data)
+
 
 class RedisStore(Store):
     """
@@ -289,7 +271,7 @@ class RedisStore(Store):
         hostname, port = uri.split(':')
         self._client = redis.StrictRedis(host=hostname, port=int(port), db=0)
 
-        super(RedisStore, self).__init__(uri)
+        super().__init__(uri)
 
     def save_value(self, key, value):
         """
@@ -320,6 +302,7 @@ class RedisStore(Store):
 # This is copied from Executor to not create a dependency on the naming of the lock field
 def sync(f):
     """ Synchronization decorator. """
+
     def new_function(self, *args, **kw):
         self._lock.acquire()
         try:
@@ -334,21 +317,24 @@ class Workspace(object):
     A workspace maintains a list of states to run and assigns them IDs.
     """
 
-    def __init__(self, lock, desc=None):
-        self._store = Store.fromdescriptor(desc)
+    def __init__(self, lock, store_or_desc=None):
+        if isinstance(store_or_desc, Store):
+            self._store = store_or_desc
+        else:
+            self._store = Store.fromdescriptor(store_or_desc)
         self._serializer = PickleSerializer()
-        self._last_id = manager.Value('i', 0)
+        self._last_id = manager().Value('i', 0)
         self._lock = lock
         self._prefix = 'state_'
         self._suffix = '.pkl'
 
     def try_loading_workspace(self):
-        state_names = self._store.ls('{}*'.format(self._prefix))
+        state_names = self._store.ls(f'{self._prefix}*')
 
         def get_state_id(name):
             return int(name[len(self._prefix):-len(self._suffix)], 16)
 
-        state_ids = map(get_state_id, state_names)
+        state_ids = list(map(get_state_id, state_names))
 
         if not state_ids:
             return []
@@ -376,19 +362,33 @@ class Workspace(object):
         :return: The deserialized state
         :rtype: State
         """
-        return self._store.load_state('{}{:08x}{}'.format(self._prefix, state_id, self._suffix), delete=delete)
+        return self._store.load_state(f'{self._prefix}{state_id:08x}{self._suffix}', delete=delete)
 
-    def save_state(self, state):
+    def save_state(self, state, state_id=None):
         """
         Save a state to storage, return identifier.
 
         :param state: The state to save
+        :param int state_id: If not None force the state id potentially overwriting old states
         :return: New state id
         :rtype: int
         """
-        id_ = self._get_id()
-        self._store.save_state(state, '{}{:08x}{}'.format(self._prefix, id_, self._suffix))
-        return id_
+        assert isinstance(state, StateBase)
+        if state_id is None:
+            state_id = self._get_id()
+        else:
+            self.rm_state(state_id)
+
+        self._store.save_state(state, f'{self._prefix}{state_id:08x}{self._suffix}')
+        return state_id
+
+    def rm_state(self, state_id):
+        """
+        Remove a state from storage identified by `state_id`.
+
+        :param state_id: The state reference of what to load
+        """
+        return self._store.rm(f'{self._prefix}{state_id:08x}{self._suffix}')
 
 
 class ManticoreOutput(object):
@@ -399,6 +399,7 @@ class ManticoreOutput(object):
     Invoked only from :class:`manticore.Manticore` from a single parent process, so
     locking is not required.
     """
+
     def __init__(self, desc=None):
         """
         Create an object capable of producing Manticore output.
@@ -409,12 +410,29 @@ class ManticoreOutput(object):
         self._descriptor = desc
         self._store = Store.fromdescriptor(desc)
         self._last_id = 0
-        self._id_gen = manager.Value('i', self._last_id)
-        self._lock = manager.Condition(manager.RLock())
+        self._id_gen = manager().Value('i', self._last_id)
+        self._lock = manager().Condition(manager().RLock())
+
+    def testcase(self, prefix='test'):
+        class Testcase(object):
+            def __init__(self, workspace, prefix):
+                self._num = workspace._increment_id()
+                self._prefix = prefix
+                self._ws = workspace
+
+            @property
+            def num(self):
+                return self._num
+
+            def open_stream(self, suffix='', binary=False):
+                stream_name = f'{self._prefix}_{self._num:08x}.{suffix}'
+                return self._ws.save_stream(stream_name, binary=binary)
+
+        return Testcase(self, prefix)
 
     @property
-    def uri(self):
-        return self._store.uri
+    def store(self):
+        return self._store
 
     @property
     def descriptor(self):
@@ -427,7 +445,7 @@ class ManticoreOutput(object):
         :rtype: str
         """
         if self._descriptor is None:
-            self._descriptor = '{}:{}'.format(self._store.store_type, self._store.uri)
+            self._descriptor = f'{self._store.store_type}:{self._store.uri}'
 
         return self._descriptor
 
@@ -435,10 +453,26 @@ class ManticoreOutput(object):
     def _increment_id(self):
         self._last_id = self._id_gen.value
         self._id_gen.value += 1
+        return self._last_id
 
     def _named_key(self, suffix):
-        return '{}_{:08x}.{}'.format(self._named_key_prefix, self._last_id, suffix)
+        return f'{self._named_key_prefix}_{self._last_id:08x}.{suffix}'
 
+    def save_stream(self, key, *rest, **kwargs):
+        return self._store.save_stream(key, *rest, **kwargs)
+
+    @contextmanager
+    def _named_stream(self, name, binary=False):
+        """
+        Create an indexed output stream i.e. 'test_00000001.name'
+
+        :param name: Identifier for the stream
+        :return: A context-managed stream-like object
+        """
+        with self._store.save_stream(self._named_key(name), binary=binary) as s:
+            yield s
+
+    #Remove/move ...
     def save_testcase(self, state, prefix, message=''):
         """
         Save the environment from `state` to storage. Return a state id
@@ -452,36 +486,26 @@ class ManticoreOutput(object):
         self._named_key_prefix = prefix
         self._increment_id()
 
+        #FIXME this should not be here. Each object must be responsible of
+        #formatting its own output
         self.save_summary(state, message)
         self.save_trace(state)
         self.save_constraints(state)
         self.save_input_symbols(state)
 
         for stream_name, data in state.platform.generate_workspace_files().items():
-            with self._named_stream(stream_name) as stream:
+            with self._named_stream(stream_name, binary=True) as stream:
+                if isinstance(data, str):
+                    data = data.encode()
                 stream.write(data)
 
         self._store.save_state(state, self._named_key('pkl'))
         return self._last_id
 
-    def save_stream(self, key, *rest, **kwargs):
-        return self._store.save_stream(key, *rest, **kwargs)
-
-    @contextmanager
-    def _named_stream(self, name):
-        """
-        Create an indexed output stream i.e. 'test_00000001.name'
-
-        :param name: Identifier for the stream
-        :return: A context-managed stream-like object
-        """
-        with self._store.save_stream(self._named_key(name)) as s:
-            yield s
-
     def save_summary(self, state, message):
         with self._named_stream('messages') as summary:
-            summary.write("Command line:\n  '{}'\n" .format(' '.join(sys.argv)))
-            summary.write('Status:\n  {}\n\n'.format(message))
+            summary.write(f"Command line:\n  '{' '.join(sys.argv)}'\n")
+            summary.write(f'Status:\n  {message}\n\n')
 
             # FIXME(mark) This is a temporary hack for EVM. We need to sufficiently
             # abstract the below code to work on many platforms, not just Linux. Then
@@ -495,18 +519,17 @@ class ManticoreOutput(object):
             memories = set()
             for cpu in filter(None, state.platform.procs):
                 idx = state.platform.procs.index(cpu)
-                summary.write("================ PROC: %02d ================\n" % idx)
+                summary.write(f"================ PROC: {idx:02d} ================\n")
                 summary.write("Memory:\n")
                 if hash(cpu.memory) not in memories:
                     summary.write(str(cpu.memory).replace('\n', '\n  '))
                     memories.add(hash(cpu.memory))
 
-                summary.write("CPU:\n{}".format(cpu))
+                summary.write(f"CPU:\n{cpu}")
 
                 if hasattr(cpu, "instruction") and cpu.instruction is not None:
                     i = cpu.instruction
-                    summary.write("  Instruction: 0x%x\t(%s %s)\n" % (
-                        i.address, i.mnemonic, i.op_str))
+                    summary.write(f"  Instruction: 0x{i.address:x}\t{i.mnemonic:s} {i.op_str:s})\n")
                 else:
                     summary.write("  Instruction: {symbolic}\n")
 
@@ -514,8 +537,8 @@ class ManticoreOutput(object):
         with self._named_stream('trace') as f:
             if 'trace' not in state.context:
                 return
-            for pc in state.context['trace']:
-                f.write('0x{:08x}\n'.format(pc))
+            for entry in state.context['trace']:
+                f.write(f'0x{entry:x}\n')
 
     def save_constraints(self, state):
         # XXX(yan): We want to conditionally enable this check
@@ -525,34 +548,7 @@ class ManticoreOutput(object):
             f.write(str(state.constraints))
 
     def save_input_symbols(self, state):
-        with self._named_stream('txt') as f:
+        with self._named_stream('input') as f:
             for symbol in state.input_symbols:
                 buf = solver.get_value(state.constraints, symbol)
-                f.write('%s: %s\n' % (symbol.name, repr(buf)))
-
-    def save_syscall_trace(self, state):
-        with self._named_stream('syscalls') as f:
-            f.write(repr(state.platform.syscall_trace))
-
-    def save_fds(self, state):
-        def solve_to_fd(data, fd):
-            try:
-                for c in data:
-                    fd.write(chr(solver.get_value(state.constraints, c)))
-            except SolverException:
-                fd.write('{SolverException}')
-
-        with self._named_stream('stdout') as _out:
-            with self._named_stream('stderr') as _err:
-                with self._named_stream('stdin') as _in:
-                    with self._named_stream('net') as _net:
-                        for name, fd, data in state.platform.syscall_trace:
-                            if name in ('_transmit', '_write'):
-                                if fd == 1:
-                                    solve_to_fd(data, _out)
-                                elif fd == 2:
-                                    solve_to_fd(data, _err)
-                            if name in ('_recv'):
-                                solve_to_fd(data, _net)
-                            if name in ('_receive', '_read') and fd == 0:
-                                solve_to_fd(data, _in)
+                f.write(f'{symbol.name}: {buf!r}\n')

@@ -25,7 +25,7 @@ response if you ask in our [chat room](https://empireslacking.herokuapp.com/)
 ## Code
 
 Manticore uses the pull request contribution model. Please make an account on
-github, fork this repo, and submit code contributions via pull request. For
+Github, fork this repo, and submit code contributions via pull request. For
 more documentation, look [here](https://guides.github.com/activities/forking/).
 
 Some pull request guidelines:
@@ -38,6 +38,9 @@ Some pull request guidelines:
 - Fill out the pull request description with a summary of what your patch does,
   key changes that have been made, and any further points of discussion, if
   applicable.
+- Title your pull request with a brief description of what it's changing.
+  "Fixes #123" is a good comment to add to the description, but makes for an
+  unclear title on its own.
 
 ### Development Environment
 

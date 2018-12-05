@@ -1,3 +1,0 @@
-How to run the test:
-
-python SymbolicExecutor/main.py --offset 0 --workspace sbd --log sbd/output.log --buffer "EBP-1" --size "1" tests/simple_bad_deref/simple_bad_deref.dmp

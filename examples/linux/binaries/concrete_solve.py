@@ -32,4 +32,4 @@ m.verbosity = 0
 procs = 1
 
 m.run(procs)
-print m.context['solution']
+print(m.context['solution'])

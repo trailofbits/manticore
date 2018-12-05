@@ -1,7 +1,7 @@
 import logging
 import inspect
 
-from ..core.memory import MemoryException, FileMap, AnonMap
+from ..native.memory import MemoryException, FileMap, AnonMap
 from ..core.smtlib import Operators, solver
 
 from .helpers import issymbolic
@@ -18,7 +18,7 @@ from capstone.x86 import *
 
 import time
 
-logger = logging.getLogger("EMULATOR")
+logger = logging.getLogger(__name__)
 
 class ConcreteUnicornEmulator(object):
     '''
@@ -39,9 +39,9 @@ class ConcreteUnicornEmulator(object):
         cpu.subscribe('did_set_descriptor', self.update_segment)
         cpu.subscribe('will_execute_instruction', self.pre_execute_callback)
         cpu.subscribe('did_execute_instruction', self.post_execute_callback)
-        
+
         self.reset()
-        
+
         # Keep track of all memory mappings. We start with just the text section
         self.mem_map = {}
         for m in cpu.memory.maps:
@@ -101,7 +101,7 @@ class ConcreteUnicornEmulator(object):
 
         for index, m in enumerate(self.mem_map):
             size = self.mem_map[m][0]
-            
+
             start_time = time.time()
             map_bytes = self._cpu._raw_read(m,size)
             logger.info("Reading %s kb map at 0x%02x took %s seconds", size / 1024, m, time.time() - start_time)
@@ -110,24 +110,33 @@ class ConcreteUnicornEmulator(object):
         self.init_time = time.time() - self.init_time
         self._last_step_time = time.time()
 
-    def reset(self):
-        self._emu = self._unicorn()
-        self._to_raise = None
-
-    def _unicorn(self):
         if self._cpu.arch == CS_ARCH_ARM:
-            if self._cpu.mode == CS_MODE_ARM:
-                return Uc(UC_ARCH_ARM, UC_MODE_ARM)
-            elif self._cpu.mode == CS_MODE_THUMB:
-                return Uc(UC_ARCH_ARM, UC_MODE_THUMB)
+            self._uc_arch = UC_ARCH_ARM
+            self._uc_mode = {
+                CS_MODE_ARM: UC_MODE_ARM,
+                CS_MODE_THUMB: UC_MODE_THUMB
+            }[self._cpu.mode]
+
+        elif self._cpu.arch == CS_ARCH_ARM64:
+            self._uc_arch = UC_ARCH_ARM64
+            self._uc_mode = {
+                CS_MODE_ARM: UC_MODE_ARM,
+                CS_MODE_THUMB: UC_MODE_THUMB
+            }[self._cpu.mode]
+
         elif self._cpu.arch == CS_ARCH_X86:
-            if self._cpu.mode == CS_MODE_32:
-                return Uc(UC_ARCH_X86, UC_MODE_32)
-            elif self._cpu.mode == CS_MODE_64:
-                return Uc(UC_ARCH_X86, UC_MODE_64)
+            self._uc_arch = UC_ARCH_X86
+            self._uc_mode = {
+                CS_MODE_32: UC_MODE_32,
+                CS_MODE_64: UC_MODE_64
+            }[self._cpu.mode]
 
-        raise RuntimeError("Unsupported architecture")
+        else:
+            raise NotImplementedError(f'Unsupported architecture: {self._cpu.arch}')
 
+    def reset(self):
+        self._emu = Uc(self._uc_arch, self._uc_mode)
+        self._to_raise = None
 
     def in_map(self, addr):
         for m in self.mem_map:
@@ -168,7 +177,6 @@ class ConcreteUnicornEmulator(object):
             elif self._cpu.mode == CS_MODE_64:
                 return self._emu.reg_read(UC_X86_REG_RIP)
 
-
     def _hook_xfer_mem(self, uc, access, address, size, value, data):
         '''
         Handle memory operations from unicorn.
@@ -179,7 +187,6 @@ class ConcreteUnicornEmulator(object):
             self._mem_delta[address] = (value, size)
 
         return True
-
 
     def _hook_unmapped(self, uc, access, address, size, value, data):
         '''
@@ -202,7 +209,7 @@ class ConcreteUnicornEmulator(object):
         Handle software interrupt (SVC/INT)
         '''
         logger.info("Caught interrupt: %s" % number)
-        from ..core.cpu.abstractcpu import Interruption
+        from ..native.cpu.abstractcpu import Interruption  # prevent circular imports
         self._to_raise = Interruption(number)
         return True
 
@@ -241,23 +248,27 @@ class ConcreteUnicornEmulator(object):
 
             # Try emulation
             self._should_try_again = False
-            
+
             self._step(instruction)
 
             if not self._should_try_again:
                 break
 
-
     def _step(self, instruction):
         '''
         A single attempt at executing an instruction.
         '''
+        logger.debug("0x%x:\t%s\t%s"
+                     % (instruction.address, instruction.mnemonic, instruction.op_str))
 
         # Bring in the instruction itself
         instruction = self._cpu.decode_instruction(self._cpu.PC)
 
         try:
-            self._emu.emu_start(self._cpu.PC, self._cpu.PC+instruction.size, count=1)
+            pc = self._cpu.PC
+            if self._cpu.arch == CS_ARCH_ARM and self._uc_mode == UC_MODE_THUMB:
+                pc |= 1
+            self._emu.emu_start(pc, self._cpu.PC + instruction.size, count=1)
         except UcError as e:
             # We request re-execution by signaling error; if we we didn't set
             # _should_try_again, it was likely an actual error
@@ -268,13 +279,13 @@ class ConcreteUnicornEmulator(object):
             return
 
         if logger.isEnabledFor(logging.DEBUG):
-            logger.debug("="*10)
+            logger.debug("=" * 10)
             for register in self._cpu.canonical_registers:
                 logger.debug("Register % 3s  Manticore: %08x, Unicorn %08x",
                         register, self._cpu.read_register(register),
                         self._emu.reg_read(self._to_unicorn_id(register)) )
             logger.debug(">"*10)
-            
+
         # self.sync_unicorn_to_manticore()
         self._cpu.PC = self.get_unicorn_pc()
 
@@ -301,7 +312,7 @@ class ConcreteUnicornEmulator(object):
         if where in self._mem_delta.keys():
             return
         if issymbolic(expr):
-            data = [Operators.CHR(Operators.EXTRACT(expr, offset, 8)) for offset in xrange(0, size, 8)]
+            data = [Operators.CHR(Operators.EXTRACT(expr, offset, 8)) for offset in range(0, size, 8)]
             concrete_data = []
             for c in data:
                 if issymbolic(c):
@@ -309,7 +320,7 @@ class ConcreteUnicornEmulator(object):
                 concrete_data.append(c)
             data = concrete_data
         else:
-            data = [Operators.CHR(Operators.EXTRACT(expr, offset, 8)) for offset in xrange(0, size, 8)]
+            data = [Operators.CHR(Operators.EXTRACT(expr, offset, 8)) for offset in range(0, size, 8)]
         logger.debug("Writing back %s bits to 0x%02x", size, where)
         if not self.in_map(where):
             self._create_emulated_mapping(self._emu, where)
@@ -336,7 +347,7 @@ class ConcreteUnicornEmulator(object):
         ordx = self._emu.reg_read(UC_X86_REG_RDX)
         orcx = self._emu.reg_read(UC_X86_REG_RCX)
         orip = self._emu.reg_read(UC_X86_REG_RIP)
-    
+
         # x86: wrmsr
         buf = '\x0f\x30'
         self._emu.mem_write(self.scratch_mem, buf)
@@ -344,14 +355,14 @@ class ConcreteUnicornEmulator(object):
         self._emu.reg_write(UC_X86_REG_RDX, (value >> 32) & 0xFFFFFFFF)
         self._emu.reg_write(UC_X86_REG_RCX, msr & 0xFFFFFFFF)
         self._emu.emu_start(self.scratch_mem, self.scratch_mem+len(buf), count=1)
-    
+
         # restore clobbered registers
         self._emu.reg_write(UC_X86_REG_RAX, orax)
         self._emu.reg_write(UC_X86_REG_RDX, ordx)
         self._emu.reg_write(UC_X86_REG_RCX, orcx)
         self._emu.reg_write(UC_X86_REG_RIP, orip)
-    
-    
+
+
     def set_fs(self, addr):
         '''
         set the FS.base hidden descriptor-register field to the given address.
@@ -359,7 +370,7 @@ class ConcreteUnicornEmulator(object):
         '''
         FSMSR = 0xC0000100
         return self.set_msr(FSMSR, addr)
-        
+
     def pre_execute_callback(self, _pc, _insn):
         start_time = time.time()
         self.out_of_step_time += (start_time - self._last_step_time)

@@ -8,7 +8,7 @@
  * Analyze it with:
  *   $ manticore indexhell
  *
- *   - By default manticore will consider all input of stdin symbolic
+ *   - By default, Manticore will consider all input of stdin to be symbolic
  *
  * 2017-04-24 12:46:46,227: [15880] MAIN:INFO: Loading program: ['indexhell']
  * 2017-04-24 12:46:46,228: [15880] MAIN:INFO: Workspace: ./mcore_72BTxZ

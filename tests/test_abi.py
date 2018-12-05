@@ -2,25 +2,16 @@
 # -*- coding: utf-8 -*-
 
 import unittest
-import sys
-import shutil
-import tempfile
-import os
-import hashlib
-import subprocess
-import collections
-import time
 
-from manticore import Manticore, issymbolic
-from manticore import variadic
-from manticore.core.smtlib import BitVecVariable
-from manticore.core.cpu.abstractcpu import ConcretizeArgument, ConcretizeRegister, ConcretizeMemory
-from manticore.core.cpu.arm import Armv7Cpu, Armv7LinuxSyscallAbi, Armv7CdeclAbi
-from manticore.core.cpu.x86 import I386Cpu, AMD64Cpu, I386LinuxSyscallAbi, I386StdcallAbi, I386CdeclAbi, AMD64LinuxSyscallAbi, SystemVAbi
-from manticore.core.memory import SMemory32, Memory32, SMemory64
+from manticore.native.cpu.abstractcpu import ConcretizeArgument, ConcretizeRegister, ConcretizeMemory
+from manticore.native.cpu.arm import Armv7Cpu, Armv7LinuxSyscallAbi, Armv7CdeclAbi
+from manticore.native.cpu.x86 import I386Cpu, AMD64Cpu, I386LinuxSyscallAbi, I386StdcallAbi, I386CdeclAbi, AMD64LinuxSyscallAbi, SystemVAbi
+from manticore.native.memory import SMemory32, SMemory64
 from manticore.core.smtlib import ConstraintSet, Operators
+from manticore.native.models import variadic
 
-class ABITests(unittest.TestCase):
+
+class ABITest(unittest.TestCase):
     _multiprocess_can_split_ = True
     def setUp(self):
         mem32 = SMemory32(ConstraintSet())
@@ -44,7 +35,7 @@ class ABITests(unittest.TestCase):
         self._cpu_x64.syscall_abi = AMD64LinuxSyscallAbi(self._cpu_x64)
 
         def write(mem, where, val, size):
-            mem[where:where+size/8] = [Operators.CHR(Operators.EXTRACT(val, offset, 8)) for offset in xrange(0, size, 8)]
+            mem[where:where + size // 8] = [Operators.CHR(Operators.EXTRACT(val, offset, 8)) for offset in range(0, size, 8)]
         for val in range(0, 0x100, 4):
             write(mem32, 0x1000+val, val, 32)
         for val in range(0, 0x100, 8):
@@ -57,7 +48,7 @@ class ABITests(unittest.TestCase):
         cpu = self._cpu_arm
 
         for i in range(4):
-            cpu.write_register('R{}'.format(i), i)
+            cpu.write_register(f'R{i}', i)
 
         cpu.LR = 0x1234
 
@@ -71,17 +62,17 @@ class ABITests(unittest.TestCase):
         cpu.func_abi.invoke(test)
 
         # result is correctly captured
-        self.assertEquals(cpu.R0, 34)
+        self.assertEqual(cpu.R0, 34)
         # sp is unchanged
-        self.assertEquals(cpu.SP, 0x1080)
+        self.assertEqual(cpu.SP, 0x1080)
         # returned correctly
-        self.assertEquals(cpu.PC, cpu.LR)
+        self.assertEqual(cpu.PC, cpu.LR)
 
     def test_arm_abi(self):
         cpu = self._cpu_arm
 
         for i in range(4):
-            cpu.write_register('R{}'.format(i), i)
+            cpu.write_register(f'R{i}', i)
 
         cpu.LR = 0x1234
 
@@ -102,17 +93,17 @@ class ABITests(unittest.TestCase):
         cpu.func_abi.invoke(test)
 
         # result is correctly captured
-        self.assertEquals(cpu.R0, 34)
+        self.assertEqual(cpu.R0, 34)
         # sp is unchanged
-        self.assertEquals(cpu.SP, 0x1080)
+        self.assertEqual(cpu.SP, 0x1080)
         # returned correctly
-        self.assertEquals(cpu.PC, cpu.LR)
+        self.assertEqual(cpu.PC, cpu.LR)
 
     def test_arm_abi_concretize_register(self):
         cpu = self._cpu_arm
 
         for i in range(4):
-            cpu.write_register('R{}'.format(i), i)
+            cpu.write_register(f'R{i}', i)
 
         previous_r0 = cpu.R0
         self.assertEqual(cpu.read_int(cpu.SP), 0x80)
@@ -123,15 +114,15 @@ class ABITests(unittest.TestCase):
         with self.assertRaises(ConcretizeRegister) as cr:
             cpu.func_abi.invoke(test)
 
-        self.assertEquals(cpu.R0, previous_r0)
-        self.assertEquals(cr.exception.reg_name, 'R0')
-        self.assertEquals(cpu.SP, 0x1080)
+        self.assertEqual(cpu.R0, previous_r0)
+        self.assertEqual(cr.exception.reg_name, 'R0')
+        self.assertEqual(cpu.SP, 0x1080)
 
     def test_arm_abi_concretize_memory(self):
         cpu = self._cpu_arm
 
         for i in range(4):
-            cpu.write_register('R{}'.format(i), i)
+            cpu.write_register(f'R{i}', i)
 
         previous_r0 = cpu.R0
         self.assertEqual(cpu.read_int(cpu.SP), 0x80)
@@ -142,9 +133,9 @@ class ABITests(unittest.TestCase):
         with self.assertRaises(ConcretizeMemory) as cr:
             cpu.func_abi.invoke(test)
 
-        self.assertEquals(cpu.R0, previous_r0)
-        self.assertEquals(cr.exception.address, cpu.SP)
-        self.assertEquals(cpu.SP, 0x1080)
+        self.assertEqual(cpu.R0, previous_r0)
+        self.assertEqual(cr.exception.address, cpu.SP)
+        self.assertEqual(cpu.SP, 0x1080)
 
     def test_i386_cdecl(self):
         cpu = self._cpu_x86
@@ -164,16 +155,16 @@ class ABITests(unittest.TestCase):
 
         cpu.func_abi.invoke(test)
 
-        self.assertEquals(cpu.EAX, 3)
-        self.assertEquals(base, cpu.ESP)
-        self.assertEquals(cpu.EIP, 0x1234)
+        self.assertEqual(cpu.EAX, 3)
+        self.assertEqual(base, cpu.ESP)
+        self.assertEqual(cpu.EIP, 0x1234)
 
     def test_i386_stdcall(self):
         cpu = self._cpu_x86
 
         base = cpu.ESP
 
-        bwidth = cpu.address_bit_size / 8
+        bwidth = cpu.address_bit_size // 8
         self.assertEqual(cpu.read_int(cpu.ESP), 0x80)
 
         cpu.push(0x1234, cpu.address_bit_size)
@@ -189,14 +180,14 @@ class ABITests(unittest.TestCase):
         abi = I386StdcallAbi(cpu)
         abi.invoke(test)
 
-        self.assertEquals(cpu.EAX, 3)
-        self.assertEquals(base + bwidth * 5, cpu.ESP)
-        self.assertEquals(cpu.EIP, 0x1234)
+        self.assertEqual(cpu.EAX, 3)
+        self.assertEqual(base + bwidth * 5, cpu.ESP)
+        self.assertEqual(cpu.EIP, 0x1234)
 
     def test_i386_stdcall_concretize(self):
         cpu = self._cpu_x86
 
-        bwidth = cpu.address_bit_size / 8
+        bwidth = cpu.address_bit_size // 8
         self.assertEqual(cpu.read_int(cpu.ESP), 0x80)
 
         cpu.push(0x1234, cpu.address_bit_size)
@@ -212,9 +203,9 @@ class ABITests(unittest.TestCase):
             abi.invoke(test)
 
         # Make sure ESP hasn't changed if exception was raised
-        self.assertEquals(base, cpu.ESP)
+        self.assertEqual(base, cpu.ESP)
         # Make sure EIP hasn't changed (i.e. return value wasn't popped)
-        self.assertEquals(cpu.EIP, eip)
+        self.assertEqual(cpu.EIP, eip)
 
     def test_i386_cdecl_concretize(self):
         cpu = self._cpu_x86
@@ -234,12 +225,12 @@ class ABITests(unittest.TestCase):
             cpu.func_abi.invoke(test)
 
         # Make sure we're concretizing
-        self.assertEquals(cr.exception.address, 0x1080)
+        self.assertEqual(cr.exception.address, 0x1080)
         # Make sure eax is unchanged
-        self.assertEquals(cpu.EAX, prev_eax)
+        self.assertEqual(cpu.EAX, prev_eax)
         # Make sure EIP wasn't popped
-        self.assertEquals(base, cpu.ESP+4)
-        self.assertNotEquals(cpu.EIP, 0x1234)
+        self.assertEqual(base, cpu.ESP+4)
+        self.assertNotEqual(cpu.EIP, 0x1234)
 
 
     def test_i386_vararg(self):
@@ -258,7 +249,7 @@ class ABITests(unittest.TestCase):
                 self.assertEqual(val, idx)
 
         cpu.func_abi.invoke(test)
-        self.assertEquals(cpu.EIP, 0x1234)
+        self.assertEqual(cpu.EIP, 0x1234)
 
 
     def test_amd64_basic_funcall(self):
@@ -324,7 +315,7 @@ class ABITests(unittest.TestCase):
 
         # Should not update RIP
         self.assertNotEqual(cpu.RIP, 0x1234)
-        self.assertEquals(cr.exception.reg_name, 'RDI')
+        self.assertEqual(cr.exception.reg_name, 'RDI')
 
     def test_amd64_vararg(self):
         cpu = self._cpu_x64
@@ -338,12 +329,12 @@ class ABITests(unittest.TestCase):
 
         @variadic
         def test(params):
-            for val, idx in zip(params, range(3)):
+            for val, idx in zip(params, list(range(3))):
                 self.assertEqual(val, idx)
 
         cpu.func_abi.invoke(test)
 
-        self.assertEquals(cpu.RIP, 0x1234)
+        self.assertEqual(cpu.RIP, 0x1234)
 
     def test_i386_syscall(self):
         cpu = self._cpu_x86
@@ -396,12 +387,12 @@ class ABITests(unittest.TestCase):
         cpu.push(0x1234, cpu.address_bit_size)
 
         def test(prefix, extracted):
-            self.assertEquals(prefix, 1)
-            self.assertEquals(extracted, 2)
+            self.assertEqual(prefix, 1)
+            self.assertEqual(extracted, 2)
 
         cpu.func_abi.invoke(test, prefix_args=(1,))
 
-        self.assertEquals(cpu.EIP, 0x1234)
+        self.assertEqual(cpu.EIP, 0x1234)
 
     def test_fail_concretize_prefix_arg(self):
         cpu = self._cpu_x86
@@ -409,8 +400,9 @@ class ABITests(unittest.TestCase):
         def test(prefix, extracted):
             raise ConcretizeArgument(cpu, 0)
 
-        with self.assertRaises(AssertionError) as cr:
-            cpu.func_abi.invoke(test, prefix_args=(1,))
+        if __debug__:
+            with self.assertRaises(AssertionError) as cr:
+                cpu.func_abi.invoke(test, prefix_args=(1,))
 
     def test_funcall_method(self):
         cpu = self._cpu_x86
@@ -426,5 +418,5 @@ class ABITests(unittest.TestCase):
         obj = Kls()
         result = cpu.func_abi.invoke(obj.method)
 
-        self.assertEquals(result, 3)
+        self.assertEqual(result, 3)
 

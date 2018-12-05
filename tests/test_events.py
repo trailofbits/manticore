@@ -11,7 +11,7 @@ class A(Eventful):
 class B(Eventful):
     _published_events = set(['eventB'])
     def __init__(self, child, **kwargs):
-        super(B, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.child = child
         self.forward_events_from(child)
 
@@ -35,32 +35,28 @@ class ManticoreDriver(unittest.TestCase):
 
     def test_weak_references(self):
         a = A()
-        self.assertSequenceEqual( map(len, (a._signals, a._forwards)), (0, 0) )
+        self.assertSequenceEqual([len(s) for s in (a._signals, a._forwards)], (0, 0))
 
         b = B(a)
-        self.assertSequenceEqual( map(len, (a._signals, a._forwards)), (0, 1) )
-        self.assertSequenceEqual( map(len, (b._signals, b._forwards)), (0, 0) )
+        self.assertSequenceEqual([len(s) for s in (a._signals, a._forwards)], (0, 1))
+        self.assertSequenceEqual([len(s) for s in (b._signals, b._forwards)], (0, 0))
 
         c = C()
         b.subscribe('eventA', c.callback)
-
-        self.assertSequenceEqual( map(len, (a._signals, a._forwards)), (0, 1) )
-        self.assertSequenceEqual( map(len, (b._signals, b._forwards)), (1, 0) )
+        self.assertSequenceEqual([len(s) for s in (a._signals, a._forwards)], (0, 1))
+        self.assertSequenceEqual([len(s) for s in (b._signals, b._forwards)], (1, 0))
 
         b.subscribe('eventB', c.callback)
-
-        self.assertSequenceEqual( map(len, (a._signals, a._forwards)), (0, 1) )
-        self.assertSequenceEqual( map(len, (b._signals, b._forwards)), (2, 0) )
-
+        self.assertSequenceEqual([len(s) for s in (a._signals, a._forwards)], (0, 1))
+        self.assertSequenceEqual([len(s) for s in (b._signals, b._forwards)], (2, 0))
 
         del c
-
-        self.assertSequenceEqual( map(len, (a._signals, a._forwards)), (0, 1) )
-        self.assertSequenceEqual( map(len, (b._signals, b._forwards)), (0, 0) )
+        self.assertSequenceEqual([len(s) for s in (a._signals, a._forwards)], (0, 1))
+        self.assertSequenceEqual([len(s) for s in (b._signals, b._forwards)], (0, 0))
 
         del b
+        self.assertSequenceEqual([len(s) for s in (a._signals, a._forwards)], (0, 0))
 
-        self.assertSequenceEqual( map(len, (a._signals, a._forwards)), (0, 0) )
 
     def test_basic(self):
         a = A()

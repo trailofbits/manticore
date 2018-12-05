@@ -1,0 +1,4 @@
+[run]
+source = manticore
+omit =
+	*__init__.py

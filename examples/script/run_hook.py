@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import sys
-from manticore import Manticore
+from manticore.native import Manticore
 
 '''
 Demonstrates the ability to set a basic hook on a specific program counter and
@@ -22,8 +22,8 @@ if __name__ == '__main__':
         assert cpu.PC == pc
 
         instruction = cpu.read_int(cpu.PC)
-        print "Execution goal reached."
-        print "Instruction bytes: {:08x}".format(instruction)
+        print("Execution goal reached.")
+        print(f"Instruction bytes: {instruction:08x}")
 
     m.run()
 

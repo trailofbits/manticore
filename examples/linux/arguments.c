@@ -1,4 +1,4 @@
-/* This program parses a commandline argument.
+/* This program parses a command line argument.
  *
  * Compile with :
  *   $ gcc -static -Os arguments.c -o arguments

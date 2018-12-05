@@ -9,7 +9,7 @@ password = 'SCRT'
 
 PROGRAM = ''
 PROGRAM += '''
-/* This program parses a commandline argument.
+/* This program parses a command line argument.
  *
  * Compile with :
  *   $ gcc -static -Os crackme.c -o crackme
@@ -17,7 +17,7 @@ PROGRAM += '''
  * Analyze it with:
  *   $ manticore crackme 
  *
- *   - By default manticore will consider all input of stdin symbolic
+ *   - By default, Manticore will consider all input of stdin to be symbolic
  *     It will explore all possible paths, eventually finding the SCRT key
  * 
  * Expected output:
@@ -132,7 +132,7 @@ def func(password, pad, flag=True):
     if len(password) == 1:
         SUBPROGRAMFALSE = '''    printf("You are NOT in!\\n");\n'''
     else:
-        SUBPROGRAMFALSE = func(''.join(random.choice(chars) for _ in range(len(password)/2)), pad[1:], False)
+        SUBPROGRAMFALSE = func(''.join(random.choice(chars) for _ in range(len(password)//2)), pad[1:], False)
 
     config = random.choice([ (True, SUBPROGRAMTRUE, SUBPROGRAMFALSE), (False, SUBPROGRAMFALSE, SUBPROGRAMTRUE)])
     
@@ -151,5 +151,5 @@ def func(password, pad, flag=True):
 
 PROGRAM += func(password, pad)
 PROGRAM += '''return 0;\n}'''
-print PROGRAM
+print(PROGRAM)
 

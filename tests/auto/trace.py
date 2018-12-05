@@ -1,3 +1,4 @@
+from __future__ import print_function
 import copy
 import sys
 import sys
@@ -40,7 +41,7 @@ class Gdb(subprocess.Popen):
         val = self.correspond('p /x %s\n'%reg.lower()).split("0x")[-1]
         return long(val.split("\n")[0],16)
 
-    def setR(reg, value):
+    def setR(self, reg, value):
         self.correspond('set $%s = %s\n'%(reg.lower(), int(value)))
     def setByte(self, m, value):
         self.correspond('set *(char*)(%s) = %s\n'%(m,value))
@@ -51,9 +52,9 @@ class Gdb(subprocess.Popen):
     def getM(self, m):
         try:
             return long(self.correspond('x/xg %s\n'%m).split("\t")[-1].split("0x")[-1].split("\n")[0],16)
-        except Exception,e:
-            print 'x/xg %s\n'%m
-            print self.correspond('x/xg %s\n'%m)
+        except Exception as e:
+            print('x/xg %s\n'%m)
+            print(self.correspond('x/xg %s\n'%m))
             raise e
             return 0
     def getPid(self):
@@ -61,7 +62,7 @@ class Gdb(subprocess.Popen):
     def getStack(self):
         maps = file("/proc/%s/maps"%self.correspond('info proc\n').split("\n")[0].split(" ")[-1]).read().split("\n")
         i,o = [ int(x,16) for x in maps[-3].split(" ")[0].split('-')]
-        print self.correspond('dump mem lala 0x%x 0x%x\n'%(i,o))
+        print(self.correspond('dump mem lala 0x%x 0x%x\n'%(i,o)))
     def getByte(self, m):
         arch = self.get_arch()
         mask = {'i386': 0xffffffff, 'amd64': 0xffffffffffffffff}[arch]
@@ -82,7 +83,7 @@ class Gdb(subprocess.Popen):
             self._arch = 'amd64'
             return 'amd64'
         else:
-            print infotarget
+            print(infotarget)
             raise NotImplementedError()
 
 
@@ -92,13 +93,13 @@ arch = gdb.correspond('')
 #guess arch
 arch = gdb.get_arch()
 
-#gues architecture from file
+#guess architecture from file
 entry = gdb.get_entry()
 gdb.correspond("b *0\n")
 gdb.correspond("run arg1 arg2 arg3 < /dev/urandom > /dev/null\n")
 gdb.correspond("d 1\n")
 
-# Simulate no vdso (As when analized with symbemu)
+# Simulate no vdso (As when analyzed with symbemu)
 found = 0
 for i in range(75,120):
     if gdb.getM('$sp+sizeof(void*)*%d'%i) ==0x19 and gdb.getM('$sp+%d'%(i+2))==0x1f:
@@ -119,11 +120,11 @@ while True:
     try:
         stepped = False
         pc = gdb.getR({'i386': 'EIP', 'amd64': 'RIP'}[arch]) 
-        print hex(pc)
+        print(hex(pc))
         gdb.stepi()
-        print gdb.correspond('info registers')
-    except Exception,e:
-        print e
-print "# Processed %d instructions." % count
+        print(gdb.correspond('info registers\n'))
+    except Exception as e:
+        print(e)
+print("# Processed %d instructions." % count)
 
 

@@ -1,9 +1,15 @@
+
 import struct
 import unittest
-from manticore.core.cpu.x86 import *
-from manticore.core.smtlib import Operators
-from manticore.core.memory import *
-import mockmem
+
+from manticore.native.cpu.x86 import I386Cpu
+
+from manticore.native.cpu.abstractcpu import ConcretizeRegister
+from manticore.native.cpu.x86 import AMD64Cpu
+from manticore.native.memory import *
+from manticore.core.smtlib import BitVecOr, operator, Bool
+from tests import mockmem
+from functools import reduce
 
 class ROOperand(object):
     ''' Mocking class for operand ronly '''
@@ -19,6 +25,10 @@ class RWOperand(ROOperand):
         return self.value
 
 sizes = {'RAX': 64, 'EAX': 32, 'AX': 16, 'AL': 8, 'AH': 8, 'RCX': 64, 'ECX': 32, 'CX': 16, 'CL': 8, 'CH': 8, 'RDX': 64, 'EDX': 32, 'DX': 16, 'DL': 8, 'DH': 8, 'RBX': 64, 'EBX': 32, 'BX': 16, 'BL': 8, 'BH': 8, 'RSP': 64, 'ESP': 32, 'SP': 16, 'SPL': 8, 'RBP': 64, 'EBP': 32, 'BP': 16, 'BPL': 8, 'RSI': 64, 'ESI': 32, 'SI': 16, 'SIL': 8, 'RDI': 64, 'EDI': 32, 'DI': 16, 'DIL': 8, 'R8': 64, 'R8D': 32, 'R8W': 16, 'R8B': 8, 'R9': 64, 'R9D': 32, 'R9W': 16, 'R9B': 8, 'R10': 64, 'R10D': 32, 'R10W': 16, 'R10B': 8, 'R11': 64, 'R11D': 32, 'R11W': 16, 'R11B': 8, 'R12': 64, 'R12D': 32, 'R12W': 16, 'R12B': 8, 'R13': 64, 'R13D': 32, 'R13W': 16, 'R13B': 8, 'R14': 64, 'R14D': 32, 'R14W': 16, 'R14B': 8, 'R15': 64, 'R15D': 32, 'R15W': 16, 'R15B': 8, 'ES': 16, 'CS': 16, 'SS': 16, 'DS': 16, 'FS': 16, 'GS': 16, 'RIP': 64, 'EIP':32, 'IP': 16, 'RFLAGS': 64, 'EFLAGS': 32, 'FLAGS': 16, 'XMM0': 128, 'XMM1': 128, 'XMM2': 128, 'XMM3': 128, 'XMM4': 128, 'XMM5': 128, 'XMM6': 128, 'XMM7': 128, 'XMM8': 128, 'XMM9': 128, 'XMM10': 128, 'XMM11': 128, 'XMM12': 128, 'XMM13': 128, 'XMM14': 128, 'XMM15': 128, 'YMM0': 256, 'YMM1': 256, 'YMM2': 256, 'YMM3': 256, 'YMM4': 256, 'YMM5': 256, 'YMM6': 256, 'YMM7': 256, 'YMM8': 256, 'YMM9': 256, 'YMM10': 256, 'YMM11': 256, 'YMM12': 256, 'YMM13': 256, 'YMM14': 256, 'YMM15': 256}
+
+def to_bytelist(bs):
+    return [bytes([b]) for b in bs]
+
 
 class SymCPUTest(unittest.TestCase):
     _multiprocess_can_split_ = True
@@ -60,9 +70,20 @@ class SymCPUTest(unittest.TestCase):
     def setUp(self):
         mem = mockmem.Memory()
         self.cpu = I386Cpu(mem) #TODO reset cpu in between tests...
-                    #TODO mock getchar/putchar in case the instructon access memory directly
+                    #TODO mock getchar/putchar in case the instruction accesses memory directly
+
     def tearDown(self):
         self.cpu = None
+
+    def assertItemsEqual(self, a, b):
+        # Required for Python3 compatibility
+        self.assertEqual(sorted(a), sorted(b))
+
+    def assertEqItems(self, a, b):
+        if isinstance(b, bytes):
+            b = [bytes([x]) for x in b]
+        return self.assertItemsEqual(a, b)
+
     def testInitialRegState(self):
         cpu = self.cpu
         #'CR0', 'CR1', 'CR2', 'CR3', 'CR4', 'CR5', 'CR6', 'CR7', 'CR8',
@@ -449,9 +470,9 @@ class SymCPUTest(unittest.TestCase):
         self.assertEqual(cpu.read_int(0x1000,64), 0x5556575845464748)
 
         #cpu.writeback()
-        for i in xrange(0x10):
-            self.assertEqual(mem[i+0x1000], 'HGFEXWVUhgfedcba'[i])
-        self.assertItemsEqual(mem.read(0x1000,0x10), 'HGFEXWVUhgfedcba')
+        for i in range(0x10):
+            self.assertEqual(mem[i+0x1000], b'HGFEXWVUhgfedcba'[i:i+1])
+        self.assertEqual(mem.read(0x1000,0x10), to_bytelist(b'HGFEXWVUhgfedcba'))
 
     def test_cache_002(self):
         cs = ConstraintSet()
@@ -474,8 +495,8 @@ class SymCPUTest(unittest.TestCase):
         self.assertEqual(cpu.read_int(0x1000,64), 0x5556575845464748)
 
         #cpu.writeback()
-        for i in xrange(0x10):
-            self.assertEqual(mem[i+0x1000], 'HGFEXWVUhgfedcba'[i])
+        for i in range(0x10):
+            self.assertEqual(mem[i+0x1000], b'HGFEXWVUhgfedcba'[i:i+1])
 
     def test_cache_003(self):
         cs = ConstraintSet()
@@ -528,10 +549,9 @@ class SymCPUTest(unittest.TestCase):
         addr = mem.mmap(0x1000, 0x1000, 'rwx')
         self.assertEqual(addr, 0x1000)
 
-
-        memory = ['\x00'] *0x1000
+        memory = bytearray(0x1000)
         written = set()
-        for _ in xrange(1000):
+        for _ in range(1000):
             address = random.randint(0x1000,0x2000-8)
             [written.add(i) for i in range(address,address+8)]
             value = random.randint(0x0,0xffffffffffffffff)
@@ -544,15 +564,16 @@ class SymCPUTest(unittest.TestCase):
         random.shuffle(written)
         for address in written:
             size = random.choice([8,16,32,64])
-            if address > 0x2000-size/8:
+            if address > 0x2000-(size // 8):
                 continue
             pattern = {8:'B', 16:'<H', 32:'<L', 64:'<Q'} [size]
-            self.assertEqual(cpu.read_int(address,size), struct.unpack(pattern, ''.join(memory[address-0x1000:address-0x1000+size/8]))[0] )
+            start = address - 0x1000
+            self.assertEqual(cpu.read_int(address, size),
+                             struct.unpack(pattern, bytes(memory[start:start + (size // 8)]))[0])
 
 
 
     def test_cache_005(self):
-        import random
         cs = ConstraintSet()
         mem = SMemory64(cs)
         cpu = AMD64Cpu(mem)
@@ -711,6 +732,42 @@ class SymCPUTest(unittest.TestCase):
 
         self.assertTrue(solver.check(cs))
 
+    # regression test for issue #560
+    def test_AND_1(self):
+        ''' Instruction AND
+            Groups:
+            0x7ffff7de390a:	and rax, 0xfc000000
+        '''
+        mem = Memory64()
+        cpu = AMD64Cpu(mem)
+        mem.mmap(0x7ffff7de3000, 0x1000, 'rwx')
+        mem[0x7ffff7de390a] = '\x48'
+        mem[0x7ffff7de390b] = '\x25'
+        mem[0x7ffff7de390c] = '\x00'
+        mem[0x7ffff7de390d] = '\x00'
+        mem[0x7ffff7de390e] = '\x00'
+        mem[0x7ffff7de390f] = '\xfc'
+        cpu.PF = True
+        cpu.RAX = 0x7ffff7ff7658
+        cpu.OF = False
+        cpu.ZF = False
+        cpu.CF = False
+        cpu.RIP = 0x7ffff7de390a
+        cpu.SF = False
+        cpu.execute()
+        self.assertEqual(mem[0x7ffff7de390a], b'\x48')
+        self.assertEqual(mem[0x7ffff7de390b], b'\x25')
+        self.assertEqual(mem[0x7ffff7de390c], b'\x00')
+        self.assertEqual(mem[0x7ffff7de390d], b'\x00')
+        self.assertEqual(mem[0x7ffff7de390e], b'\x00')
+        self.assertEqual(mem[0x7ffff7de390f], b'\xfc')
+        self.assertEqual(cpu.PF, True)
+        self.assertEqual(cpu.RAX, 0x7ffff4000000)
+        self.assertEqual(cpu.OF, False)
+        self.assertEqual(cpu.ZF, False)
+        self.assertEqual(cpu.CF, False)
+        self.assertEqual(cpu.RIP, 0x7ffff7de3910)
+        self.assertEqual(cpu.SF, False)
 
     def test_CMPXCHG8B_symbolic(self):
         '''CMPXCHG8B'''
@@ -786,14 +843,14 @@ class SymCPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.ECX = 0xd
         cpu.execute()
-        self.assertItemsEqual(mem[0x41e10a:0x41e10c], '\xff\xc9')
+        self.assertItemsEqual(mem[0x41e10a:0x41e10c], to_bytelist(b'\xff\xc9'))
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.RIP, 4317452L)
+        self.assertEqual(cpu.RIP, 4317452)
         self.assertEqual(cpu.PF, True)
         self.assertEqual(cpu.SF, False)
-        self.assertEqual(cpu.ECX, 12L)
+        self.assertEqual(cpu.ECX, 12)
 
     def test_PUSHFD_1(self):
         ''' Instruction PUSHFD_1
@@ -804,8 +861,8 @@ class SymCPUTest(unittest.TestCase):
         cpu = I386Cpu(mem)
         mem.mmap(0x08065000, 0x1000, 'rwx')
         mem.mmap(0xffffc000, 0x1000, 'rwx')
-        mem[0xffffc600:0xffffc609] = '\x00\x00\x00\x00\x02\x03\x00\x00\x00'
-        mem[0x08065f6f] = '\x9c'
+        mem[0xffffc600:0xffffc609] = b'\x00\x00\x00\x00\x02\x03\x00\x00\x00'
+        mem[0x08065f6f] = b'\x9c'
         cpu.EIP = 0x8065f6f
         cpu.EBP = 0xffffb600
         cpu.ESP = 0xffffc604
@@ -817,8 +874,8 @@ class SymCPUTest(unittest.TestCase):
         cpu.PF = True
         cpu.execute()
 
-        self.assertItemsEqual(mem[0xffffc600:0xffffc609], '\x55\x08\x00\x00\x02\x03\x00\x00\x00')
-        self.assertEqual(mem[0x8065f6f], '\x9c')
+        self.assertItemsEqual(mem[0xffffc600:0xffffc609], to_bytelist(b'\x55\x08\x00\x00\x02\x03\x00\x00\x00'))
+        self.assertEqual(mem[0x8065f6f], b'\x9c')
         self.assertEqual(cpu.EIP, 0x8065f70)
         self.assertEqual(cpu.EBP, 0xffffb600)
         self.assertEqual(cpu.ESP, 0xffffc600)
@@ -832,18 +889,18 @@ class SymCPUTest(unittest.TestCase):
         cpu = I386Cpu(mem)
         mem.mmap(0x08059000, 0x1000, 'rwx')
         mem.mmap(0xffffd000, 0x1000, 'rwx')
-        mem[0x08059a8d] = '\xd7'
-        mem[0xffffd00a] = '\x41'
+        mem[0x08059a8d] = b'\xd7'
+        mem[0xffffd00a] = b'\x41'
 
         cpu.EBX=0xffffd000
         cpu.AL=0x0a
         cpu.EIP = 0x8059a8d
         cpu.execute()
 
-        self.assertEqual(mem[0x8059a8d], '\xd7')
-        self.assertEqual(mem[0xffffd00a], '\x41')
+        self.assertEqual(mem[0x8059a8d], b'\xd7')
+        self.assertEqual(mem[0xffffd00a], b'\x41')
         self.assertEqual(cpu.AL, 0x41)
-        self.assertEqual(cpu.EIP, 134584974L)
+        self.assertEqual(cpu.EIP, 134584974)
 
     def test_XLATB_1_symbolic(self):
         ''' Instruction XLATB_1
@@ -913,7 +970,7 @@ Using the SAR instruction to perform a division operation does not produce the s
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -985,7 +1042,7 @@ Using the SAR instruction to perform a division operation does not produce the s
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -1050,7 +1107,7 @@ Using the SAR instruction to perform a division operation does not produce the s
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -1069,6 +1126,26 @@ Using the SAR instruction to perform a division operation does not produce the s
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
+
+    def test_symbolic_instruction(self):
+        cs = ConstraintSet()
+        mem = SMemory32(cs)
+        cpu = I386Cpu(mem)
+
+        # alloc/map a little mem
+        code = mem.mmap(0x1000, 0x1000, 'rwx')
+        stack = mem.mmap(0xf000, 0x1000, 'rw')
+
+        mem[code] = BitVecConstant(8, 0x90)
+        cpu.EIP = code
+        cpu.EAX = 116
+        cpu.EBP = stack + 0x700
+        cpu.write_int(cpu.EBP - 0xc, 100, 32)
+
+        cpu.execute()
+
+        self.assertEqual(cpu.EIP, code+1)
+
 
 if __name__ == '__main__':
     unittest.main()

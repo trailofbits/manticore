@@ -1,3 +1,0 @@
-How to run the test:
-
-python SymbolicExecutor/main.py --offset 0 --workspace test --buffer "EBP-88" --size "0x84" tests/simple_parse/simple_parse.dmp

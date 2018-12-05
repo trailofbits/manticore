@@ -1,23 +1,59 @@
+dist: trusty
+sudo: required
+os:
+  - linux
+language: python
+python:
+  - 3.6.5
+
+stages:
+  - prepare
+  - test
+  - submit
+
+env:
+  global:
+    - CC_TEST_REPORTER_ID=db72f1ed59628c16eb0c00cbcd629c4c71f68aa1892ef42d18c7c2b8326f460a
+    - JOB_COUNT=2 # Two jobs generate test coverage
+    - PYTHONWARNINGS="default::ResourceWarning" # Enable ResourceWarnings
+  matrix:
+    - TEST_TYPE=examples
+    - TEST_TYPE=tests
+    - TEST_TYPE=eth
+
 branches:
   only:
   - master
   - /^(?!wip-).+$/
-language: python
+
 cache:
   pip: true
   directories:
-  - $HOME/virtualenv/python2.7.12/lib/python2.7/site-packages
-  - $HOME/virtualenv/python2.7.12/bin/
-  - $HOME/unicorn
-dist: trusty
-sudo: required
-os:
-- linux
-python:
-- 2.7
+  - $HOME/virtualenv/python3.6.5/lib/python3.6/site-packages
+  - $HOME/virtualenv/python3.6.5/bin/
+
+jobs:
+  include:
+    - stage: prepare
+      env: TEST_TYPE=env
+      script:
+        - ./cc-test-reporter before-build
+      after_success:
+    - stage: submit
+      env: TEST_TYPE=env
+      script:
+        - true
+      after_script:
+        - aws s3 sync "s3://manticore-testdata/coverage/$TRAVIS_COMMIT" coverage/ 
+        - ./cc-test-reporter sum-coverage --output - --parts $JOB_COUNT coverage/codeclimate.*.json | ./cc-test-reporter upload-coverage --input -
+
 install:
-- travis_retry pip install -U pip
-- travis_retry pip uninstall -y Manticore || echo "Manticore not cached"  # uninstall any old, cached Manticore
-- travis_retry pip install --no-binary keystone-engine -e .[dev]  # ks can have pip install issues
+  - scripts/travis_install.sh $TEST_TYPE
+
 script:
-- scripts/travis_test.sh
+  - scripts/travis_test.sh $TEST_TYPE
+
+after_success:
+  - ./cc-test-reporter format-coverage -t coverage.py -o "coverage/codeclimate.$TEST_TYPE.json"
+  - aws s3 sync coverage/ "s3://manticore-testdata/coverage/$TRAVIS_COMMIT"
+

@@ -1,8 +1,11 @@
 import unittest
+import os
+
 from manticore.utils.event import Eventful
 from manticore.platforms import linux
-from manticore.core.state import State
+from manticore.native.state import State
 from manticore.core.smtlib import BitVecVariable, ConstraintSet
+
 
 class _CallbackExecuted(Exception):
     pass
@@ -20,6 +23,7 @@ class FakeMemory(object):
     def constraints(self, constraints):
         self._constraints = constraints
 
+
 class FakeCpu(object):
     def __init__(self):
         self._memory = FakeMemory()
@@ -30,19 +34,19 @@ class FakeCpu(object):
 
 class FakePlatform(Eventful):
     def __init__(self):
-        super(FakePlatform, self).__init__()
+        super().__init__()
         self._constraints = None
         self.procs = [FakeCpu()]
 
 
     
     def __getstate__(self):
-        state = super(FakePlatform, self).__getstate__()
+        state = super().__getstate__()
         state['cons'] = self._constraints
         state['procs'] = self.procs
         return state
     def __setstate__(self, state):
-        super(FakePlatform, self).__setstate__(state)
+        super().__setstate__(state)
         self._constraints = state['cons']
         self.procs = state['procs']
 
@@ -66,7 +70,8 @@ class FakePlatform(Eventful):
 class StateTest(unittest.TestCase):
     _multiprocess_can_split_ = True
     def setUp(self):
-        l = linux.Linux('/bin/ls')
+        dirname = os.path.dirname(__file__)
+        l = linux.Linux(os.path.join(dirname, 'binaries', 'basic_linux_amd64'))
         self.state = State(ConstraintSet(), l)
 
     def test_solve_one(self):
@@ -90,13 +95,21 @@ class StateTest(unittest.TestCase):
         solved = self.state.solve_n(expr, 5)
         self.assertEqual(len(solved), 5)
 
+    def test_solve_min_max(self):
+        expr = BitVecVariable(32, 'tmp')
+        self.state.constrain(expr > 4)
+        self.state.constrain(expr < 7)
+        self.assertEqual(self.state.solve_min(expr), 5)
+        self.assertEqual(self.state.solve_max(expr), 6)
+        self.assertEqual(self.state.solve_minmax(expr), (5,6))
+
     def test_policy_one(self):
         expr = BitVecVariable(32, 'tmp')
         self.state.constrain(expr > 0)
         self.state.constrain(expr < 100)
         solved = self.state.concretize(expr, 'ONE')
         self.assertEqual(len(solved), 1)
-        self.assertIn(solved[0], xrange(100))
+        self.assertIn(solved[0], range(100))
 
     def test_state(self):
         constraints = ConstraintSet()
@@ -148,7 +161,7 @@ class StateTest(unittest.TestCase):
         self.assertEqual(expr.taint, frozenset(taint))
 
     def testContextSerialization(self):
-        import cPickle as pickle
+        import pickle as pickle
         initial_file = ''
         new_file = ''
         new_new_file = ''
@@ -208,7 +221,7 @@ class StateTest(unittest.TestCase):
         raise _CallbackExecuted
 
     def testContextSerialization(self):
-        import cPickle as pickle
+        import pickle as pickle
         initial_file = ''
         new_file = ''
         new_new_file = ''

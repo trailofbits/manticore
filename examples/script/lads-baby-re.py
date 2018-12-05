@@ -2,7 +2,7 @@
 
 import sys
 
-from manticore import Manticore
+from manticore.native import Manticore
 
 '''
 Solves modified version of baby-re, compiled for arm.
@@ -18,12 +18,12 @@ if __name__ == '__main__':
         cpu = state.cpu
         arraytop = cpu.R11
         base = arraytop - 0x18
-        for i in xrange(4):
+        for i in range(4):
             symbolic_input = cpu.read_int(base + i*4)
-            # TODO apis to contrain input to ascii
+            # TODO apis to constrain input to ascii
             concrete_input = state.solve_one(symbolic_input)
             flag += chr(concrete_input & 0xff)
-        print 'flag is:', flag
+        print('flag is:', flag)
         m.terminate()
 
     m.run()

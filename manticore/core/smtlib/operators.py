@@ -1,4 +1,7 @@
-from expression import *
+
+from .expression import (
+    BitVec, BitVecExtract, BitVecSignExtend, BitVecZeroExtend, BitVecConstant, BitVecConcat, Bool, BitVecITE, BoolConstant, BoolITE
+)
 from ...utils.helpers import issymbolic
 import math
 
@@ -21,8 +24,8 @@ def CHR(s):
             return s
         else:
             return BitVecExtract(s, 0, 8)
-    elif isinstance(s, (int, long)):
-        return chr(s & 0xff)
+    elif isinstance(s, int):
+        return bytes([s & 0xff])
     else:
         assert len(s) == 1
         return s
@@ -31,9 +34,10 @@ def CHR(s):
 def NOT(a):
     if isinstance(a, bool):
         return not a
-    if isinstance(a, (Bool, int, long)):
+    if isinstance(a, (Bool, int)):
         return ~a
     return a == False
+
 
 def AND(a, b, *others):
     if len(others) > 0:
@@ -54,16 +58,17 @@ def OR(a, b, *others):
     if isinstance(b, Bool):
         return b | a
     result = a | b
-    if isinstance(result, (BitVec, int, long)):
+    if isinstance(result, (BitVec, int)):
         result = ITE(result != 0, True, False)
     return result
 
 
 def XOR(a, b):
     result = a ^ b
-    if isinstance(result, (BitVec, int, long)):
+    if isinstance(result, (BitVec, int)):
         result = ITE(result != 0, True, False)
     return result
+
 
 def UGT(a, b):
     if isinstance(a, BitVec):
@@ -127,7 +132,7 @@ def EXTRACT(x, offset, size):
 
 
 def SEXTEND(x, size_src, size_dest):
-    if isinstance(x, (int, long)):
+    if isinstance(x, int):
         if x >= (1 << (size_src - 1)):
             x -= 1 << size_src
         return x & ((1 << size_dest) - 1)
@@ -136,7 +141,7 @@ def SEXTEND(x, size_src, size_dest):
 
 
 def ZEXTEND(x, size):
-    if isinstance(x, (int, long)):
+    if isinstance(x, int):
         return x & ((1 << size) - 1)
     assert isinstance(x, BitVec) and size - x.size >= 0
     if size - x.size > 0:
@@ -146,14 +151,14 @@ def ZEXTEND(x, size):
 
 
 def CONCAT(total_size, *args):
-    arg_size = total_size / len(args)
+    arg_size = total_size // len(args)
     if any(issymbolic(x) for x in args):
         if len(args) > 1:
             def cast(x):
-                if isinstance(x, (int, long)):
+                if isinstance(x, int):
                     return BitVecConstant(arg_size, x)
                 return x
-            return BitVecConcat(total_size, *map(cast, args))
+            return BitVecConcat(total_size, *list(map(cast, args)))
         else:
             return args[0]
     else:
@@ -162,9 +167,10 @@ def CONCAT(total_size, *args):
             result = (result << arg_size) | (arg & ((1 << arg_size) - 1))
         return result
 
+
 def ITE(cond, true_value, false_value):
-    assert isinstance(true_value, (Bool, bool, BitVec, int, long))
-    assert isinstance(false_value, (Bool, bool, BitVec, int, long))
+    assert isinstance(true_value, (Bool, bool, BitVec, int))
+    assert isinstance(false_value, (Bool, bool, BitVec, int))
     assert isinstance(cond, (Bool, bool))
     if isinstance(cond, bool):
         if cond:
@@ -180,16 +186,17 @@ def ITE(cond, true_value, false_value):
 
     return BoolITE(cond, true_value, false_value)
 
+
 def ITEBV(size, cond, true_value, false_value):
     if isinstance(cond, BitVec):
         cond = cond.Bool()
-    if isinstance(cond, (int, long)):
+    if isinstance(cond, int):
         cond = (cond != 0)
 
     assert isinstance(cond, (Bool, bool))
-    assert isinstance(true_value, (BitVec, int, long))
-    assert isinstance(false_value, (BitVec, int, long))
-    assert isinstance(size, (int, long))
+    assert isinstance(true_value, (BitVec, int))
+    assert isinstance(false_value, (BitVec, int))
+    assert isinstance(size, int)
 
     if isinstance(cond, bool):
         if cond:
@@ -197,12 +204,13 @@ def ITEBV(size, cond, true_value, false_value):
         else:
             return false_value
 
-    if isinstance(true_value, (int, long)):
+    if isinstance(true_value, int):
         true_value = BitVecConstant(size, true_value)
 
-    if isinstance(false_value, (int, long)):
+    if isinstance(false_value, int):
         false_value = BitVecConstant(size, false_value)
     return BitVecITE(size, cond, true_value, false_value)
+
 
 def UDIV(dividend, divisor):
     if isinstance(dividend, BitVec):
@@ -210,22 +218,12 @@ def UDIV(dividend, divisor):
     elif isinstance(divisor, BitVec):
         return divisor.rudiv(dividend)
     assert dividend >= 0 or divisor > 0  # unsigned-es
-    return dividend/divisor
-
-
-def UREM(a, b):
-    if isinstance(a, BitVec):
-        return a.urem(b)
-    if isinstance(b, BitVec):
-        return b.rurem(a)
-    if a < 0 or b < 0:
-        raise "azaraza"
-    return a % b
+    return dividend // divisor
 
 
 def SDIV(a, b):
     if isinstance(a, BitVec):
-        return a / b
+        return a // b
     elif isinstance(b, BitVec):
         return b.__rsdiv__(a)
     return int(math.trunc(float(a) / float(b)))
@@ -242,8 +240,16 @@ def SMOD(a, b):
 def SREM(a, b):
     if isinstance(a, BitVec):
         return a.srem(b)
-    elif isinstance(a, BitVec):
+    elif isinstance(b, BitVec):
         return b.rsrem(a)
+    return a % b
+
+
+def UREM(a, b):
+    if isinstance(a, BitVec):
+        return a.urem(b)
+    elif isinstance(b, BitVec):
+        return b.rurem(a)
     return a % b
 
 
@@ -268,6 +274,12 @@ def SAR(size, a, b):
         sign = tempDest & (1 << (size - 1))
         while tempCount != 0:
             tempDest = (tempDest >> 1) | sign
-            tempCount = tempCount-1
+            tempCount = tempCount - 1
         return tempDest
 
+
+def ABS(a):
+    if issymbolic(a):
+        return ITEBV(a.size, a < 0, -a, a)
+    else:
+        return abs(a)

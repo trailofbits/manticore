@@ -1,0 +1,67 @@
+version: "2"
+checks:
+  argument-count:
+    enabled: true
+    config:
+      threshold: 12
+  complex-logic:
+    enabled: true
+    config:
+      threshold: 4
+  file-lines:
+    enabled: true
+    config:
+      threshold: 9000
+  method-complexity:
+    enabled: true
+    config:
+      threshold: 40
+  method-count:
+    enabled: true
+    config:
+      threshold: 35
+  method-lines:
+    enabled: true
+    config:
+      threshold: 53
+  nested-control-flow:
+    enabled: true
+    config:
+      threshold: 10
+  return-statements:
+    enabled: true
+    config:
+      threshold: 5
+  similar-code:
+    enabled: true
+    config:
+      threshold: 210
+  identical-code:
+    enabled: true
+    config:
+      threshold: 65
+plugins:
+  pep8:
+    enabled: true
+    checks:
+      E712:
+        enabled: false
+      E701:
+        enabled: false
+  sonar-python:
+    enabled: false
+    config:
+      minimum_severity: critical
+  radon:
+    enabled: false
+    config:
+      python_version: 3
+      threshold: "D"
+exclude_patterns:
+  - "docs/"
+  - "examples/"
+  - "scripts/"
+  - "tests/"
+  - "mcore_*/"
+  - ".tox/"
+

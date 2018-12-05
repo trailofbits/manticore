@@ -1,33 +1,36 @@
-import time
+
 import os
-import cPickle
 import random
 import logging
 import signal
-try:
-    import cStringIO as StringIO
-except:
-    import StringIO
 
+from ..exceptions import ExecutorError, SolverException
 from ..utils.nointerrupt import WithKeyboardInterruptAs
 from ..utils.event import Eventful
-from .smtlib import solver, Expression, SolverException
+from ..utils import config
+from .smtlib import Z3Solver, Expression
 from .state import Concretize, TerminateState
-from workspace import Workspace
+
+from .workspace import Workspace
 from multiprocessing.managers import SyncManager
 from contextlib import contextmanager
 
-#This is the single global manager that will handle all shared memory among workers
+# This is the single global manager that will handle all shared memory among workers
+
+consts = config.get_group('executor')
+consts.add('seed', default=1337, description='The seed to use when randomly selecting states')
+
+
 def mgr_init():
     signal.signal(signal.SIGINT, signal.SIG_IGN)
-manager = SyncManager()
-manager.start(mgr_init)
+
 
 logger = logging.getLogger(__name__)
 
 
 def sync(f):
     """ Synchronization decorator. """
+
     def newFunction(self, *args, **kw):
         self._lock.acquire()
         try:
@@ -39,8 +42,9 @@ def sync(f):
 
 class Policy(object):
     ''' Base class for prioritization of state search '''
+
     def __init__(self, executor, *args, **kwargs):
-        super(Policy, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._executor = executor
         self._executor.subscribe('did_enqueue_state', self._add_state_callback)
 
@@ -75,19 +79,23 @@ class Policy(object):
             self.context has a dict mapping state_ids -> summarize(state)'''
         raise NotImplementedError
 
+
 class Random(Policy):
     def __init__(self, executor, *args, **kwargs):
-        super(Random, self).__init__(executor, *args, **kwargs)
-        random.seed(1337) # For repeatable results
+        super().__init__(executor, *args, **kwargs)
+        random.seed(consts.seed)  # For repeatable results
 
     def choice(self, state_ids):
         return random.choice(state_ids)
 
+
 class Uncovered(Policy):
     def __init__(self, executor, *args, **kwargs):
-        super(Uncovered, self).__init__(executor, *args, **kwargs)
-        #hook on the necesary executor signals
-        #on callbacks save data in executor.context['policy']
+        super().__init__(executor, *args, **kwargs)
+        # hook on the necessary executor signals
+        # on callbacks save data in executor.context['policy']
+        with self._executor.locked_context() as ctx:
+            ctx['policy'] = {}
         self._executor.subscribe('will_load_state', self._register)
 
     def _register(self, *args):
@@ -101,7 +109,7 @@ class Uncovered(Policy):
 
     def summarize(self, state):
         ''' Save the last pc before storing the state '''
-        return state.cpu.PC
+        return state.platform.PC
 
     def choice(self, state_ids):
         # Use executor.context['uncovered'] = state_id -> stats
@@ -115,16 +123,17 @@ class Uncovered(Policy):
                     interesting.add(_id)
         return random.choice(tuple(interesting))
 
+
 class BranchLimited(Policy):
     def __init__(self, executor, *args, **kwargs):
-        super(BranchLimited, self).__init__(executor, *args, **kwargs)
+        super().__init__(executor, *args, **kwargs)
         self._executor.subscribe('will_load_state', self._register)
         self._limit = kwargs.get('limit', 5)
 
     def _register(self, *args):
         self._executor.subscribe('will_execute_instruction', self._visited_callback)
 
-    def _visited_callback(self, state, instr):
+    def _visited_callback(self, state, pc, instr):
         ''' Maintain our own copy of the visited set
         '''
         pc = state.platform.current.PC
@@ -139,20 +148,19 @@ class BranchLimited(Policy):
         with self.locked_context() as policy_ctx:
             visited = policy_ctx.get('visited', dict())
             summaries = policy_ctx.get('summaries', dict())
-            lst = []
-            for id_, pc in summaries.items():
-                cnt = visited.get(pc, 0)
-                if id_ not in state_ids:
-                    continue
-                if cnt <= self._limit:
-                    lst.append((id_, visited.get(pc, 0)))
-            lst = sorted(lst, key=lambda x: x[1])
+        lst = []
+        for id_, pc in summaries.items():
+            cnt = visited.get(pc, 0)
+            if id_ not in state_ids:
+                continue
+            if cnt <= self._limit:
+                lst.append((id_, visited.get(pc, 0)))
+        lst = sorted(lst, key=lambda x: x[1])
 
         if lst:
             return lst[0][0]
         else:
             return None
-
 
 
 class Executor(Eventful):
@@ -164,36 +172,39 @@ class Executor(Eventful):
 
     _published_events = {'enqueue_state', 'generate_testcase', 'fork_state', 'load_state', 'terminate_state'}
 
-    def __init__(self, initial=None, workspace=None, policy='random', context=None, **kwargs):
-        super(Executor, self).__init__(**kwargs)
-
+    def __init__(self, initial=None, store=None, policy='random', context=None, **kwargs):
+        super().__init__(**kwargs)
 
         # Signals / Callbacks handlers will be invoked potentially at different
         # worker processes. State provides a local context to save data.
 
         self.subscribe('did_load_state', self._register_state_callbacks)
 
+        # This is the global manager that will handle all shared memory access among workers
+        self.manager = SyncManager()
+        self.manager.start(lambda: signal.signal(signal.SIGINT, signal.SIG_IGN))
+
         # The main executor lock. Acquire this for accessing shared objects
-        self._lock = manager.Condition(manager.RLock())
+        self._lock = self.manager.Condition()
 
         # Shutdown Event
-        self._shutdown = manager.Event()
+        self._shutdown = self.manager.Event()
 
         # States on storage. Shared dict state name ->  state stats
-        self._states = manager.list()
+        self._states = self.manager.list()
 
         # Number of currently running workers. Initially no running workers
-        self._running = manager.Value('i', 0 )
+        self._running = self.manager.Value('i', 0)
 
-        self._workspace = Workspace(self._lock, workspace)
+        self._workspace = Workspace(self._lock, store)
 
         # Executor wide shared context
         if context is None:
             context = {}
-        self._shared_context = manager.dict(context)
+        self._shared_context = self.manager.dict(context)
 
-        #scheduling priority policy (wip)
-        #Set policy
+        # scheduling priority policy (wip)
+        # Set policy
         policies = {'random': Random,
                     'uncovered': Uncovered,
                     'branchlimited': BranchLimited,
@@ -208,13 +219,16 @@ class Executor(Eventful):
             if initial is not None:
                 self.add(initial)
 
+    def __del__(self):
+        self.manager.shutdown()
+
     @contextmanager
     def locked_context(self, key=None, default=dict):
         ''' Executor context is a shared memory object. All workers share this.
             It needs a lock. Its used like this:
 
             with executor.context() as context:
-                vsited = context['visited']
+                visited = context['visited']
                 visited.append(state.cpu.PC)
                 context['visited'] = visited
         '''
@@ -222,14 +236,6 @@ class Executor(Eventful):
         with self._lock:
             if key is None:
                 yield self._shared_context
-            elif '.' in key:
-                keys = key.split('.')
-                with self.locked_context('.'.join(keys[:-1])) as sub_context:
-                    sub_sub_context = sub_context.get(keys[-1], None)
-                    if sub_sub_context is None:
-                        sub_sub_context = default()
-                    yield sub_sub_context
-                    sub_context[keys[-1]] = sub_sub_context
             else:
                 sub_context = self._shared_context.get(key, None)
                 if sub_context is None:
@@ -242,7 +248,7 @@ class Executor(Eventful):
             Install forwarding callbacks in state so the events can go up.
             Going up, we prepend state in the arguments.
         '''
-        #Forward all state signals
+        # Forward all state signals
         self.forward_events_from(state, True)
 
     def enqueue(self, state):
@@ -251,14 +257,14 @@ class Executor(Eventful):
             Save state on storage, assigns an id to it, then add it to the
             priority queue
         '''
-        #save the state to secondary storage
+        # save the state to secondary storage
         state_id = self._workspace.save_state(state)
         self.put(state_id)
         self._publish('did_enqueue_state', state_id, state)
         return state_id
 
     def load_workspace(self):
-        #Browse and load states in a workspace in case we are trying to
+        # Browse and load states in a workspace in case we are trying to
         # continue from paused run
         loaded_state_ids = self._workspace.try_loading_workspace()
         if not loaded_state_ids:
@@ -273,20 +279,19 @@ class Executor(Eventful):
     # Synchronization helpers
     @sync
     def _notify_start_run(self):
-        #notify siblings we are about to start a run()
+        # notify siblings we are about to start a run()
         self._running.value += 1
 
     @sync
     def _notify_stop_run(self):
-        #notify siblings we are about to stop this run()
+        # notify siblings we are about to stop this run()
         self._running.value -= 1
-        if self._running.value < 0:
+        if self._running is None or self._running.value < 0:
             raise SystemExit
         self._lock.notify_all()
 
-
     ################################################
-    #Public API
+    # Public API
     @property
     def running(self):
         ''' Report an estimate  of how many workers are currently running '''
@@ -299,7 +304,6 @@ class Executor(Eventful):
     def is_shutdown(self):
         ''' Returns True if shutdown was requested '''
         return self._shutdown.is_set()
-
 
     ###############################################
     # Priority queue
@@ -314,26 +318,26 @@ class Executor(Eventful):
     def get(self):
         ''' Dequeue a state with the max priority '''
 
-        #A shutdown has been requested
+        # A shutdown has been requested
         if self.is_shutdown():
             return None
 
-        #if not more states in the queue lets wait for some forks
+        # if not more states in the queue, let's wait for some forks
         while len(self._states) == 0:
-            #if no worker is running bail out
+            # if no worker is running, bail out
             if self.running == 0:
                 return None
-            #if a shutdown has been requested bail out
+            # if a shutdown has been requested, bail out
             if self.is_shutdown():
                 return None
-            #if there is actually some workers running wait for state forks
+            # if there ares actually some workers running, wait for state forks
             logger.debug("Waiting for available states")
             self._lock.wait()
 
         state_id = self._policy.choice(list(self._states))
         if state_id is None:
             return None
-        del  self._states[self._states.index(state_id)]
+        del self._states[self._states.index(state_id)]
         return state_id
 
     def list(self):
@@ -349,8 +353,8 @@ class Executor(Eventful):
         :param message: Accompanying message
         '''
 
-        #broadcast test generation. This is the time for other modules
-        #to output whatever helps to understand this testcase
+        # broadcast test generation. This is the time for other modules
+        # to output whatever helps to understand this testcase
         self._publish('will_generate_testcase', state, 'test', message)
 
     def fork(self, state, expression, policy='ALL', setstate=None):
@@ -375,73 +379,82 @@ class Executor(Eventful):
         assert isinstance(expression, Expression)
 
         if setstate is None:
-            setstate = lambda x,y: None
+            setstate = lambda x, y: None
 
-        #Find a set of solutions for expression
+        # Find a set of solutions for expression
         solutions = state.concretize(expression, policy)
 
-        logger.info("Forking, about to store. (policy: %s, values: %s)",
+        if not solutions:
+            raise ExecutorError("Forking on unfeasible constraint set")
+
+        if len(solutions) == 1:
+            setstate(state, solutions[0])
+            return state
+
+        logger.info("Forking. Policy: %s. Values: %s",
                     policy,
-                    ', '.join('0x{:x}'.format(sol) for sol in solutions))
+                    ', '.join(f'0x{sol:x}' for sol in solutions))
 
         self._publish('will_fork_state', state, expression, solutions, policy)
 
-        #Build and enqueue a state for each solution
+        # Build and enqueue a state for each solution
         children = []
         for new_value in solutions:
             with state as new_state:
                 new_state.constrain(expression == new_value)
 
-                #and set the PC of the new state to the concrete pc-dest
+                # and set the PC of the new state to the concrete pc-dest
                 #(or other register or memory address to concrete)
                 setstate(new_state, new_value)
 
                 self._publish('did_fork_state', new_state, expression, new_value, policy)
 
-                #enqueue new_state
+                # enqueue new_state
                 state_id = self.enqueue(new_state)
-                #maintain a list of childres for logging purpose
+                # maintain a list of children for logging purpose
                 children.append(state_id)
 
-        logger.debug("Forking current state into states %r", children)
+        logger.info("Forking current state into states %r", children)
         return None
 
     def run(self):
         '''
         Entry point of the Executor; called by workers to start analysis.
         '''
-        #policy_order=self.policy_order
-        #policy=self.policy
+        # policy_order=self.policy_order
+        # policy=self.policy
         current_state = None
         current_state_id = None
 
         with WithKeyboardInterruptAs(self.shutdown):
-            #notify siblings we are about to start a run
+            # notify siblings we are about to start a run
             self._notify_start_run()
 
-            logger.debug("Starting Manticore Symbolic Emulator Worker (pid %d).",os.getpid())
-
-
+            logger.debug("Starting Manticore Symbolic Emulator Worker (pid %d).", os.getpid())
+            solver = Z3Solver()
             while not self.is_shutdown():
-                try:
-                    #select a suitable state to analyze
-                    if current_state is None:
-                        with self._lock:
-                            #notify siblings we are about to stop this run
-                            self._notify_stop_run()
-                            #Select a single state_id
-                            current_state_id = self.get()
-                            #load selected state from secondary storage
-                            if current_state_id is not None:
-                                self._publish('will_load_state', current_state_id)
-                                current_state = self._workspace.load_state(current_state_id)
-                                self.forward_events_from(current_state, True)
-                                self._publish('did_load_state', current_state, current_state_id)
-                                logger.info("load state %r", current_state_id)
-                            #notify siblings we have a state to play with
-                            self._notify_start_run()
+                try:  # handle fatal errors: exceptions in Manticore
+                    try:  # handle external (e.g. solver) errors, and executor control exceptions
+                        # select a suitable state to analyze
+                        if current_state is None:
+                            with self._lock:
+                                # notify siblings we are about to stop this run
+                                self._notify_stop_run()
+                                try:
+                                    # Select a single state_id
+                                    current_state_id = self.get()
+                                    # load selected state from secondary storage
+                                    if current_state_id is not None:
+                                        self._publish('will_load_state', current_state_id)
+                                        current_state = self._workspace.load_state(current_state_id)
+                                        self.forward_events_from(current_state, True)
+                                        self._publish('did_load_state', current_state, current_state_id)
+                                        logger.info("load state %r", current_state_id)
+                                    # notify siblings we have a state to play with
+                                finally:
+                                    self._notify_start_run()
 
-                        #If current_state is still None. We are done.
+                        # If current_state is still None. We are done.
                         if current_state is None:
                             logger.debug("No more states in the queue, byte bye!")
                             break
@@ -449,30 +462,25 @@ class Executor(Eventful):
                         assert current_state is not None
                         assert current_state.constraints is current_state.platform.constraints
 
-                    try:
-
                         # Allows to terminate manticore worker on user request
                         while not self.is_shutdown():
                             if not current_state.execute():
                                 break
                         else:
-                            #Notify this worker is done
-                            self._publish('will_terminate_state', current_state, current_state_id, 'Shutdown')
+                            # Notify this worker is done
+                            self._publish('will_terminate_state', current_state, current_state_id, TerminateState('Shutdown'))
                             current_state = None
 
-
-                    #Handling Forking and terminating exceptions
+                    # Handling Forking and terminating exceptions
                     except Concretize as e:
-                        #expression
-                        #policy
-                        #setstate()
-
+                        # expression
+                        # policy
+                        # setstate()
                         logger.debug("Generic state fork on condition")
-                        self.fork(current_state, e.expression, e.policy, e.setstate)
-                        current_state = None
+                        current_state = self.fork(current_state, e.expression, e.policy, e.setstate)
 
                     except TerminateState as e:
-                        #Notify this worker is done
+                        # Notify this worker is done
                         self._publish('will_terminate_state', current_state, current_state_id, e)
 
                         logger.debug("Generic terminate state")
@@ -481,11 +489,12 @@ class Executor(Eventful):
                         current_state = None
 
                     except SolverException as e:
+                        # raise
                         import traceback
                         trace = traceback.format_exc()
                         logger.error("Exception: %s\n%s", str(e), trace)
 
-                        #Notify this state is done
+                        # Notify this state is done
                         self._publish('will_terminate_state', current_state, current_state_id, e)
 
                         if solver.check(current_state.constraints):
@@ -493,16 +502,16 @@ class Executor(Eventful):
                         current_state = None
 
                 except (Exception, AssertionError) as e:
+                    # raise
                     import traceback
                     trace = traceback.format_exc()
                     logger.error("Exception: %s\n%s", str(e), trace)
-                    print "Exception: %s\n%s"%( str(e), trace)
-                    #Notify this worker is done
+                    # Notify this worker is done
                     self._publish('will_terminate_state', current_state, current_state_id, e)
                     current_state = None
                     logger.setState(None)
 
-            assert current_state is None
+            assert current_state is None or self.is_shutdown()
 
-            #notify siblings we are about to stop this run
+            # notify siblings we are about to stop this run
             self._notify_stop_run()

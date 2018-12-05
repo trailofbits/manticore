@@ -1,5 +1,5 @@
 /* Minimal toy example with some input output no stdlib
- * Symbolic values are read from stdin using int80 or syscall. The program has 2 posible paths
+ * Symbolic values are read from stdin using int80 or syscall. The program has 2 possible paths
  * 
  * Compile with :
  *   $ gcc -fno-builtin -static -nostdlib -m32  -fomit-frame-pointer  toy001.c  -o toy001
@@ -19,36 +19,34 @@
         arg 6           %ebp         call-saved
 */
 static inline
-int syscall(int syscall_number, ... )  {
+int syscall(int syscall_number, int arg1, int arg2, int arg3)  {
     int ret;
     asm volatile (
         "pushl %%ebp\n\t"
         "movl %1, %%eax\n\t"
-        "movl %2, %%ebx\n\t"
-        "movl %3, %%ecx\n\t"
-        "movl %4, %%edx\n\t"
-        "movl %5, %%edi\n\t"
-        "movl %6, %%esi\n\t"
-        "movl %7, %%ebp\n\t"
+        "movl %2, %%eax\n\t"
+        "movl %3, %%ebx\n\t"
+        "movl %4, %%ecx\n\t"
+        //"movl %4, %%edx\n\t"
         "int $0x80\n\t"
         "popl %%ebp\n\t"
         : "=a"(ret)
-        : "g"(syscall_number), "g"(*(&syscall_number+1)), "g"(*(&syscall_number+2)), "g"(*(&syscall_number+3)), "g"(*(&syscall_number+4)), "g"(*(&syscall_number+5)), "g"(*(&syscall_number+6))
+        : "g"(syscall_number), "g"(arg1), "g"(arg2), "g"(arg3)
         : "%ebx", "%ecx", "%edx", "%esi", "%edi"
     );
 return ret;
 }
 
 int write(int fd, void* buffer, unsigned int size){
-    return syscall(4, fd, buffer, size,0,0,0);
+    return syscall(4, fd, (int) buffer, size);
 }
 
 int read(int fd, void* buffer, unsigned int size){
-    return syscall(3, fd, buffer, size,0,0,0);
+    return syscall(3, fd, (int) buffer, size);
 }
 
 int exit(int errorlevel){
-    return syscall(1, errorlevel,0,0,0,0,0);
+    return syscall(1, errorlevel,0,0);
 }
 
 void _start(){

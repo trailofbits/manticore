@@ -1,19 +1,22 @@
 import unittest
-import struct
-from functools import wraps
 
-from manticore.core.cpu.arm import Armv7Cpu as Cpu, Mask, Interruption
-from manticore.core.cpu.abstractcpu import ConcretizeRegister
-from manticore.core.memory import ConcretizeMemory, Memory32, SMemory32
-from manticore.core.state import State
-from manticore.core.smtlib import BitVecVariable, ConstraintSet
+import os
+import struct
+from capstone import CS_MODE_THUMB, CS_MODE_ARM
+from functools import wraps
+from keystone import Ks, KS_ARCH_ARM, KS_MODE_ARM, KS_MODE_THUMB
+from unicorn import UC_QUERY_MODE, UC_MODE_THUMB
+
+from manticore.native.cpu.abstractcpu import ConcretizeRegister
+from manticore.native.cpu.arm import Armv7Cpu as Cpu, Mask, Interruption
+from manticore.core.smtlib import ConstraintSet
+from manticore.native.state import State
+from manticore.native.memory import ConcretizeMemory, Memory32
 from manticore.platforms import linux
 from manticore.utils.fallback_emulator import UnicornEmulator
 
-from capstone.arm import *
-from keystone import Ks, KS_ARCH_ARM, KS_MODE_ARM
-
 ks = Ks(KS_ARCH_ARM, KS_MODE_ARM)
+ks_thumb = Ks(KS_ARCH_ARM, KS_MODE_THUMB)
 
 import logging
 
@@ -25,18 +28,23 @@ semantics from ARM tests to ensure that they match. UnicornConcretization tests
 to make sure symbolic values get properly concretized.
 '''
 
-def assemble(asm):
-    ords = ks.asm(asm)[0]
+def assemble(asm, mode=CS_MODE_ARM):
+    if CS_MODE_ARM == mode:
+        ords = ks.asm(asm)[0]
+    elif CS_MODE_THUMB == mode:
+        ords = ks_thumb.asm(asm)[0]
+    else:
+        raise Exception(f'bad processor mode for assembly: {mode}')
     if not ords:
-        raise Exception('bad assembly: {}'.format(asm))
+        raise Exception(f'bad assembly: {asm}')
     return ''.join(map(chr, ords))
-
 
 def emulate_next(cpu):
     'Read the next instruction and emulate it with Unicorn '
     cpu.decode_instruction(cpu.PC)
     emu = UnicornEmulator(cpu)
     emu.emulate(cpu.instruction)
+    return emu
 
 
 def itest(asm):
@@ -95,14 +103,15 @@ class Armv7UnicornInstructions(unittest.TestCase):
         self.mem = self.cpu.memory
         self.rf = self.cpu.regfile
 
-    def _setupCpu(self, asm):
+    def _setupCpu(self, asm, mode=CS_MODE_ARM):
         self.code = self.mem.mmap(0x1000, 0x1000, 'rwx')
         self.data = self.mem.mmap(0xd000, 0x1000, 'rw')
         self.stack = self.mem.mmap(0xf000, 0x1000, 'rw')
         start = self.code + 4
-        self.mem.write(start, assemble(asm))
+        self.mem.write(start, assemble(asm, mode))
         self.rf.write('PC', start)
         self.rf.write('SP', self.stack + 0x1000)
+        self.cpu.mode = mode
 
     def _checkFlagsNZCV(self, n, z, c, v):
         self.assertEqual(self.rf.read('APSR_N'), n)
@@ -741,7 +750,7 @@ class Armv7UnicornInstructions(unittest.TestCase):
     @itest_setregs("R1=3")
     def test_push_one_reg(self):
         emulate_next(self.cpu)
-        self.assertItemsEqual(self.cpu.stack_peek(), struct.pack('<I', 3))
+        self.assertCountEqual(b''.join(self.cpu.stack_peek()), struct.pack('<I', 3))
 
     @itest_custom("push {r1, r2, r3}")
     @itest_setregs("R1=3", "R2=0x55", "R3=0xffffffff")
@@ -750,7 +759,7 @@ class Armv7UnicornInstructions(unittest.TestCase):
         emulate_next(self.cpu)
         sp = self.cpu.STACK
         self.assertEqual(self.rf.read('SP'), pre_sp - (3 * 4))
-        self.assertItemsEqual(self.cpu.stack_peek(), struct.pack('<I', 3))
+        self.assertCountEqual(b''.join(self.cpu.stack_peek()), struct.pack('<I', 3))
         self.assertEqual(self.cpu.read_int(sp + 4, self.cpu.address_bit_size), 0x55)
         self.assertEqual(self.cpu.read_int(sp + 8, self.cpu.address_bit_size), 0xffffffff)
 
@@ -1212,7 +1221,7 @@ class Armv7UnicornInstructions(unittest.TestCase):
         self.assertEqual(self.rf.read('R2'), 2)
 
     def test_flag_state_continuity(self):
-        '''If an instruction only partially updates flags, cpu.setFlags should
+        '''If an instruction only partially updates flags, cpu.set_flags should
         ensure unupdated flags are preserved.
 
         For example:
@@ -1305,6 +1314,16 @@ class Armv7UnicornInstructions(unittest.TestCase):
         self.assertEqual(self.rf.read('R2'), (mul >> 32) & Mask(32))
         self._checkFlagsNZCV(0, 1, pre_c, pre_v)
 
+    def test_thumb_mode_emulation(self):
+        asm = "add r0, r1, r2"
+        self._setupCpu(asm, mode=CS_MODE_THUMB)
+        self.rf.write('R0', 0)
+        self.rf.write('R1', 0x1234)
+        self.rf.write('R2', 0x5678)
+        emu = emulate_next(self.cpu)
+        self.assertEqual(self.rf.read('R0'), 0x1234 + 0x5678)
+        self.assertEqual(emu._emu.query(UC_QUERY_MODE), UC_MODE_THUMB)
+
 
 class UnicornConcretization(unittest.TestCase):
     '''
@@ -1318,7 +1337,8 @@ class UnicornConcretization(unittest.TestCase):
     def get_state(cls):
         if cls.cpu is None:
             constraints = ConstraintSet()
-            platform = linux.SLinux('/bin/ls')
+            dirname = os.path.dirname(__file__)
+            platform = linux.SLinux(os.path.join(dirname, 'binaries', 'basic_linux_amd64'))
             cls.state = State(constraints, platform)
             cls.cpu = platform._mk_proc('armv7')
         return (cls.cpu, cls.state)
@@ -1328,6 +1348,8 @@ class UnicornConcretization(unittest.TestCase):
         self.cpu, self.state = self.__class__.get_state()
         self.mem = self.cpu.memory
         self.rf = self.cpu.regfile
+        for r in self.cpu.regfile.canonical_registers:
+            self.cpu.write_register(r, 0)
 
     def _setupCpu(self, asm):
         self.code = self.mem.mmap(0x1000, 0x1000, 'rwx')
@@ -1397,4 +1419,13 @@ class UnicornConcretization(unittest.TestCase):
 
         self.assertEqual(self.rf.read('PC'), self.code+8)
         self.assertEqual(self.rf.read('R0'), 0x12345678)
+
+
+    @itest_custom("mov r1, r2")
+    def test_concretize_register_isnt_consumed(self):
+        val = self.state.new_symbolic_value(32)
+        self.rf.write('R2', val)
+
+        with self.assertRaises(ConcretizeRegister):
+            self.cpu.emulate(self.cpu.decode_instruction(self.cpu.PC))
 

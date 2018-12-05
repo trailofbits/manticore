@@ -62,4 +62,5 @@ main(int argc, char argv[]){
 char buffer[200];
 read(0,buffer,200);
 copy_it(buffer, 200);
+return 0;
 }

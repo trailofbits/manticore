@@ -1,9 +1,8 @@
-from seth import *
-################ Script #######################
+from manticore.ethereum import ManticoreEVM
 
-seth = ManticoreEVM()
-seth.verbosity(0)
-#And now make the contract account to analyze
+m = ManticoreEVM()
+m.verbosity(2)
+# And now make the contract account to analyze
 # cat  | solc --bin 
 source_code = '''
 pragma solidity ^0.4.13;
@@ -13,11 +12,11 @@ contract Test {
     mapping(address => uint) private balances;
 
     function Test(){
-        balances[0x11111111111111111111111111111111] = 10;
-        balances[0x22222222222222222222222222222222] = 20;
-        balances[0x33333333333333333333333333333333] = 30;
-        balances[0x44444444444444444444444444444444] = 40;
-        balances[0x55555555555555555555555555555555] = 50;
+        balances[0x1111111111111111111111111111111111111111] = 10;
+        balances[0x2222222222222222222222222222222222222222] = 20;
+        balances[0x3333333333333333333333333333333333333333] = 30;
+        balances[0x4444444444444444444444444444444444444444] = 40;
+        balances[0x5555555555555555555555555555555555555555] = 50;
     }
     
     function target(address key) returns (bool){
@@ -29,32 +28,17 @@ contract Test {
 
 }
 '''
-user_account = seth.create_account(balance=1000)
+# Initialize accounts
+user_account = m.create_account(balance=1000)
+contract_account = m.solidity_create_contract(source_code, owner=user_account)
 
-#Initialize contract
-bytecode = seth.compile(source_code)
-contract_account = seth.create_contract(owner=user_account, 
-                                          balance=0, 
-                                          init=bytecode)
+symbolic_data = m.make_symbolic_buffer(64)
+symbolic_value = 0
+m.transaction(caller=user_account,
+              address=contract_account,
+              value=symbolic_value,
+              data=symbolic_data
+              )
 
-symbolic_data = seth.SByte(64) 
-symbolic_value = None 
-seth.transaction(  caller=user_account,
-                    address=contract_account,
-                    value=symbolic_value,
-                    data=symbolic_data,
-                 )
-
-
-print "[+] There are %d reverted states now"% len(seth.final_state_ids)
-for state_id in seth.final_state_ids:
-    seth.report(state_id)
-
-print "[+] There are %d alive states now"% len(seth.running_state_ids)
-for state_id in seth.running_state_ids:
-    seth.report(state_id)
-
-print "[+] Global coverage:"
-print seth.coverage(contract_account)
-
-
+m.finalize()
+print(f"[+] Look for results in {m.workspace}")

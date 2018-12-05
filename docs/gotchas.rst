@@ -24,7 +24,7 @@ An example of a global context race condition, when modifying two context entrie
     --- interrupted by other worker
     m.context['flag2] += ['b']
 
-Client code should use the :meth:`~manticore.Manticore.locked_context` API::
+Client code should use the :meth:`~manticore.core.ManticoreBase.locked_context` API::
 
     with m.locked_context() as global_context:
         global_context['flag1'] += ['a']
@@ -34,10 +34,4 @@ Client code should use the :meth:`~manticore.Manticore.locked_context` API::
 "Random" Policy
 ---------------
 
-The `random` policy, which is the manticore default, is not actually random and is instead deterministically seeded. This means that running the same analysis twice should return the same results (and get stuck in the same places).
-
-
-Symbolic Socket Support
------------------------
-
-The current implementation of the socket family of system calls is very barebones and is deemed to be experimental. All created sockets are assumed to contain 64 bytes of symbolic input.
+The `random` policy, which is the Manticore default, is not actually random and is instead deterministically seeded. This means that running the same analysis twice should return the same results (and get stuck in the same places).
