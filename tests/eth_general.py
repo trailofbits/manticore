@@ -665,21 +665,18 @@ class EthTests(unittest.TestCase):
         class TestDetector(Detector):
             def did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
                 if instruction.is_endtx:
-                    with self.locked_context('insns', dict) as d:
-                        d[instruction.semantics] = True
+                    with self.locked_context('endtx_instructions', set) as d:
+                        d.add(instruction.name)
 
         mevm = self.mevm
         p = TestDetector()
         mevm.register_detector(p)
 
-        filename = os.path.join(THIS_DIR, 'binaries/int_overflow.sol')
-        mevm.multi_tx_analysis(filename, tx_limit=2)
+        filename = os.path.join(THIS_DIR, 'binaries/simple_int_overflow.sol')
+        mevm.multi_tx_analysis(filename, tx_limit=2, tx_preconstrain=True)
 
-        self.assertIn('insns', p.context)
-        context = p.context['insns']
-        self.assertIn('STOP', context)
-        self.assertIn('RETURN', context)
-        self.assertIn('REVERT', context)
+        self.assertIn('endtx_instructions', p.context)
+        self.assertSetEqual(p.context['endtx_instructions'], {'INVALID', 'RETURN', 'STOP'})
 
     def test_call_with_concretized_args(self):
         """Test a CALL with symbolic arguments that will to be concretized.
@@ -918,6 +915,28 @@ class EthTests(unittest.TestCase):
 
         context = p.context.get('flags', {})
         self.assertTrue(context.get('found', False))
+
+    def test_preconstraints(self):
+        source_code = '''
+        contract C {
+            constructor() public {}
+            function f0() public {}
+            function f1(uint a) public payable {}
+        }
+        '''
+        m: ManticoreEVM = self.mevm
+
+        creator_account = m.create_account(balance=1000)
+        contract_account = m.solidity_create_contract(source_code, owner=creator_account, balance=0)
+
+        data = m.make_symbolic_buffer(320)
+        value = m.make_symbolic_value()
+        m.constrain(m.preconstraint_for_call_transaction(address=contract_account, data=data, value=value))
+        m.transaction(caller=creator_account, address=contract_account, data=data, value=value)
+
+        results = [state.platform.all_transactions[-1].result for state in m.all_states]
+        # The TXERROR indicates a state where the sent value is greater than the senders budget.
+        self.assertListEqual(sorted(results), ['STOP']*2 + ['TXERROR'])
 
 class EthHelpersTest(unittest.TestCase):
     def setUp(self):
