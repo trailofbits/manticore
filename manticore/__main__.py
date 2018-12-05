@@ -119,48 +119,49 @@ def parse_arguments():
     eth_flags.add_argument('--contract', type=str,
                            help='Contract name to analyze in case of multiple contracts')
 
-    eth_flags.add_argument('--detect-overflow', action='store_true',
-                           help='Enable integer overflow detection')
+    eth_detectors = parser.add_argument_group('Ethereum detectors')
 
-    eth_flags.add_argument('--detect-invalid', action='store_true',
-                           help='Enable INVALID instruction detection')
+    eth_detectors.add_argument('--list-detectors',
+                               help='List available detectors',
+                               action=ListEthereumDetectors,
+                               nargs=0,
+                               default=False)
 
-    eth_flags.add_argument('--detect-uninitialized-memory', action='store_true',
-                           help='Enable detection of uninitialized memory usage')
+    eth_detectors.add_argument('--detect',
+                               help='Comma-separated list of detectors, defaults to all, '
+                                    'for available detectors see --list-detectors',
+                               action='store',
+                               dest='detectors_to_run',
+                               default='all')
 
-    eth_flags.add_argument('--detect-uninitialized-storage', action='store_true',
-                           help='Enable detection of uninitialized storage usage')
+    eth_detectors.add_argument('--exclude',
+                               help='Comma-separated list of detectors that should be excluded',
+                               action='store',
+                               dest='detectors_to_exclude',
+                               default='')
 
-    eth_flags.add_argument('--detect-reentrancy', action='store_true',
-                           help='Enable detection of reentrancy bug')
+    eth_detectors.add_argument('--exclude-informational',
+                               help='Exclude informational impact analyses',
+                               action='store_true',
+                               default=False)
 
-    eth_flags.add_argument('--detect-reentrancy-advanced', action='store_true',
-                           help='Enable detection of reentrancy bug -- this detector is better used via API')
+    eth_detectors.add_argument('--exclude-low',
+                               help='Exclude low impact analyses',
+                               action='store_true',
+                               default=False)
 
-    eth_flags.add_argument('--detect-unused-retval', action='store_true',
-                           help='Enable detection of unused internal transaction return value')
+    eth_detectors.add_argument('--exclude-medium',
+                               help='Exclude medium impact analyses',
+                               action='store_true',
+                               default=False)
 
-    eth_flags.add_argument('--detect-delegatecall', action='store_true',
-                           help='Enable detection of problematic uses of DELEGATECALL instruction')
-
-    eth_flags.add_argument('--detect-selfdestruct', action='store_true',
-                           help='Enable detection of reachable selfdestruct instructions')
-
-    eth_flags.add_argument('--detect-externalcall', action='store_true',
-                           help='Enable detection of reachable external call or ether leak to sender or arbitrary address')
-
-    eth_flags.add_argument('--detect-env-instr', action='store_true',
-                           help='Enable detection of use of potentially unsafe/manipulable instructions')
-
-    eth_flags.add_argument('--detect-all', action='store_true',
-                           help='Enable all detector heuristics')
+    eth_detectors.add_argument('--exclude-high',
+                               help='Exclude high impact analyses',
+                               action='store_true',
+                               default=False)
 
     eth_flags.add_argument('--avoid-constant', action='store_true',
                            help='Avoid exploring constant functions for human transactions')
-
-    eth_flags.add_argument('--detect-race-condition', action='store_true',
-                           help='Enable detection of possible transaction race conditions'
-                                ' (transaction order dependencies) (Ethereum only)')
 
     eth_flags.add_argument('--limit-loops', action='store_true',
                            help='Avoid exploring constant functions for human transactions')
@@ -187,6 +188,14 @@ def parse_arguments():
         parsed.policy = '+' + parsed.policy[3:]
 
     return parsed
+
+
+class ListEthereumDetectors(argparse.Action):
+    def __call__(self, parser, *args, **kwargs):
+        from .ethereum.cli import get_detectors_classes
+        from .utils.command_line import output_detectors
+        output_detectors(get_detectors_classes())
+        parser.exit()
 
 
 if __name__ == '__main__':

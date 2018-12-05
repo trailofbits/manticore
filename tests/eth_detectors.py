@@ -9,7 +9,7 @@ import os
 import shutil
 
 from manticore.core.smtlib import operators
-from manticore.ethereum import ManticoreEVM, DetectIntegerOverflow, DetectUnusedRetVal, DetectSelfdestruct, \
+from manticore.ethereum import ManticoreEVM, DetectIntegerOverflow, DetectUnusedRetVal, DetectSuicidal, \
     DetectDelegatecall, DetectExternalCallAndLeak, DetectEnvInstruction, DetectRaceCondition
 from manticore.ethereum.plugins import LoopDepthLimiter
 from eth_general import make_mock_evm_state
@@ -81,8 +81,8 @@ class EthRetVal(EthDetectorTest):
         self._test(name, set())
 
 
-class EthSelfdestruct(EthDetectorTest):
-    DETECTOR_CLASS = DetectSelfdestruct
+class EthSuicidal(EthDetectorTest):
+    DETECTOR_CLASS = DetectSuicidal
 
     def test_selfdestruct_true_pos(self):
         name = inspect.currentframe().f_code.co_name[5:]
