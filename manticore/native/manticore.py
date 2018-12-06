@@ -143,7 +143,8 @@ def _make_linux(program, argv=None, env=None, entry_symbol=None, symbolic_files=
     constraints = ConstraintSet()
     platform = linux.SLinux(program, argv=argv, envp=env,
                             symbolic_files=symbolic_files,
-                            pure_symbolic=pure_symbolic)
+                            pure_symbolic=pure_symbolic,
+                            concrete=True)
     if entry_symbol is not None:
         entry_pc = platform._find_symbol(entry_symbol)
         if entry_pc is None:

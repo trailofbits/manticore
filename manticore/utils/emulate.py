@@ -19,6 +19,7 @@ from capstone.x86 import *
 import time
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 class ConcreteUnicornEmulator(object):
     '''
@@ -39,6 +40,29 @@ class ConcreteUnicornEmulator(object):
         cpu.subscribe('did_set_descriptor', self.update_segment)
         cpu.subscribe('will_execute_instruction', self.pre_execute_callback)
         cpu.subscribe('did_execute_instruction', self.post_execute_callback)
+
+        if self._cpu.arch == CS_ARCH_ARM:
+            self._uc_arch = UC_ARCH_ARM
+            self._uc_mode = {
+                CS_MODE_ARM: UC_MODE_ARM,
+                CS_MODE_THUMB: UC_MODE_THUMB
+            }[self._cpu.mode]
+
+        elif self._cpu.arch == CS_ARCH_ARM64:
+            self._uc_arch = UC_ARCH_ARM64
+            self._uc_mode = {
+                CS_MODE_ARM: UC_MODE_ARM,
+                CS_MODE_THUMB: UC_MODE_THUMB
+            }[self._cpu.mode]
+
+        elif self._cpu.arch == CS_ARCH_X86:
+            self._uc_arch = UC_ARCH_X86
+            self._uc_mode = {
+                CS_MODE_32: UC_MODE_32,
+                CS_MODE_64: UC_MODE_64
+            }[self._cpu.mode]
+        else:
+            raise NotImplementedError(f'Unsupported architecture: {self._cpu.arch}')
 
         self.reset()
 
@@ -105,34 +129,10 @@ class ConcreteUnicornEmulator(object):
             start_time = time.time()
             map_bytes = self._cpu._raw_read(m,size)
             logger.info("Reading %s kb map at 0x%02x took %s seconds", size / 1024, m, time.time() - start_time)
-            self._emu.mem_write(m, ''.join(map_bytes))
+            self._emu.mem_write(m, b''.join(map_bytes))
 
         self.init_time = time.time() - self.init_time
         self._last_step_time = time.time()
-
-        if self._cpu.arch == CS_ARCH_ARM:
-            self._uc_arch = UC_ARCH_ARM
-            self._uc_mode = {
-                CS_MODE_ARM: UC_MODE_ARM,
-                CS_MODE_THUMB: UC_MODE_THUMB
-            }[self._cpu.mode]
-
-        elif self._cpu.arch == CS_ARCH_ARM64:
-            self._uc_arch = UC_ARCH_ARM64
-            self._uc_mode = {
-                CS_MODE_ARM: UC_MODE_ARM,
-                CS_MODE_THUMB: UC_MODE_THUMB
-            }[self._cpu.mode]
-
-        elif self._cpu.arch == CS_ARCH_X86:
-            self._uc_arch = UC_ARCH_X86
-            self._uc_mode = {
-                CS_MODE_32: UC_MODE_32,
-                CS_MODE_64: UC_MODE_64
-            }[self._cpu.mode]
-
-        else:
-            raise NotImplementedError(f'Unsupported architecture: {self._cpu.arch}')
 
     def reset(self):
         self._emu = Uc(self._uc_arch, self._uc_mode)
@@ -324,7 +324,7 @@ class ConcreteUnicornEmulator(object):
         logger.debug("Writing back %s bits to 0x%02x", size, where)
         if not self.in_map(where):
             self._create_emulated_mapping(self._emu, where)
-        self._emu.mem_write(where, ''.join(data))
+        self._emu.mem_write(where, b''.join(data))
 
     def write_back_register(self, reg, val):
         if reg in self.flag_registers:

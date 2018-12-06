@@ -23,6 +23,8 @@ from ...utils.helpers import issymbolic
 
 logger = logging.getLogger(__name__)
 register_logger = logging.getLogger(f'{__name__}.registers')
+from ...utils import log
+log.init_logging()
 
 ###################################################################################
 # Exceptions
