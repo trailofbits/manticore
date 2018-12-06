@@ -327,7 +327,7 @@ class IntegrationTest(unittest.TestCase):
 
     def test_eth_1102(self):
         with tempfile.TemporaryDirectory() as workspace:
-            self._simple_cli_run('1102.sol', args=['--detect-overflow'], workspace=workspace)
+            self._simple_cli_run('1102.sol', args=['--detect', 'overflow'], workspace=workspace)
 
             with open(os.path.join(workspace, 'global.findings')) as gf:
                 global_findings = gf.read().splitlines()
