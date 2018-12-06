@@ -1174,6 +1174,10 @@ class ManticoreEVM(ManticoreBase):
         return self.metadata.get(int(address))
 
     def register_detector(self, d):
+        """
+        Unregisters a plugin. This will invoke detector's `on_unregister` callback.
+        Shall be called after `.finalize`.
+        """
         if not isinstance(d, Detector):
             raise EthereumError("Not a Detector")
         if d.name in self.detectors:
@@ -1183,6 +1187,10 @@ class ManticoreEVM(ManticoreBase):
         return d.name
 
     def unregister_detector(self, d):
+        """
+        Unregisters a detector. This will invoke detector's `on_unregister` callback.
+        Shall be called after `.finalize` - otherwise, finalize won't add detector's finding to `global.findings`.
+        """
         if not isinstance(d, (Detector, str)):
             raise EthereumError("Not a Detector")
         name = d
