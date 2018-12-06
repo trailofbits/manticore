@@ -11,8 +11,7 @@ from .disasm import init_disassembler
 from ..memory import ConcretizeMemory, InvalidMemoryAccess, LazySMemory
 from ...core.smtlib import BitVec, Operators, Constant, visitors
 from ...core.smtlib.solver import solver
-from ...utils.emulate import UnicornEmulator
-from ..smtlib import Expression, Bool, BitVec, Array, Operators, Constant
+from ...core.smtlib import Expression, Bool, BitVec, Array, Operators, Constant
 from ..memory import (
     ConcretizeMemory, InvalidMemoryAccess, MemoryException, FileMap, AnonMap
 )

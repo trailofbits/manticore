@@ -5,11 +5,6 @@ from .smtlib import solver, Bool
 from ..utils.helpers import issymbolic
 from ..utils.event import Eventful
 
-#import exceptions
-from ..native.cpu.abstractcpu import ConcretizeRegister
-from ..native.memory import ConcretizeMemory, MemoryException
-from ..platforms.platform import *
-
 logger = logging.getLogger(__name__)
 
 
@@ -140,6 +135,10 @@ class StateBase(Eventful):
         self.platform.constraints = self.constraints
 
     def execute(self):
+        # import exceptions
+        from ..native.cpu.abstractcpu import ConcretizeRegister
+        from ..native.memory import ConcretizeMemory, MemoryException
+
         try:
             result = self._platform.execute()
 
