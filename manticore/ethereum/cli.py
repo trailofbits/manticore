@@ -75,11 +75,11 @@ def ethereum_main(args, logger):
     with m.shutdown_timeout(args.timeout):
         m.multi_tx_analysis(args.argv[0], contract_name=args.contract, tx_limit=args.txlimit, tx_use_coverage=not args.txnocoverage, tx_send_ether=not args.txnoether, tx_account=args.txaccount)
 
+    if not args.no_testcases:
+        m.finalize()
+
     for detector in list(m.detectors):
         m.unregister_detector(detector)
 
     for plugin in list(m.plugins):
         m.unregister_plugin(plugin)
-
-    if not args.no_testcases:
-        m.finalize()
