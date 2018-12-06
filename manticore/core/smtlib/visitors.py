@@ -374,12 +374,12 @@ class ArithmeticSimplifier(Visitor):
             return expression
 
     def visit_BitVecITE(self, expression, *operands):
-        if isinstance(expression.operands[0], Constant):
+        # FIXME Enable some taint propagating optimization
+        if isinstance(expression.operands[0], Constant) and not expression.operands[0].taint:
             if expression.operands[0].value:
                 result = expression.operands[1]
             else:
                 result = expression.operands[2]
-            # FIXME This may be loosing taint
             return result
 
         if self._changed(expression, operands):
