@@ -1408,7 +1408,7 @@ class ManticoreEVM(ManticoreBase):
         for proc in report_workers:
             proc.join()
 
-        #global summary
+        # global summary
         if len(self.global_findings):
             with self._output.save_stream('global.findings') as global_findings:
                 for address, pc, finding, at_init in self.global_findings:
