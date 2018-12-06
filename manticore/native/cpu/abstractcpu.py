@@ -630,7 +630,7 @@ class Cpu(Eventful):
 
         # data = self._memory.read(where, size // 8, force)
         # assert (8 * len(data)) == size
-        data = self._raw_read(where, size/8)
+        data = self._raw_read(where, size//8)
 
         value = Operators.CONCAT(size, *map(Operators.ORD, reversed(data)))
 
