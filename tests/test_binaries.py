@@ -63,7 +63,7 @@ class IntegrationTest(unittest.TestCase):
 
         return set(int(x[2:], 16) for x in vitems)
 
-    def _simple_cli_run(self, filename, contract=None, tx_limit=1, in_directory=None, args=None, workspace=None):
+    def _simple_cli_run(self, filename, contract=None, tx_limit=1, in_directory=None, args=None, workspace=None, testcases=False):
         """
         Simply run the Manticore command line with `filename`
         :param filename: Name of file inside the `tests/binaries` directory
@@ -88,7 +88,8 @@ class IntegrationTest(unittest.TestCase):
 
         command.extend(['--txlimit', str(tx_limit)])
 
-        command.append('--no-testcases')
+        if not testcases:
+            command.append('--no-testcases')
 
         command.append(filename)
 
@@ -392,7 +393,7 @@ class IntegrationTest(unittest.TestCase):
 
     def test_eth_1102(self):
         with tempfile.TemporaryDirectory() as workspace:
-            self._simple_cli_run('1102.sol', args=['--detect-overflow'], workspace=workspace)
+            self._simple_cli_run('1102.sol', args=['--detect-overflow'], workspace=workspace, testcases=True)
 
             with open(os.path.join(workspace, 'global.findings')) as gf:
                 global_findings = gf.read().splitlines()
