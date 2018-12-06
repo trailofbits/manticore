@@ -74,33 +74,6 @@ class Manticore(ManticoreBase):
         except KeyError:  # FIXME(mark) magic parsing for DECREE should raise better error
             raise Exception(f'Invalid binary: {path}')
 
-    #############################################################################
-    #############################################################################
-    #############################################################################
-    # Move all the following elsewhere Not all manticores have this
-    def _get_symbol_address(self, symbol):
-        '''
-        Return the address of |symbol| within the binary
-        '''
-
-        # XXX(yan) This is a bit obtuse; once PE support is updated this should
-        # be refactored out
-        if self._binary_type == 'ELF':
-            self._binary_obj = ELFFile(open(self._binary, 'rb'))
-
-        if self._binary_obj is None:
-            return NotImplementedError("Symbols aren't supported")
-
-        for section in self._binary_obj.iter_sections():
-            if not isinstance(section, SymbolTableSection):
-                continue
-
-            symbols = section.get_symbol_by_name(symbol)
-            if not symbols:
-                continue
-
-            return symbols[0].entry['st_value']
-
 
 def _make_initial_state(binary_path, **kwargs):
     with open(binary_path, 'rb') as f:
