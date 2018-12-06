@@ -108,8 +108,6 @@ class Visitor(object):
 
     @staticmethod
     def _rebuild(expression, operands):
-        if isinstance(expression, Constant):
-            return expression
         if isinstance(expression, Operation):
             if any(x is not y for x, y in zip(expression.operands, operands)):
                 import copy
@@ -381,10 +379,9 @@ class ArithmeticSimplifier(Visitor):
                 result = expression.operands[1]
             else:
                 result = expression.operands[2]
-            import copy
-            result = copy.copy(result)
-            result._taint |= expression.operands[0].taint
+            # FIXME This may be loosing taint
             return result
+
         if self._changed(expression, operands):
             return BitVecITE(expression.size, *operands, taint=expression.taint)
 
@@ -581,6 +578,10 @@ def arithmetic_simplify(expression):
 
 
 def to_constant(expression):
+    '''
+        Iff the expression can be simplified to a Constant get the actual concrete value.
+        This discards/ignore any taint
+    '''
     value = simplify(expression)
     if isinstance(value, Constant):
         return value.value

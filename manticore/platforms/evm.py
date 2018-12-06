@@ -523,7 +523,7 @@ class EVM(Eventful):
         # Machine state
         self.pc = 0
         self.stack = []
-        self._gas = gas
+        self._gas = Operators.ZEXTEND(gas, 512)
         self._world = world
         self._allocated = 0
         self._on_transaction = False  # for @transact
@@ -853,7 +853,7 @@ class EVM(Eventful):
     def _check_jmpdest(self):
         should_check_jumpdest = self._check_jumpdest
         if issymbolic(should_check_jumpdest):
-            should_check_jumpdest_solutions = solver.get_all_values(self.constraints, self._check_jumpdest)
+            should_check_jumpdest_solutions = solver.get_all_values(self.constraints, should_check_jumpdest)
             if len(should_check_jumpdest_solutions) != 1:
                 raise EthereumError("Conditional not concretized at JMPDEST check")
             should_check_jumpdest = should_check_jumpdest_solutions[0]
@@ -1453,7 +1453,6 @@ class EVM(Eventful):
         #This set ups a check for JMPDEST in the next instruction if cond != 0
         self._set_check_jmpdest(cond != 0)
 
-
     def GETPC(self):
         '''Get the value of the program counter prior to the increment'''
         return self.pc
@@ -1465,7 +1464,7 @@ class EVM(Eventful):
     def GAS(self):
         '''Get the amount of available gas, including the corresponding reduction the amount of available gas'''
         #fixme calculate gas consumption
-        return self._gas
+        return Operators.EXTRACT(self._gas, 0, 256)
 
     def JUMPDEST(self):
         '''Mark a valid destination for jumps'''

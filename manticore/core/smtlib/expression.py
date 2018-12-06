@@ -40,10 +40,11 @@ class Variable(Expression):
     def name(self):
         return self._name
 
+    def __copy__(self, memo):
+        raise Exception("Copying of Variables is not allowed.")
+
     def __deepcopy__(self, memo):
-        cls = self.__class__
-        memo[id(self)] = self
-        return self
+        raise Exception("Copying of Variables is not allowed.")
 
     def __repr__(self):
         return '<{:s}({:s}) at {:x}>'.format(type(self).__name__, self.name, id(self))
