@@ -155,6 +155,9 @@ class StateBase(Eventful):
         self._constraints = constraints
         self.platform.constraints = constraints
 
+    def execute(self):
+        raise NotImplementedError
+
     def constrain(self, constraint):
         '''Constrain state.
 

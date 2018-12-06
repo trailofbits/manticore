@@ -63,12 +63,13 @@ class IntegrationTest(unittest.TestCase):
 
         return set(int(x[2:], 16) for x in vitems)
 
-    def _simple_cli_run(self, filename, contract=None, tx_limit=1, in_directory=None):
+    def _simple_cli_run(self, filename, contract=None, tx_limit=1, in_directory=None, args=None, workspace=None):
         """
         Simply run the Manticore command line with `filename`
         :param filename: Name of file inside the `tests/binaries` directory
-        :return:
         """
+        assert isinstance(args, (list, type(None)))
+
         working_dir = os.path.join(DIRPATH, 'binaries')
 
         if in_directory:
@@ -77,11 +78,18 @@ class IntegrationTest(unittest.TestCase):
         command = [PYTHON_BIN, '-m', 'manticore']
 
         if contract:
-            command.append('--contract')
-            command.append(contract)
-        command.append('--txlimit')
-        command.append(str(tx_limit))
+            command.extend(['--contract', contract])
+
+        if args:
+            command.extend(args)
+
+        if workspace:
+            command.extend(['--workspace', workspace])
+
+        command.extend(['--txlimit', str(tx_limit)])
+
         command.append('--no-testcases')
+
         command.append(filename)
 
         subprocess.check_call(command, stdout=subprocess.PIPE, cwd=working_dir)
@@ -123,15 +131,14 @@ class IntegrationTest(unittest.TestCase):
         filename = filename[len(os.getcwd())+1:]
         workspace = os.path.join(self.test_dir, 'workspace')
 
-        timeout_secs = 1
+        timeout_secs = 4
 
         cmd = [
             PYTHON_BIN, '-m', 'manticore',
             '--workspace', workspace,
             '--timeout', str(timeout_secs),
             '--no-color',
-            filename,
-            '+++++++++'
+            filename
         ]
 
         start = time.time()
@@ -140,12 +147,18 @@ class IntegrationTest(unittest.TestCase):
 
         output = output.splitlines()
 
-        self.assertEqual(len(output), 1)
+        # Because the run will timeout, we don't know the exact line numbers that will appear
+        # but this seems as a good default
+        self.assertGreaterEqual(len(output), 4)
         self.assertIn(b'm.c.manticore:INFO: Verbosity set to 1.', output[0])
+        self.assertIn(b'm.main:INFO: Beginning analysis', output[1])
+        self.assertIn(b'm.e.manticore:INFO: Starting symbolic create contract', output[2])
+
+        self.assertIn(b'm.e.manticore:INFO: Results in ', output[-1])
 
         # Since we count the total time of Python process that runs Manticore, it takes a bit more time
-        # than the timeout value, so we just assert two seconds here (1.5s should also be fine)
-        self.assertLessEqual(end - start, timeout_secs+1)
+        # e.g. for some finalization like generation of testcases
+        self.assertLessEqual(end - start, timeout_secs+20)
 
     def test_logger_verbosity(self):
         """
@@ -377,14 +390,23 @@ class IntegrationTest(unittest.TestCase):
                 in_directory=issue.get('in_directory')
             )
 
+    def test_eth_1102(self):
+        with tempfile.TemporaryDirectory() as workspace:
+            self._simple_cli_run('1102.sol', args=['--detect-overflow'], workspace=workspace)
+
+            with open(os.path.join(workspace, 'global.findings')) as gf:
+                global_findings = gf.read().splitlines()
+
+        self.assertEqual(global_findings[0], '- Unsigned integer overflow at SUB instruction -')
+        self.assertRegex(global_findings[1], '  Contract: 0x:\d+  EVM Program counter: 0x175')
+        self.assertEqual(global_findings[2], '  Solidity snippet:')
+        self.assertEqual(global_findings[3], '    10  count -= input')
+        self.assertEqual(global_findings[4], '')
+
+        self.assertEqual(len(global_findings), 5)
+
     def test_eth_705(self):
-        # This test needs to run inside tests/binaries because the contract imports a file
-        # that is in the tests/binaries dir
-        old_cwd = os.getcwd()
-        try:
-            self._simple_cli_run('705.sol')
-        finally:
-            os.chdir(old_cwd)
+        self._simple_cli_run('705.sol')
 
     def test_basic_arm(self):
         filename = os.path.abspath(os.path.join(DIRPATH, 'binaries', 'basic_linux_armv7'))
