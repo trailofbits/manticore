@@ -324,7 +324,8 @@ class ConcreteUnicornEmulator(object):
         logger.debug("Writing back %s bits to 0x%02x", size, where)
         if not self.in_map(where):
             self._create_emulated_mapping(self._emu, where)
-        self._emu.mem_write(where, b''.join(data))
+        # TODO - the extra encoding is to handle null bytes output as strings when we concretize. That's probably a bug.
+        self._emu.mem_write(where, b''.join(b.encode('utf-8') if type(b) is str else b for b in data))
 
     def write_back_register(self, reg, val):
         if reg in self.flag_registers:
