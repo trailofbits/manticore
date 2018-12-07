@@ -422,6 +422,12 @@ class ExpressionTest(unittest.TestCase):
         self.assertItemsEqual(z.taint, ('important', 'stuff'))
         self.assertEqual(z.value, 300)
 
+        self.assertRaises(Exception, translate_to_smtlib, 1)
+
+        self.assertEqual(translate_to_smtlib(simplify(Operators.ZEXTEND(a,32))), 'VAR')
+        self.assertEqual(translate_to_smtlib(simplify(Operators.EXTRACT(Operators.EXTRACT(a,0,8),0, 8))), '((_ extract 7 0) VAR)')
+
+
     def test_arithmetic_simplify(self):
         cs = ConstraintSet()
         arr = cs.new_array(name='MEM')
