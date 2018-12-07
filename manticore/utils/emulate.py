@@ -337,39 +337,13 @@ class ConcreteUnicornEmulator(object):
         if selector == 99:
             self.set_fs(base)
 
-    def set_msr(self, msr, value):
-        '''
-        set the given model-specific register (MSR) to the given value.
-        this will clobber some memory at the given scratch address, as it emits some code.
-        '''
-        # save clobbered registers
-        orax = self._emu.reg_read(UC_X86_REG_RAX)
-        ordx = self._emu.reg_read(UC_X86_REG_RDX)
-        orcx = self._emu.reg_read(UC_X86_REG_RCX)
-        orip = self._emu.reg_read(UC_X86_REG_RIP)
-
-        # x86: wrmsr
-        buf = '\x0f\x30'
-        self._emu.mem_write(self.scratch_mem, buf)
-        self._emu.reg_write(UC_X86_REG_RAX, value & 0xFFFFFFFF)
-        self._emu.reg_write(UC_X86_REG_RDX, (value >> 32) & 0xFFFFFFFF)
-        self._emu.reg_write(UC_X86_REG_RCX, msr & 0xFFFFFFFF)
-        self._emu.emu_start(self.scratch_mem, self.scratch_mem+len(buf), count=1)
-
-        # restore clobbered registers
-        self._emu.reg_write(UC_X86_REG_RAX, orax)
-        self._emu.reg_write(UC_X86_REG_RDX, ordx)
-        self._emu.reg_write(UC_X86_REG_RCX, orcx)
-        self._emu.reg_write(UC_X86_REG_RIP, orip)
-
-
     def set_fs(self, addr):
         '''
         set the FS.base hidden descriptor-register field to the given address.
         this enables referencing the fs segment on x86-64.
         '''
         FSMSR = 0xC0000100
-        return self.set_msr(FSMSR, addr)
+        return self._emu.msr_write(FSMSR, addr)
 
     def pre_execute_callback(self, _pc, _insn):
         start_time = time.time()
