@@ -415,6 +415,8 @@ class ExpressionTest(unittest.TestCase):
         self.assertItemsEqual(solver.get_all_values(cs, values[1]), [ord('c')])
         self.assertItemsEqual(solver.get_all_values(cs, values[2]), [ord('d')])
         self.assertEqual(pretty_print(aux, depth=2), 'ArraySelect\n  ArrayStore\n    ...\n  BitVecAdd\n    ...\n')
+        self.assertEqual(pretty_print(Operators.EXTRACT(a, 0, 8), depth=1), 'BitVecExtract{0:7}\n  ...\n')
+        self.assertEqual(pretty_print(a, depth=2), 'VAR\n')
 
         x = BitVecConstant(32, 100, taint=('important',))
         y = BitVecConstant(32, 200, taint=('stuff',))
