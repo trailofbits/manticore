@@ -1,6 +1,7 @@
 import cProfile
 import itertools
 import logging
+import os
 import pstats
 import sys
 import time
@@ -449,6 +450,18 @@ class ManticoreBase(Eventful):
                     # the extra open().
                     import marshal
                     marshal.dump(ps.stats, s)
+
+    def get_profiling_stats(self):
+        """
+        Returns a pstat.Stats instance with profiling results if `run` was called with `should_profile=True`.
+        Otherwise, returns `None`.
+        """
+        profile_file_path = os.path.join(self.workspace, 'profiling.bin')
+        try:
+            return pstats.Stats(profile_file_path)
+        except Exception as e:
+            logger.debug(f'Failed to get profiling stats: {e}')
+            return None
 
     def _start_run(self):
         assert not self.running and self._context is not None
