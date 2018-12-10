@@ -52,12 +52,13 @@ setup(
         'pyyaml',
         # evm dependencies
         'pysha3',
-        'pyevmasm',
+        #'pyevmasm', installed from github until pyevmrelease
         'rlp',
         'ply'
     ] + rtd_dependent_deps(),
     dependency_links=[
         'https://github.com/aquynh/capstone/archive/next.zip#egg=capstone-4&subdirectory=bindings/python',
+        'https://github.com/trailofbits/pyevmasm/tarball/master#egg=package-0.1.2'
     ],
     extras_require=extra_require,
     entry_points={
