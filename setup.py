@@ -52,7 +52,7 @@ setup(
         'pyyaml',
         # evm dependencies
         'pysha3',
-        'pyevmasm==0.1.1',
+        'pyevmasm',
         'rlp',
         'ply'
     ] + rtd_dependent_deps(),
