@@ -92,7 +92,7 @@ class ManticoreEVM(ManticoreBase):
             m.finalize()
     """
 
-    def make_symbolic_buffer(self, size, name=None):
+    def make_symbolic_buffer(self, size, name=None, avoid_collisions=False):
         """ Creates a symbolic buffer of size bytes to be used in transactions.
             You can operate on it normally and add constraints to manticore.constraints
             via manticore.constrain(constraint_expression)
@@ -106,10 +106,10 @@ class ManticoreEVM(ManticoreBase):
                                 data=symbolic_data,
                                 value=100000 )
         """
-        avoid_collisions = False
         if name is None:
             name = 'TXBUFFER'
             avoid_collisions = True
+
         return self.constraints.new_array(index_bits=256, name=name, index_max=size, value_bits=8, taint=frozenset(), avoid_collisions=avoid_collisions)
 
     def make_symbolic_value(self, nbits=256, name=None):
@@ -539,7 +539,7 @@ class ManticoreEVM(ManticoreBase):
             Make a reasonable serialization of the symbolic argument types
         """
         # FIXME this is more naive than reasonable.
-        return ABI.deserialize(types, self.make_symbolic_buffer(32, name="INITARGS"))
+        return ABI.deserialize(types, self.make_symbolic_buffer(32, name='INITARGS', avoid_collisions=True))
 
     def solidity_create_contract(self, source_code, owner, name=None, contract_name=None, libraries=None,
                                  balance=0, address=None, args=(), solc_bin=None, solc_remaps=[],
@@ -581,12 +581,19 @@ class ManticoreEVM(ManticoreBase):
                 md = SolidityMetadata(*compile_results)
                 if contract_name_i == contract_name:
                     constructor_types = md.get_constructor_arguments()
-                    if args is None:
-                        args = self.make_symbolic_arguments(constructor_types)
+
+                    if constructor_types != '()':
+                        if args is None:
+                            args = self.make_symbolic_arguments(constructor_types)
+
+                        constructor_data = ABI.serialize(constructor_types, *args)
+                    else:
+                        constructor_data = b''
+
                     contract_account = self.create_contract(owner=owner,
                                                             balance=balance,
                                                             address=address,
-                                                            init=md._init_bytecode + ABI.serialize(constructor_types, *args),
+                                                            init=md._init_bytecode + constructor_data,
                                                             name=name,
                                                             gas=gas)
                 else:
