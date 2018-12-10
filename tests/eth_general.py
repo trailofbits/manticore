@@ -31,10 +31,12 @@ from manticore.utils.log import init_logging
 
 init_logging()
 
+
 def make_mock_evm_state():
     cs = ConstraintSet()
     fakestate = State(cs, EVMWorld(cs))
     return fakestate
+
 
 @contextmanager
 def disposable_mevm(*args, **kwargs):
@@ -43,6 +45,7 @@ def disposable_mevm(*args, **kwargs):
         yield mevm
     finally:
         shutil.rmtree(mevm.workspace)
+
 
 class EthDetectorsIntegrationTest(unittest.TestCase):
     def test_int_ovf(self):
@@ -416,6 +419,53 @@ class EthTests(unittest.TestCase):
     def tearDown(self):
         self.mevm=None
         shutil.rmtree(self.worksp)
+
+    def test_create_contract_no_args(self):
+        source_code = 'contract A { constructor() {} }'
+        owner = self.mevm.create_account()
+
+        # The default `args=()` makes it pass no arguments
+        contract1 = self.mevm.solidity_create_contract(source_code, owner=owner)
+        contract2 = self.mevm.solidity_create_contract(source_code, owner=owner)
+
+        self.assertNotEqual(contract1, contract2)
+
+    def test_create_contract_with_missing_args(self):
+        source_code = 'contract A { constructor(uint arg) {} }'
+        owner = self.mevm.create_account()
+
+        # TODO / FIXME: Probably change ValueError to another one and inform that bad arguments have been passed?
+        with self.assertRaises(ValueError) as e:
+            self.mevm.solidity_create_contract(source_code, owner=owner)
+
+        self.assertEqual(str(e.exception), 'The number of values to serialize is less than the number of types')
+
+    def test_create_contract_with_too_much_args(self):
+        source_code = 'contract A { constructor(uint arg) {} }'
+        owner = self.mevm.create_account()
+
+        with self.assertRaises(ValueError) as e:
+            self.mevm.solidity_create_contract(source_code, owner=owner, args='(uint32,uint32)')
+
+        self.assertEqual(str(e.exception), 'The number of values to serialize is greater than the number of types')
+
+    def test_create_contract_two_instances(self):
+        source_code = 'contract A { constructor(uint32 arg) {} }'
+        owner = self.mevm.create_account()
+
+        contracts = [
+            # When we pass no `args`, the default is `()` so it ends up with `b''` as constructor data
+            self.mevm.solidity_create_contract(source_code, owner=owner, args=[1234]),
+            self.mevm.solidity_create_contract(source_code, owner=owner, args=[1234]),
+            # When we pass args=None, the arguments end up being symbolic
+            # NOTE: This is what CLI does
+            self.mevm.solidity_create_contract(source_code, owner=owner, args=None),
+            self.mevm.solidity_create_contract(source_code, owner=owner, args=None)
+        ]
+
+        # They must have unique address and name
+        self.assertEqual(len(contracts), len(set(c.address for c in contracts)))
+        self.assertEqual(len(contracts), len(set(c.name_ for c in contracts)))
 
     def test_invalid_function_signature(self):
         source_code = '''

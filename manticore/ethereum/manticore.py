@@ -384,6 +384,8 @@ class ManticoreEVM(ManticoreBase):
         self._executor.subscribe('on_symbolic_sha3', self._on_symbolic_sha3_callback)
         self._executor.subscribe('on_concrete_sha3', self._on_concrete_sha3_callback)
 
+        self._initargs_id = -1
+
     @property
     def world(self):
         """ The world instance or None if there is more than one state """
@@ -539,7 +541,8 @@ class ManticoreEVM(ManticoreBase):
             Make a reasonable serialization of the symbolic argument types
         """
         # FIXME this is more naive than reasonable.
-        return ABI.deserialize(types, self.make_symbolic_buffer(32, name="INITARGS"))
+        self._initargs_id += 1
+        return ABI.deserialize(types, self.make_symbolic_buffer(32, name=f'INITARGS{self._initargs_id}'))
 
     def solidity_create_contract(self, source_code, owner, name=None, contract_name=None, libraries=None,
                                  balance=0, address=None, args=(), solc_bin=None, solc_remaps=[],
@@ -581,12 +584,19 @@ class ManticoreEVM(ManticoreBase):
                 md = SolidityMetadata(*compile_results)
                 if contract_name_i == contract_name:
                     constructor_types = md.get_constructor_arguments()
-                    if args is None:
-                        args = self.make_symbolic_arguments(constructor_types)
+
+                    if constructor_types != '()':
+                        if args is None:
+                            args = self.make_symbolic_arguments(constructor_types)
+
+                        constructor_data = ABI.serialize(constructor_types, *args)
+                    else:
+                        constructor_data = b''
+
                     contract_account = self.create_contract(owner=owner,
                                                             balance=balance,
                                                             address=address,
-                                                            init=md._init_bytecode + ABI.serialize(constructor_types, *args),
+                                                            init=md._init_bytecode + constructor_data,
                                                             name=name,
                                                             gas=gas)
                 else:
