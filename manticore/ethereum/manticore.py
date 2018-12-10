@@ -1470,8 +1470,7 @@ class ManticoreEVM(ManticoreBase):
                         global_findings.write('    '.join(source_code_snippet.splitlines(True)))
                         global_findings.write('\n')
 
-        with self._output.save_stream('manticore.yml') as f:
-            config.save(f)
+        self._save_run_data()
 
         with self._output.save_stream('global.summary') as global_summary:
             # (accounts created by contract code are not in this list )
@@ -1546,8 +1545,6 @@ class ManticoreEVM(ManticoreBase):
         with self.locked_context('ethereum') as eth_context:
             eth_context['_saved_states'] = set()
             eth_context['_final_states'] = set()
-
-        logger.info("Results in %s", self.workspace)
 
     def global_coverage(self, account):
         """ Returns code coverage for the contract on `account_address`.

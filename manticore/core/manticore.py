@@ -10,6 +10,7 @@ from multiprocessing import Process
 from threading import Timer
 
 import functools
+import shlex
 import types
 
 from ..core.executor import Executor
@@ -535,8 +536,11 @@ class ManticoreBase(Eventful):
         self._coverage_file = path
 
     def _did_finish_run_callback(self):
+        self._save_run_data()
+
+    def _save_run_data(self):
         with self._output.save_stream('command.sh') as f:
-            f.write(' '.join(sys.argv))
+            f.write(' '.join(map(shlex.quote, sys.argv)))
 
         with self._output.save_stream('manticore.yml') as f:
             config.save(f)
