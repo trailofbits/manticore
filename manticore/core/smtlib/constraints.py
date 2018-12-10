@@ -229,7 +229,7 @@ class ConstraintSet(object):
     def is_declared(self, expression_var):
         ''' True if expression_var is declared in this constraint set '''
         if not isinstance(expression_var, Variable):
-            raise ValueError("Expression must be a Variable")
+            raise ValueError(f'Expression must be a Variable (not a {type(expression_var)})')
         return any(expression_var is x for x in self.get_declared_variables())
 
     def migrate(self, expression, name_migration_map=None):
@@ -305,7 +305,7 @@ class ConstraintSet(object):
         if avoid_collisions:
             name = self._make_unique_name(name)
         if not avoid_collisions and name in self._declarations:
-            raise ValueError("Name already used")
+            raise ValueError(f'Name {name} already used')
         var = BoolVariable(name, taint=taint)
         return self._declare(var)
 
@@ -325,7 +325,7 @@ class ConstraintSet(object):
         if avoid_collisions:
             name = self._make_unique_name(name)
         if not avoid_collisions and name in self._declarations:
-            raise ValueError("Name already used")
+            raise ValueError(f'Name {name} already used')
         var = BitVecVariable(size, name, taint=taint)
         return self._declare(var)
 
@@ -345,6 +345,6 @@ class ConstraintSet(object):
         if avoid_collisions:
             name = self._make_unique_name(name)
         if not avoid_collisions and name in self._declarations:
-            raise ValueError("Name already used")
+            raise ValueError(f'Name {name} already used')
         var = self._declare(ArrayVariable(index_bits, index_max, value_bits, name, taint=taint))
         return ArrayProxy(var)
