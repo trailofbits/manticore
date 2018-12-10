@@ -117,6 +117,9 @@ def parse_arguments():
                            help='Account used as caller in the symbolic transactions, either "attacker" or '
                                 '"owner" or "combo1" (uses both)')
 
+    eth_flags.add_argument('--txpreconstrain', action='store_true',
+                           help='Constrain human transactions to avoid exceptions in the contract function dispatcher')
+
     eth_flags.add_argument('--contract', type=str,
                            help='Contract name to analyze in case of multiple contracts')
 

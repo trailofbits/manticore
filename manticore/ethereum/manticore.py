@@ -5,7 +5,7 @@ import string
 from multiprocessing import Queue, Process
 from queue import Empty as EmptyQueue
 from subprocess import check_output, Popen, PIPE
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
 
 import io
 import os
@@ -16,7 +16,7 @@ import sha3
 import tempfile
 
 from ..core.manticore import ManticoreBase
-from ..core.smtlib import ConstraintSet, Array, ArrayProxy, BitVec, Operators
+from ..core.smtlib import ConstraintSet, Array, ArrayProxy, BitVec, Operators, BoolConstant, BoolOperation, Expression
 from ..core.state import TerminateState, AbandonState
 from .account import EVMContract, EVMAccount, ABI
 from .detectors import Detector
@@ -886,9 +886,52 @@ class ManticoreEVM(ManticoreBase):
 
         return address
 
+    def preconstraint_for_call_transaction(self, address: Union[int, EVMAccount], data: Array,
+                                           value: Optional[Union[int, Expression]] = None,
+                                           contract_metadata: Optional[SolidityMetadata] = None) -> BoolOperation:
+        """ Returns a constraint that excludes combinations of value and data that would cause an exception in the EVM
+            contract dispatcher.
+            :param address: address of the contract to call
+            :param value: balance to be transferred (optional)
+            :param data: symbolic transaction data
+            :param contract_metadata: SolidityMetadata for the contract (optional)
+        """
+        if isinstance(address, EVMAccount):
+            address = int(address)
+        if not isinstance(address, int):
+            raise TypeError("invalid address type")
+
+        if not issymbolic(data):
+            raise TypeError("data must be a symbolic array")
+
+        if contract_metadata is None:
+            contract_metadata = self.metadata.get(address)
+            if contract_metadata is None:
+                raise TypeError("no Solidity metadata available for the contract address")
+
+        selectors = contract_metadata.function_selectors
+        if not selectors or len(data) <= 4:
+            return BoolConstant(True)
+
+        symbolic_selector = data[:4]
+
+        value_is_symbolic = issymbolic(value)
+
+        constraint = None
+        for selector in selectors:
+            c = symbolic_selector == selector
+            if value_is_symbolic and not contract_metadata.get_abi(selector)['payable']:
+                c = Operators.AND(c, value == 0)
+            if constraint is None:
+                constraint = c
+            else:
+                constraint = Operators.OR(constraint, c)
+
+        return constraint
+
     def multi_tx_analysis(self, solidity_filename, working_dir=None, contract_name=None,
                           tx_limit=None, tx_use_coverage=True,
-                          tx_send_ether=True, tx_account="attacker", args=None):
+                          tx_send_ether=True, tx_account="attacker", tx_preconstrain=False, args=None):
         owner_account = self.create_account(balance=1000, name='owner')
         attacker_account = self.create_account(balance=1000, name='attacker')
 
@@ -925,6 +968,12 @@ class ManticoreEVM(ManticoreBase):
                     value = self.make_symbolic_value()
                 else:
                     value = 0
+
+                if tx_preconstrain:
+                    self.constrain(self.preconstraint_for_call_transaction(address=contract_account,
+                                                                           data=symbolic_data,
+                                                                           value=value))
+
                 self.transaction(caller=tx_account[min(tx_no, len(tx_account) - 1)],
                                  address=contract_account,
                                  data=symbolic_data,
