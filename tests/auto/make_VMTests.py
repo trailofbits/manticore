@@ -21,7 +21,9 @@ def gen_test(testcase, filename, skip):
         disassemble = '\n                  '.join(EVMAsm.disassemble(bytecode).split('\n'))
     except Exception as e:
         pass
-    sha256sum = hashlib.sha256(open(filename, 'rb').read()).hexdigest()
+
+    with open(filename 'rb') as f: 
+        sha256sum = hashlib.sha256(f.read()).hexdigest()
 
     output += f"""
     def test_{testname}(self):
@@ -183,6 +185,7 @@ class Log(rlp.Serializable):
         ('data', Binary())
     ]
 
+evm.DEFAULT_FORK = "frontier"
 class EVMTest_{os.path.splitext(os.path.basename(filename_or_folder))[0]}(unittest.TestCase):
     _multiprocess_can_split_ = True
     maxDiff=None 

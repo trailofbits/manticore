@@ -32,6 +32,7 @@ TT256M1 = 2 ** 256 - 1
 MASK160 = 2 ** 160 - 1
 TT255 = 2 ** 255
 TOOHIGHMEM = 0x1000
+DEFAULT_FORK = 'byzantium'
 
 #FIXME. We should just use a Transaction() for this
 PendingTransaction = namedtuple("PendingTransaction", ['type', 'address', 'price', 'data', 'caller', 'value', 'gas'])
@@ -681,7 +682,7 @@ class EVM(Eventful):
                 yield simplify(bytecode[pc_i]).value
             while True:
                 yield 0
-        instruction = EVMAsm.disassemble_one(getcode(), pc=pc)
+        instruction = EVMAsm.disassemble_one(getcode(), pc=pc, fork=DEFAULT_FORK)
         _decoding_cache[pc] = instruction
         return instruction
 

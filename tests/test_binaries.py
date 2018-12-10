@@ -377,7 +377,7 @@ class IntegrationTest(unittest.TestCase):
                 in_directory=issue.get('in_directory')
             )
 
-    def test_eth_regressions_80(self):
+    def test_eth_regressions_808(self):
         issue = {'number': 808, 'contract': 'C', 'txlimit': 1}
         self._simple_cli_run(
                 f'{issue["number"]}.sol', contract=issue['contract'], tx_limit=issue['txlimit'],

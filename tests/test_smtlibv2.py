@@ -278,6 +278,14 @@ class ExpressionTest(unittest.TestCase):
         self.assertTrue(self.solver.must_be_true(cs, array_slice[0:2][1] == array[1]))
         self.assertTrue(self.solver.must_be_true(cs, array == hw))
 
+        #Testing some slicing combinations
+        self.assertRaises(IndexError, lambda i: translate_to_smtlib(array_slice[0:1000][i]), 1002)
+        self.assertTrue(self.solver.must_be_true(cs, array_slice[0:1000][0] == ord('A')))
+        self.assertTrue(self.solver.must_be_true(cs, array_slice[0:1000][1] == array[1]))
+        self.assertTrue(self.solver.must_be_true(cs, array_slice[0:1000][:2][1] == array[:2][1]))
+        self.assertTrue(self.solver.must_be_true(cs, array_slice[0:1000][:2][0] == ord('A')))
+
+
     def testBasicArrayProxySymbIdx(self):
         cs =  ConstraintSet()
         array = ArrayProxy(cs.new_array(index_bits=32, value_bits=32, name='array'), default=0)
