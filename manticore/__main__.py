@@ -131,36 +131,14 @@ def parse_arguments():
                                nargs=0,
                                default=False)
 
-    eth_detectors.add_argument('--detect',
-                               help='Comma-separated list of detectors, defaults to all, '
-                                    'for available detectors see --list-detectors',
-                               action='store',
-                               dest='detectors_to_run',
-                               default='all')
-
     eth_detectors.add_argument('--exclude',
                                help='Comma-separated list of detectors that should be excluded',
                                action='store',
                                dest='detectors_to_exclude',
                                default='')
 
-    eth_detectors.add_argument('--exclude-informational',
-                               help='Exclude informational impact analyses',
-                               action='store_true',
-                               default=False)
-
-    eth_detectors.add_argument('--exclude-low',
-                               help='Exclude low impact analyses',
-                               action='store_true',
-                               default=False)
-
-    eth_detectors.add_argument('--exclude-medium',
-                               help='Exclude medium impact analyses',
-                               action='store_true',
-                               default=False)
-
-    eth_detectors.add_argument('--exclude-high',
-                               help='Exclude high impact analyses',
+    eth_detectors.add_argument('--exclude-all',
+                               help='Excludes all detectors',
                                action='store_true',
                                default=False)
 

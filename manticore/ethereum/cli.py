@@ -17,38 +17,18 @@ def get_detectors_classes():
 def choose_detectors(args):
     all_detector_classes = get_detectors_classes()
     detectors = {d.ARGUMENT: d for d in all_detector_classes}
+    arguments = list(detectors.keys())
 
     detectors_to_run = []
 
-    if args.detectors_to_run == 'all':
-        detectors_to_run = all_detector_classes
-        detectors_excluded = args.detectors_to_exclude.split(',')
-        for d in detectors:
-            if d in detectors_excluded:
-                detectors_to_run.remove(detectors[d])
-    else:
-        for d in args.detectors_to_run.split(','):
-            if d in detectors:
-                detectors_to_run.append(detectors[d])
-            else:
-                raise Exception('Error: {} is not a detector'.format(d))
-        return detectors_to_run
-
-    if args.exclude_informational:
-        detectors_to_run = [d for d in detectors_to_run if
-                            d.IMPACT != DetectorClassification.INFORMATIONAL]
-    if args.exclude_low:
-        detectors_to_run = [d for d in detectors_to_run if
-                            d.IMPACT != DetectorClassification.LOW]
-    if args.exclude_medium:
-        detectors_to_run = [d for d in detectors_to_run if
-                            d.IMPACT != DetectorClassification.MEDIUM]
-    if args.exclude_high:
-        detectors_to_run = [d for d in detectors_to_run if
-                            d.IMPACT != DetectorClassification.HIGH]
-    if args.detectors_to_exclude:
-        detectors_to_run = [d for d in detectors_to_run if
-                            d.ARGUMENT not in args.detectors_to_exclude]
+    if not args.exclude_all:
+        exclude = args.detectors_to_exclude.split(',')
+        for e in exclude:
+            if e not in arguments:
+                raise Exception(f'{e} is not a detector name, must be one of {arguments}. See also `--list-detectors`.')
+        for arg, detector_cls in detectors.items():
+            if arg not in exclude:
+                detectors_to_run.append(detector_cls)
 
     return detectors_to_run
 
