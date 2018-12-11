@@ -34,12 +34,11 @@ Manticore can analyze the following types of programs:
 
 Manticore has a command line interface which can be used to easily symbolically execute a supported program or smart contract. Analysis results will be placed into a new directory beginning with `mcore_`.
 
-Use the CLI to explore possible states in Ethereum smart contracts. Manticore includes _detectors_ that flag potentially vulnerable code in discovered states. Solidity smart contracts must have a `.sol` extension for analysis by Manticore. See a [demo](https://asciinema.org/a/154012).
+Use the CLI to explore possible states in Ethereum smart contracts. Manticore includes _detectors_ that flag potentially vulnerable code in discovered states; output from them will be written to stdout and the results directory.
+Solidity smart contracts must have a `.sol` extension for analysis by Manticore. See a [demo](https://asciinema.org/a/154012).
 
 ```
 $ manticore ./path/to/contract.sol  # runs, and creates a mcore_* directory with analysis results
-$ manticore --detect-reentrancy ./path/to/contract.sol  # Above, but with reentrancy detection enabled
-$ manticore --detect-all ./path/to/contract.sol  # Above, but with all detectors enabled
 ```
 
 The command line can also be used to simply explore a Linux binary:
