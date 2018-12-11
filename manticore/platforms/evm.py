@@ -510,7 +510,7 @@ class EVM(Eventful):
         #    raise EVMException("Need code")
         self._constraints = constraints
         # Uninitialized values in memory are 0 by spec
-        self.memory = constraints.new_array(index_bits=256, value_bits=8, name='EMPTY_MEMORY_{:x}'.format(address), avoid_collisions=True, default=0)
+        self.memory = constraints.new_array(index_bits=256, value_bits=8, name=f'EMPTY_MEMORY_{address:x}', avoid_collisions=True, default=0)
         self.address = address
         self.caller = caller  # address of the account that is directly responsible for this execution
         self.data = data
