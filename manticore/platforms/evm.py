@@ -468,7 +468,7 @@ class EVM(Eventful):
         super().__init__(**kwargs)
         if data is not None and not issymbolic(data):
             data_size = len(data)
-            data_symbolic = constraints.new_array(index_bits=256, value_bits=8, index_max=data_size, name='DATA_{:x}'.format(address), avoid_collisions=True, default=0)
+            data_symbolic = constraints.new_array(index_bits=256, value_bits=8, index_max=data_size, name=f'DATA_{address:x}', avoid_collisions=True, default=0)
             data_symbolic[0:data_size] = data
             data = data_symbolic
 
