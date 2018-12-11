@@ -22,14 +22,14 @@ def gen_test(testcase, filename, skip):
     except Exception as e:
         pass
 
-    with open(filename 'rb') as f: 
+    with open(filename, 'rb') as f: 
         sha256sum = hashlib.sha256(f.read()).hexdigest()
 
     output += f"""
     def test_{testname}(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: {filename}
+            File: {os.path.split(filename)[1]}
             sha256sum: {sha256sum}
             Code: {disassemble}
         '''    

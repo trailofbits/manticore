@@ -32,7 +32,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
     def test_log1_emptyMem(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmLogTest/log1_emptyMem.json
+            File: log1_emptyMem.json
             sha256sum: 92f0894d3a39e8eeba6a8a7637de7fa7a93a51ec2cfdff11beae6414ee7afba7
             Code: PUSH1 0x0
                   PUSH1 0x0
@@ -87,7 +87,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
     def test_log0_emptyMem(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmLogTest/log0_emptyMem.json
+            File: log0_emptyMem.json
             sha256sum: 0d93034612b2fe1bcda64d8f748adc6c3627c81d07f58694184f875c000de180
             Code: PUSH1 0x0
                   PUSH1 0x0
@@ -141,7 +141,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
     def test_log4_nonEmptyMem_logMemSize1_logMemStart31(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmLogTest/log4_nonEmptyMem_logMemSize1_logMemStart31.json
+            File: log4_nonEmptyMem_logMemSize1_logMemStart31.json
             sha256sum: 88902695664dae25ab70b2e0fbd6ec4a4f0c639b7d16751838500a46241340b4
             Code: PUSH32 0xaabbffffffffffffffffffffffffffffffffffffffffffffffffffffffffccdd
                   PUSH1 0x0
@@ -202,7 +202,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
     def test_log2_logMemsizeZero(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmLogTest/log2_logMemsizeZero.json
+            File: log2_logMemsizeZero.json
             sha256sum: 183acbc7b246b9c4356123a9e02e9c95875bb3f04b2c182fd715ed9d148f8865
             Code: PUSH32 0xaabbffffffffffffffffffffffffffffffffffffffffffffffffffffffffccdd
                   PUSH1 0x0
@@ -261,7 +261,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
     def test_log3_logMemsizeZero(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmLogTest/log3_logMemsizeZero.json
+            File: log3_logMemsizeZero.json
             sha256sum: 5aca11a1da828bb0d55e076c829be9220a5580e6cbe54767d1360e23b3c66702
             Code: PUSH32 0xaabbffffffffffffffffffffffffffffffffffffffffffffffffffffffffccdd
                   PUSH1 0x0
@@ -321,7 +321,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
     def test_log0_nonEmptyMem_logMemSize1(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmLogTest/log0_nonEmptyMem_logMemSize1.json
+            File: log0_nonEmptyMem_logMemSize1.json
             sha256sum: 8a75f30cf6efb627a7c95d64dc17ac65bb3fdd41d0301faf5bd9914adbd7cc4a
             Code: PUSH32 0xaabbffffffffffffffffffffffffffffffffffffffffffffffffffffffffccdd
                   PUSH1 0x0
@@ -378,7 +378,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
     def test_log3_nonEmptyMem_logMemSize1_logMemStart31(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmLogTest/log3_nonEmptyMem_logMemSize1_logMemStart31.json
+            File: log3_nonEmptyMem_logMemSize1_logMemStart31.json
             sha256sum: e51d3a9329e2c7f99519988e90a237710113a929d05abc6f11aa2e41bd244ebe
             Code: PUSH32 0xaabbffffffffffffffffffffffffffffffffffffffffffffffffffffffffccdd
                   PUSH1 0x0
@@ -438,7 +438,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
     def test_log2_nonEmptyMem(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmLogTest/log2_nonEmptyMem.json
+            File: log2_nonEmptyMem.json
             sha256sum: d25456c1c7820ede2370ffde1b59ae243c88f11554087f01ce8b55a2a1988c7c
             Code: PUSH32 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
                   PUSH1 0x0
@@ -497,7 +497,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
     def test_log0_nonEmptyMem(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmLogTest/log0_nonEmptyMem.json
+            File: log0_nonEmptyMem.json
             sha256sum: 2f8eb6295a2a1c7b184300c911f364eb5b3e9e8bd11f9637d2b97ebc6b0a5b02
             Code: PUSH32 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
                   PUSH1 0x0
@@ -554,7 +554,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
     def test_log3_logMemsizeTooHigh(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmLogTest/log3_logMemsizeTooHigh.json
+            File: log3_logMemsizeTooHigh.json
             sha256sum: b9b8c6ab21dce6a1097155fc1ff6898983342a3e12d6742a89915a4458516454
             Code: PUSH32 0xaabbffffffffffffffffffffffffffffffffffffffffffffffffffffffffccdd
                   PUSH1 0x0
@@ -603,7 +603,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
     def test_log4_logMemsizeZero(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmLogTest/log4_logMemsizeZero.json
+            File: log4_logMemsizeZero.json
             sha256sum: 8df428a3745639c787be050599d9afaf811dd3d5d9b6a7e56b74ce7ffa18865c
             Code: PUSH32 0xaabbffffffffffffffffffffffffffffffffffffffffffffffffffffffffccdd
                   PUSH1 0x0
@@ -664,7 +664,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
     def test_log0_logMemStartTooHigh(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmLogTest/log0_logMemStartTooHigh.json
+            File: log0_logMemStartTooHigh.json
             sha256sum: a1ddd4d5bcc123bc356bd74a6db495a3c7265e56bb0df278b32f30b2f338f74d
             Code: PUSH32 0xaabbffffffffffffffffffffffffffffffffffffffffffffffffffffffffccdd
                   PUSH1 0x0
@@ -710,7 +710,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
     def test_log0_nonEmptyMem_logMemSize1_logMemStart31(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmLogTest/log0_nonEmptyMem_logMemSize1_logMemStart31.json
+            File: log0_nonEmptyMem_logMemSize1_logMemStart31.json
             sha256sum: 1261f42204f5cc01c05e376e5c5cc1c7904ee7a75fc185b3155b8d8348aacc31
             Code: PUSH32 0xaabbffffffffffffffffffffffffffffffffffffffffffffffffffffffffccdd
                   PUSH1 0x0
@@ -767,7 +767,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
     def test_log3_nonEmptyMem(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmLogTest/log3_nonEmptyMem.json
+            File: log3_nonEmptyMem.json
             sha256sum: d40e559cce1ff7bc5b8a01190a3ea0b672856c59627720654b300535bda94349
             Code: PUSH32 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
                   PUSH1 0x0
@@ -827,7 +827,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
     def test_log3_PC(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmLogTest/log3_PC.json
+            File: log3_PC.json
             sha256sum: 7c7bfdc8d5cd97b8861635f6bf033686ed2db90b0738a007774780963d1ecf6f
             Code: PUSH1 0xff
                   PUSH1 0x0
@@ -887,7 +887,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
     def test_log4_emptyMem(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmLogTest/log4_emptyMem.json
+            File: log4_emptyMem.json
             sha256sum: bc7cac7219881575c8e043a83d13985f6f7160a86d87bf742ea8f427862516d3
             Code: PUSH1 0x0
                   PUSH1 0x0
@@ -945,7 +945,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
     def test_log_2logs(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmLogTest/log_2logs.json
+            File: log_2logs.json
             sha256sum: cfcb61671028b46e606f72e79428acf4102fb57177f67112b37879b6e9c8f715
             Code: PUSH32 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
                   PUSH1 0x0
@@ -1005,7 +1005,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
     def test_log1_logMemsizeTooHigh(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmLogTest/log1_logMemsizeTooHigh.json
+            File: log1_logMemsizeTooHigh.json
             sha256sum: 578ab3931d616c8eb81045cc271b571f17cb9f596f27709132430438ff969372
             Code: PUSH32 0xaabbffffffffffffffffffffffffffffffffffffffffffffffffffffffffccdd
                   PUSH1 0x0
@@ -1052,7 +1052,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
     def test_log4_logMemsizeTooHigh(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmLogTest/log4_logMemsizeTooHigh.json
+            File: log4_logMemsizeTooHigh.json
             sha256sum: 1b16182821d84253995ac16cdfc907976c3dc0597b9199fc42c81edcec4c13c3
             Code: PUSH32 0xaabbffffffffffffffffffffffffffffffffffffffffffffffffffffffffccdd
                   PUSH1 0x0
@@ -1102,7 +1102,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
     def test_log1_logMemsizeZero(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmLogTest/log1_logMemsizeZero.json
+            File: log1_logMemsizeZero.json
             sha256sum: 8ad82bc2f38f4a667e3c4ddc19900b0a50d783fe61bbb2e72bb9c5d2bf417d91
             Code: PUSH32 0xaabbffffffffffffffffffffffffffffffffffffffffffffffffffffffffccdd
                   PUSH1 0x0
@@ -1160,7 +1160,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
     def test_log4_nonEmptyMem(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmLogTest/log4_nonEmptyMem.json
+            File: log4_nonEmptyMem.json
             sha256sum: f514d9d713ed720f4b6e3b4ff8bb9a12a57f1d6142d900c04000555b654a6230
             Code: PUSH32 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
                   PUSH1 0x0
@@ -1221,7 +1221,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
     def test_log2_nonEmptyMem_logMemSize1_logMemStart31(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmLogTest/log2_nonEmptyMem_logMemSize1_logMemStart31.json
+            File: log2_nonEmptyMem_logMemSize1_logMemStart31.json
             sha256sum: c1ac8a117d47f2634a5a82e9256e38b6c6dd585c7322094927f01a66559a9023
             Code: PUSH32 0xaabbffffffffffffffffffffffffffffffffffffffffffffffffffffffffccdd
                   PUSH1 0x0
@@ -1280,7 +1280,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
     def test_log2_logMemStartTooHigh(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmLogTest/log2_logMemStartTooHigh.json
+            File: log2_logMemStartTooHigh.json
             sha256sum: 4f21542eb18c50ca13797e4d87c91138cf655bfe4c534613eab3aaa06e1bbe16
             Code: PUSH32 0xaabbffffffffffffffffffffffffffffffffffffffffffffffffffffffffccdd
                   PUSH1 0x0
@@ -1328,7 +1328,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
     def test_log3_MaxTopic(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmLogTest/log3_MaxTopic.json
+            File: log3_MaxTopic.json
             sha256sum: d4237a1127f783c8865177e496afb3318135b4bf3e032d84bc33f69a8fa6281f
             Code: PUSH32 0xaabbffffffffffffffffffffffffffffffffffffffffffffffffffffffffccdd
                   PUSH1 0x0
@@ -1388,7 +1388,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
     def test_log1_nonEmptyMem(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmLogTest/log1_nonEmptyMem.json
+            File: log1_nonEmptyMem.json
             sha256sum: a5460e31fda8616be9b9a32827794dc693cbfda93fbf4933553eea157fbf227d
             Code: PUSH32 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
                   PUSH1 0x0
@@ -1446,7 +1446,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
     def test_log1_Caller(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmLogTest/log1_Caller.json
+            File: log1_Caller.json
             sha256sum: 9315ab755de0d3a82e12960a9f8a2b81bf116eca5e8320bb9f321d9ebdf75484
             Code: PUSH1 0xff
                   PUSH1 0x0
@@ -1504,7 +1504,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
     def test_log3_Caller(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmLogTest/log3_Caller.json
+            File: log3_Caller.json
             sha256sum: 870701b94ec1859d68b65f9a8ad3da38481b90d051ce097207fd6681b3dcf7e6
             Code: PUSH1 0xff
                   PUSH1 0x0
@@ -1564,7 +1564,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
     def test_log4_PC(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmLogTest/log4_PC.json
+            File: log4_PC.json
             sha256sum: 2c7035c93b4d925802f6057c1fbdf59e40a753d8c02034531b589ac6e7b15b5d
             Code: PUSH1 0xff
                   PUSH1 0x0
@@ -1625,7 +1625,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
     def test_log3_nonEmptyMem_logMemSize1(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmLogTest/log3_nonEmptyMem_logMemSize1.json
+            File: log3_nonEmptyMem_logMemSize1.json
             sha256sum: d31aadd67e57e20b2b15e02b6c5bfa92d669df36266c311daabde135868dfc9a
             Code: PUSH32 0xaabbffffffffffffffffffffffffffffffffffffffffffffffffffffffffccdd
                   PUSH1 0x0
@@ -1685,7 +1685,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
     def test_log4_logMemStartTooHigh(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmLogTest/log4_logMemStartTooHigh.json
+            File: log4_logMemStartTooHigh.json
             sha256sum: 6b053a6e0bbcc8aa6eaabf2d724c6393b9f58ecdd82413691c166308af70b58c
             Code: PUSH32 0xaabbffffffffffffffffffffffffffffffffffffffffffffffffffffffffccdd
                   PUSH1 0x0
@@ -1735,7 +1735,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
     def test_log3_emptyMem(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmLogTest/log3_emptyMem.json
+            File: log3_emptyMem.json
             sha256sum: e65b8aa71c00fed84051025311fb2839d57cd13e93cad54ff950af022b739fd7
             Code: PUSH1 0x0
                   PUSH1 0x0
@@ -1792,7 +1792,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
     def test_log1_nonEmptyMem_logMemSize1_logMemStart31(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmLogTest/log1_nonEmptyMem_logMemSize1_logMemStart31.json
+            File: log1_nonEmptyMem_logMemSize1_logMemStart31.json
             sha256sum: 370157a2cd11135c86b27f5f4b75b1aafe088ed0b65afcce1346a4fdb6fd59a6
             Code: PUSH32 0xaabbffffffffffffffffffffffffffffffffffffffffffffffffffffffffccdd
                   PUSH1 0x0
@@ -1850,7 +1850,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
     def test_log2_emptyMem(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmLogTest/log2_emptyMem.json
+            File: log2_emptyMem.json
             sha256sum: 3e45405cef7809ad6e49f8e8cdfe0f65264c1338b79da36c13b81f2a7aad8d77
             Code: PUSH1 0x0
                   PUSH1 0x0
@@ -1906,7 +1906,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
     def test_log4_nonEmptyMem_logMemSize1(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmLogTest/log4_nonEmptyMem_logMemSize1.json
+            File: log4_nonEmptyMem_logMemSize1.json
             sha256sum: 49568a8bc0b0e4671ca0fd2721e1fd8159e48932c379c18398e47b7f61512d5e
             Code: PUSH32 0xaabbffffffffffffffffffffffffffffffffffffffffffffffffffffffffccdd
                   PUSH1 0x0
@@ -1967,7 +1967,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
     def test_log3_logMemStartTooHigh(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmLogTest/log3_logMemStartTooHigh.json
+            File: log3_logMemStartTooHigh.json
             sha256sum: 5d7a20fbe12cd1563bba812df671f2bb56890fb3093aca942427c6e47efec21b
             Code: PUSH32 0xaabbffffffffffffffffffffffffffffffffffffffffffffffffffffffffccdd
                   PUSH1 0x0
@@ -2016,7 +2016,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
     def test_log1_MaxTopic(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmLogTest/log1_MaxTopic.json
+            File: log1_MaxTopic.json
             sha256sum: 57461de16f0dd59bfb3e68a8f703148e0a4a86e77dbfc28db9b6b6eebb3a3e64
             Code: PUSH32 0xaabbffffffffffffffffffffffffffffffffffffffffffffffffffffffffccdd
                   PUSH1 0x0
@@ -2074,7 +2074,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
     def test_log0_logMemsizeZero(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmLogTest/log0_logMemsizeZero.json
+            File: log0_logMemsizeZero.json
             sha256sum: c63c403419eb961fc7a058859f6657076848cb6d1c9ea0b915844d046031dfe0
             Code: PUSH32 0xaabbffffffffffffffffffffffffffffffffffffffffffffffffffffffffccdd
                   PUSH1 0x0
@@ -2131,7 +2131,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
     def test_log1_nonEmptyMem_logMemSize1(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmLogTest/log1_nonEmptyMem_logMemSize1.json
+            File: log1_nonEmptyMem_logMemSize1.json
             sha256sum: ac8beeadb21036f2a2f1f0a89489816082f37c74c1fc9371885120d6418ab9cd
             Code: PUSH32 0xaabbffffffffffffffffffffffffffffffffffffffffffffffffffffffffccdd
                   PUSH1 0x0
@@ -2189,7 +2189,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
     def test_log2_MaxTopic(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmLogTest/log2_MaxTopic.json
+            File: log2_MaxTopic.json
             sha256sum: c858a70982e4354306bde6cec6981f4fd8a717ac3151bbe4b3f9802362fe903e
             Code: PUSH32 0xaabbffffffffffffffffffffffffffffffffffffffffffffffffffffffffccdd
                   PUSH1 0x0
@@ -2248,7 +2248,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
     def test_log4_MaxTopic(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmLogTest/log4_MaxTopic.json
+            File: log4_MaxTopic.json
             sha256sum: 142cbb9192a5d11222e05532bb8a1bacac8760bcf3f7971a5e6a155e23a36200
             Code: PUSH32 0xaabbffffffffffffffffffffffffffffffffffffffffffffffffffffffffccdd
                   PUSH1 0x0
@@ -2309,7 +2309,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
     def test_log4_Caller(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmLogTest/log4_Caller.json
+            File: log4_Caller.json
             sha256sum: 9d8adbfeac6cdb354512917e33b9e3a04aa33f06e5422199108042a6232186a2
             Code: PUSH1 0xff
                   PUSH1 0x0
@@ -2370,7 +2370,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
     def test_log0_logMemsizeTooHigh(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmLogTest/log0_logMemsizeTooHigh.json
+            File: log0_logMemsizeTooHigh.json
             sha256sum: d28ac55519085fa97df67e497eb258e1bd832ecc1502167f453194ca9be9cad4
             Code: PUSH32 0xaabbffffffffffffffffffffffffffffffffffffffffffffffffffffffffccdd
                   PUSH1 0x0
@@ -2416,7 +2416,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
     def test_log2_logMemsizeTooHigh(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmLogTest/log2_logMemsizeTooHigh.json
+            File: log2_logMemsizeTooHigh.json
             sha256sum: ad46345861ea0cf01882ff817b9ea1cb7f0c1afc04aba505caa9675714d51748
             Code: PUSH32 0xaabbffffffffffffffffffffffffffffffffffffffffffffffffffffffffccdd
                   PUSH1 0x0
@@ -2464,7 +2464,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
     def test_log1_logMemStartTooHigh(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmLogTest/log1_logMemStartTooHigh.json
+            File: log1_logMemStartTooHigh.json
             sha256sum: 51781870be33fb0c8521f539806cf9bbcdc943610afc9bdb6f0cfe6cfffa64af
             Code: PUSH32 0xaabbffffffffffffffffffffffffffffffffffffffffffffffffffffffffccdd
                   PUSH1 0x0
@@ -2511,7 +2511,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
     def test_log2_nonEmptyMem_logMemSize1(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmLogTest/log2_nonEmptyMem_logMemSize1.json
+            File: log2_nonEmptyMem_logMemSize1.json
             sha256sum: fa27492be41be53c5924bc55047254efa6b1fa214276707bc04a32ad1abbc335
             Code: PUSH32 0xaabbffffffffffffffffffffffffffffffffffffffffffffffffffffffffccdd
                   PUSH1 0x0
@@ -2570,7 +2570,7 @@ class EVMTest_vmLogTest(unittest.TestCase):
     def test_log2_Caller(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmLogTest/log2_Caller.json
+            File: log2_Caller.json
             sha256sum: de0bbafbf9a112b4920e6e463d2b2b2ea2f7239763ccb0e6b009f5baaa7f3776
             Code: PUSH1 0xff
                   PUSH1 0x0

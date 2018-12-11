@@ -731,10 +731,8 @@ class Array(Expression):
         new_arr = ArrayProxy(ArrayVariable(self.index_bits, self.index_max + len(other), self.value_bits, 'concatenation{}'.format(uuid.uuid1())))
         for index in range(self.index_max):
             new_arr[index] = simplify(self[index])
-        _concrete_cache = new_arr._concrete_cache
         for index in range(len(other)):
             new_arr[index + self.index_max] = simplify(other[index])
-        new_arr._concrete_cache.update(_concrete_cache)
         return new_arr
 
     def __radd__(self, other):

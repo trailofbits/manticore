@@ -32,7 +32,7 @@ class EVMTest_vmSystemOperations(unittest.TestCase):
     def test_return1(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmSystemOperations/return1.json
+            File: return1.json
             sha256sum: 8bb16dfbc95077f7abc51d07cdba90b310b680750f22ad7bd5aaa1b4bda98d08
             Code: PUSH1 0x37
                   PUSH1 0x0
@@ -95,7 +95,7 @@ class EVMTest_vmSystemOperations(unittest.TestCase):
     def test_return2(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmSystemOperations/return2.json
+            File: return2.json
             sha256sum: 25972361a5871003f44467255a656b9e7ba3762a5cfe02b56a0197318d375b9a
             Code: PUSH1 0x37
                   PUSH1 0x0
@@ -158,7 +158,7 @@ class EVMTest_vmSystemOperations(unittest.TestCase):
     def test_suicideNotExistingAccount(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmSystemOperations/suicideNotExistingAccount.json
+            File: suicideNotExistingAccount.json
             sha256sum: e2cb030ec446c6acca6c87a741d254ededf0713f3147b6e5e725d6795b4b9fea
             Code: PUSH20 0xaa1722f3947def4cf144679da39c4c32bdc35681
                   SELFDESTRUCT
@@ -222,7 +222,7 @@ class EVMTest_vmSystemOperations(unittest.TestCase):
     def test_TestNameRegistrator(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmSystemOperations/TestNameRegistrator.json
+            File: TestNameRegistrator.json
             sha256sum: dd000f5977416de19410170b8a7acb5060011594fd97c81f307f015cd5bdd51e
             Code: PUSH1 0x0
                   CALLDATALOAD
@@ -288,7 +288,7 @@ class EVMTest_vmSystemOperations(unittest.TestCase):
     def test_suicide0(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmSystemOperations/suicide0.json
+            File: suicide0.json
             sha256sum: b6a8903cf90bc139d273b9408ec6aad5832bc94a2f87ee21cc018a4f1aea2fd8
             Code: CALLER
                   SELFDESTRUCT
@@ -347,7 +347,7 @@ class EVMTest_vmSystemOperations(unittest.TestCase):
     def test_suicideSendEtherToMe(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmSystemOperations/suicideSendEtherToMe.json
+            File: suicideSendEtherToMe.json
             sha256sum: 2ff81b7cdd2b1dd1f69c4bc9ba0b7369b4c624291d5021fbe638ce130a18df26
             Code: ADDRESS
                   SELFDESTRUCT
@@ -406,7 +406,7 @@ class EVMTest_vmSystemOperations(unittest.TestCase):
     def test_return0(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmSystemOperations/return0.json
+            File: return0.json
             sha256sum: 0317578f90e3f451ed9d51947d1303493022caa568aa4927eb113e1c9a0183e6
             Code: PUSH1 0x37
                   PUSH1 0x0

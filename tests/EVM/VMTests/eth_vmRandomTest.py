@@ -32,7 +32,7 @@ class EVMTest_vmRandomTest(unittest.TestCase):
     def test_201503110346PYTHON_PUSH24(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmRandomTest/201503110346PYTHON_PUSH24.json
+            File: 201503110346PYTHON_PUSH24.json
             sha256sum: 0f512fa3c9cf0e24e246ca46e8e072745df14f1cdfc8fcf6d201aba5e55f7932
             Code: 
         '''    
@@ -84,7 +84,7 @@ class EVMTest_vmRandomTest(unittest.TestCase):
     def test_201503110219PYTHON(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmRandomTest/201503110219PYTHON.json
+            File: 201503110219PYTHON.json
             sha256sum: e153bd49bafe6f1e398ddaeb35a9f0493d823b36c3823908211bf371ec95cb1f
             Code: BLOCKHASH
                   BLOCKHASH
@@ -136,7 +136,7 @@ class EVMTest_vmRandomTest(unittest.TestCase):
     def test_201503111844PYTHON(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmRandomTest/201503111844PYTHON.json
+            File: 201503111844PYTHON.json
             sha256sum: 75bc0568cd5fe782e030391083658cdcbac61e32d6f0b1bdce9286ee7fd6d75e
             Code: 
         '''    
@@ -188,7 +188,7 @@ class EVMTest_vmRandomTest(unittest.TestCase):
     def test_201503102320PYTHON(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmRandomTest/201503102320PYTHON.json
+            File: 201503102320PYTHON.json
             sha256sum: 612078317eb4f60643c39c4c0d2ee8e9c0c853ed5188d437d811cba47fe9e26f
             Code: NUMBER
                   NUMBER
@@ -237,7 +237,7 @@ class EVMTest_vmRandomTest(unittest.TestCase):
     def test_201503110206PYTHON(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmRandomTest/201503110206PYTHON.json
+            File: 201503110206PYTHON.json
             sha256sum: d02dd686767e9a3f281f4dce40244cbe23a022eae7a3e8cc3dd2e747b889500a
             Code: BLOCKHASH
                   GASLIMIT
@@ -294,7 +294,7 @@ class EVMTest_vmRandomTest(unittest.TestCase):
     def test_201503112218PYTHON(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmRandomTest/201503112218PYTHON.json
+            File: 201503112218PYTHON.json
             sha256sum: cbd7e0e94cc25d26f381b86d2808304264910c18affd48aad6bbe888929e4207
             Code: BLOCKHASH
                   COINBASE

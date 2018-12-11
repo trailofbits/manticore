@@ -32,7 +32,7 @@ class EVMTest_vmTests(unittest.TestCase):
     def test_suicide(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmTests/suicide.json
+            File: suicide.json
             sha256sum: 1aa0a61de3c9576faf6ac4f002626210a5315d3132d032162b2934d304a60c1f
             Code: CALLER
                   SELFDESTRUCT

@@ -524,6 +524,8 @@ class EVM(Eventful):
         # Machine state
         self.pc = 0
         self.stack = []
+        # We maintain gas as a 512 bits internally to avoid overflows
+        # it is shortened to 256 bits when it is used by the GAS instruction
         self._gas = Operators.ZEXTEND(gas, 512)
         self._world = world
         self._allocated = 0

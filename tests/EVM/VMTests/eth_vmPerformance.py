@@ -33,7 +33,7 @@ class EVMTest_vmPerformance(unittest.TestCase):
     def test_loop_exp_8b_100k(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmPerformance/loop-exp-8b-100k.json
+            File: loop-exp-8b-100k.json
             sha256sum: 2f076c2f9d7ce9e950e0ff5a65fe2ce54a9d7562997eba56d8ec4fa471b60b05
             Code: PUSH1 0x60
                   PUSH1 0x40
@@ -306,7 +306,7 @@ class EVMTest_vmPerformance(unittest.TestCase):
     def test_loop_exp_2b_100k(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmPerformance/loop-exp-2b-100k.json
+            File: loop-exp-2b-100k.json
             sha256sum: 9200f2941c02073357bdc92cf456135dc9987a481dd1588aa5209c686146eae8
             Code: PUSH1 0x60
                   PUSH1 0x40
@@ -579,7 +579,7 @@ class EVMTest_vmPerformance(unittest.TestCase):
     def test_loop_divadd_unr100_10M(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmPerformance/loop-divadd-unr100-10M.json
+            File: loop-divadd-unr100-10M.json
             sha256sum: b618313271e0e0ca82a116783509439d3fb82392fc8f77a5cef03f37f814b0e2
             Code: PUSH1 0x60
                   PUSH1 0x40
@@ -2466,7 +2466,7 @@ class EVMTest_vmPerformance(unittest.TestCase):
     def test_loop_divadd_10M(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmPerformance/loop-divadd-10M.json
+            File: loop-divadd-10M.json
             sha256sum: 6f90142841d39bf228763d8e8bf96f47cc675b7185e9e80006aa4ce00fd33450
             Code: PUSH1 0x60
                   PUSH1 0x40
@@ -2857,7 +2857,7 @@ class EVMTest_vmPerformance(unittest.TestCase):
     def test_loop_exp_32b_100k(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmPerformance/loop-exp-32b-100k.json
+            File: loop-exp-32b-100k.json
             sha256sum: 3fdf71291eef83ada87015592ce6993042e883c5ced3c30cc5c5708723e362aa
             Code: PUSH1 0x60
                   PUSH1 0x40
@@ -3130,7 +3130,7 @@ class EVMTest_vmPerformance(unittest.TestCase):
     def test_manyFunctions100(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmPerformance/manyFunctions100.json
+            File: manyFunctions100.json
             sha256sum: c4f4bb8c1b0f2a93c0cbf40824c8b6bed814f8a3c6814fcaf0fcbce829147b69
             Code: PUSH1 0xe0
                   PUSH1 0x2
@@ -16052,7 +16052,7 @@ class EVMTest_vmPerformance(unittest.TestCase):
     def test_loop_exp_nop_1M(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmPerformance/loop-exp-nop-1M.json
+            File: loop-exp-nop-1M.json
             sha256sum: 8ff68ed3e0ccc906a85466be208f92af7b5605fcd39e7b81f7f7f1d2b8cb2582
             Code: PUSH1 0x60
                   PUSH1 0x40
@@ -16325,7 +16325,7 @@ class EVMTest_vmPerformance(unittest.TestCase):
     def test_loop_exp_4b_100k(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmPerformance/loop-exp-4b-100k.json
+            File: loop-exp-4b-100k.json
             sha256sum: 6abe5671655177222cd21fe87fdf428378813647d662f4a217ae61c419be6600
             Code: PUSH1 0x60
                   PUSH1 0x40
@@ -16598,7 +16598,7 @@ class EVMTest_vmPerformance(unittest.TestCase):
     def test_fibonacci10(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmPerformance/fibonacci10.json
+            File: fibonacci10.json
             sha256sum: 32d1c40828faa3363167a574b686bd62d3fde00e1cb0231f79e6af76bc40eac2
             Code: PUSH1 0xe0
                   PUSH1 0x2
@@ -16803,7 +16803,7 @@ class EVMTest_vmPerformance(unittest.TestCase):
     def test_fibonacci16(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmPerformance/fibonacci16.json
+            File: fibonacci16.json
             sha256sum: e86f7704ffc75e00c174301fa0323d9281c1e0a924f41777d86435861d565ed4
             Code: PUSH1 0xe0
                   PUSH1 0x2
@@ -17008,7 +17008,7 @@ class EVMTest_vmPerformance(unittest.TestCase):
     def test_ackermann31(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmPerformance/ackermann31.json
+            File: ackermann31.json
             sha256sum: f40f63dd99b398421c09232b4e33cabc62081156d80bd223db228c4c2bcfee4e
             Code: PUSH1 0xe0
                   PUSH1 0x2
@@ -17213,7 +17213,7 @@ class EVMTest_vmPerformance(unittest.TestCase):
     def test_loop_mulmod_2M(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmPerformance/loop-mulmod-2M.json
+            File: loop-mulmod-2M.json
             sha256sum: dd880ffd723fdba361f3cda94c2a8bbf881b611e30aa5df2bf79f288d888bfba
             Code: PUSH1 0x60
                   PUSH1 0x40
@@ -17361,7 +17361,7 @@ class EVMTest_vmPerformance(unittest.TestCase):
     def test_loop_add_10M(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmPerformance/loop-add-10M.json
+            File: loop-add-10M.json
             sha256sum: f9de7ea641e10ffac8348e991c80be421942ef5acda92bc303e39f80a95a70c1
             Code: PUSH1 0x60
                   PUSH1 0x40
@@ -17752,7 +17752,7 @@ class EVMTest_vmPerformance(unittest.TestCase):
     def test_loop_exp_1b_1M(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmPerformance/loop-exp-1b-1M.json
+            File: loop-exp-1b-1M.json
             sha256sum: ce831c398cbfdb08bbad690fef66e19596aa5bfbb4b47cce7dc1d811e221fc86
             Code: PUSH1 0x60
                   PUSH1 0x40
@@ -18025,7 +18025,7 @@ class EVMTest_vmPerformance(unittest.TestCase):
     def test_loop_exp_16b_100k(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmPerformance/loop-exp-16b-100k.json
+            File: loop-exp-16b-100k.json
             sha256sum: 620de370944ea72fd94c78a76c415ed4a95011ec08e0eb3b3bbed924fc400db7
             Code: PUSH1 0x60
                   PUSH1 0x40
@@ -18298,7 +18298,7 @@ class EVMTest_vmPerformance(unittest.TestCase):
     def test_ackermann32(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmPerformance/ackermann32.json
+            File: ackermann32.json
             sha256sum: 3b6a7236e1a976db748e23082ed3446196be2eab9ecd42c57a62c4c485655590
             Code: PUSH1 0xe0
                   PUSH1 0x2
@@ -18503,7 +18503,7 @@ class EVMTest_vmPerformance(unittest.TestCase):
     def test_loop_mul(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmPerformance/loop-mul.json
+            File: loop-mul.json
             sha256sum: 600aefe4a83576ca54ffef7cc66d311787374ae277abbd012307c0c9bbd724d1
             Code: PUSH1 0x60
                   PUSH1 0x40
@@ -18646,7 +18646,7 @@ class EVMTest_vmPerformance(unittest.TestCase):
     def test_ackermann33(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmPerformance/ackermann33.json
+            File: ackermann33.json
             sha256sum: dcce15dfa23875702d36aada2f196b9c03cd37cd7f2f9de70d91cccb117ea255
             Code: PUSH1 0xe0
                   PUSH1 0x2

@@ -32,7 +32,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
     def test_calldatacopy2_return(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmEnvironmentalInfo/calldatacopy2_return.json
+            File: calldatacopy2_return.json
             sha256sum: a26586fa1b2ee81e7653875490bdedd495076bb775ebcff9d6c2112eaa8babde
             Code: PUSH1 0x0
                   PUSH1 0x1
@@ -94,7 +94,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
     def test_calldatacopy1_return(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmEnvironmentalInfo/calldatacopy1_return.json
+            File: calldatacopy1_return.json
             sha256sum: b7e6aa245f879323cdc9478104efdcad8c7bbe4f8312d67ad8e7f568ec9d537c
             Code: PUSH1 0x1
                   PUSH1 0x1
@@ -158,7 +158,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
     def test_calldatacopy0_return(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmEnvironmentalInfo/calldatacopy0_return.json
+            File: calldatacopy0_return.json
             sha256sum: 9e74e8f70e7afaed68c71a3e0ed112039672e9b6230b04e9150c22a43d59d654
             Code: PUSH1 0x2
                   PUSH1 0x1
@@ -222,7 +222,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
     def test_calldatacopy0(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmEnvironmentalInfo/calldatacopy0.json
+            File: calldatacopy0.json
             sha256sum: 638df00ff9e8cdcfa8b3d3cc5271a67361774e8c92ed2effd1efed8d79de1354
             Code: PUSH1 0x2
                   PUSH1 0x1
@@ -283,7 +283,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
     def test_calldataload1(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmEnvironmentalInfo/calldataload1.json
+            File: calldataload1.json
             sha256sum: 890c4de64840f5e42274ebd0a6058a75ee9d7fd347dbd4e28fe91db2a935b813
             Code: PUSH1 0x1
                   CALLDATALOAD
@@ -340,7 +340,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
     def test_calldatacopy_DataIndexTooHigh2_return(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmEnvironmentalInfo/calldatacopy_DataIndexTooHigh2_return.json
+            File: calldatacopy_DataIndexTooHigh2_return.json
             sha256sum: 5ba7945dab6966e02c974e2be43558840c4331a57508e0ae96fd29bdec697f85
             Code: PUSH1 0x9
                   PUSH32 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffa
@@ -402,7 +402,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
     def test_calldatacopy_sec(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmEnvironmentalInfo/calldatacopy_sec.json
+            File: calldatacopy_sec.json
             sha256sum: f6348aac4068d1096c0c4ae56b253f94d93516c0c9d6274018d5573d5e6ec6d5
             Code: PUSH1 0x5
                   JUMP
@@ -477,7 +477,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
     def test_calldatacopy2(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmEnvironmentalInfo/calldatacopy2.json
+            File: calldatacopy2.json
             sha256sum: 5ef7b5e2acb1896f30f62017bd2e18a56c921199605389378c7abec55031cc20
             Code: PUSH1 0x0
                   PUSH1 0x1
@@ -536,7 +536,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
     def test_codesize(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmEnvironmentalInfo/codesize.json
+            File: codesize.json
             sha256sum: 5704de4f0d6c6b328fccffb5c397854c3c5c0064aee3eec0277a60d8920e5051
             Code: CODESIZE
                   PUSH1 0x0
@@ -592,7 +592,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
     def test_calldataloadSizeTooHighPartial(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmEnvironmentalInfo/calldataloadSizeTooHighPartial.json
+            File: calldataloadSizeTooHighPartial.json
             sha256sum: a2899760b2ca03b1f32c69b62a70751e2be4fc9b880d97e86f151b066116221a
             Code: PUSH1 0xa
                   CALLDATALOAD
@@ -649,7 +649,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
     def test_calldataload2(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmEnvironmentalInfo/calldataload2.json
+            File: calldataload2.json
             sha256sum: 3e2a38159468be9c41b09413dfbf0047ff168e367d6e6ef183be6a8b43cf3da6
             Code: PUSH1 0x5
                   CALLDATALOAD
@@ -706,7 +706,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
     def test_calldatacopyUnderFlow(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmEnvironmentalInfo/calldatacopyUnderFlow.json
+            File: calldatacopyUnderFlow.json
             sha256sum: 3343d3f1ad16987085ce1b5c96dc1464ee1e6fdbdc487dd300e73977c3e5eb45
             Code: PUSH1 0x1
                   PUSH1 0x2
@@ -749,7 +749,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
     def test_calldatacopyZeroMemExpansion_return(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmEnvironmentalInfo/calldatacopyZeroMemExpansion_return.json
+            File: calldatacopyZeroMemExpansion_return.json
             sha256sum: 403ef747fa5eaea2cd79876ed9060188c5f3016501a0028f1de700e6a33bf5ac
             Code: PUSH1 0x0
                   PUSH1 0x0
@@ -811,7 +811,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
     def test_calldatacopy_DataIndexTooHigh(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmEnvironmentalInfo/calldatacopy_DataIndexTooHigh.json
+            File: calldatacopy_DataIndexTooHigh.json
             sha256sum: f6113b84185521a92e9507abdcacb7ff31088a74130ca1c1dbd5c37ed20b3e1a
             Code: PUSH1 0xff
                   PUSH32 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffa
@@ -870,7 +870,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
     def test_origin(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmEnvironmentalInfo/origin.json
+            File: origin.json
             sha256sum: 3480b0e1ca40883b9fe4cf4e7a4da98614d94eb0c702beda49ccb84dbc0b2d68
             Code: ORIGIN
                   PUSH1 0x0
@@ -926,7 +926,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
     def test_codecopy0(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmEnvironmentalInfo/codecopy0.json
+            File: codecopy0.json
             sha256sum: ec91f06ad11895315200c4a39a61ef367b82003e0b7cdb8bbfad4c143694c32f
             Code: PUSH1 0x5
                   PUSH1 0x0
@@ -987,7 +987,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
     def test_codecopyZeroMemExpansion(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmEnvironmentalInfo/codecopyZeroMemExpansion.json
+            File: codecopyZeroMemExpansion.json
             sha256sum: 1f5175b0b68ce027be1757ee20f17d04cfbcaa36b2241c37ff15ff419bbc5297
             Code: PUSH1 0x0
                   PUSH1 0x0
@@ -1046,7 +1046,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
     def test_calldatacopy_DataIndexTooHigh2(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmEnvironmentalInfo/calldatacopy_DataIndexTooHigh2.json
+            File: calldatacopy_DataIndexTooHigh2.json
             sha256sum: 381db3e53b756d37a287d886b8ffac894313e17ce27cde745e1f5f36779567d1
             Code: PUSH1 0x9
                   PUSH32 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffa
@@ -1105,7 +1105,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
     def test_calldatasize1(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmEnvironmentalInfo/calldatasize1.json
+            File: calldatasize1.json
             sha256sum: f544d9df8a4efd692589f75cc18a39449e86929ab2774d4838587f826f0ccc1c
             Code: CALLDATASIZE
                   PUSH1 0x0
@@ -1161,7 +1161,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
     def test_codecopy_DataIndexTooHigh(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmEnvironmentalInfo/codecopy_DataIndexTooHigh.json
+            File: codecopy_DataIndexTooHigh.json
             sha256sum: b3eb9e9d3f51705e51de5db4bfabe4d3932c4046b242f6730f875b5221eea132
             Code: PUSH1 0x8
                   PUSH32 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffa
@@ -1220,7 +1220,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
     def test_calldatasize2(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmEnvironmentalInfo/calldatasize2.json
+            File: calldatasize2.json
             sha256sum: ad21f9b77011891fdb9f015a147c3686e36932a23e3cc8390fb645208fa52b45
             Code: CALLDATASIZE
                   PUSH1 0x0
@@ -1276,7 +1276,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
     def test_calldataloadSizeTooHigh(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmEnvironmentalInfo/calldataloadSizeTooHigh.json
+            File: calldataloadSizeTooHigh.json
             sha256sum: 221a833196ffed6d0105c63c512f94be030460c5318e131ba85eab390e248521
             Code: PUSH32 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffa
                   CALLDATALOAD
@@ -1331,7 +1331,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
     def test_address1(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmEnvironmentalInfo/address1.json
+            File: address1.json
             sha256sum: fd14b93c0b05baf12caa61c62c65cf77bb02300d7f0e4737947b3512981e1a3d
             Code: ADDRESS
                   PUSH1 0x0
@@ -1387,7 +1387,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
     def test_gasprice(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmEnvironmentalInfo/gasprice.json
+            File: gasprice.json
             sha256sum: 8764def18ca712c2d9c7fc2f139d2adc67016f3825f05959e23151ca2461c885
             Code: GASPRICE
                   PUSH1 0x0
@@ -1443,7 +1443,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
     def test_callvalue(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmEnvironmentalInfo/callvalue.json
+            File: callvalue.json
             sha256sum: 09e5c3d0625d42c6204d48503ebce4e85c601c68f1e4e48d687935dbdcc46e0a
             Code: CALLVALUE
                   PUSH1 0x0
@@ -1499,7 +1499,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
     def test_calldataload_BigOffset(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmEnvironmentalInfo/calldataload_BigOffset.json
+            File: calldataload_BigOffset.json
             sha256sum: eb1de5f0bd53b3b3a0aeafb9078c11812ab0995cf6b3212bee54bb00cd94b4cb
             Code: PUSH32 0x4200000000000000000000000000000000000000000000000000000000000000
                   CALLDATALOAD
@@ -1554,7 +1554,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
     def test_calldataload0(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmEnvironmentalInfo/calldataload0.json
+            File: calldataload0.json
             sha256sum: cfb745bb3e23954a86c5adf5aac0f51d8001aabdbc28c34b8dafe850569a2df2
             Code: PUSH1 0x0
                   CALLDATALOAD
@@ -1611,7 +1611,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
     def test_address0(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmEnvironmentalInfo/address0.json
+            File: address0.json
             sha256sum: 2eadf1924441917e8a8e10f2749612b68a41846ccb185dd528ea65f3257d45db
             Code: ADDRESS
                   PUSH1 0x0
@@ -1667,7 +1667,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
     def test_calldatacopy1(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmEnvironmentalInfo/calldatacopy1.json
+            File: calldatacopy1.json
             sha256sum: 3e863533282cd4f0dea6a8e6dd00799828ad59478560079a085b16fbf98b829e
             Code: PUSH1 0x1
                   PUSH1 0x1
@@ -1728,7 +1728,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
     def test_calldatacopyZeroMemExpansion(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmEnvironmentalInfo/calldatacopyZeroMemExpansion.json
+            File: calldatacopyZeroMemExpansion.json
             sha256sum: dfb6e3a5fa584962ec2c1b2de3c6a948e04fc307c69744e80de7125320b7278d
             Code: PUSH1 0x0
                   PUSH1 0x0
@@ -1787,7 +1787,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
     def test_calldatasize0(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmEnvironmentalInfo/calldatasize0.json
+            File: calldatasize0.json
             sha256sum: d0ca8fd60a1fb59685baa4e0aba4561b0da07be7a091108b9b67c787d337c476
             Code: CALLDATASIZE
                   PUSH1 0x0
@@ -1843,7 +1843,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
     def test_calldatacopy_DataIndexTooHigh_return(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmEnvironmentalInfo/calldatacopy_DataIndexTooHigh_return.json
+            File: calldatacopy_DataIndexTooHigh_return.json
             sha256sum: c4d8273ccd0d82d9667c5501bea79563329f85aca567eede9a07f6543709a63e
             Code: PUSH1 0xff
                   PUSH32 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffa
@@ -1905,7 +1905,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
     def test_caller(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmEnvironmentalInfo/caller.json
+            File: caller.json
             sha256sum: 4529f1e1bec3e237c6c94f8ae1c7c2aabd8c2e5b0d0292ff493b7a5707def563
             Code: CALLER
                   PUSH1 0x0

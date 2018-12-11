@@ -32,7 +32,7 @@ class EVMTest_vmBlockInfoTest(unittest.TestCase):
     def test_coinbase(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmBlockInfoTest/coinbase.json
+            File: coinbase.json
             sha256sum: 112d05c5ec45f9610d75fbd5e95a6bc8b9027c702101c254ee5d667c833e370f
             Code: COINBASE
                   PUSH1 0x0
@@ -88,7 +88,7 @@ class EVMTest_vmBlockInfoTest(unittest.TestCase):
     def test_gaslimit(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmBlockInfoTest/gaslimit.json
+            File: gaslimit.json
             sha256sum: 656f33ecf7d1b15db096476b9125b969f5e3d312c85db39893a4d8f5fba57d7f
             Code: GASLIMIT
                   PUSH1 0x0
@@ -144,7 +144,7 @@ class EVMTest_vmBlockInfoTest(unittest.TestCase):
     def test_timestamp(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmBlockInfoTest/timestamp.json
+            File: timestamp.json
             sha256sum: e0517702c3ba8bc8a593af7dbdb4de4d3ee7a53ae4fffc058776e40c435b20ba
             Code: TIMESTAMP
                   PUSH1 0x0
@@ -200,7 +200,7 @@ class EVMTest_vmBlockInfoTest(unittest.TestCase):
     def test_difficulty(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmBlockInfoTest/difficulty.json
+            File: difficulty.json
             sha256sum: cfb16af60a9bb9474abfff3b66f8f93505c340ab51b4e934fb75806ad87942e5
             Code: DIFFICULTY
                   PUSH1 0x0
@@ -256,7 +256,7 @@ class EVMTest_vmBlockInfoTest(unittest.TestCase):
     def test_number(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmBlockInfoTest/number.json
+            File: number.json
             sha256sum: cced67c3cea4a07ce9c4c15107f87a2d6e958cf065791d7c793a260575e9b140
             Code: NUMBER
                   PUSH1 0x0

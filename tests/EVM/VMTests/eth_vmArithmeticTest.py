@@ -32,7 +32,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_addmodDivByZero1(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/addmodDivByZero1.json
+            File: addmodDivByZero1.json
             sha256sum: cb6142b733dd0a41e5e83b98921b62dbed0c90e28da43109e7189cc37e20bc9d
             Code: PUSH1 0x0
                   PUSH1 0x1
@@ -89,7 +89,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_mulmod2_0(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/mulmod2_0.json
+            File: mulmod2_0.json
             sha256sum: cc684081a03672440715b213e55d41c6b40b5f906d5729227eca121ffb459d9f
             Code: PUSH1 0x3
                   PUSH1 0x1
@@ -154,7 +154,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf2_64(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf2_64.json
+            File: expPowerOf2_64.json
             sha256sum: 0a917c261c69f13064e5ca6c65b8f3fa61ee9013526b33ae828887b0605b8d0f
             Code: PUSH1 0x40
                   PUSH1 0x2
@@ -224,7 +224,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_sdiv5(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/sdiv5.json
+            File: sdiv5.json
             sha256sum: 024224e1f6e953cab5d5c8c00eb01e65eaba45104cce696fa37b6f1304676e6c
             Code: PUSH1 0x1
                   PUSH1 0x0
@@ -286,7 +286,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256Of256_0(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256Of256_0.json
+            File: expPowerOf256Of256_0.json
             sha256sum: 90140ff94b6bfacb841fe9ec94969da8c2ff50d4a298e567ab9e2bc3924684cd
             Code: PUSH1 0x0
                   PUSH2 0x100
@@ -410,7 +410,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_sdiv0(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/sdiv0.json
+            File: sdiv0.json
             sha256sum: f247d5d6906019548216c29459efebace369512d19df0e266ecc8a2028dc1960
             Code: PUSH32 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
                   PUSH32 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
@@ -470,7 +470,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf2_256(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf2_256.json
+            File: expPowerOf2_256.json
             sha256sum: 5b5b5e2fdf3149601d208e55b5a19c527a74f554b7024514a5a14c10a827021b
             Code: PUSH2 0x100
                   PUSH1 0x2
@@ -538,7 +538,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256_12(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256_12.json
+            File: expPowerOf256_12.json
             sha256sum: 6961b8ed41be6fab3df3b7ad24004c9513c69ecd51a80f3a54d8f3f0c3598de2
             Code: PUSH1 0xc
                   PUSH2 0x100
@@ -608,7 +608,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256_9(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256_9.json
+            File: expPowerOf256_9.json
             sha256sum: d86d61b53ef010f8122ef525d1d4662b9b6a680256aebca4630918e07de611f0
             Code: PUSH1 0x9
                   PUSH2 0x100
@@ -678,7 +678,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf2_8(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf2_8.json
+            File: expPowerOf2_8.json
             sha256sum: dc827c7432f16db5c78b63f434ca2dc24762a4bf7827cc3f487fffe08a0d452c
             Code: PUSH1 0x8
                   PUSH1 0x2
@@ -748,7 +748,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256_28(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256_28.json
+            File: expPowerOf256_28.json
             sha256sum: 1a20d105592e063cd1a2736383aba235513940ea6a3e91fea29aa0db06e1f88f
             Code: PUSH1 0x1c
                   PUSH2 0x100
@@ -818,7 +818,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256Of256_32(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256Of256_32.json
+            File: expPowerOf256Of256_32.json
             sha256sum: 3aeec0dc1d899e00954d8cc12a7eb4e4ea8a79d53b763de0ed38bbd7f70dc8e0
             Code: PUSH1 0x20
                   PUSH2 0x100
@@ -940,7 +940,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256_13(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256_13.json
+            File: expPowerOf256_13.json
             sha256sum: 7175a5c1d4422f0a80afaf7e92eff51584e1529057d43a7cc177cc4cc6ddb491
             Code: PUSH1 0xd
                   PUSH2 0x100
@@ -1010,7 +1010,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256_20(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256_20.json
+            File: expPowerOf256_20.json
             sha256sum: b0740a6ca31abb6604729d5c5904c1c79842624834b8c01a0b3dfec6c470313e
             Code: PUSH1 0x14
                   PUSH2 0x100
@@ -1080,7 +1080,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_divByZero(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/divByZero.json
+            File: divByZero.json
             sha256sum: 3c90b75a836a6d2f79054eb6bb179afa94045229bbf98f4f0ef6603d353cc7bd
             Code: PUSH1 0x0
                   PUSH1 0x2
@@ -1136,7 +1136,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256Of256_33(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256Of256_33.json
+            File: expPowerOf256Of256_33.json
             sha256sum: 8f763116e64155dbe53aaf5f769a7daf990afb49965141af4cc8ca4fa9b9e4e4
             Code: PUSH1 0x21
                   PUSH2 0x100
@@ -1258,7 +1258,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256_22(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256_22.json
+            File: expPowerOf256_22.json
             sha256sum: 13cfb8aaf7225968816d16a4431dec7b1450c365dd74bb1d5e77964ce04d8907
             Code: PUSH1 0x16
                   PUSH2 0x100
@@ -1328,7 +1328,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_signextend_BigByte_0(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/signextend_BigByte_0.json
+            File: signextend_BigByte_0.json
             sha256sum: 55f9f4e253517d1ac56053c4e71c32eb1b18d40d5ea754683851ea356ae9daa1
             Code: PUSH1 0x0
                   PUSH32 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
@@ -1384,7 +1384,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_mul1(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/mul1.json
+            File: mul1.json
             sha256sum: c27023f53c812b9cbb868e7f76fc946c62869666668f44cf8fa85660c373d01d
             Code: PUSH32 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
                   PUSH32 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
@@ -1442,7 +1442,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_exp7(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/exp7.json
+            File: exp7.json
             sha256sum: fc5158a5d8f866285b0dc0feab44a7f04cd9d5c70392ac3a121ee7f5f449b92b
             Code: PUSH2 0x101
                   PUSH1 0x2
@@ -1498,7 +1498,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256Of256_29(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256Of256_29.json
+            File: expPowerOf256Of256_29.json
             sha256sum: 7e5cd980778372fddd4fe5da72d58a03f7248ea522d4ff1cee8774289648dd19
             Code: PUSH1 0x1d
                   PUSH2 0x100
@@ -1619,7 +1619,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256_33(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256_33.json
+            File: expPowerOf256_33.json
             sha256sum: f2daf3916252f2d92a191ca8ec40e6a6394d64b697e9b1efe88e75200d711db7
             Code: PUSH1 0x21
                   PUSH2 0x100
@@ -1688,7 +1688,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_addmod3(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/addmod3.json
+            File: addmod3.json
             sha256sum: e5b07da689ffac562e99efc151d2c9e85f8ec9d86b0a232c66722f0ed279ef47
             Code: PUSH1 0x3
                   PUSH1 0x0
@@ -1749,7 +1749,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_sdivByZero0(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/sdivByZero0.json
+            File: sdivByZero0.json
             sha256sum: d6e23171cfe8625fb39ce7d15d8b72776b0c2854017aadeff0bc2458983a76d1
             Code: PUSH1 0x0
                   PUSH1 0x0
@@ -1809,7 +1809,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_mod4(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/mod4.json
+            File: mod4.json
             sha256sum: e331db234769811883d87ea184e6e1ac118b59906328047791f12e2461435a20
             Code: PUSH1 0x3
                   PUSH1 0x2
@@ -1869,7 +1869,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256Of256_6(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256Of256_6.json
+            File: expPowerOf256Of256_6.json
             sha256sum: a5e79941b4ad22e16675c01093e4641e21c12e304fb056cd48e99cd32659982e
             Code: PUSH1 0x6
                   PUSH2 0x100
@@ -1990,7 +1990,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expXY(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expXY.json
+            File: expXY.json
             sha256sum: 946461d4eabea507c8507010fd972cc8a0bc845d05865cf9eabbb5e93b7a169a
             Code: PUSH1 0x0
                   CALLDATALOAD
@@ -2059,7 +2059,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_mulmod2_1(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/mulmod2_1.json
+            File: mulmod2_1.json
             sha256sum: 0c688ca9972d5d25c4dfe4fbc99c6b6796773acbdf9076afa799682c3e60ca7e
             Code: PUSH1 0x3
                   PUSH1 0x1
@@ -2126,7 +2126,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256Of256_3(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256Of256_3.json
+            File: expPowerOf256Of256_3.json
             sha256sum: ed99ceec8519b10c02299fa905e9822071e3457d195206d67a29dca715949fd5
             Code: PUSH1 0x3
                   PUSH2 0x100
@@ -2247,7 +2247,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256Of256_10(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256Of256_10.json
+            File: expPowerOf256Of256_10.json
             sha256sum: 0248bad71261f2ebe6476f4ed0ca91e98062b440c738386dde95fc76da51e826
             Code: PUSH1 0xa
                   PUSH2 0x100
@@ -2368,7 +2368,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256Of256_17(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256Of256_17.json
+            File: expPowerOf256Of256_17.json
             sha256sum: efdafd61b4d2430c56294205b0389c494d8d35733419d89e2189884ec84ffb0e
             Code: PUSH1 0x11
                   PUSH2 0x100
@@ -2489,7 +2489,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256Of256_27(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256Of256_27.json
+            File: expPowerOf256Of256_27.json
             sha256sum: a1d19ca0171c8b91922a91db49e2f3faadd95be335783b97f016247f240224c0
             Code: PUSH1 0x1b
                   PUSH2 0x100
@@ -2610,7 +2610,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256_21(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256_21.json
+            File: expPowerOf256_21.json
             sha256sum: abd10e17d688e09619790af67c0553c0fafb05374496c5dcac20c86635771fd3
             Code: PUSH1 0x15
                   PUSH2 0x100
@@ -2680,7 +2680,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_addmodDivByZero3(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/addmodDivByZero3.json
+            File: addmodDivByZero3.json
             sha256sum: c66eaa3ef9cc720a3194d2e4031d7f285eabb2f529931057fcaa06efbf4b8453
             Code: PUSH1 0x1
                   PUSH1 0x0
@@ -2741,7 +2741,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256_16(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256_16.json
+            File: expPowerOf256_16.json
             sha256sum: b3912160e11fd495497ba6bc62cc649cf5572048412234be7b2a023d298a14c7
             Code: PUSH1 0x10
                   PUSH2 0x100
@@ -2811,7 +2811,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_exp1(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/exp1.json
+            File: exp1.json
             sha256sum: 2d558bca9c3748e933bf10ae3ed17cb8a9ffbaf12afbe5d03e56ec266ea7842c
             Code: PUSH32 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe
                   PUSH32 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
@@ -2869,7 +2869,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_sdiv_dejavu(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/sdiv_dejavu.json
+            File: sdiv_dejavu.json
             sha256sum: 452081e3e414078883f6a88fe922841ab480e6786afd74e40ff8cb960db4cb9d
             Code: PUSH1 0x5
                   PUSH1 0x9
@@ -2930,7 +2930,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_addmodBigIntCast(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/addmodBigIntCast.json
+            File: addmodBigIntCast.json
             sha256sum: 241ccaee5295d1b7015b0c489f5463d7be34619033e089550a114e191782242b
             Code: PUSH1 0x5
                   PUSH1 0x1
@@ -2989,7 +2989,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_smod1(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/smod1.json
+            File: smod1.json
             sha256sum: 28ae643524b0b1604bf6855fdba96c6a2edee6933e3d4e299296ff1861bce9b6
             Code: PUSH1 0x3
                   PUSH1 0x0
@@ -3049,7 +3049,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_addmod1_overflowDiff(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/addmod1_overflowDiff.json
+            File: addmod1_overflowDiff.json
             sha256sum: 8609abdac8c8de1a6b70f84ffbc4be546844b9c77c6a9e9fa35fd7f987e3fb4c
             Code: PUSH1 0x5
                   PUSH1 0x2
@@ -3112,7 +3112,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_exp2(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/exp2.json
+            File: exp2.json
             sha256sum: 7f8a88cc52c669687508ef474246c30a969cdecf4eb6a508600be3dc404317dd
             Code: PUSH4 0x7fffffff
                   PUSH4 0x7fffffff
@@ -3170,7 +3170,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_exp0(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/exp0.json
+            File: exp0.json
             sha256sum: 208b278b3eb8274133ca427c82a0ff718fdcfe1871b1b4c0fb9fa3c573b260f4
             Code: PUSH1 0x2
                   PUSH1 0x2
@@ -3228,7 +3228,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_divByNonZero1(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/divByNonZero1.json
+            File: divByNonZero1.json
             sha256sum: e9aae6886ceb4107c9b254a1764a4560c32ab4097cbb4b8ebd6aa8dddf20e3de
             Code: PUSH1 0x18
                   PUSH1 0x17
@@ -3284,7 +3284,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_mod0(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/mod0.json
+            File: mod0.json
             sha256sum: c637f138f8fbd9296d552b44d2b5a2fcd30586689eb2310765ca0fb78ee0ebf4
             Code: PUSH1 0x3
                   PUSH1 0x2
@@ -3342,7 +3342,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256_8(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256_8.json
+            File: expPowerOf256_8.json
             sha256sum: 9f8782ad28deabc9d357679318ddc65c1fd930005800b8431dc204ebd574e98b
             Code: PUSH1 0x8
                   PUSH2 0x100
@@ -3412,7 +3412,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_addmod0(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/addmod0.json
+            File: addmod0.json
             sha256sum: 515208833995d0cf1a7bc89bfef6fb4fd04a059bbdb4187cadc423b99bff0c71
             Code: PUSH1 0x2
                   PUSH1 0x2
@@ -3471,7 +3471,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256_23(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256_23.json
+            File: expPowerOf256_23.json
             sha256sum: 8320b29b9626226680d60fc6f959fcea0fafe174a5cfd5e9725745291797af15
             Code: PUSH1 0x17
                   PUSH2 0x100
@@ -3541,7 +3541,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_exp5(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/exp5.json
+            File: exp5.json
             sha256sum: ad4694559220ec79dde1ec9c646d8629e4ad97510b81eb2173a727ce3f1d6c1e
             Code: PUSH1 0x1
                   PUSH2 0x101
@@ -3599,7 +3599,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256_18(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256_18.json
+            File: expPowerOf256_18.json
             sha256sum: aa7f8d1062b77e9369aac793e914383284edf1024510633984f90254ce34ede5
             Code: PUSH1 0x12
                   PUSH2 0x100
@@ -3669,7 +3669,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256_17(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256_17.json
+            File: expPowerOf256_17.json
             sha256sum: 2a3ef1239a77968bac4ef2b4def123cb9d5390fdbecd1b2924c7a77fbb47cba1
             Code: PUSH1 0x11
                   PUSH2 0x100
@@ -3739,7 +3739,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_smod8_byZero(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/smod8_byZero.json
+            File: smod8_byZero.json
             sha256sum: bcee748f666d726f3cd0b0d6a76b8c9029e4719aba2a34e8bd59bf1b4c235a49
             Code: PUSH1 0xd
                   PUSH1 0x0
@@ -3801,7 +3801,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_add1(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/add1.json
+            File: add1.json
             sha256sum: fab06ebfaeb71e4017dec55cd4b45472b843d9cb9001b54eb4cfceabeb5141c2
             Code: PUSH1 0x4
                   PUSH32 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
@@ -3859,7 +3859,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256Of256_22(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256Of256_22.json
+            File: expPowerOf256Of256_22.json
             sha256sum: 66b554633cb22c3619a5b10ea3e4a509c37a667e4d83656c59aaf25dd2f36871
             Code: PUSH1 0x16
                   PUSH2 0x100
@@ -3980,7 +3980,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_modByZero(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/modByZero.json
+            File: modByZero.json
             sha256sum: 975e8402d3cdcd650cbe38ddde963ee0f001c44eb91be662ab5ad30d092bf3ec
             Code: PUSH1 0x1
                   PUSH1 0x0
@@ -4040,7 +4040,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_mod3(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/mod3.json
+            File: mod3.json
             sha256sum: 3ff47f92fc773259070c4ecd80ecc707390c4bf33c53bf8ede1405e598e4e563
             Code: PUSH1 0x0
                   PUSH1 0x3
@@ -4096,7 +4096,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_exp8(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/exp8.json
+            File: exp8.json
             sha256sum: 69addad625a0054a7142bc765d5242bb82e834f81a9f4eff97398a1594472990
             Code: PUSH1 0x0
                   PUSH1 0x0
@@ -4154,7 +4154,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_mulmod0(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/mulmod0.json
+            File: mulmod0.json
             sha256sum: 82bfcdf4dcf1fdeb40788305eee151381ec460d0213106206899051184c39283
             Code: PUSH1 0x2
                   PUSH1 0x2
@@ -4211,7 +4211,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256_27(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256_27.json
+            File: expPowerOf256_27.json
             sha256sum: f1fa279d11f40fe6dde87ae675344583f0fad34b69ff60a946544969e6af9c7f
             Code: PUSH1 0x1b
                   PUSH2 0x100
@@ -4281,7 +4281,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_mulmoddivByZero3(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/mulmoddivByZero3.json
+            File: mulmoddivByZero3.json
             sha256sum: eca0b9c5545b22116e69cf05c171e68e0f1a6ceefd1e6b24b8b06e08a40bea31
             Code: PUSH1 0x0
                   PUSH1 0x0
@@ -4342,7 +4342,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_smod3(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/smod3.json
+            File: smod3.json
             sha256sum: b8dd5232d3daa08785f18e4265162f131a9ff7e1d052d5530aa0f7f7d1a9d212
             Code: PUSH32 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
                   PUSH1 0x2
@@ -4400,7 +4400,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_mul3(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/mul3.json
+            File: mul3.json
             sha256sum: 9af8c2dcaaf217f7d2cbeaf72d910ae893924a3dbc4951b85404a5f050a90784
             Code: PUSH1 0x1
                   PUSH1 0x17
@@ -4458,7 +4458,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256_31(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256_31.json
+            File: expPowerOf256_31.json
             sha256sum: 03ddf07eca732084776985584806b3a2b90af3536705f92c286daa0f723f46c3
             Code: PUSH1 0x1f
                   PUSH2 0x100
@@ -4528,7 +4528,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256Of256_25(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256Of256_25.json
+            File: expPowerOf256Of256_25.json
             sha256sum: ba80c4646a1371e93e9ecd024b52b25819963d880c6cef7a37dc515d93cc9dca
             Code: PUSH1 0x19
                   PUSH2 0x100
@@ -4649,7 +4649,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256Of256_18(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256Of256_18.json
+            File: expPowerOf256Of256_18.json
             sha256sum: 92315d900d6b1495846bfd4e53af140385e883a2af0aa67fd43a3df3a73a189e
             Code: PUSH1 0x12
                   PUSH2 0x100
@@ -4770,7 +4770,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_sdiv1(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/sdiv1.json
+            File: sdiv1.json
             sha256sum: d224466fd0d90938d79dddd9910147a2f173ca4444eeda966e38419edfc56fad
             Code: PUSH32 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
                   PUSH1 0x0
@@ -4830,7 +4830,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256Of256_5(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256Of256_5.json
+            File: expPowerOf256Of256_5.json
             sha256sum: e52f4cbdddf85ea945200f2b9aa9ebd3c0fa2359394022c188149b9fe18a132f
             Code: PUSH1 0x5
                   PUSH2 0x100
@@ -4951,7 +4951,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_signextend_BitIsNotSet(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/signextend_BitIsNotSet.json
+            File: signextend_BitIsNotSet.json
             sha256sum: 3e15e2e67dbe83ccdcf1eee546bff42a1eeb19ca892a0fb6610002cefc5c0440
             Code: PUSH3 0x122f6a
                   PUSH1 0x0
@@ -5009,7 +5009,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_add2(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/add2.json
+            File: add2.json
             sha256sum: 96dfcc5838c3676c7fefeb38d582b5ef7a5af3fe6303d976f0846542ea124657
             Code: PUSH1 0x1
                   PUSH32 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
@@ -5065,7 +5065,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_signextend_BigBytePlus1_2(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/signextend_BigBytePlus1_2.json
+            File: signextend_BigBytePlus1_2.json
             sha256sum: 2d4f4db0b8cce0abc97e9b4a0d771f58cc4c02dd522c0a87468eefb3236d9db3
             Code: PUSH1 0xff
                   PUSH9 0xf00000000000000001
@@ -5123,7 +5123,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_mulmoddivByZero1(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/mulmoddivByZero1.json
+            File: mulmoddivByZero1.json
             sha256sum: cf49980ff3395877d56a96edcf18b1e369b68c5d06822e8327f1c3f2ee27aa1e
             Code: PUSH1 0x0
                   PUSH1 0x1
@@ -5180,7 +5180,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_sdiv_i256min(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/sdiv_i256min.json
+            File: sdiv_i256min.json
             sha256sum: a75f354304eea0930d85934b46916213c26a7c3b17905786de6ce0d75e8b9cf0
             Code: PUSH1 0x1
                   PUSH1 0x0
@@ -5242,7 +5242,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256_6(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256_6.json
+            File: expPowerOf256_6.json
             sha256sum: f39c9e78e0c492a5537cd763021a18d8b6cd79762a964e3103fc215e215daa38
             Code: PUSH1 0x6
                   PUSH2 0x100
@@ -5312,7 +5312,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_divByNonZero3(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/divByNonZero3.json
+            File: divByNonZero3.json
             sha256sum: 9b1768e48871638a195e9d85141a0fd5b85e3478597ff05f85ca883ccc9c83d4
             Code: PUSH1 0x1
                   PUSH1 0x1
@@ -5370,7 +5370,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_addmodDivByZero(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/addmodDivByZero.json
+            File: addmodDivByZero.json
             sha256sum: 699b519167c3ca59bb214bb1cad9eacd4e3a3c0ccc9120da44602be1b67c251c
             Code: PUSH1 0x0
                   PUSH1 0x1
@@ -5427,7 +5427,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_sdiv2(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/sdiv2.json
+            File: sdiv2.json
             sha256sum: 0f21f478a11e9ec5352a0f83ef56df1d8b0115a04da8b5db731e504165d4c83e
             Code: PUSH1 0x4
                   PUSH1 0x0
@@ -5487,7 +5487,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256Of256_28(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256Of256_28.json
+            File: expPowerOf256Of256_28.json
             sha256sum: 2f1ae9d4d2a53e46e60c0bbc00f15360912d71e1fed2fd41f9e6839dbffdb05e
             Code: PUSH1 0x1c
                   PUSH2 0x100
@@ -5608,7 +5608,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_signextend_0_BigByte(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/signextend_0_BigByte.json
+            File: signextend_0_BigByte.json
             sha256sum: 424909bbf0356303bb5a4abef2cb932c66fb55f2db46dd22eba088eabf61a168
             Code: PUSH32 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
                   PUSH1 0x0
@@ -5666,7 +5666,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256_5(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256_5.json
+            File: expPowerOf256_5.json
             sha256sum: 5b2e8fdcb47b11d7de771c1ac0aa386f0ba6c1a51d423d968587caeffbec6459
             Code: PUSH1 0x5
                   PUSH2 0x100
@@ -5736,7 +5736,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256Of256_4(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256Of256_4.json
+            File: expPowerOf256Of256_4.json
             sha256sum: 133369ae88eeb438b9672375fa4f7e3f302d7c76626e068f3a3ab0f00eb803a9
             Code: PUSH1 0x4
                   PUSH2 0x100
@@ -5857,7 +5857,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_divBoostBug(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/divBoostBug.json
+            File: divBoostBug.json
             sha256sum: fe3275283df2833162d7118278032b6c1671b682b097bb88d3cb70eb054498ba
             Code: PUSH32 0x1dae6076b981dae6076b981dae6076b981dae6076b981dae6076b981dae6077
                   PUSH32 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffba
@@ -5915,7 +5915,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_signextend_AlmostBiggestByte(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/signextend_AlmostBiggestByte.json
+            File: signextend_AlmostBiggestByte.json
             sha256sum: 9e580dec6eab6488b54f744e2622c6062312b1219c08e29b8b476d05bf0891d5
             Code: PUSH32 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe
                   PUSH32 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe
@@ -5973,7 +5973,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_sdiv_i256min2(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/sdiv_i256min2.json
+            File: sdiv_i256min2.json
             sha256sum: 95b85e8b02fcb9f69748a3dcbe7b84f03a2e18d02bd9f11fa6cc81696ce117e0
             Code: PUSH1 0x1
                   PUSH1 0x0
@@ -6035,7 +6035,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_divByNonZero2(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/divByNonZero2.json
+            File: divByNonZero2.json
             sha256sum: e0063bfc165977cec03383edad0916adad5c509bfbae2d0ed1b3ee73e703e047
             Code: PUSH1 0x18
                   PUSH1 0x0
@@ -6091,7 +6091,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256Of256_13(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256Of256_13.json
+            File: expPowerOf256Of256_13.json
             sha256sum: 3559c513219c03d76dad5cbdfb05f1a009d416fb9b0f86317e1e02adb1a50925
             Code: PUSH1 0xd
                   PUSH2 0x100
@@ -6212,7 +6212,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_mulmod4(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/mulmod4.json
+            File: mulmod4.json
             sha256sum: 31c06c40acc8ab37bb205e24939f1bd09a7e65eac4e3976f5ca436b07af2f3cc
             Code: PUSH1 0x64
                   PUSH1 0x1b
@@ -6272,7 +6272,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_smod0(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/smod0.json
+            File: smod0.json
             sha256sum: ff6e79c3ee961d27ad631ec3234dbe27f60d5b9cd7a7680387dea3e297f0f3a0
             Code: PUSH1 0x3
                   PUSH1 0x0
@@ -6334,7 +6334,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256Of256_24(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256Of256_24.json
+            File: expPowerOf256Of256_24.json
             sha256sum: a6e5372e634098106ecb26b9450645cf2f57b9cf067a90f3863dc9ab21d88b50
             Code: PUSH1 0x18
                   PUSH2 0x100
@@ -6455,7 +6455,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_mulmoddivByZero2(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/mulmoddivByZero2.json
+            File: mulmoddivByZero2.json
             sha256sum: b5ecff08a9253fd2c07fe2355faafe42448e83131c0844f820dc30bc9aa5f3a3
             Code: PUSH1 0x0
                   PUSH1 0x0
@@ -6512,7 +6512,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_sub0(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/sub0.json
+            File: sub0.json
             sha256sum: e185a37296e08e7dec9a4f77e22663970f19de5a3c25fb0061df02a0743b1d05
             Code: PUSH1 0x1
                   PUSH1 0x17
@@ -6570,7 +6570,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_mulmoddivByZero(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/mulmoddivByZero.json
+            File: mulmoddivByZero.json
             sha256sum: 70d6b833c9c91d9a01e43a01b248a4a5a63d2e333a73122ab602d690de9cc34a
             Code: PUSH1 0x0
                   PUSH1 0x1
@@ -6627,7 +6627,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_mulmod2(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/mulmod2.json
+            File: mulmod2.json
             sha256sum: 6e8dc3cc2c5f0a7eb90d7aaa90a0253d7062c6e750554e6a44f1d711115ebb34
             Code: PUSH1 0x3
                   PUSH1 0x1
@@ -6688,7 +6688,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256Of256_1(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256Of256_1.json
+            File: expPowerOf256Of256_1.json
             sha256sum: 55ea9d8a3710b200e38f83bbb9622171a99c9d85410b39f0fc319cade6d25913
             Code: PUSH1 0x1
                   PUSH2 0x100
@@ -6809,7 +6809,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256Of256_11(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256Of256_11.json
+            File: expPowerOf256Of256_11.json
             sha256sum: c095d37a7b0eb417879abbe3066683a970ac925a68661ac9908ad4f16c9774c4
             Code: PUSH1 0xb
                   PUSH2 0x100
@@ -6930,7 +6930,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_addmod1_overflow3(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/addmod1_overflow3.json
+            File: addmod1_overflow3.json
             sha256sum: dcf46135e92be5e31ad5395de44fdce8d6c44c2a594712ebd9c6c79b560efef4
             Code: PUSH1 0x5
                   PUSH1 0x1
@@ -6991,7 +6991,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_exp4(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/exp4.json
+            File: exp4.json
             sha256sum: b0afd80d0882556ef89a57269e89616dd8f3eb5b0b97c5c2505f36415fc643cd
             Code: PUSH1 0x0
                   PUSH4 0x7fffffff
@@ -7049,7 +7049,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256_29(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256_29.json
+            File: expPowerOf256_29.json
             sha256sum: 7002014dfffb7c97759aab32cc66a6a0017742354d0df30b3189c553ef2a09a3
             Code: PUSH1 0x1d
                   PUSH2 0x100
@@ -7119,7 +7119,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_mul5(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/mul5.json
+            File: mul5.json
             sha256sum: 27e7f51bca0b7069694d12c59d43003cef22ec0ecf0309aa28ec47ca3911db95
             Code: PUSH32 0x8000000000000000000000000000000000000000000000000000000000000000
                   PUSH32 0x8000000000000000000000000000000000000000000000000000000000000000
@@ -7175,7 +7175,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256_32(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256_32.json
+            File: expPowerOf256_32.json
             sha256sum: b44ae8df0e423ad89f67faa99b4a982ee5bf923f0f585a35cec69259f6f8fa71
             Code: PUSH1 0x20
                   PUSH2 0x100
@@ -7244,7 +7244,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256Of256_7(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256Of256_7.json
+            File: expPowerOf256Of256_7.json
             sha256sum: b138bd8537c0d2aeab0e2b0ef55017e320bfc2fd2102d283e38a983bd30bd064
             Code: PUSH1 0x7
                   PUSH2 0x100
@@ -7365,7 +7365,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256Of256_23(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256Of256_23.json
+            File: expPowerOf256Of256_23.json
             sha256sum: f07022f79f143cb93c4ec3883ae3438038e6945295ec29f1f268e95a90e19fca
             Code: PUSH1 0x17
                   PUSH2 0x100
@@ -7486,7 +7486,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_smod_i256min1(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/smod_i256min1.json
+            File: smod_i256min1.json
             sha256sum: 4fab8396013a69a2e27b500d1eafc17724e7d1746a336264f1ebfd3c16ea41e9
             Code: PUSH1 0x1
                   PUSH1 0x0
@@ -7546,7 +7546,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_smod_i256min2(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/smod_i256min2.json
+            File: smod_i256min2.json
             sha256sum: e4e1b0c5b6cb075722450891a8021b351ef372c6cd0ac462eabe87f7527f8ac6
             Code: PUSH1 0x1
                   PUSH1 0x1
@@ -7610,7 +7610,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_smod7(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/smod7.json
+            File: smod7.json
             sha256sum: f994b29e003918f15520608025e571d08363b39a2f028a5c1ab6cc9121484c01
             Code: PUSH32 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
                   PUSH32 0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
@@ -7668,7 +7668,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256Of256_31(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256Of256_31.json
+            File: expPowerOf256Of256_31.json
             sha256sum: 8d4c69f622e12025ff763880fb81489d2816dd996e567a6fbca9af447c939b46
             Code: PUSH1 0x1f
                   PUSH2 0x100
@@ -7789,7 +7789,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_mul2(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/mul2.json
+            File: mul2.json
             sha256sum: ded58f693df18ced862fde46ba5b800217564648c15f2c6ec9c09545ba9d454b
             Code: PUSH1 0x17
                   PUSH1 0x0
@@ -7845,7 +7845,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_addmod1(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/addmod1.json
+            File: addmod1.json
             sha256sum: 9e7cb74d28005ca4b84e66485c95a896c62a3605a453e37eb15e287c8be7d942
             Code: PUSH1 0x2
                   PUSH1 0x2
@@ -7908,7 +7908,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256Of256_15(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256Of256_15.json
+            File: expPowerOf256Of256_15.json
             sha256sum: 6ba6936af4d67ffb437014aa5d698d8f372d3be932fc1b262b9b9506c36508ac
             Code: PUSH1 0xf
                   PUSH2 0x100
@@ -8029,7 +8029,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf2_16(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf2_16.json
+            File: expPowerOf2_16.json
             sha256sum: 2c3a71539fc95229e67a05630611ee85e45c8441f0d517da8a25d68b873da3f0
             Code: PUSH1 0x10
                   PUSH1 0x2
@@ -8099,7 +8099,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256Of256_2(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256Of256_2.json
+            File: expPowerOf256Of256_2.json
             sha256sum: cde732ffd8858cd61f0586632164327d840f78943df0821504ca9be92766d243
             Code: PUSH1 0x2
                   PUSH2 0x100
@@ -8220,7 +8220,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_fibbonacci_unrolled(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/fibbonacci_unrolled.json
+            File: fibbonacci_unrolled.json
             sha256sum: 96a4a7bcd1eed854a2d0778c706de18fb99bcd359834fe818b6eaed74afc3dcd
             Code: PUSH1 0x1
                   PUSH1 0x1
@@ -8329,7 +8329,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_mulmod1_overflow(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/mulmod1_overflow.json
+            File: mulmod1_overflow.json
             sha256sum: 12d71b58080463465d8822d3b6629037f70dd2f8724cc2f287c7e3c8e31ee88f
             Code: PUSH1 0x5
                   PUSH1 0x2
@@ -8388,7 +8388,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_mulUnderFlow(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/mulUnderFlow.json
+            File: mulUnderFlow.json
             sha256sum: 07f33220f500f3cff0eb048aa153f3b56b5442c84a28b3c893559d7aa6d57769
             Code: PUSH1 0x1
                   MUL
@@ -8432,7 +8432,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_signextend_bitIsSet(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/signextend_bitIsSet.json
+            File: signextend_bitIsSet.json
             sha256sum: c763feca37e8b16e1187232879fc3fc7fad7c4c5b0c22e2098bfc90fc708a2b4
             Code: PUSH3 0x122ff4
                   PUSH1 0x0
@@ -8490,7 +8490,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_divByZero_2(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/divByZero_2.json
+            File: divByZero_2.json
             sha256sum: 2d0cd8a2e436a23eae21777e1eed26d4a93c95f3ab2acb277b159d7239b4c36c
             Code: PUSH1 0x7
                   PUSH1 0x0
@@ -8550,7 +8550,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256Of256_14(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256Of256_14.json
+            File: expPowerOf256Of256_14.json
             sha256sum: 771926f9010806c01969e395afd82b9dc72e0436d9c229a055ab772d5bee6ca7
             Code: PUSH1 0xe
                   PUSH2 0x100
@@ -8671,7 +8671,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf2_128(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf2_128.json
+            File: expPowerOf2_128.json
             sha256sum: d769c6a75d99975be8e86784d56d45d33ff36eeba52f7a238daa12e84ffa854b
             Code: PUSH1 0x80
                   PUSH1 0x2
@@ -8741,7 +8741,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_sdiv7(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/sdiv7.json
+            File: sdiv7.json
             sha256sum: b097c73bc2c4c5f2329abef383205580973442668673b6fb6feccd151c866c39
             Code: PUSH1 0x19
                   PUSH1 0x1
@@ -8799,7 +8799,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_sdiv_i256min3(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/sdiv_i256min3.json
+            File: sdiv_i256min3.json
             sha256sum: 353f04f71f36a087f355ba9def055b57d53c65fcb2ebb9890dee44ffd6f0e105
             Code: PUSH32 0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
                   PUSH1 0x0
@@ -8857,7 +8857,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_sdiv3(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/sdiv3.json
+            File: sdiv3.json
             sha256sum: 0d4372b97497489fdb38dc01e5b03d73e20d29b57d638564d6e54d87c4dbd46f
             Code: PUSH1 0x2
                   PUSH1 0x0
@@ -8917,7 +8917,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256Of256_16(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256Of256_16.json
+            File: expPowerOf256Of256_16.json
             sha256sum: 5acb81a90afe62bab2a068d166ab7e0d77fdf71db887357486eaa57be2097585
             Code: PUSH1 0x10
                   PUSH2 0x100
@@ -9038,7 +9038,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256_2(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256_2.json
+            File: expPowerOf256_2.json
             sha256sum: b012e7ef19b7246c611040efe1cd4c02a0011c48749337388f0c59d2a3679a08
             Code: PUSH1 0x2
                   PUSH2 0x100
@@ -9108,7 +9108,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf2_32(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf2_32.json
+            File: expPowerOf2_32.json
             sha256sum: 1ca89c3edda3c9290247d3da6f3a3b03037059a015b70973ee54d690913bef25
             Code: PUSH1 0x20
                   PUSH1 0x2
@@ -9178,7 +9178,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_signextend_BigByteBigByte(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/signextend_BigByteBigByte.json
+            File: signextend_BigByteBigByte.json
             sha256sum: 75518a6c534f0b47b7217ca634c45f8deec9c202c789d0055e91769e3d59527c
             Code: PUSH32 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
                   PUSH32 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
@@ -9236,7 +9236,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256_19(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256_19.json
+            File: expPowerOf256_19.json
             sha256sum: 0cc1c1acafa265d5699e932898535330a4ae5a7da33df446d3de1bc9b8f4111e
             Code: PUSH1 0x13
                   PUSH2 0x100
@@ -9306,7 +9306,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_mulmod1_overflow2(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/mulmod1_overflow2.json
+            File: mulmod1_overflow2.json
             sha256sum: 9361ad1f015dcd2ff73fc319d3615689948a8cff5b1d693cbcb23b992a1f90db
             Code: PUSH1 0x5
                   PUSH1 0x2
@@ -9365,7 +9365,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_smod6(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/smod6.json
+            File: smod6.json
             sha256sum: abeb4b71ca1ccd7c9974d0a121c211ceb82091231ce00c38e93832c1fa0b38af
             Code: PUSH32 0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
                   PUSH32 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
@@ -9425,7 +9425,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_addmod2_0(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/addmod2_0.json
+            File: addmod2_0.json
             sha256sum: bbf4dffad9e7377fa52c268f04c35b73067d116100ee6e3e063af74e5114c8a0
             Code: PUSH1 0x3
                   PUSH1 0x1
@@ -9490,7 +9490,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expXY_success(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expXY_success.json
+            File: expXY_success.json
             sha256sum: a9d554c77e7cbb0bf5374f68f128fe84f896bb0996e3fc56d935fcc3d243a0e4
             Code: PUSH1 0x0
                   CALLDATALOAD
@@ -9560,7 +9560,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_smod5(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/smod5.json
+            File: smod5.json
             sha256sum: 7d01d4c43ccc6c8229f960244f07169118613c9a3d6112a1b602695f4c6d3132
             Code: PUSH32 0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
                   PUSH32 0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
@@ -9618,7 +9618,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256_25(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256_25.json
+            File: expPowerOf256_25.json
             sha256sum: 55f40ba018ea3e5a3c2a3033c1261e54e2ff042f2d3c9561fffecdf650f081c0
             Code: PUSH1 0x19
                   PUSH2 0x100
@@ -9688,7 +9688,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_mul6(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/mul6.json
+            File: mul6.json
             sha256sum: da2592cf38ec886ab0db85c44bffe2d200dc276fc6ff595ee4c012304e96c496
             Code: PUSH32 0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
                   PUSH32 0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
@@ -9746,7 +9746,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_div1(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/div1.json
+            File: div1.json
             sha256sum: 9a5f11688d430e2cb5f9b54e4a4cd6ff8ab60e7507cd3aed74f906c844a9510b
             Code: PUSH1 0x2
                   PUSH32 0xfedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210
@@ -9805,7 +9805,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256Of256_21(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256Of256_21.json
+            File: expPowerOf256Of256_21.json
             sha256sum: 133b198b7d5f401a7c9e8f06f60743ed28a5fd8bf385d818423fd2c634b10e86
             Code: PUSH1 0x15
                   PUSH2 0x100
@@ -9926,7 +9926,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256Of256_20(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256Of256_20.json
+            File: expPowerOf256Of256_20.json
             sha256sum: 773b8ea18b482afbe1c50d8c7fcb12789d399fa1e316d72319f653e8150c7f7e
             Code: PUSH1 0x14
                   PUSH2 0x100
@@ -10047,7 +10047,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_mulmod3(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/mulmod3.json
+            File: mulmod3.json
             sha256sum: 0251e3f2116b47183a5c072b9b2194a133ed124ec402ec38e9b804e6372b293b
             Code: PUSH1 0x3
                   PUSH1 0x0
@@ -10108,7 +10108,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_mulmod1_overflow3(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/mulmod1_overflow3.json
+            File: mulmod1_overflow3.json
             sha256sum: e626164ad7fe44a9b5d88a3f65b2abb79843fb4e497c9f38f617045575d83a21
             Code: PUSH1 0x5
                   PUSH1 0x2
@@ -10167,7 +10167,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_sub1(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/sub1.json
+            File: sub1.json
             sha256sum: 738dccff9466ec1fc4f88b7e7387cba994042be68f37e47ffd3bef90d5e360cd
             Code: PUSH1 0x3
                   PUSH1 0x2
@@ -10225,7 +10225,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_sdiv6(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/sdiv6.json
+            File: sdiv6.json
             sha256sum: 391a875666f18ddd1d4bfedc31e6460f696d40698ff1ddeb6b52f9454cff0ba7
             Code: PUSH1 0x0
                   PUSH32 0x8000000000000000000000000000000000000000000000000000000000000000
@@ -10283,7 +10283,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256Of256_12(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256Of256_12.json
+            File: expPowerOf256Of256_12.json
             sha256sum: 7ddde6fa841550682fd17bfdd5fae3238025df9241a1f9bfaaece1fcf83ef750
             Code: PUSH1 0xc
                   PUSH2 0x100
@@ -10404,7 +10404,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256Of256_30(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256Of256_30.json
+            File: expPowerOf256Of256_30.json
             sha256sum: 9be1de88639c668f65e96e5d6a8580acd53611be901cdbfdd45a967d85ff4b47
             Code: PUSH1 0x1e
                   PUSH2 0x100
@@ -10525,7 +10525,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_mod1(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/mod1.json
+            File: mod1.json
             sha256sum: 0c9879f653ca8b0f03f685c849ecbf73657d8b7b40a1053950e30d99a05bf692
             Code: PUSH1 0x2
                   PUSH32 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
@@ -10583,7 +10583,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256Of256_26(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256Of256_26.json
+            File: expPowerOf256Of256_26.json
             sha256sum: 9604373efccedf792396c63e83e62c70689d3d7cf3ceba25dd2fdeb37cf8308b
             Code: PUSH1 0x1a
                   PUSH2 0x100
@@ -10704,7 +10704,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256_1(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256_1.json
+            File: expPowerOf256_1.json
             sha256sum: 584202e492d8a62690f8e65908748e1f05862ead2b1a3e65a02d5598ee1818d5
             Code: PUSH1 0x1
                   PUSH2 0x100
@@ -10774,7 +10774,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_mod2(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/mod2.json
+            File: mod2.json
             sha256sum: 27dc39b0ff64dfc9c5b2a79c0f75ecc32cad7ecded7d9ae1debdf1ffc4787d1d
             Code: PUSH32 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
                   PUSH1 0x0
@@ -10830,7 +10830,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf2_4(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf2_4.json
+            File: expPowerOf2_4.json
             sha256sum: e3f55c2e3267c73c4125fec63c1f6b90ce6ad5d2117ce695f71eef6a6e6176df
             Code: PUSH1 0x4
                   PUSH1 0x2
@@ -10900,7 +10900,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256_14(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256_14.json
+            File: expPowerOf256_14.json
             sha256sum: 73f9ef5771c69fa8a9b4909d382d9c0938efdff9df3db88e2597aa71dbfbf76f
             Code: PUSH1 0xe
                   PUSH2 0x100
@@ -10970,7 +10970,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_stop(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/stop.json
+            File: stop.json
             sha256sum: 69c1ebfcd7bc87b206fa27fffa8a54a486a453cf86bfff26a0ae7270dffabb3c
             Code: STOP
         '''    
@@ -11022,7 +11022,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_sdivByZero2(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/sdivByZero2.json
+            File: sdivByZero2.json
             sha256sum: 3f978fa1b9337f8832324811fdd45fb9d6a5dc7034afebba9a7c909c223f78dc
             Code: PUSH1 0x1
                   PUSH1 0x0
@@ -11084,7 +11084,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_sdiv4(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/sdiv4.json
+            File: sdiv4.json
             sha256sum: 064bc920d09d94839707b16d921da2a963ae7f8d6730a48eb8d93c5baee0f7af
             Code: PUSH1 0x4
                   PUSH1 0x0
@@ -11144,7 +11144,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256_7(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256_7.json
+            File: expPowerOf256_7.json
             sha256sum: 61b989ba296e526bbd98acd3e0defc772990afbbaa232b82ebd8ea225b8e5a8b
             Code: PUSH1 0x7
                   PUSH2 0x100
@@ -11214,7 +11214,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_add3(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/add3.json
+            File: add3.json
             sha256sum: 094abae4a6da6e1506b01dd667c165c5c9c068fac674548685885f3c8fcc58cc
             Code: PUSH1 0x0
                   PUSH1 0x0
@@ -11270,7 +11270,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256_26(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256_26.json
+            File: expPowerOf256_26.json
             sha256sum: 6ae8556c5859ce81eae1c2315b6b14d3d081bea3d4fb901a3269943ac05da3c6
             Code: PUSH1 0x1a
                   PUSH2 0x100
@@ -11340,7 +11340,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_not1(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/not1.json
+            File: not1.json
             sha256sum: 13cf83235d5f2f14e56adcbbe92abdd7486d880792d166f951a4f43bd36e2898
             Code: PUSH3 0x1e240
                   PUSH1 0x0
@@ -11402,7 +11402,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_mul0(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/mul0.json
+            File: mul0.json
             sha256sum: 33b2ee01c056d260f630ce5fef98c68a54c3e4bbf64352acee459726de2a4124
             Code: PUSH1 0x3
                   PUSH1 0x2
@@ -11460,7 +11460,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_addmod1_overflow2(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/addmod1_overflow2.json
+            File: addmod1_overflow2.json
             sha256sum: 6d53e0173a8759687a942922b766aadd9a24b71eec1469b4fed17d2783b18a9b
             Code: PUSH1 0x5
                   PUSH1 0x0
@@ -11519,7 +11519,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_exp6(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/exp6.json
+            File: exp6.json
             sha256sum: 857a587c2ec9246189d9d0f9837c05d5b71f878d15635b59187d5cb63e1db3c7
             Code: PUSH2 0x101
                   PUSH1 0x1
@@ -11577,7 +11577,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_mul7(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/mul7.json
+            File: mul7.json
             sha256sum: eeb40b21e741cfbc21521e111beb281c4dafff4cbaaa14d53487bb9f0d8518dc
             Code: PUSH17 0x1234567890abcdef0fedcba0987654321
                   PUSH17 0x1234567890abcdef0fedcba0987654321
@@ -11638,7 +11638,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_sdivByZero1(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/sdivByZero1.json
+            File: sdivByZero1.json
             sha256sum: 9a2207240279ed9e305737bf728c43c2b7d3bb0f40e738b88c88cad1ba8dcc63
             Code: PUSH1 0x0
                   PUSH32 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
@@ -11696,7 +11696,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_signextend_BitIsSetInHigherByte(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/signextend_BitIsSetInHigherByte.json
+            File: signextend_BitIsSetInHigherByte.json
             sha256sum: 52ca3dba40a6c57773094473d20947e065012151d1739b53bdefa3745e5a07c8
             Code: PUSH3 0x12faf4
                   PUSH1 0x1
@@ -11754,7 +11754,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_addmod2_1(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/addmod2_1.json
+            File: addmod2_1.json
             sha256sum: 85890ed9d2bbf0ab3c30f1acb13082ee432641d94595b6c975097bb3a72fc840
             Code: PUSH1 0x3
                   PUSH1 0x1
@@ -11821,7 +11821,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_signextend_BitIsNotSetInHigherByte(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/signextend_BitIsNotSetInHigherByte.json
+            File: signextend_BitIsNotSetInHigherByte.json
             sha256sum: a84b4f3be5bb727c6040dde6c8fcdf0267e1b1db6005ecc8234acca9e7868b5a
             Code: PUSH3 0x126af4
                   PUSH1 0x1
@@ -11879,7 +11879,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_divByNonZero0(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/divByNonZero0.json
+            File: divByNonZero0.json
             sha256sum: e4f4a0965d214b1ac34b98e22b3098d9574518d7e0f62916606aa70180f08b0b
             Code: PUSH1 0x2
                   PUSH1 0x5
@@ -11937,7 +11937,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256_10(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256_10.json
+            File: expPowerOf256_10.json
             sha256sum: 141e97d2625d720bc8e55bb0a9871fa8eb6120d563da1f64d8a2945be4ec018c
             Code: PUSH1 0xa
                   PUSH2 0x100
@@ -12007,7 +12007,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_add0(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/add0.json
+            File: add0.json
             sha256sum: 1b9624ff5644c08e974d19fb58b8b2a42b61dcf46f906b86d0794ea7ec0b2345
             Code: PUSH32 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
                   PUSH32 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
@@ -12065,7 +12065,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_sdiv9(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/sdiv9.json
+            File: sdiv9.json
             sha256sum: ca75fe70e645e1c0b6b5ca6586f4f084300f5247ca8c78e0e7c57b9c3f4115a4
             Code: PUSH1 0x1
                   PUSH1 0x1
@@ -12125,7 +12125,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256_11(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256_11.json
+            File: expPowerOf256_11.json
             sha256sum: b432ae35edb4ed128ccf71ccae2f9d8bb48d011eb7daa694bcc3f5f22de68593
             Code: PUSH1 0xb
                   PUSH2 0x100
@@ -12195,7 +12195,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_smod2(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/smod2.json
+            File: smod2.json
             sha256sum: 78f2af60323f8507b529824bbe23ce7fbdf5f722392b97db8e3b1b7b348c8b05
             Code: PUSH1 0x3
                   PUSH1 0x5
@@ -12255,7 +12255,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_add4(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/add4.json
+            File: add4.json
             sha256sum: ca8e6b511dceca6765685b6b80463fceadd6b15ee71c9694390828a72a884a1d
             Code: PUSH32 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
                   PUSH1 0x1
@@ -12311,7 +12311,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256_24(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256_24.json
+            File: expPowerOf256_24.json
             sha256sum: 4aff8ff31080a4d5830af3c8497e69283cca7f730be72f1014e75246aaa435fc
             Code: PUSH1 0x18
                   PUSH2 0x100
@@ -12381,7 +12381,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_smod4(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/smod4.json
+            File: smod4.json
             sha256sum: 82200247a72e367fa74d3a2b2d11ebe126ee2c51861b79bc30f793010118e88c
             Code: PUSH1 0x0
                   PUSH1 0x2
@@ -12439,7 +12439,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256Of256_19(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256Of256_19.json
+            File: expPowerOf256Of256_19.json
             sha256sum: 8e1ed67aa333e3b13521661a5a9e26d3580d9631301e1c2e9dd57b8cbf391699
             Code: PUSH1 0x13
                   PUSH2 0x100
@@ -12560,7 +12560,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_addmod2(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/addmod2.json
+            File: addmod2.json
             sha256sum: 1bfa788fb8650cbb35277be2e9d56d4ef9de41e10773020c16a6589b3c7479a6
             Code: PUSH1 0x3
                   PUSH1 0x1
@@ -12621,7 +12621,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_signextend_00(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/signextend_00.json
+            File: signextend_00.json
             sha256sum: 557642b12d33eba0059e417c929fd5700c9e530b97bec89c3a5e154d6539c117
             Code: PUSH1 0x0
                   PUSH1 0x0
@@ -12677,7 +12677,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256_3(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256_3.json
+            File: expPowerOf256_3.json
             sha256sum: 2c543fb689ceca51c0b1980c806fa2e810213ac3344812bf44b9f647ea68aa74
             Code: PUSH1 0x3
                   PUSH2 0x100
@@ -12747,7 +12747,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_addmod3_0(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/addmod3_0.json
+            File: addmod3_0.json
             sha256sum: bd94167768aaa9089feaf9ea004aee1cd7728ce0beb00313054d245e41641ba0
             Code: PUSH1 0x2
                   PUSH1 0x3
@@ -12808,7 +12808,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_signextend_Overflow_dj42(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/signextend_Overflow_dj42.json
+            File: signextend_Overflow_dj42.json
             sha256sum: 98eb87e0704d92cf48dd7c2124eb1e7c80e36955cd08cbd295d86565878a512a
             Code: PUSH1 0x5
                   JUMP
@@ -12875,7 +12875,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_mulmod3_0(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/mulmod3_0.json
+            File: mulmod3_0.json
             sha256sum: a2408325f3e9c8d5154f3c1d8d19adaad67222e2f5032350e6cee4ff7f9124c5
             Code: PUSH1 0x2
                   PUSH1 0x3
@@ -12936,7 +12936,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf2_2(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf2_2.json
+            File: expPowerOf2_2.json
             sha256sum: b7e6ef69b571deadf273428a2ea22d73701409e6bfc2813874bfe7ba12687737
             Code: PUSH1 0x2
                   PUSH1 0x2
@@ -13006,7 +13006,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_arith1(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/arith1.json
+            File: arith1.json
             sha256sum: 89f96edaaf658fa135607f3c623751ad5fc480b5e9817580ca4725c5c523e58f
             Code: PUSH1 0x1
                   PUSH1 0x1
@@ -13091,7 +13091,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_sub3(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/sub3.json
+            File: sub3.json
             sha256sum: 51d9d78dc7c91e221762a0d94914b0a98599d2e52fe6751aa69852ff4b7e5736
             Code: PUSH32 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
                   PUSH1 0x0
@@ -13149,7 +13149,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_signextendInvalidByteNumber(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/signextendInvalidByteNumber.json
+            File: signextendInvalidByteNumber.json
             sha256sum: 7c8bbd8aaa7686a5d5644055eccba627e669859acd3f86370244ea4cfdd86bcf
             Code: PUSH3 0x126af4
                   PUSH1 0x50
@@ -13207,7 +13207,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_mulmod1(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/mulmod1.json
+            File: mulmod1.json
             sha256sum: 0627eddadc1ab556e263b67f4cf1a33102073c638f800756cfec5eefd47161c7
             Code: PUSH1 0x3
                   PUSH1 0x2
@@ -13268,7 +13268,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_mulmod1_overflow4(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/mulmod1_overflow4.json
+            File: mulmod1_overflow4.json
             sha256sum: a11a3a3f24b290e9d035fde4aa7967e8a4018382a3c72799e6105d188134f573
             Code: PUSH1 0x5
                   PUSH1 0x2
@@ -13327,7 +13327,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256Of256_9(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256Of256_9.json
+            File: expPowerOf256Of256_9.json
             sha256sum: 773dd1eb4eed06df60aea02095374c3442a0b521cb90605e85a8a6bfbce5ef2b
             Code: PUSH1 0x9
                   PUSH2 0x100
@@ -13448,7 +13448,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_exp3(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/exp3.json
+            File: exp3.json
             sha256sum: 30aff2bd2353be208e4964a24a76d95d6c5e8d4c272189219c821ab7f4aae95d
             Code: PUSH4 0x7fffffff
                   PUSH1 0x0
@@ -13504,7 +13504,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_sub2(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/sub2.json
+            File: sub2.json
             sha256sum: 6df63508965f32e5b145e711c7a7d5a0226182745ad7ced9596d22e869d4ce26
             Code: PUSH1 0x17
                   PUSH1 0x0
@@ -13562,7 +13562,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_signextend_bigBytePlus1(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/signextend_bigBytePlus1.json
+            File: signextend_bigBytePlus1.json
             sha256sum: c0e78b1d5a7d5a0aa6d620252bc5d3e2f90da0570222ed61a1f7ec33a2e9b0a3
             Code: PUSH7 0xf0000000000001
                   PUSH2 0xffff
@@ -13620,7 +13620,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256_15(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256_15.json
+            File: expPowerOf256_15.json
             sha256sum: 324a9bdb004fc56a3a395a7c249e5a8dacb87933c42706853dce0870c59dd1f9
             Code: PUSH1 0xf
                   PUSH2 0x100
@@ -13690,7 +13690,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_addmod1_overflow4(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/addmod1_overflow4.json
+            File: addmod1_overflow4.json
             sha256sum: fe6cf50ca2f047306b0651dc05dad77abfd1020d720c8f7f9a3ce880e7c1a883
             Code: PUSH1 0x5
                   PUSH1 0x2
@@ -13751,7 +13751,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_sub4(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/sub4.json
+            File: sub4.json
             sha256sum: 7aa553398de51c541b626d1f247ca57e6fe0037f64ef1e25f8811eabd8c32333
             Code: PUSH1 0x0
                   PUSH32 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
@@ -13809,7 +13809,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256_4(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256_4.json
+            File: expPowerOf256_4.json
             sha256sum: 2c69a6e43ce8c44ae607fd6eb3b2fc3bda3955f616443834561d2591e66a2b5c
             Code: PUSH1 0x4
                   PUSH2 0x100
@@ -13879,7 +13879,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256_30(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256_30.json
+            File: expPowerOf256_30.json
             sha256sum: 40b900a85b4a54fda4efc8e6bcdbf7ba6b7535de4223a3479188966314336500
             Code: PUSH1 0x1e
                   PUSH2 0x100
@@ -13949,7 +13949,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_mul4(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/mul4.json
+            File: mul4.json
             sha256sum: 2af8c375f77e6c86727181d0e3f29f8dbaf405887b13334db8a96f03b44d6f09
             Code: PUSH32 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
                   PUSH32 0x8000000000000000000000000000000000000000000000000000000000000000
@@ -14007,7 +14007,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_sdiv8(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/sdiv8.json
+            File: sdiv8.json
             sha256sum: ae920601baa46dd4e819c59770df6a4df3283f34525ca348cfbefed8fedf2b83
             Code: PUSH1 0x1
                   PUSH1 0x0
@@ -14069,7 +14069,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_addmodDivByZero2(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/addmodDivByZero2.json
+            File: addmodDivByZero2.json
             sha256sum: 8ff606d5cf2b15305c314d3aac201a020656517db4b5b8a5730996bf2dc1b161
             Code: PUSH1 0x0
                   PUSH1 0x0
@@ -14126,7 +14126,7 @@ class EVMTest_vmArithmeticTest(unittest.TestCase):
     def test_expPowerOf256Of256_8(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmArithmeticTest/expPowerOf256Of256_8.json
+            File: expPowerOf256Of256_8.json
             sha256sum: 670bc5532f9085f0b0ba382e693a5b57ce1674ec3c25cabef57cb97fd5b41962
             Code: PUSH1 0x8
                   PUSH2 0x100

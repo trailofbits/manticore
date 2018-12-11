@@ -32,7 +32,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
     def test_sha3_memSizeQuadraticCost64_2(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmSha3Test/sha3_memSizeQuadraticCost64_2.json
+            File: sha3_memSizeQuadraticCost64_2.json
             sha256sum: 7f8135486f7f54eddee88c3bfb21d072a58916698b436901dbe04cbe7835892c
             Code: PUSH1 0x20
                   PUSH2 0x7e0
@@ -90,7 +90,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
     def test_sha3_6(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmSha3Test/sha3_6.json
+            File: sha3_6.json
             sha256sum: f5ee9409dda75eee4e96bb3e2a76a3d74f1650f0fe5efc60d4dbb369ce252a08
             Code: PUSH32 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
                   PUSH32 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
@@ -135,7 +135,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
     def test_sha3_0(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmSha3Test/sha3_0.json
+            File: sha3_0.json
             sha256sum: b16c2447ed93b44a839c27b5aa69cd9d1af5e6eeb93680e9d04e79c48bf25cb5
             Code: PUSH1 0x0
                   PUSH1 0x0
@@ -193,7 +193,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
     def test_sha3_memSizeQuadraticCost32_zeroSize(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmSha3Test/sha3_memSizeQuadraticCost32_zeroSize.json
+            File: sha3_memSizeQuadraticCost32_zeroSize.json
             sha256sum: 4c0510b87646542f19de5f4f8329db95d5342d5b42c8de02577c8a2b94145e9c
             Code: PUSH1 0x0
                   PUSH2 0x400
@@ -251,7 +251,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
     def test_sha3_memSizeQuadraticCost32(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmSha3Test/sha3_memSizeQuadraticCost32.json
+            File: sha3_memSizeQuadraticCost32.json
             sha256sum: c98be65768f272a89dd24b9454e7837b9dbfe8df584b1ef9cc15ec02af49dd7a
             Code: PUSH1 0x1
                   PUSH2 0x3e0
@@ -309,7 +309,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
     def test_sha3_memSizeQuadraticCost33(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmSha3Test/sha3_memSizeQuadraticCost33.json
+            File: sha3_memSizeQuadraticCost33.json
             sha256sum: ad3ad47d84ee8dddaa8ee616f1015c7e094e1e3823ea7c0876011cfc4101fb00
             Code: PUSH1 0x1
                   PUSH2 0x400
@@ -367,7 +367,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
     def test_sha3_memSizeQuadraticCost65(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmSha3Test/sha3_memSizeQuadraticCost65.json
+            File: sha3_memSizeQuadraticCost65.json
             sha256sum: 616fcdfca3307703efa81630eae1ba039b88dd836931599ea0e416c6ccf1ecac
             Code: PUSH1 0x1
                   PUSH2 0x800
@@ -425,7 +425,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
     def test_sha3_memSizeNoQuadraticCost31(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmSha3Test/sha3_memSizeNoQuadraticCost31.json
+            File: sha3_memSizeNoQuadraticCost31.json
             sha256sum: fc2ba6b1f8589077e45bdbaca4d5130c458598a413c6ecf2df617aaf6f9e11b1
             Code: PUSH1 0x1
                   PUSH2 0x3c0
@@ -483,7 +483,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
     def test_sha3_bigSize(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmSha3Test/sha3_bigSize.json
+            File: sha3_bigSize.json
             sha256sum: 2082e4dc3187961acca04ef10836f496aba47b7f60b28a078da839636be45241
             Code: PUSH31 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
                   PUSH31 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
@@ -528,7 +528,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
     def test_sha3_4(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmSha3Test/sha3_4.json
+            File: sha3_4.json
             sha256sum: e9819eab0f7768ce9b44b06274a98109c4f8d9a1ad7b99b73ec02e77d0813a4c
             Code: PUSH1 0x64
                   PUSH5 0xfffffffff
@@ -573,7 +573,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
     def test_sha3_2(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmSha3Test/sha3_2.json
+            File: sha3_2.json
             sha256sum: 16e818c59b447c116dc5ba02ed573b26eab288f98d81c231b20972089ccdbf7b
             Code: PUSH1 0xa
                   PUSH1 0xa
@@ -631,7 +631,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
     def test_sha3_bigOffset2(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmSha3Test/sha3_bigOffset2.json
+            File: sha3_bigOffset2.json
             sha256sum: 1c9f5059c6713f7565b7bfab1e14f2ad51ecc3bf19b1f977e8a4e9b0e9717e73
             Code: PUSH1 0x2
                   PUSH4 0x1000000
@@ -689,7 +689,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
     def test_sha3_memSizeQuadraticCost64(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmSha3Test/sha3_memSizeQuadraticCost64.json
+            File: sha3_memSizeQuadraticCost64.json
             sha256sum: efd3a03ceed3918d998bf6bd6651954eeace410a970db2bad47445b6d8d7e2df
             Code: PUSH1 0x1
                   PUSH2 0x7e0
@@ -747,7 +747,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
     def test_sha3_memSizeQuadraticCost63(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmSha3Test/sha3_memSizeQuadraticCost63.json
+            File: sha3_memSizeQuadraticCost63.json
             sha256sum: be4410faf392a488302eaf658415d8c6daa0a2ba509385284eb4c0ec824ee2a7
             Code: PUSH1 0x1
                   PUSH2 0x7c0
@@ -805,7 +805,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
     def test_sha3_1(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmSha3Test/sha3_1.json
+            File: sha3_1.json
             sha256sum: 06ec9a0bcd254538de14028e6546a5b2db030314e8d94f05449bb7d5d5d01bcf
             Code: PUSH1 0x5
                   PUSH1 0x4
@@ -863,7 +863,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
     def test_sha3_3(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmSha3Test/sha3_3.json
+            File: sha3_3.json
             sha256sum: 717cdaf13fe74709e05442ff2689169fae1d272b0fb7a5e48a6f4d564dd9a64c
             Code: PUSH3 0xfffff
                   PUSH2 0x3e8
@@ -908,7 +908,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
     def test_sha3_bigOffset(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmSha3Test/sha3_bigOffset.json
+            File: sha3_bigOffset.json
             sha256sum: d381e3c19ddeceb5d17b00878dc48a9c4c89de423f4afd14cc0bf5887bf926e9
             Code: PUSH1 0x2
                   PUSH31 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
@@ -953,7 +953,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
     def test_sha3_5(self):
         '''
             Textcase taken from https://github.com/ethereum/tests
-            File: /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmSha3Test/sha3_5.json
+            File: sha3_5.json
             sha256sum: f1b06ddff755484ae7e36328eeed833792d5e77233e453b0d348e8c1ffbfd41d
             Code: PUSH5 0xfffffffff
                   PUSH2 0x2710
