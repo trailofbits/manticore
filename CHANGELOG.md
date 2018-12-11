@@ -27,7 +27,7 @@ Thanks to our external contributors!
 - Linux/binary analysis has been moved to `manticore.native`, `manticore.core.cpu` has been moved to `manticore.native.cpu`. Please update your imports.
 - The binary analysis dependencies are now not installed by default. They can be installed with `pip install manticore[native]`. This is to prevent EVM users from installing binary dependencies.
 - The symbolic `stdin_size` is now a config variable (in `main` config group) with a default of 256 (it was like this before).
-- ManticoreEVM.generate_testcase ‘name’ parameter is now optional
+- `ManticoreEVM.generate_testcase()` 'name' parameter is now optional
 - Manticore CLI run on a smart contract will now use all detectors by default (detectors can be listed with --list-detectors, excluded with --exclude <detectors> or --exclude-all)
 - Misusing the ManticoreEVM API, for example by using old keyword arguments that are not available since some versions (like ManticoreEVM(verbosity=5)) will now raise an exception instead of not applying the argument at all.
 
