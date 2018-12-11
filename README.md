@@ -86,11 +86,11 @@ It is also possible to use the API to create custom analysis tools for Linux bin
 
 ```python
 # example Manticore script
-from manticore import Manticore
+from manticore.native import Manticore
 
 hook_pc = 0x400ca0
 
-m = Manticore('./path/to/binary')
+m = Manticore.linux('./path/to/binary')
 
 @m.hook(hook_pc)
 def hook(state):
