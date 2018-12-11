@@ -88,6 +88,7 @@ class EthSuicidal(EthDetectorTest):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, {('Reachable SELFDESTRUCT', False)})
 
+    @unittest.skip("Too slow for these modern times")
     def test_selfdestruct_true_pos1(self):
         self.mevm.register_plugin(LoopDepthLimiter(2))
         name = inspect.currentframe().f_code.co_name[5:]
@@ -121,17 +122,20 @@ class EthExternalCallAndLeak(EthDetectorTest):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, {("Reachable external call to sender", False)})
 
+    @unittest.skip("Too slow for these modern times")
     def test_etherleak_true_pos_argument(self):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, {("Reachable ether leak to sender via argument", False),
                           ("Reachable external call to sender via argument", False)})
 
+    @unittest.skip("Too slow for these modern times")
     def test_etherleak_true_pos_argument1(self):
         self.mevm.register_plugin(LoopDepthLimiter(5))
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, {("Reachable ether leak to sender via argument", False),
                           ("Reachable external call to sender via argument", False)})
 
+    @unittest.skip("Too slow for these modern times")
     def test_etherleak_true_pos_argument2(self):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, {("Reachable ether leak to user controlled address via argument", False),
@@ -142,6 +146,7 @@ class EthExternalCallAndLeak(EthDetectorTest):
         self._test(name, {("Reachable external call to sender", False),
                           ("Reachable ether leak to sender", False)})
 
+    @unittest.skip("Too slow for these modern times")
     def test_etherleak_true_pos_msgsender1(self):
         self.mevm.register_plugin(LoopDepthLimiter(5))
         name = inspect.currentframe().f_code.co_name[5:]
@@ -213,18 +218,19 @@ class EthDelegatecall(EthDetectorTest):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, set())
 
-    @unittest.skip("Too slow for this modern times")
+    @unittest.skip("Too slow for these modern times")
     def test_delegatecall_ok3(self):
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, set())
 
+    @unittest.skip("Too slow for these modern times")
     def test_delegatecall_not_ok(self):
         self.mevm.register_plugin(LoopDepthLimiter())
         name = inspect.currentframe().f_code.co_name[5:]
         self._test(name, {('Delegatecall to user controlled function', False),
                           ('Delegatecall to user controlled address', False)})
 
-    @unittest.skip("Too slow for this modern times")
+    @unittest.skip("Too slow for these modern times")
     def test_delegatecall_not_ok1(self):
         self.mevm.register_plugin(LoopDepthLimiter(loop_count_threshold=500))
         name = inspect.currentframe().f_code.co_name[5:]
@@ -319,3 +325,6 @@ class EthRaceCondition(EthDetectorTest):
                 False
             )
         })
+
+if __name__ == '__main__':
+    unittest.main()
