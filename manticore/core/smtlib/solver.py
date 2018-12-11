@@ -17,7 +17,7 @@
 from abc import ABCMeta, abstractmethod
 from subprocess import PIPE, Popen, check_output
 
-from ...exceptions import Z3NotFoundError, SolverException, SolverUnknown, TooManySolutions
+from ...exceptions import Z3NotFoundError, SolverError, SolverUnknown, TooManySolutions
 from . import operators as Operators
 from .expression import *
 from .constraints import *
@@ -185,7 +185,7 @@ class Z3Solver(Solver):
         if self._proc.returncode is None:
             try:
                 self._send("(exit)")
-            except (SolverException, IOError) as e:
+            except (SolverError, IOError) as e:
                 # z3 was too fast to close
                 logger.debug(str(e))
             finally:
@@ -244,7 +244,7 @@ class Z3Solver(Solver):
             self._proc.stdout.flush()
             self._proc.stdin.write(f'{cmd}\n')
         except IOError as e:
-            raise SolverException(str(e))
+            raise SolverError(str(e))
 
     def _recv(self):
         ''' Reads the response from the solver '''
@@ -278,7 +278,7 @@ class Z3Solver(Solver):
         _status = self._recv()
         logger.debug("Check took %s seconds (%s)", time.time() - start, _status)
         if _status not in ('sat', 'unsat', 'unknown'):
-            raise SolverException(_status)
+            raise SolverError(_status)
         if consider_unknown_as_unsat:
             if _status == 'unknown':
                 logger.info('Found an unknown core, probably a solver timeout')
@@ -435,7 +435,7 @@ class Z3Solver(Solver):
                     elif _status == 'sat':
                         ret = self._recv()
                         if not (ret.startswith('(') and ret.endswith(')')):
-                            raise SolverException('bad output on max, z3 may have been killed')
+                            raise SolverError('bad output on max, z3 may have been killed')
 
                         pattern = re.compile('\(objectives.*\((?P<expr>.*) (?P<value>\d*)\).*\).*', re.MULTILINE | re.DOTALL)
                         m = pattern.match(ret)
@@ -456,10 +456,10 @@ class Z3Solver(Solver):
                 self._assert(operation(aux, last_value))
                 i = i + 1
                 if (i > M):
-                    raise SolverException("Optimizing error, maximum number of iterations was reached")
+                    raise SolverError("Optimizing error, maximum number of iterations was reached")
             if last_value is not None:
                 return last_value
-            raise SolverException("Optimizing error, unsat or unknown core")
+            raise SolverError("Optimizing error, unsat or unknown core")
 
     #@memoized
     def get_value(self, constraints, expression):
@@ -485,7 +485,7 @@ class Z3Solver(Solver):
 
                 self._reset(temp_cs)
                 if self._check() != 'sat':
-                    raise SolverException('Model is not available')
+                    raise SolverError('Model is not available')
 
                 for i in range(expression.index_max):
                     self._send('(get-value (%s))' % var[i].name)
@@ -502,12 +502,12 @@ class Z3Solver(Solver):
             self._reset(temp_cs)
 
         if self._check() != 'sat':
-            raise SolverException('Model is not available')
+            raise SolverError('Model is not available')
 
         self._send('(get-value (%s))' % var.name)
         ret = self._recv()
         if not (ret.startswith('((') and ret.endswith('))')):
-            raise SolverException('SMTLIB error parsing response: %s' % ret)
+            raise SolverError('SMTLIB error parsing response: %s' % ret)
 
         if isinstance(expression, Bool):
             return {'true': True, 'false': False}[ret[2:-2].split(' ')[1]]
