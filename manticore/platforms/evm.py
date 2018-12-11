@@ -777,13 +777,12 @@ class EVM(Eventful):
         # 3: Try not to OOG. If it may be enough gas we ignore the OOG case. A constraint is added to assert the gas is enough and the OOG state is ignored.
         # 4: OOG soon. If it may NOT be enough gas we ignore the normal case. A constraint is added to assert the gas is NOT enough and the other state is ignored.
         # 99: Ignore gas. Do not account for it. Do not OOG.
-
         if consts.oog == 99:
             #do nothing. gas is not even changed
             return
         elif consts.oog in (0, 1):
             #gas is faithfully accounted and ogg checked at instruction/BB level.
-            if consts.oog != 1 or not self.instruction.is_terminator:
+            if consts.oog == 0 or self.instruction.is_terminator:
                 #explore both options / fork
                 #FIXME this will reenter here and generate redundant queries
                 enough_gas_solutions = get_possible_solutions()
