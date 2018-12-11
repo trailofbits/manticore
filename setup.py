@@ -52,7 +52,7 @@ setup(
         'pyyaml',
         # evm dependencies
         'pysha3',
-        'prettytable'
+        'prettytable',
         'pyevmasm==0.2.0',
         'rlp',
         'ply'
