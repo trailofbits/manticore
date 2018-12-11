@@ -41,7 +41,7 @@ class EVMTest_ORIGIN(unittest.TestCase):
             world = evm.EVMWorld(constraints)
 
             owner_account = world.create_account(balance=1000)
-            contract_account = world.create_account(balance=1000, code='2')
+            contract_account = world.create_account(balance=1000, code=b'2')
 
             world._open_transaction('CALL', contract_account, 10, '', owner_account, 0)
 
