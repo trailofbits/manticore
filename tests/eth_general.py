@@ -1259,7 +1259,6 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
                 returndata = e.data
 
         self.assertEqual(result, 'THROW')
-        self.assertEqual(new_vm.gas, 99992)
         
 
     def test_delegatecall_env(self):

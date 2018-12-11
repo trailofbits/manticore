@@ -98,10 +98,11 @@ class ExpressionTest(unittest.TestCase):
         key = cs.new_bitvec(32)
 
         #assert that the array is 'A' at key position
+        #By default an smtlib can contain any value
         cs.add(array[key] == ord('A'))
+
         #let's restrict key to be greater than 1000
         cs.add(key.ugt(1000))
-
         with cs as temp_cs:
             #1001 position of array can be 'A'
             temp_cs.add(array[1001] == ord('A'))
@@ -211,7 +212,7 @@ class ExpressionTest(unittest.TestCase):
 
         array[key] = 1 # Write 1 to a single location
 
-        cs.add(array.get(index) != 0) # Constrain index so it selects that location
+        cs.add(array.get(index, default=0) != 0) # Constrain index so it selects that location
 
         cs.add(index != key)
         # key and index are the same there is only one slot in 1
@@ -225,9 +226,9 @@ class ExpressionTest(unittest.TestCase):
         index = cs.new_bitvec(32, name='index')
 
         array[key] = 1 # Write 1 to a single location
-        cs.add(array.get(index) != 0) # Constrain index so it selects that location
+        cs.add(array.get(index, 0) != 0) # Constrain index so it selects that location
         a_index = self.solver.get_value(cs, index)  # get a concrete solution for index
-        cs.add(array.get(a_index) != 0)             # now storage must have something at that location
+        cs.add(array.get(a_index, 0) != 0)             # now storage must have something at that location
         cs.add(a_index != index)                    # remove it from the solutions
 
         # It should not be another solution for index
@@ -262,21 +263,44 @@ class ExpressionTest(unittest.TestCase):
             results.append(c)
         self.assertTrue(len(results) == 5)
 
+    def testBasicArraySlice(self):
+        hw = bytearray(b'Hello world!')
+        cs =  ConstraintSet()
+        #make array of 32->8 bits
+        array = cs.new_array(32, index_max=12)
+        array = array.write(0, hw)
+        array_slice = array[0:2]
+        self.assertTrue(self.solver.must_be_true(cs, array == hw))
+        self.assertTrue(self.solver.must_be_true(cs, array_slice[0] == array[0]))
+        self.assertTrue(self.solver.must_be_true(cs, array_slice[0:2][1] == array[1]))
+        array_slice[0] = ord('A')
+        self.assertTrue(self.solver.must_be_true(cs, array_slice[0] == ord('A')))
+        self.assertTrue(self.solver.must_be_true(cs, array_slice[0:2][1] == array[1]))
+        self.assertTrue(self.solver.must_be_true(cs, array == hw))
+
+        #Testing some slicing combinations
+        self.assertRaises(IndexError, lambda i: translate_to_smtlib(array_slice[0:1000][i]), 1002)
+        self.assertTrue(self.solver.must_be_true(cs, array_slice[0:1000][0] == ord('A')))
+        self.assertTrue(self.solver.must_be_true(cs, array_slice[0:1000][1] == array[1]))
+        self.assertTrue(self.solver.must_be_true(cs, array_slice[0:1000][:2][1] == array[:2][1]))
+        self.assertTrue(self.solver.must_be_true(cs, array_slice[0:1000][:2][0] == ord('A')))
+
 
     def testBasicArrayProxySymbIdx(self):
         cs =  ConstraintSet()
-        array = ArrayProxy(cs.new_array(index_bits=32, value_bits=32, name='array'))
+        array = ArrayProxy(cs.new_array(index_bits=32, value_bits=32, name='array'), default=0)
         key = cs.new_bitvec(32, name='key')
         index = cs.new_bitvec(32, name='index')
 
         array[key] = 1 # Write 1 to a single location
         cs.add(array.get(index) != 0) # Constrain index so it selects that location
         a_index = self.solver.get_value(cs, index)  # get a concrete solution for index
+
         cs.add(array.get(a_index) != 0)             # now storage must have something at that location
         cs.add(a_index != index)                    # remove it from the solutions
-
         # It should not be another solution for index
         self.assertFalse(self.solver.check(cs))
+
 
     def testBasicArrayProxySymbIdx2(self):
         cs =  ConstraintSet()
@@ -285,10 +309,18 @@ class ExpressionTest(unittest.TestCase):
         index = cs.new_bitvec(32, name='index')
 
         array[0] = 1 # Write 1 to first location
-        array[key] = 2 # Write 2 to a symbolic (potentially any)location
+        array[key] = 2 # Write 2 to a symbolic (potentially any (potentially 0))location
 
         solutions = self.solver.get_all_values(cs, array[0])  # get a concrete solution for index
         self.assertItemsEqual(solutions, (1,2))
+
+        solutions = self.solver.get_all_values(cs, array.get(0,100))  # get a concrete solution for index 0
+        self.assertItemsEqual(solutions, (1,2))
+
+        solutions = self.solver.get_all_values(cs, array.get(1, 100))  # get a concrete solution for index 1 (default 100)
+        self.assertItemsEqual(solutions, (100,2))
+
+        self.assertTrue(self.solver.can_be_true(cs, array[1]==12345))  # no default so it can be anything
 
 
     def testBasicPickle(self):
@@ -391,12 +423,20 @@ class ExpressionTest(unittest.TestCase):
         self.assertItemsEqual(solver.get_all_values(cs, values[1]), [ord('c')])
         self.assertItemsEqual(solver.get_all_values(cs, values[2]), [ord('d')])
         self.assertEqual(pretty_print(aux, depth=2), 'ArraySelect\n  ArrayStore\n    ...\n  BitVecAdd\n    ...\n')
+        self.assertEqual(pretty_print(Operators.EXTRACT(a, 0, 8), depth=1), 'BitVecExtract{0:7}\n  ...\n')
+        self.assertEqual(pretty_print(a, depth=2), 'VAR\n')
 
         x = BitVecConstant(32, 100, taint=('important',))
         y = BitVecConstant(32, 200, taint=('stuff',))
         z = constant_folder(x+y)
         self.assertItemsEqual(z.taint, ('important', 'stuff'))
         self.assertEqual(z.value, 300)
+
+        self.assertRaises(Exception, translate_to_smtlib, 1)
+
+        self.assertEqual(translate_to_smtlib(simplify(Operators.ZEXTEND(a,32))), 'VAR')
+        self.assertEqual(translate_to_smtlib(simplify(Operators.EXTRACT(Operators.EXTRACT(a,0,8),0, 8))), '((_ extract 7 0) VAR)')
+
 
     def test_arithmetic_simplify(self):
         cs = ConstraintSet()

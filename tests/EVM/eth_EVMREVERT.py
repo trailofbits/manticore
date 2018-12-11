@@ -54,7 +54,7 @@ class EVMTest_REVERT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='\xfd'
+            bytecode=b'\xfd'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -80,7 +80,7 @@ class EVMTest_REVERT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='\xfd'
+            bytecode=b'\xfd'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -106,7 +106,7 @@ class EVMTest_REVERT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='\xfd'
+            bytecode=b'\xfd'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -132,7 +132,7 @@ class EVMTest_REVERT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='\xfd'
+            bytecode=b'\xfd'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -158,7 +158,7 @@ class EVMTest_REVERT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='\xfd'
+            bytecode=b'\xfd'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -184,7 +184,7 @@ class EVMTest_REVERT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='\xfd'
+            bytecode=b'\xfd'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -210,7 +210,7 @@ class EVMTest_REVERT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='\xfd'
+            bytecode=b'\xfd'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -236,7 +236,7 @@ class EVMTest_REVERT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='\xfd'
+            bytecode=b'\xfd'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -262,7 +262,7 @@ class EVMTest_REVERT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='\xfd'
+            bytecode=b'\xfd'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -287,14 +287,14 @@ class EVMTest_REVERT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             address = 0x222222222222222222222222222222222222200
             balance = 0
-            code = ''
+            code = b''
             world.create_account( address=address)
             world.create_account( address=caller)
 
 
             price=0
             value=10000
-            bytecode='\xfd'
+            bytecode=b'\xfd'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -322,7 +322,7 @@ class EVMTest_REVERT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='\xfd'
+            bytecode=b'\xfd'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
