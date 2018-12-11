@@ -2245,7 +2245,7 @@ class EVMWorld(Platform):
                 if storage.index_bits != 256 or storage.value_bits != 256:
                     raise TypeError("An ArrayProxy 256bits -> 256bits is needed")
             else:
-                if any((k < 0 or k >= 1 << 256 for k, v in storage.items()))
+                if any((k < 0 or k >= 1 << 256 for k, v in storage.items())):
                     raise TypeError("Need a dict like object that maps 256 bits keys to 256 bits values")
             # Hopefully here we have a mapping from 256b to 256b
 
