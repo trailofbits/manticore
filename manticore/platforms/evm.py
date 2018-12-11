@@ -224,7 +224,7 @@ class Transaction(object):
             if return_data is None:
                 return_data = bytearray()
             if not isinstance(return_data, (bytes, bytearray, Array)) or len(return_data) != 0:
-                raise EVMException('Invalid transaction return_data. To much data for STOP,THROW or SELFDESTRUCT')
+                raise EVMException(f'Invalid transaction return_data. Too much data ({len(return_data)}) for STOP, THROW or SELFDESTRUCT')
         else:
             if return_data is not None:
                 raise EVMException('Invalid transaction return_data')
