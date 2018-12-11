@@ -1175,6 +1175,7 @@ class EVM(Eventful):
     def EXP_gas(self, base, exponent):
         ''' Calculate extra gas fee '''
         EXP_SUPPLEMENTAL_GAS = 50   # cost of EXP exponent per byte
+
         def nbytes(e):
             result = 0
             for i in range(32):
@@ -1306,7 +1307,6 @@ class EVM(Eventful):
     def ADDRESS(self):
         '''Get address of currently executing account'''
         return self.address
-
 
     def BALANCE_gas(self, account):
         BALANCE_SUPPLEMENTAL_GAS = 380
