@@ -52,7 +52,8 @@ setup(
         'pyyaml',
         # evm dependencies
         'pysha3',
-        'pyevmasm',
+        'prettytable',
+        'pyevmasm==0.2.0',
         'rlp',
         'ply'
     ] + rtd_dependent_deps(),
