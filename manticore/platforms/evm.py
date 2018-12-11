@@ -1361,7 +1361,6 @@ class EVM(Eventful):
         '''Get size of input data in current environment'''
         return self._calldata_size
 
-
     def CALLDATACOPY_gas(self, mem_offset, data_offset, size):
         GCOPY = 3             # cost to copy one 32 byte word
         copyfee = self.safe_mul(GCOPY, self.safe_add(size, 31) // 32)
