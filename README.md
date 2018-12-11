@@ -166,14 +166,10 @@ manticore@8d456f662d0f:~/manticore/examples/script$ python3 count_instructions.p
 
 ## Installation
 
-NOTE: If you use Mac OS X you need to install dependencies manually (preferably in a manticore's python virtual environment):
-```
-brew install capstone
-export MACOS_UNIVERSAL=no && pip install capstone
 
-brew install unicorn
-UNICORN_QEMU_FLAGS="--python=`whereis python`" pip install unicorn
-```
+> NOTE: For native binary analysis, Manticore requires additional dependencies that are not installed by default. To
+install these also, substitute `manticore[native]` for `manticore` in any `pip` command.
+
 
 Option 1: Perform a user install (requires `~/.local/bin` in your `PATH`).
 
@@ -208,6 +204,16 @@ docker pull trailofbits/manticore
 Once installed, the `manticore` CLI tool and Python API will be available.
 
 For installing a development version of Manticore, see our [wiki](https://github.com/trailofbits/manticore/wiki/Hacking-on-Manticore).
+
+If you use Mac OS X you may need to install dependencies manually:
+
+```
+brew install capstone
+export MACOS_UNIVERSAL=no && pip install capstone
+
+brew install unicorn
+UNICORN_QEMU_FLAGS="--python=`whereis python`" pip install unicorn
+```
 
 ## Getting Help
 
