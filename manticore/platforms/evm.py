@@ -783,7 +783,7 @@ class EVM(Eventful):
             return
         elif consts.oog in (0, 1):
             #gas is faithfully accounted and ogg checked at instruction/BB level.
-            if consts.oog != 1 or not self.current_instructoin.is_terminator:
+            if consts.oog != 1 or not self.instruction.is_terminator:
                 #explore both options / fork
                 #FIXME this will reenter here and generate redundant queries
                 enough_gas_solutions = get_possible_solutions()
