@@ -12,7 +12,7 @@
 [![Maintainability](https://api.codeclimate.com/v1/badges/9161568d8378cea903f4/maintainability)](https://codeclimate.com/github/trailofbits/manticore/maintainability)
 [![Test Coverage](https://api.codeclimate.com/v1/badges/9161568d8378cea903f4/test_coverage)](https://codeclimate.com/github/trailofbits/manticore/test_coverage)
 
-Manticore is a symbolic execution tool for analysis of binaries and smart contracts.
+Manticore is a symbolic execution tool for analysis of smart contracts and binaries.
 
 > Note: Beginning with version 0.2.0, Python 3.6+ is required.
 
