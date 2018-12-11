@@ -31,7 +31,7 @@ class Manticore(ManticoreBase):
         else:
             initial_state = path_or_state
 
-        super().__init__(initial_state, workspace_url=workspace_url, policy=policy, **kwargs)
+        super().__init__(initial_state, workspace_url=workspace_url, policy=policy, raw_path=path_or_state, **kwargs)
 
     @classmethod
     def linux(cls, path, argv=None, envp=None, entry_symbol=None, symbolic_files=None, concrete_start='', pure_symbolic=False, stdin_size=consts.stdin_size, **kwargs):

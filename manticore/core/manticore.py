@@ -10,6 +10,8 @@ from threading import Timer
 
 import functools
 import types
+from elftools.elf.elffile import ELFFile
+from elftools.elf.sections import SymbolTableSection
 
 from ..core.executor import Executor
 from ..core.plugin import Plugin
@@ -48,6 +50,9 @@ class ManticoreBase(Eventful):
         :param kwargs: other kwargs, e.g.
         """
         super().__init__()
+
+        if 'raw_path' in kwargs:
+            self._path = kwargs.get('raw_path')
 
         if isinstance(workspace_url, str):
             if ':' not in workspace_url:
@@ -278,6 +283,69 @@ class ManticoreBase(Eventful):
             while len(self._workers) > 0:
                 self._workers.pop().join()
 
+    #
+    # Symbol resolution
+    #
+
+    def _addr_by_symline(dwarfinfo, symbols, line):
+        '''
+        Return address for a symbol and line it is on through DWARF
+        debug info
+        '''
+        for symbol in symbols:
+            for CU in dwarfinfo.iter_CUs():
+                lineprog = dwarfinfo.line_program_for_CU(CU)
+                prevstate = None
+
+                for entry in lineprog.get_entries():
+                    # check for new state assignment
+                    if entry.state is None or entry.state.end_sequence:
+                        continue
+                    # check between address range between prev and current state containing address
+                    if prevstate and prevstate.address <= symbol['st_value'] < entry.state.address:
+                        state_line = prevstate.line
+                        if int(state_line) is line:
+                            return symbol['st_value']
+                    prevstate = entry.state
+        
+        return None, None
+
+
+    def resolve(self, symbol, line=None):
+        '''
+        A helper method used to resolve a symbol name into a memory address when
+        injecting hooks for analysis. 
+
+        :param symbol: function name to be resolved
+        :type symbol: string
+
+        :param line: if more functions present, optional line number can be included
+        :type line: int or None
+        '''
+        with open(self._path, 'rb') as f:
+
+            elffile = ELFFile(f)
+            if elffile is None:
+                return NotImplementedError("Symbols aren't supported")
+ 
+            if not elffile.has_dwarf_info():
+                raise NotImplementedError("DWARF debug info not supported")
+            dwarfinfo = elffile.get_dwarf_info()
+          
+            for section in elffile.iter_sections():
+                if not isinstance(section, SymbolTableSection):
+                    continue
+
+                symbols = section.get_symbol_by_name(symbol)
+                if not symbols:
+                    continue
+                
+                if line is None:
+                    return symbols[0].entry['st_value']
+                else:
+                    return _addr_by_symline(dwarfinfo, symbols, line)
+
+
     ############################################################################
     # Common hooks + callback
     ############################################################################
@@ -291,6 +359,8 @@ class ManticoreBase(Eventful):
             f(state)
         self.subscribe('will_start_run', types.MethodType(callback, self))
         return f
+
+
 
     def hook(self, pc):
         '''
