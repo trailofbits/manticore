@@ -556,7 +556,7 @@ class EVM(Eventful):
 
     @property
     def gas(self):
-        return to_constant(self._gas)
+        return self._gas
 
     def __getstate__(self):
         state = super().__getstate__()
@@ -834,7 +834,7 @@ class EVM(Eventful):
 
             pc = self.pc
             instruction = self.instruction
-            old_gas = self.gas
+            old_gas = self._gas
 
             self._consume(instruction.fee)
             arguments = self._pop_arguments()
@@ -2241,8 +2241,13 @@ class EVMWorld(Platform):
             # Uninitialized values in a storage are 0 by spec
             storage = self.constraints.new_array(index_bits=256, value_bits=256, name=f'STORAGE_{address:x}', avoid_collisions=True, default=0)
         else:
-            # TODO: Check storage type/ dict from int/bitvec to int/bitvec
-            pass
+            if isinstance(storage, ArrayProxy):
+                if storage.index_bits != 256 or storage.value_bits != 256:
+                    raise TypeError("An ArrayProxy 256bits -> 256bits is needed")
+            else:
+                if any((k < 0 or k >= 1 << 256 for k, v in storage.items()))
+                    raise TypeError("Need a dict like object that maps 256 bits keys to 256 bits values")
+            # Hopefully here we have a mapping from 256b to 256b
 
         self._world_state[address] = {}
         self._world_state[address]['nonce'] = nonce
