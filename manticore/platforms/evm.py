@@ -769,7 +769,6 @@ class EVM(Eventful):
             else:
                 return solver.get_all_values(self.constraints, Operators.UGT(self._gas, fee))
         
-
         # This configuration variable allows the user to control and perhaps relax the gas calculation
         # 0: gas is faithfully accounted and checked at instruction level. State may get forked in OOG/NoOOG
         # 1: gas is faithfully accounted and checked at basic blocks limits. State may get forked in OOG/NoOOG
@@ -1006,7 +1005,8 @@ class EVM(Eventful):
                              setstate=setstate,
                              policy=ex.policy)
         except ConcretizeArgument as ex:
-            pos = ex.pos-1
+            pos = ex.pos - 1
+
             def setstate(state, value):
                 current_vm = state.platform.current_vm
                 _pc, _old_gas, _instruction, _arguments, _fee, _allocated = current_vm._checkpoint_data
