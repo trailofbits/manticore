@@ -19,7 +19,7 @@ Thanks to our external contributors!
 - Support for ARM THUMB instructions: ADR, ADDW, SUBW, CBZ, TBB, TBH, STMDA, STMDB
 - `State.solve_minmax()` API for querying a BitVec for its min/max values
 - New SMTLIB optimization for simplifying redundant concat/extract combinations; helps reduce expression complexity, and speed up queries
-- Ethereum: `--txpreconstrain` CLI flag. Enabling this avoids sending gas to nonpayable functions, primarily avoiding exploration of uninteresting revert states.
+- Ethereum: `--txpreconstrain` CLI flag. Enabling this avoids sending ether to nonpayable functions, primarily avoiding exploration of uninteresting revert states.
 - Research memory model (LazySMemory) allowing for symbolic memory indexing to be handled without concretization (opt in, currently for research only)
 
 ### Changed
