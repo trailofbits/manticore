@@ -22,10 +22,15 @@ def choose_detectors(args):
     detectors_to_run = []
 
     if not args.exclude_all:
-        exclude = args.detectors_to_exclude.split(',')
-        for e in exclude:
-            if e not in arguments:
-                raise Exception(f'{e} is not a detector name, must be one of {arguments}. See also `--list-detectors`.')
+        exclude = []
+
+        if args.detectors_to_exclude:
+            exclude = args.detectors_to_exclude.split(',')
+
+            for e in exclude:
+                if e not in arguments:
+                    raise Exception(f'{e} is not a detector name, must be one of {arguments}. See also `--list-detectors`.')
+
         for arg, detector_cls in detectors.items():
             if arg not in exclude:
                 detectors_to_run.append(detector_cls)
