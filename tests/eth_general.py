@@ -31,10 +31,12 @@ from manticore.utils.log import init_logging
 
 init_logging()
 
+
 def make_mock_evm_state():
     cs = ConstraintSet()
     fakestate = State(cs, EVMWorld(cs))
     return fakestate
+
 
 @contextmanager
 def disposable_mevm(*args, **kwargs):
@@ -43,6 +45,7 @@ def disposable_mevm(*args, **kwargs):
         yield mevm
     finally:
         shutil.rmtree(mevm.workspace)
+
 
 class EthDetectorsIntegrationTest(unittest.TestCase):
     def test_int_ovf(self):
@@ -417,6 +420,53 @@ class EthTests(unittest.TestCase):
         self.mevm=None
         shutil.rmtree(self.worksp)
 
+    def test_create_contract_no_args(self):
+        source_code = 'contract A { constructor() {} }'
+        owner = self.mevm.create_account()
+
+        # The default `args=()` makes it pass no arguments
+        contract1 = self.mevm.solidity_create_contract(source_code, owner=owner)
+        contract2 = self.mevm.solidity_create_contract(source_code, owner=owner)
+
+        self.assertNotEqual(contract1, contract2)
+
+    def test_create_contract_with_missing_args(self):
+        source_code = 'contract A { constructor(uint arg) {} }'
+        owner = self.mevm.create_account()
+
+        # TODO / FIXME: Probably change ValueError to another one and inform that bad arguments have been passed?
+        with self.assertRaises(ValueError) as e:
+            self.mevm.solidity_create_contract(source_code, owner=owner)
+
+        self.assertEqual(str(e.exception), 'The number of values to serialize is less than the number of types')
+
+    def test_create_contract_with_too_much_args(self):
+        source_code = 'contract A { constructor(uint arg) {} }'
+        owner = self.mevm.create_account()
+
+        with self.assertRaises(ValueError) as e:
+            self.mevm.solidity_create_contract(source_code, owner=owner, args='(uint32,uint32)')
+
+        self.assertEqual(str(e.exception), 'The number of values to serialize is greater than the number of types')
+
+    def test_create_contract_two_instances(self):
+        source_code = 'contract A { constructor(uint32 arg) {} }'
+        owner = self.mevm.create_account()
+
+        contracts = [
+            # When we pass no `args`, the default is `()` so it ends up with `b''` as constructor data
+            self.mevm.solidity_create_contract(source_code, owner=owner, args=[1234]),
+            self.mevm.solidity_create_contract(source_code, owner=owner, args=[1234]),
+            # When we pass args=None, the arguments end up being symbolic
+            # NOTE: This is what CLI does
+            self.mevm.solidity_create_contract(source_code, owner=owner, args=None),
+            self.mevm.solidity_create_contract(source_code, owner=owner, args=None)
+        ]
+
+        # They must have unique address and name
+        self.assertEqual(len(contracts), len(set(c.address for c in contracts)))
+        self.assertEqual(len(contracts), len(set(c.name_ for c in contracts)))
+
     def test_invalid_function_signature(self):
         source_code = '''
         contract Test{
@@ -665,21 +715,18 @@ class EthTests(unittest.TestCase):
         class TestDetector(Detector):
             def did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
                 if instruction.is_endtx:
-                    with self.locked_context('insns', dict) as d:
-                        d[instruction.semantics] = True
+                    with self.locked_context('endtx_instructions', set) as d:
+                        d.add(instruction.name)
 
         mevm = self.mevm
         p = TestDetector()
         mevm.register_detector(p)
 
-        filename = os.path.join(THIS_DIR, 'binaries/int_overflow.sol')
-        mevm.multi_tx_analysis(filename, tx_limit=2)
+        filename = os.path.join(THIS_DIR, 'binaries/simple_int_overflow.sol')
+        mevm.multi_tx_analysis(filename, tx_limit=2, tx_preconstrain=True)
 
-        self.assertIn('insns', p.context)
-        context = p.context['insns']
-        self.assertIn('STOP', context)
-        self.assertIn('RETURN', context)
-        self.assertIn('REVERT', context)
+        self.assertIn('endtx_instructions', p.context)
+        self.assertSetEqual(p.context['endtx_instructions'], {'INVALID', 'RETURN', 'STOP'})
 
     def test_call_with_concretized_args(self):
         """Test a CALL with symbolic arguments that will to be concretized.
@@ -918,6 +965,28 @@ class EthTests(unittest.TestCase):
 
         context = p.context.get('flags', {})
         self.assertTrue(context.get('found', False))
+
+    def test_preconstraints(self):
+        source_code = '''
+        contract C {
+            constructor() public {}
+            function f0() public {}
+            function f1(uint a) public payable {}
+        }
+        '''
+        m: ManticoreEVM = self.mevm
+
+        creator_account = m.create_account(balance=1000)
+        contract_account = m.solidity_create_contract(source_code, owner=creator_account, balance=0)
+
+        data = m.make_symbolic_buffer(320)
+        value = m.make_symbolic_value()
+        m.constrain(m.preconstraint_for_call_transaction(address=contract_account, data=data, value=value))
+        m.transaction(caller=creator_account, address=contract_account, data=data, value=value)
+
+        results = [state.platform.all_transactions[-1].result for state in m.all_states]
+        # The TXERROR indicates a state where the sent value is greater than the senders budget.
+        self.assertListEqual(sorted(results), ['STOP']*2 + ['TXERROR'])
 
 class EthHelpersTest(unittest.TestCase):
     def setUp(self):
@@ -1190,7 +1259,6 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
                 returndata = e.data
 
         self.assertEqual(result, 'THROW')
-        self.assertEqual(new_vm.gas, 99992)
         
 
     def test_delegatecall_env(self):

@@ -42,7 +42,7 @@ class EVMTest_SLOAD(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'T'
+            code = b'T'
             storage = {115792089237316195423570985008687907853269984665640564039457584007913129639935: 0}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -50,7 +50,7 @@ class EVMTest_SLOAD(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='T'
+            bytecode=b'T'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -75,7 +75,7 @@ class EVMTest_SLOAD(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'T'
+            code = b'T'
             storage = {0: 15589350798196297794172638215640352209663280458410}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -83,7 +83,7 @@ class EVMTest_SLOAD(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='T'
+            bytecode=b'T'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -108,7 +108,7 @@ class EVMTest_SLOAD(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'T'
+            code = b'T'
             storage = {1: 17148285878015927573589902037204387430629608504251}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -116,7 +116,7 @@ class EVMTest_SLOAD(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='T'
+            bytecode=b'T'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -141,7 +141,7 @@ class EVMTest_SLOAD(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'T'
+            code = b'T'
             storage = {57896044618658097711785492504343953926634992332820282019728792003956564819952: 0}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -149,7 +149,7 @@ class EVMTest_SLOAD(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='T'
+            bytecode=b'T'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -174,7 +174,7 @@ class EVMTest_SLOAD(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'T'
+            code = b'T'
             storage = {3618502788666131106986593281521497120414687020801267626233049500247285301263: 0}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -182,7 +182,7 @@ class EVMTest_SLOAD(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='T'
+            bytecode=b'T'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -207,7 +207,7 @@ class EVMTest_SLOAD(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'T'
+            code = b'T'
             storage = {16: 0}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -215,7 +215,7 @@ class EVMTest_SLOAD(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='T'
+            bytecode=b'T'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -240,7 +240,7 @@ class EVMTest_SLOAD(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'T'
+            code = b'T'
             storage = {32: 0}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -248,7 +248,7 @@ class EVMTest_SLOAD(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='T'
+            bytecode=b'T'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -273,7 +273,7 @@ class EVMTest_SLOAD(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'T'
+            code = b'T'
             storage = {48: 0}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -281,7 +281,7 @@ class EVMTest_SLOAD(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='T'
+            bytecode=b'T'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -306,7 +306,7 @@ class EVMTest_SLOAD(unittest.TestCase):
 
             address = 0x222222222222222222222222222222222222200
             balance = None
-            code = 'T'
+            code = b'T'
             storage = {6089590155545428825848686802984512581899718912: 0}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
@@ -314,7 +314,7 @@ class EVMTest_SLOAD(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='T'
+            bytecode=b'T'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
