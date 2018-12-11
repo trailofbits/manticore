@@ -2237,7 +2237,7 @@ class EVMWorld(Platform):
 
         if storage is None:
             # Uninitialized values in a storage are 0 by spec
-            storage = self.constraints.new_array(index_bits=256, value_bits=256, name='STORAGE_{:x}'.format(address), avoid_collisions=True, default=0)
+            storage = self.constraints.new_array(index_bits=256, value_bits=256, name=f'STORAGE_{address:x}', avoid_collisions=True, default=0)
         else:
             # TODO: Check storage type/ dict from int/bitvec to int/bitvec
             pass
