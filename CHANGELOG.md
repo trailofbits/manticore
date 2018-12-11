@@ -33,7 +33,7 @@ Thanks to our external contributors!
 
 ### Fixed
 
-- Fixed timeout support for ManticoreEVM
+- Ethereum: Fixed CLI timeout support
 - Numerous EVM correctness fixes for Frontier fork
 - Fixed handling of default storage and memory in EVM (reading from previously unused cell will return a zero now)
 - ARM THUMB mode, Linux syscall emulation fixes
