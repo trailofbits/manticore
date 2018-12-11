@@ -17,7 +17,7 @@ from manticore.core.smtlib.expression import BitVec
 from manticore.core.smtlib import solver
 from manticore.core.state import State
 from manticore.ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, Detector, NoAliveStates, ABI, EthereumError, DetectReentrancyAdvanced
-from manticore.platforms.evm import EVMWorld, ConcretizeStack, concretized_args, Return, Stop
+from manticore.platforms.evm import EVMWorld, concretized_args, Return, Stop
 from manticore.core.smtlib.visitors import pretty_print, translate_to_smtlib, simplify, to_constant
 
 import shutil
