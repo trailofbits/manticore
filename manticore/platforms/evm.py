@@ -224,7 +224,7 @@ class Transaction(object):
             if return_data is None:
                 return_data = bytearray()
             if not isinstance(return_data, (bytes, bytearray, Array)) or len(return_data) != 0:
-                raise EVMException('Invalid transaction return_data. To much data for STOP,THROW or SELFDESTRUCT')
+                raise EVMException(f'Invalid transaction return_data. Too much data ({len(return_data)}) for STOP, THROW or SELFDESTRUCT')
         else:
             if return_data is not None:
                 raise EVMException('Invalid transaction return_data')
@@ -468,13 +468,13 @@ class EVM(Eventful):
         super().__init__(**kwargs)
         if data is not None and not issymbolic(data):
             data_size = len(data)
-            data_symbolic = constraints.new_array(index_bits=256, value_bits=8, index_max=data_size, name='DATA_{:x}'.format(address), avoid_collisions=True, default=0)
+            data_symbolic = constraints.new_array(index_bits=256, value_bits=8, index_max=data_size, name=f'DATA_{address:x}', avoid_collisions=True, default=0)
             data_symbolic[0:data_size] = data
             data = data_symbolic
 
         if bytecode is not None and not issymbolic(bytecode):
             bytecode_size = len(bytecode)
-            bytecode_symbolic = constraints.new_array(index_bits=256, value_bits=8, index_max=bytecode_size, name='BYTECODE_{:x}'.format(address), avoid_collisions=True, default=0)
+            bytecode_symbolic = constraints.new_array(index_bits=256, value_bits=8, index_max=bytecode_size, name=f'BYTECODE_{address:x}', avoid_collisions=True, default=0)
             bytecode_symbolic[0:bytecode_size] = bytecode
             bytecode = bytecode_symbolic
 
@@ -510,7 +510,7 @@ class EVM(Eventful):
         #    raise EVMException("Need code")
         self._constraints = constraints
         # Uninitialized values in memory are 0 by spec
-        self.memory = constraints.new_array(index_bits=256, value_bits=8, name='EMPTY_MEMORY_{:x}'.format(address), avoid_collisions=True, default=0)
+        self.memory = constraints.new_array(index_bits=256, value_bits=8, name=f'EMPTY_MEMORY_{address:x}', avoid_collisions=True, default=0)
         self.address = address
         self.caller = caller  # address of the account that is directly responsible for this execution
         self.data = data
@@ -2239,7 +2239,7 @@ class EVMWorld(Platform):
 
         if storage is None:
             # Uninitialized values in a storage are 0 by spec
-            storage = self.constraints.new_array(index_bits=256, value_bits=256, name='STORAGE_{:x}'.format(address), avoid_collisions=True, default=0)
+            storage = self.constraints.new_array(index_bits=256, value_bits=256, name=f'STORAGE_{address:x}', avoid_collisions=True, default=0)
         else:
             # TODO: Check storage type/ dict from int/bitvec to int/bitvec
             pass
