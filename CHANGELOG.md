@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 Thanks to our external contributors!
 
+- [NeatMonster](https://github.com/NeatMonster)
+- [evgeniuz](https://github.com/evgeniuz)
+- [stephan-tolksdorf](https://github.com/stephan-tolksdorf)
+- [yeti-detective](https://github.com/yeti-detective)
+- [PetarMI](https://github.com/PetarMI)
+- [hidde-jan](https://github.com/hidde-jan)
+- [catenacyber](https://github.com/catenacyber)
+
 ### Added
 
 - Support for ARM THUMB instructions: ADR, ADDW, SUBW, CBZ, TBB, TBH, STMDA, STMDB
