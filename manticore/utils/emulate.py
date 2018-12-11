@@ -1,6 +1,6 @@
 import logging
 
-from ..core.memory import MemoryException
+from ..native.memory import MemoryException
 
 from .helpers import issymbolic
 ######################################################################
@@ -11,8 +11,6 @@ from unicorn.x86_const import *
 from unicorn.arm_const import *
 
 from capstone import *
-from capstone.arm import *
-from capstone.x86 import *
 
 logger = logging.getLogger(__name__)
 
@@ -143,7 +141,7 @@ class UnicornEmulator(object):
         Handle software interrupt (SVC/INT)
         '''
 
-        from ..core.cpu.abstractcpu import Interruption
+        from ..native.cpu.abstractcpu import Interruption  # prevent circular imports
         self._to_raise = Interruption(number)
         return True
 
@@ -182,7 +180,7 @@ class UnicornEmulator(object):
             for address, values in self._should_be_written.items():
                 for offset, byte in enumerate(values, start=address):
                     if issymbolic(byte):
-                        from ..core.cpu.abstractcpu import ConcretizeMemory
+                        from ..native.cpu.abstractcpu import ConcretizeMemory
                         raise ConcretizeMemory(self._cpu.memory, offset, 8,
                                                "Concretizing for emulation")
 
@@ -230,7 +228,7 @@ class UnicornEmulator(object):
         for reg in registers:
             val = self._cpu.read_register(reg)
             if issymbolic(val):
-                from ..core.cpu.abstractcpu import ConcretizeRegister
+                from ..native.cpu.abstractcpu import ConcretizeRegister
                 raise ConcretizeRegister(self._cpu, reg, "Concretizing for emulation.",
                                          policy='ONE')
             self._emu.reg_write(self._to_unicorn_id(reg), val)

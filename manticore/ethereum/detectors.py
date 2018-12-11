@@ -2,12 +2,14 @@ import hashlib
 import logging
 from contextlib import contextmanager
 
+from ..utils import log
 from ..core.smtlib import Operators, taint_with, get_taints, Constant
 from ..utils.helpers import istainted, issymbolic
 from ..core.plugin import Plugin
 
 
 logger = logging.getLogger(__name__)
+log.init_logging()
 
 
 class Detector(Plugin):

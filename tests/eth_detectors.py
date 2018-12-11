@@ -7,12 +7,12 @@ import unittest
 
 import os
 import shutil
-from eth_general import make_mock_evm_state
 
 from manticore.core.smtlib import operators
 from manticore.ethereum import ManticoreEVM, DetectIntegerOverflow, DetectUnusedRetVal, DetectSelfdestruct, \
-    LoopDepthLimiter, DetectDelegatecall, \
-    DetectExternalCallAndLeak, DetectEnvInstruction, DetectRaceCondition
+    DetectDelegatecall, DetectExternalCallAndLeak, DetectEnvInstruction, DetectRaceCondition
+from manticore.ethereum.plugins import LoopDepthLimiter
+from eth_general import make_mock_evm_state
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -181,7 +181,7 @@ class EthIntegerOverflow(unittest.TestCase):
         self.assertTrue(check)
 
 
-class DetectEnvInstruction(EthDetectorTest):
+class EthEnvInstruction(EthDetectorTest):
     DETECTOR_CLASS = DetectEnvInstruction
 
     def test_predictable_not_ok(self):

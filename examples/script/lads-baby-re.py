@@ -2,7 +2,7 @@
 
 import sys
 
-from manticore import Manticore
+from manticore.native import Manticore
 
 '''
 Solves modified version of baby-re, compiled for arm.

@@ -1,9 +1,9 @@
 import itertools
 import sys
 
-from manticore.utils.helpers import PickleSerializer
+from ...utils.helpers import PickleSerializer
 from .expression import BitVecVariable, BoolVariable, ArrayVariable, Array, Bool, BitVec, BoolConstant, ArrayProxy, BoolEq, Variable, Constant
-from .visitors import GetDeclarations, TranslatorSmtlib, get_variables, simplify, replace, translate_to_smtlib
+from .visitors import GetDeclarations, TranslatorSmtlib, get_variables, simplify, replace
 import logging
 
 logger = logging.getLogger(__name__)
@@ -72,7 +72,7 @@ class ConstraintSet(object):
         self._constraints.append(constraint)
 
         if check:
-            from manticore.core.smtlib import solver
+            from ...core.smtlib import solver
             if not solver.check(self):
                 raise ValueError("Added an impossible constraint")
 

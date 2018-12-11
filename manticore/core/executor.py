@@ -468,7 +468,7 @@ class Executor(Eventful):
                                 break
                         else:
                             # Notify this worker is done
-                            self._publish('will_terminate_state', current_state, current_state_id, 'Shutdown')
+                            self._publish('will_terminate_state', current_state, current_state_id, TerminateState('Shutdown'))
                             current_state = None
 
                     # Handling Forking and terminating exceptions

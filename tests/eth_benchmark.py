@@ -3,24 +3,11 @@ File name is purposefully not test_* to run this test separately.
 """
 
 import inspect
-import shutil
-import struct
-import tempfile
 import unittest
 import os
-import sys
-import resource
-
-from manticore.core.plugin import Plugin
-from manticore.core.smtlib import ConstraintSet, operators
-from manticore.core.smtlib.expression import BitVec
-from manticore.core.smtlib import solver
-from manticore.core.state import State
-from manticore.ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, Detector, NoAliveStates, ABI, EthereumError, DetectReentrancyAdvanced
-from manticore.platforms.evm import EVMWorld, concretized_args, Return, Stop
-from manticore.core.smtlib.visitors import pretty_print, translate_to_smtlib, simplify, to_constant
-
 import shutil
+
+from manticore.ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, DetectReentrancyAdvanced
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -29,6 +16,7 @@ THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 from manticore.utils.log import init_logging, set_verbosity
 init_logging()
 set_verbosity(0)
+
 
 class EthBenchmark(unittest.TestCase):
     """ https://consensys.net/diligence/evm-analyzer-benchmark-suite/ """

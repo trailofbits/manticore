@@ -3,8 +3,9 @@ import os
 
 from manticore.utils.event import Eventful
 from manticore.platforms import linux
-from manticore.core.state import State
+from manticore.native.state import State
 from manticore.core.smtlib import BitVecVariable, ConstraintSet
+
 
 class _CallbackExecuted(Exception):
     pass
@@ -21,6 +22,7 @@ class FakeMemory(object):
     @constraints.setter
     def constraints(self, constraints):
         self._constraints = constraints
+
 
 class FakeCpu(object):
     def __init__(self):

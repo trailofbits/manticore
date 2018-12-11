@@ -1,7 +1,7 @@
 
 import unittest
 
-from manticore.core.cpu import bitwise
+from manticore.native.cpu import bitwise
 
 
 class BitwiseTest(unittest.TestCase):

@@ -1,4 +1,4 @@
-from manticore.ethereum import ManticoreEVM, Detector
+from manticore.ethereum import Detector, ManticoreEVM
 
 ################ Script #######################
 

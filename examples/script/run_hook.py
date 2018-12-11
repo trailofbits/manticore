@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import sys
-from manticore import Manticore
+from manticore.native import Manticore
 
 '''
 Demonstrates the ability to set a basic hook on a specific program counter and
