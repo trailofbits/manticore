@@ -824,7 +824,9 @@ class EVM(Eventful):
             pass
         self._gas -= fee
 
-        assert issymbolic(self._gas) or self._gas >= 0
+        # If everything is concrete lets just check at every instruction
+        if not issymbolic(self._gas) and self._gas < 0:
+            raise NotEnoughGas()
 
     def _indemnify(self, fee):
         self._gas += fee
