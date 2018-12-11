@@ -19,7 +19,7 @@ Manticore is a symbolic execution tool for analysis of smart contracts and binar
 ## Features
 
 - **Input Generation**: Manticore automatically generates inputs that trigger unique code paths
-- **Crash Discovery**: Manticore discovers inputs that crash programs via memory safety violations
+- **Error Discovery**: Manticore discovers bugs and produces inputs required to trigger them
 - **Execution Tracing**: Manticore records an instruction-level trace of execution for each generated input
 - **Programmatic Interface**: Manticore exposes programmatic access to its analysis engine via a Python API
 
