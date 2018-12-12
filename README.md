@@ -119,7 +119,7 @@ Install and try Manticore in a few shell commands:
 sudo apt-get update && sudo apt-get install python3 python3-pip -y
 
 # Install Manticore and its dependencies
-sudo pip3 install manticore
+sudo pip3 install manticore[native]
 
 # Download the examples
 git clone https://github.com/trailofbits/manticore.git && cd manticore/examples/linux
