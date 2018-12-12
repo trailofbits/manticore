@@ -57,8 +57,6 @@ def ethereum_main(args, logger):
         filter_nohuman_constants = FilterFunctions(regexp=r".*", depth='human', mutability='constant', include=False)
         m.register_plugin(filter_nohuman_constants)
 
-    logger.info(f"Registered plugins: {m.plugins}")
-    logger.info(f"Registered detectors: {m.detectors}")
     logger.info("Beginning analysis")
 
     with m.shutdown_timeout(args.timeout):
