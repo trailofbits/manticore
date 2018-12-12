@@ -10,6 +10,6 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential software-p
 
 # Install Manticore
 ADD . /manticore
-RUN cd manticore && pip3 install -e .[native]
-
+RUN cd manticore && pip3 install .[native]
+z
 CMD ["/bin/bash"]
