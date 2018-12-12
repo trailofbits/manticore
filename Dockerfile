@@ -1,5 +1,9 @@
 FROM ubuntu:18.04
-MAINTAINER Trail of Bits <opensource@trailofbits.com>
+
+LABEL name=Manticore
+LABEL src="https://github.com/trailofbits/manticore"
+LABEL creator="Trail of Bits"
+LABEL dockerfile_maintenance=trailofbits
 
 RUN apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install python3 python3-pip git
 
