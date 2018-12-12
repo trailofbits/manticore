@@ -8,8 +8,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential software-p
     apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y solc ethereum
 
-# Install Manticore
 ADD . /manticore
 RUN cd manticore && pip3 install .[native]
-z
+
 CMD ["/bin/bash"]
