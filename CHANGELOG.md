@@ -4,6 +4,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## [Unreleased](https://github.com/trailofbits/manticore/compare/0.2.3...HEAD)
 
+## 0.2.3 - 2018-12-11
+
 Thanks to our external contributors!
 
 - [NeatMonster](https://github.com/NeatMonster)
