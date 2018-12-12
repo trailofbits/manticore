@@ -2,16 +2,45 @@
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
-## [Unreleased](https://github.com/trailofbits/manticore/compare/0.2.2...HEAD)
+## [Unreleased](https://github.com/trailofbits/manticore/compare/0.2.3...HEAD)
+
+Thanks to our external contributors!
+
+- [NeatMonster](https://github.com/NeatMonster)
+- [evgeniuz](https://github.com/evgeniuz)
+- [stephan-tolksdorf](https://github.com/stephan-tolksdorf)
+- [yeti-detective](https://github.com/yeti-detective)
+- [PetarMI](https://github.com/PetarMI)
+- [hidde-jan](https://github.com/hidde-jan)
+- [catenacyber](https://github.com/catenacyber)
+
+### Added
+
+- Support for ARM THUMB instructions: ADR, ADDW, SUBW, CBZ, TBB, TBH, STMDA, STMDB
+- `State.solve_minmax()` API for querying a BitVec for its min/max values
+- New SMTLIB optimization for simplifying redundant concat/extract combinations; helps reduce expression complexity, and speed up queries
+- Ethereum: `--txpreconstrain` CLI flag. Enabling this avoids sending ether to nonpayable functions, primarily avoiding exploration of uninteresting revert states.
+- Research memory model (LazySMemory) allowing for symbolic memory indexing to be handled without concretization (opt in, currently for research only)
 
 ### Changed
 
 - Linux/binary analysis has been moved to `manticore.native`, `manticore.core.cpu` has been moved to `manticore.native.cpu`. Please update your imports.
-- The binary analysis dependencies are now not installed by default. They can be installed with `pip install manticore[native]`.
+- The binary analysis dependencies are now not installed by default. They can be installed with `pip install manticore[native]`. This is to prevent EVM users from installing binary dependencies.
 - The symbolic `stdin_size` is now a config variable (in `main` config group) with a default of 256 (it was like this before).
+- `ManticoreEVM.generate_testcase()` 'name' parameter is now optional
+- Manticore CLI run on a smart contract will now use all detectors by default (detectors can be listed with --list-detectors, excluded with --exclude <detectors> or --exclude-all)
+- Misusing the ManticoreEVM API, for example by using old keyword arguments that are not available since some versions (like ManticoreEVM(verbosity=5)) will now raise an exception instead of not applying the argument at all.
 
+### Fixed
+
+- Ethereum: Fixed CLI timeout support
+- Numerous EVM correctness fixes for Frontier fork
+- Fixed handling of default storage and memory in EVM (reading from previously unused cell will return a zero now)
+- ARM THUMB mode, Linux syscall emulation fixes
+- Creation of multiple contracts with symbolic arguments (ManticoreEVM.solidity_create_contract with args=None fired more than once failed before)
 
 ### Removed
+
 - `Manticore.evm` static method
 
 ## 0.2.2 - 2018-10-30
