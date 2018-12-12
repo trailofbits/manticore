@@ -57,7 +57,10 @@ def ethereum_main(args, logger):
         filter_nohuman_constants = FilterFunctions(regexp=r".*", depth='human', mutability='constant', include=False)
         m.register_plugin(filter_nohuman_constants)
 
-    logger.info("Beginning analysis")
+    if m.plugins:
+        logger.info(f'Registered plugins: {", ".join(d.name for d in m.plugins)}')
+
+    logger.info('Beginning analysis')
 
     with m.shutdown_timeout(args.timeout):
         m.multi_tx_analysis(args.argv[0], contract_name=args.contract, tx_limit=args.txlimit,
