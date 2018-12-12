@@ -469,37 +469,46 @@ class DetectIntegerOverflow(Detector):
         iou = False
 
         if mnemonic == 'ADD':
+            print("add")
             ios = self._signed_add_overflow(state, *arguments)
             iou = self._unsigned_add_overflow(state, *arguments)
         elif mnemonic == 'MUL':
+            print("mul")
             ios = self._signed_mul_overflow(state, *arguments)
             iou = self._unsigned_mul_overflow(state, *arguments)
         elif mnemonic == 'SUB':
+            print("sub")
             ios = self._signed_sub_overflow(state, *arguments)
             iou = self._unsigned_sub_overflow(state, *arguments)
         elif mnemonic == 'SSTORE':
             # If an overflowded value is stored in the storage then it is a finding
+            print("sstore")
             where, what = arguments
             self._check_finding(state, what)
         elif mnemonic == 'RETURN':
+            print("Mnemonic return")
             world = state.platform
             if world.current_transaction.is_human():
+                print("Mnemonic return hooman")
                 # If an overflowded value is returned to a human
                 offset, size = arguments
                 data = world.current_vm.read_buffer(offset, size)
                 self._check_finding(state, data)
 
         if mnemonic in ('SLT', 'SGT', 'SDIV', 'SMOD'):
+            print("Mnemonic slt/sgt/sdiv/smod")
             result = taint_with(result, "SIGNED")
             vm.change_last_result(result)
+
         if state.can_be_true(ios):
+            print("State can be true")
             id_val = self._save_current_location(state, "Signed integer overflow at %s instruction" % mnemonic, ios)
             result = taint_with(result, "IOS_{:s}".format(id_val))
             vm.change_last_result(result)
-        if state.can_be_true(iou):
-            id_val = self._save_current_location(state, "Unsigned integer overflow at %s instruction" % mnemonic, iou)
-            result = taint_with(result, "IOU_{:s}".format(id_val))
-            vm.change_last_result(result)
+        # if state.can_be_true(iou):
+        #     id_val = self._save_current_location(state, "Unsigned integer overflow at %s instruction" % mnemonic, iou)
+        #     result = taint_with(result, "IOU_{:s}".format(id_val))
+            # vm.change_last_result(result)
 
 
 class DetectUnusedRetVal(Detector):
