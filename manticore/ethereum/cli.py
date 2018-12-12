@@ -10,7 +10,9 @@ def get_detectors_classes():
     return [
         DetectInvalid, DetectIntegerOverflow, DetectUninitializedStorage, DetectUninitializedMemory,
         DetectReentrancySimple, DetectReentrancyAdvanced, DetectUnusedRetVal, DetectSuicidal, DetectDelegatecall,
-        DetectExternalCallAndLeak, DetectEnvInstruction, DetectRaceCondition
+        DetectExternalCallAndLeak, DetectEnvInstruction,
+        # The RaceCondition detector has been disabled for now as it seems to collide with IntegerOverflow detector
+        # DetectRaceCondition
     ]
 
 
