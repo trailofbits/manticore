@@ -196,7 +196,7 @@ class ConcreteUnicornEmulator(object):
         try:
             m = self._create_emulated_mapping(uc, address)
         except MemoryException as e:
-            logger.error("Failed to map memory")
+            logger.error("Failed to map memory {}-{}, ({}): {}".format(hex(address), hex(address + size), access, e))
             self._to_raise = e
             self._should_try_again = False
             return False

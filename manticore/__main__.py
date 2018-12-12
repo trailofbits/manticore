@@ -69,8 +69,6 @@ def parse_arguments():
                         help='Enable profiling mode.')
     parser.add_argument('--procs', type=int, default=1,
                         help='Number of parallel processes to spawn')
-    parser.add_argument('argv', type=str, nargs='*', default=[],
-                        help="Path to program, and arguments ('+' in arguments indicates symbolic byte).")
     parser.add_argument('--timeout', type=int, default=consts.timeout,
                         help='Timeout. Abort exploration after TIMEOUT seconds')
     parser.add_argument('-v', action='count', default=1,
@@ -167,6 +165,9 @@ def parse_arguments():
 
     eth_flags.add_argument('--no-testcases', action='store_true',
                            help='Do not generate testcases for discovered states when analysis finishes')
+
+    parser.add_argument('argv', type=str, nargs=argparse.REMAINDER, default=[],
+                        help="Path to program, and arguments ('+' in arguments indicates symbolic byte).")
 
     config_flags = parser.add_argument_group('Constants')
     config.add_config_vars_to_argparse(config_flags)

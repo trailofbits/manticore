@@ -63,7 +63,7 @@ def init_logging(default_level=logging.WARNING):
     loggers = logging.getLogger().manager.loggerDict.keys()
 
     ctxfilter = ContextFilter()
-    logfmt = ("%(asctime)s: [%(process)d]%(stateid)s %(name)s:%(levelname)s"
+    logfmt = ("%(asctime)s: [%(process)d] %(name)s:%(levelname)s"
               " %(message)s")
     handler = logging.StreamHandler(sys.stdout)
     formatter = logging.Formatter(logfmt)
