@@ -102,7 +102,7 @@ class EVMContract(EVMAccount):
                 contract_account.add(1000)
 
         """
-        if not name.startswith('_'):
+        if not name.startswith('__'):
             self.__init_hashes()
             if self._hashes is not None and name in self._hashes.keys():
                 def f(*args, signature: Optional[str]=None, caller=None, value=0, gas=0xffffffffffff, **kwargs):
