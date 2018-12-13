@@ -297,6 +297,7 @@ class EthAbiTests(unittest.TestCase):
         selector = ABI.function_selector('memberId(address)')
         function_ref_data = address + selector + b'\0'*8
         # build tx call data
+        call_data = func_id + function_ref_data
         parsed_func_id, args = ABI.deserialize(spec, call_data)
         self.assertEqual(parsed_func_id, func_id)
         self.assertEqual(((0xfB6916095ca1df60bB79Ce92cE3Ea74c37c5d359, selector),), args)
