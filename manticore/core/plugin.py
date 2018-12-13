@@ -7,6 +7,9 @@ logger = logging.getLogger(__name__)
 
 
 class Plugin:
+    def __init__(self):
+        self.manticore = None
+
     @contextmanager
     def locked_context(self, key=None, value_type=list):
         """
@@ -29,10 +32,6 @@ class Plugin:
         if plugin_context_name not in self.manticore.context:
             self.manticore.context[plugin_context_name] = {}
         return self.manticore.context[plugin_context_name]
-
-    def __init__(self):
-        self.manticore = None
-        self.last_reg_state = {}
 
     def on_register(self):
         ''' Called by parent manticore on registration '''
@@ -283,8 +282,8 @@ class ExamplePlugin(Plugin):
     def will_terminate_state_callback(self, state, state_id, exception):
         logger.info('will_terminate_state %r %r %r', state, state_id, exception)
 
-    def will_generate_testcase_callback(self, state, testcase_id, message):
-        logger.info('will_generate_testcase %r %r %r', state, testcase_id, message)
+    def will_generate_testcase_callback(self, state, testcase, message):
+        logger.info('will_generate_testcase %r %r %r', state, testcase, message)
 
     def will_read_memory_callback(self, state, where, size):
         logger.info('will_read_memory %r %r %r', state, where, size)

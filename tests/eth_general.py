@@ -414,11 +414,10 @@ class EthInstructionTests(unittest.TestCase):
 class EthTests(unittest.TestCase):
     def setUp(self):
         self.mevm = ManticoreEVM()
-        self.worksp = self.mevm.workspace
 
     def tearDown(self):
-        self.mevm=None
-        shutil.rmtree(self.worksp)
+        shutil.rmtree(self.mevm.workspace)
+        del self.mevm
 
     def test_create_contract_no_args(self):
         source_code = 'contract A { constructor() {} }'

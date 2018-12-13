@@ -91,6 +91,7 @@ class ManticoreEVM(ManticoreBase):
 
             m.finalize()
     """
+    _published_events = {'generate_testcase'}
 
     def make_symbolic_buffer(self, size, name=None, avoid_collisions=False):
         """ Creates a symbolic buffer of size bytes to be used in transactions.
@@ -1289,13 +1290,15 @@ class ManticoreEVM(ManticoreBase):
         :rtype: bool
         """
         if only_if is None:
-            self._generate_testcase_callback(state, name, message)
+            testcase = self._output.testcase(prefix=name)
+            self._publish('will_generate_testcase', state, testcase, message)
             return True
         else:
             with state as temp_state:
                 temp_state.constrain(only_if)
                 if temp_state.is_feasible():
-                    self._generate_testcase_callback(temp_state, name, message)
+                    testcase = self._output.testcase(prefix=name)
+                    self._publish('will_generate_testcase', temp_state, testcase, message)
                     return True
 
         return False
@@ -1315,7 +1318,10 @@ class ManticoreEVM(ManticoreBase):
             output.write('\n')
         return output.getvalue()
 
-    def _generate_testcase_callback(self, state, name, message=''):
+    def will_generate_testcase_callback(self, state, testcase, message):
+        self._generate_testcase_callback(state, testcase, message)
+
+    def _generate_testcase_callback(self, state, testcase, message=''):
         """
         Create a serialized description of a given state.
         :param state: The state to generate information about
@@ -1329,7 +1335,6 @@ class ManticoreEVM(ManticoreBase):
         #  so this function can be fully ported to EVMWorld.generate_workspace_files.
         blockchain = state.platform
 
-        testcase = self._output.testcase(name.replace(' ', '_'))
         last_tx = blockchain.last_transaction
         if last_tx:
             message = message + last_tx.result
@@ -1446,7 +1451,9 @@ class ManticoreEVM(ManticoreBase):
             state_id = self._terminate_state_id(state_id)
             st = self.load(state_id)
             logger.debug("Generating testcase for state_id %d", state_id)
-            self._generate_testcase_callback(st, 'test', '')
+
+            testcase = self._output.testcase(prefix='test')
+            self._publish('will_generate_testcase', st, testcase, '')
 
         def worker_finalize(q):
             try:

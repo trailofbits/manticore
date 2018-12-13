@@ -31,7 +31,22 @@ def manager():
     return _manager
 
 
-class Store(object):
+class Testcase:
+    def __init__(self, workspace, prefix):
+        self._num = workspace._increment_id()
+        self._prefix = prefix
+        self._ws = workspace
+
+    @property
+    def num(self):
+        return self._num
+
+    def open_stream(self, suffix='', binary=False):
+        stream_name = f'{self._prefix}_{self._num:08x}.{suffix}'
+        return self._ws.save_stream(stream_name, binary=binary)
+
+
+class Store:
     """
     A `Store` can save arbitrary keys/values (including states) and file streams.
     Used for generating output, state saving and state loading.
@@ -312,7 +327,7 @@ def sync(f):
     return new_function
 
 
-class Workspace(object):
+class Workspace:
     """
     A workspace maintains a list of states to run and assigns them IDs.
     """
@@ -391,7 +406,7 @@ class Workspace(object):
         return self._store.rm(f'{self._prefix}{state_id:08x}{self._suffix}')
 
 
-class ManticoreOutput(object):
+class ManticoreOutput:
     """
     Functionality related to producing output. Responsible for generating state summaries,
     coverage information, etc.
@@ -414,20 +429,6 @@ class ManticoreOutput(object):
         self._lock = manager().Condition(manager().RLock())
 
     def testcase(self, prefix='test'):
-        class Testcase(object):
-            def __init__(self, workspace, prefix):
-                self._num = workspace._increment_id()
-                self._prefix = prefix
-                self._ws = workspace
-
-            @property
-            def num(self):
-                return self._num
-
-            def open_stream(self, suffix='', binary=False):
-                stream_name = f'{self._prefix}_{self._num:08x}.{suffix}'
-                return self._ws.save_stream(stream_name, binary=binary)
-
         return Testcase(self, prefix)
 
     @property

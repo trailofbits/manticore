@@ -344,18 +344,17 @@ class Executor(Eventful):
         ''' Returns the list of states ids currently queued '''
         return list(self._states)
 
-    def generate_testcase(self, state, message='Testcase generated'):
-        '''
-        Simply announce that we're going to generate a testcase. Actual generation
-        should be handled by the driver class (such as :class:`~manticore.Manticore`)
+    def generate_testcase(self, state, message: str='Testcase generated'):
+        """
+        Simply announce that we're going to generate a testcase.
+        Actual generation is handled by `core.ManticoreBase`.
 
         :param state: The state to generate information about
         :param message: Accompanying message
-        '''
-
-        # broadcast test generation. This is the time for other modules
-        # to output whatever helps to understand this testcase
-        self._publish('will_generate_testcase', state, 'test', message)
+        """
+        # broadcast test generation to ManticoreBase so it can prepare everything needed
+        # to publish `will_generate_testcase` event
+        self._publish('internal_generate_testcase', state, 'test', message)
 
     def fork(self, state, expression, policy='ALL', setstate=None):
         '''
