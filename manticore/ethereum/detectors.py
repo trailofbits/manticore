@@ -9,7 +9,6 @@ from ..core.plugin import Plugin
 
 
 logger = logging.getLogger(__name__)
-log.init_logging()
 
 
 class DetectorClassification:
