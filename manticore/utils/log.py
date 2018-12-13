@@ -6,7 +6,7 @@ manticore_verbosity = 0
 DEFAULT_LOG_LEVEL = logging.WARNING
 all_loggers = set()
 default_factory = logging.getLogRecordFactory()
-logfmt = ("%(asctime)s: [%(process)d]%(stateid)s %(name)s:%(levelname)s %(message)s")
+logfmt = ("%(asctime)s: [%(process)d] %(name)s:%(levelname)s %(message)s")
 handler = logging.StreamHandler(sys.stdout)
 formatter = logging.Formatter(logfmt)
 handler.setFormatter(formatter)
@@ -50,9 +50,6 @@ class ContextFilter(logging.Filter):
             return self.colored_levelname_format.format(self.color_map[levelname], levelname)
 
     def filter(self, record):
-        if hasattr(self, 'stateid') and isinstance(self.stateid, int):
-            record.stateid = f'[{self.stateid}]'
-
         record.name = self.summarized_name(record.name)
         record.levelname = self.colored_level_name(record.levelname)
         return True
@@ -61,10 +58,9 @@ class ContextFilter(logging.Filter):
 ctxfilter = ContextFilter()
 
 
-class LoggerWithStateId(logging.Logger):
+class CustomLogger(logging.Logger):
     '''
-    Custom Logger class that can grab the correct verbosity level from this module, and has a 'stateid' field
-    so that the ContextFilter won't break custom loggers.
+    Custom Logger class that can grab the correct verbosity level from this module
     '''
 
     def __init__(self, name, level=DEFAULT_LOG_LEVEL, *args):
@@ -77,20 +73,8 @@ class LoggerWithStateId(logging.Logger):
             self.addFilter(ctxfilter)
             self.propagate = False
 
-    def setState(self, stateid):
-        self.filters[0].stateid = stateid
 
-
-logging.setLoggerClass(LoggerWithStateId)
-
-
-def factory(name, *args, **kwargs):
-    record = default_factory(name, *args, **kwargs)
-    record.stateid = ''
-    return record
-
-
-logging.setLogRecordFactory(factory)
+logging.setLoggerClass(CustomLogger)
 
 
 def disable_colors():
