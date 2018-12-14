@@ -41,7 +41,7 @@ consts.add('oog', default=0, description='Default behavior for symbolic gas.'
                                          '2: Incomplete. Concretize gas to MIN/MAX values. Forks.'
                                          '3: Try to not fail due to OOG. If it can be enough gas use it. Ignore the path to OOG. Wont fork'
                                          '4: Try OOG only. Fail soon. Ignore the path with enough gas.'
-                                         '99: Ignore gas. Instructions wont consume gas')
+                                         "99: Ignore gas. Instructions won't consume gas")
 
 # Auxiliary constants and functions
 TT256 = 2 ** 256
