@@ -25,7 +25,6 @@ from ..utils.helpers import issymbolic
 from ..utils.nointerrupt import WithKeyboardInterruptAs
 
 logger = logging.getLogger(__name__)
-log.init_logging()
 
 
 class ManticoreBase(Eventful):

@@ -28,7 +28,6 @@ from ..utils import config, log
 from ..utils.helpers import PickleSerializer, issymbolic
 
 logger = logging.getLogger(__name__)
-log.init_logging()
 
 
 def flagged(flag):
