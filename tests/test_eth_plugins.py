@@ -7,7 +7,6 @@ import shutil
 from manticore.ethereum.plugins import VerboseTrace
 
 from manticore.ethereum import ManticoreEVM
-from utils import log
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
