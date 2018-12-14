@@ -60,7 +60,7 @@ def flip(constraint):
         ->
     (Equal (BitVecITE Cond IfC ElseC) ElseC)
     '''
-    equal = copy.deepcopy(constraint)
+    equal = copy.copy(constraint)
 
     assert len(equal.operands) == 2
     # assume they are the equal -> ite form that we produce on standard branches

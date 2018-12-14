@@ -12,7 +12,6 @@ from ..utils import log, config
 from ..utils.helpers import issymbolic
 
 logger = logging.getLogger(__name__)
-log.init_logging()
 
 consts = config.get_group('main')
 

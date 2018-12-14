@@ -4,7 +4,7 @@ import random
 import logging
 import signal
 
-from ..exceptions import ExecutorError, SolverException
+from ..exceptions import ExecutorError, SolverError
 from ..utils.nointerrupt import WithKeyboardInterruptAs
 from ..utils.event import Eventful
 from ..utils import config
@@ -488,7 +488,7 @@ class Executor(Eventful):
                             self.generate_testcase(current_state, str(e))
                         current_state = None
 
-                    except SolverException as e:
+                    except SolverError as e:
                         # raise
                         import traceback
                         trace = traceback.format_exc()
@@ -509,7 +509,6 @@ class Executor(Eventful):
                     # Notify this worker is done
                     self._publish('will_terminate_state', current_state, current_state_id, e)
                     current_state = None
-                    logger.setState(None)
 
             assert current_state is None or self.is_shutdown()
 

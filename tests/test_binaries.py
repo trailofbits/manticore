@@ -63,7 +63,7 @@ class IntegrationTest(unittest.TestCase):
 
         return set(int(x[2:], 16) for x in vitems)
 
-    def _simple_cli_run(self, filename, contract=None, tx_limit=1, in_directory=None, args=None, workspace=None):
+    def _simple_cli_run(self, filename, contract=None, tx_limit=1, in_directory=None, args=None, workspace=None, testcases=False):
         """
         Simply run the Manticore command line with `filename`
         :param filename: Name of file inside the `tests/binaries` directory
@@ -87,6 +87,9 @@ class IntegrationTest(unittest.TestCase):
             command.extend(['--workspace', workspace])
 
         command.extend(['--txlimit', str(tx_limit)])
+
+        if not testcases:
+            command.append('--no-testcases')
 
         command.append(filename)
 
@@ -149,10 +152,12 @@ class IntegrationTest(unittest.TestCase):
         # but this seems as a good default
         self.assertGreaterEqual(len(output), 4)
         self.assertIn(b'm.c.manticore:INFO: Verbosity set to 1.', output[0])
-        self.assertIn(b'm.main:INFO: Beginning analysis', output[1])
-        self.assertIn(b'm.e.manticore:INFO: Starting symbolic create contract', output[2])
+        self.assertIn(b'm.main:INFO: Registered plugins: ', output[1])
+        self.assertIn(b'm.main:INFO: Beginning analysis', output[2])
+        self.assertIn(b'm.e.manticore:INFO: Starting symbolic create contract', output[3])
 
-        self.assertIn(b'm.e.manticore:INFO: Results in ', output[-1])
+        self.assertIn(b'm.c.manticore:INFO: Results in ', output[-2])
+        self.assertIn(b'm.c.manticore:INFO: Total time: ', output[-1])
 
         # Since we count the total time of Python process that runs Manticore, it takes a bit more time
         # e.g. for some finalization like generation of testcases
@@ -303,31 +308,94 @@ class IntegrationTest(unittest.TestCase):
         actual = self._load_visited_set(os.path.join(DIRPATH, workspace, 'visited.txt'))
         self.assertTrue(len(actual) > 100)
 
-    def test_eth_regressions(self):
-        issues = [
-            {'number': 676, 'contract': None, 'txlimit': 1},
-            {'number': 678, 'contract': None, 'txlimit': 1},
-            {'number': 701, 'contract': None, 'txlimit': 1},
-            {'number': 714, 'contract': None, 'txlimit': 1},
-            {'number': 735, 'contract': None, 'txlimit': 2},
-            {'number': 760, 'contract': None, 'txlimit': 1},
-            {'number': 780, 'contract': None, 'txlimit': 1},
-            {'number': 795, 'contract': None, 'txlimit': 1},
-            {'number': 799, 'contract': 'C', 'txlimit': 1},
-            {'number': 807, 'contract': 'C', 'txlimit': 1},
-            {'number': 808, 'contract': 'C', 'txlimit': 1},
-            {'number': 'main/main', 'contract': 'C', 'txlimit': 1, 'in_directory': 'imports_issue'}
-        ]
+    def test_eth_regressions_676(self):
+        issue = {'number': 676, 'contract': None, 'txlimit': 1}
+        self._simple_cli_run(
+                f'{issue["number"]}.sol', contract=issue['contract'], tx_limit=issue['txlimit'],
+                in_directory=issue.get('in_directory')
+            )
 
-        for issue in issues:
-            self._simple_cli_run(
+    def test_eth_regressions_678(self):
+        issue = {'number': 678, 'contract': None, 'txlimit': 1}
+        self._simple_cli_run(
+                f'{issue["number"]}.sol', contract=issue['contract'], tx_limit=issue['txlimit'],
+                in_directory=issue.get('in_directory')
+            )
+
+    def test_eth_regressions_701(self):
+        issue = {'number': 701, 'contract': None, 'txlimit': 1}
+        self._simple_cli_run(
+                f'{issue["number"]}.sol', contract=issue['contract'], tx_limit=issue['txlimit'],
+                in_directory=issue.get('in_directory')
+            )
+
+    def test_eth_regressions_714(self):
+        issue = {'number': 714, 'contract': None, 'txlimit': 1}
+        self._simple_cli_run(
+                f'{issue["number"]}.sol', contract=issue['contract'], tx_limit=issue['txlimit'],
+                in_directory=issue.get('in_directory')
+            )
+
+    def test_eth_regressions_735(self):
+        issue = {'number': 735, 'contract': None, 'txlimit': 2}
+        self._simple_cli_run(
+                f'{issue["number"]}.sol', contract=issue['contract'], tx_limit=issue['txlimit'],
+                in_directory=issue.get('in_directory')
+            )
+
+    def test_eth_regressions_760(self):
+        issue = {'number': 760, 'contract': None, 'txlimit': 1}
+        self._simple_cli_run(
+                f'{issue["number"]}.sol', contract=issue['contract'], tx_limit=issue['txlimit'],
+                in_directory=issue.get('in_directory')
+            )
+
+    def test_eth_regressions_780(self):
+        issue = {'number': 780, 'contract': None, 'txlimit': 1}
+        self._simple_cli_run(
+                f'{issue["number"]}.sol', contract=issue['contract'], tx_limit=issue['txlimit'],
+                in_directory=issue.get('in_directory')
+            )
+
+    def test_eth_regressions_795(self):
+        issue = {'number': 795, 'contract': None, 'txlimit': 1}
+
+        self._simple_cli_run(
+                f'{issue["number"]}.sol', contract=issue['contract'], tx_limit=issue['txlimit'],
+                in_directory=issue.get('in_directory')
+            )
+
+    def test_eth_regressions_799(self):
+        issue = {'number': 799, 'contract': 'C', 'txlimit': 1}
+        self._simple_cli_run(
+                f'{issue["number"]}.sol', contract=issue['contract'], tx_limit=issue['txlimit'],
+                in_directory=issue.get('in_directory')
+            )
+
+    def test_eth_regressions_807(self):
+        issue = {'number': 807, 'contract': 'C', 'txlimit': 1}
+        self._simple_cli_run(
+                f'{issue["number"]}.sol', contract=issue['contract'], tx_limit=issue['txlimit'],
+                in_directory=issue.get('in_directory')
+            )
+
+    def test_eth_regressions_808(self):
+        issue = {'number': 808, 'contract': 'C', 'txlimit': 1}
+        self._simple_cli_run(
+                f'{issue["number"]}.sol', contract=issue['contract'], tx_limit=issue['txlimit'],
+                in_directory=issue.get('in_directory')
+            )
+
+    def test_eth_regressions_mainmain(self):
+        issue = {'number': 'main/main', 'contract': 'C', 'txlimit': 1, 'in_directory': 'imports_issue'}
+        self._simple_cli_run(
                 f'{issue["number"]}.sol', contract=issue['contract'], tx_limit=issue['txlimit'],
                 in_directory=issue.get('in_directory')
             )
 
     def test_eth_1102(self):
         with tempfile.TemporaryDirectory() as workspace:
-            self._simple_cli_run('1102.sol', args=['--detect-overflow'], workspace=workspace)
+            self._simple_cli_run('1102.sol', workspace=workspace, testcases=True)
 
             with open(os.path.join(workspace, 'global.findings')) as gf:
                 global_findings = gf.read().splitlines()

@@ -1,6 +1,7 @@
 import cProfile
 import itertools
 import logging
+import os
 import pstats
 import sys
 import time
@@ -9,6 +10,7 @@ from multiprocessing import Process
 from threading import Timer
 
 import functools
+import shlex
 import types
 
 from ..core.executor import Executor
@@ -23,7 +25,6 @@ from ..utils.helpers import issymbolic
 from ..utils.nointerrupt import WithKeyboardInterruptAs
 
 logger = logging.getLogger(__name__)
-log.init_logging()
 
 
 class ManticoreBase(Eventful):
@@ -450,6 +451,18 @@ class ManticoreBase(Eventful):
                     import marshal
                     marshal.dump(ps.stats, s)
 
+    def get_profiling_stats(self):
+        """
+        Returns a pstat.Stats instance with profiling results if `run` was called with `should_profile=True`.
+        Otherwise, returns `None`.
+        """
+        profile_file_path = os.path.join(self.workspace, 'profiling.bin')
+        try:
+            return pstats.Stats(profile_file_path)
+        except Exception as e:
+            logger.debug(f'Failed to get profiling stats: {e}')
+            return None
+
     def _start_run(self):
         assert not self.running and self._context is not None
         self._publish('will_start_run', self._initial_state)
@@ -522,8 +535,11 @@ class ManticoreBase(Eventful):
         self._coverage_file = path
 
     def _did_finish_run_callback(self):
+        self._save_run_data()
+
+    def _save_run_data(self):
         with self._output.save_stream('command.sh') as f:
-            f.write(' '.join(sys.argv))
+            f.write(' '.join(map(shlex.quote, sys.argv)))
 
         with self._output.save_stream('manticore.yml') as f:
             config.save(f)

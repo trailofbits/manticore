@@ -21,7 +21,7 @@ from . import linux_syscalls
 from ..core.executor import TerminateState
 from ..core.smtlib import ConstraintSet, solver, Operators
 from ..core.smtlib import Expression
-from ..exceptions import SolverException
+from ..exceptions import SolverError
 from ..native.cpu.abstractcpu import Syscall, ConcretizeArgument, Interruption
 from ..native.cpu.cpufactory import CpuFactory
 from ..native.memory import SMemory32, SMemory64, Memory32, Memory64, LazySMemory32, LazySMemory64
@@ -2701,8 +2701,8 @@ class SLinux(Linux):
                     if issymbolic(c):
                         c = solver.get_value(self.constraints, c)
                     fd.write(make_chr(c))
-            except SolverException:
-                fd.write('{SolverException}')
+            except SolverError:
+                fd.write('{SolverError}')
 
         out = io.BytesIO()
         inn = io.BytesIO()
