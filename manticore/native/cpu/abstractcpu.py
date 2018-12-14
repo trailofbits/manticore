@@ -609,7 +609,21 @@ class Cpu(Eventful):
         :return: the bytes in memory
         :rtype: list
         '''
-        data = self.memory[where:where + size]
+        map = self.memory.map_containing(where)
+        if type(map) is FileMap:
+            raw_data = map._data[where - map.start: where - map.start + size]
+            def flatten(overlay):
+                return overlay
+
+            data = b''
+            flattened = flatten(map._overlay)
+            for offset in sorted(flattened.keys()):
+                data += raw_data[len(data):offset]
+                data += flattened[offset]
+            data += raw_data[len(data):]
+
+        else:
+            data = b''.join(self.memory[where:where + size])
         assert (len(data)) == size
         return data
 
@@ -628,9 +642,8 @@ class Cpu(Eventful):
         assert size in SANE_SIZES
         self._publish('will_read_memory', where, size)
 
-        # data = self._memory.read(where, size // 8, force)
-        # assert (8 * len(data)) == size
-        data = self._raw_read(where, size//8)
+        data = self._memory.read(where, size // 8, force)
+        assert (8 * len(data)) == size
 
         value = Operators.CONCAT(size, *map(Operators.ORD, reversed(data)))
 
