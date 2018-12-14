@@ -19,7 +19,16 @@ from capstone.x86 import *
 import time
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+# logger.setLevel(logging.DEBUG)
+
+# https://stackoverflow.com/a/1094933
+def sizeof_fmt(num, suffix='B'):
+    for unit in ' KMGTPEZ':
+        if abs(num) < 1024.0:
+            return "%3.1f%s%s" % (num, unit if unit != ' ' else '', suffix)
+        num /= 1024.0
+    return "%.1f%s%s" % (num, 'Y', suffix)
+
 
 class ConcreteUnicornEmulator(object):
     '''
@@ -39,6 +48,7 @@ class ConcreteUnicornEmulator(object):
         cpu.subscribe('did_write_register', self.write_back_register)
         cpu.subscribe('did_set_descriptor', self.update_segment)
         cpu.subscribe('will_execute_instruction', self.pre_execute_callback)
+        cpu.subscribe('did_map_memory', self.map_memory_callback)
         cpu.subscribe('did_execute_instruction', self.post_execute_callback)
 
         if self._cpu.arch == CS_ARCH_ARM:
@@ -144,6 +154,16 @@ class ConcreteUnicornEmulator(object):
                 return True
         return False
 
+    def map_memory_callback(self, address, size, perms, name, offset, result):
+        logger.debug(' '.join(("Mapping Memory @",
+              hex(address) if type(address) is int else "None?? That doesn't make sense -",
+              sizeof_fmt(size), "-",
+              perms, "-",
+              f"{name}:{hex(offset) if name else ''}", "->",
+              hex(result))))
+        if address not in self.mem_map.keys() and address is not None:
+            self._create_emulated_mapping(self._emu, address)
+
     def _create_emulated_mapping(self, uc, address):
         '''
         Create a mapping in Unicorn and note that we'll need it if we retry.
@@ -155,6 +175,7 @@ class ConcreteUnicornEmulator(object):
 
         m = self._cpu.memory.map_containing(address)
         if m.start not in self.mem_map.keys():
+            logger.debug(' '.join(("Pushing Map @", hex(m.start), "to Unicorn")))
             permissions = UC_PROT_NONE
             if 'r' in m.perms:
                 permissions |= UC_PROT_READ
@@ -258,8 +279,6 @@ class ConcreteUnicornEmulator(object):
         '''
         A single attempt at executing an instruction.
         '''
-        logger.debug("0x%x:\t%s\t%s"
-                     % (instruction.address, instruction.mnemonic, instruction.op_str))
 
         # Bring in the instruction itself
         instruction = self._cpu.decode_instruction(self._cpu.PC)

@@ -23,8 +23,6 @@ from ...utils.helpers import issymbolic
 
 logger = logging.getLogger(__name__)
 register_logger = logging.getLogger(f'{__name__}.registers')
-from ...utils import log
-log.init_logging()
 
 ###################################################################################
 # Exceptions
@@ -451,7 +449,7 @@ class Cpu(Eventful):
     '''
 
     _published_events = {'write_register', 'read_register', 'write_memory', 'read_memory', 'decode_instruction',
-                           'execute_instruction', 'set_descriptor'}
+                           'execute_instruction', 'set_descriptor', 'map_memory'}
 
     def __init__(self, regfile, memory, **kwargs):
         assert isinstance(regfile, RegisterFile)

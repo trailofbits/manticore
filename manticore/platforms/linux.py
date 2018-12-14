@@ -1719,6 +1719,8 @@ class Linux(Platform):
 
         perms = perms_from_protflags(prot)
 
+        cpu._publish('will_map_memory', address, size, perms, "" if fd == 0 or flags & 0x20 else self.files[fd].name, offset)
+
         if flags & 0x20:
             result = cpu.memory.mmap(address, size, perms)
         elif fd == 0:
@@ -1729,6 +1731,8 @@ class Linux(Platform):
         else:
             # FIXME Check if file should be symbolic input and do as with fd0
             result = cpu.memory.mmapFile(address, size, perms, self.files[fd].name, offset)
+
+        cpu._publish('did_map_memory', address, size, perms, "" if fd == 0 or flags & 0x20 else self.files[fd].name, offset, result)
 
         actually_mapped = f'0x{result:016x}'
         if address is None or result != address:
