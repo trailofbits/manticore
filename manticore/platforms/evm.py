@@ -761,7 +761,7 @@ class EVM(Eventful):
 
     def _consume(self, fee):
 
-        #Check type and bitvec size
+        # Check type and bitvec size
         if isinstance(fee, int):
             if fee > (1 << 512) - 1:
                 raise ValueError
