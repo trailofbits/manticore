@@ -106,7 +106,7 @@ def get_levels():
         ],
         # 4 (-vvv)
         [
-            ('manticore.core.memory', logging.DEBUG),
+            ('manticore.native.memory', logging.DEBUG),
             ('manticore.native.cpu.*', logging.DEBUG),
             ('manticore.native.cpu.*.registers', logging.DEBUG)
         ],

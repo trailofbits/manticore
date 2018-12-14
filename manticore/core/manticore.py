@@ -26,6 +26,7 @@ from ..utils.nointerrupt import WithKeyboardInterruptAs
 
 logger = logging.getLogger(__name__)
 
+
 class ManticoreBase(Eventful):
     '''
     Base class for the central analysis object.
