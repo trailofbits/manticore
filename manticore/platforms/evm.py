@@ -289,7 +289,7 @@ class ConcretizeGas(EVMException):
     '''
 
     def __init__(self, policy='MINMAX'):
-        self.message = "Concretizing evm gas {}"
+        self.message = "Concretizing evm gas"
         self.policy = policy
 
 
