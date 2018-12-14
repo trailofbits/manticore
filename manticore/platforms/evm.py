@@ -797,7 +797,7 @@ class EVM(Eventful):
                                      expression=Operators.UGT(self._gas, fee),
                                      setstate=None,
                                      policy='ALL')
-                elif enough_gas_solutions[0] == False:
+                elif enough_gas_solutions[0] is False:
                     #if gas if only insuficient OOG!
                     logger.debug("Not enough gas for instruction")
                     raise NotEnoughGas()
