@@ -7,6 +7,7 @@ import shutil
 from manticore.ethereum.plugins import VerboseTrace
 
 from manticore.ethereum import ManticoreEVM
+from utils import log
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -32,7 +33,14 @@ class EthPluginsTests(unittest.TestCase):
         self.assertEqual(len(files), 0)  # just a sanity check?
 
         # Shall produce a verbose trace file
-        self.mevm.finalize()
+        with self.assertLogs('manticore.core.manticore', level='INFO') as cm:
+            self.mevm.finalize()
+
+            prefix = '\x1b[34mINFO:\x1b[0m:m.c.manticore'
+            self.assertEqual(f'{prefix}:Generated testcase No. 0 - RETURN', cm.output[0])
+            self.assertEqual(f'{prefix}:Results in {self.mevm.workspace}', cm.output[1])
+            self.assertEqual(f'{prefix}:Total time: {self.mevm._time_elapsed}', cm.output[2])
+            self.assertEqual(len(cm.output), 3)
 
         files = set(os.listdir(self.mevm.workspace))
 

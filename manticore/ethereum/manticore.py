@@ -1330,10 +1330,6 @@ class ManticoreEVM(ManticoreBase):
         #  so this function can be fully ported to EVMWorld.generate_workspace_files.
         blockchain = state.platform
 
-        last_tx = blockchain.last_transaction
-        if last_tx:
-            message = message + last_tx.result
-
         local_findings = set()
         for detector in self.detectors.values():
             for address, pc, finding, at_init, constraint in detector.get_findings(state):
@@ -1445,7 +1441,11 @@ class ManticoreEVM(ManticoreBase):
             state_id = self._terminate_state_id(state_id)
             st = self.load(state_id)
             logger.debug("Generating testcase for state_id %d", state_id)
-            self._publish_generate_testcase(st)
+
+            last_tx = st.platform.last_transaction
+            message = last_tx.result if last_tx else 'NO STATE RESULT (?)'
+
+            self._publish_generate_testcase(st, message=message)
 
         def worker_finalize(q):
             try:

@@ -536,6 +536,7 @@ class ManticoreBase(Eventful):
         with self._output.save_stream('manticore.yml') as f:
             config.save(f)
 
-        elapsed = time.time() - self._time_started
+        self._time_ended = time.time()
+        self._time_elapsed = self._time_ended - self._time_started
         logger.info('Results in %s', self._output.store.uri)
-        logger.info('Total time: %s', elapsed)
+        logger.info('Total time: %s', self._time_elapsed)
