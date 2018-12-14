@@ -26,11 +26,6 @@ from manticore.utils.deprecated import ManticoreDeprecationWarning
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# FIXME(mark): Remove these two lines when logging works for ManticoreEVM
-from manticore.utils.log import init_logging
-
-init_logging()
-
 
 def make_mock_evm_state():
     cs = ConstraintSet()
@@ -86,7 +81,7 @@ class EthAbiTests(unittest.TestCase):
 
 
         calldata = binascii.unhexlify(b'9de4886f9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d')
-        returndata = b'' 
+        returndata = b''
         md = m.get_metadata(contract_account)
         self.assertEqual(md.parse_tx(calldata, returndata), 'test1(899826498278242188854817720535123270925417291165, 71291600040229971300002528024956868756719167029433602173313100742126907268509)')
 
@@ -302,7 +297,7 @@ class EthAbiTests(unittest.TestCase):
         selector = ABI.function_selector('memberId(address)')
         function_ref_data = address + selector + b'\0'*8
         # build tx call data
-        call_data = func_id + function_ref_data 
+        call_data = func_id + function_ref_data
         parsed_func_id, args = ABI.deserialize(spec, call_data)
         self.assertEqual(parsed_func_id, func_id)
         self.assertEqual(((0xfB6916095ca1df60bB79Ce92cE3Ea74c37c5d359, selector),), args)
@@ -623,7 +618,7 @@ class EthTests(unittest.TestCase):
                                                     owner=owner_account,
                                                     balance=0)
 
-        #Some global expression `sym_add1` 
+        #Some global expression `sym_add1`
         sym_add1 = m.make_symbolic_value(name='sym_add1')
         #Let's constrain it on the global fake constraintset
         m.constrain(sym_add1>0)
@@ -631,7 +626,7 @@ class EthTests(unittest.TestCase):
         #Symb tx 1
         contract_account.add(sym_add1, caller=attacker_account)
 
-        # A new!? global expression 
+        # A new!? global expression
         sym_add2 = m.make_symbolic_value(name='sym_add2')
         #constraints involve old expression.  Some states may get invalidated by this. Should this be accepted?
         m.constrain(sym_add1 > sym_add2)
@@ -1157,10 +1152,10 @@ class EthSolidityMetadataTests(unittest.TestCase):
     def test_overloaded_functions_and_events(self):
         with disposable_mevm() as m:
             source_code = '''
-            contract C {                
+            contract C {
                 function f() public payable returns (uint) {}
                 function f(string a) public {}
-                
+
                 event E(uint);
                 event E(uint, string);
             }
@@ -1226,14 +1221,14 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
 
     def test_jmpdest_check(self):
         '''
-            This test that jumping to a JUMPDEST in the operand of a PUSH should 
+            This test that jumping to a JUMPDEST in the operand of a PUSH should
             be treated as an INVALID instruction.
             https://github.com/trailofbits/manticore/issues/1169
         '''
-    
+
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints)
-    
+
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
                              code=EVMAsm.assemble('PUSH1 0x5b\nPUSH1 0x1\nJUMP')
@@ -1243,7 +1238,7 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)        
+        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
@@ -1259,7 +1254,7 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
                 returndata = e.data
 
         self.assertEqual(result, 'THROW')
-        
+
 
     def test_delegatecall_env(self):
         '''
@@ -1346,7 +1341,7 @@ class EthPluginTests(unittest.TestCase):
             contract FallbackCounter {
                 uint public fallbackCounter = 123;
                 uint public otherCounter = 456;
-    
+
                 function other() {
                     otherCounter += 1;
                 }

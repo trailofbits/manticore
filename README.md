@@ -12,14 +12,14 @@
 [![Maintainability](https://api.codeclimate.com/v1/badges/9161568d8378cea903f4/maintainability)](https://codeclimate.com/github/trailofbits/manticore/maintainability)
 [![Test Coverage](https://api.codeclimate.com/v1/badges/9161568d8378cea903f4/test_coverage)](https://codeclimate.com/github/trailofbits/manticore/test_coverage)
 
-Manticore is a symbolic execution tool for analysis of binaries and smart contracts.
+Manticore is a symbolic execution tool for analysis of smart contracts and binaries.
 
 > Note: Beginning with version 0.2.0, Python 3.6+ is required.
 
 ## Features
 
 - **Input Generation**: Manticore automatically generates inputs that trigger unique code paths
-- **Crash Discovery**: Manticore discovers inputs that crash programs via memory safety violations
+- **Error Discovery**: Manticore discovers bugs and produces inputs required to trigger them
 - **Execution Tracing**: Manticore records an instruction-level trace of execution for each generated input
 - **Programmatic Interface**: Manticore exposes programmatic access to its analysis engine via a Python API
 
@@ -34,12 +34,11 @@ Manticore can analyze the following types of programs:
 
 Manticore has a command line interface which can be used to easily symbolically execute a supported program or smart contract. Analysis results will be placed into a new directory beginning with `mcore_`.
 
-Use the CLI to explore possible states in Ethereum smart contracts. Manticore includes _detectors_ that flag potentially vulnerable code in discovered states. Solidity smart contracts must have a `.sol` extension for analysis by Manticore. See a [demo](https://asciinema.org/a/154012).
+Use the CLI to explore possible states in Ethereum smart contracts. Manticore includes _detectors_ that flag potentially vulnerable code in discovered states; output from them will be written to stdout and the results directory.
+Solidity smart contracts must have a `.sol` extension for analysis by Manticore. See a [demo](https://asciinema.org/a/154012).
 
 ```
 $ manticore ./path/to/contract.sol  # runs, and creates a mcore_* directory with analysis results
-$ manticore --detect-reentrancy ./path/to/contract.sol  # Above, but with reentrancy detection enabled
-$ manticore --detect-all ./path/to/contract.sol  # Above, but with all detectors enabled
 ```
 
 The command line can also be used to simply explore a Linux binary:
@@ -87,11 +86,11 @@ It is also possible to use the API to create custom analysis tools for Linux bin
 
 ```python
 # example Manticore script
-from manticore import Manticore
+from manticore.native import Manticore
 
 hook_pc = 0x400ca0
 
-m = Manticore('./path/to/binary')
+m = Manticore.linux('./path/to/binary')
 
 @m.hook(hook_pc)
 def hook(state):
@@ -120,7 +119,7 @@ Install and try Manticore in a few shell commands:
 sudo apt-get update && sudo apt-get install python3 python3-pip -y
 
 # Install Manticore and its dependencies
-sudo pip3 install manticore
+sudo pip3 install manticore[native]
 
 # Download the examples
 git clone https://github.com/trailofbits/manticore.git && cd manticore/examples/linux
@@ -166,14 +165,10 @@ manticore@8d456f662d0f:~/manticore/examples/script$ python3 count_instructions.p
 
 ## Installation
 
-NOTE: If you use Mac OS X you need to install dependencies manually (preferably in a manticore's python virtual environment):
-```
-brew install capstone
-export MACOS_UNIVERSAL=no && pip install capstone
 
-brew install unicorn
-UNICORN_QEMU_FLAGS="--python=`whereis python`" pip install unicorn
-```
+> NOTE: For native binary analysis, Manticore requires additional dependencies that are not installed by default. To
+install these also, substitute `manticore[native]` for `manticore` in any `pip` command.
+
 
 Option 1: Perform a user install (requires `~/.local/bin` in your `PATH`).
 
@@ -208,6 +203,16 @@ docker pull trailofbits/manticore
 Once installed, the `manticore` CLI tool and Python API will be available.
 
 For installing a development version of Manticore, see our [wiki](https://github.com/trailofbits/manticore/wiki/Hacking-on-Manticore).
+
+If you use Mac OS X you may need to install dependencies manually:
+
+```
+brew install capstone
+export MACOS_UNIVERSAL=no && pip install capstone
+
+brew install unicorn
+UNICORN_QEMU_FLAGS="--python=`whereis python`" pip install unicorn
+```
 
 ## Getting Help
 
