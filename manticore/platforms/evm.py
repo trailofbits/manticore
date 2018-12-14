@@ -1022,7 +1022,7 @@ class EVM(Eventful):
                         new_arguments.append(value)
                     else:
                         new_arguments.append(old_arg)
-                    current_vm._checkpoint_data = (_pc, _old_gas, _instruction, new_arguments, _fee, _allocated)
+                current_vm._checkpoint_data = (_pc, _old_gas, _instruction, new_arguments, _fee, _allocated)
             raise Concretize("Concretize Instruction Argument",
                              expression=arguments[pos],
                              setstate=setstate,
