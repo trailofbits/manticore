@@ -19,7 +19,7 @@ from capstone.x86 import *
 import time
 
 logger = logging.getLogger(__name__)
-# logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 # https://stackoverflow.com/a/1094933
 def sizeof_fmt(num, suffix='B'):
@@ -155,8 +155,8 @@ class ConcreteUnicornEmulator(object):
         return False
 
     def map_memory_callback(self, address, size, perms, name, offset, result):
-        logger.debug(' '.join(("Mapping Memory @",
-              hex(address) if type(address) is int else "None?? That doesn't make sense -",
+        logger.info(' '.join(("Mapping Memory @",
+              hex(address) if type(address) is int else "0x??",
               sizeof_fmt(size), "-",
               perms, "-",
               f"{name}:{hex(offset) if name else ''}", "->",
@@ -175,7 +175,7 @@ class ConcreteUnicornEmulator(object):
 
         m = self._cpu.memory.map_containing(address)
         if m.start not in self.mem_map.keys():
-            logger.debug(' '.join(("Pushing Map @", hex(m.start), "to Unicorn")))
+            logger.info(f"Creating {sizeof_fmt(len(m))} map @ {hex(m.start)} in Unicorn")
             permissions = UC_PROT_NONE
             if 'r' in m.perms:
                 permissions |= UC_PROT_READ
@@ -241,13 +241,10 @@ class ConcreteUnicornEmulator(object):
             # TODO(yan): This needs to handle AF register
             custom_mapping = {'PC':'RIP'}
             try:
-                return globals()['UC_X86_REG_' + reg_name]
+                return globals()['UC_X86_REG_' + custom_mapping.get(reg_name, reg_name)]
             except KeyError:
-                try:
-                    return globals()['UC_X86_REG_' + custom_mapping[reg_name]]
-                except:
-                    logger.error("Can't find register UC_X86_REG_%s",str(reg_name))
-                    raise
+                logger.error("Can't find register UC_X86_REG_%s", str(reg_name))
+                raise
 
         else:
             # TODO(yan): raise a more appropriate exception
