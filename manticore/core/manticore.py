@@ -39,7 +39,7 @@ class ManticoreBase(Eventful):
     :ivar dict context: Global context for arbitrary data storage
     '''
 
-    _published_events = {'start_run', 'finish_run'}
+    _published_events = {'start_run', 'finish_run', 'generate_testcase'}
 
     def __init__(self, initial_state, workspace_url=None, policy='random', **kwargs):
         """
@@ -81,14 +81,18 @@ class ManticoreBase(Eventful):
         self._executor.forward_events_from(self._initial_state, True)
 
         # Move the following into a linux plugin
-
         self._assertions = {}
         self._coverage_file = None
         self.trace = None
 
         # FIXME move the following to a plugin
-        self.subscribe('will_generate_testcase', self._generate_testcase_callback)
         self.subscribe('did_finish_run', self._did_finish_run_callback)
+        self.subscribe('internal_generate_testcase', self._publish_generate_testcase)
+
+    def _publish_generate_testcase(self, state, prefix='test', message=''):
+        testcase = self._output.testcase(prefix=prefix)
+        self._publish('will_generate_testcase', state, testcase, message)
+        logger.info(f'Generated testcase No. %d - %s', testcase.num, message)
 
     def register_plugin(self, plugin):
         # Global enumeration of valid events
@@ -409,19 +413,6 @@ class ManticoreBase(Eventful):
 
         # Everything is good add it.
         state.constraints.add(assertion)
-
-    ############################################################################
-    # Some are placeholders Remove FIXME
-    # Any platform specific callback should go to a plugin
-
-    def _generate_testcase_callback(self, state, name, message):
-        '''
-        Create a serialized description of a given state.
-        :param state: The state to generate information about
-        :param message: Accompanying message
-        '''
-        testcase_id = self._output.save_testcase(state, name, message)
-        logger.info(f"Generated testcase No. {testcase_id} - {message}")
 
     def _produce_profiling_data(self):
         class PstatsFormatted:

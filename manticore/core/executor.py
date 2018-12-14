@@ -170,7 +170,7 @@ class Executor(Eventful):
     conditions (system calls, memory faults, concretization, etc.)
     '''
 
-    _published_events = {'enqueue_state', 'generate_testcase', 'fork_state', 'load_state', 'terminate_state'}
+    _published_events = {'enqueue_state', 'fork_state', 'load_state', 'terminate_state', 'internal_generate_testcase'}
 
     def __init__(self, initial=None, store=None, policy='random', context=None, **kwargs):
         super().__init__(**kwargs)

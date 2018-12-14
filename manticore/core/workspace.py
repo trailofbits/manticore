@@ -38,6 +38,10 @@ class Testcase:
         self._ws = workspace
 
     @property
+    def prefix(self):
+        return self._prefix
+
+    @property
     def num(self):
         return self._num
 
@@ -483,12 +487,12 @@ class ManticoreOutput:
         :param str message: The message to add to output
         :return: A state id representing the saved state
         """
-
         self._named_key_prefix = prefix
-        self._increment_id()
 
-        #FIXME this should not be here. Each object must be responsible of
-        #formatting its own output
+        # TODO / FIXME: We should move workspace to core/workspace and create a workspace for evm and native binaries
+        # The workspaces should override `save_testcase` method
+        #
+        # Below is native-only
         self.save_summary(state, message)
         self.save_trace(state)
         self.save_constraints(state)
@@ -507,15 +511,6 @@ class ManticoreOutput:
         with self._named_stream('messages') as summary:
             summary.write(f"Command line:\n  '{' '.join(sys.argv)}'\n")
             summary.write(f'Status:\n  {message}\n\n')
-
-            # FIXME(mark) This is a temporary hack for EVM. We need to sufficiently
-            # abstract the below code to work on many platforms, not just Linux. Then
-            # we can remove this hack.
-            if getattr(state.platform, 'procs', None) is None:
-                import pprint
-                summary.write("EVM World:\n")
-                summary.write(pprint.pformat(state.platform._global_storage))
-                return
 
             memories = set()
             for cpu in filter(None, state.platform.procs):

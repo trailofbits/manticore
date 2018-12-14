@@ -39,7 +39,8 @@ consts.add('memory', default=16384, description='Max memory for Z3 to use (in Me
 consts.add('maxsolutions', default=10000, description='Maximum solutions to provide when solving for all values')
 consts.add('z3_bin', default='z3', description='Z3 binary to use')
 
-class Solver(object, metaclass=ABCMeta):
+
+class Solver(metaclass=ABCMeta):
     @abstractmethod
     def __init__(self):
         pass
@@ -121,7 +122,17 @@ class Z3Solver(Solver):
         self._proc = None
 
         self._command = f'{consts.z3_bin} -t:{consts.timeout*1000} -memory:{consts.memory} -smt2 -in'
-        self._init = ['(set-logic QF_AUFBV)', '(set-option :global-decls false)']
+
+        # Commands used to initialize z3
+        self._init = [
+            # http://smtlib.cs.uiowa.edu/logics-all.shtml#QF_AUFBV
+            # Closed quantifier-free formulas over the theory of bitvectors and bitvector arrays extended with
+            # free sort and function symbols.
+            '(set-logic QF_AUFBV)',
+            # The declarations and definitions will be scoped
+            '(set-option :global-decls false)',
+        ]
+
         self._get_value_fmt = (re.compile('\(\((?P<expr>(.*))\ #x(?P<value>([0-9a-fA-F]*))\)\)'), 16)
 
         self.debug = False

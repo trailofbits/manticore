@@ -33,6 +33,11 @@ class Manticore(ManticoreBase):
 
         super().__init__(initial_state, workspace_url=workspace_url, policy=policy, **kwargs)
 
+        self.subscribe('will_generate_testcase', self._generate_testcase_callback)
+
+    def _generate_testcase_callback(self, state, testcase, message):
+        self._output.save_testcase(state, testcase.prefix, message)
+
     @classmethod
     def linux(cls, path, argv=None, envp=None, entry_symbol=None, symbolic_files=None, concrete_start='', pure_symbolic=False, stdin_size=consts.stdin_size, **kwargs):
         """
