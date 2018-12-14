@@ -344,18 +344,6 @@ class Executor(Eventful):
         ''' Returns the list of states ids currently queued '''
         return list(self._states)
 
-    def generate_testcase(self, state, message: str='Testcase generated'):
-        """
-        Simply announce that we're going to generate a testcase.
-        Actual generation is handled by `core.ManticoreBase`.
-
-        :param state: The state to generate information about
-        :param message: Accompanying message
-        """
-        # broadcast test generation to ManticoreBase so it can prepare everything needed
-        # to publish `will_generate_testcase` event
-        self._publish('internal_generate_testcase', state, 'test', message)
-
     def fork(self, state, expression, policy='ALL', setstate=None):
         '''
         Fork state on expression concretizations.
@@ -484,7 +472,7 @@ class Executor(Eventful):
 
                         logger.debug("Generic terminate state")
                         if e.testcase:
-                            self.generate_testcase(current_state, str(e))
+                            self._publish('internal_generate_testcase', current_state, 'test', str(e))
                         current_state = None
 
                     except SolverError as e:
@@ -497,7 +485,7 @@ class Executor(Eventful):
                         self._publish('will_terminate_state', current_state, current_state_id, e)
 
                         if solver.check(current_state.constraints):
-                            self.generate_testcase(current_state, "Solver failed" + str(e))
+                            self._publish('internal_generate_testcase', current_state, 'test', "Solver failed" + str(e))
                         current_state = None
 
                 except (Exception, AssertionError) as e:
