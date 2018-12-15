@@ -43,6 +43,7 @@ class ConcreteUnicornEmulator(object):
         self._cpu = cpu
         self._mem_delta = {}
         self.flag_registers = set(['CF','PF','AF','ZF','SF','IF','DF','OF'])
+        self.write_backs_disabled = False
 
         cpu.subscribe('did_write_memory', self.write_back_memory)
         cpu.subscribe('did_write_register', self.write_back_register)
@@ -142,6 +143,8 @@ class ConcreteUnicornEmulator(object):
         start_time = time.time()
         map_bytes = self._cpu._raw_read(address, size)
         logger.info("Reading %s map at 0x%02x took %s seconds", sizeof_fmt(size), address, time.time() - start_time)
+        if (time.time() - start_time > 2):
+            logger.warning(self._cpu.memory.map_containing(address))
         self._emu.mem_write(address, map_bytes)
 
     def map_memory_callback(self, address, size, perms, name, offset, result):
@@ -207,7 +210,7 @@ class ConcreteUnicornEmulator(object):
         '''
         try:
             m = self.copy_mapping_to_unicorn(address)
-            self.copy_map(m.start, m.size)
+            self.copy_map(m.start, m.end - m.start)
         except MemoryException as e:
             logger.error("Failed to map memory {}-{}, ({}): {}".format(hex(address), hex(address + size), access, e))
             self._to_raise = e
@@ -231,7 +234,7 @@ class ConcreteUnicornEmulator(object):
             return globals()['UC_ARM_REG_' + reg_name]
         elif self._cpu.arch == CS_ARCH_X86:
             # TODO(yan): This needs to handle AF register
-            custom_mapping = {'PC':'RIP'}
+            custom_mapping = {'PC': 'RIP'}
             try:
                 return globals()['UC_X86_REG_' + custom_mapping.get(reg_name, reg_name)]
             except KeyError:
@@ -269,9 +272,8 @@ class ConcreteUnicornEmulator(object):
 
         try:
             pc = self._cpu.PC
-            if self._cpu.arch == CS_ARCH_ARM and self._uc_mode == UC_MODE_THUMB:
-                pc |= 1
-            self._emu.emu_start(pc, self._cpu.PC + instruction.size, count=1)
+            map = self._cpu.memory.map_containing(pc)
+            self._emu.emu_start(pc, map.end, count=0x1)
         except UcError as e:
             # We request re-execution by signaling error; if we we didn't set
             # _should_try_again, it was likely an actual error
@@ -280,14 +282,6 @@ class ConcreteUnicornEmulator(object):
 
         if self._should_try_again:
             return
-
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug("=" * 10)
-            for register in self._cpu.canonical_registers:
-                logger.debug("Register % 3s  Manticore: %08x, Unicorn %08x",
-                        register, self._cpu.read_register(register),
-                        self._emu.reg_read(self._to_unicorn_id(register)) )
-            logger.debug(">"*10)
 
         # self.sync_unicorn_to_manticore()
         self._cpu.PC = self.get_unicorn_pc()
@@ -301,18 +295,22 @@ class ConcreteUnicornEmulator(object):
 
     def sync_unicorn_to_manticore(self):
         start = time.time()
+        self.write_backs_disabled = True
         for reg in self.registers:
             val = self._emu.reg_read(self._to_unicorn_id(reg))
             self._cpu.write_register(reg, val)
+        logger.info(f"Syncing {len(self._mem_delta)} writes back into Manticore")
         for location in self._mem_delta:
             value, size = self._mem_delta[location]
-            logger.debug("Writing %s bytes to 0x%02x", size, location)
             self._cpu.write_int(location, value, size*8)
+        self.write_backs_disabled = False
         self._mem_delta = {}
-        self.sync_time += (time.time() - start)
+        duration = time.time() - start
+        logger.debug(f"Sync took {duration} seconds")
+        self.sync_time += duration
 
     def write_back_memory(self, where, expr, size):
-        if where in self._mem_delta.keys():
+        if self.write_backs_disabled:
             return
         if issymbolic(expr):
             data = [Operators.CHR(Operators.EXTRACT(expr, offset, 8)) for offset in range(0, size, 8)]
@@ -331,6 +329,8 @@ class ConcreteUnicornEmulator(object):
         self._emu.mem_write(where, b''.join(b.encode('utf-8') if type(b) is str else b for b in data))
 
     def write_back_register(self, reg, val):
+        if self.write_backs_disabled:
+            return
         if reg in self.flag_registers:
             self._emu.reg_write(self._to_unicorn_id('EFLAGS'), self._cpu.read_register('EFLAGS'))
             return
