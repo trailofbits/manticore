@@ -81,7 +81,7 @@ class Manticore(ManticoreBase):
         function takes one :class:`~manticore.core.state.State` argument.
         '''
         def callback(manticore_obj, state):
-                       f(state)
+            f(state)
         self.subscribe('will_start_run', types.MethodType(callback, self))
         return f
 
@@ -123,15 +123,15 @@ class Manticore(ManticoreBase):
         # and execute those that are?
 
         if issymbolic(pc):
-                        return
+            return
 
         # Invoke all pc-specific hooks
         for cb in self._hooks.get(pc, []):
-                        cb(state)
+            cb(state)
 
         # Invoke all pc-agnostic hooks
         for cb in self._hooks.get(None, []):
-                        cb(state)
+            cb(state)
 
     #############################################################################
     #############################################################################
