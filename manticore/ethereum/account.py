@@ -61,9 +61,9 @@ class EVMContract(EVMAccount):
         :param default_caller: the default caller address for any transaction
         """
         super().__init__(**kwargs)
-        self._default_caller = default_caller
-        self._hashes = None
-        self._initialized = False
+        self.__default_caller = default_caller
+        self.__hashes = None
+        self.__initialized = False
 
     def add_function(self, signature):
         func_id = ABI.function_selector(signature)
@@ -71,23 +71,23 @@ class EVMContract(EVMAccount):
         if func_name.startswith('_EVMContract__') or func_name in {'add_function', 'address', 'name_'}:
             raise EthereumError(f"Function name ({func_name}) is internally reserved")
         entry = HashesEntry(signature, func_id)
-        if func_name in self._hashes:
-            self._hashes[func_name].append(entry)
+        if func_name in self.__hashes:
+            self.__hashes[func_name].append(entry)
             return
-        if func_id in {entry.func_id for entries in self._hashes.values() for entry in entries}:
+        if func_id in {entry.func_id for entries in self.__hashes.values() for entry in entries}:
             raise EthereumError(f"A function with the same hash as {func_name} is already defined")
-        self._hashes[func_name] = [entry]
+        self.__hashes[func_name] = [entry]
 
     def __init_hashes(self):
         # initializes self._hashes lazy
-        if self._hashes is None and self._manticore is not None:
-            self._hashes = {}
+        if self.__hashes is None and self._manticore is not None:
+            self.__hashes = {}
             md = self._manticore.get_metadata(self._address)
             if md is not None:
                 for signature in md.function_signatures:
                     self.add_function(signature)
             # It was successful, no need to re-run. _init_hashes disabled
-            self._initialized = True
+            self.__initialized = True
 
     def __getattr__(self, name):
         """
@@ -98,21 +98,21 @@ class EVMContract(EVMAccount):
             # call function `add` on contract_account with argument `1000`
             contract_account.add(1000)
         """
-        if not self._initialized:
+        if not self.__initialized:
             self.__init_hashes()
 
-        if name in self._hashes:
+        if name in self.__hashes:
             def f(*args, signature: Optional[str]=None, caller=None, value=0, gas=0xffffffffffff, **kwargs):
                 try:
                     if signature:
-                        if f'{name}{signature}' not in {entry.signature for entries in self._hashes.values() for entry in entries}:
+                        if f'{name}{signature}' not in {entry.signature for entries in self.__hashes.values() for entry in entries}:
                             raise EthereumError(
                                 f'Function: `{name}` has no such signature\n'
                                 f'Known signatures: {[entry.signature[len(name):] for entry in self._hashes[name]]}')
 
                         tx_data = ABI.function_call(f'{name}{signature}', *args)
                     else:
-                        entries = self._hashes[name]
+                        entries = self.__hashes[name]
                         if len(entries) > 1:
                             sig = entries[0].signature[len(name):]
                             raise EthereumError(
@@ -125,7 +125,7 @@ class EVMContract(EVMAccount):
                     raise e
 
                 if caller is None:
-                    caller = self._default_caller
+                    caller = self.__default_caller
 
                 self._manticore.transaction(caller=caller,
                                             address=self._address,
