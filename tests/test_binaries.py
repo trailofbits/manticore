@@ -422,13 +422,8 @@ class IntegrationTest(unittest.TestCase):
 
         self.assertIn(b'm.c.manticore:INFO: Verbosity set to 1.', output[0])
         self.assertIn(b'm.n.manticore:INFO: Loading program ', output[1])
-
         self.assertIn(b'm.c.manticore:INFO: Generated testcase No. 0 - Program finished with exit status: 0', output[2])
-        self.assertIn(b'- Program finished with exit status: 0', output[2])
-
         self.assertIn(b'm.c.manticore:INFO: Generated testcase No. 1 - Program finished with exit status: 0', output[3])
-        self.assertIn(b'- Program finished with exit status: 0', output[3])
-
         self.assertIn(b'm.c.manticore:INFO: Results in ', output[4])
         self.assertIn(b'm.c.manticore:INFO: Total time: ', output[5])
 
