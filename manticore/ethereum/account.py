@@ -68,14 +68,19 @@ class EVMContract(EVMAccount):
     def add_function(self, signature):
         func_id = ABI.function_selector(signature)
         func_name = str(signature.split('(')[0])
-        if func_name.startswith('_EVMContract__') or func_name in {'add_function', 'address', 'name_'}:
+
+        if func_name in self.__dict__ or func_name in {'add_function', 'address', 'name_'}:
             raise EthereumError(f"Function name ({func_name}) is internally reserved")
+
         entry = HashesEntry(signature, func_id)
+
         if func_name in self.__hashes:
             self.__hashes[func_name].append(entry)
             return
+
         if func_id in {entry.func_id for entries in self.__hashes.values() for entry in entries}:
             raise EthereumError(f"A function with the same hash as {func_name} is already defined")
+
         self.__hashes[func_name] = [entry]
 
     def __init_hashes(self):
