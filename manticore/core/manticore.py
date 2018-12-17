@@ -62,6 +62,7 @@ class ManticoreBase(Eventful):
 
         self._output = ManticoreOutput(ws_path)
         self._context = {}
+        self._last_run_stats = {}
 
         # sugar for 'will_execute_instruction"
         self._hooks = {}
@@ -486,7 +487,7 @@ class ManticoreBase(Eventful):
         assert not self.running, "Manticore is already running."
         self._start_run()
 
-        self._time_started = time.time()
+        self._last_run_stats['time_started'] = time.time()
         with self.shutdown_timeout(timeout):
             self._start_workers(procs, profiling=should_profile)
 
@@ -534,8 +535,12 @@ class ManticoreBase(Eventful):
 
         with self._output.save_stream('manticore.yml') as f:
             config.save(f)
+            time_ended = time.time()
 
-        self._time_ended = time.time()
-        self._time_elapsed = self._time_ended - self._time_started
+        time_elapsed = self._last_run_stats['time_started'] - time_ended
+
         logger.info('Results in %s', self._output.store.uri)
-        logger.info('Total time: %s', self._time_elapsed)
+        logger.info('Total time: %s', time_elapsed)
+
+        self._last_run_stats['time_ended'] = time_ended
+        self._last_run_stats['time_elapsed'] = time_elapsed

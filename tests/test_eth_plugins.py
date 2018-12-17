@@ -38,7 +38,7 @@ class EthPluginsTests(unittest.TestCase):
             prefix = '\x1b[34mINFO:\x1b[0m:m.c.manticore'
             self.assertEqual(f'{prefix}:Generated testcase No. 0 - RETURN', cm.output[0])
             self.assertEqual(f'{prefix}:Results in {self.mevm.workspace}', cm.output[1])
-            self.assertEqual(f'{prefix}:Total time: {self.mevm._time_elapsed}', cm.output[2])
+            self.assertEqual(f'{prefix}:Total time: {self.mevm._last_run_stats["time_elapsed"]}', cm.output[2])
             self.assertEqual(len(cm.output), 3)
 
         files = set(os.listdir(self.mevm.workspace))
