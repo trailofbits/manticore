@@ -10,7 +10,6 @@ class ManticoreTest(unittest.TestCase):
     _multiprocess_can_split_ = True
 
     def setUp(self):
-        from manticore.native import Manticore
         dirname = os.path.dirname(__file__)
         self.m = Manticore(os.path.join(dirname, 'binaries', 'arguments_linux_amd64'))
 
@@ -84,14 +83,11 @@ class ManticoreTest(unittest.TestCase):
 
 
 class ManticoreLogger(unittest.TestCase):
-    '''Make sure we set the logging levels correctly'''
+    """Make sure we set the logging levels correctly"""
 
     _multiprocess_can_split_ = True
 
     def test_logging(self):
-        import manticore.native.cpu.abstractcpu
-        import manticore.ethereum.abi
-
         set_verbosity(5)
         self.assertEqual(get_verbosity('manticore.native.cpu.abstractcpu'), logging.DEBUG)
         self.assertEqual(get_verbosity('manticore.ethereum.abi'), logging.DEBUG)
