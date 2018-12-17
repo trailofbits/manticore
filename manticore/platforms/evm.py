@@ -50,7 +50,7 @@ def to_signed(i):
     return Operators.ITEBV(256, i < TT255, i, i - TT256)
 
 
-class Transaction(object):
+class Transaction:
     __slots__ = '_sort', 'address', 'price', 'data', 'caller', 'value', 'depth', '_return_data', '_result', 'gas'
 
     def __init__(self, sort, address, price, data, caller, value, gas=0, depth=None, result=None, return_data=None):
@@ -408,7 +408,7 @@ class EVM(Eventful):
                          'evm_read_code',
                          'decode_instruction', 'execute_instruction', 'concrete_sha3', 'symbolic_sha3'}
 
-    class transact(object):
+    class transact:
         "Emulate PyProperty_Type() in Objects/descrobject.c"
 
         def __init__(self, pre=None, pos=None, doc=None):

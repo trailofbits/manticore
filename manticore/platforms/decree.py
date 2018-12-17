@@ -29,7 +29,7 @@ class SymbolicSyscallArgument(ConcretizeRegister):
         super().__init__(cpu, reg_name, message, policy)
 
 
-class Socket(object):
+class Socket:
     @staticmethod
     def pair():
         a = Socket()
@@ -1056,7 +1056,7 @@ class SDecree(Decree):
         return 0
 
 
-class DecreeEmu(object):
+class DecreeEmu:
 
     RANDOM = 0
 

@@ -2,7 +2,7 @@ import signal
 import logging
 
 
-class WithKeyboardInterruptAs(object):
+class WithKeyboardInterruptAs:
     def __init__(self, callback):
         if callback is None:
             callback = lambda *args, **kwargs: None

@@ -8,7 +8,7 @@ from ..exceptions import EthereumError
 HashesEntry = namedtuple('HashesEntry', 'signature func_id')
 
 
-class EVMAccount(object):
+class EVMAccount:
     def __init__(self, address=None, manticore=None, name=None):
         """ Encapsulates an account.
 

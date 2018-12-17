@@ -130,7 +130,7 @@ class CacheDict(OrderedDict):
         self._hits -= purge_count
 
 
-class StateSerializer(object):
+class StateSerializer:
     """
     StateSerializer can serialize and deserialize :class:`~manticore.core.state.State` objects from and to
     stream-like objects.

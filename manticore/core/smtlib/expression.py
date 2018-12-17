@@ -2,7 +2,7 @@ from functools import reduce
 import uuid
 
 
-class Expression(object):
+class Expression:
     ''' Abstract taintable Expression. '''
 
     def __init__(self, taint=()):
