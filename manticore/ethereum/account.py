@@ -105,7 +105,7 @@ class EVMContract(EVMAccount):
                         if f'{name}{signature}' not in {entry.signature for entries in self.__hashes.values() for entry in entries}:
                             raise EthereumError(
                                 f'Function: `{name}` has no such signature\n'
-                                f'Known signatures: {[entry.signature[len(name):] for entry in self._hashes[name]]}')
+                                f'Known signatures: {[entry.signature[len(name):] for entry in self.__hashes[name]]}')
 
                         tx_data = ABI.function_call(f'{name}{signature}', *args)
                     else:
@@ -115,7 +115,7 @@ class EVMContract(EVMAccount):
                             raise EthereumError(
                                 f'Function: `{name}` has multiple signatures but `signature` is not '
                                 f'defined! Example: `account.{name}(..., signature="{sig}")`\n'
-                                f'Known signatures: {[entry.signature[len(name):] for entry in self._hashes[name]]}')
+                                f'Known signatures: {[entry.signature[len(name):] for entry in self.__hashes[name]]}')
 
                         tx_data = ABI.function_call(str(entries[0].signature), *args)
                 except KeyError as e:
