@@ -7,7 +7,7 @@ from manticore.platforms import linux
 from manticore.utils.event import Eventful
 
 
-class FakeMemory(object):
+class FakeMemory:
     def __init__(self):
         self._constraints = None
 
@@ -29,7 +29,7 @@ class FakeCpu(Eventful):
     def memory(self):
         return self._memory
 
-class FakePlatform(object):
+class FakePlatform:
     def __init__(self):
         self._constraints = None
         self.procs = [FakeCpu()]

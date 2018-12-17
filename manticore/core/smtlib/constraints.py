@@ -9,7 +9,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class ConstraintSet(object):
+class ConstraintSet:
     ''' Constraint Sets
 
         An object containing a set of constraints. Serves also as a factory for

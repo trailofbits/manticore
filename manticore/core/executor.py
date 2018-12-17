@@ -40,7 +40,7 @@ def sync(f):
     return newFunction
 
 
-class Policy(object):
+class Policy:
     ''' Base class for prioritization of state search '''
 
     def __init__(self, executor, *args, **kwargs):

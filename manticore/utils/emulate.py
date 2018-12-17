@@ -15,7 +15,7 @@ from capstone import *
 logger = logging.getLogger(__name__)
 
 
-class UnicornEmulator(object):
+class UnicornEmulator:
     '''
     Helper class to emulate a single instruction via Unicorn.
     '''

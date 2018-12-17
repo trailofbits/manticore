@@ -6,7 +6,7 @@ import operator
 logger = logging.getLogger(__name__)
 
 
-class Visitor(object):
+class Visitor:
     ''' Class/Type Visitor
 
        Inherit your class visitor from this one and get called on a different

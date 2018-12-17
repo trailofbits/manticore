@@ -6,7 +6,7 @@ from .abi import ABI
 from ..utils.deprecated import deprecated
 
 
-class SolidityMetadata(object):
+class SolidityMetadata:
 
     @staticmethod
     def function_signature_for_name_and_inputs(name: str, inputs: Sequence[Mapping[str, Any]]) -> str:
