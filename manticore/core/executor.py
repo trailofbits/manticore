@@ -472,7 +472,7 @@ class Executor(Eventful):
 
                         logger.debug("Generic terminate state")
                         if e.testcase:
-                            self._publish('internal_generate_testcase', current_state, 'test', str(e))
+                            self._publish('internal_generate_testcase', current_state, message=str(e))
                         current_state = None
 
                     except SolverError as e:
@@ -485,7 +485,7 @@ class Executor(Eventful):
                         self._publish('will_terminate_state', current_state, current_state_id, e)
 
                         if solver.check(current_state.constraints):
-                            self._publish('internal_generate_testcase', current_state, 'test', "Solver failed" + str(e))
+                            self._publish('internal_generate_testcase', current_state, message="Solver failed" + str(e))
                         current_state = None
 
                 except (Exception, AssertionError) as e:
