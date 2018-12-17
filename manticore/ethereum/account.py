@@ -62,7 +62,7 @@ class EVMContract(EVMAccount):
         """
         super().__init__(**kwargs)
         self.__default_caller = default_caller
-        self.__hashes = None
+        self.__hashes = {}
         self.__initialized = False
 
     def add_function(self, signature):
@@ -79,15 +79,12 @@ class EVMContract(EVMAccount):
         self.__hashes[func_name] = [entry]
 
     def __init_hashes(self):
-        # initializes self._hashes lazy
-        if self.__hashes is None and self._manticore is not None:
-            self.__hashes = {}
-            md = self._manticore.get_metadata(self._address)
-            if md is not None:
-                for signature in md.function_signatures:
-                    self.add_function(signature)
-            # It was successful, no need to re-run. _init_hashes disabled
-            self.__initialized = True
+        md = self._manticore.get_metadata(self._address)
+        if md is not None:
+            for signature in md.function_signatures:
+                self.add_function(signature)
+        # It was successful, no need to re-run. _init_hashes disabled
+        self.__initialized = True
 
     def __getattr__(self, name):
         """
