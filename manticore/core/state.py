@@ -439,12 +439,3 @@ class StateBase(Eventful):
             branches[branch] += 1
         else:
             branches[branch] = 1
-
-    def generate_testcase(self, name, message='State generated testcase'):
-        """
-        Generate a testcase for this state and place in the analysis workspace.
-
-        :param str name: Short string identifying this testcase used to prefix workspace entries.
-        :param str message: Longer description
-        """
-        self._publish('will_generate_testcase', name, message)

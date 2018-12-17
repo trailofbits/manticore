@@ -382,6 +382,7 @@ class ManticoreEVM(ManticoreBase):
         self._executor.subscribe('did_read_code', self._did_evm_read_code)
         self._executor.subscribe('on_symbolic_sha3', self._on_symbolic_sha3_callback)
         self._executor.subscribe('on_concrete_sha3', self._on_concrete_sha3_callback)
+        self.subscribe('will_generate_testcase', self._generate_testcase_callback)
 
     @property
     def world(self):
@@ -1288,13 +1289,13 @@ class ManticoreEVM(ManticoreBase):
         :rtype: bool
         """
         if only_if is None:
-            self._generate_testcase_callback(state, name, message)
+            self._publish_generate_testcase(state, name, message)
             return True
         else:
             with state as temp_state:
                 temp_state.constrain(only_if)
                 if temp_state.is_feasible():
-                    self._generate_testcase_callback(temp_state, name, message)
+                    self._publish_generate_testcase(temp_state, name, message)
                     return True
 
         return False
@@ -1314,7 +1315,7 @@ class ManticoreEVM(ManticoreBase):
             output.write('\n')
         return output.getvalue()
 
-    def _generate_testcase_callback(self, state, name, message=''):
+    def _generate_testcase_callback(self, state, testcase, message):
         """
         Create a serialized description of a given state.
         :param state: The state to generate information about
@@ -1327,12 +1328,6 @@ class ManticoreEVM(ManticoreBase):
         # TODO(mark): Refactor ManticoreOutput to let the platform be more in control
         #  so this function can be fully ported to EVMWorld.generate_workspace_files.
         blockchain = state.platform
-
-        testcase = self._output.testcase(name.replace(' ', '_'))
-        last_tx = blockchain.last_transaction
-        if last_tx:
-            message = message + last_tx.result
-        logger.info("Generated testcase No. {} - {}".format(testcase.num, message))
 
         local_findings = set()
         for detector in self.detectors.values():
@@ -1445,7 +1440,11 @@ class ManticoreEVM(ManticoreBase):
             state_id = self._terminate_state_id(state_id)
             st = self.load(state_id)
             logger.debug("Generating testcase for state_id %d", state_id)
-            self._generate_testcase_callback(st, 'test', '')
+
+            last_tx = st.platform.last_transaction
+            message = last_tx.result if last_tx else 'NO STATE RESULT (?)'
+
+            self._publish_generate_testcase(st, message=message)
 
         def worker_finalize(q):
             try:

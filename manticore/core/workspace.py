@@ -31,7 +31,26 @@ def manager():
     return _manager
 
 
-class Store(object):
+class Testcase:
+    def __init__(self, workspace, prefix):
+        self._num = workspace._increment_id()
+        self._prefix = prefix
+        self._ws = workspace
+
+    @property
+    def prefix(self):
+        return self._prefix
+
+    @property
+    def num(self):
+        return self._num
+
+    def open_stream(self, suffix='', binary=False):
+        stream_name = f'{self._prefix}_{self._num:08x}.{suffix}'
+        return self._ws.save_stream(stream_name, binary=binary)
+
+
+class Store:
     """
     A `Store` can save arbitrary keys/values (including states) and file streams.
     Used for generating output, state saving and state loading.
@@ -312,7 +331,7 @@ def sync(f):
     return new_function
 
 
-class Workspace(object):
+class Workspace:
     """
     A workspace maintains a list of states to run and assigns them IDs.
     """
@@ -391,7 +410,7 @@ class Workspace(object):
         return self._store.rm(f'{self._prefix}{state_id:08x}{self._suffix}')
 
 
-class ManticoreOutput(object):
+class ManticoreOutput:
     """
     Functionality related to producing output. Responsible for generating state summaries,
     coverage information, etc.
@@ -414,20 +433,6 @@ class ManticoreOutput(object):
         self._lock = manager().Condition(manager().RLock())
 
     def testcase(self, prefix='test'):
-        class Testcase(object):
-            def __init__(self, workspace, prefix):
-                self._num = workspace._increment_id()
-                self._prefix = prefix
-                self._ws = workspace
-
-            @property
-            def num(self):
-                return self._num
-
-            def open_stream(self, suffix='', binary=False):
-                stream_name = f'{self._prefix}_{self._num:08x}.{suffix}'
-                return self._ws.save_stream(stream_name, binary=binary)
-
         return Testcase(self, prefix)
 
     @property
@@ -482,12 +487,12 @@ class ManticoreOutput(object):
         :param str message: The message to add to output
         :return: A state id representing the saved state
         """
-
         self._named_key_prefix = prefix
-        self._increment_id()
 
-        #FIXME this should not be here. Each object must be responsible of
-        #formatting its own output
+        # TODO / FIXME: We should move workspace to core/workspace and create a workspace for evm and native binaries
+        # The workspaces should override `save_testcase` method
+        #
+        # Below is native-only
         self.save_summary(state, message)
         self.save_trace(state)
         self.save_constraints(state)
@@ -506,15 +511,6 @@ class ManticoreOutput(object):
         with self._named_stream('messages') as summary:
             summary.write(f"Command line:\n  '{' '.join(sys.argv)}'\n")
             summary.write(f'Status:\n  {message}\n\n')
-
-            # FIXME(mark) This is a temporary hack for EVM. We need to sufficiently
-            # abstract the below code to work on many platforms, not just Linux. Then
-            # we can remove this hack.
-            if getattr(state.platform, 'procs', None) is None:
-                import pprint
-                summary.write("EVM World:\n")
-                summary.write(pprint.pformat(state.platform._global_storage))
-                return
 
             memories = set()
             for cpu in filter(None, state.platform.procs):
