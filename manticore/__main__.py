@@ -5,8 +5,10 @@ import argparse
 import logging
 import sys
 
-from .utils import config, log
+import pkg_resources
+
 from .core.manticore import ManticoreBase
+from .utils import config, log
 
 consts = config.get_group('main')
 consts.add('recursionlimit', default=10000,
@@ -78,7 +80,9 @@ def parse_arguments():
     parser.add_argument('--workspace', type=str, default=None,
                         help=("A folder name for temporaries and results."
                               "(default mcore_?????)"))
-    parser.add_argument('--version', action='version', version='Manticore 0.2.3',
+
+    current_version = pkg_resources.get_distribution("manticore").version
+    parser.add_argument('--version', action='version', version=f'Manticore {current_version}',
                         help='Show program version information')
     parser.add_argument('--config', type=str,
                         help='Manticore config file (.yml) to use. (default config file pattern is: ./[.]m[anti]core.yml)')
