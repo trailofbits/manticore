@@ -461,6 +461,25 @@ class EthTests(unittest.TestCase):
         self.assertEqual(len(contracts), len(set(c.address for c in contracts)))
         self.assertEqual(len(contracts), len(set(c.name_ for c in contracts)))
 
+    def test_contract_create_and_call_underscore_function(self):
+        source_code = 'contract A { function _f(uint x) returns (uint) { return x + 0x1234; } }'
+
+        owner = self.mevm.create_account()
+        contract = self.mevm.solidity_create_contract(source_code, owner=owner, args=[])
+
+        contract._f(123)
+
+    def test_contract_create_and_access_non_existing_function(self):
+        source_code = 'contract A {}'
+
+        owner = self.mevm.create_account()
+        contract = self.mevm.solidity_create_contract(source_code, owner=owner, args=[])
+
+        with self.assertRaises(AttributeError) as e:
+            _ = contract.xyz
+
+        self.assertEqual(str(e.exception), "The contract contract0 doesn't have xyz function.")
+
     def test_invalid_function_signature(self):
         source_code = '''
         contract Test{
