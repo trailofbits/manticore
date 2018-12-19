@@ -27,6 +27,7 @@ class Manticore(ManticoreBase):
             if not os.path.isfile(path_or_state):
                 raise OSError(f'{path_or_state} is not an existing regular file')
 
+            self._binpath = path_or_state
             initial_state = _make_initial_state(path_or_state, argv=argv, **kwargs)
         else:
             initial_state = path_or_state
@@ -78,6 +79,10 @@ class Manticore(ManticoreBase):
             return cls(_make_decree(path, concrete_start), **kwargs)
         except KeyError:  # FIXME(mark) magic parsing for DECREE should raise better error
             raise Exception(f'Invalid binary: {path}')
+
+    ###############################
+    # Hook Callback Methods
+    ###############################
 
     def init(self, f):
         '''
@@ -136,6 +141,82 @@ class Manticore(ManticoreBase):
         # Invoke all pc-agnostic hooks
         for cb in self._hooks.get(None, []):
             cb(state)
+
+    ###############################
+    # Symbol Resolution Methods
+    ###############################
+
+    def _get_addr_by_line(dwarfinfo, symbols, line):
+        """
+        Identifies a memory address through an input
+        line number through DWARF debug information.
+        """
+        for symbol in symbols:
+            # iterate over compiler units to find line program
+            for CU in dwarfinfo.iter_CUs():
+                lineprog = dwarfinfo.line_program_for_CU(CU)
+                prevstate = None
+
+                for entry in lineprog.get_entries():
+                    # check for new state assignment
+                    if entry.state is None or entry.state.end_sequence:
+                        continue
+
+                    # check between address range between prev and current state containing address
+                    if prevstate and prevstate.address <= symbol.entry['st_value'] < entry.state.address:
+                        state_line = prevstate.line
+
+                        # line number might be offset, so check to see if line number is within a range
+                        if int(state_line) - 2 <= line <= int(state_line) + 2:
+                            return symbol.entry['st_value']
+
+        # if address not found, raise exception
+        raise NotImplementedError(f"The {self._binpath} ELF file does not support line programs")
+
+    def resolve(self, symbol, line=None):
+        """
+        A helper method used to resolve a symbol name into a memory address when
+        injecting hooks for analysis.
+
+        :param symbol: function name to be resolved
+        :type symbol: string
+
+        :param line: if more functions present, optional line number can be included
+        :type line: int or None
+        """
+
+        # exit because we encounter a State object rather than an ELF binary path
+        if self._binpath is None:
+            raise NotImplementedError("Does not support symbol resolution on State objects")
+
+        with open(self._binpath, 'rb') as f:
+
+            # parse as ELF file
+            elffile = ELFFile(f)
+            if elffile is None:
+                raise NotImplementedError(f"The {self._binpath} ELF file does not support symbols")
+
+            # check for and parse DWARF debug information
+            if not elffile.has_dwarf_info():
+                raise NotImplementedError(f"The {self._binpath} ELF file does not support DWARF debug info")
+            dwarfinfo = elffile.get_dwarf_info()
+
+            # iterate over sections and identify symbol table section
+            for section in elffile.iter_sections():
+                if not isinstance(section, SymbolTableSection):
+                    continue
+
+                # get list of symbols by name
+                symbols = section.get_symbol_by_name(symbol)
+                if not symbols:
+                    continue
+
+                # if line param is None, return first indexed memory address for the symbol,
+                # otherwise use helper method to identify specific function by line
+                if line is None:
+                    return symbols[0].entry['st_value']
+                else:
+                    return self._get_addr_by_line(dwarfinfo, symbols, line)
 
 
 def _make_initial_state(binary_path, **kwargs):
