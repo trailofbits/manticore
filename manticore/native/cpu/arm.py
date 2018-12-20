@@ -146,8 +146,7 @@ class Armv7Operand(Operand):
 
         :return: True if operand is shifted, otherwise False.
         """
-        return self.op.mem.lshift != 0
-        # return self.op.shift.type != cs.arm.ARM_SFT_INVALID
+        return self.op.shift.type != cs.arm.ARM_SFT_INVALID
 
     def address(self):
         assert self.__type == 'memory'
