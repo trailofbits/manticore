@@ -70,7 +70,7 @@ class Armv7Operand(Operand):
     @property
     def type(self):
         """
-        Corresponds to capstone's `operand.type` (cs.arm.RAM_OP_*).
+        Corresponds to capstone's `operand.type` (cs.arm.ARM_OP_*).
         """
         return self.__type
 
