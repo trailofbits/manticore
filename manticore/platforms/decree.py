@@ -102,6 +102,8 @@ class Decree(Platform):
         '''
         programs = programs.split(",")
         super().__init__(path=programs[0], **kwargs)
+
+        self.program = programs[0]
         self.clocks = 0
         self.files = []
         self.syscall_trace = []
