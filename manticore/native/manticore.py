@@ -26,7 +26,6 @@ class Manticore(ManticoreBase):
         if isinstance(path_or_state, str):
             if not os.path.isfile(path_or_state):
                 raise OSError(f'{path_or_state} is not an existing regular file')
-
             initial_state = _make_initial_state(path_or_state, argv=argv, **kwargs)
         else:
             initial_state = path_or_state
@@ -78,6 +77,19 @@ class Manticore(ManticoreBase):
             return cls(_make_decree(path, concrete_start), **kwargs)
         except KeyError:  # FIXME(mark) magic parsing for DECREE should raise better error
             raise Exception(f'Invalid binary: {path}')
+
+    @property
+    def binary_path(self):
+        """
+        Assumes that self._initial_state.platform.program always
+        refers to current program. Might not be true in case program
+        calls execve().
+        """
+        return self._initial_state.platform.program
+
+    ###############################
+    # Hook Callback Methods
+    ###############################
 
     def init(self, f):
         '''
@@ -137,32 +149,40 @@ class Manticore(ManticoreBase):
         for cb in self._hooks.get(None, []):
             cb(state)
 
-    #############################################################################
-    #############################################################################
-    #############################################################################
-    # Move all the following elsewhere Not all manticores have this
-    def _get_symbol_address(self, symbol):
-        '''
-        Return the address of |symbol| within the binary
-        '''
+    ###############################
+    # Symbol Resolution
+    ###############################
 
-        # XXX(yan) This is a bit obtuse; once PE support is updated this should
-        # be refactored out
-        if self._binary_type == 'ELF':
-            self._binary_obj = ELFFile(open(self._binary, 'rb'))
+    def resolve(self, symbol):
+        """
+        A helper method used to resolve a symbol name into a memory address when
+        injecting hooks for analysis.
 
-        if self._binary_obj is None:
-            return NotImplementedError("Symbols aren't supported")
+        :param symbol: function name to be resolved
+        :type symbol: string
 
-        for section in self._binary_obj.iter_sections():
-            if not isinstance(section, SymbolTableSection):
-                continue
+        :param line: if more functions present, optional line number can be included
+        :type line: int or None
+        """
 
-            symbols = section.get_symbol_by_name(symbol)
-            if not symbols:
-                continue
+        with open(self.binary_path, 'rb') as f:
 
-            return symbols[0].entry['st_value']
+            elffile = ELFFile(f)
+
+            # iterate over sections and identify symbol table section
+            for section in elffile.iter_sections():
+                if not isinstance(section, SymbolTableSection):
+                    continue
+
+                # get list of symbols by name
+                symbols = section.get_symbol_by_name(symbol)
+                if not symbols:
+                    continue
+
+                # return first indexed memory address for the symbol,
+                return symbols[0].entry['st_value']
+
+            raise ValueError(f"The {self.binary_path} ELFfile does not contain symbol {symbol}")
 
 
 def _make_initial_state(binary_path, **kwargs):

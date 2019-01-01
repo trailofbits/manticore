@@ -64,6 +64,15 @@ class ManticoreTest(unittest.TestCase):
             def tmp(state):
                 pass
 
+    def test_symbol_resolution(self):
+        dirname = os.path.dirname(__file__)
+        self.m = Manticore(os.path.join(dirname, 'binaries', 'basic_linux_amd64'))
+        self.assertTrue(self.m.resolve('sbrk'), 0x449ee0)
+
+    def test_symbol_resolution_fail(self):
+        with self.assertRaises(ValueError):
+            self.m.resolve("does_not_exist")
+
     def test_integration_basic_stdin(self):
         import struct
         dirname = os.path.dirname(__file__)
