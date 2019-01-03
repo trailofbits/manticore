@@ -36,12 +36,12 @@ logger = logging.getLogger(__name__)
 # 99: Ignore gas. Do not account for it. Do not OOG.
 consts = config.get_group('evm')
 consts.add('oog', default=0, description='Default behavior for symbolic gas.'
-                                         '0: Fully faithfull. Test at every instruction. Forks.'
+                                         '0: Fully faithful. Test at every instruction. Forks.'
                                          '1: Mostly faithful. Test at BB limit. Forks.'
                                          '2: Incomplete. Concretize gas to MIN/MAX values. Forks.'
                                          '3: Try to not fail due to OOG. If it can be enough gas use it. Ignore the path to OOG. Wont fork'
                                          '4: Try OOG only. Fail soon. Ignore the path with enough gas.'
-                                         '99: Ignore gas. Instructions wont consume gas')
+                                         "99: Ignore gas. Instructions won't consume gas")
 
 # Auxiliary constants and functions
 TT256 = 2 ** 256
@@ -279,7 +279,7 @@ class ConcretizeFee(EVMException):
     '''
 
     def __init__(self, policy='MINMAX'):
-        self.message = "Concretizing evm instruction gas fee {}"
+        self.message = "Concretizing evm instruction gas fee"
         self.policy = policy
 
 class ConcretizeGas(EVMException):
@@ -289,7 +289,7 @@ class ConcretizeGas(EVMException):
     '''
 
     def __init__(self, policy='MINMAX'):
-        self.message = "Concretizing evm gas {}"
+        self.message = "Concretizing evm gas"
         self.policy = policy
 
 
@@ -761,7 +761,7 @@ class EVM(Eventful):
 
     def _consume(self, fee):
 
-        #Check type and bitvec size
+        # Check type and bitvec size
         if isinstance(fee, int):
             if fee > (1 << 512) - 1:
                 raise ValueError
@@ -797,7 +797,7 @@ class EVM(Eventful):
                                      expression=Operators.UGT(self._gas, fee),
                                      setstate=None,
                                      policy='ALL')
-                elif enough_gas_solutions[0] == False:
+                elif enough_gas_solutions[0] is False:
                     #if gas if only insuficient OOG!
                     logger.debug("Not enough gas for instruction")
                     raise NotEnoughGas()
