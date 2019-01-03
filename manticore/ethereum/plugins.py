@@ -12,6 +12,24 @@ logger = logging.getLogger(__name__)
 
 
 class ExamplePlugin(Plugin):
+    def on_register(self):
+        """Called by parent manticore on registration"""
+        pass
+
+    def on_unregister(self):
+        """Called be parent manticore on un-registration"""
+        pass
+
+    def will_start_run_callback(self, state):
+        """
+        Called once at the beginning of the run.
+        The `state` is the initial root state.
+        """
+        logger.info('will_start_run')
+
+    def did_finish_run_callback(self):
+        logger.info('did_finish_run')
+
     def will_open_transaction_callback(self, state, tx):
         logger.info('will open a transaction %r %r', state, tx)
 
@@ -26,16 +44,6 @@ class ExamplePlugin(Plugin):
 
     def did_execute_instruction_callback(self, state, last_instruction, last_arguments, result):
         logger.info('did_execute_instruction %r %r %r %r', state, last_instruction, last_arguments, result)
-
-    def will_start_run_callback(self, state):
-        """
-        Called once at the beginning of the run.
-        The `state` is the initial root state.
-        """
-        logger.info('will_start_run')
-
-    def did_finish_run_callback(self):
-        logger.info('did_finish_run')
 
     def will_fork_state_callback(self, parent_state, expression, solutions, policy):
         logger.info('will_fork_state %r %r %r %r', parent_state, expression, solutions, policy)
