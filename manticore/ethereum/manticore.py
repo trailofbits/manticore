@@ -134,21 +134,31 @@ class ManticoreEVM(ManticoreBase):
         return self.constraints.new_bitvec(nbits, name=name, avoid_collisions=avoid_collisions)
 
     def make_symbolic_address(self, name=None, select='both'):
+        """
+        Creates a symbolic address and constrains it to pre-existing addresses or the 0 address.
+
+        :param name: Name of the symbolic variable. Defaults to 'TXADDR' and later to 'TXADDR_<number>'
+        :param select: Whether to select contracts or normal accounts. Not implemented for now.
+        :return: Symbolic address in form of a BitVecVariable.
+        """
         if select not in ('both', 'normal', 'contract'):
             raise EthereumError('Wrong selection type')
         if select in ('normal', 'contract'):
             # FIXME need to select contracts or normal accounts
             raise NotImplemented
+
         avoid_collisions = False
         if name is None:
             name = 'TXADDR'
             avoid_collisions = True
-        return self.constraints.new_bitvec(160, name=name, avoid_collisions=avoid_collisions)
+
+        symbolic_address = self.constraints.new_bitvec(160, name=name, avoid_collisions=avoid_collisions)
 
         constraint = symbolic_address == 0
-        for contract_account_i in map(int, self._accounts.values()):
-            constraint = Operators.OR(symbolic_address == contract_account_i, constraint)
+        for account in self._accounts.values():
+            constraint = Operators.OR(symbolic_address == int(account), constraint)
         self.constrain(constraint)
+
         return symbolic_address
 
     def constrain(self, constraint):
