@@ -1,5 +1,6 @@
 import sys
 
+import logging
 from functools import reduce
 
 import re
@@ -7,24 +8,71 @@ import re
 from ..core.plugin import Plugin
 from ..core.smtlib import Operators
 
+logger = logging.getLogger(__name__)
+
+
+class ExamplePlugin(Plugin):
+    def will_open_transaction_callback(self, state, tx):
+        logger.info('will open a transaction %r %r', state, tx)
+
+    def will_close_transaction_callback(self, state, tx):
+        logger.info('will close a transaction %r %r', state, tx)
+
+    def will_decode_instruction_callback(self, state, pc):
+        logger.info('will_decode_instruction %r %r', state, pc)
+
+    def will_execute_instruction_callback(self, state, instruction, arguments):
+        logger.info('will_execute_instruction %r %r %r', state, instruction, arguments)
+
+    def did_execute_instruction_callback(self, state, last_instruction, last_arguments, result):
+        logger.info('did_execute_instruction %r %r %r %r', state, last_instruction, last_arguments, result)
+
+    def will_start_run_callback(self, state):
+        """
+        Called once at the beginning of the run.
+        The `state` is the initial root state.
+        """
+        logger.info('will_start_run')
+
+    def did_finish_run_callback(self):
+        logger.info('did_finish_run')
+
+    def will_fork_state_callback(self, parent_state, expression, solutions, policy):
+        logger.info('will_fork_state %r %r %r %r', parent_state, expression, solutions, policy)
+
+    def did_fork_state_callback(self, child_state, expression, new_value, policy):
+        logger.info('did_fork_state %r %r %r %r', child_state, expression, new_value, policy)
+
+    def did_load_state_callback(self, state, state_id):
+        logger.info('did_load_state %r %r', state, state_id)
+
+    def did_enqueue_state_callback(self, state, state_id):
+        logger.info('did_enqueue_state %r %r', state, state_id)
+
+    def will_terminate_state_callback(self, state, state_id, exception):
+        logger.info('will_terminate_state %r %r %r', state, state_id, exception)
+
+    def will_generate_testcase_callback(self, state, testcase, message):
+        logger.info('will_generate_testcase %r %r %r', state, testcase, message)
+
 
 class FilterFunctions(Plugin):
     def __init__(self, regexp=r'.*', mutability='both', depth='both', fallback=False, include=True, **kwargs):
         """
-            Constrain input based on function metadata. Include or avoid functions selected by the specified criteria.
+        Constrain input based on function metadata. Include or avoid functions selected by the specified criteria.
 
-            Examples:
-            #Do not explore any human transactions that end up calling a constant function
-            no_human_constant = FilterFunctions(depth='human', mutability='constant', include=False)
+        Examples:
+        #Do not explore any human transactions that end up calling a constant function
+        no_human_constant = FilterFunctions(depth='human', mutability='constant', include=False)
 
-            #At human tx depth only accept synthetic check functions
-            only_tests = FilterFunctions(regexp=r'mcore_.*', depth='human', include=False)
+        #At human tx depth only accept synthetic check functions
+        only_tests = FilterFunctions(regexp=r'mcore_.*', depth='human', include=False)
 
-            :param regexp: a regular expression over the name of the function '.*' will match all functions
-            :param mutability: mutable, constant or both will match functions declared in the abi to be of such class
-            :param depth: match functions in internal transactions, in human initiated transactions or in both types
-            :param fallback: if True include the fallback function. Hash will be 00000000 for it
-            :param include: if False exclude the selected functions, if True include them
+        :param regexp: a regular expression over the name of the function '.*' will match all functions
+        :param mutability: mutable, constant or both will match functions declared in the abi to be of such class
+        :param depth: match functions in internal transactions, in human initiated transactions or in both types
+        :param fallback: if True include the fallback function. Hash will be 00000000 for it
+        :param include: if False exclude the selected functions, if True include them
         """
         super().__init__(**kwargs)
         depth = depth.lower()
@@ -53,11 +101,11 @@ class FilterFunctions(Plugin):
             if self._depth == 'internal' and tx.is_human:
                 return
 
-            #Get metadata if any for the target address of current tx
+            # Get metadata if any for the target address of current tx
             md = self.manticore.get_metadata(tx.address)
             if md is None:
                 return
-            #Let's compile  the list of interesting hashes
+            # Let's compile  the list of interesting hashes
             selected_functions = []
 
             for func_hsh in md.function_selectors:
@@ -88,7 +136,7 @@ class FilterFunctions(Plugin):
 
 
 class LoopDepthLimiter(Plugin):
-    ''' This just aborts explorations that are too deep '''
+    """This just aborts explorations that are too deep"""
 
     def __init__(self, loop_count_threshold=5, **kwargs):
         super().__init__(**kwargs)
@@ -116,7 +164,7 @@ class VerboseTrace(Plugin):
     Example output can be seen in test_eth_plugins.
     """
 
-    def will_evm_execute_instruction_callback(self, state, instruction, arguments):
+    def will_execute_instruction_callback(self, state, instruction, arguments):
         current_vm = state.platform.current_vm
         state.context.setdefault('str_trace', []).append(str(current_vm))
 

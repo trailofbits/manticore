@@ -378,8 +378,8 @@ class ManticoreEVM(ManticoreBase):
 
         self._executor.subscribe('did_load_state', self._load_state_callback)
         self._executor.subscribe('will_terminate_state', self._terminate_state_callback)
-        self._executor.subscribe('did_evm_execute_instruction', self._did_evm_execute_instruction_callback)
-        self._executor.subscribe('did_read_code', self._did_evm_read_code)
+        self._executor.subscribe('did_execute_instruction', self._did_execute_instruction_callback)
+        self._executor.subscribe('did_read_code', self._did_read_code)
         self._executor.subscribe('on_symbolic_sha3', self._on_symbolic_sha3_callback)
         self._executor.subscribe('on_concrete_sha3', self._on_concrete_sha3_callback)
         self.subscribe('will_generate_testcase', self._generate_testcase_callback)
@@ -1202,7 +1202,7 @@ class ManticoreEVM(ManticoreBase):
             assert ty == 'CREATE'
             world.create_contract(caller=caller, address=address, balance=value, init=data, price=price, gas=gaslimit)
 
-    def _did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
+    def _did_execute_instruction_callback(self, state, instruction, arguments, result):
         """ INTERNAL USE """
         #logger.debug("%s", state.platform.current_vm)
         #TODO move to a plugin
@@ -1217,7 +1217,7 @@ class ManticoreEVM(ManticoreBase):
 
         state.context.setdefault('evm.trace', []).append((state.platform.current_vm.address, instruction.pc, at_init))
 
-    def _did_evm_read_code(self, state, offset, size):
+    def _did_read_code(self, state, offset, size):
         """ INTERNAL USE """
         with self.locked_context('code_data', set) as code_data:
             for i in range(offset, offset + size):

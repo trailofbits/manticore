@@ -7,6 +7,9 @@ logger = logging.getLogger(__name__)
 
 
 class Plugin:
+    """
+    NOTE: Example plugins can be found in corresponding target's plugins.py file (native, ethereum)
+    """
     def __init__(self):
         self.manticore = None
 
@@ -27,30 +30,30 @@ class Plugin:
 
     @property
     def context(self):
-        ''' Convenient access to shared context '''
+        """Convenient access to shared context"""
         plugin_context_name = str(type(self))
         if plugin_context_name not in self.manticore.context:
             self.manticore.context[plugin_context_name] = {}
         return self.manticore.context[plugin_context_name]
 
     def on_register(self):
-        ''' Called by parent manticore on registration '''
+        """Called by parent manticore on registration"""
         pass
 
     def on_unregister(self):
-        ''' Called be parent manticore on un-registration '''
+        """Called be parent manticore on un-registration"""
         pass
 
 
 def _dict_diff(d1, d2):
-    '''
+    """
     Produce a dict that includes all the keys in d2 that represent different values in d1, as well as values that
     aren't in d1.
 
     :param dict d1: First dict
     :param dict d2: Dict to compare with
     :rtype: dict
-    '''
+    """
     d = {}
     for key in set(d1).intersection(set(d2)):
         if d2[key] != d1[key]:
@@ -67,9 +70,9 @@ class Tracer(Plugin):
 
 class ExtendedTracer(Plugin):
     def __init__(self):
-        '''
+        """
         Record a detailed execution trace
-        '''
+        """
         super().__init__()
         self.last_dict = {}
         self.current_pc = None
@@ -239,72 +242,3 @@ class Visited(Plugin):
                 for m in executor_visited:
                     f.write(f"0x{m:016x}\n")
         logger.info('Coverage: %d different instructions executed', len(executor_visited))
-
-
-# TODO document all callbacks
-class ExamplePlugin(Plugin):
-    def will_open_transaction_callback(self, state, tx):
-        logger.info('will open a transaction %r %r', state, tx)
-
-    def will_close_transaction_callback(self, state, tx):
-        logger.info('will close a transaction %r %r', state, tx)
-
-    def will_decode_instruction_callback(self, state, pc):
-        logger.info('will_decode_instruction %r %r', state, pc)
-
-    def will_execute_instruction_callback(self, state, pc, instruction):
-        logger.info('will_execute_instruction %r %r %r', state, pc, instruction)
-
-    def did_execute_instruction_callback(self, state, pc, target_pc, instruction):
-        logger.info('did_execute_instruction %r %r %r %r', state, pc, target_pc, instruction)
-
-    def will_start_run_callback(self, state):
-        ''' Called once at the beginning of the run.
-            state is the initial root state
-        '''
-        logger.info('will_start_run')
-
-    def did_finish_run_callback(self):
-        logger.info('did_finish_run')
-
-    def will_fork_state_callback(self, parent_state, expression, solutions, policy):
-        logger.info('will_fork_state %r %r %r %r', parent_state, expression, solutions, policy)
-
-    def did_fork_state_callback(self, child_state, expression, new_value, policy):
-        logger.info('did_fork_state %r %r %r %r', child_state, expression, new_value, policy)
-
-    def did_load_state_callback(self, state, state_id):
-        logger.info('did_load_state %r %r', state, state_id)
-
-    def did_enqueue_state_callback(self, state, state_id):
-        logger.info('did_enqueue_state %r %r', state, state_id)
-
-    def will_terminate_state_callback(self, state, state_id, exception):
-        logger.info('will_terminate_state %r %r %r', state, state_id, exception)
-
-    def will_generate_testcase_callback(self, state, testcase, message):
-        logger.info('will_generate_testcase %r %r %r', state, testcase, message)
-
-    def will_read_memory_callback(self, state, where, size):
-        logger.info('will_read_memory %r %r %r', state, where, size)
-
-    def did_read_memory_callback(self, state, where, value, size):
-        logger.info('did_read_memory %r %r %r %r', state, where, value, size)
-
-    def will_write_memory_callback(self, state, where, value, size):
-        logger.info('will_write_memory %r %r %r', state, where, value, size)
-
-    def did_write_memory_callback(self, state, where, value, size):
-        logger.info('did_write_memory %r %r %r %r', state, where, value, size)
-
-    def will_read_register_callback(self, state, register):
-        logger.info('will_read_register %r %r', state, register)
-
-    def did_read_register_callback(self, state, register, value):
-        logger.info('did_read_register %r %r %r', state, register, value)
-
-    def will_write_register_callback(self, state, register, value):
-        logger.info('will_write_register %r %r %r', state, register, value)
-
-    def did_write_register_callback(self, state, register, value):
-        logger.info('did_write_register %r %r %r', state, register, value)

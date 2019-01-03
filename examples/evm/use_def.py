@@ -50,7 +50,7 @@ class EVMUseDef(Plugin):
             return
         return r
 
-    def did_evm_write_storage_callback(self, state, address, offset, value):
+    def did_write_storage_callback(self, state, address, offset, value):
         m = self.manticore
         world = state.platform
         tx = world.all_transactions[-1]
@@ -68,7 +68,7 @@ class EVMUseDef(Plugin):
             for off in offsets:
                 storage_writes[contract_function].add(off)
 
-    def did_evm_read_storage_callback(self, state, address, offset, value):
+    def did_read_storage_callback(self, state, address, offset, value):
         m = self.manticore
         world = state.platform
         tx = world.all_transactions[-1]
