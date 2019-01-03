@@ -722,11 +722,11 @@ class EthTests(unittest.TestCase):
 
     def test_emit_did_execute_end_instructions(self):
         """
-        Tests whether the did_evm_execute_instruction event is fired for instructions that internally trigger
+        Tests whether the did_execute_instruction event is fired for instructions that internally trigger
         an exception
         """
         class TestDetector(Detector):
-            def did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
+            def did_execute_instruction_callback(self, state, instruction, arguments, result):
                 if instruction.is_endtx:
                     with self.locked_context('endtx_instructions', set) as d:
                         d.add(instruction.name)
@@ -822,7 +822,7 @@ class EthTests(unittest.TestCase):
             """
             Record the pcs of all end instructions encountered. Source of truth.
             """
-            def did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
+            def did_execute_instruction_callback(self, state, instruction, arguments, result):
                 try:
                     world = state.platform
                     if world.current_transaction.sort == 'CREATE':

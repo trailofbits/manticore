@@ -124,7 +124,7 @@ class DetectEnvInstruction(Detector):
     IMPACT = DetectorClassification.MEDIUM
     CONFIDENCE = DetectorClassification.HIGH
 
-    def will_evm_execute_instruction_callback(self, state, instruction, arguments):
+    def will_execute_instruction_callback(self, state, instruction, arguments):
         if instruction.semantics in ('BLOCKHASH', 'COINBASE', 'TIMESTAMP', 'NUMBER', 'DIFFICULTY', 'GASLIMIT', 'ORIGIN', 'GASPRICE'):
             self.add_finding_here(state, f'Warning {instruction.semantics} instruction used')
 
@@ -135,7 +135,7 @@ class DetectSuicidal(Detector):
     IMPACT = DetectorClassification.MEDIUM
     CONFIDENCE = DetectorClassification.HIGH
 
-    def will_evm_execute_instruction_callback(self, state, instruction, arguments):
+    def will_execute_instruction_callback(self, state, instruction, arguments):
         if instruction.semantics == 'SELFDESTRUCT':
             self.add_finding_here(state, 'Reachable SELFDESTRUCT')
 
@@ -146,7 +146,7 @@ class DetectExternalCallAndLeak(Detector):
     IMPACT = DetectorClassification.MEDIUM
     CONFIDENCE = DetectorClassification.HIGH
 
-    def will_evm_execute_instruction_callback(self, state, instruction, arguments):
+    def will_execute_instruction_callback(self, state, instruction, arguments):
         if instruction.semantics == 'CALL':
             dest_address = arguments[1]
             sent_value = arguments[2]
@@ -193,7 +193,7 @@ class DetectInvalid(Detector):
         super().__init__(**kwargs)
         self._only_human = only_human
 
-    def will_evm_execute_instruction_callback(self, state, instruction, arguments):
+    def will_execute_instruction_callback(self, state, instruction, arguments):
         mnemonic = instruction.semantics
 
         if mnemonic == 'INVALID':
@@ -220,7 +220,7 @@ class DetectReentrancySimple(Detector):
         if tx.is_human():
             state.context[self._context_key] = []
 
-    def will_evm_execute_instruction_callback(self, state, instruction, arguments):
+    def will_execute_instruction_callback(self, state, instruction, arguments):
         if instruction.semantics == 'CALL':
             gas = arguments[0]
             dest_address = arguments[1]
@@ -236,7 +236,7 @@ class DetectReentrancySimple(Detector):
             if issymbolic(dest_address) or msg_sender == dest_address:
                 state.context.get(self._context_key, []).append((pc, is_enough_gas))
 
-    def did_evm_write_storage_callback(self, state, address, offset, value):
+    def did_write_storage_callback(self, state, address, offset, value):
         locs = state.context.get(self._context_key, [])
 
         # if we're here and locs has stuff in it. by definition this state has
@@ -313,10 +313,10 @@ class DetectReentrancyAdvanced(Detector):
         locations = state.context.get(name, dict)
         return locations.items()
 
-    def did_evm_read_storage_callback(self, state, address, offset, value):
+    def did_read_storage_callback(self, state, address, offset, value):
         state.context[self._read_storage_name].add((address, offset))
 
-    def did_evm_write_storage_callback(self, state, address, offset, value):
+    def did_write_storage_callback(self, state, address, offset, value):
         # if in potential DAO check that write to storage values read before
         # the "send"
         for location, reads in self._get_location_and_reads(state):
@@ -461,7 +461,7 @@ class DetectIntegerOverflow(Detector):
                 if state.can_be_true(condition):
                     self.add_finding(state, address, pc, finding, at_init)
 
-    def did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
+    def did_execute_instruction_callback(self, state, instruction, arguments, result):
         vm = state.platform.current_vm
         mnemonic = instruction.semantics
         ios = False
@@ -543,7 +543,7 @@ class DetectUnusedRetVal(Detector):
 
         state.context[self._stack_name].pop()
 
-    def did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
+    def did_execute_instruction_callback(self, state, instruction, arguments, result):
         world = state.platform
         mnemonic = instruction.semantics
         current_vm = world.current_vm
@@ -572,7 +572,7 @@ class DetectDelegatecall(Detector):
     IMPACT = DetectorClassification.HIGH
     CONFIDENCE = DetectorClassification.HIGH
 
-    def will_evm_execute_instruction_callback(self, state, instruction, arguments):
+    def will_execute_instruction_callback(self, state, instruction, arguments):
         world = state.platform
         mnemonic = instruction.semantics
 
@@ -605,7 +605,7 @@ class DetectUninitializedMemory(Detector):
     IMPACT = DetectorClassification.MEDIUM
     CONFIDENCE = DetectorClassification.HIGH
 
-    def did_evm_read_memory_callback(self, state, offset, value):
+    def did_read_memory_callback(self, state, offset, value):
         initialized_memory = state.context.get('{:s}.initialized_memory'.format(self.name), set())
         cbu = True  # Can be unknown
         current_contract = state.platform.current_vm.address
@@ -615,7 +615,7 @@ class DetectUninitializedMemory(Detector):
         if state.can_be_true(cbu):
             self.add_finding_here(state, "Potentially reading uninitialized memory at instruction (address: %r, offset %r)" % (current_contract, offset))
 
-    def did_evm_write_memory_callback(self, state, offset, value):
+    def did_write_memory_callback(self, state, offset, value):
         current_contract = state.platform.current_vm.address
 
         # concrete or symbolic write
@@ -631,7 +631,7 @@ class DetectUninitializedStorage(Detector):
     IMPACT = DetectorClassification.MEDIUM
     CONFIDENCE = DetectorClassification.HIGH
 
-    def did_evm_read_storage_callback(self, state, address, offset, value):
+    def did_read_storage_callback(self, state, address, offset, value):
         if not state.can_be_true(value != 0):
             # Not initialized memory should be zero
             return
@@ -644,7 +644,7 @@ class DetectUninitializedStorage(Detector):
         if state.can_be_true(cbu):
             self.add_finding_here(state, "Potentially reading uninitialized storage")
 
-    def did_evm_write_storage_callback(self, state, address, offset, value):
+    def did_write_storage_callback(self, state, address, offset, value):
         # concrete or symbolic write
         state.context.setdefault('{:s}.initialized_storage'.format(self.name), set()).add((address, offset))
 
@@ -710,7 +710,7 @@ class DetectRaceCondition(Detector):
 
         return in_function
 
-    def did_evm_write_storage_callback(self, state, storage_address, offset, value):
+    def did_write_storage_callback(self, state, storage_address, offset, value):
         world = state.platform
         curr_tx = world.current_transaction
 
@@ -730,7 +730,7 @@ class DetectRaceCondition(Detector):
         # Save signature of function that tainted the value at given storage index
         state.context.setdefault(key, set()).add(func_sig)
 
-    def did_evm_execute_instruction_callback(self, state, instruction, arguments, result_ref):
+    def did_execute_instruction_callback(self, state, instruction, arguments, result_ref):
         if not self._in_user_func(state):
             return
 

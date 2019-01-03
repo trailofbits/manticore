@@ -401,12 +401,11 @@ class EVM(Eventful):
         from position 0), and the stack contents. The memory
         contents are a series of zeroes of bitsize 256
     '''
-    _published_events = {'evm_execute_instruction',
-                         'evm_read_storage', 'evm_write_storage',
-                         'evm_read_memory',
-                         'evm_write_memory',
-                         'evm_read_code',
-                         'decode_instruction', 'execute_instruction', 'concrete_sha3', 'symbolic_sha3'}
+    _published_events = {'decode_instruction', 'execute_instruction',
+                         'read_storage', 'write_storage',
+                         'read_memory', 'write_memory',
+                         'read_code',
+                         'concrete_sha3', 'symbolic_sha3'}
 
     class transact:
         "Emulate PyProperty_Type() in Objects/descrobject.c"
@@ -828,9 +827,7 @@ class EVM(Eventful):
         if self._checkpoint_data is None:
             if not self._published_pre_instruction_events:
                 self._published_pre_instruction_events = True
-                self._publish('will_decode_instruction', self.pc)
-                self._publish('will_execute_instruction', self.pc, self.instruction)
-                self._publish('will_evm_execute_instruction', self.instruction, self._top_arguments())
+                self._publish('will_execute_instruction', self.instruction, self._top_arguments())
 
             pc = self.pc
             instruction = self.instruction
@@ -875,8 +872,7 @@ class EVM(Eventful):
                 #advance pc pointer
                 self.pc += last_instruction.size
             self._push_results(last_instruction, result)
-        self._publish('did_evm_execute_instruction', last_instruction, last_arguments, result)
-        self._publish('did_execute_instruction', last_pc, self.pc, last_instruction)
+        self._publish('did_execute_instruction', last_instruction, last_arguments, result)
         self._checkpoint_data = None
         self._published_pre_instruction_events = False
 
@@ -957,14 +953,14 @@ class EVM(Eventful):
             pass
 
         for i in range(size):
-            self._publish('did_evm_read_memory', offset + i, Operators.EXTRACT(value, (size - i - 1) * 8, 8))
+            self._publish('did_read_memory', offset + i, Operators.EXTRACT(value, (size - i - 1) * 8, 8))
         return value
 
     def _store(self, offset, value, size=1):
         ''' Stores value in memory as a big endian '''
         self.memory.write_BE(offset, value, size)
         for i in range(size):
-            self._publish('did_evm_write_memory', offset + i, Operators.EXTRACT(value, (size - i - 1) * 8, 8))
+            self._publish('did_write_memory', offset + i, Operators.EXTRACT(value, (size - i - 1) * 8, 8))
 
     def safe_add(self, a, b):
         a = Operators.ZEXTEND(a, 512)
@@ -1312,7 +1308,7 @@ class EVM(Eventful):
                 else:
                     value = self.bytecode[code_offset + i]
             self._store(mem_offset + i, value)
-        self._publish('did_evm_read_code', code_offset, size)
+        self._publish('did_read_code', code_offset, size)
 
     def GASPRICE(self):
         '''Get price of gas in current environment'''
@@ -1410,15 +1406,15 @@ class EVM(Eventful):
     def SLOAD(self, offset):
         '''Load word from storage'''
         storage_address = self.address
-        self._publish('will_evm_read_storage', storage_address, offset)
+        self._publish('will_read_storage', storage_address, offset)
         value = self.world.get_storage_data(storage_address, offset)
-        self._publish('did_evm_read_storage', storage_address, offset, value)
+        self._publish('did_read_storage', storage_address, offset, value)
         return value
 
     def SSTORE(self, offset, value):
         '''Save word to storage'''
         storage_address = self.address
-        self._publish('will_evm_write_storage', storage_address, offset, value)
+        self._publish('will_write_storage', storage_address, offset, value)
 
         GSTORAGEREFUND = 15000
         GSTORAGEKILL = 5000
@@ -1442,7 +1438,7 @@ class EVM(Eventful):
             for taint in get_taints(self.pc):
                 value = taint_with(value, taint)
         self.world.set_storage_data(storage_address, offset, value)
-        self._publish('did_evm_write_storage', storage_address, offset, value)
+        self._publish('did_write_storage', storage_address, offset, value)
 
     def JUMP(self, dest):
         '''Alter the program counter'''
@@ -1734,7 +1730,7 @@ class EVM(Eventful):
 
 
 class EVMWorld(Platform):
-    _published_events = {'evm_read_storage', 'evm_write_storage', 'evm_read_code',
+    _published_events = {'read_storage', 'write_storage', 'read_code',
                          'decode_instruction', 'execute_instruction', 'concrete_sha3', 'symbolic_sha3',
                          'open_transaction', 'close_transaction'}
 
