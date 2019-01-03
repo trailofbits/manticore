@@ -1321,8 +1321,7 @@ class EVM(Eventful):
         return self.address
 
     def BALANCE_gas(self, account):
-        BALANCE_SUPPLEMENTAL_GAS = 380
-        return BALANCE_SUPPLEMENTAL_GAS
+        return 380
 
     def BALANCE(self, account):
         '''Get balance of the given account'''
@@ -1471,8 +1470,7 @@ class EVM(Eventful):
                 self._store(address + i, 0)
 
     def RETURNDATACOPY_gas(self, mem_offset, return_offset, size):
-        memfee = self._get_memfee(mem_offset + size)
-        return memfee
+        return self._get_memfee(mem_offset + size)
 
     def RETURNDATACOPY(self, mem_offset, return_offset, size):
         return_data = self.world.last_transaction.return_data
@@ -1652,8 +1650,7 @@ class EVM(Eventful):
     ############################################################################
     # System operations
     def CREATE_gas(self, value, offset, size):
-        memfee = self._get_memfee(offset, size)
-        return memfee
+        return self._get_memfee(offset, size)
 
     @transact
     def CREATE(self, value, offset, size):
@@ -1681,8 +1678,7 @@ class EVM(Eventful):
         return address
 
     def CALL_gas(self, gas, address, value, in_offset, in_size, out_offset, out_size):
-        memfee = self._get_memfee(in_offset, in_size)
-        return memfee
+        return self._get_memfee(in_offset, in_size)
 
     @transact
     @concretized_args(address='ACCOUNTS', gas='MINMAX', in_offset='SAMPLED', in_size='SAMPLED')
@@ -1707,8 +1703,7 @@ class EVM(Eventful):
         return self.world.last_transaction.return_value
 
     def CALLCODE_gas(self, gas, address, value, in_offset, in_size, out_offset, out_size):
-        memfee = self._get_memfee(in_offset, in_size)
-        return memfee
+        return self._get_memfee(in_offset, in_size)
 
     @transact
     @concretized_args(in_offset='SAMPLED', in_size='SAMPLED')
@@ -1733,8 +1728,7 @@ class EVM(Eventful):
         return self.world.last_transaction.return_value
 
     def RETURN_gas(self, offset, size):
-        memfee = self._get_memfee(offset, size)
-        return memfee
+        return self._get_memfee(offset, size)
 
     def RETURN(self, offset, size):
         '''Halt execution returning output data'''
@@ -1742,8 +1736,7 @@ class EVM(Eventful):
         raise EndTx('RETURN', data)
 
     def DELEGATECALL_gas(self, gas, address, in_offset, in_size, out_offset, out_size):
-        memfee = self._get_memfee(in_offset, in_size)
-        return memfee
+        return self._get_memfee(in_offset, in_size)
 
     @transact
     @concretized_args(in_offset='SAMPLED', in_size='SAMPLED')
@@ -1768,8 +1761,7 @@ class EVM(Eventful):
         return self.world.last_transaction.return_value
 
     def STATICCALL_gas(self, gas, address, in_offset, in_size, out_offset, out_size):
-        memfee = self._get_memfee(in_offset, in_size)
-        return memfee
+        return self._get_memfee(in_offset, in_size)
 
     @transact
     @concretized_args(in_offset='SAMPLED', in_size='SAMPLED')
@@ -1794,8 +1786,7 @@ class EVM(Eventful):
         return self.world.last_transaction.return_value
 
     def REVERT_gas(self, offset, size):
-        memfee = self._get_memfee(offset, size)
-        return memfee
+        return self._get_memfee(offset, size)
 
     def REVERT(self, offset, size):
         data = self.read_buffer(offset, size)
