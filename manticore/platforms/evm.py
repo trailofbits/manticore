@@ -924,10 +924,22 @@ class EVM(Eventful):
         self._checkpoint_data = None
 
     def _set_check_jmpdest(self, flag=True):
-        # TODO: Document. This enables the check that the next instruction must be a JUMPDEST
+        '''
+            Next instruction must be a JUMPDEST iff `flag` holds.
+
+            Note that at this point `flag` can be the conditional from a JUMPI
+            instruction hence potentially a symbolic value.
+        '''
         self._check_jumpdest = flag
 
     def _check_jmpdest(self):
+        '''
+           If the previous instruction was a JUMP/JUMPI and the conditional was
+           True, this checks that the current instruction must be a JUMPDEST.
+
+           Here, if symbolic, the conditional `self._check_jumpdest` would be
+           already constrained to a single concrete value.
+        '''
         should_check_jumpdest = self._check_jumpdest
         if issymbolic(should_check_jumpdest):
             should_check_jumpdest_solutions = solver.get_all_values(self.constraints, should_check_jumpdest)
