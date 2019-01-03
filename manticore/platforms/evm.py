@@ -644,6 +644,13 @@ class EVM(Eventful):
         super().__setstate__(state)
 
     def _get_memfee(self, address, size=1):
+        '''
+            This calculates the ammount of extra gas needed for accessing to
+            previously unused memory. 
+
+            `address` is the base memory offset and,
+            `size` is the size of the memory access.
+        '''
         if not issymbolic(size) and size == 0:
             return 0
  
@@ -1407,7 +1414,7 @@ class EVM(Eventful):
         return len(self.bytecode)
 
     def CODECOPY_gas(self, mem_offset, code_offset, size):
-        return self._get_memfee(mem_offset + size)
+        return self._get_memfee(mem_offset, size)
 
     @concretized_args(code_offset='SAMPLED', size='SAMPLED')
     def CODECOPY(self, mem_offset, code_offset, size):
@@ -1454,7 +1461,7 @@ class EVM(Eventful):
     def EXTCODECOPY_gas(self, account, address, offset, size):
         GCOPY = 3             # cost to copy one 32 byte word
         extbytecode = self.world.get_code(account)
-        memfee = self._get_memfee(address + size)
+        memfee = self._get_memfee(address, size)
         return GCOPY * (ceil32(len(extbytecode)) // 32) + memfee
 
     @concretized_args(account='ACCOUNTS')
@@ -1520,7 +1527,7 @@ class EVM(Eventful):
         pass
 
     def MLOAD_gas(self, address):
-        return self._get_memfee(address + 32)
+        return self._get_memfee(address, 32)
 
     def MLOAD(self, address):
         '''Load word from memory'''
@@ -1529,7 +1536,7 @@ class EVM(Eventful):
         return value
 
     def MSTORE_gas(self, address, value):
-        return self._get_memfee(address + 32)
+        return self._get_memfee(address, 32)
 
     def MSTORE(self, address, value):
         '''Save word to memory'''
@@ -1540,7 +1547,7 @@ class EVM(Eventful):
         self._store(address, value, 32)
 
     def MSTORE8_gas(self, address, value):
-        return self._get_memfee(address + 1)
+        return self._get_memfee(address, 1)
 
     def MSTORE8(self, address, value):
         '''Save byte to memory'''
