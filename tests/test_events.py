@@ -1,15 +1,18 @@
-
 import unittest
 
 from manticore.utils.event import Eventful
 
+
 class A(Eventful):
-    _published_events = set(['eventA'])
+    _published_events = {'eventA'}
+
     def do_stuff(self):
-        self._publish("eventA",1, 'a')
+        self._publish("eventA", 1, 'a')
+
 
 class B(Eventful):
-    _published_events = set(['eventB'])
+    _published_events = {'eventB'}
+
     def __init__(self, child, **kwargs):
         super().__init__(**kwargs)
         self.child = child
@@ -19,19 +22,16 @@ class B(Eventful):
         self._publish("eventB", 2, 'b')
 
 
-class C():
+class C:
     def __init__(self):
         self.received = []
+
     def callback(self, *args):
         self.received.append(args)
 
+
 class ManticoreDriver(unittest.TestCase):
     _multiprocess_can_split_ = True
-    def setUp(self):
-        self.state = {}
-
-    def tearDown(self):
-        pass
 
     def test_weak_references(self):
         a = A()
@@ -57,7 +57,6 @@ class ManticoreDriver(unittest.TestCase):
         del b
         self.assertSequenceEqual([len(s) for s in (a._signals, a._forwards)], (0, 0))
 
-
     def test_basic(self):
         a = A()
         b = B(a)
@@ -71,5 +70,3 @@ class ManticoreDriver(unittest.TestCase):
 
         b.do_stuff()
         self.assertSequenceEqual(c.received, [(1, 'a'), (2, 'b')])
-
-

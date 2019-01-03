@@ -45,7 +45,7 @@ class TraceReceiver(Plugin):
     def trace(self):
         return self._trace
 
-    def will_generate_testcase_callback(self, state, test_id, msg):
+    def will_generate_testcase_callback(self, state, testcase, msg):
         self._trace = state.context.get(self._tracer.context_key, [])
 
         instructions, writes = _partition(lambda x: x['type'] == 'regs', self._trace)

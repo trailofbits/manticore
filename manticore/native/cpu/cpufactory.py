@@ -2,7 +2,7 @@ from .x86 import AMD64Cpu, I386Cpu, AMD64LinuxSyscallAbi, I386LinuxSyscallAbi, I
 from .arm import Armv7Cpu, Armv7CdeclAbi, Armv7LinuxSyscallAbi
 
 
-class CpuFactory(object):
+class CpuFactory:
     _cpus = {
         'i386': I386Cpu,
         'amd64': AMD64Cpu,

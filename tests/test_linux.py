@@ -142,7 +142,7 @@ class LinuxTest(unittest.TestCase):
     def test_syscall_events(self):
         nr_fstat64 = 197
 
-        class Receiver(object):
+        class Receiver:
             def __init__(self):
                 self.nevents = 0
             def will_exec(self, pc, i):

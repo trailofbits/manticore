@@ -411,7 +411,7 @@ class ABITest(unittest.TestCase):
         cpu.push(1, cpu.address_bit_size)
         cpu.push(0x1234, cpu.address_bit_size)
 
-        class Kls(object):
+        class Kls:
             def method(self, a, b):
                 return a+b
 
