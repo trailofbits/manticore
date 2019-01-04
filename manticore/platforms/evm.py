@@ -1902,9 +1902,9 @@ class EVM(Eventful):
         gas = self.gas
         if issymbolic(gas):
             gas = simplify(gas)
-            result.append(f'GAS: {translate_to_smtlib(gas)} {gas.taint}')
+            result.append(f'Gas: {translate_to_smtlib(gas)} {gas.taint}')
         else:
-            result.append(f'GAS: {gas}')
+            result.append(f'Gas: {gas}')
  
         result = [hex(self.address) + ": " + x for x in result]
         return '\n'.join(result)
