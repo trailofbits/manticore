@@ -29,7 +29,7 @@ class SymbolicSyscallArgument(ConcretizeRegister):
         super().__init__(cpu, reg_name, message, policy)
 
 
-class Socket(object):
+class Socket:
     @staticmethod
     def pair():
         a = Socket()
@@ -102,6 +102,8 @@ class Decree(Platform):
         '''
         programs = programs.split(",")
         super().__init__(path=programs[0], **kwargs)
+
+        self.program = programs[0]
         self.clocks = 0
         self.files = []
         self.syscall_trace = []
@@ -1056,7 +1058,7 @@ class SDecree(Decree):
         return 0
 
 
-class DecreeEmu(object):
+class DecreeEmu:
 
     RANDOM = 0
 

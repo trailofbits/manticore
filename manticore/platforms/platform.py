@@ -6,9 +6,10 @@ class OSException(Exception):
 
 
 class SyscallNotImplemented(OSException):
-    ''' Exception raised when you try to call an unimplemented
-        system call. Go to linux.py and add it!
-    '''
+    """
+    Exception raised when you try to call an unimplemented system call.
+    Go to linux.py and add it!
+    """
 
     def __init__(self, idx, name):
         msg = f'Syscall index "{idx}" ({name}) not implemented.'
@@ -24,9 +25,9 @@ class ConcretizeSyscallArgument(OSException):
 
 
 class Platform(Eventful):
-    '''
-    Base class for all operating system platforms.
-    '''
+    """
+    Base class for all platforms e.g. operating systems or virtual machines.
+    """
 
     def __init__(self, path, **kwargs):
         super().__init__(**kwargs)

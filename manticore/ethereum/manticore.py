@@ -28,7 +28,6 @@ from ..utils import config, log
 from ..utils.helpers import PickleSerializer, issymbolic
 
 logger = logging.getLogger(__name__)
-log.init_logging()
 
 
 def flagged(flag):
@@ -135,21 +134,31 @@ class ManticoreEVM(ManticoreBase):
         return self.constraints.new_bitvec(nbits, name=name, avoid_collisions=avoid_collisions)
 
     def make_symbolic_address(self, name=None, select='both'):
+        """
+        Creates a symbolic address and constrains it to pre-existing addresses or the 0 address.
+
+        :param name: Name of the symbolic variable. Defaults to 'TXADDR' and later to 'TXADDR_<number>'
+        :param select: Whether to select contracts or normal accounts. Not implemented for now.
+        :return: Symbolic address in form of a BitVecVariable.
+        """
         if select not in ('both', 'normal', 'contract'):
             raise EthereumError('Wrong selection type')
         if select in ('normal', 'contract'):
             # FIXME need to select contracts or normal accounts
             raise NotImplemented
+
         avoid_collisions = False
         if name is None:
             name = 'TXADDR'
             avoid_collisions = True
-        return self.constraints.new_bitvec(160, name=name, avoid_collisions=avoid_collisions)
+
+        symbolic_address = self.constraints.new_bitvec(160, name=name, avoid_collisions=avoid_collisions)
 
         constraint = symbolic_address == 0
-        for contract_account_i in map(int, self._accounts.values()):
-            constraint = Operators.OR(symbolic_address == contract_account_i, constraint)
+        for account in self._accounts.values():
+            constraint = Operators.OR(symbolic_address == int(account), constraint)
         self.constrain(constraint)
+
         return symbolic_address
 
     def constrain(self, constraint):
@@ -383,6 +392,7 @@ class ManticoreEVM(ManticoreBase):
         self._executor.subscribe('did_read_code', self._did_evm_read_code)
         self._executor.subscribe('on_symbolic_sha3', self._on_symbolic_sha3_callback)
         self._executor.subscribe('on_concrete_sha3', self._on_concrete_sha3_callback)
+        self.subscribe('will_generate_testcase', self._generate_testcase_callback)
 
     @property
     def world(self):
@@ -1230,6 +1240,10 @@ class ManticoreEVM(ManticoreBase):
         return self.metadata.get(int(address))
 
     def register_detector(self, d):
+        """
+        Unregisters a plugin. This will invoke detector's `on_unregister` callback.
+        Shall be called after `.finalize`.
+        """
         if not isinstance(d, Detector):
             raise EthereumError("Not a Detector")
         if d.name in self.detectors:
@@ -1239,6 +1253,10 @@ class ManticoreEVM(ManticoreBase):
         return d.name
 
     def unregister_detector(self, d):
+        """
+        Unregisters a detector. This will invoke detector's `on_unregister` callback.
+        Shall be called after `.finalize` - otherwise, finalize won't add detector's finding to `global.findings`.
+        """
         if not isinstance(d, (Detector, str)):
             raise EthereumError("Not a Detector")
         name = d
@@ -1281,13 +1299,13 @@ class ManticoreEVM(ManticoreBase):
         :rtype: bool
         """
         if only_if is None:
-            self._generate_testcase_callback(state, name, message)
+            self._publish_generate_testcase(state, name, message)
             return True
         else:
             with state as temp_state:
                 temp_state.constrain(only_if)
                 if temp_state.is_feasible():
-                    self._generate_testcase_callback(temp_state, name, message)
+                    self._publish_generate_testcase(temp_state, name, message)
                     return True
 
         return False
@@ -1307,7 +1325,7 @@ class ManticoreEVM(ManticoreBase):
             output.write('\n')
         return output.getvalue()
 
-    def _generate_testcase_callback(self, state, name, message=''):
+    def _generate_testcase_callback(self, state, testcase, message):
         """
         Create a serialized description of a given state.
         :param state: The state to generate information about
@@ -1320,12 +1338,6 @@ class ManticoreEVM(ManticoreBase):
         # TODO(mark): Refactor ManticoreOutput to let the platform be more in control
         #  so this function can be fully ported to EVMWorld.generate_workspace_files.
         blockchain = state.platform
-
-        testcase = self._output.testcase(name.replace(' ', '_'))
-        last_tx = blockchain.last_transaction
-        if last_tx:
-            message = message + last_tx.result
-        logger.info("Generated testcase No. {} - {}".format(testcase.num, message))
 
         local_findings = set()
         for detector in self.detectors.values():
@@ -1438,7 +1450,11 @@ class ManticoreEVM(ManticoreBase):
             state_id = self._terminate_state_id(state_id)
             st = self.load(state_id)
             logger.debug("Generating testcase for state_id %d", state_id)
-            self._generate_testcase_callback(st, 'test', '')
+
+            last_tx = st.platform.last_transaction
+            message = last_tx.result if last_tx else 'NO STATE RESULT (?)'
+
+            self._publish_generate_testcase(st, message=message)
 
         def worker_finalize(q):
             try:

@@ -96,11 +96,11 @@ class ConcretizeArgument(CpuException):
 SANE_SIZES = {8, 16, 32, 64, 80, 128, 256}
 
 
-class Operand(object):
+class Operand:
     """This class encapsulates how to access operands (regs/mem/immediates) for
     different CPUs
     """
-    class MemSpec(object):
+    class MemSpec:
         '''
         Auxiliary class wraps capstone operand 'mem' attribute. This will
         return register names instead of Ids
@@ -182,7 +182,7 @@ class Operand(object):
 #  only from the cpu implementation
 
 
-class RegisterFile(object):
+class RegisterFile:
     def __init__(self, aliases=None):
         # dict mapping from alias register name ('PC') to actual register
         # name ('RIP')
@@ -235,7 +235,7 @@ class RegisterFile(object):
         return self._alias(register) in self.all_registers
 
 
-class Abi(object):
+class Abi:
     '''
     Represents the ability to extract arguments from the environment and write
     back a result.

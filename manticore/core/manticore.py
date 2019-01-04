@@ -11,7 +11,6 @@ from threading import Timer
 
 import functools
 import shlex
-import types
 
 from ..core.executor import Executor
 from ..core.plugin import Plugin
@@ -25,7 +24,6 @@ from ..utils.helpers import issymbolic
 from ..utils.nointerrupt import WithKeyboardInterruptAs
 
 logger = logging.getLogger(__name__)
-log.init_logging()
 
 
 class ManticoreBase(Eventful):
@@ -39,7 +37,7 @@ class ManticoreBase(Eventful):
     :ivar dict context: Global context for arbitrary data storage
     '''
 
-    _published_events = {'start_run', 'finish_run'}
+    _published_events = {'start_run', 'finish_run', 'generate_testcase'}
 
     def __init__(self, initial_state, workspace_url=None, policy='random', **kwargs):
         """
@@ -63,6 +61,7 @@ class ManticoreBase(Eventful):
 
         self._output = ManticoreOutput(ws_path)
         self._context = {}
+        self._last_run_stats = {}
 
         # sugar for 'will_execute_instruction"
         self._hooks = {}
@@ -81,14 +80,18 @@ class ManticoreBase(Eventful):
         self._executor.forward_events_from(self._initial_state, True)
 
         # Move the following into a linux plugin
-
         self._assertions = {}
         self._coverage_file = None
         self.trace = None
 
         # FIXME move the following to a plugin
-        self.subscribe('will_generate_testcase', self._generate_testcase_callback)
         self.subscribe('did_finish_run', self._did_finish_run_callback)
+        self.subscribe('internal_generate_testcase', self._publish_generate_testcase)
+
+    def _publish_generate_testcase(self, state, prefix='test', message=''):
+        testcase = self._output.testcase(prefix=prefix)
+        self._publish('will_generate_testcase', state, testcase, message)
+        logger.info(f'Generated testcase No. %d - %s', testcase.num, message)
 
     def register_plugin(self, plugin):
         # Global enumeration of valid events
@@ -281,68 +284,6 @@ class ManticoreBase(Eventful):
                 self._workers.pop().join()
 
     ############################################################################
-    # Common hooks + callback
-    ############################################################################
-
-    def init(self, f):
-        '''
-        A decorator used to register a hook function to run before analysis begins. Hook
-        function takes one :class:`~manticore.core.state.State` argument.
-        '''
-        def callback(manticore_obj, state):
-            f(state)
-        self.subscribe('will_start_run', types.MethodType(callback, self))
-        return f
-
-    def hook(self, pc):
-        '''
-        A decorator used to register a hook function for a given instruction address.
-        Equivalent to calling :func:`~add_hook`.
-
-        :param pc: Address of instruction to hook
-        :type pc: int or None
-        '''
-        def decorator(f):
-            self.add_hook(pc, f)
-            return f
-        return decorator
-
-    def add_hook(self, pc, callback):
-        '''
-        Add a callback to be invoked on executing a program counter. Pass `None`
-        for pc to invoke callback on every instruction. `callback` should be a callable
-        that takes one :class:`~manticore.core.state.State` argument.
-
-        :param pc: Address of instruction to hook
-        :type pc: int or None
-        :param callable callback: Hook function
-        '''
-        if not (isinstance(pc, int) or pc is None):
-            raise TypeError(f"pc must be either an int or None, not {pc.__class__.__name__}")
-        else:
-            self._hooks.setdefault(pc, set()).add(callback)
-            if self._hooks:
-                self._executor.subscribe('will_execute_instruction', self._hook_callback)
-
-    def _hook_callback(self, state, pc, instruction):
-        'Invoke all registered generic hooks'
-
-        # Ignore symbolic pc.
-        # TODO(yan): Should we ask the solver if any of the hooks are possible,
-        # and execute those that are?
-
-        if issymbolic(pc):
-            return
-
-        # Invoke all pc-specific hooks
-        for cb in self._hooks.get(pc, []):
-            cb(state)
-
-        # Invoke all pc-agnostic hooks
-        for cb in self._hooks.get(None, []):
-            cb(state)
-
-    ############################################################################
     # Model hooks + callback
     ############################################################################
 
@@ -409,19 +350,6 @@ class ManticoreBase(Eventful):
 
         # Everything is good add it.
         state.constraints.add(assertion)
-
-    ############################################################################
-    # Some are placeholders Remove FIXME
-    # Any platform specific callback should go to a plugin
-
-    def _generate_testcase_callback(self, state, name, message):
-        '''
-        Create a serialized description of a given state.
-        :param state: The state to generate information about
-        :param message: Accompanying message
-        '''
-        testcase_id = self._output.save_testcase(state, name, message)
-        logger.info(f"Generated testcase No. {testcase_id} - {message}")
 
     def _produce_profiling_data(self):
         class PstatsFormatted:
@@ -496,7 +424,7 @@ class ManticoreBase(Eventful):
         assert not self.running, "Manticore is already running."
         self._start_run()
 
-        self._time_started = time.time()
+        self._last_run_stats['time_started'] = time.time()
         with self.shutdown_timeout(timeout):
             self._start_workers(procs, profiling=should_profile)
 
@@ -544,7 +472,12 @@ class ManticoreBase(Eventful):
 
         with self._output.save_stream('manticore.yml') as f:
             config.save(f)
+            time_ended = time.time()
 
-        elapsed = time.time() - self._time_started
+        time_elapsed = time_ended - self._last_run_stats['time_started']
+
         logger.info('Results in %s', self._output.store.uri)
-        logger.info('Total time: %s', elapsed)
+        logger.info('Total time: %s', time_elapsed)
+
+        self._last_run_stats['time_ended'] = time_ended
+        self._last_run_stats['time_elapsed'] = time_elapsed

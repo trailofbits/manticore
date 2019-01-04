@@ -3,6 +3,13 @@ from ..native.memory import ConcretizeMemory, MemoryException
 
 
 class State(StateBase):
+    @property
+    def cpu(self):
+        return self._platform.current
+
+    @property
+    def mem(self):
+        return self._platform.current.memory
 
     def execute(self):
         from .cpu.abstractcpu import ConcretizeRegister  # must be here, otherwise we get circular imports

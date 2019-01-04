@@ -8,7 +8,7 @@ from manticore.native.memory import *
 
 class CPUTest(unittest.TestCase):
     _multiprocess_can_split_ = True
-    class ROOperand(object):
+    class ROOperand:
         ''' Mocking class for operand ronly '''
         def __init__(self, size, value):
             self.size = size

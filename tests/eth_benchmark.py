@@ -12,12 +12,6 @@ from manticore.ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflo
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
-# FIXME(mark): Remove these two lines when logging works for ManticoreEVM
-from manticore.utils.log import init_logging, set_verbosity
-init_logging()
-set_verbosity(0)
-
-
 class EthBenchmark(unittest.TestCase):
     """ https://consensys.net/diligence/evm-analyzer-benchmark-suite/ """
     def setUp(self):

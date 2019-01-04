@@ -152,8 +152,9 @@ class IntegrationTest(unittest.TestCase):
         # but this seems as a good default
         self.assertGreaterEqual(len(output), 4)
         self.assertIn(b'm.c.manticore:INFO: Verbosity set to 1.', output[0])
-        self.assertIn(b'm.main:INFO: Beginning analysis', output[1])
-        self.assertIn(b'm.e.manticore:INFO: Starting symbolic create contract', output[2])
+        self.assertIn(b'm.main:INFO: Registered plugins: ', output[1])
+        self.assertIn(b'm.main:INFO: Beginning analysis', output[2])
+        self.assertIn(b'm.e.manticore:INFO: Starting symbolic create contract', output[3])
 
         self.assertIn(b'm.c.manticore:INFO: Results in ', output[-2])
         self.assertIn(b'm.c.manticore:INFO: Total time: ', output[-1])
@@ -394,7 +395,7 @@ class IntegrationTest(unittest.TestCase):
 
     def test_eth_1102(self):
         with tempfile.TemporaryDirectory() as workspace:
-            self._simple_cli_run('1102.sol', args=['--detect-overflow'], workspace=workspace, testcases=True)
+            self._simple_cli_run('1102.sol', workspace=workspace, testcases=True)
 
             with open(os.path.join(workspace, 'global.findings')) as gf:
                 global_findings = gf.read().splitlines()
@@ -421,13 +422,8 @@ class IntegrationTest(unittest.TestCase):
 
         self.assertIn(b'm.c.manticore:INFO: Verbosity set to 1.', output[0])
         self.assertIn(b'm.n.manticore:INFO: Loading program ', output[1])
-
-        self.assertIn(b'm.c.manticore:INFO: Generated testcase No.', output[2])
-        self.assertIn(b'- Program finished with exit status: 0', output[2])
-
-        self.assertIn(b'm.c.manticore:INFO: Generated testcase No.', output[3])
-        self.assertIn(b'- Program finished with exit status: 0', output[3])
-
+        self.assertIn(b'm.c.manticore:INFO: Generated testcase No. 0 - Program finished with exit status: 0', output[2])
+        self.assertIn(b'm.c.manticore:INFO: Generated testcase No. 1 - Program finished with exit status: 0', output[3])
         self.assertIn(b'm.c.manticore:INFO: Results in ', output[4])
         self.assertIn(b'm.c.manticore:INFO: Total time: ', output[5])
 
