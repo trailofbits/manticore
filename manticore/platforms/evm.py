@@ -200,7 +200,7 @@ class Transaction:
     @property
     def is_human(self):
         """
-        Whether it is a human or internal transaction.
+        Returns whether this is a human or internal transaction.
 
         As an example for:
             contract A { function a(B b) { b.b(); } }
