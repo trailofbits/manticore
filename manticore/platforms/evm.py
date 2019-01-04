@@ -1325,7 +1325,7 @@ class EVM(Eventful):
         return self.address
 
     def BALANCE_gas(self, account):
-        return 380
+        return 380  # BALANCE_SUPPLEMENTAL_GAS
 
     def BALANCE(self, account):
         """Get balance of the given account"""
