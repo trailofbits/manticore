@@ -646,7 +646,7 @@ class EVM(Eventful):
     def _get_memfee(self, address, size=1):
         """
             This calculates the ammount of extra gas needed for accessing to
-            previously unused memory. 
+            previously unused memory.
 
             `address` is the base memory offset and,
             `size` is the size of the memory access.
@@ -1198,7 +1198,7 @@ class EVM(Eventful):
         def nbytes(e):
             result = 0
             for i in range(32):
-                result = Operators.ITEBV(512, Operators.EXTRACT(e, i * 8, 8) !=0 , i + 1, result)
+                result = Operators.ITEBV(512, Operators.EXTRACT(e, i * 8, 8) != 0, i + 1, result)
             return result
         return EXP_SUPPLEMENTAL_GAS * nbytes(exponent)
 
