@@ -200,14 +200,14 @@ class Transaction:
     @property
     def is_human(self):
         """
-        Returns whether this is a human or internal transaction.
+        Returns whether this is a transaction made by human (in a script).
 
         As an example for:
             contract A { function a(B b) { b.b(); } }
             contract B { function b() {} }
 
-        The A.a(B) call made in a script is a human transaction
-        but the call it makes: b.b() makes an internal transaction.
+        Calling `B.b()` makes a human transaction.
+        Calling `A.a(B)` makes a human transaction which makes an internal transaction (b.b()).
         """
         return self.depth == 0
 
