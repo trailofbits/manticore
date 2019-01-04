@@ -197,7 +197,18 @@ class Transaction:
     def result(self):
         return self._result
 
+    @property
     def is_human(self):
+        """
+        Whether it is a human or internal transaction.
+
+        As an example for:
+            contract A { function a(B b) { b.b(); } }
+            contract B { function b() {} }
+
+        The A.a(B) call made in a script is a human transaction
+        but the call it makes: b.b() makes an internal transaction.
+        """
         return self.depth == 0
 
     @property
@@ -1867,7 +1878,7 @@ class EVMWorld(Platform):
                 # Increment the nonce if this transaction created a contract, or if it was called by a non-contract account
                 self.increase_nonce(tx.caller)
 
-        if tx.is_human():
+        if tx.is_human:
             for deleted_account in self._deleted_accounts:
                 if deleted_account in self._world_state:
                     del self._world_state[deleted_account]
