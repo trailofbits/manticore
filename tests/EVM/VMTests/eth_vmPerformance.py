@@ -299,8 +299,8 @@ class EVMTest_vmPerformance(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 999985499780)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 999985499780)
     @unittest.skip('Gas or performance related')
 
     def test_loop_exp_2b_100k(self):
@@ -572,8 +572,8 @@ class EVMTest_vmPerformance(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 999991499780)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 999991499780)
     @unittest.skip('Gas or performance related')
 
     def test_loop_divadd_unr100_10M(self):
@@ -2459,8 +2459,8 @@ class EVMTest_vmPerformance(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 999464799656)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 999464799656)
     @unittest.skip('Gas or performance related')
 
     def test_loop_divadd_10M(self):
@@ -2850,8 +2850,8 @@ class EVMTest_vmPerformance(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 999109999719)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 999109999719)
     @unittest.skip('Gas or performance related')
 
     def test_loop_exp_32b_100k(self):
@@ -3123,8 +3123,8 @@ class EVMTest_vmPerformance(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 999961499780)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 999961499780)
     @unittest.skip('Gas or performance related')
 
     def test_manyFunctions100(self):
@@ -16045,8 +16045,8 @@ class EVMTest_vmPerformance(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 71600)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 71600)
     @unittest.skip('Gas or performance related')
 
     def test_loop_exp_nop_1M(self):
@@ -16318,8 +16318,8 @@ class EVMTest_vmPerformance(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 999955999738)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 999955999738)
     @unittest.skip('Gas or performance related')
 
     def test_loop_exp_4b_100k(self):
@@ -16591,8 +16591,8 @@ class EVMTest_vmPerformance(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 999989499780)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 999989499780)
     @unittest.skip('Gas or performance related')
 
     def test_fibonacci10(self):
@@ -16796,8 +16796,8 @@ class EVMTest_vmPerformance(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79922)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79922)
     @unittest.skip('Gas or performance related')
 
     def test_fibonacci16(self):
@@ -17001,8 +17001,8 @@ class EVMTest_vmPerformance(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99639418)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99639418)
     @unittest.skip('Gas or performance related')
 
     def test_ackermann31(self):
@@ -17206,8 +17206,8 @@ class EVMTest_vmPerformance(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 88225)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 88225)
     @unittest.skip('Gas or performance related')
 
     def test_loop_mulmod_2M(self):
@@ -17354,8 +17354,8 @@ class EVMTest_vmPerformance(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 999867999745)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 999867999745)
     @unittest.skip('Gas or performance related')
 
     def test_loop_add_10M(self):
@@ -17745,8 +17745,8 @@ class EVMTest_vmPerformance(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 999439999705)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 999439999705)
     @unittest.skip('Gas or performance related')
 
     def test_loop_exp_1b_1M(self):
@@ -18018,8 +18018,8 @@ class EVMTest_vmPerformance(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 999924999780)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 999924999780)
     @unittest.skip('Gas or performance related')
 
     def test_loop_exp_16b_100k(self):
@@ -18291,8 +18291,8 @@ class EVMTest_vmPerformance(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 999977499780)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 999977499780)
     @unittest.skip('Gas or performance related')
 
     def test_ackermann32(self):
@@ -18496,8 +18496,8 @@ class EVMTest_vmPerformance(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 40600)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 40600)
     @unittest.skip('Gas or performance related')
 
     def test_loop_mul(self):
@@ -18639,8 +18639,8 @@ class EVMTest_vmPerformance(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 999881510690)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 999881510690)
     @unittest.skip('Gas or performance related')
 
     def test_ackermann33(self):

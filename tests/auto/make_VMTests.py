@@ -148,8 +148,8 @@ def gen_test(testcase, filename, skip):
         '''
 
         output += f'''
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, {int(testcase['gas'], 0)})'''
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), {int(testcase['gas'], 0)})'''
 
     return output
 

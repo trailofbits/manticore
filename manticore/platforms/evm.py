@@ -1193,14 +1193,13 @@ class EVM(Eventful):
 
     def EXP_gas(self, base, exponent):
         """ Calculate extra gas fee """
-        EXP_SUPPLEMENTAL_GAS = 50   # cost of EXP exponent per byte
+        EXP_SUPPLEMENTAL_GAS = 10   # cost of EXP exponent per byte
 
         def nbytes(e):
             result = 0
             for i in range(32):
-                result = Operators.ITEBV(512, e > (1 << i * 8) - 1, i + 1, result)
+                result = Operators.ITEBV(512, Operators.EXTRACT(e, i * 8, 8) !=0 , i + 1, result)
             return result
-
         return EXP_SUPPLEMENTAL_GAS * nbytes(exponent)
 
     def EXP(self, base, exponent):
@@ -1289,10 +1288,8 @@ class EVM(Eventful):
 
     def SHA3_gas(self, start, size):
         GSHA3WORD = 6         # Cost of SHA3 per word
-        return GSHA3WORD * (ceil32(size) // 32)
-
-    def SHA3_gas(self, start, size):
-        return self._get_memfee(start, size)
+        memfee = self._get_memfee(start, size)
+        return GSHA3WORD * (ceil32(size) // 32) + memfee
 
     @concretized_args(size='SAMPLED')
     def SHA3(self, start, size):
@@ -1354,7 +1351,7 @@ class EVM(Eventful):
                 self.constraints.add(offset == self._used_calldata_size)
             raise ConcretizeArgument(1, policy='SAMPLED')
 
-        self._use_calldata(offset + 32)
+        self._use_calldata(offset, 32)
 
         data_length = len(self.data)
 
@@ -1369,11 +1366,11 @@ class EVM(Eventful):
             bytes.append(c)
         return Operators.CONCAT(256, *bytes)
 
-    def _use_calldata(self, n):
+    def _use_calldata(self, n, size):
         assert not issymbolic(n)
         max_size = len(self.data)
         min_size = self._used_calldata_size
-        self._used_calldata_size = Operators.ITEBV(256, min_size + n > max_size, max_size, min_size + n)
+        self._used_calldata_size = Operators.ITEBV(256, size != 0, Operators.ITEBV(256, min_size + n > max_size, max_size, min_size + n), self._used_calldata_size)
 
     def CALLDATASIZE(self):
         """Get size of input data in current environment"""
@@ -1381,6 +1378,7 @@ class EVM(Eventful):
 
     def CALLDATACOPY_gas(self, mem_offset, data_offset, size):
         GCOPY = 3             # cost to copy one 32 byte word
+        copyfee1 = size if size % 32 == 0 else size + 32 - (size % 32)
         copyfee = self.safe_mul(GCOPY, self.safe_add(size, 31) // 32)
         memfee = self._get_memfee(mem_offset, size)
         return copyfee + memfee
@@ -1399,8 +1397,8 @@ class EVM(Eventful):
             raise ConcretizeStack(2, policy='SAMPLED')
 
         #account for calldata usage
-        self._use_calldata(data_offset + size)
-        self._allocate(self.safe_add(mem_offset, size))
+        self._use_calldata(data_offset, size)
+        self._allocate(mem_offset, size)
         for i in range(size):
             try:
                 c = Operators.ITEBV(8, data_offset + i < len(self.data), Operators.ORD(self.data[data_offset + i]), 0)
@@ -1477,7 +1475,7 @@ class EVM(Eventful):
                 self._store(address + i, 0)
 
     def RETURNDATACOPY_gas(self, mem_offset, return_offset, size):
-        return self._get_memfee(mem_offset + size)
+        return self._get_memfee(mem_offset, size)
 
     def RETURNDATACOPY(self, mem_offset, return_offset, size):
         return_data = self.world.last_transaction.return_data
@@ -1565,11 +1563,8 @@ class EVM(Eventful):
         self._publish('did_evm_read_storage', storage_address, offset, value)
         return value
 
-    def SSTORE(self, offset, value):
-        """Save word to storage"""
+    def SSTORE_gas(self, offset, value):
         storage_address = self.address
-        self._publish('will_evm_write_storage', storage_address, offset, value)
-
         GSTORAGEREFUND = 15000
         GSTORAGEKILL = 5000
         GSTORAGEMOD = 5000
@@ -1582,11 +1577,16 @@ class EVM(Eventful):
                                   Operators.ITEBV(512, value != 0, GSTORAGEMOD, GSTORAGEKILL),
                                   Operators.ITEBV(512, value != 0, GSTORAGEADD, GSTORAGEMOD))
 
-        refund = Operators.ITEBV(256,
-                                 previous_value != 0,
-                                 Operators.ITEBV(256, value != 0, 0, GSTORAGEREFUND),
-                                 0)
-        self._consume(gascost)
+        return gascost
+
+    def SSTORE(self, offset, value):
+        """Save word to storage"""
+        storage_address = self.address
+        self._publish('will_evm_write_storage', storage_address, offset, value)
+        #refund = Operators.ITEBV(256,
+        #                         previous_value != 0,
+        #                         Operators.ITEBV(256, value != 0, 0, GSTORAGEREFUND),
+        #                         0)
 
         if istainted(self.pc):
             for taint in get_taints(self.pc):
