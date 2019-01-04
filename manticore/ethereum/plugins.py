@@ -13,31 +13,53 @@ logger = logging.getLogger(__name__)
 
 class ExamplePlugin(Plugin):
     def on_register(self):
-        """Called by parent manticore on registration"""
+        """Called when manticore.register_plugin(...) is called"""
         pass
 
     def on_unregister(self):
-        """Called be parent manticore on un-registration"""
+        """Called when manticore.unregister_plugin(...) is called"""
         pass
 
     def will_start_run_callback(self, state):
         """
-        Called once at the beginning of the run.
-        The `state` is the initial root state.
+        Called at the beginning of each analysis run
+        (so when a contract is created or when it's function is called from a script).
+
+        The `state` argument holds the state before running the given analysis.
+
+        As an example, having contracts:
+            contract A { function a(B b) { b.b(); } }
+            contract B { function b() {} }
+
+        All of the lines below will end up calling this event exactly once:
+            A = manticore.solidity_create_contract(..., contract_name='A')
+            B = manticore.solidity_create_contract(..., contract_name='B')
+            A.a(B)
         """
-        logger.info('will_start_run')
+        pass
 
     def did_finish_run_callback(self):
-        logger.info('did_finish_run')
+        """
+        Called at the end of each analysis run. For more see `will_start_run_callback`.
+        """
+        pass
 
     def will_open_transaction_callback(self, state, tx):
-        logger.info('will open a transaction %r %r', state, tx)
+        """
+        Called when a transaction is opened.
+
+        So an example for such code:
+            contract A { function a(B b) { b.b(); } }
+            contract B { function b() {} }
+
+        The A.a(B) call will open two transactions.
+
+        `tx.is_human` can be used to determine whether it is human or internal transaction.
+        """
+        pass
 
     def will_close_transaction_callback(self, state, tx):
         logger.info('will close a transaction %r %r', state, tx)
-
-    def will_decode_instruction_callback(self, state, pc):
-        logger.info('will_decode_instruction %r %r', state, pc)
 
     def will_execute_instruction_callback(self, state, instruction, arguments):
         logger.info('will_execute_instruction %r %r %r', state, instruction, arguments)
