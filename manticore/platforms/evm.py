@@ -1864,10 +1864,10 @@ class EVM(Eventful):
             pc = pc.value
 
         if issymbolic(pc):
-            result.append('<Symbolic PC> {:s} {}'.format((translate_to_smtlib(pc), pc.taint)))
+            result.append('<Symbolic PC> {:s} {}\n'.format((translate_to_smtlib(pc), pc.taint)))
         else:
             operands_str = self.instruction.has_operand and '0x{:x}'.format(self.instruction.operand) or ''
-            result.append('0x{:04x}: {:s} {:s} {:s}\n'.format(pc, self.instruction.name, operands_str, self.instruction.description))
+            result.append('0x{:04x}: {:s} {:s} {:s}'.format(pc, self.instruction.name, operands_str, self.instruction.description))
 
         args = {}
         implementation = getattr(self, self.instruction.semantics, None)
@@ -1898,6 +1898,14 @@ class EVM(Eventful):
             r = ' ' * clmn + hd[i]
             result.append(r)
 
+        #Append gas
+        gas = self.gas
+        if issymbolic(gas):
+            gas = simplify(gas)
+            result.append(f'GAS: {translate_to_smtlib(gas)} {gas.taint}')
+        else:
+            result.append(f'GAS: {gas}')
+ 
         result = [hex(self.address) + ": " + x for x in result]
         return '\n'.join(result)
 

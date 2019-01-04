@@ -361,6 +361,12 @@ class EthInstructionTests(unittest.TestCase):
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
         return constraints, world, new_vm
 
+    def test_str(self):
+        constraints, world, vm = self._make()
+        vm_str = """0x222222222222222222222222222222222222200: ---------------------------------------------------------------------------------------------------------------------------------------------------\n0x222222222222222222222222222222222222200: 0x0000: SDIV  Signed integer division operation (truncated).\n0x222222222222222222222222222222222222200: Stack                                                                           Memory\n0x222222222222222222222222222222222222200:                                                                                 0000  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................\n0x222222222222222222222222222222222222200:                                                                                 0010  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................\n0x222222222222222222222222222222222222200:                                                                                 0020  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................\n0x222222222222222222222222222222222222200:                                                                                 0030  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................\n0x222222222222222222222222222222222222200:                                                                                 0040  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................\n0x222222222222222222222222222222222222200:                                                                                 0050  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................\n0x222222222222222222222222222222222222200:                                                                                 0060  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................\n0x222222222222222222222222222222222222200:                                                                                 0070  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................\n0x222222222222222222222222222222222222200: GAS: 1000000"""
+
+        self.assertEqual(str(vm), vm_str)
+
     def test_SDIV(self):
         constraints, world, vm = self._make()
         result = vm.SDIV(115792089237316182568066630936765703517573245936339743861833633745570447228928, 200867255532373784442745261542645325315275374222849104412672)
@@ -765,7 +771,7 @@ class EthTests(unittest.TestCase):
         contract.transferHalfTo(symbolic_address, caller=owner, value=m.make_symbolic_value())
         self.assertTrue(m.count_running_states() > 0 )
         self.assertTrue(any(state.can_be_true(state.platform.get_balance(receiver.address) > 0)
-                                for state in running_states))
+                                for state in m.running_states))
 
     def test_make_symbolic_address(self):
         def get_state():
