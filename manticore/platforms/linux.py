@@ -1412,7 +1412,11 @@ class Linux(Platform):
         ARCH_SET_FS = 0x1002
         ARCH_GET_FS = 0x1003
         ARCH_GET_GS = 0x1004
-        assert code == ARCH_SET_FS
+        if code not in {ARCH_SET_GS, ARCH_SET_FS, ARCH_GET_FS, ARCH_GET_GS}:
+            logger.debug("code not in expected options ARCH_GET/SET_FS/GS")
+            return -errno.EINVAL
+        if code != ARCH_SET_FS:
+            raise NotImplementedError("Manticore supports only arch_prctl with code=ARCH_SET_FS (0x1002) for now")
         self.current.FS = 0x63
         self.current.set_descriptor(self.current.FS, addr, 0x4000, 'rw')
         return 0
