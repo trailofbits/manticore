@@ -1175,7 +1175,7 @@ class ManticoreEVM(ManticoreBase):
 
         #we initiated the Tx; we need process the outcome for now.
         #Fixme incomplete.
-        if tx.is_human():
+        if tx.is_human:
             if tx.sort == 'CREATE':
                 if tx.result == 'RETURN':
                     world.set_code(tx.address, tx.return_data)

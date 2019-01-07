@@ -217,7 +217,7 @@ class DetectReentrancySimple(Detector):
         return f'{self.name}.call_locations'
 
     def will_open_transaction_callback(self, state, tx):
-        if tx.is_human():
+        if tx.is_human:
             state.context[self._context_key] = []
 
     def will_evm_execute_instruction_callback(self, state, instruction, arguments):
@@ -277,14 +277,14 @@ class DetectReentrancyAdvanced(Detector):
 
     def will_open_transaction_callback(self, state, tx):
         # Reset reading log on new human transactions
-        if tx.is_human():
+        if tx.is_human:
             state.context[self._read_storage_name] = set()
             state.context['{:s}.locations'.format(self.name)] = dict()
 
     def did_close_transaction_callback(self, state, tx):
         world = state.platform
         #Check if it was an internal tx
-        if not tx.is_human():
+        if not tx.is_human:
             # Check is the tx was successful
             if tx.result:
                 # Check if gas was enough for a reentrancy attack
@@ -482,7 +482,7 @@ class DetectIntegerOverflow(Detector):
             self._check_finding(state, what)
         elif mnemonic == 'RETURN':
             world = state.platform
-            if world.current_transaction.is_human():
+            if world.current_transaction.is_human:
                 # If an overflowded value is returned to a human
                 offset, size = arguments
                 data = world.current_vm.read_buffer(offset, size)
@@ -528,7 +528,7 @@ class DetectUnusedRetVal(Detector):
 
     def will_open_transaction_callback(self, state, tx):
         # Reset reading log on new human transactions
-        if tx.is_human():
+        if tx.is_human:
             state.context[self._stack_name] = []
         state.context[self._stack_name].append(set())
 
