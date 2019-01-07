@@ -28,20 +28,22 @@ logger = logging.getLogger(__name__)
 # Though Gas can became symbolic in normal bytecode execution for example at instructions
 # MSTORE, MSTORE8, EXP, ... and every instruction with internal operation restricted by gas
 # This configuration variable allows the user to control and perhaps relax the gas calculation
-# 0: gas is faithfully accounted and checked at instruction level. State may get forked in OOG/NoOOG
-# 1: gas is faithfully accounted and checked at basic blocks limits. State may get forked in OOG/NoOOG
-# 2: Concretize gas. If the fee to be consumed gets to be symbolic. Choose some potential values and fork on those.
-# 3: Try not to OOG. If it may be enough gas we ignore the OOG case. A constraint is added to assert the gas is enough and the OOG state is ignored.
-# 4: OOG soon. If it may NOT be enough gas we ignore the normal case. A constraint is added to assert the gas is NOT enough and the other state is ignored.
-# 99: Ignore gas. Do not account for it. Do not OOG.
+# This configuration variable allows the user to control and perhaps relax the gas calculation
+# pedantic: gas is faithfully accounted and checked at instruction level. State may get forked in OOG/NoOOG
+# complete: gas is faithfully accounted and checked at basic blocks limits. State may get forked in OOG/NoOOG
+# concrete: Concretize gas. If the fee to be consumed gets to be symbolic. Choose some potential values and fork on those.
+# optimistic: Try not to OOG. If it may be enough gas we ignore the OOG case. A constraint is added to assert the gas is enough and the OOG state is ignored.
+# pesimistic: OOG soon. If it may NOT be enough gas we ignore the normal case. A constraint is added to assert the gas is NOT enough and the other state is ignored.
+# ignore: Ignore gas. Do not account for it. Do not OOG.
 consts = config.get_group('evm')
+
 consts.add('oog', default=0, description='Default behavior for symbolic gas.'
-                                         '0: Fully faithful. Test at every instruction. Forks.'
-                                         '1: Mostly faithful. Test at BB limit. Forks.'
-                                         '2: Incomplete. Concretize gas to MIN/MAX values. Forks.'
-                                         '3: Try to not fail due to OOG. If it can be enough gas use it. Ignore the path to OOG. Wont fork'
-                                         '4: Try OOG only. Fail soon. Ignore the path with enough gas.'
-                                         "99: Ignore gas. Instructions won't consume gas")
+                                         'pedantic: Fully faithful. Test at every instruction. Forks.'
+                                         'complete: Mostly faithful. Test at BB limit. Forks.'
+                                         'concrete: Incomplete. Concretize gas to MIN/MAX values. Forks.'
+                                         'optimistic: Try to not fail due to OOG. If it can be enough gas use it. Ignore the path to OOG. Wont fork'
+                                         'pesimistic: Try OOG asap. Fail soon. Ignore the path with enough gas.'
+                                         "ignore: Ignore gas. Instructions won't consume gas")
 
 # Auxiliary constants and functions
 TT256 = 2 ** 256
@@ -93,9 +95,9 @@ class Transaction:
                            depth=self.depth, result=self.result, return_data=bytearray(conc_return_data))
 
     def to_dict(self, mevm):
-       """
+        """
         Only meant to be used with concrete Transaction objects! (after calling .concretize())
-       """
+        """
         return dict(type=self.sort,
                     from_address=self.caller,
                     from_name=mevm.account_name(self.caller),
@@ -106,7 +108,7 @@ class Transaction:
                     data=binascii.hexlify(self.data).decode())
 
     def dump(self, stream, state, mevm, conc_tx=None):
-       """
+        """
         Concretize and write a human readable version of the transaction into the stream. Used during testcase
         generation.
 
@@ -114,7 +116,7 @@ class Transaction:
         :param manticore.ethereum.State state: state that the tx exists in
         :param manticore.ethereum.ManticoreEVM mevm: manticore instance
         :return:
-       """
+        """
         from ..ethereum import ABI  # circular imports
         from ..ethereum.manticore import flagged
 
@@ -249,7 +251,7 @@ class Transaction:
         self._return_data = return_data
 
     def __reduce__(self):
-       """Implements serialization/pickle"""
+        """Implements serialization/pickle"""
         return (self.__class__, (self.sort, self.address, self.price, self.data, self.caller, self.value, self.gas, self.depth, self.result, self.return_data))
 
     def __str__(self):
@@ -446,8 +448,6 @@ class EVM(Eventful):
                          'decode_instruction', 'execute_instruction', 'concrete_sha3', 'symbolic_sha3'}
 
     class transact:
-        "Emulate PyProperty_Type() in Objects/descrobject.c"
-
         def __init__(self, pre=None, pos=None, doc=None):
             self._pre = pre
             self._pos = pos
@@ -489,18 +489,18 @@ class EVM(Eventful):
             return type(self)(self._pre, pos)
 
     def __init__(self, constraints, address, data, caller, value, bytecode, world=None, gas=210000, **kwargs):
-       """
-       Builds a Ethereum Virtual Machine instance
+        """
+        Builds a Ethereum Virtual Machine instance
 
-       :param memory: the initial memory
-       :param address: the address of the account which owns the code that is executing.
-       :param data: the byte array that is the input data to this execution
-       :param caller: the address of the account which caused the code to be executing. A 160-bit code used for identifying Accounts
-       :param value: the value, in Wei, passed to this account as part of the same procedure as execution. One Ether is defined as being 10**18 Wei
-       :param bytecode: the byte array that is the machine code to be executed
-       :param world: the EVMWorld object where the transaction is being executed
-       :param gas: gas budget for this transaction
-       """
+        :param memory: the initial memory
+        :param address: the address of the account which owns the code that is executing.
+        :param data: the byte array that is the input data to this execution
+        :param caller: the address of the account which caused the code to be executing. A 160-bit code used for identifying Accounts
+        :param value: the value, in Wei, passed to this account as part of the same procedure as execution. One Ether is defined as being 10**18 Wei
+        :param bytecode: the byte array that is the machine code to be executed
+        :param world: the EVMWorld object where the transaction is being executed
+        :param gas: gas budget for this transaction
+        """
         super().__init__(**kwargs)
         if data is not None and not issymbolic(data):
             data_size = len(data)
@@ -644,13 +644,13 @@ class EVM(Eventful):
         super().__setstate__(state)
 
     def _get_memfee(self, address, size=1):
-       """
-       This calculates the ammount of extra gas needed for accessing to
-       previously unused memory.
+        """
+        This calculates the ammount of extra gas needed for accessing to
+        previously unused memory.
 
-        `address` is the base memory offset and,
-        `size` is the size of the memory access.
-       """
+        :param address: base memory offset
+        :param size: size of the memory access
+        """
         if not issymbolic(size) and size == 0:
             return 0
  
@@ -684,10 +684,10 @@ class EVM(Eventful):
         assert True
 
     def read_code(self, address, size=1):
-       """
-       Read size byte from bytecode.
-       If less than size bytes are available result will be pad with \x00
-       """
+        """
+        Read size byte from bytecode.
+        If less than size bytes are available result will be pad with \x00
+        """
         assert address < len(self.bytecode)
         value = self.bytecode[address:address + size]
         if len(value) < size:
@@ -703,9 +703,9 @@ class EVM(Eventful):
 
     @property
     def instruction(self):
-       """
-       Current instruction pointed by self.pc
-       """
+        """
+        Current instruction pointed by self.pc
+        """
         # FIXME check if pc points to invalid instruction
         # if self.pc >= len(self.bytecode):
         #    return InvalidOpcode('Code out of range')
@@ -736,12 +736,14 @@ class EVM(Eventful):
     # auxiliary funcs
     # Stack related
     def _push(self, value):
-       """
-                   ITEM0
-                   ITEM1
-                   ITEM2
-             sp->  {empty}
-       """
+        """
+        Push into the stack
+
+              ITEM0
+              ITEM1
+              ITEM2
+        sp->  {empty}
+        """
         assert isinstance(value, int) or isinstance(value, BitVec) and value.size == 256
         if len(self.stack) >= 1024:
             raise StackOverflow()
@@ -755,19 +757,18 @@ class EVM(Eventful):
         self.stack.append(value)
 
     def _top(self, n=0):
-       """Read a value from the top of the stack without removing it"""
+        """Read a value from the top of the stack without removing it"""
         if len(self.stack) - n < 0:
             raise StackUnderflow()
         return self.stack[n - 1]
 
     def _pop(self):
-       """Pop a value from the stack"""
+        """Pop a value from the stack"""
         if len(self.stack) == 0:
             raise StackUnderflow()
         return self.stack.pop()
 
     def _consume(self, fee):
-
         # Check type and bitvec size
         if isinstance(fee, int):
             if fee > (1 << 512) - 1:
@@ -783,18 +784,16 @@ class EVM(Eventful):
                 return solver.get_all_values(self.constraints, Operators.UGT(self._gas, fee))
         
         # This configuration variable allows the user to control and perhaps relax the gas calculation
-        # 0: gas is faithfully accounted and checked at instruction level. State may get forked in OOG/NoOOG
-        # 1: gas is faithfully accounted and checked at basic blocks limits. State may get forked in OOG/NoOOG
-        # 2: Keep gas concrete. If the fee to be consumed gets to be symbolic. Choose some potential values and fork on those.
-        # 3: Try not to OOG. If it may be enough gas we ignore the OOG case. A constraint is added to assert the gas is enough and the OOG state is ignored.
-        # 4: OOG soon. If it may NOT be enough gas we ignore the normal case. A constraint is added to assert the gas is NOT enough and the other state is ignored.
-        # 99: Ignore gas. Do not account for it. Do not OOG.
-        if consts.oog == 99:
-            #do nothing. gas is not even changed
-            return
-        elif consts.oog in (0, 1):
+        # pedantic: gas is faithfully accounted and checked at instruction level. State may get forked in OOG/NoOOG
+        # complete: gas is faithfully accounted and checked at basic blocks limits. State may get forked in OOG/NoOOG
+        # concrete: Concretize gas. If the fee to be consumed gets to be symbolic. Choose some potential values and fork on those.
+        # optimistic: Try not to OOG. If it may be enough gas we ignore the OOG case. A constraint is added to assert the gas is enough and the OOG state is ignored.
+        # pesimistic: OOG soon. If it may NOT be enough gas we ignore the normal case. A constraint is added to assert the gas is NOT enough and the other state is ignored.
+        # ignore: Ignore gas. Do not account for it. Do not OOG.
+
+        if consts.oog in ('pedantic', 'complete'):
             #gas is faithfully accounted and ogg checked at instruction/BB level.
-            if consts.oog == 0 or self.instruction.is_terminator:
+            if consts.oog == 'pedantic' or self.instruction.is_terminator:
                 #explore both options / fork
                 #FIXME this will reenter here and generate redundant queries
                 enough_gas_solutions = get_possible_solutions()
@@ -811,14 +810,14 @@ class EVM(Eventful):
                 else:
                     assert enough_gas_solutions[0] == True
                     #if there is enough gas keep going
-        elif consts.oog == 2:
+        elif consts.oog == 'concrete':
             # Keep gas concrete. Concretize symbolic fees to some values.
-            #this can happen only if symblic gas is provided for the TX
+            #this can happen only if symbolic gas is provided for the TX
             if issymbolic(self._gas):
                 raise ConcretizeGas()
             if issymbolic(fee):
                 raise ConcretizeFee()
-        elif consts.oog == 3:
+        elif consts.oog == 'optimistic':
             #Try not to OOG. If it may be enough gas we ignore the OOG case. A constraint is added to assert the gas is enough and the OOG state is ignored.
             #explore only when there is enough gas if possible
             if solver.can_be_true(self.constraints, Operators.UGT(self.gas, fee)):
@@ -826,14 +825,17 @@ class EVM(Eventful):
             else:
                 logger.debug("Not enough gas for instruction")
                 raise NotEnoughGas()
-        elif consts.oog == 4:
+        elif consts.oog == 'pesimistic':
             # OOG soon. If it may NOT be enough gas we ignore the normal case. A constraint is added to assert the gas is NOT enough and the other state is ignored.
             #explore only when there is enough gas if possible
             if solver.can_be_true(self.constraints, Operators.ULE(self.gas, fee)):
                 self.constraints.add(Operators.ULE(self.gas, fee))
                 raise NotEnoughGas()
         else:
-            pass
+            if consts.oog != 'ignore':
+                raise Exception("Wrong oog config variable")
+           #do nothing. gas is not even changed
+            return
         self._gas -= fee
 
         # If everything is concrete lets just check at every instruction
@@ -901,7 +903,7 @@ class EVM(Eventful):
         return implementation(*arguments)
 
     def _checkpoint(self):
-       """Save and/or get a state checkpoint previous to current instruction"""
+        """Save and/or get a state checkpoint previous to current instruction"""
         #Fixme[felipe] add a with self.disabled_events context mangr to Eventful
         if self._checkpoint_data is None:
             if not self._published_pre_instruction_events:
@@ -922,7 +924,7 @@ class EVM(Eventful):
         return self._checkpoint_data
 
     def _rollback(self):
-       """Revert the stack, gas, pc and memory allocation so it looks like before executing the instruction"""
+        """Revert the stack, gas, pc and memory allocation so it looks like before executing the instruction"""
         last_pc, last_gas, last_instruction, last_arguments, fee, allocated = self._checkpoint_data
         self._push_arguments(last_arguments)
         self._gas = last_gas
@@ -931,22 +933,22 @@ class EVM(Eventful):
         self._checkpoint_data = None
 
     def _set_check_jmpdest(self, flag=True):
-       """
-       Next instruction must be a JUMPDEST iff `flag` holds.
+        """
+        Next instruction must be a JUMPDEST iff `flag` holds.
 
-       Note that at this point `flag` can be the conditional from a JUMPI
-       instruction hence potentially a symbolic value.
-       """
+        Note that at this point `flag` can be the conditional from a JUMPI
+        instruction hence potentially a symbolic value.
+        """
         self._check_jumpdest = flag
 
     def _check_jmpdest(self):
-       """
-       If the previous instruction was a JUMP/JUMPI and the conditional was
-       True, this checks that the current instruction must be a JUMPDEST.
+        """
+        If the previous instruction was a JUMP/JUMPI and the conditional was
+        True, this checks that the current instruction must be a JUMPDEST.
 
-       Here, if symbolic, the conditional `self._check_jumpdest` would be
-       already constrained to a single concrete value.
-       """
+        Here, if symbolic, the conditional `self._check_jumpdest` would be
+        already constrained to a single concrete value.
+        """
         should_check_jumpdest = self._check_jumpdest
         if issymbolic(should_check_jumpdest):
             should_check_jumpdest_solutions = solver.get_all_values(self.constraints, should_check_jumpdest)
@@ -1080,7 +1082,7 @@ class EVM(Eventful):
         return value
 
     def _store(self, offset, value, size=1):
-       """Stores value in memory as a big endian"""
+        """Stores value in memory as a big endian"""
         self.memory.write_BE(offset, value, size)
         for i in range(size):
             self._publish('did_evm_write_memory', offset + i, Operators.EXTRACT(value, (size - i - 1) * 8, 8))
@@ -1101,7 +1103,7 @@ class EVM(Eventful):
     #INSTRUCTIONS
 
     def INVALID(self):
-       """Halts execution"""
+        """Halts execution"""
         raise InvalidOpcode()
 
     ############################################################################
@@ -1109,23 +1111,23 @@ class EVM(Eventful):
     # All arithmetic is modulo 256 unless otherwise noted.
 
     def STOP(self):
-       """Halts execution"""
+        """Halts execution"""
         raise EndTx('STOP')
 
     def ADD(self, a, b):
-       """Addition operation"""
+        """Addition operation"""
         return a + b
 
     def MUL(self, a, b):
-       """Multiplication operation"""
+        """Multiplication operation"""
         return a * b
 
     def SUB(self, a, b):
-       """Subtraction operation"""
+        """Subtraction operation"""
         return a - b
 
     def DIV(self, a, b):
-       """Integer division operation"""
+        """Integer division operation"""
         try:
             result = Operators.UDIV(a, b)
         except ZeroDivisionError:
@@ -1133,7 +1135,7 @@ class EVM(Eventful):
         return Operators.ITEBV(256, b == 0, 0, result)
 
     def SDIV(self, a, b):
-       """Signed integer division operation (truncated)"""
+        """Signed integer division operation (truncated)"""
         s0, s1 = to_signed(a), to_signed(b)
         try:
             result = (Operators.ABS(s0) // Operators.ABS(s1) * Operators.ITEBV(256, (s0 < 0) != (s1 < 0), -1, 1))
@@ -1145,7 +1147,7 @@ class EVM(Eventful):
         return result
 
     def MOD(self, a, b):
-       """Modulo remainder operation"""
+        """Modulo remainder operation"""
         try:
             result = Operators.ITEBV(256, b == 0, 0, a % b)
         except ZeroDivisionError:
@@ -1153,7 +1155,7 @@ class EVM(Eventful):
         return result
 
     def SMOD(self, a, b):
-       """Signed modulo remainder operation"""
+        """Signed modulo remainder operation"""
         s0, s1 = to_signed(a), to_signed(b)
         sign = Operators.ITEBV(256, s0 < 0, -1, 1)
         try:
@@ -1164,7 +1166,7 @@ class EVM(Eventful):
         return Operators.ITEBV(256, s1 == 0, 0, result)
 
     def ADDMOD(self, a, b, c):
-       """Modulo addition operation"""
+        """Modulo addition operation"""
         try:
             result = Operators.ITEBV(256, c == 0, 0, (a + b) % c)
         except ZeroDivisionError:
@@ -1172,7 +1174,7 @@ class EVM(Eventful):
         return result
 
     def MULMOD(self, a, b, c):
-       """Modulo addition operation"""
+        """Modulo addition operation"""
         try:
             result = Operators.ITEBV(256, c == 0, 0, (a * b) % c)
         except ZeroDivisionError:
@@ -1180,7 +1182,7 @@ class EVM(Eventful):
         return result
 
     def EXP_gas(self, base, exponent):
-       """Calculate extra gas fee"""
+        """Calculate extra gas fee"""
         EXP_SUPPLEMENTAL_GAS = 10   # cost of EXP exponent per byte
 
         def nbytes(e):
@@ -1191,15 +1193,15 @@ class EVM(Eventful):
         return EXP_SUPPLEMENTAL_GAS * nbytes(exponent)
 
     def EXP(self, base, exponent):
-       """
+        """
             Exponential operation
             The zero-th power of zero 0^0 is defined to be one
-       """
+        """
         # fixme integer bitvec
         return pow(base, exponent, TT256)
 
     def SIGNEXTEND(self, size, value):
-       """Extend length of two's complement signed integer"""
+        """Extend length of two's complement signed integer"""
         # FIXME maybe use Operators.SEXTEND
         testbit = Operators.ITEBV(256, size <= 31, size * 8 + 7, 257)
         result1 = (value | (TT256 - (1 << testbit)))
@@ -1210,51 +1212,51 @@ class EVM(Eventful):
     ############################################################################
     # Comparison & Bitwise Logic Operations
     def LT(self, a, b):
-       """Less-than comparison"""
+        """Less-than comparison"""
         return Operators.ITEBV(256, Operators.ULT(a, b), 1, 0)
 
     def GT(self, a, b):
-       """Greater-than comparison"""
+        """Greater-than comparison"""
         return Operators.ITEBV(256, Operators.UGT(a, b), 1, 0)
 
     def SLT(self, a, b):
-       """Signed less-than comparison"""
+        """Signed less-than comparison"""
         # http://gavwood.com/paper.pdf
         s0, s1 = to_signed(a), to_signed(b)
         return Operators.ITEBV(256, s0 < s1, 1, 0)
 
     def SGT(self, a, b):
-       """Signed greater-than comparison"""
+        """Signed greater-than comparison"""
         # http://gavwood.com/paper.pdf
         s0, s1 = to_signed(a), to_signed(b)
         return Operators.ITEBV(256, s0 > s1, 1, 0)
 
     def EQ(self, a, b):
-       """Equality comparison"""
+        """Equality comparison"""
         return Operators.ITEBV(256, a == b, 1, 0)
 
     def ISZERO(self, a):
-       """Simple not operator"""
+        """Simple not operator"""
         return Operators.ITEBV(256, a == 0, 1, 0)
 
     def AND(self, a, b):
-       """Bitwise AND operation"""
+        """Bitwise AND operation"""
         return a & b
 
     def OR(self, a, b):
-       """Bitwise OR operation"""
+        """Bitwise OR operation"""
         return a | b
 
     def XOR(self, a, b):
-       """Bitwise XOR operation"""
+        """Bitwise XOR operation"""
         return a ^ b
 
     def NOT(self, a):
-       """Bitwise NOT operation"""
+        """Bitwise NOT operation"""
         return ~a
 
     def BYTE(self, offset, value):
-       """Retrieve single byte from word"""
+        """Retrieve single byte from word"""
         offset = Operators.ITEBV(256, offset < 32, (31 - offset) * 8, 256)
         return Operators.ZEXTEND(Operators.EXTRACT(value, offset, 8), 256)
 
@@ -1281,7 +1283,7 @@ class EVM(Eventful):
 
     @concretized_args(size='SAMPLED')
     def SHA3(self, start, size):
-       """Compute Keccak-256 hash"""
+        """Compute Keccak-256 hash"""
         # read memory from start to end
         # http://gavwood.com/paper.pdf
         data = self.try_simplify_to_constant(self.read_buffer(start, size))
@@ -1309,30 +1311,30 @@ class EVM(Eventful):
     ############################################################################
     # Environmental Information
     def ADDRESS(self):
-       """Get address of currently executing account"""
+        """Get address of currently executing account"""
         return self.address
 
     def BALANCE_gas(self, account):
         return 380  # BALANCE_SUPPLEMENTAL_GAS
 
     def BALANCE(self, account):
-       """Get balance of the given account"""
+        """Get balance of the given account"""
         return self.world.get_balance(account)
 
     def ORIGIN(self):
-       """Get execution origination address"""
+        """Get execution origination address"""
         return Operators.ZEXTEND(self.world.tx_origin(), 256)
 
     def CALLER(self):
-       """Get caller address"""
+        """Get caller address"""
         return Operators.ZEXTEND(self.caller, 256)
 
     def CALLVALUE(self):
-       """Get deposited value by the instruction/transaction responsible for this execution"""
+        """Get deposited value by the instruction/transaction responsible for this execution"""
         return self.value
 
     def CALLDATALOAD(self, offset):
-       """Get input data of current environment"""
+        """Get input data of current environment"""
 
         if issymbolic(offset):
             if solver.can_be_true(self._constraints, offset == self._used_calldata_size):
@@ -1361,7 +1363,7 @@ class EVM(Eventful):
         self._used_calldata_size = Operators.ITEBV(256, size != 0, Operators.ITEBV(256, min_size + n > max_size, max_size, min_size + n), self._used_calldata_size)
 
     def CALLDATASIZE(self):
-       """Get size of input data in current environment"""
+        """Get size of input data in current environment"""
         return self._calldata_size
 
     def CALLDATACOPY_gas(self, mem_offset, data_offset, size):
@@ -1372,7 +1374,7 @@ class EVM(Eventful):
         return copyfee + memfee
 
     def CALLDATACOPY(self, mem_offset, data_offset, size):
-       """Copy input data in current environment to memory"""
+        """Copy input data in current environment to memory"""
 
         if issymbolic(size):
             if solver.can_be_true(self._constraints, size <= len(self.data) + 32):
@@ -1396,7 +1398,7 @@ class EVM(Eventful):
             self._store(mem_offset + i, c)
 
     def CODESIZE(self):
-       """Get size of code running in current environment"""
+        """Get size of code running in current environment"""
         return len(self.bytecode)
 
     def CODECOPY_gas(self, mem_offset, code_offset, size):
@@ -1404,7 +1406,7 @@ class EVM(Eventful):
 
     @concretized_args(code_offset='SAMPLED', size='SAMPLED')
     def CODECOPY(self, mem_offset, code_offset, size):
-       """Copy code running in current environment to memory"""
+        """Copy code running in current environment to memory"""
 
         self._allocate(mem_offset, size)
         GCOPY = 3             # cost to copy one 32 byte word
@@ -1436,12 +1438,12 @@ class EVM(Eventful):
         self._publish('did_evm_read_code', code_offset, size)
 
     def GASPRICE(self):
-       """Get price of gas in current environment"""
+        """Get price of gas in current environment"""
         return self.world.tx_gasprice()
 
     @concretized_args(account='ACCOUNTS')
     def EXTCODESIZE(self, account):
-       """Get size of an account's code"""
+        """Get size of an account's code"""
         return len(self.world.get_code(account))
 
     def EXTCODECOPY_gas(self, account, address, offset, size):
@@ -1452,7 +1454,7 @@ class EVM(Eventful):
 
     @concretized_args(account='ACCOUNTS')
     def EXTCODECOPY(self, account, address, offset, size):
-       """Copy an account's code to memory"""
+        """Copy an account's code to memory"""
         extbytecode = self.world.get_code(account)
         self._allocate(address + size)
 
@@ -1481,33 +1483,33 @@ class EVM(Eventful):
     ############################################################################
     # Block Information
     def BLOCKHASH(self, a):
-       """Get the hash of one of the 256 most recent complete blocks"""
+        """Get the hash of one of the 256 most recent complete blocks"""
         return self.world.block_hash(a)
 
     def COINBASE(self):
-       """Get the block's beneficiary address"""
+        """Get the block's beneficiary address"""
         return self.world.block_coinbase()
 
     def TIMESTAMP(self):
-       """Get the block's timestamp"""
+        """Get the block's timestamp"""
         return self.world.block_timestamp()
 
     def NUMBER(self):
-       """Get the block's number"""
+        """Get the block's number"""
         return self.world.block_number()
 
     def DIFFICULTY(self):
-       """Get the block's difficulty"""
+        """Get the block's difficulty"""
         return self.world.block_difficulty()
 
     def GASLIMIT(self):
-       """Get the block's gas limit"""
+        """Get the block's gas limit"""
         return self.world.block_gaslimit()
 
     ############################################################################
     # Stack, Memory, Storage and Flow Operations
     def POP(self, a):
-       """Remove item from stack"""
+        """Remove item from stack"""
         # Items are automatically removed from stack
         # by the instruction dispatcher
         pass
@@ -1516,7 +1518,7 @@ class EVM(Eventful):
         return self._get_memfee(address, 32)
 
     def MLOAD(self, address):
-       """Load word from memory"""
+        """Load word from memory"""
         self._allocate(address, 32)
         value = self._load(address, 32)
         return value
@@ -1525,7 +1527,7 @@ class EVM(Eventful):
         return self._get_memfee(address, 32)
 
     def MSTORE(self, address, value):
-       """Save word to memory"""
+        """Save word to memory"""
         if istainted(self.pc):
             for taint in get_taints(self.pc):
                 value = taint_with(value, taint)
@@ -1536,7 +1538,7 @@ class EVM(Eventful):
         return self._get_memfee(address, 1)
 
     def MSTORE8(self, address, value):
-       """Save byte to memory"""
+        """Save byte to memory"""
         if istainted(self.pc):
             for taint in get_taints(self.pc):
                 value = taint_with(value, taint)
@@ -1544,7 +1546,7 @@ class EVM(Eventful):
         self._store(address, Operators.EXTRACT(value, 0, 8), 1)
 
     def SLOAD(self, offset):
-       """Load word from storage"""
+        """Load word from storage"""
         storage_address = self.address
         self._publish('will_evm_read_storage', storage_address, offset)
         value = self.world.get_storage_data(storage_address, offset)
@@ -1568,7 +1570,7 @@ class EVM(Eventful):
         return gascost
 
     def SSTORE(self, offset, value):
-       """Save word to storage"""
+        """Save word to storage"""
         storage_address = self.address
         self._publish('will_evm_write_storage', storage_address, offset, value)
         #refund = Operators.ITEBV(256,
@@ -1583,49 +1585,49 @@ class EVM(Eventful):
         self._publish('did_evm_write_storage', storage_address, offset, value)
 
     def JUMP(self, dest):
-       """Alter the program counter"""
+        """Alter the program counter"""
         self.pc = dest
         #This set ups a check for JMPDEST in the next instruction
         self._set_check_jmpdest()
 
     def JUMPI(self, dest, cond):
-       """Conditionally alter the program counter"""
+        """Conditionally alter the program counter"""
         self.pc = Operators.ITEBV(256, cond != 0, dest, self.pc + self.instruction.size)
         #This set ups a check for JMPDEST in the next instruction if cond != 0
         self._set_check_jmpdest(cond != 0)
 
     def GETPC(self):
-       """Get the value of the program counter prior to the increment"""
+        """Get the value of the program counter prior to the increment"""
         return self.pc
 
     def MSIZE(self):
-       """Get the size of active memory in bytes"""
+        """Get the size of active memory in bytes"""
         return self._allocated
 
     def GAS(self):
-       """Get the amount of available gas, including the corresponding reduction the amount of available gas"""
+        """Get the amount of available gas, including the corresponding reduction the amount of available gas"""
         #fixme calculate gas consumption
         return Operators.EXTRACT(self._gas, 0, 256)
 
     def JUMPDEST(self):
-       """Mark a valid destination for jumps"""
+        """Mark a valid destination for jumps"""
 
     ############################################################################
     # Push Operations
     def PUSH(self, value):
-       """Place 1 to 32 bytes item on stack"""
+        """Place 1 to 32 bytes item on stack"""
         return value
 
     ############################################################################
     # Duplication Operations
     def DUP(self, *operands):
-       """Duplicate stack item"""
+        """Duplicate stack item"""
         return (operands[-1],) + operands
 
     ############################################################################
     # Exchange Operations
     def SWAP(self, *operands):
-       """Exchange 1st and 2nd stack items"""
+        """Exchange 1st and 2nd stack items"""
         a = operands[0]
         b = operands[-1]
         return (b,) + operands[1:-1] + (a,)
@@ -1649,7 +1651,7 @@ class EVM(Eventful):
 
     @transact
     def CREATE(self, value, offset, size):
-       """Create a new account with associated code"""
+        """Create a new account with associated code"""
         address = self.world.create_account(address=EVMWorld.calculate_new_address(sender=self.address, nonce=self.world.get_nonce(self.address)))
         self.world.start_transaction('CREATE',
                                      address,
@@ -1662,7 +1664,7 @@ class EVM(Eventful):
 
     @CREATE.pos
     def CREATE(self, value, offset, size):
-       """Create a new account with associated code"""
+        """Create a new account with associated code"""
         tx = self.world.last_transaction  # At this point last and current tx are the same.
         address = tx.address
         if tx.result == 'RETURN':
@@ -1678,7 +1680,7 @@ class EVM(Eventful):
     @transact
     @concretized_args(address='ACCOUNTS', gas='MINMAX', in_offset='SAMPLED', in_size='SAMPLED')
     def CALL(self, gas, address, value, in_offset, in_size, out_offset, out_size):
-       """Message-call into an account"""
+        """Message-call into an account"""
         self.world.start_transaction('CALL',
                                      address,
                                      data=self.read_buffer(in_offset, in_size),
@@ -1703,7 +1705,7 @@ class EVM(Eventful):
     @transact
     @concretized_args(in_offset='SAMPLED', in_size='SAMPLED')
     def CALLCODE(self, gas, _ignored_, value, in_offset, in_size, out_offset, out_size):
-       """Message-call into this account with alternative account's code"""
+        """Message-call into this account with alternative account's code"""
         self.world.start_transaction('CALLCODE',
                                      address=self.address,
                                      data=self.read_buffer(in_offset, in_size),
@@ -1726,7 +1728,7 @@ class EVM(Eventful):
         return self._get_memfee(offset, size)
 
     def RETURN(self, offset, size):
-       """Halt execution returning output data"""
+        """Halt execution returning output data"""
         data = self.read_buffer(offset, size)
         raise EndTx('RETURN', data)
 
@@ -1736,7 +1738,7 @@ class EVM(Eventful):
     @transact
     @concretized_args(in_offset='SAMPLED', in_size='SAMPLED')
     def DELEGATECALL(self, gas, address, in_offset, in_size, out_offset, out_size):
-       """Message-call into an account"""
+        """Message-call into an account"""
         self.world.start_transaction('DELEGATECALL',
                                      address,
                                      data=self.read_buffer(in_offset, in_size),
@@ -1761,7 +1763,7 @@ class EVM(Eventful):
     @transact
     @concretized_args(in_offset='SAMPLED', in_size='SAMPLED')
     def STATICCALL(self, gas, address, in_offset, in_size, out_offset, out_size):
-       """Message-call into an account"""
+        """Message-call into an account"""
         self.world.start_transaction('STATICCALL',
                                      address,
                                      data=self.read_buffer(in_offset, in_size),
@@ -1793,7 +1795,7 @@ class EVM(Eventful):
         raise EndTx('THROW')
 
     def SELFDESTRUCT(self, recipient):
-       """Halt execution and register account for later deletion"""
+        """Halt execution and register account for later deletion"""
         #This may create a user account
         recipient = Operators.EXTRACT(recipient, 0, 160)
         address = self.address
@@ -2056,12 +2058,12 @@ class EVMWorld(Platform):
 
     @property
     def transactions(self):
-       """Completed completed transaction"""
+        """Completed completed transaction"""
         return tuple((tx for tx in self._transactions if tx.result != 'TXERROR'))
 
     @property
     def human_transactions(self):
-       """Completed human transaction"""
+        """Completed human transaction"""
         txs = []
         for tx in self.transactions:
             if tx.depth == 0:
@@ -2070,14 +2072,14 @@ class EVMWorld(Platform):
 
     @property
     def last_transaction(self):
-       """Last completed transaction"""
+        """Last completed transaction"""
         if len(self.transactions):
             return self.transactions[-1]
         return None
 
     @property
     def last_human_transaction(self):
-       """Last completed human transaction"""
+        """Last completed human transaction"""
         for tx in reversed(self.transactions):
             if tx.depth == 0:
                 return tx
@@ -2091,7 +2093,7 @@ class EVMWorld(Platform):
 
     @property
     def current_vm(self):
-       """current vm"""
+        """current vm"""
         try:
             _, _, _, _, vm = self._callstack[-1]
             return vm
@@ -2100,7 +2102,7 @@ class EVMWorld(Platform):
 
     @property
     def current_transaction(self):
-       """current tx"""
+        """current tx"""
         try:
             tx, _, _, _, _ = self._callstack[-1]
             if tx.result is not None:
@@ -2112,7 +2114,7 @@ class EVMWorld(Platform):
 
     @property
     def current_human_transaction(self):
-       """Current ongoing human transaction"""
+        """Current ongoing human transaction"""
         try:
             tx, _, _, _, _ = self._callstack[0]
             if tx.result is not None:
@@ -2152,7 +2154,7 @@ class EVMWorld(Platform):
             self._deleted_accounts.add(address)
 
     def get_storage_data(self, storage_address, offset):
-       """
+        """
         Read a value from a storage slot on the specified account
 
         :param storage_address: an account address
@@ -2160,12 +2162,12 @@ class EVMWorld(Platform):
         :type offset: int or BitVec
         :return: the value
         :rtype: int or BitVec
-       """
+        """
         value = self._world_state[storage_address]['storage'].get(offset, 0)
         return simplify(value)
 
     def set_storage_data(self, storage_address, offset, value):
-       """
+        """
         Writes a value to a storage slot in specified account
 
         :param storage_address: an account address
@@ -2173,17 +2175,17 @@ class EVMWorld(Platform):
         :type offset: int or BitVec
         :param value: the value to write
         :type value: int or BitVec
-       """
+        """
         self._world_state[storage_address]['storage'][offset] = value
 
     def get_storage_items(self, address):
-       """
-
+        """
+        Gets all items in an account storage
 
         :param address: account address
         :return: all items in account storage. items are tuple of (index, value). value can be symbolic
         :rtype: list[(storage_index, storage_value)]
-       """
+        """
         storage = self._world_state[address]['storage']
         items = []
         array = storage.array
@@ -2193,11 +2195,11 @@ class EVMWorld(Platform):
         return items
 
     def has_storage(self, address):
-       """
+        """
         True if something has been written to the storage.
         Note that if a slot has been erased from the storage this function may
         lose any meaning.
-       """
+        """
         storage = self._world_state[address]['storage']
         array = storage.array
         while not isinstance(array, ArrayVariable):
@@ -2207,16 +2209,17 @@ class EVMWorld(Platform):
         return False
 
     def get_storage(self, address):
-       """
+        """
+        Gets the storage of an account
 
         :param address: account address
         :return: account storage
         :rtype: bytearray or ArrayProxy
-       """
+        """
         return self._world_state[address]['storage']
 
     def _set_storage(self, address, storage):
-       """Private auxiliary function to replace the storage"""
+        """Private auxiliary function to replace the storage"""
         self._world_state[address]['storage'] = storage
 
     def get_nonce(self, address):
@@ -2304,11 +2307,12 @@ class EVMWorld(Platform):
         return self._gaslimit
 
     def block_hash(self, block_number=None, force_recent=True):
-       """Calculates a block's hash
-            :param block_number: the block number for which to calculate the hash, defaulting to the most recent block
-            :param force_recent: if True (the default) return zero for any block that is in the future or older than 256 blocks
-            :return: the block hash
-       """
+        """
+        Calculates a block's hash
+        :param block_number: the block number for which to calculate the hash, defaulting to the most recent block
+        :param force_recent: if True (the default) return zero for any block that is in the future or older than 256 blocks
+        :return: the block hash
+        """
         if block_number is None:
             block_number = self.block_number() - 1
 
@@ -2339,7 +2343,7 @@ class EVMWorld(Platform):
         return len(self._callstack)
 
     def new_address(self, sender=None, nonce=None):
-       """Create a fresh 160bit address"""
+        """Create a fresh 160bit address"""
         if sender is not None and nonce is None:
             nonce = self.get_nonce(sender)
 
@@ -2377,13 +2381,14 @@ class EVMWorld(Platform):
             self._close_transaction(ex.result, ex.data, rollback=ex.is_rollback())
 
     def create_account(self, address=None, balance=0, code=None, storage=None, nonce=None):
-       """Low level account creation. No transaction is done.
-            :param address: the address of the account, if known. If omitted, a new address will be generated as closely to the Yellow Paper as possible.
-            :param balance: the initial balance of the account in Wei
-            :param code: the runtime code of the account, if a contract
-            :param storage: storage array
-            :param nonce: the nonce for the account; contracts should have a nonce greater than or equal to 1
-       """
+        """
+        Low level account creation. No transaction is done.
+        :param address: the address of the account, if known. If omitted, a new address will be generated as closely to the Yellow Paper as possible.
+        :param balance: the initial balance of the account in Wei
+        :param code: the runtime code of the account, if a contract
+        :param storage: storage array
+        :param nonce: the nonce for the account; contracts should have a nonce greater than or equal to 1
+        """
         if code is None:
             code = bytes()
         else:
@@ -2434,10 +2439,12 @@ class EVMWorld(Platform):
         return address
 
     def create_contract(self, price=0, address=None, caller=None, balance=0, init=None, gas=2300):
-       """Create a contract account. Sends a transaction to initialize the contract
-            :param address: the address of the new account, if known. If omitted, a new address will be generated as closely to the Yellow Paper as possible.
-            :param balance: the initial balance of the account in Wei
-            :param init: the initialization code of the contract
+        """
+        Create a contract account. Sends a transaction to initialize the contract
+
+        :param address: the address of the new account, if known. If omitted, a new address will be generated as closely to the Yellow Paper as possible.
+        :param balance: the initial balance of the account in Wei
+        :param init: the initialization code of the contract
 
         The way that the Solidity compiler expects the constructor arguments to
         be passed is by appending the arguments to the byte code produced by the
@@ -2446,7 +2453,7 @@ class EVMWorld(Platform):
         memory through the CODECOPY opcode with appropriate values on the stack.
         This is done when the byte code in the init byte array is actually run
         on the network.
-       """
+        """
         expected_address = self.create_account(self.new_address(sender=caller))
         if address is None:
             address = expected_address
@@ -2461,16 +2468,17 @@ class EVMWorld(Platform):
         self._process_pending_transaction()
 
     def start_transaction(self, sort, address, price=None, data=None, caller=None, value=0, gas=2300):
-       """Initiate a transaction
-            :param sort: the type of transaction. CREATE or CALL or DELEGATECALL
-            :param address: the address of the account which owns the code that is executing.
-            :param price: the price of gas in the transaction that originated this execution.
-            :param data: the byte array that is the input data to this execution
-            :param caller: the address of the account which caused the code to be executing. A 160-bit code used for identifying Accounts
-            :param value: the value, in Wei, passed to this account as part of the same procedure as execution. One Ether is defined as being 10**18 Wei.
-            :param bytecode: the byte array that is the machine code to be executed.
-            :param gas: gas budget for this transaction.
-       """
+        """
+        Initiate a transaction
+        :param sort: the type of transaction. CREATE or CALL or DELEGATECALL
+        :param address: the address of the account which owns the code that is executing.
+        :param price: the price of gas in the transaction that originated this execution.
+        :param data: the byte array that is the input data to this execution
+        :param caller: the address of the account which caused the code to be executing. A 160-bit code used for identifying Accounts
+        :param value: the value, in Wei, passed to this account as part of the same procedure as execution. One Ether is defined as being 10**18 Wei.
+        :param bytecode: the byte array that is the machine code to be executed.
+        :param gas: gas budget for this transaction.
+        """
         assert self._pending_transaction is None, "Already started tx"
         self._pending_transaction = PendingTransaction(sort, address, price, data, caller, value, gas)
 
@@ -2644,15 +2652,6 @@ class EVMWorld(Platform):
                     value = storage.get(i)
                     is_storage_symbolic = issymbolic(value)
                     stream.write("storage[%x] = %x %s\n" % (state.solve_one(i), state.solve_one(value), flagged(is_storage_symbolic)))
-           """if blockchain.has_storage(account_address):
-                stream.write("Storage:\n")
-                for offset, value in blockchain.get_storage_items(account_address):
-                    is_storage_symbolic = issymbolic(offset) or issymbolic(value)
-                    offset = state.solve_one(offset)
-                    value = state.solve_one(value)
-                    stream.write("\t%032x -> %032x %s\n" % (offset, value, flagged(is_storage_symbolic)))
-                    is_something_symbolic = is_something_symbolic or is_storage_symbolic
-           """
 
             runtime_code = state.solve_one(blockchain.get_code(account_address))
             if runtime_code:
