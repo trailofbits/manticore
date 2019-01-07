@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 # ignore: Ignore gas. Do not account for it. Do not OOG.
 consts = config.get_group('evm')
 
-consts.add('oog', default=0, description='Default behavior for symbolic gas.'
+consts.add('oog', default='pedantic', description='Default behavior for symbolic gas.'
                                          'pedantic: Fully faithful. Test at every instruction. Forks.'
                                          'complete: Mostly faithful. Test at BB limit. Forks.'
                                          'concrete: Incomplete. Concretize gas to MIN/MAX values. Forks.'

@@ -15,7 +15,7 @@ class EVMTest_REVERT(unittest.TestCase):
     maxDiff=None 
     def setUp(self):
         self.saved_gas_config = consts.oog
-        consts.oog = 1
+        consts.oog = 'complete'
 
     def tearDown(self):
         consts.oog = self.saved_gas_config
