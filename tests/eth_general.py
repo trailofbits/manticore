@@ -530,6 +530,33 @@ class EthTests(unittest.TestCase):
         # is actually deleted at the end of the human tx
         self.assertEqual(ABI.deserialize('uint', to_constant(self.mevm.world.transactions[-1].return_data)), 42)
 
+    def test_states_querying_1325(self):
+        """
+        Tests issue 1325.
+        """
+        owner = self.mevm.create_account(balance=1000)
+        A = self.mevm.solidity_create_contract('contract A { function foo() { revert(); } }', owner=owner)
+
+        self.assertEqual(self.mevm.count_running_states(), 1)
+        self.assertEqual(self.mevm.count_terminated_states(), 0)
+        self.assertEqual(self.mevm.count_states(), 1)
+
+        A.foo()
+
+        def assert_all():
+            self.assertEqual(self.mevm.count_running_states(), 0)
+            self.assertEqual(self.mevm.count_terminated_states(), 1)
+            self.assertEqual(self.mevm.count_states(), 1)
+
+        list(self.mevm.running_states)
+        assert_all()
+
+        list(self.mevm.terminated_states)
+        assert_all()
+
+        list(self.mevm.all_states)
+        assert_all()
+
     def test_function_name_collision(self):
         source_code = '''
         contract Test{
