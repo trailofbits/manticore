@@ -1,7 +1,8 @@
-# Usage:
-# git clone https://github.com/ethereum/tests
-# for i in tests/VMTests/*; do python3.6 make_VMTests.py $i > $MANTICORE/tests/EVM/VMTests/eth_`basename $i`.py; done
-#MANTICORE is manticore source folder
+__doc__ = '''Usage:
+     $ git clone https://github.com/ethereum/tests
+     $ for i in tests/VMTests/*; do python3.6 make_VMTests.py $i > $MANTICORE/tests/EVM/VMTests/eth_`basename $i`.py; done
+     (MANTICORE is manticore source folder)
+'''
 from io import StringIO
 from binascii import unhexlify
 import pyevmasm as EVMAsm
@@ -155,6 +156,10 @@ def gen_test(testcase, filename, skip):
 
 import sys, os, json
 if __name__ == '__main__':
+    if len(sys.argv) < 2:
+        print (__doc__)
+        sys.exit()
+
     filename_or_folder = os.path.abspath(sys.argv[1])
     
     
