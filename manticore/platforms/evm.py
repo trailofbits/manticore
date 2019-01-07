@@ -645,7 +645,7 @@ class EVM(Eventful):
 
     def _get_memfee(self, address, size=1):
         """
-        This calculates the ammount of extra gas needed for accessing to
+        This calculates the amount of extra gas needed for accessing to
         previously unused memory.
 
         :param address: base memory offset
