@@ -21,7 +21,7 @@ from manticore.ethereum import ManticoreEVM, State, DetectExternalCallAndLeak, D
 from manticore.ethereum.plugins import FilterFunctions
 from manticore.ethereum.solidity import SolidityMetadata
 from manticore.platforms import evm
-from manticore.platforms.evm import EVMWorld, ConcretizeStack, concretized_args, Return, Stop
+from manticore.platforms.evm import EVMWorld, ConcretizeArgument, concretized_args, Return, Stop
 from manticore.utils.deprecated import ManticoreDeprecationWarning
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -360,6 +360,12 @@ class EthInstructionTests(unittest.TestCase):
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
         return constraints, world, new_vm
+
+    def test_str(self):
+        constraints, world, vm = self._make()
+        vm_str = """0x222222222222222222222222222222222222200: ---------------------------------------------------------------------------------------------------------------------------------------------------\n0x222222222222222222222222222222222222200: 0x0000: SDIV  Signed integer division operation (truncated).\n0x222222222222222222222222222222222222200: Stack                                                                           Memory\n0x222222222222222222222222222222222222200:                                                                                 0000  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................\n0x222222222222222222222222222222222222200:                                                                                 0010  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................\n0x222222222222222222222222222222222222200:                                                                                 0020  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................\n0x222222222222222222222222222222222222200:                                                                                 0030  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................\n0x222222222222222222222222222222222222200:                                                                                 0040  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................\n0x222222222222222222222222222222222222200:                                                                                 0050  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................\n0x222222222222222222222222222222222222200:                                                                                 0060  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................\n0x222222222222222222222222222222222222200:                                                                                 0070  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................\n0x222222222222222222222222222222222222200: Gas: 1000000"""
+
+        self.assertEqual(str(vm), vm_str)
 
     def test_SDIV(self):
         constraints, world, vm = self._make()
@@ -786,17 +792,13 @@ class EthTests(unittest.TestCase):
         owner = m.create_account(balance=10**10)
         contract = m.solidity_create_contract(contract_src, owner=owner)
         receiver = m.create_account(0)
-
         symbolic_address = m.make_symbolic_address()
-
         m.constrain(symbolic_address == receiver.address)
+        self.assertTrue(m.count_running_states() > 0 )
         contract.transferHalfTo(symbolic_address, caller=owner, value=m.make_symbolic_value())
-
-        running_states = list(m.running_states)
-
-        self.assertEqual(len(running_states), 2)
+        self.assertTrue(m.count_running_states() > 0 )
         self.assertTrue(any(state.can_be_true(state.platform.get_balance(receiver.address) > 0)
-                                for state in running_states))
+                                for state in m.running_states))
 
     def test_make_symbolic_address(self):
         def get_state():
@@ -1087,7 +1089,7 @@ class EthHelpersTest(unittest.TestCase):
         def inner_func(self, a, b):
             return a, b
 
-        with self.assertRaises(ConcretizeStack) as cm:
+        with self.assertRaises(ConcretizeArgument) as cm:
             inner_func(None, self.bv, 34)
 
         self.assertEqual(cm.exception.pos, 1)
@@ -1098,7 +1100,7 @@ class EthHelpersTest(unittest.TestCase):
         def inner_func(self, a, b):
             return a, b
 
-        with self.assertRaises(ConcretizeStack) as cm:
+        with self.assertRaises(ConcretizeArgument) as cm:
             inner_func(None, 34, self.bv)
 
         self.assertEqual(cm.exception.pos, 2)

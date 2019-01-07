@@ -90,8 +90,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 54932)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 54932)
 
     def test_DynamicJumpInsidePushWithJumpDest(self):
         '''
@@ -194,8 +194,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79983)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79983)
 
     def test_memory1(self):
         '''
@@ -261,8 +261,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99949)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99949)
 
     def test_JDfromStorageDynamicJump0_AfterJumpdest(self):
         '''
@@ -422,8 +422,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79921)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79921)
 
     def test_for_loop2(self):
         '''
@@ -500,8 +500,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99153)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99153)
 
     def test_DynamicJumpJD_DependsOnJumps1(self):
         '''
@@ -564,8 +564,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79966)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79966)
 
     def test_msize0(self):
         '''
@@ -623,8 +623,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79983)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79983)
 
     def test_DynamicJumpPathologicalTest3(self):
         '''
@@ -737,8 +737,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 39932)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 39932)
 
     def test_DyanmicJump0_outOfBoundary(self):
         '''
@@ -847,8 +847,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79976)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79976)
 
     def test_jumpToUint64maxPlus1(self):
         '''
@@ -1037,8 +1037,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99999905)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99999905)
 
     def test_mstore8_1(self):
         '''
@@ -1100,8 +1100,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79970)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79970)
 
     def test_sha3MemExp(self):
         '''
@@ -1547,8 +1547,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99153)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99153)
 
     def test_JDfromStorageDynamicJump0_jumpdest0(self):
         '''
@@ -1612,8 +1612,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79926)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79926)
 
     def test_mstore8_0(self):
         '''
@@ -1672,8 +1672,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79976)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79976)
 
     def test_return2(self):
         '''
@@ -1751,8 +1751,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99935)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99935)
 
     def test_BlockNumberDynamicJumpi1(self):
         '''
@@ -1813,8 +1813,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79970)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79970)
 
     def test_jumpiToUint64maxPlus1(self):
         '''
@@ -2529,8 +2529,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79971)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79971)
 
     def test_gas1(self):
         '''
@@ -2585,8 +2585,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79995)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79995)
 
     def test_jump0_AfterJumpdest(self):
         '''
@@ -2694,8 +2694,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79965)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79965)
 
     def test_msize3(self):
         '''
@@ -2756,8 +2756,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79965)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79965)
 
     def test_JDfromStorageDynamicJump0_withoutJumpdest(self):
         '''
@@ -2914,8 +2914,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79972)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79972)
 
     def test_jumpifInsidePushWithJumpDest(self):
         '''
@@ -3155,8 +3155,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79976)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79976)
 
     def test_BlockNumberDynamicJump0_jumpdest0(self):
         '''
@@ -3217,8 +3217,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79977)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79977)
 
     def test_JDfromStorageDynamicJumpi1_jumpdest(self):
         '''
@@ -3339,8 +3339,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 69926)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 69926)
 
     def test_byte1(self):
         '''
@@ -3495,8 +3495,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 94688)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 94688)
 
     def test_jumpDynamicJumpSameDest(self):
         '''
@@ -3559,8 +3559,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99964)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99964)
 
     def test_jump0_withoutJumpdest(self):
         '''
@@ -3666,8 +3666,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99966)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99966)
 
     def test_pop0(self):
         '''
@@ -3724,8 +3724,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79989)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79989)
 
     def test_BlockNumberDynamicJumpiAfterStop(self):
         '''
@@ -3788,8 +3788,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79972)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79972)
 
     def test_DynamicJumpifInsidePushWithoutJumpDest(self):
         '''
@@ -3990,8 +3990,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99965)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99965)
 
     def test_mloadError1(self):
         '''
@@ -4048,8 +4048,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 94976)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 94976)
 
     def test_codecopyMemExp(self):
         '''
@@ -4204,8 +4204,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79970)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79970)
 
     def test_deadCode_1(self):
         '''
@@ -4271,8 +4271,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99983)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99983)
 
     def test_DynamicJumpi1(self):
         '''
@@ -4333,8 +4333,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79969)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79969)
 
     def test_mstore8WordToBigError(self):
         '''
@@ -4393,8 +4393,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79976)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79976)
 
     def test_jumpTo1InstructionafterJump_noJumpDest(self):
         '''
@@ -4682,8 +4682,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 608)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 608)
 
     def test_DynamicJump_valueUnderflow(self):
         '''
@@ -4866,8 +4866,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99960)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99960)
 
     def test_jump0_AfterJumpdest3(self):
         '''
@@ -5032,8 +5032,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79965)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79965)
 
     def test_jumpOntoJump(self):
         '''
@@ -5232,8 +5232,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79975)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79975)
 
     def test_DynamicJump_value3(self):
         '''
@@ -5309,8 +5309,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99966)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99966)
 
     def test_jump0_jumpdest2(self):
         '''
@@ -5371,8 +5371,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79977)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79977)
 
     def test_stack_loop(self):
         '''
@@ -5592,8 +5592,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79979)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79979)
 
     def test_indirect_jump2(self):
         '''
@@ -5660,8 +5660,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99965)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99965)
 
     def test_BlockNumberDynamicJumpiOutsideBoundary(self):
         '''
@@ -5867,8 +5867,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79982)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79982)
 
     def test_stackjump1(self):
         '''
@@ -5937,8 +5937,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99938)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99938)
 
     def test_mloadError0(self):
         '''
@@ -5992,8 +5992,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 94988)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 94988)
 
     def test_pc0(self):
         '''
@@ -6046,8 +6046,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 94995)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 94995)
 
     def test_DynamicJump_value1(self):
         '''
@@ -6123,8 +6123,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99962)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99962)
 
     def test_sstore_load_2(self):
         '''
@@ -6290,8 +6290,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79921)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79921)
 
     def test_jumpiToUintmaxPlus1(self):
         '''
@@ -6397,8 +6397,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 74989)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 74989)
 
     def test_BlockNumberDynamicJumpi1_jumpdest(self):
         '''
@@ -6512,8 +6512,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79919)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79919)
 
     def test_DynamicJump0_jumpdest0(self):
         '''
@@ -6574,8 +6574,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79976)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79976)
 
     def test_DynamicJump0_jumpdest2(self):
         '''
@@ -6638,8 +6638,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79971)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79971)
 
     def test_BlockNumberDynamicJump0_foreverOutOfGas(self):
         '''
@@ -7026,8 +7026,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79976)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79976)
 
     def test_JDfromStorageDynamicJump0_foreverOutOfGas(self):
         '''
@@ -7185,8 +7185,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79977)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79977)
 
     def test_log1MemExp(self):
         '''
@@ -7293,8 +7293,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79971)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79971)
 
     def test_loop_stacklimit_1021(self):
         '''
@@ -7410,8 +7410,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79985)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79985)
 
     def test_jumpTo1InstructionafterJump_jumpdestFirstInstruction(self):
         '''
@@ -7517,8 +7517,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79982)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79982)
 
     def test_when(self):
         '''
@@ -7578,8 +7578,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99950)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99950)
 
     def test_DynamicJumpPathologicalTest1(self):
         '''
@@ -7750,8 +7750,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 61212)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 61212)
 
     def test_JDfromStorageDynamicJumpiOutsideBoundary(self):
         '''
@@ -7877,8 +7877,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99964)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99964)
 
     def test_bad_indirect_jump2(self):
         '''
@@ -8119,8 +8119,8 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79965)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79965)
 
 if __name__ == '__main__':
     unittest.main()

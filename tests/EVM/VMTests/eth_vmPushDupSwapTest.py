@@ -93,8 +93,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79961)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79961)
 
     def test_swap15(self):
         '''
@@ -164,8 +164,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79949)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79949)
 
     def test_dup3(self):
         '''
@@ -223,8 +223,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79985)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79985)
 
     def test_push20(self):
         '''
@@ -279,8 +279,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79994)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79994)
 
     def test_swap7(self):
         '''
@@ -342,8 +342,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79973)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79973)
 
     def test_swap14(self):
         '''
@@ -412,8 +412,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79952)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79952)
 
     def test_push12(self):
         '''
@@ -468,8 +468,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79994)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79994)
 
     def test_dup14(self):
         '''
@@ -538,8 +538,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79952)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79952)
 
     def test_swap8(self):
         '''
@@ -602,8 +602,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79970)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79970)
 
     def test_push15(self):
         '''
@@ -658,8 +658,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79994)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79994)
 
     def test_dup12(self):
         '''
@@ -726,8 +726,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79958)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79958)
 
     def test_push9(self):
         '''
@@ -782,8 +782,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79994)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79994)
 
     def test_push8(self):
         '''
@@ -838,8 +838,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79994)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79994)
 
     def test_push16(self):
         '''
@@ -894,8 +894,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79994)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79994)
 
     def test_dup6(self):
         '''
@@ -956,8 +956,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79976)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79976)
 
     def test_swap2(self):
         '''
@@ -1014,8 +1014,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79988)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79988)
 
     def test_push21(self):
         '''
@@ -1070,8 +1070,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79994)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79994)
 
     def test_dup10(self):
         '''
@@ -1136,8 +1136,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79964)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79964)
 
     def test_push24(self):
         '''
@@ -1192,8 +1192,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79994)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79994)
 
     def test_push25(self):
         '''
@@ -1248,8 +1248,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79994)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79994)
 
     def test_dup16(self):
         '''
@@ -1320,8 +1320,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79946)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79946)
 
     def test_swap2error(self):
         '''
@@ -1420,8 +1420,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79994)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79994)
 
     def test_push32AndSuicide(self):
         '''
@@ -1475,8 +1475,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99997)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99997)
 
     def test_push3(self):
         '''
@@ -1531,8 +1531,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79994)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79994)
 
     def test_push10(self):
         '''
@@ -1587,8 +1587,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79994)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79994)
 
     def test_dup13(self):
         '''
@@ -1656,8 +1656,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79955)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79955)
 
     def test_push6(self):
         '''
@@ -1712,8 +1712,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79994)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79994)
 
     def test_dup4(self):
         '''
@@ -1772,8 +1772,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79982)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79982)
 
     def test_push13(self):
         '''
@@ -1828,8 +1828,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79994)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79994)
 
     def test_dup1(self):
         '''
@@ -1885,8 +1885,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79991)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79991)
 
     def test_push11(self):
         '''
@@ -1941,8 +1941,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79994)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79994)
 
     def test_push19(self):
         '''
@@ -1997,8 +1997,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79994)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79994)
 
     def test_push32Undefined3(self):
         '''
@@ -2049,8 +2049,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99997)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99997)
 
     def test_push30(self):
         '''
@@ -2105,8 +2105,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79994)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79994)
 
     def test_swap16(self):
         '''
@@ -2177,8 +2177,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79946)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79946)
 
     def test_swap9(self):
         '''
@@ -2242,8 +2242,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79967)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79967)
 
     def test_swap1(self):
         '''
@@ -2299,8 +2299,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79991)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79991)
 
     def test_push5(self):
         '''
@@ -2355,8 +2355,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79994)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79994)
 
     def test_swapjump1(self):
         '''
@@ -2430,8 +2430,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99964)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99964)
 
     def test_dup11(self):
         '''
@@ -2497,8 +2497,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79961)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79961)
 
     def test_dup7(self):
         '''
@@ -2560,8 +2560,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79973)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79973)
 
     def test_swap13(self):
         '''
@@ -2629,8 +2629,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79955)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79955)
 
     def test_dup5(self):
         '''
@@ -2690,8 +2690,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79979)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79979)
 
     def test_push32(self):
         '''
@@ -2746,8 +2746,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79994)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79994)
 
     def test_push32FillUpInputWithZerosAtTheEnd(self):
         '''
@@ -2798,8 +2798,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99997)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99997)
 
     def test_push14(self):
         '''
@@ -2854,8 +2854,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79994)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79994)
 
     def test_push32Undefined2(self):
         '''
@@ -2910,8 +2910,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79994)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79994)
 
     def test_push1_missingStack(self):
         '''
@@ -2962,8 +2962,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99997)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99997)
 
     def test_push18(self):
         '''
@@ -3018,8 +3018,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79994)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79994)
 
     def test_swap12(self):
         '''
@@ -3086,8 +3086,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79958)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79958)
 
     def test_swap6(self):
         '''
@@ -3148,8 +3148,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79976)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79976)
 
     def test_push32Undefined(self):
         '''
@@ -3200,8 +3200,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99997)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99997)
 
     def test_dup2(self):
         '''
@@ -3258,8 +3258,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79988)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79988)
 
     def test_swap3(self):
         '''
@@ -3317,8 +3317,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79985)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79985)
 
     def test_dup2error(self):
         '''
@@ -3421,8 +3421,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79982)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79982)
 
     def test_push31(self):
         '''
@@ -3477,8 +3477,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79994)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79994)
 
     def test_swap10(self):
         '''
@@ -3543,8 +3543,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79964)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79964)
 
     def test_push7(self):
         '''
@@ -3599,8 +3599,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79994)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79994)
 
     def test_dup9(self):
         '''
@@ -3664,8 +3664,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79967)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79967)
 
     def test_push2(self):
         '''
@@ -3720,8 +3720,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79994)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79994)
 
     def test_push1(self):
         '''
@@ -3776,8 +3776,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79994)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79994)
 
     def test_push29(self):
         '''
@@ -3832,8 +3832,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79994)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79994)
 
     def test_push4(self):
         '''
@@ -3888,8 +3888,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79994)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79994)
 
     def test_push33(self):
         '''
@@ -4024,8 +4024,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79970)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79970)
 
     def test_push26(self):
         '''
@@ -4080,8 +4080,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79994)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79994)
 
     def test_push27(self):
         '''
@@ -4136,8 +4136,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79994)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79994)
 
     def test_dup15(self):
         '''
@@ -4207,8 +4207,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79949)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79949)
 
     def test_swap5(self):
         '''
@@ -4268,8 +4268,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79979)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79979)
 
     def test_push17(self):
         '''
@@ -4324,8 +4324,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79994)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79994)
 
     def test_push22(self):
         '''
@@ -4380,8 +4380,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79994)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79994)
 
     def test_push28(self):
         '''
@@ -4436,8 +4436,8 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79994)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79994)
 
 if __name__ == '__main__':
     unittest.main()

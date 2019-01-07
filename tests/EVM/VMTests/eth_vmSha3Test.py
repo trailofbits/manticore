@@ -84,8 +84,8 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 4294947051)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 4294947051)
 
     def test_sha3_6(self):
         '''
@@ -187,8 +187,8 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99999979961)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99999979961)
 
     def test_sha3_memSizeQuadraticCost32_zeroSize(self):
         '''
@@ -245,8 +245,8 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 4294947257)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 4294947257)
 
     def test_sha3_memSizeQuadraticCost32(self):
         '''
@@ -303,8 +303,8 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 4294947153)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 4294947153)
 
     def test_sha3_memSizeQuadraticCost33(self):
         '''
@@ -361,8 +361,8 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 4294947150)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 4294947150)
 
     def test_sha3_memSizeQuadraticCost65(self):
         '''
@@ -419,8 +419,8 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 4294947048)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 4294947048)
 
     def test_sha3_memSizeNoQuadraticCost31(self):
         '''
@@ -477,8 +477,8 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 4294947157)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 4294947157)
 
     def test_sha3_bigSize(self):
         '''
@@ -625,8 +625,8 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79952)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79952)
 
     def test_sha3_bigOffset2(self):
         '''
@@ -683,8 +683,8 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 3756501424)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 3756501424)
 
     def test_sha3_memSizeQuadraticCost64(self):
         '''
@@ -741,8 +741,8 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 4294947051)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 4294947051)
 
     def test_sha3_memSizeQuadraticCost63(self):
         '''
@@ -799,8 +799,8 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 4294947055)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 4294947055)
 
     def test_sha3_1(self):
         '''
@@ -857,8 +857,8 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79952)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79952)
 
     def test_sha3_3(self):
         '''
