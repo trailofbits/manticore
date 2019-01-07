@@ -238,6 +238,11 @@ class Transaction:
     def __str__(self):
         return 'Transaction({:s}, from=0x{:x}, to=0x{:x}, value={!r}, depth={:d}, data={!r}, result={!r}..)'.format(self.sort, self.caller, self.address, self.value, self.depth, self.data, self.result)
 
+    def __repr__(self):
+        if self.sort == 'CALL':
+            return f'Tx CALL(func_sig={self.data[:4]}) -> {self.result}'
+        else:
+            return f'Tx {self.sort} -> {self.result}'
 
 # Exceptions...
 class EVMException(Exception):

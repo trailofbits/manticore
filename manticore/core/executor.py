@@ -57,7 +57,7 @@ class Policy:
         with self._executor.locked_context('.'.join(keys), default) as policy_context:
             yield policy_context
 
-    def _add_state_callback(self, state_id, state):
+    def _add_state_callback(self, state, state_id):
         ''' Save summarize(state) on policy shared context before
             the state is stored
         '''
@@ -244,23 +244,22 @@ class Executor(Eventful):
                 self._shared_context[key] = sub_context
 
     def _register_state_callbacks(self, state, state_id):
-        '''
-            Install forwarding callbacks in state so the events can go up.
-            Going up, we prepend state in the arguments.
-        '''
+        """
+        Install forwarding callbacks in state so the events can go up.
+        Going up, we prepend state in the arguments.
+        """
         # Forward all state signals
         self.forward_events_from(state, True)
 
     def enqueue(self, state):
-        '''
-            Enqueue state.
-            Save state on storage, assigns an id to it, then add it to the
-            priority queue
-        '''
+        """
+        Enqueue state.
+        Save state on storage, assigns an id to it, then add it to the priority queue.
+        """
         # save the state to secondary storage
         state_id = self._workspace.save_state(state)
         self.put(state_id)
-        self._publish('did_enqueue_state', state_id, state)
+        self._publish('did_enqueue_state', state, state_id)
         return state_id
 
     def load_workspace(self):

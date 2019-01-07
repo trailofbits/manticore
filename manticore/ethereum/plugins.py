@@ -1,5 +1,3 @@
-import sys
-
 import logging
 from functools import reduce
 
@@ -35,6 +33,8 @@ class ExamplePlugin(Plugin):
             A = manticore.solidity_create_contract(..., contract_name='A')
             B = manticore.solidity_create_contract(..., contract_name='B')
             A.a(B)
+
+        :type state: manticore.ethereum.State
         """
         pass
 
@@ -52,38 +52,131 @@ class ExamplePlugin(Plugin):
             contract A { function a(B b) { b.b(); } }
             contract B { function b() {} }
 
-        The A.a(B) call will open two transactions.
+        B.b() opens one transaction while A.a(B) opens two transactions.
 
-        `tx.is_human` can be used to determine whether it is human or internal transaction.
+        The `tx.is_human` can be used to determine if the transaction has been explicitly called by the user
+        (from a manticore script) or if it is an internal transaction (e.g. b.b() called from A.a(B)).
+
+        :type state: manticore.ethereum.State
+        :type tx: manticore.ethereum.evm.Transaction
         """
         pass
 
     def will_close_transaction_callback(self, state, tx):
-        logger.info('will close a transaction %r %r', state, tx)
+        """
+        Called when a transaction is closed. See also `will_open_transaction_callback`.
+
+        :type state: manticore.ethereum.State
+        :type tx: manticore.ethereum.evm.Transaction
+        """
+        pass
 
     def will_execute_instruction_callback(self, state, instruction, arguments):
-        logger.info('will_execute_instruction %r %r %r', state, instruction, arguments)
+        """
+        Called before an instruction is executed.
+
+        The arguments may be symbolic.
+
+        :type state: manticore.ethereum.State
+        :type instruction: pyevmasm.Instruction
+        :type arguments: list
+        """
+        pass
 
     def did_execute_instruction_callback(self, state, last_instruction, last_arguments, result):
-        logger.info('did_execute_instruction %r %r %r %r', state, last_instruction, last_arguments, result)
+        """
+        Called after an instruction was executed.
+
+        The last_arguments and result may be symbolic.
+
+        :type state: manticore.ethereum.State
+        :type last_instruction: pyevmasm.Instruction
+        :type last_arguments: list
+        :type result: typing.Union[int, manticore.core.smtlib.expression.Expression]
+        """
+        pass
 
     def will_fork_state_callback(self, parent_state, expression, solutions, policy):
-        logger.info('will_fork_state %r %r %r %r', parent_state, expression, solutions, policy)
+        """
+        :param expression: expression that we fork on
+        :param solutions: tuple of solutions (values) that the state will fork to
+        :param policy: fork policy string
+
+        :type parent_state: manticore.ethereum.State
+        :type expression: manticore.core.smtlib.expression.Expression
+        :type solutions: Any
+        :type policy: str
+        """
+        pass
 
     def did_fork_state_callback(self, child_state, expression, new_value, policy):
-        logger.info('did_fork_state %r %r %r %r', child_state, expression, new_value, policy)
+        """
 
-    def did_load_state_callback(self, state, state_id):
-        logger.info('did_load_state %r %r', state, state_id)
+        :type child_state: manticore.ethereum.State
+        :type expression: manticore.core.smtlib.expression.
+        :type new_value: TODO / FIXME
+        :type policy: str
+        """
+        pass
 
     def did_enqueue_state_callback(self, state, state_id):
-        logger.info('did_enqueue_state %r %r', state, state_id)
+        """
+        Called after the state has been enqueued (saved into workspace).
+
+        :type state: manticore.ethereum.State
+        :type state_id: int
+        """
+        pass
+
+    def will_load_state_callback(self, state_id):
+        """
+        Called before loading a state with given id.
+
+        :type state_id: int
+        """
+        pass
+
+    def did_load_state_callback(self, state, state_id):
+        """
+        Called after the state has been loaded.
+
+        :type state: manticore.ethereum.State
+        :type state_id: int
+        """
+        pass
 
     def will_terminate_state_callback(self, state, state_id, exception):
-        logger.info('will_terminate_state %r %r %r', state, state_id, exception)
+        """
+        Called when a state is terminated. This happens e.g. when:
+        * state ended with RETURN instruction
+        * during a shutdown (given timeout passed or user cancelled manticore)
+        * we entered a state we cannot solve (e.g. no matching keccak256)
+        * state tries to execute an unimplemented instruction
+
+        :type state: manticore.ethereum.State
+        :type state_id: int
+        :type exception: manticore.core.state.TerminateState
+        """
+        pass
 
     def will_generate_testcase_callback(self, state, testcase, message):
-        logger.info('will_generate_testcase %r %r %r', state, testcase, message)
+        """
+        Data shared between states should be saved in `self.context` dict.
+        Data related to given state should be saved in `state.context` dict.
+
+        :param testcase: let us save additional information about given state to the workspace e.g.:
+            with testcase.open_stream('something') as f:
+                f.write('some information')
+        Will save a file called `state_XXXXXX.something` in the workspace.
+
+        :param message: Message that was sent when generating testcase; usually a result of transaction (e.g. STOP)
+        or user defined message.
+
+        :type state: manticore.ethereum.State
+        :type testcase: manticore.core.workspace.Testcase
+        :type message: str
+        """
+        pass
 
 
 class FilterFunctions(Plugin):
