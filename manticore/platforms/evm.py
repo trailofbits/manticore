@@ -38,12 +38,12 @@ logger = logging.getLogger(__name__)
 consts = config.get_group('evm')
 
 consts.add('oog', default='pedantic', description='Default behavior for symbolic gas.'
-                                         'pedantic: Fully faithful. Test at every instruction. Forks.'
-                                         'complete: Mostly faithful. Test at BB limit. Forks.'
-                                         'concrete: Incomplete. Concretize gas to MIN/MAX values. Forks.'
-                                         'optimistic: Try to not fail due to OOG. If it can be enough gas use it. Ignore the path to OOG. Wont fork'
-                                         'pesimistic: Try OOG asap. Fail soon. Ignore the path with enough gas.'
-                                         "ignore: Ignore gas. Instructions won't consume gas")
+                                                  'pedantic: Fully faithful. Test at every instruction. Forks.'
+                                                  'complete: Mostly faithful. Test at BB limit. Forks.'
+                                                  'concrete: Incomplete. Concretize gas to MIN/MAX values. Forks.'
+                                                  'optimistic: Try to not fail due to OOG. If it can be enough gas use it. Ignore the path to OOG. Wont fork'
+                                                  'pesimistic: Try OOG asap. Fail soon. Ignore the path with enough gas.'
+                                                  "ignore: Ignore gas. Instructions won't consume gas")
 
 # Auxiliary constants and functions
 TT256 = 2 ** 256
@@ -834,7 +834,7 @@ class EVM(Eventful):
         else:
             if consts.oog != 'ignore':
                 raise Exception("Wrong oog config variable")
-           #do nothing. gas is not even changed
+            #do nothing. gas is not even changed
             return
         self._gas -= fee
 
