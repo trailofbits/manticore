@@ -1037,7 +1037,7 @@ class EVM(Eventful):
             def setstate(state, value):
                 current_vm = state.platform.current_vm
                 _pc, _old_gas, _instruction, _arguments, _fee, _allocated = current_vm._checkpoint_data
-                current_vm._checkpoint_data = (_pc, _old_gas, _instruction, _arguments, _value, _allocated)
+                current_vm._checkpoint_data = (_pc, _old_gas, _instruction, _arguments, _fee, _allocated)
             raise Concretize("Concretize current instruction fee",
                              expression=fee,
                              setstate=setstate,
