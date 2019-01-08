@@ -88,8 +88,8 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99999994971)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99999994971)
 
     def test_calldatacopy1_return(self):
         '''
@@ -152,8 +152,8 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99999979968)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99999979968)
 
     def test_calldatacopy0_return(self):
         '''
@@ -216,8 +216,8 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99999979968)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99999979968)
 
     def test_calldatacopy0(self):
         '''
@@ -277,8 +277,8 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99999979973)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99999979973)
 
     def test_calldataload1(self):
         '''
@@ -334,8 +334,8 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99999979991)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99999979991)
 
     def test_calldatacopy_DataIndexTooHigh2_return(self):
         '''
@@ -396,8 +396,8 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99999994968)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99999994968)
 
     def test_calldatacopy_sec(self):
         '''
@@ -471,8 +471,8 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99999979876)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99999979876)
 
     def test_calldatacopy2(self):
         '''
@@ -530,8 +530,8 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99999994976)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99999994976)
 
     def test_codesize(self):
         '''
@@ -586,8 +586,8 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99999979995)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99999979995)
 
     def test_calldataloadSizeTooHighPartial(self):
         '''
@@ -643,8 +643,8 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99999979991)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99999979991)
 
     def test_calldataload2(self):
         '''
@@ -700,8 +700,8 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99999979991)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99999979991)
 
     def test_calldatacopyUnderFlow(self):
         '''
@@ -805,8 +805,8 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99999994971)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99999994971)
 
     def test_calldatacopy_DataIndexTooHigh(self):
         '''
@@ -864,8 +864,8 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99999994931)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99999994931)
 
     def test_origin(self):
         '''
@@ -920,8 +920,8 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99999979995)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99999979995)
 
     def test_codecopy0(self):
         '''
@@ -981,8 +981,8 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99999979973)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99999979973)
 
     def test_codecopyZeroMemExpansion(self):
         '''
@@ -1040,8 +1040,8 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99999994976)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99999994976)
 
     def test_calldatacopy_DataIndexTooHigh2(self):
         '''
@@ -1099,8 +1099,8 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99999994973)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99999994973)
 
     def test_calldatasize1(self):
         '''
@@ -1155,8 +1155,8 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99999979995)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99999979995)
 
     def test_codecopy_DataIndexTooHigh(self):
         '''
@@ -1214,8 +1214,8 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99999994973)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99999994973)
 
     def test_calldatasize2(self):
         '''
@@ -1270,8 +1270,8 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99999979995)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99999979995)
 
     def test_calldataloadSizeTooHigh(self):
         '''
@@ -1325,8 +1325,8 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99999994991)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99999994991)
 
     def test_address1(self):
         '''
@@ -1381,8 +1381,8 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99999979995)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99999979995)
 
     def test_gasprice(self):
         '''
@@ -1437,8 +1437,8 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99999979995)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99999979995)
 
     def test_callvalue(self):
         '''
@@ -1493,8 +1493,8 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99999979995)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99999979995)
 
     def test_calldataload_BigOffset(self):
         '''
@@ -1548,8 +1548,8 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99999994991)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99999994991)
 
     def test_calldataload0(self):
         '''
@@ -1605,8 +1605,8 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99999979991)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99999979991)
 
     def test_address0(self):
         '''
@@ -1661,8 +1661,8 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99999979995)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99999979995)
 
     def test_calldatacopy1(self):
         '''
@@ -1722,8 +1722,8 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99999979973)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99999979973)
 
     def test_calldatacopyZeroMemExpansion(self):
         '''
@@ -1781,8 +1781,8 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99999994976)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99999994976)
 
     def test_calldatasize0(self):
         '''
@@ -1837,8 +1837,8 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99999979995)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99999979995)
 
     def test_calldatacopy_DataIndexTooHigh_return(self):
         '''
@@ -1899,8 +1899,8 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99999994926)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99999994926)
 
     def test_caller(self):
         '''
@@ -1955,8 +1955,8 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 99999979995)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99999979995)
 
 if __name__ == '__main__':
     unittest.main()

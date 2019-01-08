@@ -89,8 +89,8 @@ class EVMTest_vmSystemOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79973)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79973)
 
     def test_return2(self):
         '''
@@ -152,8 +152,8 @@ class EVMTest_vmSystemOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79970)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79970)
 
     def test_suicideNotExistingAccount(self):
         '''
@@ -216,8 +216,8 @@ class EVMTest_vmSystemOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 997)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 997)
 
     def test_TestNameRegistrator(self):
         '''
@@ -282,8 +282,8 @@ class EVMTest_vmSystemOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79915)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79915)
 
     def test_suicide0(self):
         '''
@@ -341,8 +341,8 @@ class EVMTest_vmSystemOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 998)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 998)
 
     def test_suicideSendEtherToMe(self):
         '''
@@ -400,8 +400,8 @@ class EVMTest_vmSystemOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 998)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 998)
 
     def test_return0(self):
         '''
@@ -463,8 +463,8 @@ class EVMTest_vmSystemOperations(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 79973)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79973)
 
 if __name__ == '__main__':
     unittest.main()

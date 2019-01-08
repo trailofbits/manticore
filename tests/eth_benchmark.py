@@ -4,7 +4,6 @@ File name is purposefully not test_* to run this test separately.
 
 import inspect
 import unittest
-
 import os
 import shutil
 

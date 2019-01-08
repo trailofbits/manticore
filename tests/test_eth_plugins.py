@@ -62,16 +62,16 @@ class EthPluginsTests(unittest.TestCase):
         self.assertEqual(len(res), len(exp))
         self.assertEqual(len(res), 204)
 
-        # Till line 185 the outputs shall be the same
+        # Till line 184 the outputs shall be the same
         # Next there is a CODESIZE instruction that concretizes to different values each run
         # and as a result, the values in memory might differ.
         #
         # For some reason even setting `(set-option :random-seed 1)` in z3 doesn't help
-        for i in range(185):
+        for i in range(184):
             self.assertEqual(res[i], exp[i], f'Difference on line {i}')
 
         till = 130  # number of chars that doesn't differ
-        for i in range(185, 188):
+        for i in range(184, 188):
             self.assertEqual(res[i][:till], exp[i][:till], f'Difference on line {i}')
 
         for i in range(188, 195):

@@ -429,27 +429,45 @@ class ManticoreEVM(ManticoreBase):
 
     @property
     def running_states(self):
-        """ Iterates over the running states"""
+        """
+        Iterates over running states giving the possibility to change state data.
+
+        The state data change must be done in a loop, e.g. `for state in running_states: ...`
+        as we re-save the state when the generator comes back to the function.
+
+        This means it is not possible to change the state used by Manticore with `states = list(m.running_states)`.
+        """
         for state_id in self._running_state_ids:
             state = self.load(state_id)
             yield state
-            self.save(state, state_id=state_id)  # overwrite old
+            # Re-save the state in case the user changed its data
+            self.save(state, state_id=state_id)
 
     @property
     def terminated_states(self):
-        """ Iterates over the terminated states"""
+        """
+        Iterates over the terminated states.
+
+        See also `running_states`.
+        """
         for state_id in self._terminated_state_ids:
             state = self.load(state_id)
             yield state
-            self.save(state, state_id=state_id)  # overwrite old
+            # Re-save the state in case the user changed its data
+            self.save(state, state_id=state_id, final=True)
 
     @property
     def all_states(self):
-        """ Iterates over the all states (terminated and alive)"""
+        """
+        Iterates over the all states (running and terminated)
+
+        See also `running_states`.
+        """
         for state_id in self._all_state_ids:
             state = self.load(state_id)
             yield state
-            self.save(state, state_id=state_id)  # overwrite old
+            # Re-save the state in case the user changed its data
+            self.save(state, state_id=state_id, final=state_id in self._terminated_state_ids)
 
     def count_states(self):
         """ Total states count """
@@ -1175,7 +1193,7 @@ class ManticoreEVM(ManticoreBase):
 
         #we initiated the Tx; we need process the outcome for now.
         #Fixme incomplete.
-        if tx.is_human():
+        if tx.is_human:
             if tx.sort == 'CREATE':
                 if tx.result == 'RETURN':
                     world.set_code(tx.address, tx.return_data)
