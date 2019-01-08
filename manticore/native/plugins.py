@@ -261,4 +261,3 @@ def _dict_diff(d1, d2):
     for key in set(d2).difference(set(d1)):
         d[key] = d2[key]
     return d
-
