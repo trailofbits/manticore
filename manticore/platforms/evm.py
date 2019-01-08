@@ -420,7 +420,7 @@ def concretized_args(**policies):
             spec = inspect.getfullargspec(func)
             for arg, policy in policies.items():
                 assert arg in spec.args, "Concretizer argument not found in wrapped function."
-                # index is 0-indexed, but ConcretizeStack is 1-indexed. However, this is correct
+                # index is 0-indexed, but ConcretizeArgument is 1-indexed. However, this is correct
                 # since implementation method is always a bound method (self is param 0)
                 index = spec.args.index(arg)
                 if not issymbolic(args[index]):
@@ -1390,12 +1390,12 @@ class EVM(Eventful):
         if issymbolic(size):
             if solver.can_be_true(self._constraints, size <= len(self.data) + 32):
                 self.constraints.add(size <= len(self.data) + 32)
-            raise ConcretizeStack(3, policy='SAMPLED')
+            raise ConcretizeArgument(3, policy='SAMPLED')
 
         if issymbolic(data_offset):
             if solver.can_be_true(self._constraints, data_offset == self._used_calldata_size):
                 self.constraints.add(data_offset == self._used_calldata_size)
-            raise ConcretizeStack(2, policy='SAMPLED')
+            raise ConcretizeArgument(2, policy='SAMPLED')
 
         #account for calldata usage
         self._use_calldata(data_offset, size)
