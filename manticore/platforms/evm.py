@@ -420,7 +420,7 @@ def concretized_args(**policies):
             spec = inspect.getfullargspec(func)
             for arg, policy in policies.items():
                 assert arg in spec.args, "Concretizer argument not found in wrapped function."
-                # index is 0-indexed, but ConcretizeStack is 1-indexed. However, this is correct
+                # index is 0-indexed, but ConcretizeArgument is 1-indexed. However, this is correct
                 # since implementation method is always a bound method (self is param 0)
                 index = spec.args.index(arg)
                 if not issymbolic(args[index]):
@@ -1037,7 +1037,7 @@ class EVM(Eventful):
             def setstate(state, value):
                 current_vm = state.platform.current_vm
                 _pc, _old_gas, _instruction, _arguments, _fee, _allocated = current_vm._checkpoint_data
-                current_vm._checkpoint_data = (_pc, _old_gas, _instruction, _arguments, _value, _allocated)
+                current_vm._checkpoint_data = (_pc, _old_gas, _instruction, _arguments, value, _allocated)
             raise Concretize("Concretize current instruction fee",
                              expression=fee,
                              setstate=setstate,
@@ -1379,7 +1379,6 @@ class EVM(Eventful):
 
     def CALLDATACOPY_gas(self, mem_offset, data_offset, size):
         GCOPY = 3             # cost to copy one 32 byte word
-        copyfee1 = size if size % 32 == 0 else size + 32 - (size % 32)
         copyfee = self.safe_mul(GCOPY, self.safe_add(size, 31) // 32)
         memfee = self._get_memfee(mem_offset, size)
         return copyfee + memfee
@@ -1390,12 +1389,12 @@ class EVM(Eventful):
         if issymbolic(size):
             if solver.can_be_true(self._constraints, size <= len(self.data) + 32):
                 self.constraints.add(size <= len(self.data) + 32)
-            raise ConcretizeStack(3, policy='SAMPLED')
+            raise ConcretizeArgument(3, policy='SAMPLED')
 
         if issymbolic(data_offset):
             if solver.can_be_true(self._constraints, data_offset == self._used_calldata_size):
                 self.constraints.add(data_offset == self._used_calldata_size)
-            raise ConcretizeStack(2, policy='SAMPLED')
+            raise ConcretizeArgument(2, policy='SAMPLED')
 
         #account for calldata usage
         self._use_calldata(data_offset, size)
