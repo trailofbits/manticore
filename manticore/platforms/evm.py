@@ -1379,7 +1379,6 @@ class EVM(Eventful):
 
     def CALLDATACOPY_gas(self, mem_offset, data_offset, size):
         GCOPY = 3             # cost to copy one 32 byte word
-        copyfee1 = size if size % 32 == 0 else size + 32 - (size % 32)
         copyfee = self.safe_mul(GCOPY, self.safe_add(size, 31) // 32)
         memfee = self._get_memfee(mem_offset, size)
         return copyfee + memfee
