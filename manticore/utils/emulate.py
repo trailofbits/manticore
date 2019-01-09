@@ -196,14 +196,9 @@ class ConcreteUnicornEmulator(object):
 
     def _hook_syscall(self, uc, data):
         logger.info(f"Stopping emulation at {hex(uc.reg_read(self._to_unicorn_id('RIP')))} to perform syscall")
-        uc.reg_write(self._to_unicorn_id('RIP'), uc.reg_read(self._to_unicorn_id('RIP')) - 2)
-        # uc.reg_write(self._to_unicorn_id('EFLAGS'), uc.reg_read(self._to_unicorn_id('R11')))
         self.sync_unicorn_to_manticore()
-
-        # self._cpu.write_register('PC', self._emu.reg_read(self._to_unicorn_id('PC')) - 2)
-
-        # from ..native.cpu.abstractcpu import Syscall
-        # self._to_raise = Syscall() #RollbackPCException(hex(uc.reg_read(self._to_unicorn_id('RIP'))))
+        from ..native.cpu.abstractcpu import Syscall
+        self._to_raise = Syscall() #RollbackPCException(hex(uc.reg_read(self._to_unicorn_id('RIP'))))
         uc.emu_stop()
 
     def _hook_xfer_mem(self, uc, access, address, size, value, data):
@@ -271,13 +266,14 @@ class ConcreteUnicornEmulator(object):
 
             # Try emulation
             self._should_try_again = False
+            self._to_raise = None
 
             self._step(instruction)
 
             if not self._should_try_again:
                 break
 
-    def _step(self, instruction, chunksize=0x10):
+    def _step(self, instruction, chunksize=0):
         '''
         A single attempt at executing an instruction.
         '''
