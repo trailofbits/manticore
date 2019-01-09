@@ -87,6 +87,7 @@ class ConcreteUnicornEmulator(object):
         self._emu.hook_add(UC_HOOK_MEM_FETCH_UNMAPPED, self._hook_unmapped)
         self._emu.hook_add(UC_HOOK_MEM_WRITE,          self._hook_xfer_mem)
         self._emu.hook_add(UC_HOOK_INTR,               self._interrupt)
+        self._emu.hook_add(UC_HOOK_INSN,               self._hook_syscall, arg1=UC_X86_INS_SYSCALL)
 
         self.registers = set(self._cpu.canonical_registers)
         # The last 8 canonical registers of x86 are individual flags; replace with the eflags
@@ -144,7 +145,7 @@ class ConcreteUnicornEmulator(object):
         map_bytes = self._cpu._raw_read(address, size)
         logger.info("Reading %s map at 0x%02x took %s seconds", sizeof_fmt(size), address, time.time() - start_time)
         if (time.time() - start_time > 2):
-            logger.warning(self._cpu.memory.map_containing(address))
+            logger.warning(f"Memory map took more than two seconds to copy: {self._cpu.memory.map_containing(address)}")
         self._emu.mem_write(address, map_bytes)
 
     def map_memory_callback(self, address, size, perms, name, offset, result):
@@ -193,6 +194,18 @@ class ConcreteUnicornEmulator(object):
             elif self._cpu.mode == CS_MODE_64:
                 return self._emu.reg_read(UC_X86_REG_RIP)
 
+    def _hook_syscall(self, uc, data):
+        logger.info(f"Stopping emulation at {hex(uc.reg_read(self._to_unicorn_id('RIP')))} to perform syscall")
+        uc.reg_write(self._to_unicorn_id('RIP'), uc.reg_read(self._to_unicorn_id('RIP')) - 2)
+        # uc.reg_write(self._to_unicorn_id('EFLAGS'), uc.reg_read(self._to_unicorn_id('R11')))
+        self.sync_unicorn_to_manticore()
+
+        # self._cpu.write_register('PC', self._emu.reg_read(self._to_unicorn_id('PC')) - 2)
+
+        # from ..native.cpu.abstractcpu import Syscall
+        # self._to_raise = Syscall() #RollbackPCException(hex(uc.reg_read(self._to_unicorn_id('RIP'))))
+        uc.emu_stop()
+
     def _hook_xfer_mem(self, uc, access, address, size, value, data):
         '''
         Handle memory operations from unicorn.
@@ -209,6 +222,8 @@ class ConcreteUnicornEmulator(object):
         We hit an unmapped region; map it into unicorn.
         '''
         try:
+            self.sync_unicorn_to_manticore()
+            logger.warning(f"Encountered an operation on unmapped memory at {hex(address)}")
             m = self.copy_mapping_to_unicorn(address)
             self.copy_map(m.start, m.end - m.start)
         except MemoryException as e:
@@ -262,7 +277,7 @@ class ConcreteUnicornEmulator(object):
             if not self._should_try_again:
                 break
 
-    def _step(self, instruction):
+    def _step(self, instruction, chunksize=0x10):
         '''
         A single attempt at executing an instruction.
         '''
@@ -273,7 +288,7 @@ class ConcreteUnicornEmulator(object):
         try:
             pc = self._cpu.PC
             map = self._cpu.memory.map_containing(pc)
-            self._emu.emu_start(pc, map.end, count=0x1)
+            self._emu.emu_start(pc, map.end, count=chunksize)
         except UcError as e:
             # We request re-execution by signaling error; if we we didn't set
             # _should_try_again, it was likely an actual error
@@ -299,7 +314,8 @@ class ConcreteUnicornEmulator(object):
         for reg in self.registers:
             val = self._emu.reg_read(self._to_unicorn_id(reg))
             self._cpu.write_register(reg, val)
-        logger.info(f"Syncing {len(self._mem_delta)} writes back into Manticore")
+        if len(self._mem_delta) > 0:
+            logger.info(f"Syncing {len(self._mem_delta)} writes back into Manticore")
         for location in self._mem_delta:
             value, size = self._mem_delta[location]
             self._cpu.write_int(location, value, size*8)
