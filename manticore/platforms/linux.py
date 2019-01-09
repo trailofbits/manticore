@@ -1546,7 +1546,7 @@ class Linux(Platform):
 
     # Signals..
     def sys_kill(self, pid, sig):
-        logger.debug(f"KILL, Ignoring Sending signal {sig} to pid {pid}")
+        logger.warning(f"KILL, Ignoring Sending signal {sig} to pid {pid}")
         return 0
 
     def sys_rt_sigaction(self, signum, act, oldact):
@@ -1554,7 +1554,7 @@ class Linux(Platform):
         return self.sys_sigaction(signum, act, oldact)
 
     def sys_sigaction(self, signum, act, oldact):
-        logger.debug(f"SIGACTION, Ignoring changing signal handler for signal {signum}")
+        logger.warning(f"SIGACTION, Ignoring changing signal handler for signal {signum}")
         return 0
 
     def sys_rt_sigprocmask(self, cpu, how, newset, oldset):
@@ -1562,7 +1562,7 @@ class Linux(Platform):
         return self.sys_sigprocmask(cpu, how, newset, oldset)
 
     def sys_sigprocmask(self, cpu, how, newset, oldset):
-        logger.debug(f"SIGACTION, Ignoring changing signal mask set cmd:{how}", )
+        logger.warning(f"SIGACTION, Ignoring changing signal mask set cmd:{how}", )
         return 0
 
     def sys_dup(self, fd):
@@ -1890,7 +1890,7 @@ class Linux(Platform):
 
         :return: C{0}
         '''
-        logger.debug("Ignoring sys_get_priority")
+        logger.warning("Ignoring sys_get_priority")
         return 0
 
     def sys_setpriority(self, which, who, prio):
@@ -1900,7 +1900,14 @@ class Linux(Platform):
 
         :return: C{0}
         '''
-        logger.debug("Ignoring sys_setpriority")
+        logger.warning("Ignoring sys_setpriority")
+        return 0
+
+    def sys_tgkill(self, *args):
+        '''
+        System call ignored.
+        '''
+        logger.warning("Ignoring sys_tgkill")
         return 0
 
     def sys_acct(self, path):
