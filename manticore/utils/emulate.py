@@ -334,7 +334,7 @@ class ConcreteUnicornEmulator(object):
             data = concrete_data
         else:
             data = [Operators.CHR(Operators.EXTRACT(expr, offset, 8)) for offset in range(0, size, 8)]
-        logger.debug("Writing back %s bits to 0x%02x", size, where)
+        logger.debug(f"Writing back {sizeof_fmt(size // 8)} to {hex(where)}: {data}")
         if not self.in_map(where):
             self.copy_mapping_to_unicorn(where)
         # TODO - the extra encoding is to handle null bytes output as strings when we concretize. That's probably a bug.
