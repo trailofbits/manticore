@@ -78,8 +78,8 @@ class EVMTest_vmRandomTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 9997)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 9997)
 
     def test_201503110219PYTHON(self):
         '''
@@ -182,8 +182,8 @@ class EVMTest_vmRandomTest(unittest.TestCase):
         data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
-        # test spent gas
-        self.assertEqual(world.current_vm.gas, 9997)
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 9997)
 
     def test_201503102320PYTHON(self):
         '''

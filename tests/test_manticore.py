@@ -10,7 +10,6 @@ class ManticoreTest(unittest.TestCase):
     _multiprocess_can_split_ = True
 
     def setUp(self):
-        from manticore.native import Manticore
         dirname = os.path.dirname(__file__)
         self.m = Manticore(os.path.join(dirname, 'binaries', 'arguments_linux_amd64'))
 
@@ -65,6 +64,15 @@ class ManticoreTest(unittest.TestCase):
             def tmp(state):
                 pass
 
+    def test_symbol_resolution(self):
+        dirname = os.path.dirname(__file__)
+        self.m = Manticore(os.path.join(dirname, 'binaries', 'basic_linux_amd64'))
+        self.assertTrue(self.m.resolve('sbrk'), 0x449ee0)
+
+    def test_symbol_resolution_fail(self):
+        with self.assertRaises(ValueError):
+            self.m.resolve("does_not_exist")
+
     def test_integration_basic_stdin(self):
         import struct
         dirname = os.path.dirname(__file__)
@@ -84,14 +92,11 @@ class ManticoreTest(unittest.TestCase):
 
 
 class ManticoreLogger(unittest.TestCase):
-    '''Make sure we set the logging levels correctly'''
+    """Make sure we set the logging levels correctly"""
 
     _multiprocess_can_split_ = True
 
     def test_logging(self):
-        import manticore.native.cpu.abstractcpu
-        import manticore.ethereum.abi
-
         set_verbosity(5)
         self.assertEqual(get_verbosity('manticore.native.cpu.abstractcpu'), logging.DEBUG)
         self.assertEqual(get_verbosity('manticore.ethereum.abi'), logging.DEBUG)

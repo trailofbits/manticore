@@ -53,25 +53,30 @@ def instruction(body):
     return abstract_instruction(instruction_implementation)
 
 
+_TYPE_MAP = {
+    cs.arm.ARM_OP_REG: 'register',
+    cs.arm.ARM_OP_MEM: 'memory',
+    cs.arm.ARM_OP_IMM: 'immediate',
+    cs.arm.ARM_OP_PIMM: 'coprocessor',
+    cs.arm.ARM_OP_CIMM: 'immediate'
+}
+
+
 class Armv7Operand(Operand):
     def __init__(self, cpu, op, **kwargs):
         super().__init__(cpu, op, **kwargs)
+        self.__type = _TYPE_MAP[self.op.type]
 
     @property
     def type(self):
-        type_map = {
-            cs.arm.ARM_OP_REG: 'register',
-            cs.arm.ARM_OP_MEM: 'memory',
-            cs.arm.ARM_OP_IMM: 'immediate',
-            cs.arm.ARM_OP_PIMM: 'coprocessor',
-            cs.arm.ARM_OP_CIMM: 'immediate'
-        }
-
-        return type_map[self.op.type]
+        """
+        Corresponds to capstone's `operand.type` (cs.arm.ARM_OP_*).
+        """
+        return self.__type
 
     @property
     def size(self):
-        assert self.type == 'register'
+        assert self.__type == 'register'
         if cs.arm.ARM_REG_D0 <= self.op.reg <= cs.arm.ARM_REG_D31:
             return 64
         else:
@@ -80,7 +85,7 @@ class Armv7Operand(Operand):
 
     def read(self, nbits=None, with_carry=False):
         carry = self.cpu.regfile.read('APSR_C')
-        if self.type == 'register':
+        if self.__type == 'register':
             value = self.cpu.regfile.read(self.reg)
             # PC in this case has to be set to the instruction after next. PC at this point
             # is already pointing to next instruction; we bump it one more.
@@ -94,17 +99,17 @@ class Armv7Operand(Operand):
             if with_carry:
                 return value, carry
             return value
-        elif self.type == 'immediate':
+        elif self.__type == 'immediate':
             imm = self.op.imm
             if self.op.subtracted:
                 imm = -imm
             if with_carry:
                 return imm, self._get_expand_imm_carry(carry)
             return imm
-        elif self.type == 'coprocessor':
+        elif self.__type == 'coprocessor':
             imm = self.op.imm
             return imm
-        elif self.type == 'memory':
+        elif self.__type == 'memory':
             val = self.cpu.read_int(self.address(), nbits)
             if with_carry:
                 return val, carry
@@ -113,17 +118,17 @@ class Armv7Operand(Operand):
             raise NotImplementedError("readOperand unknown type", self.op.type)
 
     def write(self, value, nbits=None):
-        if self.type == 'register':
+        if self.__type == 'register':
             self.cpu.regfile.write(self.reg, value)
-        elif self.type == 'memory':
+        elif self.__type == 'memory':
             raise NotImplementedError('need to impl arm store mem')
         else:
             raise NotImplementedError("writeOperand unknown type", self.op.type)
 
     def writeback(self, value):
-        if self.type == 'register':
+        if self.__type == 'register':
             self.write(value)
-        elif self.type == 'memory':
+        elif self.__type == 'memory':
             self.cpu.regfile.write(self.mem.base, value)
         else:
             raise NotImplementedError("writeback Operand unknown type", self.op.type)
@@ -144,12 +149,12 @@ class Armv7Operand(Operand):
         return self.op.shift.type != cs.arm.ARM_SFT_INVALID
 
     def address(self):
-        assert self.type == 'memory'
+        assert self.__type == 'memory'
         addr = self.get_mem_base_addr() + self.get_mem_offset()
         return addr & Mask(self.cpu.address_bit_size)
 
     def get_mem_offset(self):
-        assert self.type == 'memory'
+        assert self.__type == 'memory'
 
         off = 0
         if self.mem.index is not None:
@@ -164,7 +169,7 @@ class Armv7Operand(Operand):
         return off
 
     def get_mem_base_addr(self):
-        assert self.type == 'memory'
+        assert self.__type == 'memory'
 
         base = self.cpu.regfile.read(self.mem.base)
 

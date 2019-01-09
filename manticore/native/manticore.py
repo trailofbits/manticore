@@ -1,4 +1,5 @@
 import logging
+import types
 
 import elftools
 import os
@@ -25,12 +26,16 @@ class Manticore(ManticoreBase):
         if isinstance(path_or_state, str):
             if not os.path.isfile(path_or_state):
                 raise OSError(f'{path_or_state} is not an existing regular file')
-
             initial_state = _make_initial_state(path_or_state, argv=argv, **kwargs)
         else:
             initial_state = path_or_state
 
         super().__init__(initial_state, workspace_url=workspace_url, policy=policy, **kwargs)
+
+        self.subscribe('will_generate_testcase', self._generate_testcase_callback)
+
+    def _generate_testcase_callback(self, state, testcase, message):
+        self._output.save_testcase(state, testcase.prefix, message)
 
     @classmethod
     def linux(cls, path, argv=None, envp=None, entry_symbol=None, symbolic_files=None, concrete_start='', pure_symbolic=False, stdin_size=consts.stdin_size, **kwargs):
@@ -73,32 +78,111 @@ class Manticore(ManticoreBase):
         except KeyError:  # FIXME(mark) magic parsing for DECREE should raise better error
             raise Exception(f'Invalid binary: {path}')
 
-    #############################################################################
-    #############################################################################
-    #############################################################################
-    # Move all the following elsewhere Not all manticores have this
-    def _get_symbol_address(self, symbol):
+    @property
+    def binary_path(self):
+        """
+        Assumes that self._initial_state.platform.program always
+        refers to current program. Might not be true in case program
+        calls execve().
+        """
+        return self._initial_state.platform.program
+
+    ###############################
+    # Hook Callback Methods
+    ###############################
+
+    def init(self, f):
         '''
-        Return the address of |symbol| within the binary
+        A decorator used to register a hook function to run before analysis begins. Hook
+        function takes one :class:`~manticore.core.state.State` argument.
         '''
+        def callback(manticore_obj, state):
+            f(state)
+        self.subscribe('will_start_run', types.MethodType(callback, self))
+        return f
 
-        # XXX(yan) This is a bit obtuse; once PE support is updated this should
-        # be refactored out
-        if self._binary_type == 'ELF':
-            self._binary_obj = ELFFile(open(self._binary, 'rb'))
+    def hook(self, pc):
+        '''
+        A decorator used to register a hook function for a given instruction address.
+        Equivalent to calling :func:`~add_hook`.
 
-        if self._binary_obj is None:
-            return NotImplementedError("Symbols aren't supported")
+        :param pc: Address of instruction to hook
+        :type pc: int or None
+        '''
+        def decorator(f):
+            self.add_hook(pc, f)
+            return f
+        return decorator
 
-        for section in self._binary_obj.iter_sections():
-            if not isinstance(section, SymbolTableSection):
-                continue
+    def add_hook(self, pc, callback):
+        '''
+        Add a callback to be invoked on executing a program counter. Pass `None`
+        for pc to invoke callback on every instruction. `callback` should be a callable
+        that takes one :class:`~manticore.core.state.State` argument.
 
-            symbols = section.get_symbol_by_name(symbol)
-            if not symbols:
-                continue
+        :param pc: Address of instruction to hook
+        :type pc: int or None
+        :param callable callback: Hook function
+        '''
+        if not (isinstance(pc, int) or pc is None):
+            raise TypeError(f"pc must be either an int or None, not {pc.__class__.__name__}")
+        else:
+            self._hooks.setdefault(pc, set()).add(callback)
+            if self._hooks:
+                self._executor.subscribe('will_execute_instruction', self._hook_callback)
 
-            return symbols[0].entry['st_value']
+    def _hook_callback(self, state, pc, instruction):
+        'Invoke all registered generic hooks'
+
+        # Ignore symbolic pc.
+        # TODO(yan): Should we ask the solver if any of the hooks are possible,
+        # and execute those that are?
+
+        if issymbolic(pc):
+            return
+
+        # Invoke all pc-specific hooks
+        for cb in self._hooks.get(pc, []):
+            cb(state)
+
+        # Invoke all pc-agnostic hooks
+        for cb in self._hooks.get(None, []):
+            cb(state)
+
+    ###############################
+    # Symbol Resolution
+    ###############################
+
+    def resolve(self, symbol):
+        """
+        A helper method used to resolve a symbol name into a memory address when
+        injecting hooks for analysis.
+
+        :param symbol: function name to be resolved
+        :type symbol: string
+
+        :param line: if more functions present, optional line number can be included
+        :type line: int or None
+        """
+
+        with open(self.binary_path, 'rb') as f:
+
+            elffile = ELFFile(f)
+
+            # iterate over sections and identify symbol table section
+            for section in elffile.iter_sections():
+                if not isinstance(section, SymbolTableSection):
+                    continue
+
+                # get list of symbols by name
+                symbols = section.get_symbol_by_name(symbol)
+                if not symbols:
+                    continue
+
+                # return first indexed memory address for the symbol,
+                return symbols[0].entry['st_value']
+
+            raise ValueError(f"The {self.binary_path} ELFfile does not contain symbol {symbol}")
 
 
 def _make_initial_state(binary_path, **kwargs):

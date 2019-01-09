@@ -11,7 +11,7 @@ from manticore.core.smtlib import BitVecOr, operator, Bool
 from tests import mockmem
 from functools import reduce
 
-class ROOperand(object):
+class ROOperand:
     ''' Mocking class for operand ronly '''
     def __init__(self, size, value):
         self.size = size
@@ -53,7 +53,7 @@ class SymCPUTest(unittest.TestCase):
         'OF': 0x00800,
         'IF': 0x00200,}
 
-    class ROOperand(object):
+    class ROOperand:
         ''' Mocking class for operand ronly '''
         def __init__(self, size, value):
             self.size = size
