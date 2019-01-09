@@ -785,7 +785,7 @@ class EVM(Eventful):
             if fee > (1 << 512) - 1:
                 raise ValueError
         elif isinstance(fee, BitVec):
-            if (fee.size != 512):
+            if fee.size != 512:
                 raise ValueError("Fees should be 512 bit long")
 
         def get_possible_solutions():
@@ -803,49 +803,51 @@ class EVM(Eventful):
         # ignore: Ignore gas. Do not account for it. Do not OOG.
 
         if consts.oog in ('pedantic', 'complete'):
-            #gas is faithfully accounted and ogg checked at instruction/BB level.
+            # gas is faithfully accounted and ogg checked at instruction/BB level.
             if consts.oog == 'pedantic' or self.instruction.is_terminator:
-                #explore both options / fork
-                #FIXME this will reenter here and generate redundant queries
+                # explore both options / fork
+                # FIXME this will reenter here and generate redundant queries
                 enough_gas_solutions = get_possible_solutions()
                 if len(enough_gas_solutions) == 2:
-                    #if gas can be both enough an insuficient, fork
+                    # if gas can be both enough and insufficient, fork
                     raise Concretize("Concretize gas fee",
                                      expression=Operators.UGT(self._gas, fee),
                                      setstate=None,
                                      policy='ALL')
                 elif enough_gas_solutions[0] is False:
                     #if gas if only insuficient OOG!
-                    logger.debug("Not enough gas for instruction")
+                    logger.debug(f"Not enough gas for instruction {self.instruction.name} at 0x{self.pc:x}")
                     raise NotEnoughGas()
                 else:
-                    assert enough_gas_solutions[0] == True
-                    #if there is enough gas keep going
+                    assert enough_gas_solutions[0] is True
+                    # if there is enough gas keep going
         elif consts.oog == 'concrete':
             # Keep gas concrete. Concretize symbolic fees to some values.
-            #this can happen only if symbolic gas is provided for the TX
+            # this can happen only if symbolic gas is provided for the TX
             if issymbolic(self._gas):
                 raise ConcretizeGas()
             if issymbolic(fee):
                 raise ConcretizeFee()
         elif consts.oog == 'optimistic':
-            #Try not to OOG. If it may be enough gas we ignore the OOG case. A constraint is added to assert the gas is enough and the OOG state is ignored.
-            #explore only when there is enough gas if possible
+            # Try not to OOG. If it may be enough gas we ignore the OOG case.
+            # A constraint is added to assert the gas is enough and the OOG state is ignored.
+            # explore only when there is enough gas if possible
             if solver.can_be_true(self.constraints, Operators.UGT(self.gas, fee)):
                 self.constraints.add(Operators.UGT(self.gas, fee))
             else:
-                logger.debug("Not enough gas for instruction")
+                logger.debug(f"Not enough gas for instruction {self.instruction.name} at 0x{self.pc:x}")
                 raise NotEnoughGas()
         elif consts.oog == 'pesimistic':
-            # OOG soon. If it may NOT be enough gas we ignore the normal case. A constraint is added to assert the gas is NOT enough and the other state is ignored.
-            #explore only when there is enough gas if possible
+            # OOG soon. If it may NOT be enough gas we ignore the normal case.
+            # A constraint is added to assert the gas is NOT enough and the other state is ignored.
+            # explore only when there is enough gas if possible
             if solver.can_be_true(self.constraints, Operators.ULE(self.gas, fee)):
                 self.constraints.add(Operators.ULE(self.gas, fee))
                 raise NotEnoughGas()
         else:
             if consts.oog != 'ignore':
                 raise Exception("Wrong oog config variable")
-            #do nothing. gas is not even changed
+            # do nothing. gas is not even changed
             return
         self._gas -= fee
 
@@ -857,7 +859,7 @@ class EVM(Eventful):
         self._gas += fee
 
     def _pop_arguments(self):
-        #Get arguments (imm, pop)
+        # Get arguments (imm, pop)
         current = self.instruction
         arguments = []
         if current.has_operand:
@@ -871,7 +873,7 @@ class EVM(Eventful):
         return arguments
 
     def _top_arguments(self):
-        #Get arguments (imm, top). Stack is not changed
+        # Get arguments (imm, top). Stack is not changed
         current = self.instruction
         arguments = []
         if current.has_operand:
@@ -882,7 +884,7 @@ class EVM(Eventful):
         return arguments
 
     def _push_arguments(self, arguments):
-        #Immediate operands should not be pushed
+        # Immediate operands should not be pushed
         start = int(self.instruction.has_operand)
         for arg in reversed(arguments[start:]):
             self._push(arg)
@@ -910,7 +912,7 @@ class EVM(Eventful):
         current = self.instruction
         implementation = getattr(self, current.semantics, None)
         if implementation is None:
-            raise TerminateState("Instruction not implemented %s" % current.semantics, testcase=True)
+            raise TerminateState(f"Instruction not implemented {current.semantics}", testcase=True)
         return implementation(*arguments)
 
     def _checkpoint(self):
@@ -1823,29 +1825,6 @@ class EVM(Eventful):
         raise EndTx('SELFDESTRUCT')
 
     def __str__(self):
-        def hexdump(src, length=16):
-            FILTER = ''.join([(len(repr(chr(x))) == 3) and chr(x) or '.' for x in range(256)])
-            lines = []
-            for c in range(0, len(src), length):
-                chars = src[c:c + length]
-
-                def p(x):
-                    if issymbolic(x):
-                        return '??'
-                    else:
-                        return "%02x" % x
-                hex = ' '.join([p(x) for x in chars])
-
-                def p1(x):
-                    if issymbolic(x):
-                        return '.'
-                    else:
-                        return "%s" % ((x <= 127 and FILTER[x]) or '.')
-
-                printable = ''.join([p1(x) for x in chars])
-                lines.append("%04x  %-*s  %s" % (c, length * 3, hex, printable))
-            return lines
-
         m = []
         for offset in range(128):
             c = simplify(self.memory[offset])
@@ -1855,16 +1834,15 @@ class EVM(Eventful):
                 pass
             m.append(c)
 
-        hd = hexdump(m)
+        hd = _hexdump(m)
 
-        #hd = ''  # str(self.memory)
         result = ['-' * 147]
         pc = self.pc
         if isinstance(pc, Constant):
             pc = pc.value
 
         if issymbolic(pc):
-            result.append('<Symbolic PC> {:s} {}\n'.format((translate_to_smtlib(pc), pc.taint)))
+            result.append('<Symbolic PC> {:s} {}\n'.format(translate_to_smtlib(pc), pc.taint))
         else:
             operands_str = self.instruction.has_operand and '0x{:x}'.format(self.instruction.operand) or ''
             result.append('0x{:04x}: {:s} {:s} {:s}'.format(pc, self.instruction.name, operands_str, self.instruction.description))
@@ -1898,16 +1876,15 @@ class EVM(Eventful):
             r = ' ' * clmn + hd[i]
             result.append(r)
 
-        #Append gas
+        # Append gas
         gas = self.gas
         if issymbolic(gas):
             gas = simplify(gas)
             result.append(f'Gas: {translate_to_smtlib(gas)} {gas.taint}')
         else:
             result.append(f'Gas: {gas}')
- 
-        result = [hex(self.address) + ": " + x for x in result]
-        return '\n'.join(result)
+
+        return '\n'.join(hex(self.address) + ": " + x for x in result)
 
 ################################################################################
 ################################################################################
@@ -2674,3 +2651,28 @@ class EVMWorld(Platform):
             stream.write("\n")
         return is_something_symbolic
 
+
+_FILTER = ''.join((len(repr(chr(x))) == 3) and chr(x) or '.' for x in range(256))
+
+
+def _hexdump(src, length=16):
+    lines = []
+    for c in range(0, len(src), length):
+        chars = src[c:c + length]
+
+        def p(x):
+            if issymbolic(x):
+                return '??'
+            else:
+                return "%02x" % x
+        hex = ' '.join(p(x) for x in chars)
+
+        def p1(x):
+            if issymbolic(x):
+                return '.'
+            else:
+                return "%s" % ((x <= 127 and _FILTER[x]) or '.')
+
+        printable = ''.join(p1(x) for x in chars)
+        lines.append("%04x  %-*s  %s" % (c, length * 3, hex, printable))
+    return lines
