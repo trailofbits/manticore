@@ -1825,29 +1825,6 @@ class EVM(Eventful):
         raise EndTx('SELFDESTRUCT')
 
     def __str__(self):
-        def hexdump(src, length=16):
-            FILTER = ''.join([(len(repr(chr(x))) == 3) and chr(x) or '.' for x in range(256)])
-            lines = []
-            for c in range(0, len(src), length):
-                chars = src[c:c + length]
-
-                def p(x):
-                    if issymbolic(x):
-                        return '??'
-                    else:
-                        return "%02x" % x
-                hex = ' '.join([p(x) for x in chars])
-
-                def p1(x):
-                    if issymbolic(x):
-                        return '.'
-                    else:
-                        return "%s" % ((x <= 127 and FILTER[x]) or '.')
-
-                printable = ''.join([p1(x) for x in chars])
-                lines.append("%04x  %-*s  %s" % (c, length * 3, hex, printable))
-            return lines
-
         m = []
         for offset in range(128):
             c = simplify(self.memory[offset])
@@ -1857,16 +1834,15 @@ class EVM(Eventful):
                 pass
             m.append(c)
 
-        hd = hexdump(m)
+        hd = _hexdump(m)
 
-        #hd = ''  # str(self.memory)
         result = ['-' * 147]
         pc = self.pc
         if isinstance(pc, Constant):
             pc = pc.value
 
         if issymbolic(pc):
-            result.append('<Symbolic PC> {:s} {}\n'.format((translate_to_smtlib(pc), pc.taint)))
+            result.append('<Symbolic PC> {:s} {}\n'.format(translate_to_smtlib(pc), pc.taint))
         else:
             operands_str = self.instruction.has_operand and '0x{:x}'.format(self.instruction.operand) or ''
             result.append('0x{:04x}: {:s} {:s} {:s}'.format(pc, self.instruction.name, operands_str, self.instruction.description))
@@ -1900,16 +1876,15 @@ class EVM(Eventful):
             r = ' ' * clmn + hd[i]
             result.append(r)
 
-        #Append gas
+        # Append gas
         gas = self.gas
         if issymbolic(gas):
             gas = simplify(gas)
             result.append(f'Gas: {translate_to_smtlib(gas)} {gas.taint}')
         else:
             result.append(f'Gas: {gas}')
- 
-        result = [hex(self.address) + ": " + x for x in result]
-        return '\n'.join(result)
+
+        return '\n'.join(hex(self.address) + ": " + x for x in result)
 
 ################################################################################
 ################################################################################
@@ -2676,3 +2651,28 @@ class EVMWorld(Platform):
             stream.write("\n")
         return is_something_symbolic
 
+
+_FILTER = ''.join((len(repr(chr(x))) == 3) and chr(x) or '.' for x in range(256))
+
+
+def _hexdump(src, length=16):
+    lines = []
+    for c in range(0, len(src), length):
+        chars = src[c:c + length]
+
+        def p(x):
+            if issymbolic(x):
+                return '??'
+            else:
+                return "%02x" % x
+        hex = ' '.join(p(x) for x in chars)
+
+        def p1(x):
+            if issymbolic(x):
+                return '.'
+            else:
+                return "%s" % ((x <= 127 and _FILTER[x]) or '.')
+
+        printable = ''.join(p1(x) for x in chars)
+        lines.append("%04x  %-*s  %s" % (c, length * 3, hex, printable))
+    return lines
