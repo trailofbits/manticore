@@ -571,7 +571,7 @@ class ManticoreEVM(ManticoreBase):
 
     def solidity_create_contract(self, source_code, owner, name=None, contract_name=None, libraries=None,
                                  balance=0, address=None, args=(), solc_bin=None, solc_remaps=[],
-                                 working_dir=None, gas=90000):
+                                 working_dir=None, gas=3000000):
         """ Creates a solidity contract and library dependencies
 
             :param str source_code: solidity source code
@@ -655,7 +655,7 @@ class ManticoreEVM(ManticoreBase):
         else:
             return next(iter(nonces))
 
-    def create_contract(self, owner, balance=0, address=None, init=None, name=None, gas=21000):
+    def create_contract(self, owner, balance=0, address=None, init=None, name=None, gas=3000000):
         """ Creates a contract
 
             :param owner: owner account (will be default caller in any transactions)
