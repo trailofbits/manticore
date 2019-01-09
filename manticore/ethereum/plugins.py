@@ -126,3 +126,12 @@ class VerboseTrace(Plugin):
         with testcase.open_stream('verbose_trace') as vt:
             for t in trace:
                 vt.write(t + '\n')
+
+
+class VerboseTraceStdout(Plugin):
+    """
+    Same as VerboseTrace but prints to stdout. Note that you should use it only if Manticore
+    is run with procs=1 as otherwise, the output will be clobbered.
+    """
+    def will_evm_execute_instruction_callback(self, state, instruction, arguments):
+        print(state.platform.current_vm)
