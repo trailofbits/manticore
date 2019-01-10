@@ -14,22 +14,20 @@
 # Once you Solver.check() it the status is changed to sat or unsat (or unknown+exception)
 # You can create new symbols operate on them. The declarations will be sent to the smtlib process when needed.
 # You can add new constraints. A new constraint may change the state from {None, sat} to {sat, unsat, unknown}
-from abc import ABCMeta, abstractmethod
-from subprocess import PIPE, Popen, check_output
-
-from ...exceptions import Z3NotFoundError, SolverError, SolverUnknown, TooManySolutions
-from . import operators as Operators
-from .expression import *
-from .constraints import *
-import logging
-import re
+import collections
 import shlex
 import time
+from subprocess import PIPE, Popen
+
+import re
+from abc import ABCMeta, abstractmethod
+
+from . import operators as Operators
+from .constraints import *
 from .visitors import *
-from ...utils.helpers import issymbolic, istainted, taint_with, get_taints
+from ...exceptions import Z3NotFoundError, SolverError, SolverUnknown, TooManySolutions
 from ...utils import config
-import io
-import collections
+from ...utils.helpers import issymbolic
 
 logger = logging.getLogger(__name__)
 
