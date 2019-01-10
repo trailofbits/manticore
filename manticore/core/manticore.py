@@ -43,18 +43,15 @@ class ManticoreBase(Eventful):
 
     _published_events = {'start_run', 'finish_run', 'generate_testcase'}
 
-    def __init__(self, initial_state, workspace_url=None, policy='random', timeout=None, **kwargs):
+    def __init__(self, initial_state, workspace_url=None, policy='random', **kwargs):
         """
 
         :param initial_state: State to start from.
         :param workspace_url: workspace folder name
         :param policy: scheduling policy
-        :param timeout: the timeout for execution (in seconds)
         :param kwargs: other kwargs, e.g.
         """
         super().__init__()
-
-        self._timeout = consts.timeout if timeout is None else timeout
 
         if isinstance(workspace_url, str):
             if ':' not in workspace_url:
@@ -221,12 +218,15 @@ class ManticoreBase(Eventful):
                 context[key] = ctx
 
     @contextmanager
-    def shutdown_timeout(self):
-        if self._timeout <= 0:
+    def shutdown_timeout(self, timeout=None):
+        if timeout is None:
+            timeout = consts.timeout
+
+        if timeout <= 0:
             yield
             return
 
-        timer = Timer(self._timeout, self.shutdown)
+        timer = Timer(timeout, self.shutdown)
         timer.start()
 
         try:
@@ -421,7 +421,7 @@ class ManticoreBase(Eventful):
 
         self._publish('did_finish_run')
 
-    def run(self, procs=1, should_profile=False):
+    def run(self, procs=1, should_profile=False, timeout=None):
         '''
         Runs analysis.
 
@@ -432,7 +432,7 @@ class ManticoreBase(Eventful):
         self._start_run()
 
         self._last_run_stats['time_started'] = time.time()
-        with self.shutdown_timeout():
+        with self.shutdown_timeout(timeout):
             self._start_workers(procs, profiling=should_profile)
 
             self._join_workers()
