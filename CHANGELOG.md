@@ -18,7 +18,7 @@
 ### Native
 
 * **[added API]** Added symbol resolution feature, so it is possible to grab a symbol address by using `m.resolve(symbol)` ([#1302](https://github.com/trailofbits/manticore/pull/1302))
-* **[changed API]** The `stdin_size` CLI argument has been moved to config constant and so has to be passed using `--native.stdin_size` instead of `--stdin_size`
+* **[changed API]** The `stdin_size` CLI argument has been moved to config constant and so has to be passed using `--native.stdin_size` instead of `--stdin_size` ([#1337](https://github.com/trailofbits/manticore/pull/1337))
 * Speeded up Armv7 execution a bit ([#1313](https://github.com/trailofbits/manticore/pull/1313))
 * Fixed `sys_arch_prctl` syscall when wrong `code` value was passed and raise a NotImplementedError instead of asserting for not supported code values ([#1319](https://github.com/trailofbits/manticore/pull/1319))
 
