@@ -9,14 +9,12 @@ The config values and constant are gathered from three sources:
 
 in that order of priority.
 """
-
-import yaml
-import io
+import argparse
 import logging
-import os
-
 from itertools import product
 
+import os
+import yaml
 
 _groups = {}
 
