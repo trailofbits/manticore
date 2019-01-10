@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 * Launching manticore from cli will display all registered plugins (#1301)
 * Fixed `Transaction.is_human` usage and changed it to a property (#1323)
 * Fixed `make_symbolic_address` not preconstraining the symbolic address to be within all already-known addresses (#1318)
+* Fixed bug where a terminated state became a running one if `m.running_states` or `m.terminated_states` were generated (#1326)
 
 ### Native
 
@@ -22,10 +23,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 * Speeded up Armv7 execution a bit (#1313)
 * Fixed `sys_arch_prctl` syscall when wrong `code` value was passed and raise a NotImplementedError instead of asserting for not supported code values (#1319)
 * The `stdin_size` CLI argument has been moved to config constant and so has to be passed using `--native.stdin_size` instead of `--stdin_size`
-
-### Core
-
-* Fixed bug where a terminated state became a running one if `m.running_states` or `m.terminated_states` were generated (#1326)
 
 ### Other
 
