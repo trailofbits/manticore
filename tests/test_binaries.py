@@ -119,7 +119,7 @@ class IntegrationTest(unittest.TestCase):
         with open(os.path.join(os.pardir, self.test_dir, 'output.log'), "w") as output:
             subprocess.check_call([PYTHON_BIN, '-m', 'manticore',
                                 '--workspace', workspace,
-                                '--timeout', '1',
+                                '--core.timeout', '1',
                                 '--procs', '4',
                                 filename,
                                 '+++++++++'], stdout=output)
@@ -137,7 +137,7 @@ class IntegrationTest(unittest.TestCase):
         cmd = [
             PYTHON_BIN, '-m', 'manticore',
             '--workspace', workspace,
-            '--timeout', str(timeout_secs),
+            '--core.timeout', str(timeout_secs),
             '--no-color',
             filename
         ]
@@ -299,7 +299,7 @@ class IntegrationTest(unittest.TestCase):
         workspace = os.path.join(self.test_dir, 'workspace')
         self._run_with_timeout([PYTHON_BIN, '-m', 'manticore',
                               '--workspace', workspace,
-                              '--timeout', '20',
+                              '--core.timeout', '20',
                               '--proc', '4',
                               '--no-color',
                               '--policy', 'uncovered',
