@@ -421,7 +421,7 @@ class ManticoreBase(Eventful):
 
         self._publish('did_finish_run')
 
-    def run(self, procs=1, should_profile=False, timeout=None):
+    def run(self, procs=1, timeout=None, should_profile=False):
         '''
         Runs analysis.
 
