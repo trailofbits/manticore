@@ -6,28 +6,28 @@
 
 ### Ethereum
 
-* **[added API]** Fixed VerboseTrace plugin (#1305) and added VerboseTraceStdout plugin  (#1305): those can be used to track EVM execution (`m.regiser_plugin(VerboseTraceStdout())`)
-* **[changed API]** Made gas calculation faithfulness configurable: this way, you can choose whether you respect or ignore gas calculations with `--evm.oog <opt>` (see `--help`); also, the gas calculations has been decoupled into its own methods (#1279)
-* **[changed API]** Changed default gas to 3000000 when creating contract (#1332)
-* **[changed API]** Launching manticore from cli will display all registered plugins (#1301)
-* Fixed a bug where it wasn't possible to call contract's function when its name started with an underscore (#1306)
-* Fixed `Transaction.is_human` usage and changed it to a property (#1323)
-* Fixed `make_symbolic_address` not preconstraining the symbolic address to be within all already-known addresses (#1318)
-* Fixed bug where a terminated state became a running one if `m.running_states` or `m.terminated_states` were generated (#1326)
+* **[added API]** Fixed VerboseTrace plugin ([#1305](https://github.com/trailofbits/manticore/pull/1305)) and added VerboseTraceStdout plugin  ([#1305](https://github.com/trailofbits/manticore/pull/1305)): those can be used to track EVM execution (`m.regiser_plugin(VerboseTraceStdout())`)
+* **[changed API]** Made gas calculation faithfulness configurable: this way, you can choose whether you respect or ignore gas calculations with `--evm.oog <opt>` (see `--help`); also, the gas calculations has been decoupled into its own methods ([#1279](https://github.com/trailofbits/manticore/pull/1279))
+* **[changed API]** Changed default gas to 3000000 when creating contract ([#1332](https://github.com/trailofbits/manticore/pull/1332))
+* **[changed API]** Launching manticore from cli will display all registered plugins ([#1301](https://github.com/trailofbits/manticore/pull/1301))
+* Fixed a bug where it wasn't possible to call contract's function when its name started with an underscore ([#1306](https://github.com/trailofbits/manticore/pull/1306))
+* Fixed `Transaction.is_human` usage and changed it to a property ([#1323](https://github.com/trailofbits/manticore/pull/1323))
+* Fixed `make_symbolic_address` not preconstraining the symbolic address to be within all already-known addresses ([#1318](https://github.com/trailofbits/manticore/pull/1318))
+* Fixed bug where a terminated state became a running one if `m.running_states` or `m.terminated_states` were generated ([#1326](https://github.com/trailofbits/manticore/pull/1326))
 
 ### Native
 
-* **[added API]** Added symbol resolution feature, so it is possible to grab a symbol address by using `m.resolve(symbol)` (#1302)
+* **[added API]** Added symbol resolution feature, so it is possible to grab a symbol address by using `m.resolve(symbol)` ([#1302](https://github.com/trailofbits/manticore/pull/1302))
 * **[changed API]** The `stdin_size` CLI argument has been moved to config constant and so has to be passed using `--native.stdin_size` instead of `--stdin_size`
-* Speeded up Armv7 execution a bit (#1313)
-* Fixed `sys_arch_prctl` syscall when wrong `code` value was passed and raise a NotImplementedError instead of asserting for not supported code values (#1319)
+* Speeded up Armv7 execution a bit ([#1313](https://github.com/trailofbits/manticore/pull/1313))
+* Fixed `sys_arch_prctl` syscall when wrong `code` value was passed and raise a NotImplementedError instead of asserting for not supported code values ([#1319](https://github.com/trailofbits/manticore/pull/1319))
 
 ### Other
 
-* **[changed API]** Fixed missing CLI arguments that came from config constants - note that `timeout` has to be passed using `core.timeout` now (#1337)
-* We now explicitly require Python>=3.6 when using CLI or when importing Manticore (#1331)
-* `__main__` now fetches manticore version from installed modules (#1310)
-* Refactored some of the codebase (events #1314, solver #1334, tests #1308, py2->py3 #1307, state/platform #1320, evm stuff #1329)
+* **[changed API]** Fixed missing CLI arguments that came from config constants - note that `timeout` has to be passed using `core.timeout` now ([#1337](https://github.com/trailofbits/manticore/pull/1337))
+* We now explicitly require Python>=3.6 when using CLI or when importing Manticore ([#1331](https://github.com/trailofbits/manticore/pull/1331))
+* `__main__` now fetches manticore version from installed modules ([#1310](https://github.com/trailofbits/manticore/pull/1310))
+* Refactored some of the codebase (events [#1314](https://github.com/trailofbits/manticore/pull/1314), solver [#1334](https://github.com/trailofbits/manticore/pull/1334), tests [#1308](https://github.com/trailofbits/manticore/pull/1308), py2->py3 [#1307](https://github.com/trailofbits/manticore/pull/1307), state/platform [#1320](https://github.com/trailofbits/manticore/pull/1320), evm stuff [#1329](https://github.com/trailofbits/manticore/pull/1329))
 * Some other fixes and minor changes
 
 
