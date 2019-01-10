@@ -142,7 +142,7 @@ def save(f):
 
     c = {}
     for group_name, group in _groups.items():
-        section = dict((var.name, var.value) for var in group.updated_vars())
+        section = {var.name: var.value for var in group.updated_vars()}
         if not section:
             continue
         c[group_name] = section
