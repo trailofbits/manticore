@@ -40,6 +40,12 @@ consts.add('maxsolutions', default=10000, description='Maximum solutions to prov
 consts.add('z3_bin', default='z3', description='Z3 binary to use')
 
 
+# Regular expressions used by the solver
+RE_GET_EXPR_VALUE_FMT = re.compile('\(\((?P<expr>(.*))\ #x(?P<value>([0-9a-fA-F]*))\)\)')
+RE_OBJECTIVES_EXPR_VALUE = re.compile('\(objectives.*\((?P<expr>.*) (?P<value>\d*)\).*\).*', re.MULTILINE | re.DOTALL)
+RE_MIN_MAX_OBJECTIVE_EXPR_VALUE = re.compile('(?P<expr>.*?)\s+\|->\s+(?P<value>.*)', re.DOTALL)
+
+
 class Solver(metaclass=ABCMeta):
     @abstractmethod
     def __init__(self):
@@ -133,7 +139,7 @@ class Z3Solver(Solver):
             '(set-option :global-decls false)',
         ]
 
-        self._get_value_fmt = (re.compile('\(\((?P<expr>(.*))\ #x(?P<value>([0-9a-fA-F]*))\)\)'), 16)
+        self._get_value_fmt = (RE_GET_EXPR_VALUE_FMT, 16)
 
         self.debug = False
         # To cache what get-info returned; can be directly set when writing tests
@@ -445,8 +451,7 @@ class Z3Solver(Solver):
                         # This will be a line like NAME |-> VALUE
                         maybe_sat = self._recv()
                         if maybe_sat == 'sat':
-                            pattern = re.compile('(?P<expr>.*?)\s+\|->\s+(?P<value>.*)', re.DOTALL)
-                            m = pattern.match(_status)
+                            m = RE_MIN_MAX_OBJECTIVE_EXPR_VALUE.match(_status)
                             expr, value = m.group('expr'), m.group('value')
                             assert expr == aux.name
                             return int(value)
@@ -455,8 +460,7 @@ class Z3Solver(Solver):
                         if not (ret.startswith('(') and ret.endswith(')')):
                             raise SolverError('bad output on max, z3 may have been killed')
 
-                        pattern = re.compile('\(objectives.*\((?P<expr>.*) (?P<value>\d*)\).*\).*', re.MULTILINE | re.DOTALL)
-                        m = pattern.match(ret)
+                        m = RE_OBJECTIVES_EXPR_VALUE.match(ret)
                         expr, value = m.group('expr'), m.group('value')
                         assert expr == aux.name
                         return int(value)
