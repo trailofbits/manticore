@@ -6,7 +6,6 @@ import copy
 import inspect
 from functools import wraps
 from typing import List, Set, Tuple, Union
-from ..exceptions import EthereumError
 from ..utils.helpers import issymbolic, get_taints, taint_with, istainted
 from ..platforms.platform import *
 from ..core.smtlib import solver, BitVec, Array, ArrayProxy, Operators, Constant, ArrayVariable, ArrayStore, BitVecConstant, translate_to_smtlib, to_constant, simplify
@@ -31,19 +30,21 @@ logger = logging.getLogger(__name__)
 # This configuration variable allows the user to control and perhaps relax the gas calculation
 # pedantic: gas is faithfully accounted and checked at instruction level. State may get forked in OOG/NoOOG
 # complete: gas is faithfully accounted and checked at basic blocks limits. State may get forked in OOG/NoOOG
-# concrete: Concretize gas. If the fee to be consumed gets to be symbolic. Choose some potential values and fork on those.
+# concrete: concretize gas: if the fee to be consumed gets to be symbolic choose some potential values and fork on those
 # optimistic: Try not to OOG. If it may be enough gas we ignore the OOG case. A constraint is added to assert the gas is enough and the OOG state is ignored.
 # pesimistic: OOG soon. If it may NOT be enough gas we ignore the normal case. A constraint is added to assert the gas is NOT enough and the other state is ignored.
 # ignore: Ignore gas. Do not account for it. Do not OOG.
 consts = config.get_group('evm')
 
-consts.add('oog', default='pedantic', description='Default behavior for symbolic gas.'
-                                                  'pedantic: Fully faithful. Test at every instruction. Forks.'
-                                                  'complete: Mostly faithful. Test at BB limit. Forks.'
-                                                  'concrete: Incomplete. Concretize gas to MIN/MAX values. Forks.'
-                                                  'optimistic: Try to not fail due to OOG. If it can be enough gas use it. Ignore the path to OOG. Wont fork'
-                                                  'pesimistic: Try OOG asap. Fail soon. Ignore the path with enough gas.'
-                                                  "ignore: Ignore gas. Instructions won't consume gas")
+consts.add('oog', default='pedantic', description=(
+    'Default behavior for symbolic gas.'
+    'pedantic: Fully faithful. Test at every instruction. Forks.'
+    'complete: Mostly faithful. Test at BB limit. Forks.'
+    'concrete: Incomplete. Concretize gas to MIN/MAX values. Forks.'
+    'optimistic: Try to not fail due to OOG. If it can be enough gas use it. Ignore the path to OOG. Wont fork'
+    'pesimistic: Try OOG asap. Fail soon. Ignore the path with enough gas.'
+    "ignore: Ignore gas. Instructions won't consume gas"
+))
 
 # Auxiliary constants and functions
 TT256 = 2 ** 256

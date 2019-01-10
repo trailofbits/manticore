@@ -8,18 +8,20 @@ import sys
 import pkg_resources
 
 from .core.manticore import ManticoreBase
-from .utils import config, log
+from .ethereum.cli import ethereum_main
+from .utils import config, log, install_helper
 
 consts = config.get_group('main')
 consts.add('recursionlimit', default=10000,
            description="Value to set for Python recursion limit")
-consts.add('timeout', default=0,
-           description='Timeout, in seconds, for Manticore invocation')
 
 
 # XXX(yan): This would normally be __name__, but then logger output will be pre-
 # pended by 'm.__main__: ', which is not very pleasing. hard-coding to 'main'
 logger = logging.getLogger('manticore.main')
+
+if install_helper.has_native:
+    from manticore.native.cli import native_main
 
 
 def main():
@@ -36,10 +38,8 @@ def main():
     ManticoreBase.verbosity(args.v)
 
     if args.argv[0].endswith('.sol'):
-        from manticore.ethereum.cli import ethereum_main
         ethereum_main(args, logger)
     else:
-        from manticore.native.cli import native_main
         native_main(args, logger)
 
 
@@ -73,8 +73,6 @@ def parse_arguments():
                         help='Number of parallel processes to spawn')
     parser.add_argument('argv', type=str, nargs='*', default=[],
                         help="Path to program, and arguments ('+' in arguments indicates symbolic byte).")
-    parser.add_argument('--timeout', type=int, default=consts.timeout,
-                        help='Timeout. Abort exploration after TIMEOUT seconds')
     parser.add_argument('-v', action='count', default=1,
                         help='Specify verbosity level from -v to -vvvv')
     parser.add_argument('--workspace', type=str, default=None,
@@ -86,8 +84,6 @@ def parse_arguments():
                         help='Show program version information')
     parser.add_argument('--config', type=str,
                         help='Manticore config file (.yml) to use. (default config file pattern is: ./[.]m[anti]core.yml)')
-    parser.add_argument('--stdin_size', type=int, default=consts.stdin_size,
-                        help='Control the maximum symbolic stdin size')
 
     bin_flags = parser.add_argument_group('Binary flags')
     bin_flags.add_argument('--entrysymbol', type=str, default=None,
