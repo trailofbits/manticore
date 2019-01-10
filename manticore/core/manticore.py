@@ -26,6 +26,10 @@ from ..utils.nointerrupt import WithKeyboardInterruptAs
 logger = logging.getLogger(__name__)
 
 
+consts = config.get_group('core')
+consts.add('timeout', default=0, description='Timeout, in seconds, for Manticore invocation')
+
+
 class ManticoreBase(Eventful):
     '''
     Base class for the central analysis object.
@@ -39,15 +43,18 @@ class ManticoreBase(Eventful):
 
     _published_events = {'start_run', 'finish_run', 'generate_testcase'}
 
-    def __init__(self, initial_state, workspace_url=None, policy='random', **kwargs):
+    def __init__(self, initial_state, workspace_url=None, policy='random', timeout=None, **kwargs):
         """
 
         :param initial_state: State to start from.
         :param workspace_url: workspace folder name
         :param policy: scheduling policy
+        :param timeout: the timeout for execution (in seconds)
         :param kwargs: other kwargs, e.g.
         """
         super().__init__()
+
+        self._timeout = consts.timeout if timeout is None else timeout
 
         if isinstance(workspace_url, str):
             if ':' not in workspace_url:
@@ -214,12 +221,12 @@ class ManticoreBase(Eventful):
                 context[key] = ctx
 
     @contextmanager
-    def shutdown_timeout(self, timeout):
-        if timeout <= 0:
+    def shutdown_timeout(self):
+        if self._timeout <= 0:
             yield
             return
 
-        timer = Timer(timeout, self.shutdown)
+        timer = Timer(self._timeout, self.shutdown)
         timer.start()
 
         try:
@@ -414,7 +421,7 @@ class ManticoreBase(Eventful):
 
         self._publish('did_finish_run')
 
-    def run(self, procs=1, timeout=0, should_profile=False):
+    def run(self, procs=1, should_profile=False):
         '''
         Runs analysis.
 
@@ -425,7 +432,7 @@ class ManticoreBase(Eventful):
         self._start_run()
 
         self._last_run_stats['time_started'] = time.time()
-        with self.shutdown_timeout(timeout):
+        with self.shutdown_timeout():
             self._start_workers(procs, profiling=should_profile)
 
             self._join_workers()
