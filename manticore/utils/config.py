@@ -213,15 +213,14 @@ def add_config_vars_to_argparse(args):
                               default=obj.default, help=obj.description)
 
 
-def process_config_values(parser, args):
+def process_config_values(parser: argparse.ArgumentParser, args: argparse.Namespace):
     """
     Bring in provided config values to the args parser, and import entries to the config
     from all arguments that were actually passed on the command line
 
-    :param argparse.ArgumentParser parser: The arg parser
+    :param parser: The arg parser
     :param args: The value that parser.parse_args returned
     """
-
     # First, load a local config file, if passed or look for one in pwd if it wasn't.
     load_overrides(args.config)
 
