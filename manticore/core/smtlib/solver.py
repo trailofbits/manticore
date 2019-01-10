@@ -283,24 +283,28 @@ class Z3Solver(Solver):
         return buf
 
     # UTILS: check-sat get-value
-    def _check(self):
-        ''' Check the satisfiability of the current state '''
+    def _is_sat(self) -> bool:
+        """
+        Check the satisfiability of the current state
+
+        :return: whether current state is satisfiable or not.
+        """
         logger.debug("Solver.check() ")
         start = time.time()
         self._send('(check-sat)')
-        _status = self._recv()
-        logger.debug("Check took %s seconds (%s)", time.time() - start, _status)
-        if _status not in ('sat', 'unsat', 'unknown'):
-            raise SolverError(_status)
+        status = self._recv()
+        logger.debug("Check took %s seconds (%s)", time.time() - start, status)
+        if status not in ('sat', 'unsat', 'unknown'):
+            raise SolverError(status)
         if consider_unknown_as_unsat:
-            if _status == 'unknown':
+            if status == 'unknown':
                 logger.info('Found an unknown core, probably a solver timeout')
-                _status = 'unsat'
+                status = 'unsat'
 
-        if _status == 'unknown':
-            raise SolverUnknown(_status)
+        if status == 'unknown':
+            raise SolverUnknown(status)
 
-        return _status
+        return status == 'sat'
 
     def _assert(self, expression):
         ''' Auxiliary method to send an assert '''
@@ -357,13 +361,13 @@ class Z3Solver(Solver):
             else:
                 # if True check if constraints are feasible
                 self._reset(constraints)
-                return self._check() == 'sat'
+                return self._is_sat()
         assert isinstance(expression, Bool)
 
         with constraints as temp_cs:
             temp_cs.add(expression)
             self._reset(temp_cs.to_string(related_to=expression))
-            return self._check() == 'sat'
+            return self._is_sat()
 
     # get-all-values min max minmax
     def get_all_values(self, constraints, expression, maxcnt=None, silent=False):
@@ -390,8 +394,8 @@ class Z3Solver(Solver):
             self._reset(temp_cs.to_string(related_to=var))
 
             result = []
-            val = None
-            while self._check() == 'sat':
+
+            while self._is_sat():
                 value = self._getvalue(var)
                 result.append(value)
                 self._assert(var != value)
@@ -465,7 +469,7 @@ class Z3Solver(Solver):
             self._assert(aux == X)
             last_value = None
             i = 0
-            while self._check() == 'sat':
+            while self._is_sat():
                 last_value = self._getvalue(aux)
                 self._assert(operation(aux, last_value))
                 i = i + 1
@@ -496,7 +500,7 @@ class Z3Solver(Solver):
                     temp_cs.add(subvar == simplify(expression[i]))
 
                 self._reset(temp_cs)
-                if self._check() != 'sat':
+                if not self._is_sat():
                     raise SolverError('Model is not available')
 
                 for i in range(expression.index_max):
@@ -513,7 +517,7 @@ class Z3Solver(Solver):
 
             self._reset(temp_cs)
 
-        if self._check() != 'sat':
+        if not self._is_sat():
             raise SolverError('Model is not available')
 
         self._send('(get-value (%s))' % var.name)
