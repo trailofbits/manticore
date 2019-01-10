@@ -2,9 +2,8 @@ import hashlib
 import logging
 from contextlib import contextmanager
 
-from ..utils import log
-from ..core.smtlib import Operators, taint_with, get_taints, Constant
-from ..utils.helpers import istainted, issymbolic
+from ..core.smtlib import Operators, Constant
+from ..utils.helpers import istainted, issymbolic, taint_with, get_taints
 from ..core.plugin import Plugin
 
 
