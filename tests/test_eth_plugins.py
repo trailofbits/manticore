@@ -26,7 +26,7 @@ class EthPluginsTests(unittest.TestCase):
         owner = self.mevm.create_account(balance=1000)
 
         # Initialize contract so it's constructor function will be traced
-        self.mevm.solidity_create_contract(source_code, owner=owner)
+        self.mevm.solidity_create_contract(source_code, owner=owner, gas=90000)
 
         files = set(os.listdir(self.mevm.workspace))
         self.assertEqual(len(files), 0)  # just a sanity check?

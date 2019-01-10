@@ -26,6 +26,10 @@ from ..utils.nointerrupt import WithKeyboardInterruptAs
 logger = logging.getLogger(__name__)
 
 
+consts = config.get_group('core')
+consts.add('timeout', default=0, description='Timeout, in seconds, for Manticore invocation')
+
+
 class ManticoreBase(Eventful):
     '''
     Base class for the central analysis object.
@@ -214,7 +218,10 @@ class ManticoreBase(Eventful):
                 context[key] = ctx
 
     @contextmanager
-    def shutdown_timeout(self, timeout):
+    def shutdown_timeout(self, timeout=None):
+        if timeout is None:
+            timeout = consts.timeout
+
         if timeout <= 0:
             yield
             return
@@ -414,7 +421,7 @@ class ManticoreBase(Eventful):
 
         self._publish('did_finish_run')
 
-    def run(self, procs=1, timeout=0, should_profile=False):
+    def run(self, procs=1, timeout=None, should_profile=False):
         '''
         Runs analysis.
 
