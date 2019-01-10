@@ -8,21 +8,20 @@ import sys
 import pkg_resources
 
 from .core.manticore import ManticoreBase
-from .utils import config, log
+from .ethereum.cli import ethereum_main
+from .utils import config, log, install_helper
 
 consts = config.get_group('main')
 consts.add('recursionlimit', default=10000,
            description="Value to set for Python recursion limit")
-consts.add('timeout', default=0,
-           description='Timeout, in seconds, for Manticore invocation. Zero means no timeout.')
 
 
 # XXX(yan): This would normally be __name__, but then logger output will be pre-
 # pended by 'm.__main__: ', which is not very pleasing. hard-coding to 'main'
 logger = logging.getLogger('manticore.main')
 
-from manticore.ethereum.cli import ethereum_main
-from manticore.native.cli import native_main
+if install_helper.has_native:
+    from manticore.native.cli import native_main
 
 
 def main():
