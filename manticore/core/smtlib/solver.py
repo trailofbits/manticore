@@ -106,7 +106,7 @@ class Solver(metaclass=ABCMeta):
             return x, x
 
 
-# FixME move this \/ This configuration should be registered as global config
+# TODO/FIXME move this \/ This configuration should be registered as global config
 consider_unknown_as_unsat = True
 
 
@@ -231,7 +231,7 @@ class Z3Solver(Solver):
             pass
 
     def _reset(self, constraints=None):
-        ''' Auxiliary method to reset the smtlib external solver to initial defaults'''
+        """Auxiliary method to reset the smtlib external solver to initial defaults"""
         if self._proc is None:
             self._start_proc()
         else:
@@ -246,10 +246,12 @@ class Z3Solver(Solver):
         if constraints is not None:
             self._send(constraints)
 
-    def _send(self, cmd):
-        ''' Send a string to the solver.
-            :param cmd: a SMTLIBv2 command (ex. (check-sat))
-        '''
+    def _send(self, cmd: str):
+        """
+        Send a string to the solver.
+
+        :param cmd: a SMTLIBv2 command (ex. (check-sat))
+        """
         logger.debug('>%s', cmd)
         try:
             self._proc.stdout.flush()
@@ -257,8 +259,8 @@ class Z3Solver(Solver):
         except IOError as e:
             raise SolverError(str(e))
 
-    def _recv(self):
-        ''' Reads the response from the solver '''
+    def _recv(self) -> str:
+        """Reads the response from the solver"""
         def readline():
             buf = self._proc.stdout.readline()
             return buf, buf.count('('), buf.count(')')
@@ -347,14 +349,13 @@ class Z3Solver(Solver):
         ''' Recall the last pushed constraint store and state. '''
         self._send('(pop 1)')
 
-    #@memoized
     def can_be_true(self, constraints, expression):
-        ''' Check if two potentially symbolic values can be equal '''
+        """Check if two potentially symbolic values can be equal"""
         if isinstance(expression, bool):
             if not expression:
                 return expression
             else:
-                #if True check if constraints are feasible
+                # if True check if constraints are feasible
                 self._reset(constraints)
                 return self._check() == 'sat'
         assert isinstance(expression, Bool)
@@ -365,7 +366,6 @@ class Z3Solver(Solver):
             return self._check() == 'sat'
 
     # get-all-values min max minmax
-    #@memoized
     def get_all_values(self, constraints, expression, maxcnt=None, silent=False):
         ''' Returns a list with all the possible values for the symbol x'''
         if not isinstance(expression, Expression):
@@ -384,7 +384,7 @@ class Z3Solver(Solver):
             elif isinstance(expression, Array):
                 var = temp_cs.new_array(index_max=expression.index_max, value_bits=expression.value_bits, taint=expression.taint).array
             else:
-                raise NotImplementedError("get_all_values only implemented for Bool and BitVec")
+                raise NotImplementedError(f"get_all_values only implemented for {type(expression)} expression type.")
 
             temp_cs.add(var == expression)
             self._reset(temp_cs.to_string(related_to=var))
@@ -408,13 +408,16 @@ class Z3Solver(Solver):
 
             return result
 
-    #@memoized
-    def optimize(self, constraints, x, goal, M=10000):
-        ''' Iteratively finds the maximum or minimal value for the operation
-            (Normally Operators.UGT or Operators.ULT)
-            :param X: a symbol or expression
-            :param M: maximum number of iterations allowed
-        '''
+    def optimize(self, constraints: ConstraintSet, x: BitVec, goal: str, M=10000):
+        """
+        Iteratively finds the maximum or minimum value for the operation
+        (Normally Operators.UGT or Operators.ULT)
+
+        :param constraints: constraints to take into account
+        :param x: a symbol or expression
+        :param goal: goal to achieve, either 'maximize' or 'minimize'
+        :param M: maximum number of iterations allowed
+        """
         assert goal in ('maximize', 'minimize')
         assert isinstance(x, BitVec)
         operation = {'maximize': Operators.UGE, 'minimize': Operators.ULE}[goal]
@@ -466,18 +469,16 @@ class Z3Solver(Solver):
                 last_value = self._getvalue(aux)
                 self._assert(operation(aux, last_value))
                 i = i + 1
-                if (i > M):
+                if i > M:
                     raise SolverError("Optimizing error, maximum number of iterations was reached")
             if last_value is not None:
                 return last_value
             raise SolverError("Optimizing error, unsat or unknown core")
 
-    #@memoized
     def get_value(self, constraints, expression):
-        ''' Ask the solver for one possible assignment for val using current set
-            of constraints.
-            The current set of assertions must be sat.
-            :param val: an expression or symbol '''
+        """
+        Ask the solver for one possible result of given expression using current set of constraints.
+        """
         if not issymbolic(expression):
             return expression
         assert isinstance(expression, (Bool, BitVec, Array))
