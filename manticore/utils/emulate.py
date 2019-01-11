@@ -1,25 +1,32 @@
 import logging
-import inspect
+import time
 
-from ..native.memory import MemoryException, FileMap, AnonMap
-from ..core.smtlib import Operators, solver
-
-from .helpers import issymbolic
+from capstone import *
 ######################################################################
 # Abstract classes for capstone/unicorn based cpus
 # no emulator by default
 from unicorn import *
-from unicorn.x86_const import *
 from unicorn.arm_const import *
+from unicorn.x86_const import *
 
-from capstone import *
-from capstone.arm import *
-from capstone.x86 import *
-
-import time
+from .helpers import issymbolic
+from ..core.smtlib import Operators, solver
+from ..native.memory import MemoryException
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+
+def convert_permissions(m_perms):
+    permissions = UC_PROT_NONE
+    if 'r' in m_perms:
+        permissions |= UC_PROT_READ
+    if 'w' in m_perms:
+        permissions |= UC_PROT_WRITE
+    if 'x' in m_perms:
+        permissions |= UC_PROT_EXEC
+    return permissions
+
 
 # https://stackoverflow.com/a/1094933
 def sizeof_fmt(num, suffix='B'):
@@ -44,6 +51,7 @@ class ConcreteUnicornEmulator(object):
         self._mem_delta = {}
         self.flag_registers = set(['CF','PF','AF','ZF','SF','IF','DF','OF'])
         self.write_backs_disabled = False
+        self._stop_at = None
 
         cpu.subscribe('did_write_memory', self.write_back_memory)
         cpu.subscribe('did_write_register', self.write_back_register)
@@ -85,7 +93,7 @@ class ConcreteUnicornEmulator(object):
         self._emu.hook_add(UC_HOOK_MEM_READ_UNMAPPED,  self._hook_unmapped)
         self._emu.hook_add(UC_HOOK_MEM_WRITE_UNMAPPED, self._hook_unmapped)
         self._emu.hook_add(UC_HOOK_MEM_FETCH_UNMAPPED, self._hook_unmapped)
-        self._emu.hook_add(UC_HOOK_MEM_WRITE,          self._hook_xfer_mem)
+        self._emu.hook_add(UC_HOOK_MEM_WRITE,          self._hook_write_mem)
         self._emu.hook_add(UC_HOOK_INTR,               self._interrupt)
         self._emu.hook_add(UC_HOOK_INSN,               self._hook_syscall, arg1=UC_X86_INS_SYSCALL)
 
@@ -130,17 +138,6 @@ class ConcreteUnicornEmulator(object):
         return False
 
     def copy_map(self, address, size):
-        # map = self._cpu.memory.map_containing(address)
-        # if type(map) is FileMap:
-        #     permissions = UC_PROT_NONE
-        #     if 'r' in map.perms:
-        #         permissions |= UC_PROT_READ
-        #     if 'w' in map.perms:
-        #         permissions |= UC_PROT_WRITE
-        #     if 'x' in map.perms:
-        #         permissions |= UC_PROT_EXEC
-        #     self._emu.mem_map_ptr(address, size, permissions, map._data)
-
         start_time = time.time()
         map_bytes = self._cpu._raw_read(address, size)
         logger.info("Reading %s map at 0x%02x took %s seconds", sizeof_fmt(size), address, time.time() - start_time)
@@ -172,13 +169,7 @@ class ConcreteUnicornEmulator(object):
         size = m.end - m.start
         if m.start not in self.mem_map.keys():
             logger.info(f"Creating {sizeof_fmt(size)} map @ {hex(m.start)} in Unicorn")
-            permissions = UC_PROT_NONE
-            if 'r' in m.perms:
-                permissions |= UC_PROT_READ
-            if 'w' in m.perms:
-                permissions |= UC_PROT_WRITE
-            if 'x' in m.perms:
-                permissions |= UC_PROT_EXEC
+            permissions = convert_permissions(m.perms)
             self._emu.mem_map(m.start, size, permissions)
 
             self.mem_map[m.start] = (size, permissions)
@@ -201,15 +192,11 @@ class ConcreteUnicornEmulator(object):
         self._to_raise = Syscall() #RollbackPCException(hex(uc.reg_read(self._to_unicorn_id('RIP'))))
         uc.emu_stop()
 
-    def _hook_xfer_mem(self, uc, access, address, size, value, data):
+    def _hook_write_mem(self, uc, access, address, size, value, data):
         '''
         Handle memory operations from unicorn.
         '''
-        assert access in (UC_MEM_WRITE, UC_MEM_READ, UC_MEM_FETCH)
-
-        if access == UC_MEM_WRITE:
-            self._mem_delta[address] = (value, size)
-
+        self._mem_delta[address] = (value, size)
         return True
 
     def _hook_unmapped(self, uc, access, address, size, value, data):
@@ -244,7 +231,7 @@ class ConcreteUnicornEmulator(object):
             return globals()['UC_ARM_REG_' + reg_name]
         elif self._cpu.arch == CS_ARCH_X86:
             # TODO(yan): This needs to handle AF register
-            custom_mapping = {'PC': 'RIP'}
+            custom_mapping = {'PC': 'RIP', 'STACK': 'RSP'}
             try:
                 return globals()['UC_X86_REG_' + custom_mapping.get(reg_name, reg_name)]
             except KeyError:
@@ -284,7 +271,7 @@ class ConcreteUnicornEmulator(object):
         try:
             pc = self._cpu.PC
             map = self._cpu.memory.map_containing(pc)
-            self._emu.emu_start(pc, map.end, count=chunksize)
+            self._emu.emu_start(pc, map.end if not self._stop_at else self._stop_at, count=chunksize)
         except UcError as e:
             # We request re-execution by signaling error; if we we didn't set
             # _should_try_again, it was likely an actual error
@@ -296,6 +283,9 @@ class ConcreteUnicornEmulator(object):
 
         # self.sync_unicorn_to_manticore()
         self._cpu.PC = self.get_unicorn_pc()
+        if self._cpu.PC == self._stop_at:
+            self.sync_unicorn_to_manticore()
+            self._stop_at = None
 
         # Raise the exception from a hook that Unicorn would have eaten
         if self._to_raise:
@@ -342,6 +332,9 @@ class ConcreteUnicornEmulator(object):
 
     def write_back_register(self, reg, val):
         if self.write_backs_disabled:
+            return
+        if issymbolic(val):
+            logger.warning("Skipping Symbolic write-back")
             return
         if reg in self.flag_registers:
             self._emu.reg_write(self._to_unicorn_id('EFLAGS'), self._cpu.read_register('EFLAGS'))

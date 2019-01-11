@@ -11,8 +11,6 @@ import io
 import os
 import random
 from elftools.elf.descriptions import describe_symbol_type
-import time
-
 #Remove in favor of binary.py
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
@@ -1761,7 +1759,9 @@ class Linux(Platform):
         :return: C{0} on success.
         '''
         perms = perms_from_protflags(prot)
+        self.current._publish('will_protect_memory', start, size, perms)
         ret = self.current.memory.mprotect(start, size, perms)
+        self.current._publish('did_protect_memory', start, size, perms)
         return 0
 
     def sys_munmap(self, addr, size):
