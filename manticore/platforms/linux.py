@@ -1936,22 +1936,27 @@ class Linux(Platform):
         return self._exit(f"Program finished with exit status: {ctypes.c_int32(error_code).value}")
 
     def sys_ptrace(self, request, pid, addr, data):
+        logger.warning("Unimplemented system call: sys_ptrace")
         return 0
 
     def sys_nanosleep(self, req, rem):
+        logger.warning("Unimplemented system call: sys_nanosleep")
         return 0
 
     def sys_set_tid_address(self, tidptr):
         return 1000  # tha pid
 
     def sys_faccessat(self, dirfd, pathname, mode, flags):
+        logger.warning("Unimplemented system call: sys_faccessat")
         filename = self.current.read_string(pathname)
         return -1
 
     def sys_set_robust_list(self, head, length):
+        logger.warning("Unimplemented system call: sys_set_robust_list")
         return -1
 
     def sys_futex(self, uaddr, op, val, timeout, uaddr2, val3):
+        logger.warning("Unimplemented system call: sys_futex")
         return -1
 
     def sys_getrlimit(self, resource, rlim):
@@ -1965,9 +1970,11 @@ class Linux(Platform):
         return ret
 
     def sys_fadvise64(self, fd, offset, length, advice):
+        logger.warning("Unimplemented system call: sys_fadvise64")
         return 0
 
     def sys_gettimeofday(self, tv, tz):
+        logger.warning("Unimplemented system call: sys_gettimeofday")
         return 0
 
     def sys_socket(self, domain, socket_type, protocol):
@@ -2107,7 +2114,7 @@ class Linux(Platform):
         return self._syscall_abi.invoke(implementation)
 
     def sys_clock_gettime(self, clock_id, timespec):
-        logger.info("sys_clock_time not really implemented")
+        logger.warning("sys_clock_time not really implemented")
         return 0
 
     def sys_time(self, tloc):
