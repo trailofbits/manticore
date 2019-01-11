@@ -40,13 +40,24 @@ class _Var:
 
 
 class _Group:
+    """
+    Configuration group to which you can add variables by simple doing:
+        group.add('some_var', default=123, description='..')
+
+    And then use their value in the code as:
+        group.some_var
+
+    Note that it is not recommended to use it as a default argument value for a function as it will be evaluated once.
+    Also don't forget that a given variable can be set through CLI or .yaml file!
+    (see config.py)
+    """
     def __init__(self, name: str):
         # To bypass __setattr__
         object.__setattr__(self, '_name', name)
         object.__setattr__(self, '_vars', {})
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
     def add(self, name: str, default=None, description: str=None):
@@ -117,7 +128,7 @@ class _Group:
         return key in self._vars
 
 
-def get_group(name: str):
+def get_group(name: str) -> _Group:
     """
     Get a configuration variable group named |name|
     """
