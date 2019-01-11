@@ -4,6 +4,7 @@ import random
 import logging
 import signal
 
+from core.state_merging import StateMerging
 from ..exceptions import ExecutorError, SolverError
 from ..utils.nointerrupt import WithKeyboardInterruptAs
 from ..utils.event import Eventful
@@ -163,6 +164,9 @@ class BranchLimited(Policy):
             return None
 
 
+
+
+
 class Executor(Eventful):
     '''
     The executor guides the execution of a single state, handles state forking
@@ -218,6 +222,7 @@ class Executor(Eventful):
         else:
             if initial is not None:
                 self.add(initial)
+        self.cpu_stateid_dict = {}
 
     def __del__(self):
         self.manager.shutdown()
@@ -259,6 +264,10 @@ class Executor(Eventful):
         '''
         # save the state to secondary storage
         state_id = self._workspace.save_state(state)
+        if state.cpu.PC in self.cpu_stateid_dict:
+            self.cpu_stateid_dict[state.cpu.PC].append(state_id)
+        else:
+            self.cpu_stateid_dict[state.cpu.PC] = [state_id]
         self.put(state_id)
         self._publish('did_enqueue_state', state_id, state)
         return state_id
@@ -434,6 +443,24 @@ class Executor(Eventful):
                                     if current_state_id is not None:
                                         self._publish('will_load_state', current_state_id)
                                         current_state = self._workspace.load_state(current_state_id)
+                                        merged_state = current_state
+                                        if len(self.cpu_stateid_dict[current_state.cpu.PC]) > 1:
+                                            for new_state_id in self.cpu_stateid_dict[current_state.cpu.PC]:
+                                                if current_state_id != new_state_id:
+                                                    new_state = self._workspace.load_state(new_state_id, delete=False)
+                                                    if StateMerging.is_merge_possible(merged_state, new_state):
+                                                        merged_state = StateMerging.merge(merged_state, new_state)
+                                                        self._workspace.load_state(new_state_id, delete=True)
+                                                        self.cpu_stateid_dict[current_state.cpu.PC].remove(new_state_id)
+                                                        is_mergeable = "succeeded"
+                                                    else:
+                                                        is_mergeable = "failed"
+                                                    debug_string = "at PC = " + hex(current_state.cpu.PC) + \
+                                                                   ", merge " + is_mergeable + " for state id = " + \
+                                                                   str(current_state_id) + " and " + str(new_state_id)
+                                                    print(debug_string)
+                                        self.cpu_stateid_dict[current_state.cpu.PC].remove(current_state_id)
+                                        current_state = merged_state
                                         self.forward_events_from(current_state, True)
                                         self._publish('did_load_state', current_state, current_state_id)
                                         logger.info("load state %r", current_state_id)
