@@ -15,7 +15,7 @@ def rtd_dependent_deps():
 # If you update native_deps please update the `REQUIREMENTS_TO_IMPORTS` dict in `utils/install_helper.py`
 # (we need to know how to import a given native dependency so we can check if native dependencies are installed)
 native_deps = [
-    'capstone>=4',
+    'capstone==4.0.1',
     'pyelftools',
     'unicorn',
 ]
@@ -57,9 +57,6 @@ setup(
         'rlp',
         'ply'
     ] + rtd_dependent_deps(),
-    dependency_links=[
-        'https://github.com/aquynh/capstone/archive/next.zip#egg=capstone-4&subdirectory=bindings/python',
-    ],
     extras_require=extra_require,
     entry_points={
         'console_scripts': [
