@@ -155,7 +155,6 @@ def parse_arguments():
     eth_flags.add_argument('--no-testcases', action='store_true',
                            help='Do not generate testcases for discovered states when analysis finishes')
 
-
     config_flags = parser.add_argument_group('Constants')
     config.add_config_vars_to_argparse(config_flags)
 

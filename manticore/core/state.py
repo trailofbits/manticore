@@ -131,40 +131,6 @@ class StateBase(Eventful):
         self._child = None
         self.platform.constraints = self.constraints
 
-    def execute(self):
-        # import exceptions
-        from ..native.cpu.abstractcpu import ConcretizeRegister
-        from ..native.memory import ConcretizeMemory, MemoryException
-
-        try:
-            result = self._platform.execute()
-
-        #Instead of State importing SymbolicRegisterException and SymbolicMemoryException
-        # from cpu/memory shouldn't we import Concretize from linux, cpu, memory ??
-        # We are forcing State to have abstractcpu
-        except ConcretizeRegister as e:
-            expression = self.cpu.read_register(e.reg_name)
-            def setstate(state, value):
-                state.cpu.write_register(e.reg_name, value)
-            raise Concretize(e.message,
-                                expression=expression,
-                                setstate=setstate,
-                                policy=e.policy)
-        except ConcretizeMemory as e:
-            expression = self.cpu.read_int(e.address, e.size)
-            def setstate(state, value):
-                state.cpu.write_int(e.address, value, e.size)
-            raise Concretize(e.message,
-                                expression=expression,
-                                setstate=setstate,
-                                policy=e.policy)
-        except MemoryException as e:
-            raise TerminateState(e.message, testcase=True)
-
-        #Remove when code gets stable?
-        assert self.platform.constraints is self.constraints
-        return result
-
     @property
     def input_symbols(self):
         return self._input_symbols
