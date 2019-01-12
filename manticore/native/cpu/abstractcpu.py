@@ -1,24 +1,23 @@
 import inspect
+import io
 import logging
+import struct
+from functools import wraps
 from itertools import islice
 
-import io
-import struct
 import unicorn
-from functools import wraps
 
 from .disasm import init_disassembler
-from ..memory import ConcretizeMemory, InvalidMemoryAccess, LazySMemory
-from ...core.smtlib import BitVec, Operators, Constant, visitors
-from ...core.smtlib.solver import solver
-from ...core.smtlib import Expression, Bool, BitVec, Array, Operators, Constant
 from ..memory import (
-    ConcretizeMemory, InvalidMemoryAccess, MemoryException, FileMap, AnonMap
+    ConcretizeMemory, InvalidMemoryAccess, FileMap
 )
-from ...utils.helpers import issymbolic
+from ..memory import LazySMemory
+from ...core.smtlib import Expression, BitVec, Operators, Constant
+from ...core.smtlib import visitors
+from ...core.smtlib.solver import solver
 from ...utils.emulate import ConcreteUnicornEmulator
-from ...utils.fallback_emulator import UnicornEmulator
 from ...utils.event import Eventful
+from ...utils.fallback_emulator import UnicornEmulator
 from ...utils.helpers import issymbolic
 
 logger = logging.getLogger(__name__)
@@ -449,12 +448,11 @@ class Cpu(Eventful):
     '''
 
     _published_events = {'write_register', 'read_register', 'write_memory', 'read_memory', 'decode_instruction',
-                           'execute_instruction', 'set_descriptor', 'map_memory'}
+                         'execute_instruction', 'set_descriptor', 'map_memory', 'protect_memory'}
 
     def __init__(self, regfile, memory, **kwargs):
         assert isinstance(regfile, RegisterFile)
         self._disasm = kwargs.pop("disasm", 'capstone')
-        self._concrete = kwargs.pop("concrete", False)
         super().__init__(**kwargs)
         self._regfile = regfile
         self._memory = memory
@@ -462,6 +460,8 @@ class Cpu(Eventful):
         self._icount = 0
         self._last_pc = None
         self._non_unicorn_instrs = 0
+        self._concrete = kwargs.pop("concrete", False)
+        self._break_unicorn_at = None
         if not hasattr(self, "disasm"):
             self.disasm = init_disassembler(self._disasm, self.arch, self.mode)
         # Ensure that regfile created STACK/PC aliases
@@ -476,6 +476,7 @@ class Cpu(Eventful):
         state['last_pc'] = self._last_pc
         state['disassembler'] = self._disasm
         state['concrete'] = self._concrete
+        state['break_unicorn_at'] = self._break_unicorn_at
         return state
 
     def __setstate__(self, state):
@@ -486,6 +487,7 @@ class Cpu(Eventful):
         self._last_pc = state['last_pc']
         self._disasm = state['disassembler']
         self._concrete = state['concrete']
+        self._break_unicorn_at = state['break_unicorn_at']
         super().__setstate__(state)
 
     @property
@@ -574,6 +576,13 @@ class Cpu(Eventful):
         except AttributeError:
             object.__setattr__(self, name, value)
 
+    def emulate_until(self, target):
+        self._concrete = True
+        self._break_unicorn_at = target
+        logger.debug(f"Emulating until {hex(target)}")
+        if hasattr(self, 'emu'):
+            self.emu._stop_at = target
+
     #############################
     # Memory access
     @property
@@ -641,7 +650,6 @@ class Cpu(Eventful):
             size = self.address_bit_size
         assert size in SANE_SIZES
         self._publish('will_read_memory', where, size)
-
         data = self._memory.read(where, size // 8, force)
         assert (8 * len(data)) == size
 
@@ -883,6 +891,10 @@ class Cpu(Eventful):
                 self.emu.sync_unicorn_to_manticore()
             if self._concrete and 'SYSCALL' not in name:
                 self.emulate(insn)
+                if self.PC == self._break_unicorn_at:
+                    logger.debug("Switching from Unicorn to Manticore")
+                    self._break_unicorn_at = None
+                    self._concrete = False
             else:
                 self._non_unicorn_instrs += 1
                 implementation = getattr(self, name, None)
@@ -894,7 +906,7 @@ class Cpu(Eventful):
                     text_bytes = ' '.join('%02x' % x for x in insn.bytes)
                     logger.warning("Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
                                    insn.address, text_bytes, insn.mnemonic, insn.op_str)
-                    self.emulate(insn)
+                    self.backup_emulate(insn)
         except (Interruption, Syscall) as e:
             e.on_handled = lambda: self._publish_instruction_as_executed(insn)
             raise e
@@ -920,12 +932,29 @@ class Cpu(Eventful):
         '''
 
         if not hasattr(self, 'emu'):
-            if self._concrete:
-                self.emu = ConcreteUnicornEmulator(self)
-            else:
-                self.emu = UnicornEmulator(self)
+            self.emu = ConcreteUnicornEmulator(self)
+            self.emu._stop_at = self._break_unicorn_at
         try:
             self.emu.emulate(insn)
+        except unicorn.UcError as e:
+            if e.errno == unicorn.UC_ERR_INSN_INVALID:
+                text_bytes = ' '.join('%02x' % x for x in insn.bytes)
+                logger.error("Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
+                             insn.address, text_bytes, insn.mnemonic, insn.op_str)
+            raise InstructionEmulationError(str(e))
+
+    def backup_emulate(self, insn):
+        '''
+        If we could not handle emulating an instruction, use Unicorn to emulate
+        it.
+
+        :param capstone.CsInsn instruction: The instruction object to emulate
+        '''
+
+        if not hasattr(self, 'backup_emu'):
+            self.backup_emu = UnicornEmulator(self)
+        try:
+            self.backup_emu.emulate(insn)
         except unicorn.UcError as e:
             if e.errno == unicorn.UC_ERR_INSN_INVALID:
                 text_bytes = ' '.join('%02x' % x for x in insn.bytes)
@@ -936,8 +965,7 @@ class Cpu(Eventful):
             # We have been seeing occasional Unicorn issues with it not clearing
             # the backing unicorn instance. Saw fewer issues with the following
             # line present.
-            if not self._concrete:
-                del self.emu
+            del self.backup_emu
 
     def render_instruction(self, insn=None):
         try:
