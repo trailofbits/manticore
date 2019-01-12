@@ -4,7 +4,6 @@ import random
 import logging
 import signal
 
-from core.state_merging import StateMerging
 from ..exceptions import ExecutorError, SolverError
 from ..utils.nointerrupt import WithKeyboardInterruptAs
 from ..utils.event import Eventful
@@ -16,6 +15,7 @@ from .workspace import Workspace
 from multiprocessing.managers import SyncManager
 from contextlib import contextmanager
 
+from core.state_merging import is_merge_possible, merge
 # This is the single global manager that will handle all shared memory among workers
 
 consts = config.get_group('executor')
@@ -84,7 +84,8 @@ class Policy:
 class Random(Policy):
     def __init__(self, executor, *args, **kwargs):
         super().__init__(executor, *args, **kwargs)
-        random.seed(consts.seed)  # For repeatable results
+        # random.seed(consts.seed)  # For repeatable results
+        random.seed(2)  # For repeatable results
 
     def choice(self, state_ids):
         return random.choice(state_ids)
@@ -448,8 +449,8 @@ class Executor(Eventful):
                                             for new_state_id in self.cpu_stateid_dict[current_state.cpu.PC]:
                                                 if current_state_id != new_state_id:
                                                     new_state = self._workspace.load_state(new_state_id, delete=False)
-                                                    if StateMerging.is_merge_possible(merged_state, new_state):
-                                                        merged_state = StateMerging.merge(merged_state, new_state)
+                                                    if is_merge_possible(merged_state, new_state):
+                                                        merged_state = merge(merged_state, new_state)
                                                         self._workspace.load_state(new_state_id, delete=True)
                                                         self.cpu_stateid_dict[current_state.cpu.PC].remove(new_state_id)
                                                         is_mergeable = "succeeded"
