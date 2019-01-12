@@ -1,15 +1,18 @@
 #!/usr/bin/env python
 
 import sys
+
+from manticore.utils import config
+
 from manticore.native import Manticore
-from utils import config
 
 '''
 Demonstrates the ability to set a basic hook on a specific program counter and
 the ability to read from memory.
 '''
-
 if __name__ == '__main__':
+    consts = config.get_group('executor')
+    consts.seed = 2
     path = sys.argv[1]
     # m = Manticore(path, policy='uncovered')
     m = Manticore(path, policy='random')

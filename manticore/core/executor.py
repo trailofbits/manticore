@@ -84,8 +84,7 @@ class Policy:
 class Random(Policy):
     def __init__(self, executor, *args, **kwargs):
         super().__init__(executor, *args, **kwargs)
-        # random.seed(consts.seed)  # For repeatable results
-        random.seed(2)  # For repeatable results
+        random.seed(consts.seed)  # For repeatable results
 
     def choice(self, state_ids):
         return random.choice(state_ids)
