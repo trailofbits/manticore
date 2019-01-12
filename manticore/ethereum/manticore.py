@@ -47,8 +47,8 @@ def write_findings(method, lead_space, address, pc, at_init=""):
     :param at_init: Boolean
     :return: pass
     """
-    method.write(f'{lead_space}Contract: 0x:{address}')
-    method.write(f'{lead_space}EVM Program counter: 0x{pc}{" (at constructor)" if at_init else ""}\n')
+    method.write(f'{lead_space}Contract: {address:#x}')
+    method.write(f'{lead_space}EVM Program counter: {pc:#x}{" (at constructor)" if at_init else ""}\n')
 
 
 def calculate_coverage(runtime_bytecode, seen):
