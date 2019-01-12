@@ -459,7 +459,6 @@ class Cpu(Eventful):
         self._instruction_cache = {}
         self._icount = 0
         self._last_pc = None
-        self._non_unicorn_instrs = 0
         self._concrete = kwargs.pop("concrete", False)
         self._break_unicorn_at = None
         if not hasattr(self, "disasm"):
@@ -652,7 +651,6 @@ class Cpu(Eventful):
         self._publish('will_read_memory', where, size)
         data = self._memory.read(where, size // 8, force)
         assert (8 * len(data)) == size
-
         value = Operators.CONCAT(size, *map(Operators.ORD, reversed(data)))
 
         self._publish('did_read_memory', where, value, size)
@@ -896,7 +894,6 @@ class Cpu(Eventful):
                     self._break_unicorn_at = None
                     self._concrete = False
             else:
-                self._non_unicorn_instrs += 1
                 implementation = getattr(self, name, None)
 
                 if implementation is not None:

@@ -360,7 +360,7 @@ class Armv7Cpu(Cpu):
     # 'mode' is usually defined here as a class member, but it can change, so
     # it's an instance property.
 
-    def __init__(self, memory, *args, **kwargs):
+    def __init__(self, memory):
         self._it_conditional = list()
         self._last_flags = {'C': 0, 'V': 0, 'N': 0, 'Z': 0, 'GE': 0}
         self._at_symbolic_conditional = None

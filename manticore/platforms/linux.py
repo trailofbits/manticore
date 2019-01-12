@@ -11,7 +11,7 @@ import io
 import os
 import random
 from elftools.elf.descriptions import describe_symbol_type
-#Remove in favor of binary.py
+# Remove in favor of binary.py
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 
@@ -409,7 +409,6 @@ class Linux(Platform):
         # Many programs to support SLinux
         self.programs = program
         self.disasm = disasm
-        self._concrete = kwargs.pop('concrete', False)
         self.envp = envp
         self.argv = argv
 
@@ -540,7 +539,7 @@ class Linux(Platform):
 
     def _mk_proc(self, arch):
         mem = Memory32() if arch in {'i386', 'armv7'} else Memory64()
-        cpu = CpuFactory.get_cpu(mem, arch, concrete=self._concrete)
+        cpu = CpuFactory.get_cpu(mem, arch)
         return cpu
 
     @property
@@ -2476,7 +2475,7 @@ class SLinux(Linux):
     """
 
     def __init__(self, programs, argv=None, envp=None, symbolic_files=None,
-                 disasm='capstone', pure_symbolic=False, **kwargs):
+                 disasm='capstone', pure_symbolic=False):
         argv = [] if argv is None else argv
         envp = [] if envp is None else envp
         symbolic_files = [] if symbolic_files is None else symbolic_files
@@ -2485,7 +2484,7 @@ class SLinux(Linux):
         self._pure_symbolic = pure_symbolic
         self.random = 0
         self.symbolic_files = symbolic_files
-        super().__init__(programs, argv=argv, envp=envp, disasm=disasm, **kwargs)
+        super().__init__(programs, argv=argv, envp=envp, disasm=disasm)
 
     def _mk_proc(self, arch):
         if arch in {'i386', 'armv7'}:
@@ -2499,7 +2498,7 @@ class SLinux(Linux):
             else:
                 mem = SMemory64(self.constraints)
 
-        cpu = CpuFactory.get_cpu(mem, arch, concrete=self._concrete)
+        cpu = CpuFactory.get_cpu(mem, arch)
         return cpu
 
     def add_symbolic_file(self, symbolic_file):

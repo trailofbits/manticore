@@ -42,23 +42,17 @@ class ConcreteUnicornEmulator(object):
     Helper class to emulate instructions in bulk via Unicorn.
     '''
     def __init__(self, cpu):
-        self.init_time = time.time()
-        self.out_of_step_time = self.init_time - self.init_time
-        self.in_step_time = self.out_of_step_time
-        self.sync_time = self.in_step_time
-
         self._cpu = cpu
         self._mem_delta = {}
-        self.flag_registers = set(['CF','PF','AF','ZF','SF','IF','DF','OF'])
+        self.flag_registers = {'CF', 'PF', 'AF', 'ZF', 'SF', 'IF', 'DF', 'OF'}
         self.write_backs_disabled = False
         self._stop_at = None
 
         cpu.subscribe('did_write_memory', self.write_back_memory)
         cpu.subscribe('did_write_register', self.write_back_register)
         cpu.subscribe('did_set_descriptor', self.update_segment)
-        cpu.subscribe('will_execute_instruction', self.pre_execute_callback)
         cpu.subscribe('did_map_memory', self.map_memory_callback)
-        cpu.subscribe('did_execute_instruction', self.post_execute_callback)
+        # cpu.subscribe('did_protect_memory', self.protect_memory)
 
         if self._cpu.arch == CS_ARCH_X86:
             self._uc_arch = UC_ARCH_X86
@@ -124,8 +118,6 @@ class ConcreteUnicornEmulator(object):
             size = self.mem_map[m][0]
             self.copy_map(m, size)
 
-        self.init_time = time.time() - self.init_time
-        self._last_step_time = time.time()
 
     def reset(self):
         self._emu = Uc(self._uc_arch, self._uc_mode)
@@ -295,7 +287,6 @@ class ConcreteUnicornEmulator(object):
         return
 
     def sync_unicorn_to_manticore(self):
-        start = time.time()
         self.write_backs_disabled = True
         for reg in self.registers:
             val = self._emu.reg_read(self._to_unicorn_id(reg))
@@ -307,9 +298,13 @@ class ConcreteUnicornEmulator(object):
             self._cpu.write_int(location, value, size*8)
         self.write_backs_disabled = False
         self._mem_delta = {}
-        duration = time.time() - start
-        logger.debug(f"Sync took {duration} seconds")
-        self.sync_time += duration
+
+    def protect_memory(self, start, size, perms):
+        self.copy_mapping_to_unicorn(start)
+        logger.info(f"Changing permissions on {hex(start)}:{hex(start + size)} to {perms}")
+        for mp in self._cpu.memory.maps:
+            print(f"{type(mp)} -- {hex(mp.start)}:{hex(mp.end)} ({mp.perms})")
+        self._emu.mem_protect(start, size, convert_permissions(perms))
 
     def write_back_memory(self, where, expr, size):
         if self.write_backs_disabled:
@@ -353,13 +348,3 @@ class ConcreteUnicornEmulator(object):
         '''
         FSMSR = 0xC0000100
         return self._emu.msr_write(FSMSR, addr)
-
-    def pre_execute_callback(self, _pc, _insn):
-        start_time = time.time()
-        self.out_of_step_time += (start_time - self._last_step_time)
-        self._last_step_time = start_time
-
-    def post_execute_callback(self, _last_pc, _pc, _insn):
-        start_time = time.time()
-        self.in_step_time += (start_time - self._last_step_time)
-        self._last_step_time = start_time
