@@ -47,6 +47,13 @@ class _Group:
     And then use their value in the code as:
         group.some_var
 
+    Can also be used with a `with-statement context` so it would revert the value, e.g.:
+    group.var = 100
+    with group:
+        group.var = 123
+        # group.var is 123 for the time of with statement
+    # group.var is back to 100
+
     Note that it is not recommended to use it as a default argument value for a function as it will be evaluated once.
     Also don't forget that a given variable can be set through CLI or .yaml file!
     (see config.py)
@@ -55,6 +62,10 @@ class _Group:
         # To bypass __setattr__
         object.__setattr__(self, '_name', name)
         object.__setattr__(self, '_vars', {})
+
+        # Whether we are in a context manager (`with group:`)
+        object.__setattr__(self, '_entered', False)
+        object.__setattr__(self, '_saved', {})
 
     @property
     def name(self) -> str:
@@ -120,6 +131,9 @@ class _Group:
             raise AttributeError(f"Group '{self.name}' has no variable '{name}'")
 
     def __setattr__(self, name, new_value):
+        if self._entered and name not in self._saved:
+            self._saved[name] = self._vars[name].value
+
         self._vars[name].value = new_value
 
     def __iter__(self):
@@ -127,6 +141,21 @@ class _Group:
 
     def __contains__(self, key):
         return key in self._vars
+
+    def __enter__(self):
+        if self._entered is True:
+            raise ConfigError("Can't use `with group` recursively!")
+
+        object.__setattr__(self, '_entered', True)
+        self._saved.clear()
+
+    def __exit__(self, *_):
+        object.__setattr__(self, '_entered', False)
+
+        for k in self._saved:
+            self._vars[k].value = self._saved[k]
+
+        self._saved.clear()
 
 
 def get_group(name: str) -> _Group:

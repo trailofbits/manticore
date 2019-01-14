@@ -59,6 +59,27 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(o.description, 'description')
         self.assertEqual(g.val2, 56)
 
+    def test_group_context_manager(self):
+        g = config.get_group('test')
+        g.add('val1', default=123)
+
+        self.assertEqual(g.val1, 123)
+
+        with g:
+            self.assertEqual(g.val1, 123)
+            g.val1 = 456
+            self.assertEqual(g.val1, 456)
+            g.val1 = 789
+            self.assertEqual(g.val1, 789)
+
+            with self.assertRaises(config.ConfigError) as e:
+                with g:
+                    pass
+
+            self.assertEqual(str(e.exception), "Can't use `with group` recursively!")
+
+        self.assertEqual(g.val1, 123)
+
     def test_getattr(self):
         g = config.get_group('attrs')
         with self.assertRaises(AttributeError):
