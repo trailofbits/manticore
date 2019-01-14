@@ -114,9 +114,10 @@ class _Group:
         return self._vars[name]
 
     def __getattr__(self, name):
-        if name not in self._vars:
+        try:
+            return self._vars[name].value
+        except KeyError:
             raise AttributeError(f"Group '{self.name}' has no variable '{name}'")
-        return self._vars[name].value
 
     def __setattr__(self, name, new_value):
         self._vars[name].value = new_value
