@@ -9,14 +9,12 @@ The config values and constant are gathered from three sources:
 
 in that order of priority.
 """
-
-import yaml
-import io
+import argparse
 import logging
-import os
-
 from itertools import product
 
+import os
+import yaml
 
 _groups = {}
 
@@ -42,13 +40,24 @@ class _Var:
 
 
 class _Group:
+    """
+    Configuration group to which you can add variables by simple doing:
+        group.add('some_var', default=123, description='..')
+
+    And then use their value in the code as:
+        group.some_var
+
+    Note that it is not recommended to use it as a default argument value for a function as it will be evaluated once.
+    Also don't forget that a given variable can be set through CLI or .yaml file!
+    (see config.py)
+    """
     def __init__(self, name: str):
         # To bypass __setattr__
         object.__setattr__(self, '_name', name)
         object.__setattr__(self, '_vars', {})
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
     def add(self, name: str, default=None, description: str=None):
@@ -119,7 +128,7 @@ class _Group:
         return key in self._vars
 
 
-def get_group(name: str):
+def get_group(name: str) -> _Group:
     """
     Get a configuration variable group named |name|
     """
@@ -144,7 +153,7 @@ def save(f):
 
     c = {}
     for group_name, group in _groups.items():
-        section = dict((var.name, var.value) for var in group.updated_vars())
+        section = {var.name: var.value for var in group.updated_vars()}
         if not section:
             continue
         c[group_name] = section
@@ -215,15 +224,14 @@ def add_config_vars_to_argparse(args):
                               default=obj.default, help=obj.description)
 
 
-def process_config_values(parser, args):
+def process_config_values(parser: argparse.ArgumentParser, args: argparse.Namespace):
     """
     Bring in provided config values to the args parser, and import entries to the config
     from all arguments that were actually passed on the command line
 
-    :param argparse.ArgumentParser parser: The arg parser
+    :param parser: The arg parser
     :param args: The value that parser.parse_args returned
     """
-
     # First, load a local config file, if passed or look for one in pwd if it wasn't.
     load_overrides(args.config)
 
