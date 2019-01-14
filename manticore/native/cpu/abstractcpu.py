@@ -649,6 +649,7 @@ class Cpu(Eventful):
             size = self.address_bit_size
         assert size in SANE_SIZES
         self._publish('will_read_memory', where, size)
+
         data = self._memory.read(where, size // 8, force)
         assert (8 * len(data)) == size
         value = Operators.CONCAT(size, *map(Operators.ORD, reversed(data)))
@@ -921,6 +922,18 @@ class Cpu(Eventful):
         self._publish('did_execute_instruction', self._last_pc, self.PC, insn)
 
     def emulate(self, insn):
+        '''
+        Pick the right emulate function (maintains API compatiblity)
+
+        :param insn: single instruction to emulate/start emulation from
+        '''
+
+        if self._concrete:
+            self.concrete_emulate(insn)
+        else:
+            self.backup_emulate(insn)
+
+    def concrete_emulate(self, insn):
         '''
         If we could not handle emulating an instruction, use Unicorn to emulate
         it.
