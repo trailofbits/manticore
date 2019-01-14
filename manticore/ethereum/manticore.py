@@ -618,6 +618,15 @@ class ManticoreEVM(ManticoreBase):
                     else:
                         constructor_data = b''
 
+                    if balance != 0:
+                        if not md.constructor_abi['payable']:
+                            raise EthereumError(f"Can't create solidity contract with balance ({balance}) "
+                                                f"different than 0 because the contract's constructor is not payable.")
+                        elif self.world.get_balance(owner.address) < balance:
+                            raise EthereumError(f"Can't create solidity contract with balance ({balance}) "
+                                                f"because the owner account ({owner}) has insufficient balance "
+                                                f"({self.world.get_balance(owner.address)}).")
+
                     contract_account = self.create_contract(owner=owner,
                                                             balance=balance,
                                                             address=address,
