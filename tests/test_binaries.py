@@ -401,7 +401,7 @@ class IntegrationTest(unittest.TestCase):
                 global_findings = gf.read().splitlines()
 
         self.assertEqual(global_findings[0], '- Unsigned integer overflow at SUB instruction -')
-        self.assertRegex(global_findings[1], '  Contract: 0x:\d+  EVM Program counter: 0x175')
+        self.assertRegex(global_findings[1], '  Contract: 0x[0-9a-f]+  EVM Program counter: 0xaf')
         self.assertEqual(global_findings[2], '  Solidity snippet:')
         self.assertEqual(global_findings[3], '    10  count -= input')
         self.assertEqual(global_findings[4], '')
