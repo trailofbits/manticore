@@ -29,6 +29,9 @@ from ..utils.helpers import PickleSerializer, issymbolic
 
 logger = logging.getLogger(__name__)
 
+cfg = config.get_group('evm')
+cfg.add('defaultgas', 3000000, 'Default gas value for ethereum transactions.')
+
 
 def flagged(flag):
     """
@@ -571,7 +574,7 @@ class ManticoreEVM(ManticoreBase):
 
     def solidity_create_contract(self, source_code, owner, name=None, contract_name=None, libraries=None,
                                  balance=0, address=None, args=(), solc_bin=None, solc_remaps=[],
-                                 working_dir=None, gas=3000000):
+                                 working_dir=None, gas=None):
         """ Creates a solidity contract and library dependencies
 
             :param str source_code: solidity source code
@@ -655,7 +658,7 @@ class ManticoreEVM(ManticoreBase):
         else:
             return next(iter(nonces))
 
-    def create_contract(self, owner, balance=0, address=None, init=None, name=None, gas=3000000):
+    def create_contract(self, owner, balance=0, address=None, init=None, name=None, gas=None):
         """ Creates a contract
 
             :param owner: owner account (will be default caller in any transactions)
@@ -719,7 +722,7 @@ class ManticoreEVM(ManticoreBase):
             if new_address not in all_addresses:
                 return new_address
 
-    def transaction(self, caller, address, value, data, gas=21000):
+    def transaction(self, caller, address, value, data, gas=None):
         """ Issue a symbolic transaction in all running states
 
             :param caller: the address of the account sending the transaction
@@ -830,7 +833,7 @@ class ManticoreEVM(ManticoreBase):
 
             return caller, address, value, data
 
-    def _transaction(self, sort, caller, value=0, address=None, data=None, gaslimit=0, price=1):
+    def _transaction(self, sort, caller, value=0, address=None, data=None, gaslimit=None, price=1):
         """ Initiates a transaction
 
             :param caller: caller account
@@ -843,12 +846,14 @@ class ManticoreEVM(ManticoreBase):
             :param gaslimit: gas budget
             :rtype: EVMAccount
         """
-        #Type Forgiveness
+        if gaslimit is None:
+            gaslimit = cfg.defaultgas
+        # Type Forgiveness
         if isinstance(address, EVMAccount):
             address = int(address)
         if isinstance(caller, EVMAccount):
             caller = int(caller)
-        #Defaults, call data is empty
+        # Defaults, call data is empty
         if data is None:
             data = bytearray(b"")
         if isinstance(data, (str, bytes)):
@@ -1012,8 +1017,7 @@ class ManticoreEVM(ManticoreBase):
                 self.transaction(caller=tx_account[min(tx_no, len(tx_account) - 1)],
                                  address=contract_account,
                                  data=symbolic_data,
-                                 value=value,
-                                 gas=2100000)
+                                 value=value)
                 logger.info("%d alive states, %d terminated states", self.count_running_states(), self.count_terminated_states())
             except NoAliveStates:
                 break

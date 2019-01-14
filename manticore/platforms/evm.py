@@ -2426,7 +2426,7 @@ class EVMWorld(Platform):
 
         return address
 
-    def create_contract(self, price=0, address=None, caller=None, balance=0, init=None, gas=2300):
+    def create_contract(self, price=0, address=None, caller=None, balance=0, init=None, gas=None):
         """
         Create a contract account. Sends a transaction to initialize the contract
 
