@@ -9,14 +9,12 @@ The config values and constant are gathered from three sources:
 
 in that order of priority.
 """
-
-import yaml
-import io
+import argparse
 import logging
-import os
-
 from itertools import product
 
+import os
+import yaml
 
 _groups = {}
 
@@ -42,13 +40,31 @@ class _Var:
 
 
 class _Group:
+    """
+    Configuration group to which you can add variables by simple doing:
+        group.add('some_var', default=123, description='..')
+
+    And then use their value in the code as:
+        group.some_var
+
+    Can also be used with a `with-statement context` so it would revert the value, e.g.:
+    group.var = 100
+    with group.temp_vals():
+        group.var = 123
+        # group.var is 123 for the time of with statement
+    # group.var is back to 100
+
+    Note that it is not recommended to use it as a default argument value for a function as it will be evaluated once.
+    Also don't forget that a given variable can be set through CLI or .yaml file!
+    (see config.py)
+    """
     def __init__(self, name: str):
         # To bypass __setattr__
         object.__setattr__(self, '_name', name)
         object.__setattr__(self, '_vars', {})
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
     def add(self, name: str, default=None, description: str=None):
@@ -105,9 +121,10 @@ class _Group:
         return self._vars[name]
 
     def __getattr__(self, name):
-        if name not in self._vars:
+        try:
+            return self._vars[name].value
+        except KeyError:
             raise AttributeError(f"Group '{self.name}' has no variable '{name}'")
-        return self._vars[name].value
 
     def __setattr__(self, name, new_value):
         self._vars[name].value = new_value
@@ -118,8 +135,48 @@ class _Group:
     def __contains__(self, key):
         return key in self._vars
 
+    def temp_vals(self) -> "_TemporaryGroup":
+        """
+        Returns a contextmanager that can be used to set temporary config variables.
+        E.g.:
+        group.var = 123
 
-def get_group(name: str):
+        with group.temp_vals():
+            group.var = 456
+            # var is 456
+
+        # group.var is back to 123
+        """
+        return _TemporaryGroup(self)
+
+
+class _TemporaryGroup:
+    def __init__(self, group: _Group):
+        object.__setattr__(self, '_group', group)
+        object.__setattr__(self, '_entered', False)
+        object.__setattr__(self, '_saved', {k: v.value for k, v in group._vars.items()})
+
+    def __getattr__(self, item):
+        return getattr(self._grp, item)
+
+    def __setattr__(self, key, value):
+        if self._entered and key not in self._saved:
+            self._saved[key] = getattr(self._group, key).value
+
+    def __enter__(self):
+        if self._entered is True:
+            raise ConfigError("Can't use temporary group recursively!")
+
+        object.__setattr__(self, '_entered', True)
+
+    def __exit__(self, *_):
+        for k in self._saved:
+            setattr(self._group, k, self._saved[k])
+
+        object.__setattr__(self, '_entered', False)
+
+
+def get_group(name: str) -> _Group:
     """
     Get a configuration variable group named |name|
     """
@@ -144,7 +201,7 @@ def save(f):
 
     c = {}
     for group_name, group in _groups.items():
-        section = dict((var.name, var.value) for var in group.updated_vars())
+        section = {var.name: var.value for var in group.updated_vars()}
         if not section:
             continue
         c[group_name] = section
@@ -215,15 +272,14 @@ def add_config_vars_to_argparse(args):
                               default=obj.default, help=obj.description)
 
 
-def process_config_values(parser, args):
+def process_config_values(parser: argparse.ArgumentParser, args: argparse.Namespace):
     """
     Bring in provided config values to the args parser, and import entries to the config
     from all arguments that were actually passed on the command line
 
-    :param argparse.ArgumentParser parser: The arg parser
+    :param parser: The arg parser
     :param args: The value that parser.parse_args returned
     """
-
     # First, load a local config file, if passed or look for one in pwd if it wasn't.
     load_overrides(args.config)
 

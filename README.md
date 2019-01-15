@@ -108,7 +108,7 @@ m.run()
 * Manticore is supported on Linux and requires **Python 3.6+**.
 * Ubuntu 18.04 is strongly recommended.
 * Ethereum smart contract analysis requires the [`solc`](https://github.com/ethereum/solidity) program in your `$PATH`.
-
+* Increased stack size is recommended; this can be done by `ulimit -s 100000` or by passing `--ulimit stack=100000000:100000000` to `docker run` if docker is used.
 
 ## Quickstart
 
@@ -143,7 +143,8 @@ You can also use Docker to quickly install and try Manticore:
 # Run container with a shared examples/ directory
 # Note that `--rm` will make the container be deleted if you exit it
 # (if you want to persist data from the container, use docker volumes)
-$ docker run --rm -it trailofbits/manticore bash
+# (we need to increase maximum stack size, so we use ulimit for that)
+$ docker run --rm -it --ulimit stack=100000000:100000000 trailofbits/manticore bash
 
 # Change to examples directory
 manticore@8d456f662d0f:~$ cd manticore/examples/linux/

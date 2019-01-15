@@ -972,7 +972,10 @@ class EVM(Eventful):
 
         if should_check_jumpdest:
             self._check_jumpdest = False
-            if self.pc not in self._valid_jumpdests:
+
+            pc = self.pc.value if isinstance(self.pc, Constant) else self.pc
+
+            if pc not in self._valid_jumpdests:
                 raise InvalidOpcode()
 
     def _advance(self, result=None, exception=False):
@@ -2426,7 +2429,7 @@ class EVMWorld(Platform):
 
         return address
 
-    def create_contract(self, price=0, address=None, caller=None, balance=0, init=None, gas=2300):
+    def create_contract(self, price=0, address=None, caller=None, balance=0, init=None, gas=None):
         """
         Create a contract account. Sends a transaction to initialize the contract
 
