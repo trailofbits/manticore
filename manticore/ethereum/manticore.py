@@ -583,7 +583,7 @@ class ManticoreEVM(ManticoreBase):
             :param contract_name: Name of the contract to analyze (optional if there is a single one in the source code)
             :type contract_name: str
             :param balance: balance to be transferred on creation
-            :type balance: int or SValue
+            :type balance: int or BitVecVariable
             :param address: the address for the new contract (optional)
             :type address: int or EVMAccount
             :param tuple args: constructor arguments
@@ -664,7 +664,7 @@ class ManticoreEVM(ManticoreBase):
             :param owner: owner account (will be default caller in any transactions)
             :type owner: int or EVMAccount
             :param balance: balance to be transferred on creation
-            :type balance: int or SValue
+            :type balance: int or BitVecVariable
             :param int address: the address for the new contract (optional)
             :param str init: initializing evm bytecode and arguments
             :param str name: a unique name for reference
@@ -730,7 +730,7 @@ class ManticoreEVM(ManticoreBase):
             :param address: the address of the contract to call
             :type address: int or EVMAccount
             :param value: balance to be transfered on creation
-            :type value: int or SValue
+            :type value: int or BitVecVariable
             :param data: initial data
             :param gas: gas budget
             :raises NoAliveStates: if there are no alive states to execute
@@ -741,7 +741,7 @@ class ManticoreEVM(ManticoreBase):
         """ Low level creates an account. This won't generate a transaction.
 
             :param balance: balance to be set on creation (optional)
-            :type balance: int or SValue
+            :type balance: int or BitVecVariable
             :param address: the address for the new account (optional)
             :type address: int
             :param code: the runtime code for the new account (None means normal account) (optional)
@@ -841,7 +841,7 @@ class ManticoreEVM(ManticoreBase):
             :param int address: the address for the transaction (optional)
             :param value: value to be transferred
             :param price: the price of gas for this transaction. Mostly unused.
-            :type value: int or SValue
+            :type value: int or BitVecVariable
             :param str data: initializing evm bytecode and arguments or transaction call data
             :param gaslimit: gas budget
             :rtype: EVMAccount
