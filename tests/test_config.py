@@ -59,6 +59,35 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(o.description, 'description')
         self.assertEqual(g.val2, 56)
 
+    def test_group_temp_vals(self):
+        g = config.get_group('test')
+        g.add('val', default=123)
+
+        self.assertEqual(g.val, 123)
+
+        with g.temp_vals():
+            self.assertEqual(g.val, 123)
+            g.val = 456
+            self.assertEqual(g.val, 456)
+            g.val = 789
+            self.assertEqual(g.val, 789)
+
+            with g.temp_vals():
+                g.val = 123456
+                self.assertEqual(g.val, 123456)
+
+            self.assertEqual(g.val, 789)
+
+        self.assertEqual(g.val, 123)
+
+        t = g.temp_vals()
+        with t:
+            with self.assertRaises(config.ConfigError) as e:
+                with t:
+                    pass
+
+        self.assertEqual(str(e.exception), "Can't use temporary group recursively!")
+
     def test_getattr(self):
         g = config.get_group('attrs')
         with self.assertRaises(AttributeError):
