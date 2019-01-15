@@ -62,7 +62,7 @@ def ethereum_main(args, logger):
 
     logger.info('Beginning analysis')
 
-    with m.shutdown_timeout(args.timeout):
+    with m.shutdown_timeout():
         m.multi_tx_analysis(args.argv[0], contract_name=args.contract, tx_limit=args.txlimit,
                             tx_use_coverage=not args.txnocoverage, tx_send_ether=not args.txnoether,
                             tx_account=args.txaccount, tx_preconstrain=args.txpreconstrain)
