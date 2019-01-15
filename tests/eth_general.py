@@ -584,15 +584,14 @@ class EthTests(unittest.TestCase):
 
     def test_check_jumpdest_symbolic_pc(self):
         """
-        In Manticore 0.2.4 (up to 6804661) when run with detector, the EVM.pc is a BitVecConstant and so a check
-        in EVM._check_jumpdest: `self.pc in self._valid_jumpdests` failed.
+        In Manticore 0.2.4 (up to 6804661) when run with DetectIntegerOverflow,
+        the EVM.pc is tainted and so it becomes a Constant and so a check in EVM._check_jumpdest:
+            self.pc in self._valid_jumpdests
+        failed (because we checked if the object is in a list of integers...).
 
         This test checks the fix for this issue.
         """
-        class D(Detector):
-            pass
-
-        self.mevm.register_detector(D())
+        self.mevm.register_detector(DetectIntegerOverflow())
         c = self.mevm.solidity_create_contract('''
         contract C {
             function mul(int256 a, int256 b) {
