@@ -15,7 +15,7 @@ from capstone import *
 logger = logging.getLogger(__name__)
 
 
-class UnicornEmulator(object):
+class UnicornEmulator:
     '''
     Helper class to emulate a single instruction via Unicorn.
     '''
@@ -146,11 +146,6 @@ class UnicornEmulator(object):
         return True
 
     def _to_unicorn_id(self, reg_name):
-        # TODO(felipe, yan): Register naming is broken in current unicorn
-        # packages, but works on unicorn git's master. We leave this hack
-        # in until unicorn gets updated.
-        if unicorn.__version__ <= '1.0.0' and reg_name == 'APSR':
-            reg_name = 'CPSR'
         if self._cpu.arch == CS_ARCH_ARM:
             return globals()['UC_ARM_REG_' + reg_name]
         elif self._cpu.arch == CS_ARCH_X86:

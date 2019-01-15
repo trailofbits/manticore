@@ -2,7 +2,7 @@ from functools import reduce
 import uuid
 
 
-class Expression(object):
+class Expression:
     ''' Abstract taintable Expression. '''
 
     def __init__(self, taint=()):
@@ -40,10 +40,11 @@ class Variable(Expression):
     def name(self):
         return self._name
 
+    def __copy__(self, memo):
+        raise Exception("Copying of Variables is not allowed.")
+
     def __deepcopy__(self, memo):
-        cls = self.__class__
-        memo[id(self)] = self
-        return self
+        raise Exception("Copying of Variables is not allowed.")
 
     def __repr__(self):
         return '<{:s}({:s}) at {:x}>'.format(type(self).__name__, self.name, id(self))
@@ -749,8 +750,10 @@ class Array(Expression):
         new_arr = ArrayProxy(ArrayVariable(self.index_bits, self.index_max + len(other), self.value_bits, 'concatenation{}'.format(uuid.uuid1())))
         for index in range(len(other)):
             new_arr[index] = simplify(other[index])
+        _concrete_cache = new_arr._concrete_cache
         for index in range(self.index_max):
             new_arr[index + len(other)] = simplify(self[index])
+        new_arr._concrete_cache.update(_concrete_cache)
         return new_arr
 
 
@@ -833,12 +836,13 @@ class ArraySlice(Array):
         return self._array.select(index + self._slice_offset)
 
     def store(self, index, value):
-        return self._array.store(index + self.slice_offset, value)
+        return ArraySlice(self._array.store(index + self._slice_offset, value), self._slice_offset, self._slice_size)
 
 
 class ArrayProxy(Array):
-    def __init__(self, array):
+    def __init__(self, array, default=None):
         assert isinstance(array, Array)
+        self._default = default
         self._concrete_cache = {}
         self._written = None
         if isinstance(array, ArrayProxy):
@@ -846,9 +850,10 @@ class ArrayProxy(Array):
             super().__init__(array.index_bits, array.index_max, array.value_bits)
             self._array = array._array
             self._name = array._name
+            if default is None:
+                self._default = array._default
             self._concrete_cache = dict(array._concrete_cache)
-            if array._written is not None:
-                self._written = set(array._written)
+            self._written = set(array.written)
         elif isinstance(array, ArrayVariable):
             #fresh array proxy
             super().__init__(array.index_bits, array.index_max, array.value_bits)
@@ -897,10 +902,8 @@ class ArrayProxy(Array):
         if self.index_max is not None:
             from .visitors import simplify
             index = simplify(BitVecITE(self.index_bits, index < 0, self.index_max + index + 1, index))
-
         if isinstance(index, Constant) and index.value in self._concrete_cache:
             return self._concrete_cache[index.value]
-
         return self._array.select(index)
 
     def store(self, index, value):
@@ -915,21 +918,27 @@ class ArrayProxy(Array):
         else:
             # delete all cache as we do not know what this may overwrite.
             self._concrete_cache = {}
+
+        # potentially generate and update .written set
         self.written.add(index)
-        auxiliary = self._array.store(index, value)
-        self._array = auxiliary
+        self._array = self._array.store(index, value)
         return self
 
     def __getitem__(self, index):
         if isinstance(index, slice):
             start, stop = self._fix_index(index)
             size = self._get_size(index)
-            return ArrayProxy(ArraySlice(self, start, size))
+            array_proxy_slice = ArrayProxy(ArraySlice(self, start, size), default=self._default)
+            array_proxy_slice._concrete_cache = {}
+            for k, v in self._concrete_cache.items():
+                if k >= start and k < start + size:
+                    array_proxy_slice._concrete_cache[k - start] = v
+            return array_proxy_slice
         else:
             if self.index_max is not None:
                 if not isinstance(index, Expression) and index >= self.index_max:
                     raise IndexError
-            return self.select(index)
+            return self.get(index, self._default)
 
     def __setitem__(self, index, value):
         if isinstance(index, slice):
@@ -943,6 +952,7 @@ class ArrayProxy(Array):
 
     def __getstate__(self):
         state = {}
+        state['_default'] = self._default
         state['_array'] = self._array
         state['name'] = self.name
         state['_concrete_cache'] = self._concrete_cache
@@ -950,6 +960,7 @@ class ArrayProxy(Array):
         return state
 
     def __setstate__(self, state):
+        self._default = state['_default']
         self._array = state['_array']
         self._name = state['name']
         self._concrete_cache = state['_concrete_cache']
@@ -960,34 +971,46 @@ class ArrayProxy(Array):
 
     @property
     def written(self):
+        # Calculate only first time
         if self._written is None:
             written = set()
+            #take out Proxy sleve
             array = self._array
+            offset = 0
+            if isinstance(array, ArraySlice):
+                #if it is a proxy over a slice take out the slice too
+                offset = array._slice_offset
+                array = array._array
             while not isinstance(array, ArrayVariable):
-                written.add(array.index)
+                # The index written to underlaying Array are displaced when sliced
+                written.add(array.index - offset)
                 array = array.array
+            assert isinstance(array, ArrayVariable)
             self._written = written
         return self._written
 
     def is_known(self, index):
-        #return reduce(BoolOr, map(lambda known_index: index == known_index, self.written), BoolConstant(False))
+        if isinstance(index, Constant) and index.value in self._concrete_cache:
+            return BoolConstant(True)
+
         is_known_index = BoolConstant(False)
         written = self.written
         for known_index in written:
             if isinstance(index, Constant) and isinstance(known_index, Constant):
                 if known_index.value == index.value:
                     return BoolConstant(True)
-                else:
-                    continue
             is_known_index = BoolOr(is_known_index.cast(index == known_index), is_known_index)
         return is_known_index
 
-    def get(self, index, default=0):
-        value = self.select(index)
-        if not isinstance(value, ArraySelect):
-            return value
-        is_known = self.is_known(index)
+    def get(self, index, default=None):
+        if default is None:
+            default = self._default
         index = self.cast_index(index)
+        value = self.select(index)
+        if default is None:
+            return value
+
+        is_known = self.is_known(index)
         default = self.cast_value(default)
         return BitVecITE(self._array.value_bits, is_known, value, default)
 

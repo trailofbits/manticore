@@ -9,7 +9,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class ConstraintSet(object):
+class ConstraintSet:
     ''' Constraint Sets
 
         An object containing a set of constraints. Serves also as a factory for
@@ -229,7 +229,7 @@ class ConstraintSet(object):
     def is_declared(self, expression_var):
         ''' True if expression_var is declared in this constraint set '''
         if not isinstance(expression_var, Variable):
-            raise ValueError("Expression must be a Variable")
+            raise ValueError(f'Expression must be a Variable (not a {type(expression_var)})')
         return any(expression_var is x for x in self.get_declared_variables())
 
     def migrate(self, expression, name_migration_map=None):
@@ -305,7 +305,7 @@ class ConstraintSet(object):
         if avoid_collisions:
             name = self._make_unique_name(name)
         if not avoid_collisions and name in self._declarations:
-            raise ValueError("Name already used")
+            raise ValueError(f'Name {name} already used')
         var = BoolVariable(name, taint=taint)
         return self._declare(var)
 
@@ -325,11 +325,11 @@ class ConstraintSet(object):
         if avoid_collisions:
             name = self._make_unique_name(name)
         if not avoid_collisions and name in self._declarations:
-            raise ValueError("Name already used")
+            raise ValueError(f'Name {name} already used')
         var = BitVecVariable(size, name, taint=taint)
         return self._declare(var)
 
-    def new_array(self, index_bits=32, name=None, index_max=None, value_bits=8, taint=frozenset(), avoid_collisions=False):
+    def new_array(self, index_bits=32, name=None, index_max=None, value_bits=8, taint=frozenset(), avoid_collisions=False, default=None):
         ''' Declares a free symbolic array of value_bits long bitvectors in the constraint store.
             :param index_bits: size in bits for the array indexes one of [32, 64]
             :param value_bits: size in bits for the array values
@@ -337,6 +337,7 @@ class ConstraintSet(object):
                          if not unique, a numeric nonce will be appended
             :param index_max: upper limit for indexes on this array (#FIXME)
             :param avoid_collisions: potentially avoid_collisions the variable to avoid name collisions if True
+            :param default: default for not initialized values
             :return: a fresh ArrayProxy
         '''
         if name is None:
@@ -345,6 +346,6 @@ class ConstraintSet(object):
         if avoid_collisions:
             name = self._make_unique_name(name)
         if not avoid_collisions and name in self._declarations:
-            raise ValueError("Name already used")
+            raise ValueError(f'Name {name} already used')
         var = self._declare(ArrayVariable(index_bits, index_max, value_bits, name, taint=taint))
-        return ArrayProxy(var)
+        return ArrayProxy(var, default=default)

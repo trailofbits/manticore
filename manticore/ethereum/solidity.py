@@ -6,7 +6,7 @@ from .abi import ABI
 from ..utils.deprecated import deprecated
 
 
-class SolidityMetadata(object):
+class SolidityMetadata:
 
     @staticmethod
     def function_signature_for_name_and_inputs(name: str, inputs: Sequence[Mapping[str, Any]]) -> str:
@@ -139,7 +139,7 @@ class SolidityMetadata(object):
             return ''
 
         output = ''
-        nl = self.source_code[:beg].count('\n')
+        nl = self.source_code[:beg].count('\n') + 1
         snippet = self.source_code[beg:beg + size]
         for l in snippet.split('\n'):
             output += '    %s  %s\n' % (nl, l)

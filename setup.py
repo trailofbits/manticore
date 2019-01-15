@@ -15,7 +15,7 @@ def rtd_dependent_deps():
 # If you update native_deps please update the `REQUIREMENTS_TO_IMPORTS` dict in `utils/install_helper.py`
 # (we need to know how to import a given native dependency so we can check if native dependencies are installed)
 native_deps = [
-    'capstone>=3.0.5',
+    'capstone==4.0.1',
     'pyelftools',
     'unicorn',
 ]
@@ -45,21 +45,18 @@ setup(
     description='Manticore is a symbolic execution tool for analysis of binaries and smart contracts.',
     url='https://github.com/trailofbits/manticore',
     author='Trail of Bits',
-    version='0.2.2',
+    version='0.2.4',
     packages=find_packages(exclude=['tests', 'tests.*']),
     python_requires='>=3.6',
     install_requires=[
         'pyyaml',
         # evm dependencies
         'pysha3',
-        # In 0.1.1, pyevmasm changed its gas cost calculations, so Manticore will need to update its
-        # unit tests to match before we can upgrade pyevmasm
-        'pyevmasm==0.1.0',
+        'prettytable',
+        'pyevmasm==0.2.0',
+        'rlp',
         'ply'
     ] + rtd_dependent_deps(),
-    dependency_links=[
-        'https://github.com/aquynh/capstone/archive/next.zip#egg=capstone-4&subdirectory=bindings/python',
-    ],
     extras_require=extra_require,
     entry_points={
         'console_scripts': [

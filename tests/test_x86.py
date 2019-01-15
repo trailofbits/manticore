@@ -38,7 +38,7 @@ class CPUTest(unittest.TestCase):
             b = bytes([ord(c) for c in b])
         return super().assertEqual(a, b)
 
-    class ROOperand(object):
+    class ROOperand:
         ''' Mocking class for operand ronly '''
         def __init__(self, size, value):
             self.size = size

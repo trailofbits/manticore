@@ -19,7 +19,7 @@ from . import linux_syscalls
 from ..core.executor import TerminateState
 from ..core.smtlib import ConstraintSet, solver, Operators
 from ..core.smtlib import Expression
-from ..exceptions import SolverException
+from ..exceptions import SolverError
 from ..native.cpu.abstractcpu import Syscall, ConcretizeArgument, Interruption
 from ..native.cpu.cpufactory import CpuFactory
 from ..native.memory import SMemory32, SMemory64, Memory32, Memory64, LazySMemory32, LazySMemory64
@@ -62,7 +62,7 @@ def mode_from_flags(file_flags):
     return {os.O_RDWR: 'rb+', os.O_RDONLY: 'rb', os.O_WRONLY: 'wb'}[file_flags & 7]
 
 
-class File(object):
+class File:
     def __init__(self, path, flags):
         # TODO: assert file is seekable; otherwise we should save what was
         # read from/written to the state
@@ -305,7 +305,7 @@ class SymbolicFile(File):
             self.array[i] = data[i - self.pos]
 
 
-class SocketDesc(object):
+class SocketDesc:
     '''
     Represents a socket descriptor (i.e. value returned by socket(2)
     '''
@@ -316,7 +316,7 @@ class SocketDesc(object):
         self.protocol = protocol
 
 
-class Socket(object):
+class Socket:
     def stat(self):
         from collections import namedtuple
         stat_result = namedtuple('stat_result', ['st_mode', 'st_ino', 'st_dev', 'st_nlink', 'st_uid', 'st_gid',
@@ -1412,7 +1412,11 @@ class Linux(Platform):
         ARCH_SET_FS = 0x1002
         ARCH_GET_FS = 0x1003
         ARCH_GET_GS = 0x1004
-        assert code == ARCH_SET_FS
+        if code not in {ARCH_SET_GS, ARCH_SET_FS, ARCH_GET_FS, ARCH_GET_GS}:
+            logger.debug("code not in expected options ARCH_GET/SET_FS/GS")
+            return -errno.EINVAL
+        if code != ARCH_SET_FS:
+            raise NotImplementedError("Manticore supports only arch_prctl with code=ARCH_SET_FS (0x1002) for now")
         self.current.FS = 0x63
         self.current.set_descriptor(self.current.FS, addr, 0x4000, 'rw')
         return 0
@@ -2693,8 +2697,8 @@ class SLinux(Linux):
                     if issymbolic(c):
                         c = solver.get_value(self.constraints, c)
                     fd.write(make_chr(c))
-            except SolverException:
-                fd.write('{SolverException}')
+            except SolverError:
+                fd.write('{SolverError}')
 
         out = io.BytesIO()
         inn = io.BytesIO()

@@ -41,7 +41,7 @@ class EVMTest_GASPRICE(unittest.TestCase):
             world = evm.EVMWorld(constraints)
 
             owner_account = world.create_account(balance=1000)
-            contract_account = world.create_account(balance=1000, code=':')
+            contract_account = world.create_account(balance=1000, code=b':')
 
             world._open_transaction('CALL', contract_account, 10, '', owner_account, 0)
             world._open_transaction('CALL', contract_account, 100, '', owner_account, 0)

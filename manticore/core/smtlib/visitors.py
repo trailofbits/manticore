@@ -6,7 +6,7 @@ import operator
 logger = logging.getLogger(__name__)
 
 
-class Visitor(object):
+class Visitor:
     ''' Class/Type Visitor
 
        Inherit your class visitor from this one and get called on a different
@@ -51,10 +51,6 @@ class Visitor(object):
         return self._stack[-1]
 
     def _method(self, expression, *args):
-        #Special case. Need to get the unsleeved version of the array
-        if isinstance(expression, ArrayProxy):
-            expression = expression.array
-
         assert expression.__class__.__mro__[-1] is object
         for cls in expression.__class__.__mro__:
             sort = cls.__name__
@@ -112,8 +108,6 @@ class Visitor(object):
 
     @staticmethod
     def _rebuild(expression, operands):
-        if isinstance(expression, Constant):
-            return expression
         if isinstance(expression, Operation):
             if any(x is not y for x, y in zip(expression.operands, operands)):
                 import copy
@@ -380,15 +374,14 @@ class ArithmeticSimplifier(Visitor):
             return expression
 
     def visit_BitVecITE(self, expression, *operands):
-        if isinstance(expression.operands[0], Constant):
+        # FIXME Enable some taint propagating optimization
+        if isinstance(expression.operands[0], Constant) and not expression.operands[0].taint:
             if expression.operands[0].value:
                 result = expression.operands[1]
             else:
                 result = expression.operands[2]
-            import copy
-            result = copy.copy(result)
-            result._taint |= expression.operands[0].taint
             return result
+
         if self._changed(expression, operands):
             return BitVecITE(expression.size, *operands, taint=expression.taint)
 
@@ -434,10 +427,13 @@ class ArithmeticSimplifier(Visitor):
         op = expression.operands[0]
         begining = expression.begining
         end = expression.end
+        size = end - begining + 1
 
         # extract(sizeof(a), 0)(a)  ==> a
         if begining == 0 and end + 1 == op.size:
             return op
+        elif isinstance(op, BitVecExtract):
+            return BitVecExtract(op.value, op.begining + begining, size, taint=expression.taint)
         elif isinstance(op, BitVecConcat):
             new_operands = []
             bitcount = 0
@@ -582,19 +578,26 @@ def arithmetic_simplify(expression):
 
 
 def to_constant(expression):
-    value = arithmetic_simplify(expression)
+    '''
+        Iff the expression can be simplified to a Constant get the actual concrete value.
+        This discards/ignore any taint
+    '''
+    value = simplify(expression)
+    if isinstance(value, Expression) and value.taint:
+        raise ValueError("Can not simplify tainted values to constant")
     if isinstance(value, Constant):
         return value.value
     elif isinstance(value, Array):
-        if value.index_max:
+        if expression.index_max:
             ba = bytearray()
-            for i in range(value.index_max):
+            for i in range(expression.index_max):
                 value_i = simplify(value[i])
                 if not isinstance(value_i, Constant):
                     break
                 ba.append(value_i.value)
             else:
-                return ba
+                return bytes(ba)
+            return expression
     return value
 
 

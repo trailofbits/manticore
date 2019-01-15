@@ -2,15 +2,31 @@ import hashlib
 import logging
 from contextlib import contextmanager
 
-from ..core.smtlib import Operators, taint_with, get_taints, Constant
-from ..utils.helpers import istainted, issymbolic
+from ..core.smtlib import Operators, Constant
+from ..utils.helpers import istainted, issymbolic, taint_with, get_taints
 from ..core.plugin import Plugin
 
 
 logger = logging.getLogger(__name__)
 
 
+class DetectorClassification:
+    """
+    Shall be consistent with
+    https://github.com/trailofbits/slither/blob/563d5118298e4cae7f0ea5f2a531f0dcdcebd64d/slither/detectors/abstract_detector.py#L11-L15
+    """
+    HIGH = 0
+    MEDIUM = 1
+    LOW = 2
+    INFORMATIONAL = 3
+
+
 class Detector(Plugin):
+    ARGUMENT = None  # argument that needs to be passed to --detect to use given detector
+    HELP = None  # help string
+    IMPACT = None  # DetectorClassification value
+    CONFIDENCE = None  # DetectorClassification value
+
     @property
     def name(self):
         return self.__class__.__name__.split('.')[-1]
@@ -29,7 +45,7 @@ class Detector(Plugin):
             return global_findings
 
     def add_finding(self, state, address, pc, finding, at_init, constraint=True):
-        '''
+        """
         Logs a finding at specified contract and assembler line.
         :param state: current state
         :param address: contract address of the finding
@@ -37,7 +53,7 @@ class Detector(Plugin):
         :param at_init: true if executing the constructor
         :param finding: textual description of the finding
         :param constraint: finding is considered reproducible only when constraint is True
-        '''
+        """
 
         if isinstance(pc, Constant):
             pc = pc.value
@@ -50,12 +66,12 @@ class Detector(Plugin):
         logger.warning(finding)
 
     def add_finding_here(self, state, finding, constraint=True):
-        '''
+        """
         Logs a finding in current contract and assembler line.
         :param state: current state
         :param finding: textual description of the finding
         :param constraint: finding is considered reproducible only when constraint is True
-        '''
+        """
         address = state.platform.current_vm.address
         pc = state.platform.current_vm.pc
         if isinstance(pc, Constant):
@@ -66,14 +82,14 @@ class Detector(Plugin):
         self.add_finding(state, address, pc, finding, at_init, constraint)
 
     def _save_current_location(self, state, finding, condition=True):
-        '''
+        """
         Save current location in the internal locations list and returns a textual id for it.
         This is used to save locations that could later be promoted to a finding if other conditions hold
         See _get_location()
         :param state: current state
         :param finding: textual description of the finding
         :param condition: general purpose constraint
-        '''
+        """
         address = state.platform.current_vm.address
         pc = state.platform.current_vm.pc
         at_init = state.platform.current_transaction.sort == 'CREATE'
@@ -83,9 +99,10 @@ class Detector(Plugin):
         return hash_id
 
     def _get_location(self, state, hash_id):
-        ''' Get previously saved location
-            A location is composed of: address, pc, finding, at_init, condition
-        '''
+        """
+        Get previously saved location
+        A location is composed of: address, pc, finding, at_init, condition
+        """
         return state.context.setdefault('{:s}.locations'.format(self.name), {})[hash_id]
 
     def _get_src(self, address, pc):
@@ -93,26 +110,41 @@ class Detector(Plugin):
 
 
 class DetectEnvInstruction(Detector):
-    ''' Detect the usage of instructions that query environmental/block information:
-        BLOCKHASH, COINBASE, TIMESTAMP, NUMBER, DIFFICULTY, GASLIMIT, ORIGIN, GASPRICE
+    """
+    Detect the usage of instructions that query environmental/block information:
+    BLOCKHASH, COINBASE, TIMESTAMP, NUMBER, DIFFICULTY, GASLIMIT, ORIGIN, GASPRICE
 
-        Sometimes environmental information can be manipulated. Contracts should avoid
-        using it. Unless special situations. Notably to programatically detect human transactions
-        `sender == origin`
-    '''
+    Sometimes environmental information can be manipulated. Contracts should avoid
+    using it. Unless special situations. Notably to programatically detect human transactions
+    `sender == origin`
+    """
+    ARGUMENT = 'env-instr'
+    HELP = 'Use of potentially unsafe/manipulable instructions'
+    IMPACT = DetectorClassification.MEDIUM
+    CONFIDENCE = DetectorClassification.HIGH
 
     def will_evm_execute_instruction_callback(self, state, instruction, arguments):
         if instruction.semantics in ('BLOCKHASH', 'COINBASE', 'TIMESTAMP', 'NUMBER', 'DIFFICULTY', 'GASLIMIT', 'ORIGIN', 'GASPRICE'):
             self.add_finding_here(state, f'Warning {instruction.semantics} instruction used')
 
 
-class DetectSelfdestruct(Detector):
+class DetectSuicidal(Detector):
+    ARGUMENT = 'suicidal'
+    HELP = 'Reachable selfdestruct instructions'
+    IMPACT = DetectorClassification.MEDIUM
+    CONFIDENCE = DetectorClassification.HIGH
+
     def will_evm_execute_instruction_callback(self, state, instruction, arguments):
         if instruction.semantics == 'SELFDESTRUCT':
             self.add_finding_here(state, 'Reachable SELFDESTRUCT')
 
 
 class DetectExternalCallAndLeak(Detector):
+    ARGUMENT = 'ext-call-leak'
+    HELP = 'Reachable external call or ether leak to sender or arbitrary address'
+    IMPACT = DetectorClassification.MEDIUM
+    CONFIDENCE = DetectorClassification.HIGH
+
     def will_evm_execute_instruction_callback(self, state, instruction, arguments):
         if instruction.semantics == 'CALL':
             dest_address = arguments[1]
@@ -142,6 +174,11 @@ class DetectExternalCallAndLeak(Detector):
 
 
 class DetectInvalid(Detector):
+    ARGUMENT = 'invalid'
+    HELP = 'Enable INVALID instruction detection'
+    IMPACT = DetectorClassification.LOW
+    CONFIDENCE = DetectorClassification.HIGH
+
     def __init__(self, only_human=True, **kwargs):
         """
         Detects INVALID instructions.
@@ -169,13 +206,17 @@ class DetectReentrancySimple(Detector):
     Alert if contract changes the state of storage (does a write) after a call with >2300 gas to a user controlled/symbolic
     external address or the msg.sender address.
     """
+    ARGUMENT = 'reentrancy'
+    HELP = 'Reentrancy bug'
+    IMPACT = DetectorClassification.HIGH
+    CONFIDENCE = DetectorClassification.HIGH
 
     @property
     def _context_key(self):
         return f'{self.name}.call_locations'
 
     def will_open_transaction_callback(self, state, tx):
-        if tx.is_human():
+        if tx.is_human:
             state.context[self._context_key] = []
 
     def will_evm_execute_instruction_callback(self, state, instruction, arguments):
@@ -210,10 +251,18 @@ class DetectReentrancyAdvanced(Detector):
     Detector for reentrancy bugs.
     Given an optional concrete list of attacker addresses, warn on the following conditions.
 
-    1) A _successful_ call to an attacker address (address in attacker list), or any human account address (if no list is given). With enough gas (>2300).
+    1) A _successful_ call to an attacker address (address in attacker list), or any human account address
+    (if no list is given). With enough gas (>2300).
+
     2) A SSTORE after the execution of the CALL.
+
     3) The storage slot of the SSTORE must be used in some path to control flow
     """
+    ARGUMENT = 'reentrancy-adv'
+    HELP = 'Reentrancy bug (different method)'
+    IMPACT = DetectorClassification.HIGH
+    CONFIDENCE = DetectorClassification.HIGH
+
     def __init__(self, addresses=None, **kwargs):
         super().__init__(**kwargs)
         # TODO Check addresses are normal accounts. Heuristics implemented here
@@ -227,14 +276,14 @@ class DetectReentrancyAdvanced(Detector):
 
     def will_open_transaction_callback(self, state, tx):
         # Reset reading log on new human transactions
-        if tx.is_human():
+        if tx.is_human:
             state.context[self._read_storage_name] = set()
             state.context['{:s}.locations'.format(self.name)] = dict()
 
     def did_close_transaction_callback(self, state, tx):
         world = state.platform
         #Check if it was an internal tx
-        if not tx.is_human():
+        if not tx.is_human:
             # Check is the tx was successful
             if tx.result:
                 # Check if gas was enough for a reentrancy attack
@@ -278,8 +327,12 @@ class DetectReentrancyAdvanced(Detector):
 
 class DetectIntegerOverflow(Detector):
     """
-        Detects potential overflow and underflow conditions on ADD and SUB instructions.
+    Detects potential overflow and underflow conditions on ADD and SUB instructions.
     """
+    ARGUMENT = 'overflow'
+    HELP = 'Integer overflows'
+    IMPACT = DetectorClassification.HIGH
+    CONFIDENCE = DetectorClassification.HIGH
 
     @staticmethod
     def _signed_sub_overflow(state, a, b):
@@ -428,7 +481,7 @@ class DetectIntegerOverflow(Detector):
             self._check_finding(state, what)
         elif mnemonic == 'RETURN':
             world = state.platform
-            if world.current_transaction.is_human():
+            if world.current_transaction.is_human:
                 # If an overflowded value is returned to a human
                 offset, size = arguments
                 data = world.current_vm.read_buffer(offset, size)
@@ -448,7 +501,11 @@ class DetectIntegerOverflow(Detector):
 
 
 class DetectUnusedRetVal(Detector):
-    """ Detects unused return value from internal transactions """
+    """Detects unused return value from internal transactions"""
+    ARGUMENT = 'unused-return'
+    HELP = 'Unused internal transaction return values'
+    IMPACT = DetectorClassification.LOW
+    CONFIDENCE = DetectorClassification.HIGH
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -470,7 +527,7 @@ class DetectUnusedRetVal(Detector):
 
     def will_open_transaction_callback(self, state, tx):
         # Reset reading log on new human transactions
-        if tx.is_human():
+        if tx.is_human:
             state.context[self._stack_name] = []
         state.context[self._stack_name].append(set())
 
@@ -503,17 +560,21 @@ class DetectUnusedRetVal(Detector):
 
 
 class DetectDelegatecall(Detector):
-    '''
-        Detects DELEGATECALLs to controlled addresses and or with controlled function id.
-        This detector finds and reports on any delegatecall instruction any the following propositions are hold:
-            * the destination address can be controlled by the caller
-            * the first 4 bytes of the calldata are controlled by the caller
-    '''
+    """
+    Detects DELEGATECALLs to controlled addresses and or with controlled function id.
+    This detector finds and reports on any delegatecall instruction any the following propositions are hold:
+        * the destination address can be controlled by the caller
+        * the first 4 bytes of the calldata are controlled by the caller
+    """
+    ARGUMENT = 'delegatecall'
+    HELP = 'Problematic uses of DELEGATECALL instruction'
+    IMPACT = DetectorClassification.HIGH
+    CONFIDENCE = DetectorClassification.HIGH
 
     def will_evm_execute_instruction_callback(self, state, instruction, arguments):
         world = state.platform
         mnemonic = instruction.semantics
-        current_vm = world.current_vm
+
         # If it executed a DELEGATECALL
         # TODO: Check the transaction was success
         # if blockchain.last_transaction.return_value:
@@ -536,8 +597,12 @@ class DetectDelegatecall(Detector):
 
 class DetectUninitializedMemory(Detector):
     """
-        Detects uses of uninitialized memory
+    Detects uses of uninitialized memory
     """
+    ARGUMENT = 'uninitialized-memory'
+    HELP = 'Uninitialized memory usage'
+    IMPACT = DetectorClassification.MEDIUM
+    CONFIDENCE = DetectorClassification.HIGH
 
     def did_evm_read_memory_callback(self, state, offset, value):
         initialized_memory = state.context.get('{:s}.initialized_memory'.format(self.name), set())
@@ -558,8 +623,12 @@ class DetectUninitializedMemory(Detector):
 
 class DetectUninitializedStorage(Detector):
     """
-        Detects uses of uninitialized storage
+    Detects uses of uninitialized storage
     """
+    ARGUMENT = 'uninitialized-storage'
+    HELP = 'Uninitialized storage usage'
+    IMPACT = DetectorClassification.MEDIUM
+    CONFIDENCE = DetectorClassification.HIGH
 
     def did_evm_read_storage_callback(self, state, address, offset, value):
         if not state.can_be_true(value != 0):
@@ -580,11 +649,16 @@ class DetectUninitializedStorage(Detector):
 
 
 class DetectRaceCondition(Detector):
-    """Detects possible transaction race conditions (transaction order dependencies)
+    """
+    Detects possible transaction race conditions (transaction order dependencies)
 
     The RaceCondition detector might not work properly for contracts that have only a fallback function.
     See the detector's implementation and it's `_in_user_func` method for more information.
     """
+    ARGUMENT = 'race-condition'
+    HELP = 'Possible transaction race conditions'
+    IMPACT = DetectorClassification.LOW
+    CONFIDENCE = DetectorClassification.LOW
 
     TAINT = 'written_storage_slots.'
 

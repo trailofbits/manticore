@@ -12,7 +12,7 @@ from ..exceptions import EthereumError
 logger = logging.getLogger(__name__)
 
 
-class ABI(object):
+class ABI:
     """
         This class contains methods to handle the ABI.
         The Application Binary Interface is the standard way to interact with

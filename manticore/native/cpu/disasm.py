@@ -3,7 +3,7 @@ from abc import abstractmethod
 import capstone as cs
 
 
-class Instruction(object):
+class Instruction:
     """Capstone-like instruction to be used internally
     """
     @property
@@ -43,7 +43,7 @@ class Instruction(object):
         pass
 
 
-class Disasm(object):
+class Disasm:
     """Abstract class for different disassembler interfaces"""
 
     def __init__(self, disasm):

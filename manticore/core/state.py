@@ -89,9 +89,6 @@ class StateBase(Eventful):
         # Events are lost in serialization and fork !!
         self.forward_events_from(platform)
 
-        # FIXME(felipe) This should go into some event callback in a plugin (start_run?)
-        self._init_context()
-
     def __getstate__(self):
         state = super().__getstate__()
         state['platform'] = self._platform
@@ -154,6 +151,9 @@ class StateBase(Eventful):
     def constraints(self, constraints):
         self._constraints = constraints
         self.platform.constraints = constraints
+
+    def execute(self):
+        raise NotImplementedError
 
     def constrain(self, constraint):
         '''Constrain state.
@@ -415,33 +415,3 @@ class StateBase(Eventful):
                 else:
                     assert b != 0
         return data
-
-    @property
-    def cpu(self):
-        return self._platform.current
-
-    @property
-    def mem(self):
-        return self._platform.current.memory
-
-    # FIXME(felipe) Remove this
-    def _init_context(self):
-        self.context['branches'] = dict()
-
-    # FIXME(felipe) Remove this
-    def record_branch(self, target):
-        branches = self.context['branches']
-        branch = (self.cpu._last_pc, target)
-        if branch in branches:
-            branches[branch] += 1
-        else:
-            branches[branch] = 1
-
-    def generate_testcase(self, name, message='State generated testcase'):
-        """
-        Generate a testcase for this state and place in the analysis workspace.
-
-        :param str name: Short string identifying this testcase used to prefix workspace entries.
-        :param str message: Longer description
-        """
-        self._publish('will_generate_testcase', name, message)

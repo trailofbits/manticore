@@ -4,7 +4,7 @@ import random
 import logging
 import signal
 
-from ..exceptions import ExecutorError, SolverException
+from ..exceptions import ExecutorError, SolverError
 from ..utils.nointerrupt import WithKeyboardInterruptAs
 from ..utils.event import Eventful
 from ..utils import config
@@ -40,7 +40,7 @@ def sync(f):
     return newFunction
 
 
-class Policy(object):
+class Policy:
     ''' Base class for prioritization of state search '''
 
     def __init__(self, executor, *args, **kwargs):
@@ -170,7 +170,7 @@ class Executor(Eventful):
     conditions (system calls, memory faults, concretization, etc.)
     '''
 
-    _published_events = {'enqueue_state', 'generate_testcase', 'fork_state', 'load_state', 'terminate_state'}
+    _published_events = {'enqueue_state', 'fork_state', 'load_state', 'terminate_state', 'internal_generate_testcase'}
 
     def __init__(self, initial=None, store=None, policy='random', context=None, **kwargs):
         super().__init__(**kwargs)
@@ -344,19 +344,6 @@ class Executor(Eventful):
         ''' Returns the list of states ids currently queued '''
         return list(self._states)
 
-    def generate_testcase(self, state, message='Testcase generated'):
-        '''
-        Simply announce that we're going to generate a testcase. Actual generation
-        should be handled by the driver class (such as :class:`~manticore.Manticore`)
-
-        :param state: The state to generate information about
-        :param message: Accompanying message
-        '''
-
-        # broadcast test generation. This is the time for other modules
-        # to output whatever helps to understand this testcase
-        self._publish('will_generate_testcase', state, 'test', message)
-
     def fork(self, state, expression, policy='ALL', setstate=None):
         '''
         Fork state on expression concretizations.
@@ -468,7 +455,7 @@ class Executor(Eventful):
                                 break
                         else:
                             # Notify this worker is done
-                            self._publish('will_terminate_state', current_state, current_state_id, 'Shutdown')
+                            self._publish('will_terminate_state', current_state, current_state_id, TerminateState('Shutdown'))
                             current_state = None
 
                     # Handling Forking and terminating exceptions
@@ -485,10 +472,10 @@ class Executor(Eventful):
 
                         logger.debug("Generic terminate state")
                         if e.testcase:
-                            self.generate_testcase(current_state, str(e))
+                            self._publish('internal_generate_testcase', current_state, message=str(e))
                         current_state = None
 
-                    except SolverException as e:
+                    except SolverError as e:
                         # raise
                         import traceback
                         trace = traceback.format_exc()
@@ -498,7 +485,7 @@ class Executor(Eventful):
                         self._publish('will_terminate_state', current_state, current_state_id, e)
 
                         if solver.check(current_state.constraints):
-                            self.generate_testcase(current_state, "Solver failed" + str(e))
+                            self._publish('internal_generate_testcase', current_state, message="Solver failed" + str(e))
                         current_state = None
 
                 except (Exception, AssertionError) as e:
@@ -509,7 +496,6 @@ class Executor(Eventful):
                     # Notify this worker is done
                     self._publish('will_terminate_state', current_state, current_state_id, e)
                     current_state = None
-                    logger.setState(None)
 
             assert current_state is None or self.is_shutdown()
 

@@ -2,11 +2,21 @@ import logging
 import sys
 import types
 
+manticore_verbosity = 0
+DEFAULT_LOG_LEVEL = logging.WARNING
+all_loggers = set()
+default_factory = logging.getLogRecordFactory()
+logfmt = ("%(asctime)s: [%(process)d] %(name)s:%(levelname)s %(message)s")
+handler = logging.StreamHandler(sys.stdout)
+formatter = logging.Formatter(logfmt)
+handler.setFormatter(formatter)
+
 
 class ContextFilter(logging.Filter):
     '''
     This is a filter which injects contextual information into the log.
     '''
+
     def summarized_name(self, name):
         '''
         Produce a summarized record name
@@ -18,10 +28,10 @@ class ContextFilter(logging.Filter):
 
     colors_disabled = False
 
-    coloring = {u'DEBUG':u'magenta', u'WARNING':u'yellow',
-        u'ERROR':u'red', u'INFO':u'blue'}
-    colors =  dict(zip([u'black', u'red', u'green', u'yellow',
-        u'blue', u'magenta', u'cyan', u'white'], map(str, range(30, 30 + 8))))
+    coloring = {u'DEBUG': u'magenta', u'WARNING': u'yellow',
+                u'ERROR': u'red', u'INFO': u'blue'}
+    colors = dict(zip([u'black', u'red', u'green', u'yellow',
+                       u'blue', u'magenta', u'cyan', u'white'], map(str, range(30, 30 + 8))))
 
     color_map = {}
     for k, v in coloring.items():
@@ -40,59 +50,41 @@ class ContextFilter(logging.Filter):
             return self.colored_levelname_format.format(self.color_map[levelname], levelname)
 
     def filter(self, record):
-        if hasattr(self, 'stateid') and isinstance(self.stateid, int):
-            record.stateid = f'[{self.stateid}]'
-        else:
-            record.stateid = ''
-
         record.name = self.summarized_name(record.name)
         record.levelname = self.colored_level_name(record.levelname)
         return True
 
 
-manticore_verbosity = 0
-all_loggers = []
+ctxfilter = ContextFilter()
+
+
+class CustomLogger(logging.Logger):
+    '''
+    Custom Logger class that can grab the correct verbosity level from this module
+    '''
+
+    def __init__(self, name, level=DEFAULT_LOG_LEVEL, *args):
+        super().__init__(name, min(get_verbosity(name), level), *args)
+        all_loggers.add(name)
+        self.initialized = False
+
+        if name.startswith('manticore'):
+            self.addHandler(handler)
+            self.addFilter(ctxfilter)
+            self.propagate = False
+
+
+logging.setLoggerClass(CustomLogger)
 
 
 def disable_colors():
     ContextFilter.colors_disabled = True
 
 
-def init_logging(default_level=logging.WARNING):
-    global all_loggers
-    loggers = logging.getLogger().manager.loggerDict.keys()
-
-    ctxfilter = ContextFilter()
-    logfmt = ("%(asctime)s: [%(process)d]%(stateid)s %(name)s:%(levelname)s"
-              " %(message)s")
-    handler = logging.StreamHandler(sys.stdout)
-    formatter = logging.Formatter(logfmt)
-    handler.setFormatter(formatter)
-    for name in loggers:
-        logger = logging.getLogger(name)
-        if not name.startswith('manticore'):
-            continue
-        if name in all_loggers:
-            continue
-        logger.addHandler(handler)
-        logger.propagate = False
-        logger.setLevel(default_level)
-        logger.addFilter(ctxfilter)
-        logger.setState = types.MethodType(loggerSetState, logger)
-        all_loggers.append(name)
-    set_verbosity(manticore_verbosity)
-
-
-def loggerSetState(logger, stateid):
-    logger.filters[0].stateid = stateid
-
-
-def set_verbosity(setting):
-    global manticore_verbosity, all_loggers
-    zero = [(x, logging.WARNING) for x in all_loggers]
-    levels = [
+def get_levels():
+    return [
         # 0
-        zero,
+        [(x, DEFAULT_LOG_LEVEL) for x in all_loggers],
         # 1
         [
             ('manticore.manticore', logging.INFO),
@@ -128,6 +120,8 @@ def set_verbosity(setting):
         ]
     ]
 
+
+def get_verbosity(logger_name):
     def match(name, pattern):
         '''
         Pseudo globbing that only supports full fields. 'a.*.d' matches 'a.b.d'
@@ -143,18 +137,19 @@ def set_verbosity(setting):
                 return False
         return True
 
-    def glob(lst, expression):
-        return [name for name in lst if match(name, expression)]
+    for level in range(manticore_verbosity, 0, -1):
+        for pattern, log_level in get_levels()[level]:
+            if match(logger_name, pattern):
+                return log_level
+    return DEFAULT_LOG_LEVEL
 
-    # Takes a value and ensures it's in a certain range
-    def clamp(val, minimum, maximum):
-        return sorted((minimum, val, maximum))[1]
 
-    clamped = clamp(setting, 0, len(levels) - 1)
-    for level in range(clamped + 1):
-        for pattern, log_level in levels[level]:
-            for logger_name in glob(all_loggers, pattern):
-                logger = logging.getLogger(logger_name)
-                logger.setLevel(log_level)
-
-    manticore_verbosity = clamped
+def set_verbosity(setting):
+    global manticore_verbosity
+    manticore_verbosity = min(max(setting, 0), len(get_levels()) - 1)
+    for logger_name in all_loggers:
+        logger = logging.getLogger(logger_name)
+        # min because more verbosity == lower numbers
+        # This means if you explicitly call setLevel somewhere else in the source, and it's *more*
+        # verbose, it'll stay that way even if manticore_verbosity is 0.
+        logger.setLevel(min(get_verbosity(logger_name), logger.getEffectiveLevel()))

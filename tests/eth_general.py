@@ -21,20 +21,17 @@ from manticore.ethereum import ManticoreEVM, State, DetectExternalCallAndLeak, D
 from manticore.ethereum.plugins import FilterFunctions
 from manticore.ethereum.solidity import SolidityMetadata
 from manticore.platforms import evm
-from manticore.platforms.evm import EVMWorld, ConcretizeStack, concretized_args, Return, Stop
+from manticore.platforms.evm import EVMWorld, ConcretizeArgument, concretized_args, Return, Stop
 from manticore.utils.deprecated import ManticoreDeprecationWarning
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# FIXME(mark): Remove these two lines when logging works for ManticoreEVM
-from manticore.utils.log import init_logging
-
-init_logging()
 
 def make_mock_evm_state():
     cs = ConstraintSet()
     fakestate = State(cs, EVMWorld(cs))
     return fakestate
+
 
 @contextmanager
 def disposable_mevm(*args, **kwargs):
@@ -43,6 +40,7 @@ def disposable_mevm(*args, **kwargs):
         yield mevm
     finally:
         shutil.rmtree(mevm.workspace)
+
 
 class EthDetectorsIntegrationTest(unittest.TestCase):
     def test_int_ovf(self):
@@ -83,7 +81,7 @@ class EthAbiTests(unittest.TestCase):
 
 
         calldata = binascii.unhexlify(b'9de4886f9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d')
-        returndata = b'' 
+        returndata = b''
         md = m.get_metadata(contract_account)
         self.assertEqual(md.parse_tx(calldata, returndata), 'test1(899826498278242188854817720535123270925417291165, 71291600040229971300002528024956868756719167029433602173313100742126907268509)')
 
@@ -299,7 +297,7 @@ class EthAbiTests(unittest.TestCase):
         selector = ABI.function_selector('memberId(address)')
         function_ref_data = address + selector + b'\0'*8
         # build tx call data
-        call_data = func_id + function_ref_data 
+        call_data = func_id + function_ref_data
         parsed_func_id, args = ABI.deserialize(spec, call_data)
         self.assertEqual(parsed_func_id, func_id)
         self.assertEqual(((0xfB6916095ca1df60bB79Ce92cE3Ea74c37c5d359, selector),), args)
@@ -363,6 +361,12 @@ class EthInstructionTests(unittest.TestCase):
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
         return constraints, world, new_vm
 
+    def test_str(self):
+        constraints, world, vm = self._make()
+        vm_str = """0x222222222222222222222222222222222222200: ---------------------------------------------------------------------------------------------------------------------------------------------------\n0x222222222222222222222222222222222222200: 0x0000: SDIV  Signed integer division operation (truncated).\n0x222222222222222222222222222222222222200: Stack                                                                           Memory\n0x222222222222222222222222222222222222200:                                                                                 0000  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................\n0x222222222222222222222222222222222222200:                                                                                 0010  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................\n0x222222222222222222222222222222222222200:                                                                                 0020  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................\n0x222222222222222222222222222222222222200:                                                                                 0030  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................\n0x222222222222222222222222222222222222200:                                                                                 0040  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................\n0x222222222222222222222222222222222222200:                                                                                 0050  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................\n0x222222222222222222222222222222222222200:                                                                                 0060  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................\n0x222222222222222222222222222222222222200:                                                                                 0070  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00   ................\n0x222222222222222222222222222222222222200: Gas: 1000000"""
+
+        self.assertEqual(str(vm), vm_str)
+
     def test_SDIV(self):
         constraints, world, vm = self._make()
         result = vm.SDIV(115792089237316182568066630936765703517573245936339743861833633745570447228928, 200867255532373784442745261542645325315275374222849104412672)
@@ -411,11 +415,76 @@ class EthInstructionTests(unittest.TestCase):
 class EthTests(unittest.TestCase):
     def setUp(self):
         self.mevm = ManticoreEVM()
-        self.worksp = self.mevm.workspace
 
     def tearDown(self):
-        self.mevm=None
-        shutil.rmtree(self.worksp)
+        shutil.rmtree(self.mevm.workspace)
+        del self.mevm
+
+    def test_create_contract_no_args(self):
+        source_code = 'contract A { constructor() {} }'
+        owner = self.mevm.create_account()
+
+        # The default `args=()` makes it pass no arguments
+        contract1 = self.mevm.solidity_create_contract(source_code, owner=owner)
+        contract2 = self.mevm.solidity_create_contract(source_code, owner=owner)
+
+        self.assertNotEqual(contract1, contract2)
+
+    def test_create_contract_with_missing_args(self):
+        source_code = 'contract A { constructor(uint arg) {} }'
+        owner = self.mevm.create_account()
+
+        # TODO / FIXME: Probably change ValueError to another one and inform that bad arguments have been passed?
+        with self.assertRaises(ValueError) as e:
+            self.mevm.solidity_create_contract(source_code, owner=owner)
+
+        self.assertEqual(str(e.exception), 'The number of values to serialize is less than the number of types')
+
+    def test_create_contract_with_too_much_args(self):
+        source_code = 'contract A { constructor(uint arg) {} }'
+        owner = self.mevm.create_account()
+
+        with self.assertRaises(ValueError) as e:
+            self.mevm.solidity_create_contract(source_code, owner=owner, args='(uint32,uint32)')
+
+        self.assertEqual(str(e.exception), 'The number of values to serialize is greater than the number of types')
+
+    def test_create_contract_two_instances(self):
+        source_code = 'contract A { constructor(uint32 arg) {} }'
+        owner = self.mevm.create_account()
+
+        contracts = [
+            # When we pass no `args`, the default is `()` so it ends up with `b''` as constructor data
+            self.mevm.solidity_create_contract(source_code, owner=owner, args=[1234]),
+            self.mevm.solidity_create_contract(source_code, owner=owner, args=[1234]),
+            # When we pass args=None, the arguments end up being symbolic
+            # NOTE: This is what CLI does
+            self.mevm.solidity_create_contract(source_code, owner=owner, args=None),
+            self.mevm.solidity_create_contract(source_code, owner=owner, args=None)
+        ]
+
+        # They must have unique address and name
+        self.assertEqual(len(contracts), len(set(c.address for c in contracts)))
+        self.assertEqual(len(contracts), len(set(c.name_ for c in contracts)))
+
+    def test_contract_create_and_call_underscore_function(self):
+        source_code = 'contract A { function _f(uint x) returns (uint) { return x + 0x1234; } }'
+
+        owner = self.mevm.create_account()
+        contract = self.mevm.solidity_create_contract(source_code, owner=owner, args=[])
+
+        contract._f(123)
+
+    def test_contract_create_and_access_non_existing_function(self):
+        source_code = 'contract A {}'
+
+        owner = self.mevm.create_account()
+        contract = self.mevm.solidity_create_contract(source_code, owner=owner, args=[])
+
+        with self.assertRaises(AttributeError) as e:
+            _ = contract.xyz
+
+        self.assertEqual(str(e.exception), "The contract contract0 doesn't have xyz function.")
 
     def test_invalid_function_signature(self):
         source_code = '''
@@ -467,6 +536,33 @@ class EthTests(unittest.TestCase):
         # is actually deleted at the end of the human tx
         self.assertEqual(ABI.deserialize('uint', to_constant(self.mevm.world.transactions[-1].return_data)), 42)
 
+    def test_states_querying_1325(self):
+        """
+        Tests issue 1325.
+        """
+        owner = self.mevm.create_account(balance=1000)
+        A = self.mevm.solidity_create_contract('contract A { function foo() { revert(); } }', owner=owner)
+
+        self.assertEqual(self.mevm.count_running_states(), 1)
+        self.assertEqual(self.mevm.count_terminated_states(), 0)
+        self.assertEqual(self.mevm.count_states(), 1)
+
+        A.foo()
+
+        def assert_all():
+            self.assertEqual(self.mevm.count_running_states(), 0)
+            self.assertEqual(self.mevm.count_terminated_states(), 1)
+            self.assertEqual(self.mevm.count_states(), 1)
+
+        list(self.mevm.running_states)
+        assert_all()
+
+        list(self.mevm.terminated_states)
+        assert_all()
+
+        list(self.mevm.all_states)
+        assert_all()
+
     def test_function_name_collision(self):
         source_code = '''
         contract Test{
@@ -485,6 +581,30 @@ class EthTests(unittest.TestCase):
         contract_account = self.mevm.solidity_create_contract(source_code, owner=user_account)
         with self.assertRaises(EthereumError):
             contract_account.ret(self.mevm.make_symbolic_value())
+
+    def test_check_jumpdest_symbolic_pc(self):
+        """
+        In Manticore 0.2.4 (up to 6804661) when run with DetectIntegerOverflow,
+        the EVM.pc is tainted and so it becomes a Constant and so a check in EVM._check_jumpdest:
+            self.pc in self._valid_jumpdests
+        failed (because we checked if the object is in a list of integers...).
+
+        This test checks the fix for this issue.
+        """
+        self.mevm.register_detector(DetectIntegerOverflow())
+        c = self.mevm.solidity_create_contract('''
+        contract C {
+            function mul(int256 a, int256 b) {
+                int256 c = a * b;
+                require(c / a == b);
+            }
+        }
+        ''', owner=self.mevm.create_account(balance=1000))
+
+        c.mul(1, 2)
+
+        self.assertEqual(self.mevm.count_running_states(), 1)
+        self.assertEqual(self.mevm.count_terminated_states(), 0)
 
     def test_gen_testcase_only_if(self):
         source_code = '''
@@ -573,7 +693,7 @@ class EthTests(unittest.TestCase):
                                                     owner=owner_account,
                                                     balance=0)
 
-        #Some global expression `sym_add1` 
+        #Some global expression `sym_add1`
         sym_add1 = m.make_symbolic_value(name='sym_add1')
         #Let's constrain it on the global fake constraintset
         m.constrain(sym_add1>0)
@@ -581,7 +701,7 @@ class EthTests(unittest.TestCase):
         #Symb tx 1
         contract_account.add(sym_add1, caller=attacker_account)
 
-        # A new!? global expression 
+        # A new!? global expression
         sym_add2 = m.make_symbolic_value(name='sym_add2')
         #constraints involve old expression.  Some states may get invalidated by this. Should this be accepted?
         m.constrain(sym_add1 > sym_add2)
@@ -665,21 +785,18 @@ class EthTests(unittest.TestCase):
         class TestDetector(Detector):
             def did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
                 if instruction.is_endtx:
-                    with self.locked_context('insns', dict) as d:
-                        d[instruction.semantics] = True
+                    with self.locked_context('endtx_instructions', set) as d:
+                        d.add(instruction.name)
 
         mevm = self.mevm
         p = TestDetector()
         mevm.register_detector(p)
 
-        filename = os.path.join(THIS_DIR, 'binaries/int_overflow.sol')
-        mevm.multi_tx_analysis(filename, tx_limit=2)
+        filename = os.path.join(THIS_DIR, 'binaries/simple_int_overflow.sol')
+        mevm.multi_tx_analysis(filename, tx_limit=2, tx_preconstrain=True)
 
-        self.assertIn('insns', p.context)
-        context = p.context['insns']
-        self.assertIn('STOP', context)
-        self.assertIn('RETURN', context)
-        self.assertIn('REVERT', context)
+        self.assertIn('endtx_instructions', p.context)
+        self.assertSetEqual(p.context['endtx_instructions'], {'INVALID', 'RETURN', 'STOP'})
 
     def test_call_with_concretized_args(self):
         """Test a CALL with symbolic arguments that will to be concretized.
@@ -701,9 +818,53 @@ class EthTests(unittest.TestCase):
         receiver = m.create_account(0)
         symbolic_address = m.make_symbolic_address()
         m.constrain(symbolic_address == receiver.address)
+        self.assertTrue(m.count_running_states() > 0 )
         contract.transferHalfTo(symbolic_address, caller=owner, value=m.make_symbolic_value())
+        self.assertTrue(m.count_running_states() > 0 )
         self.assertTrue(any(state.can_be_true(state.platform.get_balance(receiver.address) > 0)
                                 for state in m.running_states))
+
+    def test_make_symbolic_address(self):
+        def get_state():
+            """Returns one state and asserts that there is ONLY ONE."""
+            states = list(self.mevm.running_states)
+            self.assertEqual(len(states), 1)
+            return states[0]
+
+        init_state = get_state()
+
+        symbolic_address1 = self.mevm.make_symbolic_address()
+        self.assertEqual(symbolic_address1.name, 'TXADDR')
+
+        # sanity check: creating a symbolic address should not create a new state
+        self.assertIs(get_state(), init_state)
+
+        # TEST 1: the 1st symbolic address should be constrained only to 0 (as there are no other accounts yet!)
+        possible_addresses1 = init_state.solve_n(symbolic_address1, 10)
+        self.assertEqual(possible_addresses1, [0])
+
+        owner = self.mevm.create_account(balance=1)
+
+        # TEST 2: the 2nd symbolic address should be constrained to OR(owner_address, 0)
+        symbolic_address2 = self.mevm.make_symbolic_address()
+        self.assertEqual(symbolic_address2.name, 'TXADDR_1')
+
+        self.assertEqual(get_state().solve_n(symbolic_address2, 10), [int(owner), 0])
+
+        contract = self.mevm.solidity_create_contract('contract C {}', owner=owner)
+
+        # TEST 3: the 3rd symbolic address should be constrained to OR(contract_address, 0, owner_address)
+        symbolic_address3 = self.mevm.make_symbolic_address()
+        self.assertEqual(symbolic_address3.name, 'TXADDR_2')
+
+        state = get_state()
+
+        self.assertEqual(state.solve_n(symbolic_address3, 10), [int(contract), 0, int(owner)])
+
+        # NOTE: The 1st and 2nd symbolic addresses are still constrained to 0 and OR(owner_address, 0)
+        # as the constrains are not reevaluated. They are created/assigned only once: when we create symbolic address.
+        self.assertEqual(state.solve_n(symbolic_address1, 10), [0])
+        self.assertEqual(state.solve_n(symbolic_address2, 10), [int(owner), 0])
 
     def test_end_instruction_trace(self):
         """
@@ -919,6 +1080,28 @@ class EthTests(unittest.TestCase):
         context = p.context.get('flags', {})
         self.assertTrue(context.get('found', False))
 
+    def test_preconstraints(self):
+        source_code = '''
+        contract C {
+            constructor() public {}
+            function f0() public {}
+            function f1(uint a) public payable {}
+        }
+        '''
+        m: ManticoreEVM = self.mevm
+
+        creator_account = m.create_account(balance=1000)
+        contract_account = m.solidity_create_contract(source_code, owner=creator_account, balance=0)
+
+        data = m.make_symbolic_buffer(320)
+        value = m.make_symbolic_value()
+        m.constrain(m.preconstraint_for_call_transaction(address=contract_account, data=data, value=value))
+        m.transaction(caller=creator_account, address=contract_account, data=data, value=value)
+
+        results = [state.platform.all_transactions[-1].result for state in m.all_states]
+        # The TXERROR indicates a state where the sent value is greater than the senders budget.
+        self.assertListEqual(sorted(results), ['STOP']*2 + ['TXERROR'])
+
 class EthHelpersTest(unittest.TestCase):
     def setUp(self):
         self.bv = BitVec(256)
@@ -930,7 +1113,7 @@ class EthHelpersTest(unittest.TestCase):
         def inner_func(self, a, b):
             return a, b
 
-        with self.assertRaises(ConcretizeStack) as cm:
+        with self.assertRaises(ConcretizeArgument) as cm:
             inner_func(None, self.bv, 34)
 
         self.assertEqual(cm.exception.pos, 1)
@@ -941,7 +1124,7 @@ class EthHelpersTest(unittest.TestCase):
         def inner_func(self, a, b):
             return a, b
 
-        with self.assertRaises(ConcretizeStack) as cm:
+        with self.assertRaises(ConcretizeArgument) as cm:
             inner_func(None, 34, self.bv)
 
         self.assertEqual(cm.exception.pos, 2)
@@ -1088,10 +1271,10 @@ class EthSolidityMetadataTests(unittest.TestCase):
     def test_overloaded_functions_and_events(self):
         with disposable_mevm() as m:
             source_code = '''
-            contract C {                
+            contract C {
                 function f() public payable returns (uint) {}
                 function f(string a) public {}
-                
+
                 event E(uint);
                 event E(uint, string);
             }
@@ -1157,14 +1340,14 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
 
     def test_jmpdest_check(self):
         '''
-            This test that jumping to a JUMPDEST in the operand of a PUSH should 
+            This test that jumping to a JUMPDEST in the operand of a PUSH should
             be treated as an INVALID instruction.
             https://github.com/trailofbits/manticore/issues/1169
         '''
-    
+
         constraints = ConstraintSet()
         world = evm.EVMWorld(constraints)
-    
+
         world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
                              balance=100000000000000000000000,
                              code=EVMAsm.assemble('PUSH1 0x5b\nPUSH1 0x1\nJUMP')
@@ -1174,7 +1357,7 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
         data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 1000000000000000000
-        bytecode = world.get_code(address)        
+        bytecode = world.get_code(address)
         gas = 100000
 
         new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, world=world, gas=gas)
@@ -1190,8 +1373,7 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
                 returndata = e.data
 
         self.assertEqual(result, 'THROW')
-        self.assertEqual(new_vm.gas, 99992)
-        
+
 
     def test_delegatecall_env(self):
         '''
@@ -1278,7 +1460,7 @@ class EthPluginTests(unittest.TestCase):
             contract FallbackCounter {
                 uint public fallbackCounter = 123;
                 uint public otherCounter = 456;
-    
+
                 function other() {
                     otherCounter += 1;
                 }

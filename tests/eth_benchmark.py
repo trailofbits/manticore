@@ -4,19 +4,12 @@ File name is purposefully not test_* to run this test separately.
 
 import inspect
 import unittest
-
 import os
 import shutil
 
 from manticore.ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, DetectReentrancyAdvanced
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
-
-
-# FIXME(mark): Remove these two lines when logging works for ManticoreEVM
-from manticore.utils.log import init_logging, set_verbosity
-init_logging()
-set_verbosity(0)
 
 
 class EthBenchmark(unittest.TestCase):

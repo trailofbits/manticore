@@ -5,19 +5,23 @@ import argparse
 import logging
 import sys
 
-from .utils import config, log
+import pkg_resources
+
 from .core.manticore import ManticoreBase
+from .ethereum.cli import ethereum_main
+from .utils import config, log, install_helper
 
 consts = config.get_group('main')
 consts.add('recursionlimit', default=10000,
            description="Value to set for Python recursion limit")
-consts.add('timeout', default=0,
-           description='Timeout, in seconds, for Manticore invocation')
 
 
 # XXX(yan): This would normally be __name__, but then logger output will be pre-
 # pended by 'm.__main__: ', which is not very pleasing. hard-coding to 'main'
 logger = logging.getLogger('manticore.main')
+
+if install_helper.has_native:
+    from manticore.native.cli import native_main
 
 
 def main():
@@ -34,10 +38,8 @@ def main():
     ManticoreBase.verbosity(args.v)
 
     if args.argv[0].endswith('.sol'):
-        from manticore.ethereum.cli import ethereum_main
         ethereum_main(args, logger)
     else:
-        from manticore.native.cli import native_main
         native_main(args, logger)
 
 
@@ -71,19 +73,17 @@ def parse_arguments():
                         help='Number of parallel processes to spawn')
     parser.add_argument('argv', type=str, nargs='*', default=[],
                         help="Path to program, and arguments ('+' in arguments indicates symbolic byte).")
-    parser.add_argument('--timeout', type=int, default=consts.timeout,
-                        help='Timeout. Abort exploration after TIMEOUT seconds')
     parser.add_argument('-v', action='count', default=1,
                         help='Specify verbosity level from -v to -vvvv')
     parser.add_argument('--workspace', type=str, default=None,
                         help=("A folder name for temporaries and results."
                               "(default mcore_?????)"))
-    parser.add_argument('--version', action='version', version='Manticore 0.2.2',
+
+    current_version = pkg_resources.get_distribution("manticore").version
+    parser.add_argument('--version', action='version', version=f'Manticore {current_version}',
                         help='Show program version information')
     parser.add_argument('--config', type=str,
                         help='Manticore config file (.yml) to use. (default config file pattern is: ./[.]m[anti]core.yml)')
-    parser.add_argument('--stdin_size', type=int, default=consts.stdin_size,
-                        help='Control the maximum symbolic stdin size')
 
     bin_flags = parser.add_argument_group('Binary flags')
     bin_flags.add_argument('--entrysymbol', type=str, default=None,
@@ -114,53 +114,36 @@ def parse_arguments():
                            help='Do not attempt to send ether to contract')
 
     eth_flags.add_argument('--txaccount', type=str, default="attacker",
-                           help='Account used as caller in the symbolic transactions, either "attacker" or "owner"')
+                           help='Account used as caller in the symbolic transactions, either "attacker" or '
+                                '"owner" or "combo1" (uses both)')
+
+    eth_flags.add_argument('--txpreconstrain', action='store_true',
+                           help='Constrain human transactions to avoid exceptions in the contract function dispatcher')
 
     eth_flags.add_argument('--contract', type=str,
                            help='Contract name to analyze in case of multiple contracts')
 
-    eth_flags.add_argument('--detect-overflow', action='store_true',
-                           help='Enable integer overflow detection')
+    eth_detectors = parser.add_argument_group('Ethereum detectors')
 
-    eth_flags.add_argument('--detect-invalid', action='store_true',
-                           help='Enable INVALID instruction detection')
+    eth_detectors.add_argument('--list-detectors',
+                               help='List available detectors',
+                               action=ListEthereumDetectors,
+                               nargs=0,
+                               default=False)
 
-    eth_flags.add_argument('--detect-uninitialized-memory', action='store_true',
-                           help='Enable detection of uninitialized memory usage')
+    eth_detectors.add_argument('--exclude',
+                               help='Comma-separated list of detectors that should be excluded',
+                               action='store',
+                               dest='detectors_to_exclude',
+                               default='')
 
-    eth_flags.add_argument('--detect-uninitialized-storage', action='store_true',
-                           help='Enable detection of uninitialized storage usage')
-
-    eth_flags.add_argument('--detect-reentrancy', action='store_true',
-                           help='Enable detection of reentrancy bug')
-
-    eth_flags.add_argument('--detect-reentrancy-advanced', action='store_true',
-                           help='Enable detection of reentrancy bug -- this detector is better used via API')
-
-    eth_flags.add_argument('--detect-unused-retval', action='store_true',
-                           help='Enable detection of unused internal transaction return value')
-
-    eth_flags.add_argument('--detect-delegatecall', action='store_true',
-                           help='Enable detection of problematic uses of DELEGATECALL instruction')
-
-    eth_flags.add_argument('--detect-selfdestruct', action='store_true',
-                           help='Enable detection of reachable selfdestruct instructions')
-
-    eth_flags.add_argument('--detect-externalcall', action='store_true',
-                           help='Enable detection of reachable external call or ether leak to sender or arbitrary address')
-
-    eth_flags.add_argument('--detect-env-instr', action='store_true',
-                           help='Enable detection of use of potentially unsafe/manipulable instructions')
-
-    eth_flags.add_argument('--detect-all', action='store_true',
-                           help='Enable all detector heuristics')
+    eth_detectors.add_argument('--exclude-all',
+                               help='Excludes all detectors',
+                               action='store_true',
+                               default=False)
 
     eth_flags.add_argument('--avoid-constant', action='store_true',
                            help='Avoid exploring constant functions for human transactions')
-
-    eth_flags.add_argument('--detect-race-condition', action='store_true',
-                           help='Enable detection of possible transaction race conditions'
-                                ' (transaction order dependencies) (Ethereum only)')
 
     eth_flags.add_argument('--limit-loops', action='store_true',
                            help='Avoid exploring constant functions for human transactions')
@@ -187,6 +170,14 @@ def parse_arguments():
         parsed.policy = '+' + parsed.policy[3:]
 
     return parsed
+
+
+class ListEthereumDetectors(argparse.Action):
+    def __call__(self, parser, *args, **kwargs):
+        from .ethereum.cli import get_detectors_classes
+        from .utils.command_line import output_detectors
+        output_detectors(get_detectors_classes())
+        parser.exit()
 
 
 if __name__ == '__main__':

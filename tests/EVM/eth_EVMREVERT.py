@@ -6,17 +6,19 @@ from manticore.platforms import evm
 from manticore.core import state
 from manticore.core.smtlib import Operators, ConstraintSet
 import os
+from manticore.utils import config
+consts = config.get_group('evm')
 
 
 class EVMTest_REVERT(unittest.TestCase):
     _multiprocess_can_split_ = True
     maxDiff=None 
     def setUp(self):
-        self.saved_gas_config = evm.config.out_of_gas
-        evm.config.out_of_gas = 1
+        self.saved_gas_config = consts.oog
+        consts.oog = 'complete'
 
     def tearDown(self):
-        evm.config.out_of_gas = self.saved_gas_config
+        consts.oog = self.saved_gas_config
 
     def _execute(self, new_vm):
         last_returned = None
@@ -54,7 +56,7 @@ class EVMTest_REVERT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='\xfd'
+            bytecode=b'\xfd'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -80,7 +82,7 @@ class EVMTest_REVERT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='\xfd'
+            bytecode=b'\xfd'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -106,7 +108,7 @@ class EVMTest_REVERT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='\xfd'
+            bytecode=b'\xfd'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -132,7 +134,7 @@ class EVMTest_REVERT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='\xfd'
+            bytecode=b'\xfd'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -158,7 +160,7 @@ class EVMTest_REVERT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='\xfd'
+            bytecode=b'\xfd'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -184,7 +186,7 @@ class EVMTest_REVERT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='\xfd'
+            bytecode=b'\xfd'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -210,7 +212,7 @@ class EVMTest_REVERT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='\xfd'
+            bytecode=b'\xfd'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -236,7 +238,7 @@ class EVMTest_REVERT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='\xfd'
+            bytecode=b'\xfd'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -262,7 +264,7 @@ class EVMTest_REVERT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='\xfd'
+            bytecode=b'\xfd'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -287,14 +289,14 @@ class EVMTest_REVERT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             address = 0x222222222222222222222222222222222222200
             balance = 0
-            code = ''
+            code = b''
             world.create_account( address=address)
             world.create_account( address=caller)
 
 
             price=0
             value=10000
-            bytecode='\xfd'
+            bytecode=b'\xfd'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -322,7 +324,7 @@ class EVMTest_REVERT(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='\xfd'
+            bytecode=b'\xfd'
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,

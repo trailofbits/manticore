@@ -9,7 +9,7 @@ class Memory:  # todo Mock
         raise NotImplementedError("putchar")
 
 
-class Mem(object):
+class Mem:
     ''' Mocking class for memory '''
 
     def __init__(self, mem):
@@ -44,7 +44,7 @@ class Mem(object):
         return True
 
 
-class SMem(object):
+class SMem:
     ''' Mocking class for memory '''
 
     def __init__(self, array, init):
