@@ -582,6 +582,30 @@ class EthTests(unittest.TestCase):
         with self.assertRaises(EthereumError):
             contract_account.ret(self.mevm.make_symbolic_value())
 
+    def test_check_jumpdest_symbolic_pc(self):
+        """
+        In Manticore 0.2.4 (up to 6804661) when run with DetectIntegerOverflow,
+        the EVM.pc is tainted and so it becomes a Constant and so a check in EVM._check_jumpdest:
+            self.pc in self._valid_jumpdests
+        failed (because we checked if the object is in a list of integers...).
+
+        This test checks the fix for this issue.
+        """
+        self.mevm.register_detector(DetectIntegerOverflow())
+        c = self.mevm.solidity_create_contract('''
+        contract C {
+            function mul(int256 a, int256 b) {
+                int256 c = a * b;
+                require(c / a == b);
+            }
+        }
+        ''', owner=self.mevm.create_account(balance=1000))
+
+        c.mul(1, 2)
+
+        self.assertEqual(self.mevm.count_running_states(), 1)
+        self.assertEqual(self.mevm.count_terminated_states(), 0)
+
     def test_gen_testcase_only_if(self):
         source_code = '''
         contract Test {
