@@ -38,7 +38,7 @@ class EthDetectorTest(unittest.TestCase):
         """
         mevm = self.mevm
 
-        dir = os.path.join(THIS_DIR, 'binaries', 'detectors')
+        dir = os.path.join(THIS_DIR, 'contracts', 'detectors')
         filepath = os.path.join(dir, f'{name}.sol')
 
         if use_ctor_sym_arg:

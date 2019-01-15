@@ -8,7 +8,7 @@ from manticore.native.cpu.abstractcpu import ConcretizeRegister
 from manticore.native.cpu.x86 import AMD64Cpu
 from manticore.native.memory import *
 from manticore.core.smtlib import BitVecOr, operator, Bool
-from tests import mockmem
+import mockmem
 from functools import reduce
 
 class ROOperand:

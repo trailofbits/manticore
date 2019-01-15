@@ -46,7 +46,7 @@ class EthDetectorsIntegrationTest(unittest.TestCase):
     def test_int_ovf(self):
         mevm = ManticoreEVM()
         mevm.register_detector(DetectIntegerOverflow())
-        filename = os.path.join(THIS_DIR, 'binaries/int_overflow.sol')
+        filename = os.path.join(THIS_DIR, 'contracts/int_overflow.sol')
         mevm.multi_tx_analysis(filename, tx_limit=1)
         self.assertEqual(len(mevm.global_findings), 3)
         all_findings = ''.join([x[2] for x in mevm.global_findings])
@@ -792,7 +792,7 @@ class EthTests(unittest.TestCase):
         p = TestDetector()
         mevm.register_detector(p)
 
-        filename = os.path.join(THIS_DIR, 'binaries/simple_int_overflow.sol')
+        filename = os.path.join(THIS_DIR, 'contracts/simple_int_overflow.sol')
         mevm.multi_tx_analysis(filename, tx_limit=2, tx_preconstrain=True)
 
         self.assertIn('endtx_instructions', p.context)
@@ -894,8 +894,7 @@ class EthTests(unittest.TestCase):
         p = TestPlugin()
         mevm.register_plugin(p)
 
-
-        filename = os.path.join(THIS_DIR, 'binaries/int_overflow.sol')
+        filename = os.path.join(THIS_DIR, 'contracts/int_overflow.sol')
 
         mevm.multi_tx_analysis(filename, tx_limit=1)
         mevm.finalize()
@@ -1074,7 +1073,7 @@ class EthTests(unittest.TestCase):
         p = StopAtFirstJump414141()
         mevm.register_detector(p)
 
-        filename = os.path.join(THIS_DIR, 'binaries/reached.sol')
+        filename = os.path.join(THIS_DIR, 'contracts/reached.sol')
         mevm.multi_tx_analysis(filename, tx_limit=2, contract_name='Reachable')
 
         context = p.context.get('flags', {})
