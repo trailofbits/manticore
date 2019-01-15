@@ -12,8 +12,10 @@ def compare_sockets(cs, socket1, socket2):
 
 
 def compare_buffers(cs, buffer1, buffer2):
-    for i in range(len(buffer1)):
-        if not solver.must_be_true(cs, buffer1[i] == buffer2[i]):
+    if len(buffer1) != len(buffer2):
+        return False
+    for b1, b2 in zip(buffer1, buffer2):
+        if not solver.must_be_true(cs, b1 == b2):
             return False
     return True
 
@@ -33,18 +35,19 @@ def map_start(m):
 
 
 def compare_mem(mem1, mem2):
-    maps1 = sorted(list(mem1.maps), key=map_start)
-    maps2 = sorted(list(mem2.maps), key=map_start)
+    maps1 = sorted(list(mem1.maps))
+    maps2 = sorted(list(mem2.maps))
     if len(maps1) != len(maps2):
         return False
 
-    for i, m1 in enumerate(maps1):
-        m2 = maps2[i]
-        if m1.start != m2.start or m1.end != m2.end or m1.perms != m2.perms:
+    for m1, m2 in zip(maps1, maps2):
+        if m1 != m2:
             return False
-        #TODO Compare byte values in the data in these memory maps
-        # if m1._data != m2._data:
-        #     return False
+        # TODO Compare symbolic byte values in the data in these memory maps
+        bytes1 = m1[m1.start:m1.end]
+        bytes2 = m2[m2.start:m2.end]
+        if bytes1 != bytes2:
+            return False
     return False
 
 
@@ -77,7 +80,7 @@ def is_merge_possible(state1, state2):
     if not compare_mem(state1.mem, state2.mem):
         return False
 
-    return False
+    return True
 #TODO
 def merge(state1, state2):
     return state1
