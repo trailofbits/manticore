@@ -12,7 +12,7 @@ from manticore.core.smtlib import operators
 from manticore.ethereum import ManticoreEVM, DetectIntegerOverflow, DetectUnusedRetVal, DetectSuicidal, \
     DetectDelegatecall, DetectExternalCallAndLeak, DetectEnvInstruction, DetectRaceCondition
 from manticore.ethereum.plugins import LoopDepthLimiter
-from mocks import make_mock_evm_state
+from .mocks import make_mock_evm_state
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
