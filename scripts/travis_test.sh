@@ -5,8 +5,8 @@ RV=0
 set -o errexit
 set -o pipefail
 
-# Run all examples; this assumes PWD is examples/script
-run_examples() {
+# Launches all examples; this assumes PWD is examples/script
+launch_examples() {
     # concolic assumes presence of ../linux/simpleassert
     echo "Running concolic.py..."
     HW=../linux/helloworld
@@ -60,44 +60,21 @@ run_examples() {
     return 0
 }
 
-measure_cov() {
-    local PYFILE=${1}
-    echo "Measuring coverage for ${PYFILE}"
-    local HAS_COV=$(coverage report --include=${PYFILE} | tail -n1 | grep -o 'No data to report')
-    if [ "${HAS_COV}" = "No data to report" ]
-    then
-        echo "    FAIL: No coverage for ${PYFILE}"
+
+run_tests_from_dir() {
+    DIR=$1
+    coverage erase
+    coverage run -m unittest discover "tests/$DIR" 2>&1 >/dev/null | tee travis_tests.log
+    DID_OK=$(tail -n1 travis_tests.log)
+    if [[ "${DID_OK}" != OK* ]]; then
+        echo "Some tests failed :("
         return 1
-    fi
-    
-    local COV_AMT=$(coverage report --include=${PYFILE} | tail -n1 | sed "s/.* \([0-9]*\)%/\1/g")
-    if [ "${COV_AMT}" -gt "${2}" ]
-    then
-        echo "    PASS: coverage for ${PYFILE} at ${COV_AMT}%"
     else
-        echo "    FAIL: coverage for ${PYFILE} at ${COV_AMT}%"
-        return 1
+        coverage xml
     fi
-    return 0
 }
 
-should_run_examples=false
-should_run_tests=false
-
-case $1 in
-    tests)    should_run_tests=true
-              ;;
-    examples) should_run_examples=true
-              ;;
-    "" | all) should_run_examples=true
-              should_run_tests=true
-              ;;
-    *)        echo "Usage: $0 [tests|examples|all]"
-              exit 3;
-              ;;
-esac
-
-if [ "$should_run_examples" = true ]; then
+run_examples() {
     pushd examples/linux
     make
     for example in $(make list); do
@@ -107,28 +84,48 @@ if [ "$should_run_examples" = true ]; then
     popd
 
     pushd examples/script
-    run_examples
+    launch_examples
+    RESULT=$?
     echo Ran example scripts
     popd
-fi
+    return RESULT
+}
+
+# Test type
+case $1 in
+    native)     ;&  # Fallthrough
+    ethereum)   ;&  # Fallthrough
+    other)
+        echo "Running only the tests from 'tests/$1' directory"
+        run_tests_from_dir $1
+        RV=$?
+        ;;
+
+    examples)
+        run_examples
+        ;;
+
+    all)
+        echo "Running all tests registered in travis_test.sh: examples, natvie, ethereum, other";
+
+        # Functions should return 0 on success and 1 on failure
+        RV=0
+        run_tests_from_dir native
+        RV=$(($RV + $?))
+        run_tests_from_dir ethereum
+        RV=$(($RV + $?))
+        run_tests_from_dir other
+        RV=$(($RV + $?))
+        run_examples
+        RV=$(($RV + $?))
+        ;;
+
+    *)
+        echo "Usage: $0 [examples|native|ethereum|other|all]"
+        exit 3;
+        ;;
+esac
 
 
-if [ "$should_run_tests" = true ]; then
-    coverage erase
-    coverage run -m unittest discover tests/ 2>&1 >/dev/null | tee travis_tests.log
-    DID_OK=$(tail -n1 travis_tests.log)
-    if [[ "${DID_OK}" != OK* ]]; then
-        echo "Some tests failed :("
-        exit 2
-    else
-        coverage xml
-    fi
-
-    echo "Measuring code coverage..."
-    measure_cov "manticore/core/smtlib/*" 80
-    measure_cov "manticore/native/cpu/x86.py" 50
-    measure_cov "manticore/native/memory.py" 85
-
-fi
 
 exit ${RV}
