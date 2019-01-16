@@ -34,21 +34,29 @@ def map_start(m):
     return m.start
 
 
-def compare_mem(mem1, mem2):
+def compare_mem(mem1, mem2, merged_constraint):
     maps1 = sorted(list(mem1.maps))
     maps2 = sorted(list(mem2.maps))
     if len(maps1) != len(maps2):
         return False
-
     for m1, m2 in zip(maps1, maps2):
-        if m1 != m2:
+        if m1 != m2:  # compares the maps' names, permissions, starts, and ends
             return False
-        # TODO Compare symbolic byte values in the data in these memory maps
+        # Compare concrete byte values in the data in these memory maps for equality
         bytes1 = m1[m1.start:m1.end]
         bytes2 = m2[m2.start:m2.end]
         if bytes1 != bytes2:
             return False
-    return False
+    # compare symbolic byte values in memory
+    for addr1, _ in mem1._symbols.items():
+        val1 = mem1.read(addr1, 1)
+        val2 = mem2.read(addr1, 1)
+        # since we only read a single byte value, these lists should only have one entry in them
+        assert len(val1) == 1 and len(val2) == 1
+        cond_to_check = (val1[0] == val2[0])
+        if not solver.must_be_true(merged_constraint, cond_to_check):
+            return False
+    return True
 
 
 def is_merge_possible(state1, state2):
@@ -75,12 +83,12 @@ def is_merge_possible(state1, state2):
         (name2, fd2, data2) = platform2.syscall_trace[i]
         if not (name1 == name2 and fd1 == fd2 and compare_buffers(merged_constraint, data1, data2)):
             return False
-
     # compare memory of the two states
-    if not compare_mem(state1.mem, state2.mem):
+    if not compare_mem(state1.mem, state2.mem, merged_constraint):
         return False
-
     return True
+
+
 #TODO
 def merge(state1, state2):
     return state1
