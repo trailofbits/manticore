@@ -933,7 +933,7 @@ class EVM(Eventful):
             #FIXME Not clear which exception should trigger first. OOG or insuficient stack
             # this could raise an insuficient stack exception
             arguments = self._pop_arguments()
-            fee = self._calculate_extra_gas(*arguments)
+            fee = self._calculate_gas(*arguments)
             self._checkpoint_data = (pc, old_gas, instruction, arguments, fee, allocated)
         return self._checkpoint_data
 
