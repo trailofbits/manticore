@@ -88,7 +88,7 @@ run_examples() {
     RESULT=$?
     echo Ran example scripts
     popd
-    return RESULT
+    return $RESULT
 }
 
 # Test type
