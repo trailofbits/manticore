@@ -350,6 +350,27 @@ class Executor(Eventful):
         del self._states[self._states.index(state_id)]
         return state_id
 
+    @sync
+    def _load_state(self, state_id):
+        if state_id not in self._states:
+            raise Exception("State does not exist")
+        return self._workspace.load_state(new_state_id, delete=False)
+
+    @sync
+    def _delete_state(self, state_id):
+        if state_id not in self._states:
+            raise Exception("State does not exist")
+        del self._states[self._states.index(state_id)]
+        return self._workspace.rm(state_id)
+
+    @sync
+    def _replace_state(self, state_id, state):
+        if state_id not in self._states:
+            raise Exception("State id does not exist")
+        del self._states[self._states.index(state_id)]
+        self._workspace.rm(state_id)
+        self._workspace.save_state(state, state_id)
+
     def list(self):
         ''' Returns the list of states ids currently queued '''
         return list(self._states)
