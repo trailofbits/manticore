@@ -18,8 +18,9 @@ env:
     - PYTHONWARNINGS="default::ResourceWarning" # Enable ResourceWarnings
   matrix:
     - TEST_TYPE=examples
-    - TEST_TYPE=tests
-    - TEST_TYPE=eth
+    - TEST_TYPE=ethereum
+    - TEST_TYPE=native
+    - TEST_TYPE=other
 
 branches:
   only:

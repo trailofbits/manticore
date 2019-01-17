@@ -7,14 +7,20 @@ import unittest
 
 import os
 import shutil
+from manticore.platforms.evm import EVMWorld
 
-from manticore.core.smtlib import operators
+from manticore.core.smtlib import operators, ConstraintSet
 from manticore.ethereum import ManticoreEVM, DetectIntegerOverflow, DetectUnusedRetVal, DetectSuicidal, \
-    DetectDelegatecall, DetectExternalCallAndLeak, DetectEnvInstruction, DetectRaceCondition
+    DetectDelegatecall, DetectExternalCallAndLeak, DetectEnvInstruction, DetectRaceCondition, State
 from manticore.ethereum.plugins import LoopDepthLimiter
-from eth_general import make_mock_evm_state
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+
+
+def make_mock_evm_state():
+    cs = ConstraintSet()
+    fakestate = State(cs, EVMWorld(cs))
+    return fakestate
 
 
 class EthDetectorTest(unittest.TestCase):
@@ -38,7 +44,7 @@ class EthDetectorTest(unittest.TestCase):
         """
         mevm = self.mevm
 
-        dir = os.path.join(THIS_DIR, 'binaries', 'detectors')
+        dir = os.path.join(THIS_DIR, 'contracts', 'detectors')
         filepath = os.path.join(dir, f'{name}.sol')
 
         if use_ctor_sym_arg:
@@ -319,6 +325,7 @@ class EthRaceCondition(EthDetectorTest):
                 False
             )
         })
+
 
 if __name__ == '__main__':
     unittest.main()

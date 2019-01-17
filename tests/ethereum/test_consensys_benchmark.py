@@ -1,7 +1,3 @@
-"""
-File name is purposefully not test_* to run this test separately.
-"""
-
 import inspect
 import unittest
 import os
@@ -20,7 +16,7 @@ class EthBenchmark(unittest.TestCase):
         self.worksp = self.mevm.workspace
 
     def tearDown(self):
-        self.mevm=None
+        self.mevm = None
         shutil.rmtree(self.worksp)
 
     def _test(self, name, should_find, use_ctor_sym_arg=False):
@@ -32,7 +28,7 @@ class EthBenchmark(unittest.TestCase):
         mevm.register_detector(DetectIntegerOverflow())
         mevm.register_detector(DetectReentrancyAdvanced())
 
-        filename = os.path.join(THIS_DIR, 'binaries', 'benchmark', f'{name}.sol')
+        filename = os.path.join(THIS_DIR, 'contracts', 'consensys_benchmark', f'{name}.sol')
 
         if use_ctor_sym_arg:
             ctor_arg = (mevm.make_symbolic_value(),)
