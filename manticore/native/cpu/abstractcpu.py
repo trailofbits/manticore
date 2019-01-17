@@ -576,9 +576,14 @@ class Cpu(Eventful):
             object.__setattr__(self, name, value)
 
     def emulate_until(self, target):
+        '''
+        Tells the CPU to set up a concrete unicorn emulator and use it to execute instructions
+        until target is reached.
+
+        :param int target: Where Unicorn should hand control back to Manticore. Set to 0 for all instructions.
+        '''
         self._concrete = True
         self._break_unicorn_at = target
-        logger.debug(f"Emulating until {hex(target)}")
         if hasattr(self, 'emu'):
             self.emu._stop_at = target
 
@@ -610,12 +615,12 @@ class Cpu(Eventful):
 
     def _raw_read(self, where, size=1):
         '''
-        Selects bytes from memory
+        Selects bytes from memory. Attempts to do so faster than via read_bytes.
 
         :param int where: address to read from
         :param size: number of bytes to read
         :return: the bytes in memory
-        :rtype: list
+        :rtype: bytes
         '''
         map = self.memory.map_containing(where)
         if type(map) is FileMap:
@@ -935,10 +940,9 @@ class Cpu(Eventful):
 
     def concrete_emulate(self, insn):
         '''
-        If we could not handle emulating an instruction, use Unicorn to emulate
-        it.
+        Start executing in Unicorn from this point until we hit a syscall or reach break_unicorn_at
 
-        :param capstone.CsInsn instruction: The instruction object to emulate
+        :param capstone.CsInsn insn: The instruction object to emulate
         '''
 
         if not hasattr(self, 'emu'):

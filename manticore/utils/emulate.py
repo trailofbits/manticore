@@ -18,6 +18,11 @@ logger.setLevel(logging.INFO)
 
 
 def convert_permissions(m_perms):
+    """
+    Converts a Manticore permission string into a Unicorn permission
+    :param m_perms: Manticore perm string ('rwx')
+    :return: Unicorn Permissions
+    """
     permissions = UC_PROT_NONE
     if 'r' in m_perms:
         permissions |= UC_PROT_READ
@@ -118,18 +123,23 @@ class ConcreteUnicornEmulator(object):
             size = self.mem_map[m][0]
             self.copy_map(m, size)
 
-
     def reset(self):
         self._emu = Uc(self._uc_arch, self._uc_mode)
         self._to_raise = None
 
     def in_map(self, addr):
         for m in self.mem_map:
-            if addr >= m and addr <= (m + self.mem_map[m][0]):
+            if m <= addr <= (m + self.mem_map[m][0]):
                 return True
         return False
 
     def copy_map(self, address, size):
+        """
+        Copy the bytes from address to address+size into Unicorn
+        Used primarily for copying memory maps
+        :param address: start of buffer to copy
+        :param size: How many bytes to copy
+        """
         start_time = time.time()
         map_bytes = self._cpu._raw_read(address, size)
         logger.info("Reading %s map at 0x%02x took %s seconds", sizeof_fmt(size), address, time.time() - start_time)
@@ -138,6 +148,9 @@ class ConcreteUnicornEmulator(object):
         self._emu.mem_write(address, map_bytes)
 
     def map_memory_callback(self, address, size, perms, name, offset, result):
+        """
+        Catches did_map_memory and copies the mapping into Manticore
+        """
         logger.info(' '.join(("Mapping Memory @",
               hex(address) if type(address) is int else "0x??",
               sizeof_fmt(size), "-",
@@ -147,7 +160,6 @@ class ConcreteUnicornEmulator(object):
         if address not in self.mem_map.keys() and address is not None:
             self.copy_mapping_to_unicorn(address)
             self.copy_map(address, size)
-
 
     def copy_mapping_to_unicorn(self, address):
         '''
@@ -169,6 +181,8 @@ class ConcreteUnicornEmulator(object):
         return m
 
     def get_unicorn_pc(self):
+        """ Get the program counter from Unicorn regardless of architecture.
+        Legacy method, since this module only works on x86."""
         if self._cpu.arch == CS_ARCH_ARM:
             return self._emu.reg_read(UC_ARM_REG_R15)
         elif self._cpu.arch == CS_ARCH_X86:
@@ -178,15 +192,18 @@ class ConcreteUnicornEmulator(object):
                 return self._emu.reg_read(UC_X86_REG_RIP)
 
     def _hook_syscall(self, uc, data):
+        """
+        Unicorn hook that transfers control to Manticore so it can execute the syscall
+        """
         logger.debug(f"Stopping emulation at {hex(uc.reg_read(self._to_unicorn_id('RIP')))} to perform syscall")
         self.sync_unicorn_to_manticore()
         from ..native.cpu.abstractcpu import Syscall
-        self._to_raise = Syscall() #RollbackPCException(hex(uc.reg_read(self._to_unicorn_id('RIP'))))
+        self._to_raise = Syscall()
         uc.emu_stop()
 
     def _hook_write_mem(self, uc, access, address, size, value, data):
         '''
-        Handle memory operations from unicorn.
+        Captures memory written by Unicorn
         '''
         self._mem_delta[address] = (value, size)
         return True
@@ -236,7 +253,7 @@ class ConcreteUnicornEmulator(object):
 
     def emulate(self, instruction):
         '''
-        Emulate a single instruction.
+        Wrapper that runs the _step function in a loop while handling exceptions
         '''
 
         # The emulation might restart if Unicorn needs to bring in a memory map
@@ -254,11 +271,10 @@ class ConcreteUnicornEmulator(object):
 
     def _step(self, instruction, chunksize=0):
         '''
-        A single attempt at executing an instruction.
+        Execute a chunk fo instructions starting from instruction
+        :param instruction: Where to start
+        :param chunksize: max number of instructions to execute. Defaults to infinite.
         '''
-
-        # Bring in the instruction itself
-        instruction = self._cpu.decode_instruction(self._cpu.PC)
 
         try:
             pc = self._cpu.PC
@@ -287,6 +303,9 @@ class ConcreteUnicornEmulator(object):
         return
 
     def sync_unicorn_to_manticore(self):
+        """
+        Copy registers and written memory back into Manticore
+        """
         self.write_backs_disabled = True
         for reg in self.registers:
             val = self._emu.reg_read(self._to_unicorn_id(reg))
@@ -300,6 +319,7 @@ class ConcreteUnicornEmulator(object):
         self._mem_delta = {}
 
     def protect_memory(self, start, size, perms):
+        """ Set memory protections in Unicorn correctly """
         self.copy_mapping_to_unicorn(start)
         logger.info(f"Changing permissions on {hex(start)}:{hex(start + size)} to {perms}")
         for mp in self._cpu.memory.maps:
@@ -307,6 +327,7 @@ class ConcreteUnicornEmulator(object):
         self._emu.mem_protect(start, size, convert_permissions(perms))
 
     def write_back_memory(self, where, expr, size):
+        """ Copy memory writes from Manticore back into Unicorn in real-time """
         if self.write_backs_disabled:
             return
         if issymbolic(expr):
@@ -326,6 +347,7 @@ class ConcreteUnicornEmulator(object):
         self._emu.mem_write(where, b''.join(b.encode('utf-8') if type(b) is str else b for b in data))
 
     def write_back_register(self, reg, val):
+        """ Sync register state from Manticore -> Unicorn"""
         if self.write_backs_disabled:
             return
         if issymbolic(val):
@@ -337,6 +359,7 @@ class ConcreteUnicornEmulator(object):
         self._emu.reg_write(self._to_unicorn_id(reg), val)
 
     def update_segment(self, selector, base, size, perms):
+        """ Only useful for setting FS right now. """
         logger.info("Updating selector %s to 0x%02x (%s bytes) (%s)", selector, base, size, perms)
         if selector == 99:
             self.set_fs(base)
