@@ -15,7 +15,8 @@ from .workspace import Workspace
 from multiprocessing.managers import SyncManager
 from contextlib import contextmanager
 
-from core.state_merging import is_merge_possible, merge
+from core.state_merging import is_merge_possible, merge, merge_constraints
+
 # This is the single global manager that will handle all shared memory among workers
 
 consts = config.get_group('executor')
@@ -448,13 +449,16 @@ class Executor(Eventful):
                                             for new_state_id in self.cpu_stateid_dict[current_state.cpu.PC]:
                                                 if current_state_id != new_state_id:
                                                     new_state = self._workspace.load_state(new_state_id, delete=False)
-                                                    if is_merge_possible(merged_state, new_state):
-                                                        merged_state = merge(merged_state, new_state)
+                                                    (exp_merged_state, exp_new_state, merged_constraint) = merge_constraints(merged_state.constraints, new_state.constraints)
+                                                    is_mergeable, reason = is_merge_possible(merged_state, new_state, merged_constraint)
+                                                    if is_mergeable:
+                                                        merged_state = merge(merged_state, new_state, exp_merged_state, exp_new_state)
                                                         self._workspace.load_state(new_state_id, delete=True)
+                                                        self._states.remove(new_state_id)
                                                         self.cpu_stateid_dict[current_state.cpu.PC].remove(new_state_id)
                                                         is_mergeable = "succeeded"
                                                     else:
-                                                        is_mergeable = "failed"
+                                                        is_mergeable = "failed because of " + reason
                                                     debug_string = "at PC = " + hex(current_state.cpu.PC) + \
                                                                    ", merge " + is_mergeable + " for state id = " + \
                                                                    str(current_state_id) + " and " + str(new_state_id)

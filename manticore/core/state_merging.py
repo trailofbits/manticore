@@ -1,4 +1,4 @@
-from manticore.core.smtlib import solver, ConstraintSet
+from manticore.core.smtlib import solver, ConstraintSet, Operators, issymbolic, BitVec
 
 
 def compare_sockets(cs, socket1, socket2):
@@ -27,11 +27,9 @@ def merge_constraints(constraints1, constraints2):
     exp2 = constraints2.constraints[0]
     for i in range(1, len(constraints2.constraints)):
         exp2 = exp2 & constraints2.constraints[i]
-    return exp1 | exp2
-
-
-def map_start(m):
-    return m.start
+    merged_constraint = ConstraintSet()
+    merged_constraint.add(exp1 | exp2)
+    return exp1, exp2, merged_constraint
 
 
 def compare_mem(mem1, mem2, merged_constraint):
@@ -59,38 +57,50 @@ def compare_mem(mem1, mem2, merged_constraint):
     return True
 
 
-def is_merge_possible(state1, state2):
+def is_merge_possible(state1, state2, merged_constraint):
     platform1 = state1.platform
     platform2 = state2.platform
-
-    merged_exp = merge_constraints(state1.constraints, state2.constraints)
-    merged_constraint = ConstraintSet()
-    merged_constraint.add(merged_exp)
 
     # compare input and output sockets of the states
     if not compare_sockets(merged_constraint, platform1.input, platform2.input) or \
             not compare_sockets(merged_constraint, platform1.output, platform2.output):
-        return False
+        return False, "inequivalent socket operations"
 
     # compare symbolic files opened by the two states
     if platform1.symbolic_files != platform2.symbolic_files:
-        return False
+        return False, "inequivalent symbolic files"
 
     # compare system call traces of the two states
     if len(platform1.syscall_trace) != len(platform2.syscall_trace):
-        return False
+        return False, "inequivalent syscall trace lengths"
     for i, (name1, fd1, data1) in enumerate(platform1.syscall_trace):
         (name2, fd2, data2) = platform2.syscall_trace[i]
         if not (name1 == name2 and fd1 == fd2 and compare_buffers(merged_constraint, data1, data2)):
-            return False
+            return False, "inequivalent syscall traces"
+
     # compare memory of the two states
     if not compare_mem(state1.mem, state2.mem, merged_constraint):
-        return False
-    return True
+        return False, "inequivalent memory"
+    return True, None
 
 
 #TODO
-def merge(state1, state2):
-    return state1
+def merge_cpu(cpu1, cpu2, state, exp1, exp2):
+    for reg in cpu1.canonical_registers:
+        val1 = cpu1.read_register(reg)
+        val2 = cpu2.read_register(reg)
+        if isinstance(val1, BitVec) and isinstance(val2, BitVec):
+            assert val1.size == val2.size
+        if issymbolic(val1) or issymbolic(val2) or val1 != val2:
+            if cpu1.regfile.sizeof(reg) == 1:
+                state.cpu.write_register(reg, Operators.ITE(exp1, val1, val2))
+            else:
+                state.cpu.write_register(reg, Operators.ITEBV(cpu1.regfile.sizeof(reg), exp1, val1, val2))
+
+
+def merge(state1, state2, exp1, exp2):
+    merged_state = state1
+    merge_cpu(state1.cpu, state2.cpu, merged_state, exp1, exp2)
+    return merged_state
 
 
