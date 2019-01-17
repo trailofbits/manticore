@@ -98,9 +98,10 @@ def merge_cpu(cpu1, cpu2, state, exp1, exp2):
                 state.cpu.write_register(reg, Operators.ITEBV(cpu1.regfile.sizeof(reg), exp1, val1, val2))
 
 
-def merge(state1, state2, exp1, exp2):
+def merge(state1, state2, exp1, exp2, merged_constraint):
     merged_state = state1
     merge_cpu(state1.cpu, state2.cpu, merged_state, exp1, exp2)
+    merged_state.constraints = merged_constraint
     return merged_state
 
 

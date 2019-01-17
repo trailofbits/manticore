@@ -452,7 +452,7 @@ class Executor(Eventful):
                                                     (exp_merged_state, exp_new_state, merged_constraint) = merge_constraints(merged_state.constraints, new_state.constraints)
                                                     is_mergeable, reason = is_merge_possible(merged_state, new_state, merged_constraint)
                                                     if is_mergeable:
-                                                        merged_state = merge(merged_state, new_state, exp_merged_state, exp_new_state)
+                                                        merged_state = merge(merged_state, new_state, exp_merged_state, exp_new_state, merged_constraint)
                                                         self._workspace.load_state(new_state_id, delete=True)
                                                         self._states.remove(new_state_id)
                                                         self.cpu_stateid_dict[current_state.cpu.PC].remove(new_state_id)
