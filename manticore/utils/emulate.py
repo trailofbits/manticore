@@ -178,7 +178,7 @@ class ConcreteUnicornEmulator(object):
                 return self._emu.reg_read(UC_X86_REG_RIP)
 
     def _hook_syscall(self, uc, data):
-        logger.info(f"Stopping emulation at {hex(uc.reg_read(self._to_unicorn_id('RIP')))} to perform syscall")
+        logger.debug(f"Stopping emulation at {hex(uc.reg_read(self._to_unicorn_id('RIP')))} to perform syscall")
         self.sync_unicorn_to_manticore()
         from ..native.cpu.abstractcpu import Syscall
         self._to_raise = Syscall() #RollbackPCException(hex(uc.reg_read(self._to_unicorn_id('RIP'))))
@@ -292,7 +292,7 @@ class ConcreteUnicornEmulator(object):
             val = self._emu.reg_read(self._to_unicorn_id(reg))
             self._cpu.write_register(reg, val)
         if len(self._mem_delta) > 0:
-            logger.info(f"Syncing {len(self._mem_delta)} writes back into Manticore")
+            logger.debug(f"Syncing {len(self._mem_delta)} writes back into Manticore")
         for location in self._mem_delta:
             value, size = self._mem_delta[location]
             self._cpu.write_int(location, value, size*8)

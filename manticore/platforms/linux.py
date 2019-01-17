@@ -387,6 +387,7 @@ class Linux(Platform):
 
     # from /usr/include/asm-generic/resource.h
     RLIMIT_NOFILE = 7  # /* max number of open files */
+    RLIMIT_STACK = 3
     FCNTL_FDCWD = -100  # /* Special value used to indicate openat should use the cwd */
 
     def __init__(self, program, argv=None, envp=None, disasm='capstone', **kwargs):
@@ -414,7 +415,8 @@ class Linux(Platform):
 
         # dict of [int -> (int, int)] where tuple is (soft, hard) limits
         self._rlimits = {
-            self.RLIMIT_NOFILE: (256, 1024)
+            self.RLIMIT_NOFILE: (256, 1024),
+            self.RLIMIT_STACK: (8192*1024, 0)
         }
 
         if program is not None:
@@ -1253,13 +1255,12 @@ class Linux(Platform):
         '''
         signed_offset = self._to_signed_dword(offset)
         try:
-            self._get_fd(fd).seek(signed_offset, whence)
+            return self._get_fd(fd).seek(signed_offset, whence)
         except FdError as e:
             logger.info(("LSEEK: Not valid file descriptor on lseek."
                          "Fd not seekable. Returning EBADF"))
             return -e.err
 
-        return 0
 
     def sys_read(self, fd, buf, count):
         data: bytes = bytes()
@@ -1893,7 +1894,7 @@ class Linux(Platform):
 
         :return: C{0}
         '''
-        logger.warning("Ignoring sys_get_priority")
+        logger.warning("Unimplemented system call: sys_get_priority")
         return 0
 
     def sys_setpriority(self, which, who, prio):
@@ -1903,14 +1904,11 @@ class Linux(Platform):
 
         :return: C{0}
         '''
-        logger.warning("Ignoring sys_setpriority")
+        logger.warning("Unimplemented system call: sys_setpriority")
         return 0
 
-    def sys_tgkill(self, *args):
-        '''
-        System call ignored.
-        '''
-        logger.warning("Ignoring sys_tgkill")
+    def sys_tgkill(self, tgid, pid, sig):
+        logger.warning("Unimplemented system call: sys_tgkill")
         return 0
 
     def sys_acct(self, path):
@@ -1924,7 +1922,7 @@ class Linux(Platform):
         return -1
 
     def sys_exit(self, error_code):
-        'Wrapper for sys_exit_group'
+        '''Wrapper for sys_exit_group'''
         return self.sys_exit_group(error_code)
 
     def sys_exit_group(self, error_code):
@@ -1954,9 +1952,18 @@ class Linux(Platform):
         logger.warning("Unimplemented system call: sys_set_robust_list")
         return -1
 
-    def sys_futex(self, uaddr, op, val, timeout, uaddr2, val3):
-        logger.warning("Unimplemented system call: sys_futex")
+    def sys_sysinfo(self, infop):
+        logger.warning("Unimplemented system call: sys_sysinfo")
         return -1
+
+    def sys_madvise(self, infop):
+        logger.warning("Unimplemented system call: sys_madvise")
+        return -1
+
+    def sys_futex(self, uaddr, op, val, timeout, uaddr2, val3):
+        logger.warning("sys_futex isn't really implemented")
+        logger.debug(f"Futex at: {hex(uaddr)} -- {op}:{val} ({self.current.read_int(uaddr)})")
+        return 0
 
     def sys_getrlimit(self, resource, rlim):
         ret = -1
