@@ -1,4 +1,4 @@
-"""DO NOT MODIFY: Test `/Users/dc/projects/manticore/tests/ethereum/tests/VMTests/vmSha3Test` generated with make_VMTests.py"""
+"""DO NOT MODIFY: Tests generated from `VMTests/vmSha3Test` with make_VMTests.py"""
 import unittest
 from binascii import unhexlify
 
@@ -98,7 +98,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
-        
+
         # test used gas
         self.assertEqual(to_constant(world.current_vm.gas), 99999979961)
 
@@ -161,7 +161,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
-        
+
         # test used gas
         self.assertEqual(to_constant(world.current_vm.gas), 4294947157)
 
@@ -224,7 +224,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
-        
+
         # test used gas
         self.assertEqual(to_constant(world.current_vm.gas), 4294947055)
 
@@ -287,7 +287,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
-        
+
         # test used gas
         self.assertEqual(to_constant(world.current_vm.gas), 79952)
 
@@ -350,7 +350,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
-        
+
         # test used gas
         self.assertEqual(to_constant(world.current_vm.gas), 4294947048)
 
@@ -413,7 +413,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
-        
+
         # test used gas
         self.assertEqual(to_constant(world.current_vm.gas), 4294947153)
 
@@ -574,7 +574,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
-        
+
         # test used gas
         self.assertEqual(to_constant(world.current_vm.gas), 4294947150)
 
@@ -637,7 +637,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
-        
+
         # test used gas
         self.assertEqual(to_constant(world.current_vm.gas), 4294947051)
 
@@ -700,7 +700,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
-        
+
         # test used gas
         self.assertEqual(to_constant(world.current_vm.gas), 4294947051)
 
@@ -910,7 +910,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
-        
+
         # test used gas
         self.assertEqual(to_constant(world.current_vm.gas), 79952)
 
@@ -973,7 +973,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
-        
+
         # test used gas
         self.assertEqual(to_constant(world.current_vm.gas), 4294947257)
 
@@ -1085,7 +1085,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
-        
+
         # test used gas
         self.assertEqual(to_constant(world.current_vm.gas), 3756501424)
 

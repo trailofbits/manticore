@@ -1,4 +1,4 @@
-"""DO NOT MODIFY: Test `/Users/dc/projects/manticore/tests/ethereum/tests/VMTests/vmBlockInfoTest` generated with make_VMTests.py"""
+"""DO NOT MODIFY: Tests generated from `VMTests/vmBlockInfoTest` with make_VMTests.py"""
 import unittest
 from binascii import unhexlify
 
@@ -96,7 +96,7 @@ class EVMTest_vmBlockInfoTest(unittest.TestCase):
         logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
-        
+
         # test used gas
         self.assertEqual(to_constant(world.current_vm.gas), 79995)
 
@@ -157,7 +157,7 @@ class EVMTest_vmBlockInfoTest(unittest.TestCase):
         logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
-        
+
         # test used gas
         self.assertEqual(to_constant(world.current_vm.gas), 79995)
 
@@ -218,7 +218,7 @@ class EVMTest_vmBlockInfoTest(unittest.TestCase):
         logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
-        
+
         # test used gas
         self.assertEqual(to_constant(world.current_vm.gas), 79995)
 
@@ -279,7 +279,7 @@ class EVMTest_vmBlockInfoTest(unittest.TestCase):
         logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
-        
+
         # test used gas
         self.assertEqual(to_constant(world.current_vm.gas), 79995)
 
@@ -340,7 +340,7 @@ class EVMTest_vmBlockInfoTest(unittest.TestCase):
         logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
-        
+
         # test used gas
         self.assertEqual(to_constant(world.current_vm.gas), 79995)
 

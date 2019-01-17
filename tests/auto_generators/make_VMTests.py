@@ -1,9 +1,9 @@
 """
 This script generates VMTests that are used to check EVM's Frontier fork correctness.
 
-$ cd manticore/tests/ethereum
+$ cd manticore/tests/ethereum && mkdir VMTests
 $ git clone https://github.com/ethereum/tests --depth=1
-$ for i in tests/VMTests/*; do python ../auto_generators/make_VMTests.py $i > ./VMTests/test_`basename $i`.py; done
+$ for i in ./tests/VMTests; do python ../auto_generators/make_VMTests.py ./tests/VMTests/$1; done
 $ rm -rf ./tests  # cleanup/remove the ethereum/tests repo
 """
 import json
@@ -16,10 +16,27 @@ import pyevmasm as EVMAsm
 
 
 def gen_test(testcase, filename, skip):
-    output = ''
-    if skip:
-        output += '''    @unittest.skip('Gas or performance related')\n'''
+    output = '''    @unittest.skip('Gas or performance related')\n''' if skip else ''
 
+    # Sanity checks
+
+    # We don't use those!
+    testcase.pop('_info')
+    assert len(testcase.pop('callcreates', [])) == 0
+
+    output += generate_pre_output(testcase, filename)
+
+    if 'post' not in testcase:
+        output += '''
+        #If test end in exception check it here
+        self.assertTrue(result == 'THROW')'''
+    else:
+        output += generate_post_output(testcase)
+
+    return output
+
+
+def generate_pre_output(testcase, filename):
     testname = (os.path.split(filename)[1].replace('-', '_')).split('.')[0]
     bytecode = unhexlify(testcase['exec']['code'][2:])
     disassemble = ''
@@ -32,7 +49,7 @@ def gen_test(testcase, filename, skip):
     with open(filename, 'rb') as f:
         sha256sum = hashlib.sha256(f.read()).hexdigest()
 
-    output += f'''
+    output = f'''
     def test_{testname}(self):
         """
         Textcase taken from https://github.com/ethereum/tests
@@ -55,6 +72,8 @@ def gen_test(testcase, filename, skip):
     '''
 
     for address, account in testcase['pre'].items():
+        assert account.keys() == {'code', 'nonce', 'balance', 'storage'}
+
         account_address = int(address, 0)
         account_code = account['code'][2:]
         account_nonce = int(account['nonce'], 0)
@@ -81,6 +100,7 @@ def gen_test(testcase, filename, skip):
     price = int(testcase['exec']['gasPrice'], 0)
     origin = int(testcase['exec']['origin'], 0)
     value = int(testcase['exec']['value'], 0)
+    assert testcase['exec'].keys() == {'address', 'caller', 'code', 'data', 'gas', 'gasPrice', 'origin', 'value'}
 
     # Need to check if origin is diff from caller. we do not support those tests
     assert origin == caller, "test type not supported"
@@ -119,46 +139,48 @@ def gen_test(testcase, filename, skip):
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')'''
 
-    if 'post' not in testcase:
-        output += '''
-        #If test end in exception check it here
-        self.assertTrue(result == 'THROW')'''
-    else:
+    return output
 
-        for address, account in testcase['post'].items():
-            account_address = int(address, 0)
-            account_code = account['code'][2:]
-            account_nonce = int(account['nonce'], 0)
-            account_balance = int(account['balance'], 0)
 
-            output += f'''
+def generate_post_output(testcase):
+    output = ''
+
+    for address, account in testcase['post'].items():
+        assert account.keys() == {'code', 'nonce', 'balance', 'storage'}
+
+        account_address = int(address, 0)
+        account_code = account['code'][2:]
+        account_nonce = int(account['nonce'], 0)
+        account_balance = int(account['balance'], 0)
+
+        output += f'''
         # Add pos checks for account {hex(account_address)}
         # check nonce, balance, code
         self.assertEqual(world.get_nonce({hex(account_address)}), {account_nonce})
         self.assertEqual(to_constant(world.get_balance({hex(account_address)})), {account_balance})
         self.assertEqual(world.get_code({hex(account_address)}), unhexlify('{account_code}'))'''
 
-        if account['storage']:
-            output += '''
+    if account['storage']:
+        output += '''
         #check storage'''
 
-            for key, value in account['storage'].items():
-                output += f'''
+        for key, value in account['storage'].items():
+            output += f'''
         self.assertEqual(to_constant(world.get_storage_data({hex(account_address)}, {key})), {value})'''
 
-        output += f'''
+    output += f'''
         # check outs
         self.assertEqual(returndata, unhexlify('{testcase['out'][2:]}'))'''
 
-        output += '''
+    output += '''
         # check logs
         logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)'''
-        output += f'''
+    output += f'''
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '{testcase['logs'][2:]}')
-        '''
+'''
 
-        output += f'''
+    output += f'''
         # test used gas
         self.assertEqual(to_constant(world.current_vm.gas), {int(testcase['gas'], 0)})'''
 
@@ -172,7 +194,7 @@ if __name__ == '__main__':
 
     filename_or_folder = os.path.abspath(sys.argv[1])
 
-    print(f'''"""DO NOT MODIFY: Test `{filename_or_folder}` generated with make_VMTests.py"""
+    output = f'''"""DO NOT MODIFY: Tests generated from `{os.path.join(*filename_or_folder.split('/')[-2:])}` with make_VMTests.py"""
 import unittest
 from binascii import unhexlify
 
@@ -211,17 +233,15 @@ class EVMTest_{os.path.splitext(os.path.basename(filename_or_folder))[0]}(unitte
 
     @classmethod
     def tearDownClass(cls):
-        evm.DEFAULT_FORK = cls.SAVED_DEFAULT_FORK''')
-
-
-    def disabled(test):
-        if 'Performance' in test:
-            return True
-        return False
-
+        evm.DEFAULT_FORK = cls.SAVED_DEFAULT_FORK
+'''
 
     if os.path.isdir(filename_or_folder):
         folder = filename_or_folder
+
+        print(f'Generating tests from dir {folder}...', file=sys.stderr)
+        cnt = 0
+
         for filename in os.listdir(folder):
             if not filename.endswith('.json'):
                 continue
@@ -229,14 +249,29 @@ class EVMTest_{os.path.splitext(os.path.basename(filename_or_folder))[0]}(unitte
             filename = os.path.join(folder, filename)
             testcase = dict(json.loads(open(filename).read()))
             for name, testcase in testcase.items():
-                print(gen_test(testcase, filename, disabled(filename)))
+                output += gen_test(testcase, filename, skip='Performance' in filename) + '\n'
+                cnt += 1
+
+        print(f'Generated {cnt} testcases from jsons in {folder}.', file=sys.stderr)
     else:
+        folder = None
         filename = os.path.abspath(filename_or_folder)
         testcase = dict(json.loads(open(filename).read()))
         for name, testcase in testcase.items():
-            print(gen_test(testcase, filename, disabled(filename)))
+            output += gen_test(testcase, filename, skip='Performance' in filename) + '\n'
 
-    print('''
+    output += '''
 
 if __name__ == '__main__':
-    unittest.main()''')
+    unittest.main()
+'''
+
+    if folder:
+        testname = folder.split('/')[-1]
+        with open(f'VMTests/test_{testname}.py', 'w') as f:
+            f.write(output)
+        with open(f'VMTests/__init__.py', 'w') as f:
+            f.write("# DO NOT DELETE")
+        print("Tests generated. If this is the only output, u did sth bad.", file=sys.stderr)
+    else:
+        print(output)
