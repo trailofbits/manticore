@@ -1,21 +1,20 @@
-
-#Taken from /home/felipe/Projects/manticore/tests/auto/tests/VMTests/vmPerformance
-import struct
+"""DO NOT MODIFY: Test `/Users/dc/projects/manticore/tests/ethereum/tests/VMTests/vmPerformance` generated with make_VMTests.py"""
 import unittest
-import json
-import os
 from binascii import unhexlify
-from manticore.platforms import evm
-from manticore.core import state
-from manticore.core.smtlib import Operators, ConstraintSet
-from manticore.core.smtlib.visitors import to_constant
-import sha3
+
 import rlp
+import sha3
 from rlp.sedes import (
     CountableList,
     BigEndianInt,
     Binary,
 )
+
+from manticore.core.smtlib import ConstraintSet
+from manticore.core.smtlib.visitors import to_constant
+from manticore.platforms import evm
+
+
 class Log(rlp.Serializable):
     fields = [
         ('address', Binary.fixed_length(20, allow_empty=True)),
@@ -23,19 +22,30 @@ class Log(rlp.Serializable):
         ('data', Binary())
     ]
 
-evm.DEFAULT_FORK = "frontier"
+
 class EVMTest_vmPerformance(unittest.TestCase):
+    # https://nose.readthedocs.io/en/latest/doc_tests/test_multiprocess/multiprocess.html#controlling-distribution
     _multiprocess_can_split_ = True
-    maxDiff=None 
+    # https://docs.python.org/3.7/library/unittest.html#unittest.TestCase.maxDiff
+    maxDiff = None
 
+    SAVED_DEFAULT_FORK = evm.DEFAULT_FORK
+
+    @classmethod
+    def setUpClass(cls):
+        evm.DEFAULT_FORK = 'frontier'
+
+    @classmethod
+    def tearDownClass(cls):
+        evm.DEFAULT_FORK = cls.SAVED_DEFAULT_FORK
     @unittest.skip('Gas or performance related')
 
-    def test_loop_exp_8b_100k(self):
-        '''
-            Textcase taken from https://github.com/ethereum/tests
-            File: loop-exp-8b-100k.json
-            sha256sum: 2f076c2f9d7ce9e950e0ff5a65fe2ce54a9d7562997eba56d8ec4fa471b60b05
-            Code: PUSH1 0x60
+    def test_loop_mul(self):
+        """
+        Textcase taken from https://github.com/ethereum/tests
+        File: loop-mul.json
+        sha256sum: 600aefe4a83576ca54ffef7cc66d311787374ae277abbd012307c0c9bbd724d1
+        Code:     PUSH1 0x60
                   PUSH1 0x40
                   MSTORE
                   PUSH1 0xe0
@@ -44,2783 +54,104 @@ class EVMTest_vmPerformance(unittest.TestCase):
                   PUSH1 0x0
                   CALLDATALOAD
                   DIV
-                  PUSH4 0x3392ffc8
+                  PUSH4 0xeb8ac921
                   DUP2
                   EQ
-                  PUSH2 0x3f
-                  JUMPI
-                  DUP1
-                  PUSH4 0x3c77b95c
-                  EQ
-                  PUSH2 0x6a
-                  JUMPI
-                  DUP1
-                  PUSH4 0xce67bda6
-                  EQ
-                  PUSH2 0xc2
-                  JUMPI
-                  DUP1
-                  PUSH4 0xebbbe00b
-                  EQ
-                  PUSH2 0xe8
+                  PUSH1 0x1c
                   JUMPI
                   JUMPDEST
-                  PUSH2 0x2
-                  JUMP
-                  JUMPDEST
-                  CALLVALUE
-                  PUSH2 0x2
-                  JUMPI
-                  PUSH2 0x10e
-                  PUSH1 0x4
-                  CALLDATALOAD
-                  PUSH1 0x24
-                  CALLDATALOAD
-                  PUSH1 0x44
-                  CALLDATALOAD
-                  PUSH1 0x0
-                  DUP3
-                  DUP2
-                  JUMPDEST
-                  DUP4
-                  DUP2
-                  LT
-                  ISZERO
-                  PUSH2 0x120
-                  JUMPI
-                  SWAP1
-                  DUP6
-                  SWAP1
-                  EXP
-                  SWAP1
-                  PUSH1 0x1
-                  ADD
-                  PUSH2 0x55
-                  JUMP
-                  JUMPDEST
-                  CALLVALUE
-                  PUSH2 0x2
-                  JUMPI
-                  PUSH2 0x10e
-                  PUSH1 0x4
-                  CALLDATALOAD
-                  PUSH1 0x24
-                  CALLDATALOAD
-                  PUSH1 0x44
-                  CALLDATALOAD
-                  PUSH1 0x0
-                  DUP3
-                  DUP2
-                  JUMPDEST
-                  DUP4
-                  DUP2
-                  LT
-                  ISZERO
-                  PUSH2 0x120
-                  JUMPI
-                  SWAP1
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  SWAP1
-                  PUSH1 0x10
-                  ADD
-                  PUSH2 0x80
-                  JUMP
-                  JUMPDEST
-                  CALLVALUE
-                  PUSH2 0x2
-                  JUMPI
-                  PUSH2 0x10e
-                  PUSH1 0x4
-                  CALLDATALOAD
-                  PUSH1 0x24
-                  CALLDATALOAD
-                  PUSH1 0x44
-                  CALLDATALOAD
-                  PUSH1 0x0
-                  DUP1
-                  JUMPDEST
-                  DUP3
-                  DUP2
-                  LT
-                  ISZERO
-                  PUSH2 0x129
-                  JUMPI
-                  JUMPDEST
-                  PUSH1 0x1
-                  ADD
-                  PUSH2 0xd7
-                  JUMP
-                  JUMPDEST
-                  CALLVALUE
-                  PUSH2 0x2
-                  JUMPI
-                  PUSH2 0x10e
-                  PUSH1 0x4
-                  CALLDATALOAD
-                  PUSH1 0x24
-                  CALLDATALOAD
-                  PUSH1 0x44
-                  CALLDATALOAD
-                  PUSH1 0x0
-                  DUP1
-                  JUMPDEST
-                  DUP3
-                  DUP2
-                  LT
-                  ISZERO
-                  PUSH2 0x129
-                  JUMPI
-                  JUMPDEST
-                  PUSH1 0x10
-                  ADD
-                  PUSH2 0xfd
-                  JUMP
-                  JUMPDEST
-                  PUSH1 0x40
-                  DUP1
-                  MLOAD
-                  SWAP2
-                  DUP3
-                  MSTORE
-                  MLOAD
-                  SWAP1
-                  DUP2
-                  SWAP1
-                  SUB
-                  PUSH1 0x20
-                  ADD
-                  SWAP1
-                  RETURN
-                  JUMPDEST
-                  POP
-                  SWAP5
-                  SWAP4
-                  POP
-                  POP
-                  POP
-                  POP
-                  JUMP
-                  JUMPDEST
-                  POP
-                  SWAP2
-                  SWAP4
-                  SWAP3
-                  POP
-                  POP
-                  POP
-                  JUMP
-        '''    
-    
-        constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=9999, timestamp=1, difficulty=20000, coinbase=244687034288125203496486448490407391986876152250, gaslimit=100000000000)
-    
-        bytecode = unhexlify('606060405260e060020a60003504633392ffc8811461003f5780633c77b95c1461006a578063ce67bda6146100c2578063ebbbe00b146100e8575b610002565b346100025761010e600435602435604435600082815b83811015610120579085900a90600101610055565b346100025761010e600435602435604435600082815b83811015610120579085900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a90601001610080565b346100025761010e6004356024356044356000805b82811015610129575b6001016100d7565b346100025761010e6004356024356044356000805b82811015610129575b6010016100fd565b60408051918252519081900360200190f35b50949350505050565b5091939250505056')
-        world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-                             balance=100000000000000000000000,
-                             code=bytecode,
-                             nonce=0
-                            )
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = unhexlify('3392ffc8000000000000000000000000000000000000000000000000ffffffffffffffff0000000000000000000000000000000000000000000000005851f42d4c957f2d00000000000000000000000000000000000000000000000000000000000186a0')
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        value = 0
-        gas = 1000000000000
-
-        # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
-
-        result = None
-        returndata = b''
-        try:
-            while True:
-                world.current_vm.execute()
-        except evm.EndTx as e:
-            result = e.result
-            if e.result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
-        except evm.StartTx as e:
-            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        #Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        #check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('606060405260e060020a60003504633392ffc8811461003f5780633c77b95c1461006a578063ce67bda6146100c2578063ebbbe00b146100e8575b610002565b346100025761010e600435602435604435600082815b83811015610120579085900a90600101610055565b346100025761010e600435602435604435600082815b83811015610120579085900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a90601001610080565b346100025761010e6004356024356044356000805b82811015610129575b6001016100d7565b346100025761010e6004356024356044356000805b82811015610129575b6010016100fd565b60408051918252519081900360200190f35b50949350505050565b5091939250505056'))
-        #check outs
-        self.assertEqual(returndata, unhexlify('a0b60baf8a7d5ff1840537484b793d86f808935d77dbab805851f42d4c957f2d'))
-        #check logs
-        data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
-        
-        # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 999985499780)
-    @unittest.skip('Gas or performance related')
-
-    def test_loop_exp_2b_100k(self):
-        '''
-            Textcase taken from https://github.com/ethereum/tests
-            File: loop-exp-2b-100k.json
-            sha256sum: 9200f2941c02073357bdc92cf456135dc9987a481dd1588aa5209c686146eae8
-            Code: PUSH1 0x60
-                  PUSH1 0x40
-                  MSTORE
-                  PUSH1 0xe0
                   PUSH1 0x2
-                  EXP
-                  PUSH1 0x0
-                  CALLDATALOAD
-                  DIV
-                  PUSH4 0x3392ffc8
-                  DUP2
-                  EQ
-                  PUSH2 0x3f
-                  JUMPI
-                  DUP1
-                  PUSH4 0x3c77b95c
-                  EQ
-                  PUSH2 0x6a
-                  JUMPI
-                  DUP1
-                  PUSH4 0xce67bda6
-                  EQ
-                  PUSH2 0xc2
-                  JUMPI
-                  DUP1
-                  PUSH4 0xebbbe00b
-                  EQ
-                  PUSH2 0xe8
-                  JUMPI
-                  JUMPDEST
-                  PUSH2 0x2
                   JUMP
                   JUMPDEST
                   CALLVALUE
-                  PUSH2 0x2
+                  PUSH1 0x2
                   JUMPI
-                  PUSH2 0x10e
+                  PUSH1 0x64
                   PUSH1 0x4
                   CALLDATALOAD
                   PUSH1 0x24
                   CALLDATALOAD
-                  PUSH1 0x44
-                  CALLDATALOAD
                   PUSH1 0x0
+                  PUSH8 0x5851f42d4c957f2d
+                  PUSH8 0x14057b7ef767814f
                   DUP3
-                  DUP2
-                  JUMPDEST
-                  DUP4
-                  DUP2
-                  LT
-                  ISZERO
-                  PUSH2 0x120
-                  JUMPI
-                  SWAP1
-                  DUP6
-                  SWAP1
-                  EXP
-                  SWAP1
-                  PUSH1 0x1
-                  ADD
-                  PUSH2 0x55
-                  JUMP
-                  JUMPDEST
-                  CALLVALUE
-                  PUSH2 0x2
-                  JUMPI
-                  PUSH2 0x10e
-                  PUSH1 0x4
-                  CALLDATALOAD
-                  PUSH1 0x24
-                  CALLDATALOAD
-                  PUSH1 0x44
-                  CALLDATALOAD
-                  PUSH1 0x0
-                  DUP3
-                  DUP2
-                  JUMPDEST
-                  DUP4
-                  DUP2
-                  LT
-                  ISZERO
-                  PUSH2 0x120
-                  JUMPI
-                  SWAP1
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  SWAP1
-                  PUSH1 0x10
-                  ADD
-                  PUSH2 0x80
-                  JUMP
-                  JUMPDEST
-                  CALLVALUE
-                  PUSH2 0x2
-                  JUMPI
-                  PUSH2 0x10e
-                  PUSH1 0x4
-                  CALLDATALOAD
-                  PUSH1 0x24
-                  CALLDATALOAD
-                  PUSH1 0x44
-                  CALLDATALOAD
-                  PUSH1 0x0
                   DUP1
                   JUMPDEST
-                  DUP3
-                  DUP2
-                  LT
-                  ISZERO
-                  PUSH2 0x129
-                  JUMPI
-                  JUMPDEST
-                  PUSH1 0x1
-                  ADD
-                  PUSH2 0xd7
-                  JUMP
-                  JUMPDEST
-                  CALLVALUE
-                  PUSH2 0x2
-                  JUMPI
-                  PUSH2 0x10e
-                  PUSH1 0x4
-                  CALLDATALOAD
-                  PUSH1 0x24
-                  CALLDATALOAD
-                  PUSH1 0x44
-                  CALLDATALOAD
-                  PUSH1 0x0
-                  DUP1
-                  JUMPDEST
-                  DUP3
-                  DUP2
-                  LT
-                  ISZERO
-                  PUSH2 0x129
-                  JUMPI
-                  JUMPDEST
-                  PUSH1 0x10
-                  ADD
-                  PUSH2 0xfd
-                  JUMP
-                  JUMPDEST
-                  PUSH1 0x40
-                  DUP1
-                  MLOAD
-                  SWAP2
-                  DUP3
-                  MSTORE
-                  MLOAD
-                  SWAP1
-                  DUP2
-                  SWAP1
-                  SUB
-                  PUSH1 0x20
-                  ADD
-                  SWAP1
-                  RETURN
-                  JUMPDEST
-                  POP
-                  SWAP5
-                  SWAP4
-                  POP
-                  POP
-                  POP
-                  POP
-                  JUMP
-                  JUMPDEST
-                  POP
-                  SWAP2
-                  SWAP4
-                  SWAP3
-                  POP
-                  POP
-                  POP
-                  JUMP
-        '''    
-    
-        constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=9999, timestamp=1, difficulty=20000, coinbase=244687034288125203496486448490407391986876152250, gaslimit=100000000000)
-    
-        bytecode = unhexlify('606060405260e060020a60003504633392ffc8811461003f5780633c77b95c1461006a578063ce67bda6146100c2578063ebbbe00b146100e8575b610002565b346100025761010e600435602435604435600082815b83811015610120579085900a90600101610055565b346100025761010e600435602435604435600082815b83811015610120579085900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a90601001610080565b346100025761010e6004356024356044356000805b82811015610129575b6001016100d7565b346100025761010e6004356024356044356000805b82811015610129575b6010016100fd565b60408051918252519081900360200190f35b50949350505050565b5091939250505056')
-        world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-                             balance=100000000000000000000000,
-                             code=bytecode,
-                             nonce=0
-                            )
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = unhexlify('3392ffc8000000000000000000000000000000000000000000000000000000000000ffff0000000000000000000000000000000000000000000000005851f42d4c957f2d00000000000000000000000000000000000000000000000000000000000186a0')
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        value = 0
-        gas = 1000000000000
-
-        # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
-
-        result = None
-        returndata = b''
-        try:
-            while True:
-                world.current_vm.execute()
-        except evm.EndTx as e:
-            result = e.result
-            if e.result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
-        except evm.StartTx as e:
-            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        #Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        #check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('606060405260e060020a60003504633392ffc8811461003f5780633c77b95c1461006a578063ce67bda6146100c2578063ebbbe00b146100e8575b610002565b346100025761010e600435602435604435600082815b83811015610120579085900a90600101610055565b346100025761010e600435602435604435600082815b83811015610120579085900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a90601001610080565b346100025761010e6004356024356044356000805b82811015610129575b6001016100d7565b346100025761010e6004356024356044356000805b82811015610129575b6010016100fd565b60408051918252519081900360200190f35b50949350505050565b5091939250505056'))
-        #check outs
-        self.assertEqual(returndata, unhexlify('87b9c676d0fd90e2d05a9f8621a374edc678a3fc7209929731e3c9c8f8157f2d'))
-        #check logs
-        data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
-        
-        # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 999991499780)
-    @unittest.skip('Gas or performance related')
-
-    def test_loop_divadd_unr100_10M(self):
-        '''
-            Textcase taken from https://github.com/ethereum/tests
-            File: loop-divadd-unr100-10M.json
-            sha256sum: b618313271e0e0ca82a116783509439d3fb82392fc8f77a5cef03f37f814b0e2
-            Code: PUSH1 0x60
-                  PUSH1 0x40
-                  MSTORE
-                  PUSH1 0x0
-                  CALLDATALOAD
-                  PUSH29 0x100000000000000000000000000000000000000000000000000000000
-                  SWAP1
-                  DIV
-                  PUSH4 0xffffffff
-                  AND
-                  DUP1
-                  PUSH4 0x5bc0d2f1
-                  EQ
-                  PUSH2 0x3b
-                  JUMPI
-                  JUMPDEST
-                  INVALID
-                  JUMPDEST
-                  CALLVALUE
-                  ISZERO
-                  PUSH2 0x43
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  PUSH2 0x74
-                  PUSH1 0x4
-                  DUP1
-                  DUP1
-                  CALLDATALOAD
-                  SWAP1
-                  PUSH1 0x20
-                  ADD
-                  SWAP1
-                  SWAP2
-                  SWAP1
-                  DUP1
-                  CALLDATALOAD
-                  SWAP1
-                  PUSH1 0x20
-                  ADD
-                  SWAP1
-                  SWAP2
-                  SWAP1
-                  DUP1
-                  CALLDATALOAD
-                  SWAP1
-                  PUSH1 0x20
-                  ADD
-                  SWAP1
-                  SWAP2
-                  SWAP1
-                  DUP1
-                  CALLDATALOAD
-                  SWAP1
-                  PUSH1 0x20
-                  ADD
-                  SWAP1
-                  SWAP2
-                  SWAP1
-                  POP
-                  POP
-                  PUSH2 0x8a
-                  JUMP
-                  JUMPDEST
-                  PUSH1 0x40
-                  MLOAD
-                  DUP1
-                  DUP3
-                  DUP2
-                  MSTORE
-                  PUSH1 0x20
-                  ADD
-                  SWAP2
-                  POP
-                  POP
-                  PUSH1 0x40
-                  MLOAD
-                  DUP1
-                  SWAP2
-                  SUB
-                  SWAP1
-                  RETURN
-                  JUMPDEST
-                  PUSH1 0x0
-                  PUSH1 0x0
                   PUSH1 0x0
                   DUP7
-                  SWAP2
-                  POP
-                  PUSH1 0x0
-                  SWAP1
-                  POP
-                  JUMPDEST
-                  DUP4
-                  DUP2
-                  LT
-                  ISZERO
-                  PUSH2 0x818
-                  JUMPI
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0xab
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0xbe
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0xd1
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0xe4
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0xf7
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x10a
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x11d
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x130
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x143
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x156
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x169
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x17c
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x18f
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x1a2
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x1b5
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x1c8
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x1db
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x1ee
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x201
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x214
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x227
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x23a
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x24d
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x260
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x273
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x286
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x299
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x2ac
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x2bf
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x2d2
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x2e5
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x2f8
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x30b
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x31e
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x331
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x344
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x357
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x36a
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x37d
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x390
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x3a3
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x3b6
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x3c9
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x3dc
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x3ef
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x402
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x415
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x428
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x43b
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x44e
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x461
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x474
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x487
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x49a
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x4ad
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x4c0
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x4d3
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x4e6
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x4f9
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x50c
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x51f
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x532
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x545
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x558
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x56b
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x57e
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x591
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x5a4
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x5b7
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x5ca
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x5dd
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x5f0
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x603
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x616
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x629
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x63c
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x64f
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x662
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x675
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x688
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x69b
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x6ae
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x6c1
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x6d4
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x6e7
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x6fa
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x70d
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x720
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x733
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x746
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x759
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x76c
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x77f
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x792
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x7a5
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x7b8
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x7cb
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x7de
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x7f1
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x804
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  SWAP2
-                  POP
-                  DUP5
-                  DUP3
-                  ADD
-                  SWAP2
-                  POP
-                  JUMPDEST
-                  PUSH1 0x64
-                  DUP2
-                  ADD
-                  SWAP1
-                  POP
-                  PUSH2 0x98
-                  JUMP
-                  JUMPDEST
-                  DUP2
-                  SWAP3
-                  POP
-                  JUMPDEST
-                  POP
-                  POP
-                  SWAP5
-                  SWAP4
-                  POP
-                  POP
-                  POP
-                  POP
-                  JUMP
-                  STOP
-                  LOG1
-                  PUSH6 0x627a7a723058
-                  SHA3
-                  INVALID
-                  DUP13
-                  SHA3
-                  INVALID
-                  INVALID
-                  PUSH17 0xea745144fec130354270a65a17f75c8e4d
-                  BYTE
-                  INVALID
-                  GETPC
-                  ADDMOD
-        '''    
-    
-        constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=9999, timestamp=1, difficulty=20000, coinbase=244687034288125203496486448490407391986876152250, gaslimit=100000000000)
-    
-        bytecode = unhexlify('60606040526000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680635bc0d2f11461003b575bfe5b341561004357fe5b610074600480803590602001909190803590602001909190803590602001909190803590602001909190505061008a565b6040518082815260200191505060405180910390f35b600060006000869150600090505b838110156108185785828115156100ab57fe5b049150848201915085828115156100be57fe5b049150848201915085828115156100d157fe5b049150848201915085828115156100e457fe5b049150848201915085828115156100f757fe5b0491508482019150858281151561010a57fe5b0491508482019150858281151561011d57fe5b0491508482019150858281151561013057fe5b0491508482019150858281151561014357fe5b0491508482019150858281151561015657fe5b0491508482019150858281151561016957fe5b0491508482019150858281151561017c57fe5b0491508482019150858281151561018f57fe5b049150848201915085828115156101a257fe5b049150848201915085828115156101b557fe5b049150848201915085828115156101c857fe5b049150848201915085828115156101db57fe5b049150848201915085828115156101ee57fe5b0491508482019150858281151561020157fe5b0491508482019150858281151561021457fe5b0491508482019150858281151561022757fe5b0491508482019150858281151561023a57fe5b0491508482019150858281151561024d57fe5b0491508482019150858281151561026057fe5b0491508482019150858281151561027357fe5b0491508482019150858281151561028657fe5b0491508482019150858281151561029957fe5b049150848201915085828115156102ac57fe5b049150848201915085828115156102bf57fe5b049150848201915085828115156102d257fe5b049150848201915085828115156102e557fe5b049150848201915085828115156102f857fe5b0491508482019150858281151561030b57fe5b0491508482019150858281151561031e57fe5b0491508482019150858281151561033157fe5b0491508482019150858281151561034457fe5b0491508482019150858281151561035757fe5b0491508482019150858281151561036a57fe5b0491508482019150858281151561037d57fe5b0491508482019150858281151561039057fe5b049150848201915085828115156103a357fe5b049150848201915085828115156103b657fe5b049150848201915085828115156103c957fe5b049150848201915085828115156103dc57fe5b049150848201915085828115156103ef57fe5b0491508482019150858281151561040257fe5b0491508482019150858281151561041557fe5b0491508482019150858281151561042857fe5b0491508482019150858281151561043b57fe5b0491508482019150858281151561044e57fe5b0491508482019150858281151561046157fe5b0491508482019150858281151561047457fe5b0491508482019150858281151561048757fe5b0491508482019150858281151561049a57fe5b049150848201915085828115156104ad57fe5b049150848201915085828115156104c057fe5b049150848201915085828115156104d357fe5b049150848201915085828115156104e657fe5b049150848201915085828115156104f957fe5b0491508482019150858281151561050c57fe5b0491508482019150858281151561051f57fe5b0491508482019150858281151561053257fe5b0491508482019150858281151561054557fe5b0491508482019150858281151561055857fe5b0491508482019150858281151561056b57fe5b0491508482019150858281151561057e57fe5b0491508482019150858281151561059157fe5b049150848201915085828115156105a457fe5b049150848201915085828115156105b757fe5b049150848201915085828115156105ca57fe5b049150848201915085828115156105dd57fe5b049150848201915085828115156105f057fe5b0491508482019150858281151561060357fe5b0491508482019150858281151561061657fe5b0491508482019150858281151561062957fe5b0491508482019150858281151561063c57fe5b0491508482019150858281151561064f57fe5b0491508482019150858281151561066257fe5b0491508482019150858281151561067557fe5b0491508482019150858281151561068857fe5b0491508482019150858281151561069b57fe5b049150848201915085828115156106ae57fe5b049150848201915085828115156106c157fe5b049150848201915085828115156106d457fe5b049150848201915085828115156106e757fe5b049150848201915085828115156106fa57fe5b0491508482019150858281151561070d57fe5b0491508482019150858281151561072057fe5b0491508482019150858281151561073357fe5b0491508482019150858281151561074657fe5b0491508482019150858281151561075957fe5b0491508482019150858281151561076c57fe5b0491508482019150858281151561077f57fe5b0491508482019150858281151561079257fe5b049150848201915085828115156107a557fe5b049150848201915085828115156107b857fe5b049150848201915085828115156107cb57fe5b049150848201915085828115156107de57fe5b049150848201915085828115156107f157fe5b0491508482019150858281151561080457fe5b04915084820191505b606481019050610098565b8192505b50509493505050505600a165627a7a72305820c38c20b72770ea745144fec130354270a65a17f75c8e4d1ad15808766d62bcdc0029')
-        world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-                             balance=100000000000000000000000,
-                             code=bytecode,
-                             nonce=0
-                            )
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = unhexlify('5bc0d2f18edad8b55b1586805ea8c245d8c16b06a5102b791fc6eb60693731c0677bf5011c68db1c179cd35ab3fc60c63704aa7fcbea40f19782b1611aaba86726a7686cff00ffffffffffffffffffffffffffaaffffffffffffffffbbffffffffffffff0000000000000000000000000000000000000000000000000000000000989680')
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        value = 0
-        gas = 1000000000000
-
-        # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
-
-        result = None
-        returndata = b''
-        try:
-            while True:
-                world.current_vm.execute()
-        except evm.EndTx as e:
-            result = e.result
-            if e.result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
-        except evm.StartTx as e:
-            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        #Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        #check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60606040526000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680635bc0d2f11461003b575bfe5b341561004357fe5b610074600480803590602001909190803590602001909190803590602001909190803590602001909190505061008a565b6040518082815260200191505060405180910390f35b600060006000869150600090505b838110156108185785828115156100ab57fe5b049150848201915085828115156100be57fe5b049150848201915085828115156100d157fe5b049150848201915085828115156100e457fe5b049150848201915085828115156100f757fe5b0491508482019150858281151561010a57fe5b0491508482019150858281151561011d57fe5b0491508482019150858281151561013057fe5b0491508482019150858281151561014357fe5b0491508482019150858281151561015657fe5b0491508482019150858281151561016957fe5b0491508482019150858281151561017c57fe5b0491508482019150858281151561018f57fe5b049150848201915085828115156101a257fe5b049150848201915085828115156101b557fe5b049150848201915085828115156101c857fe5b049150848201915085828115156101db57fe5b049150848201915085828115156101ee57fe5b0491508482019150858281151561020157fe5b0491508482019150858281151561021457fe5b0491508482019150858281151561022757fe5b0491508482019150858281151561023a57fe5b0491508482019150858281151561024d57fe5b0491508482019150858281151561026057fe5b0491508482019150858281151561027357fe5b0491508482019150858281151561028657fe5b0491508482019150858281151561029957fe5b049150848201915085828115156102ac57fe5b049150848201915085828115156102bf57fe5b049150848201915085828115156102d257fe5b049150848201915085828115156102e557fe5b049150848201915085828115156102f857fe5b0491508482019150858281151561030b57fe5b0491508482019150858281151561031e57fe5b0491508482019150858281151561033157fe5b0491508482019150858281151561034457fe5b0491508482019150858281151561035757fe5b0491508482019150858281151561036a57fe5b0491508482019150858281151561037d57fe5b0491508482019150858281151561039057fe5b049150848201915085828115156103a357fe5b049150848201915085828115156103b657fe5b049150848201915085828115156103c957fe5b049150848201915085828115156103dc57fe5b049150848201915085828115156103ef57fe5b0491508482019150858281151561040257fe5b0491508482019150858281151561041557fe5b0491508482019150858281151561042857fe5b0491508482019150858281151561043b57fe5b0491508482019150858281151561044e57fe5b0491508482019150858281151561046157fe5b0491508482019150858281151561047457fe5b0491508482019150858281151561048757fe5b0491508482019150858281151561049a57fe5b049150848201915085828115156104ad57fe5b049150848201915085828115156104c057fe5b049150848201915085828115156104d357fe5b049150848201915085828115156104e657fe5b049150848201915085828115156104f957fe5b0491508482019150858281151561050c57fe5b0491508482019150858281151561051f57fe5b0491508482019150858281151561053257fe5b0491508482019150858281151561054557fe5b0491508482019150858281151561055857fe5b0491508482019150858281151561056b57fe5b0491508482019150858281151561057e57fe5b0491508482019150858281151561059157fe5b049150848201915085828115156105a457fe5b049150848201915085828115156105b757fe5b049150848201915085828115156105ca57fe5b049150848201915085828115156105dd57fe5b049150848201915085828115156105f057fe5b0491508482019150858281151561060357fe5b0491508482019150858281151561061657fe5b0491508482019150858281151561062957fe5b0491508482019150858281151561063c57fe5b0491508482019150858281151561064f57fe5b0491508482019150858281151561066257fe5b0491508482019150858281151561067557fe5b0491508482019150858281151561068857fe5b0491508482019150858281151561069b57fe5b049150848201915085828115156106ae57fe5b049150848201915085828115156106c157fe5b049150848201915085828115156106d457fe5b049150848201915085828115156106e757fe5b049150848201915085828115156106fa57fe5b0491508482019150858281151561070d57fe5b0491508482019150858281151561072057fe5b0491508482019150858281151561073357fe5b0491508482019150858281151561074657fe5b0491508482019150858281151561075957fe5b0491508482019150858281151561076c57fe5b0491508482019150858281151561077f57fe5b0491508482019150858281151561079257fe5b049150848201915085828115156107a557fe5b049150848201915085828115156107b857fe5b049150848201915085828115156107cb57fe5b049150848201915085828115156107de57fe5b049150848201915085828115156107f157fe5b0491508482019150858281151561080457fe5b04915084820191505b606481019050610098565b8192505b50509493505050505600a165627a7a72305820c38c20b72770ea745144fec130354270a65a17f75c8e4d1ad15808766d62bcdc0029'))
-        #check outs
-        self.assertEqual(returndata, unhexlify('ff00ffffffffffffffffffffffffffaaffffffffffffffffbc00000000000007'))
-        #check logs
-        data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
-        
-        # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 999464799656)
-    @unittest.skip('Gas or performance related')
-
-    def test_loop_divadd_10M(self):
-        '''
-            Textcase taken from https://github.com/ethereum/tests
-            File: loop-divadd-10M.json
-            sha256sum: 6f90142841d39bf228763d8e8bf96f47cc675b7185e9e80006aa4ce00fd33450
-            Code: PUSH1 0x60
-                  PUSH1 0x40
-                  MSTORE
-                  PUSH4 0xffffffff
-                  PUSH1 0xe0
-                  PUSH1 0x2
-                  EXP
-                  PUSH1 0x0
-                  CALLDATALOAD
-                  DIV
-                  AND
-                  PUSH4 0x15d42327
-                  DUP2
                   EQ
-                  PUSH2 0x42
+                  PUSH1 0x76
                   JUMPI
-                  DUP1
-                  PUSH4 0x59e3e1ea
-                  EQ
-                  PUSH2 0x70
-                  JUMPI
-                  DUP1
-                  PUSH4 0xc4f8b9fb
-                  EQ
-                  PUSH2 0x9e
-                  JUMPI
-                  DUP1
-                  PUSH4 0xe01330bb
-                  EQ
-                  PUSH2 0xc9
-                  JUMPI
-                  JUMPDEST
-                  INVALID
-                  JUMPDEST
-                  CALLVALUE
-                  ISZERO
-                  PUSH2 0x4a
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  PUSH2 0x5e
-                  PUSH1 0x4
-                  CALLDATALOAD
-                  PUSH1 0x24
-                  CALLDATALOAD
-                  PUSH1 0x44
-                  CALLDATALOAD
-                  PUSH1 0x64
-                  CALLDATALOAD
-                  PUSH2 0xf4
-                  JUMP
-                  JUMPDEST
-                  PUSH1 0x40
-                  DUP1
-                  MLOAD
-                  SWAP2
-                  DUP3
-                  MSTORE
-                  MLOAD
-                  SWAP1
-                  DUP2
-                  SWAP1
-                  SUB
-                  PUSH1 0x20
-                  ADD
-                  SWAP1
-                  RETURN
-                  JUMPDEST
-                  CALLVALUE
-                  ISZERO
-                  PUSH2 0x78
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  PUSH2 0x5e
-                  PUSH1 0x4
-                  CALLDATALOAD
-                  PUSH1 0x24
-                  CALLDATALOAD
-                  PUSH1 0x44
-                  CALLDATALOAD
-                  PUSH1 0x64
-                  CALLDATALOAD
-                  PUSH2 0x11e
-                  JUMP
-                  JUMPDEST
-                  PUSH1 0x40
-                  DUP1
-                  MLOAD
-                  SWAP2
-                  DUP3
-                  MSTORE
-                  MLOAD
-                  SWAP1
-                  DUP2
-                  SWAP1
-                  SUB
-                  PUSH1 0x20
-                  ADD
-                  SWAP1
-                  RETURN
-                  JUMPDEST
-                  CALLVALUE
-                  ISZERO
-                  PUSH2 0xa6
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  PUSH2 0x5e
-                  PUSH1 0x4
-                  CALLDATALOAD
-                  PUSH1 0x24
-                  CALLDATALOAD
-                  PUSH1 0x44
-                  CALLDATALOAD
-                  PUSH2 0x152
-                  JUMP
-                  JUMPDEST
-                  PUSH1 0x40
-                  DUP1
-                  MLOAD
-                  SWAP2
-                  DUP3
-                  MSTORE
-                  MLOAD
-                  SWAP1
-                  DUP2
-                  SWAP1
-                  SUB
-                  PUSH1 0x20
-                  ADD
-                  SWAP1
-                  RETURN
-                  JUMPDEST
-                  CALLVALUE
-                  ISZERO
-                  PUSH2 0xd1
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  PUSH2 0x5e
-                  PUSH1 0x4
-                  CALLDATALOAD
-                  PUSH1 0x24
-                  CALLDATALOAD
-                  PUSH1 0x44
-                  CALLDATALOAD
-                  PUSH2 0x179
-                  JUMP
-                  JUMPDEST
-                  PUSH1 0x40
-                  DUP1
-                  MLOAD
-                  SWAP2
-                  DUP3
-                  MSTORE
-                  MLOAD
-                  SWAP1
-                  DUP2
-                  SWAP1
-                  SUB
-                  PUSH1 0x20
-                  ADD
-                  SWAP1
-                  RETURN
-                  JUMPDEST
-                  PUSH1 0x0
-                  DUP5
-                  DUP2
-                  JUMPDEST
-                  DUP4
-                  DUP2
-                  LT
-                  ISZERO
-                  PUSH2 0x110
-                  JUMPI
-                  DUP5
-                  DUP7
-                  DUP4
-                  MULMOD
-                  SWAP2
-                  POP
-                  JUMPDEST
-                  PUSH1 0x1
-                  ADD
-                  PUSH2 0xf9
-                  JUMP
-                  JUMPDEST
-                  DUP2
-                  SWAP3
-                  POP
-                  JUMPDEST
-                  POP
-                  POP
-                  SWAP5
-                  SWAP4
-                  POP
-                  POP
-                  POP
-                  POP
-                  JUMP
-                  JUMPDEST
-                  PUSH1 0x0
-                  DUP5
-                  DUP2
-                  JUMPDEST
-                  DUP4
-                  DUP2
-                  LT
-                  ISZERO
-                  PUSH2 0x110
-                  JUMPI
-                  DUP6
-                  DUP3
-                  DUP2
-                  ISZERO
-                  ISZERO
-                  PUSH2 0x136
-                  JUMPI
-                  INVALID
-                  JUMPDEST
-                  DIV
-                  DUP6
-                  ADD
-                  SWAP2
-                  POP
-                  JUMPDEST
-                  PUSH1 0x1
-                  ADD
-                  PUSH2 0x123
-                  JUMP
-                  JUMPDEST
-                  DUP2
-                  SWAP3
-                  POP
-                  JUMPDEST
-                  POP
-                  POP
-                  SWAP5
-                  SWAP4
-                  POP
-                  POP
-                  POP
-                  POP
-                  JUMP
-                  JUMPDEST
-                  PUSH1 0x0
-                  DUP4
-                  DUP2
-                  JUMPDEST
-                  DUP4
-                  DUP2
-                  LT
-                  ISZERO
-                  PUSH2 0x16c
-                  JUMPI
-                  SWAP1
-                  DUP5
-                  ADD
-                  SWAP1
-                  JUMPDEST
-                  PUSH1 0x1
-                  ADD
-                  PUSH2 0x157
-                  JUMP
-                  JUMPDEST
-                  DUP2
-                  SWAP3
-                  POP
-                  JUMPDEST
                   POP
                   POP
                   SWAP4
-                  SWAP3
-                  POP
-                  POP
-                  POP
-                  JUMP
-                  JUMPDEST
-                  PUSH1 0x0
-                  DUP4
                   DUP2
-                  JUMPDEST
-                  DUP4
-                  DUP2
-                  LT
-                  ISZERO
-                  PUSH2 0x16c
-                  JUMPI
-                  SWAP1
-                  DUP5
                   MUL
-                  SWAP1
-                  JUMPDEST
-                  PUSH1 0x1
+                  DUP5
                   ADD
-                  PUSH2 0x17e
+                  DUP1
+                  DUP3
+                  MUL
+                  DUP6
+                  ADD
+                  DUP1
+                  DUP3
+                  MUL
+                  SWAP6
+                  PUSH1 0x0
+                  NOT
+                  SWAP6
+                  SWAP1
+                  SWAP6
+                  ADD
+                  SWAP5
+                  SWAP2
+                  SWAP1
+                  PUSH1 0x3f
                   JUMP
                   JUMPDEST
-                  DUP2
-                  SWAP3
-                  POP
-                  JUMPDEST
-                  POP
-                  POP
-                  SWAP4
-                  SWAP3
-                  POP
-                  POP
-                  POP
-                  JUMP
-                  STOP
-                  LOG1
-                  PUSH6 0x627a7a723058
-                  SHA3
-                  MOD
-                  POP
-                  DUP2
-                  INVALID
-                  INVALID
-                  SWAP16
-                  INVALID
-                  INVALID
-                  INVALID
-                  INVALID
-                  SGT
-                  ORIGIN
+                  PUSH1 0x40
+                  DUP1
+                  MLOAD
+                  SWAP2
+                  DUP3
                   MSTORE
-                  ORIGIN
-                  COINBASE
-                  INVALID
-                  INVALID
-                  INVALID
-                  INVALID
-                  XOR
+                  MLOAD
+                  SWAP1
                   DUP2
-                  LOG0
-                  PUSH6 0x29599a9c67d0
-                  INVALID
-        '''    
+                  SWAP1
+                  SUB
+                  PUSH1 0x20
+                  ADD
+                  SWAP1
+                  RETURN
+                  JUMPDEST
+                  POP
+                  SWAP5
+                  SWAP6
+                  SWAP5
+                  POP
+                  POP
+                  POP
+                  POP
+                  POP
+                  JUMP
+        """    
     
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=9999, timestamp=1, difficulty=20000, coinbase=244687034288125203496486448490407391986876152250, gaslimit=100000000000)
+        world = evm.EVMWorld(constraints, blocknumber=9999, timestamp=1, difficulty=20000,
+                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=100000000000)
     
-        bytecode = unhexlify('606060405263ffffffff60e060020a60003504166315d42327811461004257806359e3e1ea14610070578063c4f8b9fb1461009e578063e01330bb146100c9575bfe5b341561004a57fe5b61005e6004356024356044356064356100f4565b60408051918252519081900360200190f35b341561007857fe5b61005e60043560243560443560643561011e565b60408051918252519081900360200190f35b34156100a657fe5b61005e600435602435604435610152565b60408051918252519081900360200190f35b34156100d157fe5b61005e600435602435604435610179565b60408051918252519081900360200190f35b600084815b83811015610110578486830991505b6001016100f9565b8192505b5050949350505050565b600084815b8381101561011057858281151561013657fe5b04850191505b600101610123565b8192505b5050949350505050565b600083815b8381101561016c57908401905b600101610157565b8192505b50509392505050565b600083815b8381101561016c57908402905b60010161017e565b8192505b505093925050505600a165627a7a72305820065081bd1e9fdffccd251332523241eaabd0fb1881a06529599a9c67d0a568e50029')
-        world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-                             balance=100000000000000000000000,
-                             code=bytecode,
-                             nonce=0
-                            )
+        bytecode = unhexlify('606060405260e060020a6000350463eb8ac9218114601c575b6002565b3460025760646004356024356000675851f42d4c957f2d6714057b7ef767814f82805b600086146076575050938102840180820285018082029560001995909501949190603f565b60408051918252519081900360200190f35b50949594505050505056')
+        world.create_account(
+            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
+            balance=100000000000000000000000,
+            code=bytecode,
+            nonce=0
+        )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
-        data = unhexlify('59e3e1ea8edad8b55b1586805ea8c245d8c16b06a5102b791fc6eb60693731c0677bf5011c68db1c179cd35ab3fc60c63704aa7fcbea40f19782b1611aaba86726a7686cff00ffffffffffffffffffffffffffaaffffffffffffffffbbffffffffffffff0000000000000000000000000000000000000000000000000000000000989680')
+        data = unhexlify('eb8ac9215eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeed0000000000000000000000000000000000000000000000000000000000100000')
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 0
         gas = 1000000000000
@@ -2828,6 +159,8 @@ class EVMTest_vmPerformance(unittest.TestCase):
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
+        # This variable might seem redundant in some tests - don't forget it is auto generated
+        # and there are cases in which we need it ;)
         result = None
         returndata = b''
         try:
@@ -2835,31 +168,32 @@ class EVMTest_vmPerformance(unittest.TestCase):
                 world.current_vm.execute()
         except evm.EndTx as e:
             result = e.result
-            if e.result in ('RETURN', 'REVERT'):
+            if result in ('RETURN', 'REVERT'):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        #Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        #check nonce, balance, code
+        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        # check nonce, balance, code
         self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('606060405263ffffffff60e060020a60003504166315d42327811461004257806359e3e1ea14610070578063c4f8b9fb1461009e578063e01330bb146100c9575bfe5b341561004a57fe5b61005e6004356024356044356064356100f4565b60408051918252519081900360200190f35b341561007857fe5b61005e60043560243560443560643561011e565b60408051918252519081900360200190f35b34156100a657fe5b61005e600435602435604435610152565b60408051918252519081900360200190f35b34156100d157fe5b61005e600435602435604435610179565b60408051918252519081900360200190f35b600084815b83811015610110578486830991505b6001016100f9565b8192505b5050949350505050565b600084815b8381101561011057858281151561013657fe5b04850191505b600101610123565b8192505b5050949350505050565b600083815b8381101561016c57908401905b600101610157565b8192505b50509392505050565b600083815b8381101561016c57908402905b60010161017e565b8192505b505093925050505600a165627a7a72305820065081bd1e9fdffccd251332523241eaabd0fb1881a06529599a9c67d0a568e50029'))
-        #check outs
-        self.assertEqual(returndata, unhexlify('ff00ffffffffffffffffffffffffffaaffffffffffffffffbc00000000000007'))
-        #check logs
-        data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
+        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('606060405260e060020a6000350463eb8ac9218114601c575b6002565b3460025760646004356024356000675851f42d4c957f2d6714057b7ef767814f82805b600086146076575050938102840180820285018082029560001995909501949190603f565b60408051918252519081900360200190f35b50949594505050505056'))
+        # check outs
+        self.assertEqual(returndata, unhexlify('af5113aa9f5bf0371ae31b13a58edff7f3ce96c9f40d9bb4c7b2ed490a6396c6'))
+        # check logs
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 999109999719)
+        self.assertEqual(to_constant(world.current_vm.gas), 999881510690)
     @unittest.skip('Gas or performance related')
 
-    def test_loop_exp_32b_100k(self):
-        '''
-            Textcase taken from https://github.com/ethereum/tests
-            File: loop-exp-32b-100k.json
-            sha256sum: 3fdf71291eef83ada87015592ce6993042e883c5ced3c30cc5c5708723e362aa
-            Code: PUSH1 0x60
+    def test_loop_exp_nop_1M(self):
+        """
+        Textcase taken from https://github.com/ethereum/tests
+        File: loop-exp-nop-1M.json
+        sha256sum: 8ff68ed3e0ccc906a85466be208f92af7b5605fcd39e7b81f7f7f1d2b8cb2582
+        Code:     PUSH1 0x60
                   PUSH1 0x40
                   MSTORE
                   PUSH1 0xe0
@@ -3080,20 +414,22 @@ class EVMTest_vmPerformance(unittest.TestCase):
                   POP
                   POP
                   JUMP
-        '''    
+        """    
     
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=9999, timestamp=1, difficulty=20000, coinbase=244687034288125203496486448490407391986876152250, gaslimit=100000000000)
+        world = evm.EVMWorld(constraints, blocknumber=9999, timestamp=1, difficulty=20000,
+                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=100000000000)
     
         bytecode = unhexlify('606060405260e060020a60003504633392ffc8811461003f5780633c77b95c1461006a578063ce67bda6146100c2578063ebbbe00b146100e8575b610002565b346100025761010e600435602435604435600082815b83811015610120579085900a90600101610055565b346100025761010e600435602435604435600082815b83811015610120579085900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a90601001610080565b346100025761010e6004356024356044356000805b82811015610129575b6001016100d7565b346100025761010e6004356024356044356000805b82811015610129575b6010016100fd565b60408051918252519081900360200190f35b50949350505050565b5091939250505056')
-        world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-                             balance=100000000000000000000000,
-                             code=bytecode,
-                             nonce=0
-                            )
+        world.create_account(
+            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
+            balance=100000000000000000000000,
+            code=bytecode,
+            nonce=0
+        )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
-        data = unhexlify('3392ffc8ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000000000000000000000000000000000000000000005851f42d4c957f2d00000000000000000000000000000000000000000000000000000000000186a0')
+        data = unhexlify('ce67bda60000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f00000000000000000000000000000000000000000000000000000000000f4240')
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
         value = 0
         gas = 1000000000000
@@ -3101,6 +437,8 @@ class EVMTest_vmPerformance(unittest.TestCase):
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
+        # This variable might seem redundant in some tests - don't forget it is auto generated
+        # and there are cases in which we need it ;)
         result = None
         returndata = b''
         try:
@@ -3108,31 +446,32 @@ class EVMTest_vmPerformance(unittest.TestCase):
                 world.current_vm.execute()
         except evm.EndTx as e:
             result = e.result
-            if e.result in ('RETURN', 'REVERT'):
+            if result in ('RETURN', 'REVERT'):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        #Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        #check nonce, balance, code
+        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        # check nonce, balance, code
         self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('606060405260e060020a60003504633392ffc8811461003f5780633c77b95c1461006a578063ce67bda6146100c2578063ebbbe00b146100e8575b610002565b346100025761010e600435602435604435600082815b83811015610120579085900a90600101610055565b346100025761010e600435602435604435600082815b83811015610120579085900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a90601001610080565b346100025761010e6004356024356044356000805b82811015610129575b6001016100d7565b346100025761010e6004356024356044356000805b82811015610129575b6010016100fd565b60408051918252519081900360200190f35b50949350505050565b5091939250505056'))
-        #check outs
-        self.assertEqual(returndata, unhexlify('0000000000000000000000000000000000000000000000005851f42d4c957f2d'))
-        #check logs
-        data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
+        # check outs
+        self.assertEqual(returndata, unhexlify('000000000000000000000000000000000000000000000000000000000000000f'))
+        # check logs
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 999961499780)
+        self.assertEqual(to_constant(world.current_vm.gas), 999955999738)
     @unittest.skip('Gas or performance related')
 
     def test_manyFunctions100(self):
-        '''
-            Textcase taken from https://github.com/ethereum/tests
-            File: manyFunctions100.json
-            sha256sum: c4f4bb8c1b0f2a93c0cbf40824c8b6bed814f8a3c6814fcaf0fcbce829147b69
-            Code: PUSH1 0xe0
+        """
+        Textcase taken from https://github.com/ethereum/tests
+        File: manyFunctions100.json
+        sha256sum: c4f4bb8c1b0f2a93c0cbf40824c8b6bed814f8a3c6814fcaf0fcbce829147b69
+        Code:     PUSH1 0xe0
                   PUSH1 0x2
                   EXP
                   PUSH1 0x0
@@ -16002,17 +13341,19 @@ class EVMTest_vmPerformance(unittest.TestCase):
                   SWAP1
                   POP
                   JUMP
-        '''    
+        """    
     
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=100000000000)
+        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
+                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=100000000000)
     
         bytecode = unhexlify('60e060020a60003504806301f99ad7146108c3578063023a624a146108d857806303bdecf5146108ed57806305fe035f14610902578063082d8f4914610917578063090bf3b71461092c5780630bd9c534146109415780630c4bfa94146109565780630e20ebe21461096b5780630f76de0d1461098057806310cfcc191461099557806313ce15a9146109aa578063140dcec4146109bf57806314d07a3e146109d45780631687f112146109e957806316eb6603146109fe578063172cf71714610a135780631bd6f59614610a285780631cdb857114610a3d5780631cf74ece14610a525780631d09ba2c14610a675780631f69aa5114610a7c578063223dcc7414610a9157806325e524d314610aa6578063261de7c414610abb5780632632924d14610ad05780632909cc5d14610ae55780632981699814610afa5780632a85a45d14610b0f5780632ca36da014610b245780632cbf1f0d14610b395780632d0f557314610b4e5780632d97867814610b6357806331db9efd14610b7857806332064db714610b8d57806332931fbb14610ba2578063355f51a014610bb7578063361bb34014610bcc578063364ddb0e14610be15780633792a01814610bf657806338c68f8f14610c0b57806338e586fd14610c20578063392d42ae14610c3557806339a87bd914610c4a5780633a95a33214610c5f5780633b8ecdf914610c745780633cf0659a14610c895780633eaf992314610c9e5780633fe97ead14610cb35780633ff11c8b14610cc8578063404efc5314610cdd578063407fce7b14610cf257806340c3b18714610d07578063440208c314610d1c57806344e86b2f14610d31578063455df57914610d465780634689ab4d14610d5b57806346be2e0c14610d70578063487cd86f14610d8557806348e6178214610d9a57806349d4a34414610daf5780634a0f597414610dc45780634bc24ec514610dd95780634c2fe45614610dee5780634cc885d414610e035780634eaaad7b14610e185780634eb166af14610e2d5780635050093414610e42578063506bff1114610e57578063508762c114610e6c578063526938f814610e8157806354400c6014610e96578063559510d814610eab57806355a5f70214610ec057806356ca528f14610ed5578063570a2a1614610eea5780635dab2e0f14610eff5780635dca53d314610f1457806362017ebc14610f29578063621a25f814610f3e578063626d4a3614610f5357806362b6a28214610f6857806364faf22c14610f7d57806366d7ffde14610f9257806367b886e814610fa757806367e902c714610fbc57806369d7774014610fd15780636b7ae8e614610fe65780636c3b659114610ffb5780636e54181e146110105780636e978d91146110255780636f63d2ec1461103a578063706332d11461104f57806370ac4bb9146110645780637138ef521461107957806371dd46a91461108e57806372a7c229146110a35780637376fc8d146110b8578063738a2679146110cd57806374552650146110e2578063746fc8d0146110f757806379254bb81461110c5780637adaa3f8146111215780637e4eb35b14611136578063885ec18e1461114b5780638b9ff6b6146111605780638ce113dc146111755780638defbc5e1461118a5780638f4613d51461119f5780638fdc24ba146111b45780639002dba4146111c957806391d15735146111de57806391d43b23146111f357806393b14daa1461120857806394d63afd1461121d57806395805dad1461123257806396f68782146112475780639740e4a21461125c578063981290131461127157806399a3f0e8146112865780639acb1ad41461129b5780639be07908146112b05780639c15be0b146112c55780639d451c4d146112da5780639d8ee943146112ef5780639ef6ca0f14611304578063a0db0a2214611319578063a18e2eb91461132e578063a408384914611343578063a57544da14611358578063a5a83e4d1461136d578063a6843f3414611382578063a6dacdd714611397578063a8c4c8bc146113ac578063aa058a73146113c1578063aad62da2146113d6578063aaf3e4f4146113eb578063ab81e77314611400578063abc93aee14611415578063abde33f71461142a578063b114b96c1461143f578063b3df873714611454578063b4174cb014611469578063b5d02a561461147e578063b731e84814611493578063b7b96723146114a8578063bbcded7a146114bd578063bbececa9146114d2578063beca7440146114e7578063bf8981c0146114fc578063c028c67414611511578063c2385fa614611526578063c319a02c1461153b578063c569bae014611550578063c6715f8114611565578063c7b98dec1461157a578063c9acab841461158f578063ca9efc73146115a4578063cad80024146115b9578063cdadb0fa146115ce578063cdbdf391146115e3578063cf460fa5146115f8578063cf69318a1461160d578063d1835b8c14611622578063d353a1cb14611637578063d3e141e01461164c578063d5ec7e1d14611661578063d7ead1de14611676578063d90b02aa1461168b578063d959e244146116a0578063d9e68b44146116b5578063daacb24f146116ca578063dc12a805146116df578063dd946033146116f4578063dda5142414611709578063de6612171461171e578063dfb9560c14611733578063e03827d214611748578063e21720001461175d578063e2c718d814611772578063e3da539914611787578063e48e603f1461179c578063e5f9ec29146117b1578063e6c0459a146117c6578063e70addec146117db578063e7a01215146117f0578063ea7f4d2714611805578063ebb6c59f1461181a578063ed6302be1461182f578063ed64b36b14611844578063eecd278914611859578063f0ed14e01461186e578063f0f2134414611883578063f1e328f914611898578063f1e6f4cd146118ad578063f32fe995146118c2578063f75165c6146118d7578063f7ed71d0146118ec578063f80f44f314611901578063f8bc050514611916578063fbd3c51a1461192b578063fd72009014611940578063fed3a3001461195557005b6108ce600435612edf565b8060005260206000f35b6108e3600435612fb5565b8060005260206000f35b6108f8600435613f47565b8060005260206000f35b61090d600435612a11565b8060005260206000f35b6109226004356127ec565b8060005260206000f35b61093760043561215c565b8060005260206000f35b61094c6004356128c2565b8060005260206000f35b61096160043561310f565b8060005260206000f35b610976600435614e0b565b8060005260206000f35b61098b600435613269565b8060005260206000f35b6109a0600435611a82565b8060005260206000f35b6109b5600435613e71565b8060005260206000f35b6109ca600435611dd2565b8060005260206000f35b6109df6004356120d0565b8060005260206000f35b6109f4600435613755565b8060005260206000f35b610a096004356134e3565b8060005260206000f35b610a1e6004356137e1565b8060005260206000f35b610a3360043561382b565b8060005260206000f35b610a48600435612b0b565b8060005260206000f35b610a5d60043561386d565b8060005260206000f35b610a726004356131e5565b8060005260206000f35b610a876004356143e9565b8060005260206000f35b610a9c60043561319b565b8060005260206000f35b610ab1600435612e11565b8060005260206000f35b610ac660043561234a565b8060005260206000f35b610adb6004356121e8565b8060005260206000f35b610af06004356119f6565b8060005260206000f35b610b05600435613bff565b8060005260206000f35b610b1a600435612606565b8060005260206000f35b610b2f6004356126d4565b8060005260206000f35b610b44600435613bb5565b8060005260206000f35b610b59600435612462565b8060005260206000f35b610b6e600435611e14565b8060005260206000f35b610b836004356149ab565b8060005260206000f35b610b98600435611c26565b8060005260206000f35b610bad600435612a7f565b8060005260206000f35b610bc2600435613457565b8060005260206000f35b610bd760043561340d565b8060005260206000f35b610bec60043561363d565b8060005260206000f35b610c01600435612e53565b8060005260206000f35b610c1660043561477b565b8060005260206000f35b610c2b600435612c6d565b8060005260206000f35b610c40600435612648565b8060005260206000f35b610c55600435612274565b8060005260206000f35b610c6a6004356138f9565b8060005260206000f35b610c7f600435612b55565b8060005260206000f35b610c94600435611eea565b8060005260206000f35b610ca9600435613ebb565b8060005260206000f35b610cbe600435613499565b8060005260206000f35b610cd3600435614807565b8060005260206000f35b610ce8600435611fb8565b8060005260206000f35b610cfd600435613083565b8060005260206000f35b610d126004356125bc565b8060005260206000f35b610d27600435613041565b8060005260206000f35b610d3c6004356140a1565b8060005260206000f35b610d516004356147bd565b8060005260206000f35b610d66600435611c70565b8060005260206000f35b610d7b600435612300565b8060005260206000f35b610d906004356123d6565b8060005260206000f35b610da5600435612c23565b8060005260206000f35b610dba600435614faf565b8060005260206000f35b610dcf600435612044565b8060005260206000f35b610de4600435613ae7565b8060005260206000f35b610df9600435614cf3565b8060005260206000f35b610e0e600435613d17565b8060005260206000f35b610e2360043561412d565b8060005260206000f35b610e38600435614177565b8060005260206000f35b610e4d60043561208e565b8060005260206000f35b610e62600435612dc7565b8060005260206000f35b610e77600435612f29565b8060005260206000f35b610e8c6004356124a4565b8060005260206000f35b610ea1600435611b58565b8060005260206000f35b610eb66004356136c9565b8060005260206000f35b610ecb600435613227565b8060005260206000f35b610ee0600435611acc565b8060005260206000f35b610ef5600435613687565b8060005260206000f35b610f0a6004356146a5565b8060005260206000f35b610f1f6004356121a6565b8060005260206000f35b610f346004356132f5565b8060005260206000f35b610f49600435613da3565b8060005260206000f35b610f5e60043561379f565b8060005260206000f35b610f73600435612878565b8060005260206000f35b610f88600435611b0e565b8060005260206000f35b610f9d600435611ea0565b8060005260206000f35b610fb2600435614ed9565b8060005260206000f35b610fc7600435614bdb565b8060005260206000f35b610fdc600435614c1d565b8060005260206000f35b610ff1600435614245565b8060005260206000f35b6110066004356146ef565b8060005260206000f35b61101b60043561428f565b8060005260206000f35b611030600435614ac3565b8060005260206000f35b611045600435613de5565b8060005260206000f35b61105a6004356132b3565b8060005260206000f35b61106f6004356122be565b8060005260206000f35b611084600435612e9d565b8060005260206000f35b611099600435611b9a565b8060005260206000f35b6110ae6004356127aa565b8060005260206000f35b6110c3600435613e2f565b8060005260206000f35b6110d8600435614849565b8060005260206000f35b6110ed600435614dc1565b8060005260206000f35b61110260043561333f565b8060005260206000f35b61111760043561211a565b8060005260206000f35b61112c600435612692565b8060005260206000f35b611141600435612904565b8060005260206000f35b611156600435612d3b565b8060005260206000f35b61116b600435614b91565b8060005260206000f35b611180600435613a5b565b8060005260206000f35b611195600435612232565b8060005260206000f35b6111aa600435612f6b565b8060005260206000f35b6111bf600435614d35565b8060005260206000f35b6111d4600435611a40565b8060005260206000f35b6111e9600435612ff7565b8060005260206000f35b6111fe60043561431b565b8060005260206000f35b611213600435613159565b8060005260206000f35b611228600435612b97565b8060005260206000f35b61123d600435612990565b8060005260206000f35b611252600435613b73565b8060005260206000f35b611267600435614961565b8060005260206000f35b61127c600435613381565b8060005260206000f35b611291600435613fd3565b8060005260206000f35b6112a660043561257a565b8060005260206000f35b6112bb600435614501565b8060005260206000f35b6112d0600435613d59565b8060005260206000f35b6112e56004356143a7565b8060005260206000f35b6112fa60043561405f565b8060005260206000f35b61130f60043561238c565b8060005260206000f35b611324600435612be1565b8060005260206000f35b611339600435613f89565b8060005260206000f35b61134e60043561294e565b8060005260206000f35b6113636004356124ee565b8060005260206000f35b611378600435614b4f565b8060005260206000f35b61138d6004356133cb565b8060005260206000f35b6113a26004356139cf565b8060005260206000f35b6113b7600435613c8b565b8060005260206000f35b6113cc600435612cf9565b8060005260206000f35b6113e1600435614a79565b8060005260206000f35b6113f66004356149ed565b8060005260206000f35b61140b600435613b29565b8060005260206000f35b611420600435613ccd565b8060005260206000f35b611435600435611f76565b8060005260206000f35b61144a600435614ff1565b8060005260206000f35b61145f600435613525565b8060005260206000f35b61147460043561356f565b8060005260206000f35b6114896004356129dc565b8060005260206000f35b61149e600435614ca9565b8060005260206000f35b6114b3600435612d85565b8060005260206000f35b6114c86004356141b9565b8060005260206000f35b6114dd600435614475565b8060005260206000f35b6114f26004356135fb565b8060005260206000f35b611507600435612530565b8060005260206000f35b61151c600435614663565b8060005260206000f35b611531600435614433565b8060005260206000f35b611546600435614f23565b8060005260206000f35b61155b600435614c67565b8060005260206000f35b611570600435611d3e565b8060005260206000f35b611585600435612a3d565b8060005260206000f35b61159a600435613a11565b8060005260206000f35b6115af600435614619565b8060005260206000f35b6115c4600435613985565b8060005260206000f35b6115d9600435613943565b8060005260206000f35b6115ee600435612418565b8060005260206000f35b6116036004356119b4565b8060005260206000f35b611618600435613a9d565b8060005260206000f35b61162d600435611cb2565b8060005260206000f35b6116426004356129d2565b8060005260206000f35b611657600435612caf565b8060005260206000f35b61166c600435611d88565b8060005260206000f35b611681600435614203565b8060005260206000f35b61169660043561458d565b8060005260206000f35b6116ab600435611f2c565b8060005260206000f35b6116c0600435612a23565b8060005260206000f35b6116d5600435612836565b8060005260206000f35b6116ea6004356138b7565b8060005260206000f35b6116ff6004356145d7565b8060005260206000f35b61171460043561454b565b8060005260206000f35b6117296004356142d1565b8060005260206000f35b61173e600435611e5e565b8060005260206000f35b611753600435614015565b8060005260206000f35b611768600435613c41565b8060005260206000f35b61177d600435611be4565b8060005260206000f35b611792600435614b05565b8060005260206000f35b6117a7600435613713565b8060005260206000f35b6117bc6004356135b1565b8060005260206000f35b6117d16004356144bf565b8060005260206000f35b6117e660043561491f565b8060005260206000f35b6117fb600435612ac9565b8060005260206000f35b6118106004356130cd565b8060005260206000f35b6118256004356140eb565b8060005260206000f35b61183a600435614f65565b8060005260206000f35b61184f60043561196a565b8060005260206000f35b6118646004356148d5565b8060005260206000f35b611879600435614d7f565b8060005260206000f35b61188e600435612002565b8060005260206000f35b6118a3600435613efd565b8060005260206000f35b6118b860043561271e565b8060005260206000f35b6118cd600435614e4d565b8060005260206000f35b6118e2600435611cfc565b8060005260206000f35b6118f7600435612760565b8060005260206000f35b61190c600435614e97565b8060005260206000f35b61192160043561435d565b8060005260206000f35b611936600435614731565b8060005260206000f35b61194b600435614893565b8060005260206000f35b611960600435614a37565b8060005260206000f35b6000600061197f61197a846129dc565b6129dc565b9050605d60020a811015611992576119a2565b61199b816119f6565b91506119ae565b6119ab816119b4565b91505b50919050565b600060006119c1836129dc565b9050605e60020a8110156119d4576119e4565b6119dd81611a40565b91506119f0565b6119ed81611a82565b91505b50919050565b60006000611a0b611a06846129dc565b6129dc565b9050605e60020a811015611a1e57611a2e565b611a2781611a82565b9150611a3a565b611a3781611a40565b91505b50919050565b60006000611a4d836129dc565b9050605f60020a811015611a6057611a70565b611a6981611acc565b9150611a7c565b611a7981611b0e565b91505b50919050565b60006000611a97611a92846129dc565b6129dc565b9050605f60020a811015611aaa57611aba565b611ab381611b0e565b9150611ac6565b611ac381611acc565b91505b50919050565b60006000611ad9836129dc565b9050606060020a811015611aec57611afc565b611af581611b58565b9150611b08565b611b0581611b9a565b91505b50919050565b60006000611b23611b1e846129dc565b6129dc565b9050606060020a811015611b3657611b46565b611b3f81611b9a565b9150611b52565b611b4f81611b58565b91505b50919050565b60006000611b65836129dc565b9050606160020a811015611b7857611b88565b611b8181611be4565b9150611b94565b611b9181611c26565b91505b50919050565b60006000611baf611baa846129dc565b6129dc565b9050606160020a811015611bc257611bd2565b611bcb81611c26565b9150611bde565b611bdb81611be4565b91505b50919050565b60006000611bf1836129dc565b9050606260020a811015611c0457611c14565b611c0d81611c70565b9150611c20565b611c1d81611cb2565b91505b50919050565b60006000611c3b611c36846129dc565b6129dc565b9050606260020a811015611c4e57611c5e565b611c5781611cb2565b9150611c6a565b611c6781611c70565b91505b50919050565b60006000611c7d836129dc565b9050606360020a811015611c9057611ca0565b611c9981611cfc565b9150611cac565b611ca981611d88565b91505b50919050565b60006000611cc7611cc2846129dc565b6129dc565b9050606360020a811015611cda57611cea565b611ce381611d88565b9150611cf6565b611cf381611cfc565b91505b50919050565b60006000611d09836129dc565b9050606460020a811015611d1c57611d2c565b611d2581611dd2565b9150611d38565b611d3581611e14565b91505b50919050565b60006000611d53611d4e846129dc565b6129dc565b9050607a60020a811015611d6657611d76565b611d6f81613269565b9150611d82565b611d7f81613227565b91505b50919050565b60006000611d9d611d98846129dc565b6129dc565b9050606460020a811015611db057611dc0565b611db981611e14565b9150611dcc565b611dc981611dd2565b91505b50919050565b60006000611ddf836129dc565b9050606560020a811015611df257611e02565b611dfb81611e5e565b9150611e0e565b611e0b81611ea0565b91505b50919050565b60006000611e29611e24846129dc565b6129dc565b9050606560020a811015611e3c57611e4c565b611e4581611ea0565b9150611e58565b611e5581611e5e565b91505b50919050565b60006000611e6b836129dc565b9050606660020a811015611e7e57611e8e565b611e8781611eea565b9150611e9a565b611e9781611f2c565b91505b50919050565b60006000611eb5611eb0846129dc565b6129dc565b9050606660020a811015611ec857611ed8565b611ed181611f2c565b9150611ee4565b611ee181611eea565b91505b50919050565b60006000611ef7836129dc565b9050606760020a811015611f0a57611f1a565b611f1381611f76565b9150611f26565b611f2381611fb8565b91505b50919050565b60006000611f41611f3c846129dc565b6129dc565b9050606760020a811015611f5457611f64565b611f5d81611fb8565b9150611f70565b611f6d81611f76565b91505b50919050565b60006000611f83836129dc565b9050606860020a811015611f9657611fa6565b611f9f81612002565b9150611fb2565b611faf81612044565b91505b50919050565b60006000611fcd611fc8846129dc565b6129dc565b9050606860020a811015611fe057611ff0565b611fe981612044565b9150611ffc565b611ff981612002565b91505b50919050565b6000600061200f836129dc565b9050606960020a81101561202257612032565b61202b8161208e565b915061203e565b61203b816120d0565b91505b50919050565b60006000612059612054846129dc565b6129dc565b9050606960020a81101561206c5761207c565b612075816120d0565b9150612088565b6120858161208e565b91505b50919050565b6000600061209b836129dc565b9050606a60020a8110156120ae576120be565b6120b78161211a565b91506120ca565b6120c78161215c565b91505b50919050565b600060006120e56120e0846129dc565b6129dc565b9050606a60020a8110156120f857612108565b6121018161215c565b9150612114565b6121118161211a565b91505b50919050565b60006000612127836129dc565b9050606b60020a81101561213a5761214a565b612143816121a6565b9150612156565b612153816121e8565b91505b50919050565b6000600061217161216c846129dc565b6129dc565b9050606b60020a81101561218457612194565b61218d816121e8565b91506121a0565b61219d816121a6565b91505b50919050565b600060006121b3836129dc565b9050606c60020a8110156121c6576121d6565b6121cf81612232565b91506121e2565b6121df81612274565b91505b50919050565b600060006121fd6121f8846129dc565b6129dc565b9050606c60020a81101561221057612220565b61221981612274565b915061222c565b61222981612232565b91505b50919050565b6000600061223f836129dc565b9050606d60020a81101561225257612262565b61225b816122be565b915061226e565b61226b81612300565b91505b50919050565b60006000612289612284846129dc565b6129dc565b9050606d60020a81101561229c576122ac565b6122a581612300565b91506122b8565b6122b5816122be565b91505b50919050565b600060006122cb836129dc565b9050606e60020a8110156122de576122ee565b6122e78161234a565b91506122fa565b6122f78161238c565b91505b50919050565b60006000612315612310846129dc565b6129dc565b9050606e60020a81101561232857612338565b6123318161238c565b9150612344565b6123418161234a565b91505b50919050565b60006000612357836129dc565b9050606f60020a81101561236a5761237a565b612373816123d6565b9150612386565b61238381612418565b91505b50919050565b600060006123a161239c846129dc565b6129dc565b9050606f60020a8110156123b4576123c4565b6123bd81612418565b91506123d0565b6123cd816123d6565b91505b50919050565b600060006123e3836129dc565b9050607060020a8110156123f657612406565b6123ff81612462565b9150612412565b61240f816124a4565b91505b50919050565b6000600061242d612428846129dc565b6129dc565b9050607060020a81101561244057612450565b612449816124a4565b915061245c565b61245981612462565b91505b50919050565b6000600061246f836129dc565b9050607160020a81101561248257612492565b61248b816124ee565b915061249e565b61249b81612530565b91505b50919050565b600060006124b96124b4846129dc565b6129dc565b9050607160020a8110156124cc576124dc565b6124d581612530565b91506124e8565b6124e5816124ee565b91505b50919050565b600060006124fb836129dc565b9050607260020a81101561250e5761251e565b6125178161257a565b915061252a565b612527816125bc565b91505b50919050565b60006000612545612540846129dc565b6129dc565b9050607260020a81101561255857612568565b612561816125bc565b9150612574565b6125718161257a565b91505b50919050565b60006000612587836129dc565b9050607360020a81101561259a576125aa565b6125a381612606565b91506125b6565b6125b381612648565b91505b50919050565b600060006125d16125cc846129dc565b6129dc565b9050607360020a8110156125e4576125f4565b6125ed81612648565b9150612600565b6125fd81612606565b91505b50919050565b60006000612613836129dc565b9050607460020a81101561262657612636565b61262f81612692565b9150612642565b61263f816126d4565b91505b50919050565b6000600061265d612658846129dc565b6129dc565b9050607460020a81101561267057612680565b612679816126d4565b915061268c565b61268981612692565b91505b50919050565b6000600061269f836129dc565b9050607560020a8110156126b2576126c2565b6126bb8161271e565b91506126ce565b6126cb81612760565b91505b50919050565b600060006126e96126e4846129dc565b6129dc565b9050607560020a8110156126fc5761270c565b61270581612760565b9150612718565b6127158161271e565b91505b50919050565b6000600061272b836129dc565b9050607660020a81101561273e5761274e565b612747816127aa565b915061275a565b612757816127ec565b91505b50919050565b60006000612775612770846129dc565b6129dc565b9050607660020a81101561278857612798565b612791816127ec565b91506127a4565b6127a1816127aa565b91505b50919050565b600060006127b7836129dc565b9050607760020a8110156127ca576127da565b6127d381612836565b91506127e6565b6127e381612878565b91505b50919050565b600060006128016127fc846129dc565b6129dc565b9050607760020a81101561281457612824565b61281d81612878565b9150612830565b61282d81612836565b91505b50919050565b60006000612843836129dc565b9050607860020a81101561285657612866565b61285f816128c2565b9150612872565b61286f81612904565b91505b50919050565b6000600061288d612888846129dc565b6129dc565b9050607860020a8110156128a0576128b0565b6128a981612904565b91506128bc565b6128b9816128c2565b91505b50919050565b600060006128cf836129dc565b9050607960020a8110156128e2576128f2565b6128eb8161294e565b91506128fe565b6128fb81611d3e565b91505b50919050565b60006000612919612914846129dc565b6129dc565b9050607960020a81101561292c5761293c565b61293581611d3e565b9150612948565b6129458161294e565b91505b50919050565b6000600061295b836129dc565b9050607a60020a81101561296e5761297e565b61297781613227565b915061298a565b61298781613269565b91505b50919050565b6000600061299d836129dc565b9050604e60020a8110156129b0576129c0565b6129b981612a7f565b91506129cc565b6129c981612a3d565b91505b50919050565b6000819050919050565b600060007f5851f42d4c957f2c0000000000000000000000000000000000000000000000019050828102600101915050919050565b6000612a1c826129d2565b9050919050565b6000612a36612a31836129dc565b6129d2565b9050919050565b60006000612a4a836129dc565b9050604f60020a811015612a5d57612a6d565b612a6681612ac9565b9150612a79565b612a7681612b0b565b91505b50919050565b60006000612a94612a8f846129dc565b6129dc565b9050604f60020a811015612aa757612ab7565b612ab081612b0b565b9150612ac3565b612ac081612ac9565b91505b50919050565b60006000612ad6836129dc565b9050605060020a811015612ae957612af9565b612af281612b55565b9150612b05565b612b0281612b97565b91505b50919050565b60006000612b20612b1b846129dc565b6129dc565b9050605060020a811015612b3357612b43565b612b3c81612b97565b9150612b4f565b612b4c81612b55565b91505b50919050565b60006000612b62836129dc565b9050605160020a811015612b7557612b85565b612b7e81612be1565b9150612b91565b612b8e81612c23565b91505b50919050565b60006000612bac612ba7846129dc565b6129dc565b9050605160020a811015612bbf57612bcf565b612bc881612c23565b9150612bdb565b612bd881612be1565b91505b50919050565b60006000612bee836129dc565b9050605260020a811015612c0157612c11565b612c0a81612c6d565b9150612c1d565b612c1a81612caf565b91505b50919050565b60006000612c38612c33846129dc565b6129dc565b9050605260020a811015612c4b57612c5b565b612c5481612caf565b9150612c67565b612c6481612c6d565b91505b50919050565b60006000612c7a836129dc565b9050605360020a811015612c8d57612c9d565b612c9681612cf9565b9150612ca9565b612ca681612d3b565b91505b50919050565b60006000612cc4612cbf846129dc565b6129dc565b9050605360020a811015612cd757612ce7565b612ce081612d3b565b9150612cf3565b612cf081612cf9565b91505b50919050565b60006000612d06836129dc565b9050605460020a811015612d1957612d29565b612d2281612d85565b9150612d35565b612d3281612dc7565b91505b50919050565b60006000612d50612d4b846129dc565b6129dc565b9050605460020a811015612d6357612d73565b612d6c81612dc7565b9150612d7f565b612d7c81612d85565b91505b50919050565b60006000612d92836129dc565b9050605560020a811015612da557612db5565b612dae81612e11565b9150612dc1565b612dbe81612e53565b91505b50919050565b60006000612ddc612dd7846129dc565b6129dc565b9050605560020a811015612def57612dff565b612df881612e53565b9150612e0b565b612e0881612e11565b91505b50919050565b60006000612e1e836129dc565b9050605660020a811015612e3157612e41565b612e3a81612e9d565b9150612e4d565b612e4a81612edf565b91505b50919050565b60006000612e68612e63846129dc565b6129dc565b9050605660020a811015612e7b57612e8b565b612e8481612edf565b9150612e97565b612e9481612e9d565b91505b50919050565b60006000612eaa836129dc565b9050605760020a811015612ebd57612ecd565b612ec681612f29565b9150612ed9565b612ed681612f6b565b91505b50919050565b60006000612ef4612eef846129dc565b6129dc565b9050605760020a811015612f0757612f17565b612f1081612f6b565b9150612f23565b612f2081612f29565b91505b50919050565b60006000612f36836129dc565b9050605860020a811015612f4957612f59565b612f5281612fb5565b9150612f65565b612f6281612ff7565b91505b50919050565b60006000612f80612f7b846129dc565b6129dc565b9050605860020a811015612f9357612fa3565b612f9c81612ff7565b9150612faf565b612fac81612fb5565b91505b50919050565b60006000612fc2836129dc565b9050605960020a811015612fd557612fe5565b612fde81613041565b9150612ff1565b612fee81613083565b91505b50919050565b6000600061300c613007846129dc565b6129dc565b9050605960020a81101561301f5761302f565b61302881613083565b915061303b565b61303881613041565b91505b50919050565b6000600061304e836129dc565b9050605a60020a81101561306157613071565b61306a816130cd565b915061307d565b61307a8161310f565b91505b50919050565b60006000613098613093846129dc565b6129dc565b9050605a60020a8110156130ab576130bb565b6130b48161310f565b91506130c7565b6130c4816130cd565b91505b50919050565b600060006130da836129dc565b9050605b60020a8110156130ed576130fd565b6130f681613159565b9150613109565b6131068161319b565b91505b50919050565b6000600061312461311f846129dc565b6129dc565b9050605b60020a81101561313757613147565b6131408161319b565b9150613153565b61315081613159565b91505b50919050565b60006000613166836129dc565b9050605c60020a81101561317957613189565b613182816131e5565b9150613195565b6131928161196a565b91505b50919050565b600060006131b06131ab846129dc565b6129dc565b9050605c60020a8110156131c3576131d3565b6131cc8161196a565b91506131df565b6131dc816131e5565b91505b50919050565b600060006131f2836129dc565b9050605d60020a81101561320557613215565b61320e816119b4565b9150613221565b61321e816119f6565b91505b50919050565b60006000613234836129dc565b9050607b60020a81101561324757613257565b613250816132b3565b9150613263565b613260816132f5565b91505b50919050565b6000600061327e613279846129dc565b6129dc565b9050607b60020a811015613291576132a1565b61329a816132f5565b91506132ad565b6132aa816132b3565b91505b50919050565b600060006132c0836129dc565b9050607c60020a8110156132d3576132e3565b6132dc8161333f565b91506132ef565b6132ec81613381565b91505b50919050565b6000600061330a613305846129dc565b6129dc565b9050607c60020a81101561331d5761332d565b61332681613381565b9150613339565b6133368161333f565b91505b50919050565b6000600061334c836129dc565b9050607d60020a81101561335f5761336f565b613368816133cb565b915061337b565b6133788161340d565b91505b50919050565b60006000613396613391846129dc565b6129dc565b9050607d60020a8110156133a9576133b9565b6133b28161340d565b91506133c5565b6133c2816133cb565b91505b50919050565b600060006133d8836129dc565b9050607e60020a8110156133eb576133fb565b6133f481613457565b9150613407565b61340481613499565b91505b50919050565b6000600061342261341d846129dc565b6129dc565b9050607e60020a81101561343557613445565b61343e81613499565b9150613451565b61344e81613457565b91505b50919050565b60006000613464836129dc565b9050607f60020a81101561347757613487565b613480816134e3565b9150613493565b61349081613525565b91505b50919050565b600060006134ae6134a9846129dc565b6129dc565b9050607f60020a8110156134c1576134d1565b6134ca81613525565b91506134dd565b6134da816134e3565b91505b50919050565b600060006134f0836129dc565b9050608060020a81101561350357613513565b61350c8161356f565b915061351f565b61351c816135b1565b91505b50919050565b6000600061353a613535846129dc565b6129dc565b9050608060020a81101561354d5761355d565b613556816135b1565b9150613569565b6135668161356f565b91505b50919050565b6000600061357c836129dc565b9050608160020a81101561358f5761359f565b613598816135fb565b91506135ab565b6135a88161363d565b91505b50919050565b600060006135c66135c1846129dc565b6129dc565b9050608160020a8110156135d9576135e9565b6135e28161363d565b91506135f5565b6135f2816135fb565b91505b50919050565b60006000613608836129dc565b9050608260020a81101561361b5761362b565b61362481613687565b9150613637565b613634816136c9565b91505b50919050565b6000600061365261364d846129dc565b6129dc565b9050608260020a81101561366557613675565b61366e816136c9565b9150613681565b61367e81613687565b91505b50919050565b60006000613694836129dc565b9050608360020a8110156136a7576136b7565b6136b081613713565b91506136c3565b6136c081613755565b91505b50919050565b600060006136de6136d9846129dc565b6129dc565b9050608360020a8110156136f157613701565b6136fa81613755565b915061370d565b61370a81613713565b91505b50919050565b60006000613720836129dc565b9050608460020a81101561373357613743565b61373c8161379f565b915061374f565b61374c816137e1565b91505b50919050565b6000600061376a613765846129dc565b6129dc565b9050608460020a81101561377d5761378d565b613786816137e1565b9150613799565b6137968161379f565b91505b50919050565b600060006137ac836129dc565b9050608560020a8110156137bf576137cf565b6137c88161382b565b91506137db565b6137d88161386d565b91505b50919050565b600060006137f66137f1846129dc565b6129dc565b9050608560020a81101561380957613819565b6138128161386d565b9150613825565b6138228161382b565b91505b50919050565b60006000613838836129dc565b9050608660020a81101561384b5761385b565b613854816138b7565b9150613867565b613864816138f9565b91505b50919050565b6000600061388261387d846129dc565b6129dc565b9050608660020a811015613895576138a5565b61389e816138f9565b91506138b1565b6138ae816138b7565b91505b50919050565b600060006138c4836129dc565b9050608760020a8110156138d7576138e7565b6138e081613943565b91506138f3565b6138f081613985565b91505b50919050565b6000600061390e613909846129dc565b6129dc565b9050608760020a81101561392157613931565b61392a81613985565b915061393d565b61393a81613943565b91505b50919050565b60006000613950836129dc565b9050608860020a81101561396357613973565b61396c816139cf565b915061397f565b61397c81613a11565b91505b50919050565b6000600061399a613995846129dc565b6129dc565b9050608860020a8110156139ad576139bd565b6139b681613a11565b91506139c9565b6139c6816139cf565b91505b50919050565b600060006139dc836129dc565b9050608960020a8110156139ef576139ff565b6139f881613a5b565b9150613a0b565b613a0881613a9d565b91505b50919050565b60006000613a26613a21846129dc565b6129dc565b9050608960020a811015613a3957613a49565b613a4281613a9d565b9150613a55565b613a5281613a5b565b91505b50919050565b60006000613a68836129dc565b9050608a60020a811015613a7b57613a8b565b613a8481613ae7565b9150613a97565b613a9481613b29565b91505b50919050565b60006000613ab2613aad846129dc565b6129dc565b9050608a60020a811015613ac557613ad5565b613ace81613b29565b9150613ae1565b613ade81613ae7565b91505b50919050565b60006000613af4836129dc565b9050608b60020a811015613b0757613b17565b613b1081613b73565b9150613b23565b613b2081613bb5565b91505b50919050565b60006000613b3e613b39846129dc565b6129dc565b9050608b60020a811015613b5157613b61565b613b5a81613bb5565b9150613b6d565b613b6a81613b73565b91505b50919050565b60006000613b80836129dc565b9050608c60020a811015613b9357613ba3565b613b9c81613bff565b9150613baf565b613bac81613c41565b91505b50919050565b60006000613bca613bc5846129dc565b6129dc565b9050608c60020a811015613bdd57613bed565b613be681613c41565b9150613bf9565b613bf681613bff565b91505b50919050565b60006000613c0c836129dc565b9050608d60020a811015613c1f57613c2f565b613c2881613c8b565b9150613c3b565b613c3881613ccd565b91505b50919050565b60006000613c56613c51846129dc565b6129dc565b9050608d60020a811015613c6957613c79565b613c7281613ccd565b9150613c85565b613c8281613c8b565b91505b50919050565b60006000613c98836129dc565b9050608e60020a811015613cab57613cbb565b613cb481613d17565b9150613cc7565b613cc481613d59565b91505b50919050565b60006000613ce2613cdd846129dc565b6129dc565b9050608e60020a811015613cf557613d05565b613cfe81613d59565b9150613d11565b613d0e81613d17565b91505b50919050565b60006000613d24836129dc565b9050608f60020a811015613d3757613d47565b613d4081613da3565b9150613d53565b613d5081613de5565b91505b50919050565b60006000613d6e613d69846129dc565b6129dc565b9050608f60020a811015613d8157613d91565b613d8a81613de5565b9150613d9d565b613d9a81613da3565b91505b50919050565b60006000613db0836129dc565b9050609060020a811015613dc357613dd3565b613dcc81613e2f565b9150613ddf565b613ddc81613e71565b91505b50919050565b60006000613dfa613df5846129dc565b6129dc565b9050609060020a811015613e0d57613e1d565b613e1681613e71565b9150613e29565b613e2681613e2f565b91505b50919050565b60006000613e3c836129dc565b9050609160020a811015613e4f57613e5f565b613e5881613ebb565b9150613e6b565b613e6881613efd565b91505b50919050565b60006000613e86613e81846129dc565b6129dc565b9050609160020a811015613e9957613ea9565b613ea281613efd565b9150613eb5565b613eb281613ebb565b91505b50919050565b60006000613ec8836129dc565b9050609260020a811015613edb57613eeb565b613ee481613f47565b9150613ef7565b613ef481613f89565b91505b50919050565b60006000613f12613f0d846129dc565b6129dc565b9050609260020a811015613f2557613f35565b613f2e81613f89565b9150613f41565b613f3e81613f47565b91505b50919050565b60006000613f54836129dc565b9050609360020a811015613f6757613f77565b613f7081613fd3565b9150613f83565b613f8081614015565b91505b50919050565b60006000613f9e613f99846129dc565b6129dc565b9050609360020a811015613fb157613fc1565b613fba81614015565b9150613fcd565b613fca81613fd3565b91505b50919050565b60006000613fe0836129dc565b9050609460020a811015613ff357614003565b613ffc8161405f565b915061400f565b61400c816140a1565b91505b50919050565b6000600061402a614025846129dc565b6129dc565b9050609460020a81101561403d5761404d565b614046816140a1565b9150614059565b6140568161405f565b91505b50919050565b6000600061406c836129dc565b9050609560020a81101561407f5761408f565b614088816140eb565b915061409b565b6140988161412d565b91505b50919050565b600060006140b66140b1846129dc565b6129dc565b9050609560020a8110156140c9576140d9565b6140d28161412d565b91506140e5565b6140e2816140eb565b91505b50919050565b600060006140f8836129dc565b9050609660020a81101561410b5761411b565b61411481614177565b9150614127565b614124816141b9565b91505b50919050565b6000600061414261413d846129dc565b6129dc565b9050609660020a81101561415557614165565b61415e816141b9565b9150614171565b61416e81614177565b91505b50919050565b60006000614184836129dc565b9050609760020a811015614197576141a7565b6141a081614203565b91506141b3565b6141b081614245565b91505b50919050565b600060006141ce6141c9846129dc565b6129dc565b9050609760020a8110156141e1576141f1565b6141ea81614245565b91506141fd565b6141fa81614203565b91505b50919050565b60006000614210836129dc565b9050609860020a81101561422357614233565b61422c8161428f565b915061423f565b61423c816142d1565b91505b50919050565b6000600061425a614255846129dc565b6129dc565b9050609860020a81101561426d5761427d565b614276816142d1565b9150614289565b6142868161428f565b91505b50919050565b6000600061429c836129dc565b9050609960020a8110156142af576142bf565b6142b88161431b565b91506142cb565b6142c88161435d565b91505b50919050565b600060006142e66142e1846129dc565b6129dc565b9050609960020a8110156142f957614309565b6143028161435d565b9150614315565b6143128161431b565b91505b50919050565b60006000614328836129dc565b9050609a60020a81101561433b5761434b565b614344816143a7565b9150614357565b614354816143e9565b91505b50919050565b6000600061437261436d846129dc565b6129dc565b9050609a60020a81101561438557614395565b61438e816143e9565b91506143a1565b61439e816143a7565b91505b50919050565b600060006143b4836129dc565b9050609b60020a8110156143c7576143d7565b6143d081614433565b91506143e3565b6143e081614475565b91505b50919050565b600060006143fe6143f9846129dc565b6129dc565b9050609b60020a81101561441157614421565b61441a81614475565b915061442d565b61442a81614433565b91505b50919050565b60006000614440836129dc565b9050609c60020a81101561445357614463565b61445c816144bf565b915061446f565b61446c81614501565b91505b50919050565b6000600061448a614485846129dc565b6129dc565b9050609c60020a81101561449d576144ad565b6144a681614501565b91506144b9565b6144b6816144bf565b91505b50919050565b600060006144cc836129dc565b9050609d60020a8110156144df576144ef565b6144e88161454b565b91506144fb565b6144f88161458d565b91505b50919050565b60006000614516614511846129dc565b6129dc565b9050609d60020a81101561452957614539565b6145328161458d565b9150614545565b6145428161454b565b91505b50919050565b60006000614558836129dc565b9050609e60020a81101561456b5761457b565b614574816145d7565b9150614587565b61458481614619565b91505b50919050565b600060006145a261459d846129dc565b6129dc565b9050609e60020a8110156145b5576145c5565b6145be81614619565b91506145d1565b6145ce816145d7565b91505b50919050565b600060006145e4836129dc565b9050609f60020a8110156145f757614607565b61460081614663565b9150614613565b614610816146a5565b91505b50919050565b6000600061462e614629846129dc565b6129dc565b9050609f60020a81101561464157614651565b61464a816146a5565b915061465d565b61465a81614663565b91505b50919050565b60006000614670836129dc565b905060a060020a81101561468357614693565b61468c816146ef565b915061469f565b61469c81614731565b91505b50919050565b600060006146ba6146b5846129dc565b6129dc565b905060a060020a8110156146cd576146dd565b6146d681614731565b91506146e9565b6146e6816146ef565b91505b50919050565b600060006146fc836129dc565b905060a160020a81101561470f5761471f565b6147188161477b565b915061472b565b614728816147bd565b91505b50919050565b60006000614746614741846129dc565b6129dc565b905060a160020a81101561475957614769565b614762816147bd565b9150614775565b6147728161477b565b91505b50919050565b60006000614788836129dc565b905060a260020a81101561479b576147ab565b6147a481614807565b91506147b7565b6147b481614849565b91505b50919050565b600060006147d26147cd846129dc565b6129dc565b905060a260020a8110156147e5576147f5565b6147ee81614849565b9150614801565b6147fe81614807565b91505b50919050565b60006000614814836129dc565b905060a360020a81101561482757614837565b61483081614893565b9150614843565b614840816148d5565b91505b50919050565b6000600061485e614859846129dc565b6129dc565b905060a360020a81101561487157614881565b61487a816148d5565b915061488d565b61488a81614893565b91505b50919050565b600060006148a0836129dc565b905060a460020a8110156148b3576148c3565b6148bc8161491f565b91506148cf565b6148cc81614961565b91505b50919050565b600060006148ea6148e5846129dc565b6129dc565b905060a460020a8110156148fd5761490d565b61490681614961565b9150614919565b6149168161491f565b91505b50919050565b6000600061492c836129dc565b905060a560020a81101561493f5761494f565b614948816149ab565b915061495b565b614958816149ed565b91505b50919050565b60006000614976614971846129dc565b6129dc565b905060a560020a81101561498957614999565b614992816149ed565b91506149a5565b6149a2816149ab565b91505b50919050565b600060006149b8836129dc565b905060a660020a8110156149cb576149db565b6149d481614a37565b91506149e7565b6149e481614a79565b91505b50919050565b60006000614a026149fd846129dc565b6129dc565b905060a660020a811015614a1557614a25565b614a1e81614a79565b9150614a31565b614a2e81614a37565b91505b50919050565b60006000614a44836129dc565b905060a760020a811015614a5757614a67565b614a6081614ac3565b9150614a73565b614a7081614b05565b91505b50919050565b60006000614a8e614a89846129dc565b6129dc565b905060a760020a811015614aa157614ab1565b614aaa81614b05565b9150614abd565b614aba81614ac3565b91505b50919050565b60006000614ad0836129dc565b905060a860020a811015614ae357614af3565b614aec81614b4f565b9150614aff565b614afc81614b91565b91505b50919050565b60006000614b1a614b15846129dc565b6129dc565b905060a860020a811015614b2d57614b3d565b614b3681614b91565b9150614b49565b614b4681614b4f565b91505b50919050565b60006000614b5c836129dc565b905060a960020a811015614b6f57614b7f565b614b7881614bdb565b9150614b8b565b614b8881614c1d565b91505b50919050565b60006000614ba6614ba1846129dc565b6129dc565b905060a960020a811015614bb957614bc9565b614bc281614c1d565b9150614bd5565b614bd281614bdb565b91505b50919050565b60006000614be8836129dc565b905060aa60020a811015614bfb57614c0b565b614c0481614c67565b9150614c17565b614c1481614ca9565b91505b50919050565b60006000614c32614c2d846129dc565b6129dc565b905060aa60020a811015614c4557614c55565b614c4e81614ca9565b9150614c61565b614c5e81614c67565b91505b50919050565b60006000614c74836129dc565b905060ab60020a811015614c8757614c97565b614c9081614cf3565b9150614ca3565b614ca081614d35565b91505b50919050565b60006000614cbe614cb9846129dc565b6129dc565b905060ab60020a811015614cd157614ce1565b614cda81614d35565b9150614ced565b614cea81614cf3565b91505b50919050565b60006000614d00836129dc565b905060ac60020a811015614d1357614d23565b614d1c81614d7f565b9150614d2f565b614d2c81614dc1565b91505b50919050565b60006000614d4a614d45846129dc565b6129dc565b905060ac60020a811015614d5d57614d6d565b614d6681614dc1565b9150614d79565b614d7681614d7f565b91505b50919050565b60006000614d8c836129dc565b905060ad60020a811015614d9f57614daf565b614da881614e0b565b9150614dbb565b614db881614e4d565b91505b50919050565b60006000614dd6614dd1846129dc565b6129dc565b905060ad60020a811015614de957614df9565b614df281614e4d565b9150614e05565b614e0281614e0b565b91505b50919050565b60006000614e18836129dc565b905060ae60020a811015614e2b57614e3b565b614e3481614e97565b9150614e47565b614e4481614ed9565b91505b50919050565b60006000614e62614e5d846129dc565b6129dc565b905060ae60020a811015614e7557614e85565b614e7e81614ed9565b9150614e91565b614e8e81614e97565b91505b50919050565b60006000614ea4836129dc565b905060af60020a811015614eb757614ec7565b614ec081614f23565b9150614ed3565b614ed081614f65565b91505b50919050565b60006000614eee614ee9846129dc565b6129dc565b905060af60020a811015614f0157614f11565b614f0a81614f65565b9150614f1d565b614f1a81614f23565b91505b50919050565b60006000614f30836129dc565b905060b060020a811015614f4357614f53565b614f4c81614faf565b9150614f5f565b614f5c81614ff1565b91505b50919050565b60006000614f7a614f75846129dc565b6129dc565b905060b060020a811015614f8d57614f9d565b614f9681614ff1565b9150614fa9565b614fa681614faf565b91505b50919050565b60006000614fbc836129dc565b905060b160020a811015614fcf57614fdf565b614fd881612a11565b9150614feb565b614fe881612a23565b91505b50919050565b60006000615006615001846129dc565b6129dc565b905060b160020a81101561501957615029565b61502281612a23565b9150615035565b61503281612a11565b91505b5091905056')
-        world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-                             balance=100000000000000000000000,
-                             code=bytecode,
-                             nonce=0
-                            )
+        world.create_account(
+            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
+            balance=100000000000000000000000,
+            code=bytecode,
+            nonce=0
+        )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = unhexlify('95805dad0000000000000000000000000000000000000000000000000000000000000001')
@@ -16023,6 +13364,8 @@ class EVMTest_vmPerformance(unittest.TestCase):
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
+        # This variable might seem redundant in some tests - don't forget it is auto generated
+        # and there are cases in which we need it ;)
         result = None
         returndata = b''
         try:
@@ -16030,304 +13373,32 @@ class EVMTest_vmPerformance(unittest.TestCase):
                 world.current_vm.execute()
         except evm.EndTx as e:
             result = e.result
-            if e.result in ('RETURN', 'REVERT'):
+            if result in ('RETURN', 'REVERT'):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        #Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        #check nonce, balance, code
+        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        # check nonce, balance, code
         self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60e060020a60003504806301f99ad7146108c3578063023a624a146108d857806303bdecf5146108ed57806305fe035f14610902578063082d8f4914610917578063090bf3b71461092c5780630bd9c534146109415780630c4bfa94146109565780630e20ebe21461096b5780630f76de0d1461098057806310cfcc191461099557806313ce15a9146109aa578063140dcec4146109bf57806314d07a3e146109d45780631687f112146109e957806316eb6603146109fe578063172cf71714610a135780631bd6f59614610a285780631cdb857114610a3d5780631cf74ece14610a525780631d09ba2c14610a675780631f69aa5114610a7c578063223dcc7414610a9157806325e524d314610aa6578063261de7c414610abb5780632632924d14610ad05780632909cc5d14610ae55780632981699814610afa5780632a85a45d14610b0f5780632ca36da014610b245780632cbf1f0d14610b395780632d0f557314610b4e5780632d97867814610b6357806331db9efd14610b7857806332064db714610b8d57806332931fbb14610ba2578063355f51a014610bb7578063361bb34014610bcc578063364ddb0e14610be15780633792a01814610bf657806338c68f8f14610c0b57806338e586fd14610c20578063392d42ae14610c3557806339a87bd914610c4a5780633a95a33214610c5f5780633b8ecdf914610c745780633cf0659a14610c895780633eaf992314610c9e5780633fe97ead14610cb35780633ff11c8b14610cc8578063404efc5314610cdd578063407fce7b14610cf257806340c3b18714610d07578063440208c314610d1c57806344e86b2f14610d31578063455df57914610d465780634689ab4d14610d5b57806346be2e0c14610d70578063487cd86f14610d8557806348e6178214610d9a57806349d4a34414610daf5780634a0f597414610dc45780634bc24ec514610dd95780634c2fe45614610dee5780634cc885d414610e035780634eaaad7b14610e185780634eb166af14610e2d5780635050093414610e42578063506bff1114610e57578063508762c114610e6c578063526938f814610e8157806354400c6014610e96578063559510d814610eab57806355a5f70214610ec057806356ca528f14610ed5578063570a2a1614610eea5780635dab2e0f14610eff5780635dca53d314610f1457806362017ebc14610f29578063621a25f814610f3e578063626d4a3614610f5357806362b6a28214610f6857806364faf22c14610f7d57806366d7ffde14610f9257806367b886e814610fa757806367e902c714610fbc57806369d7774014610fd15780636b7ae8e614610fe65780636c3b659114610ffb5780636e54181e146110105780636e978d91146110255780636f63d2ec1461103a578063706332d11461104f57806370ac4bb9146110645780637138ef521461107957806371dd46a91461108e57806372a7c229146110a35780637376fc8d146110b8578063738a2679146110cd57806374552650146110e2578063746fc8d0146110f757806379254bb81461110c5780637adaa3f8146111215780637e4eb35b14611136578063885ec18e1461114b5780638b9ff6b6146111605780638ce113dc146111755780638defbc5e1461118a5780638f4613d51461119f5780638fdc24ba146111b45780639002dba4146111c957806391d15735146111de57806391d43b23146111f357806393b14daa1461120857806394d63afd1461121d57806395805dad1461123257806396f68782146112475780639740e4a21461125c578063981290131461127157806399a3f0e8146112865780639acb1ad41461129b5780639be07908146112b05780639c15be0b146112c55780639d451c4d146112da5780639d8ee943146112ef5780639ef6ca0f14611304578063a0db0a2214611319578063a18e2eb91461132e578063a408384914611343578063a57544da14611358578063a5a83e4d1461136d578063a6843f3414611382578063a6dacdd714611397578063a8c4c8bc146113ac578063aa058a73146113c1578063aad62da2146113d6578063aaf3e4f4146113eb578063ab81e77314611400578063abc93aee14611415578063abde33f71461142a578063b114b96c1461143f578063b3df873714611454578063b4174cb014611469578063b5d02a561461147e578063b731e84814611493578063b7b96723146114a8578063bbcded7a146114bd578063bbececa9146114d2578063beca7440146114e7578063bf8981c0146114fc578063c028c67414611511578063c2385fa614611526578063c319a02c1461153b578063c569bae014611550578063c6715f8114611565578063c7b98dec1461157a578063c9acab841461158f578063ca9efc73146115a4578063cad80024146115b9578063cdadb0fa146115ce578063cdbdf391146115e3578063cf460fa5146115f8578063cf69318a1461160d578063d1835b8c14611622578063d353a1cb14611637578063d3e141e01461164c578063d5ec7e1d14611661578063d7ead1de14611676578063d90b02aa1461168b578063d959e244146116a0578063d9e68b44146116b5578063daacb24f146116ca578063dc12a805146116df578063dd946033146116f4578063dda5142414611709578063de6612171461171e578063dfb9560c14611733578063e03827d214611748578063e21720001461175d578063e2c718d814611772578063e3da539914611787578063e48e603f1461179c578063e5f9ec29146117b1578063e6c0459a146117c6578063e70addec146117db578063e7a01215146117f0578063ea7f4d2714611805578063ebb6c59f1461181a578063ed6302be1461182f578063ed64b36b14611844578063eecd278914611859578063f0ed14e01461186e578063f0f2134414611883578063f1e328f914611898578063f1e6f4cd146118ad578063f32fe995146118c2578063f75165c6146118d7578063f7ed71d0146118ec578063f80f44f314611901578063f8bc050514611916578063fbd3c51a1461192b578063fd72009014611940578063fed3a3001461195557005b6108ce600435612edf565b8060005260206000f35b6108e3600435612fb5565b8060005260206000f35b6108f8600435613f47565b8060005260206000f35b61090d600435612a11565b8060005260206000f35b6109226004356127ec565b8060005260206000f35b61093760043561215c565b8060005260206000f35b61094c6004356128c2565b8060005260206000f35b61096160043561310f565b8060005260206000f35b610976600435614e0b565b8060005260206000f35b61098b600435613269565b8060005260206000f35b6109a0600435611a82565b8060005260206000f35b6109b5600435613e71565b8060005260206000f35b6109ca600435611dd2565b8060005260206000f35b6109df6004356120d0565b8060005260206000f35b6109f4600435613755565b8060005260206000f35b610a096004356134e3565b8060005260206000f35b610a1e6004356137e1565b8060005260206000f35b610a3360043561382b565b8060005260206000f35b610a48600435612b0b565b8060005260206000f35b610a5d60043561386d565b8060005260206000f35b610a726004356131e5565b8060005260206000f35b610a876004356143e9565b8060005260206000f35b610a9c60043561319b565b8060005260206000f35b610ab1600435612e11565b8060005260206000f35b610ac660043561234a565b8060005260206000f35b610adb6004356121e8565b8060005260206000f35b610af06004356119f6565b8060005260206000f35b610b05600435613bff565b8060005260206000f35b610b1a600435612606565b8060005260206000f35b610b2f6004356126d4565b8060005260206000f35b610b44600435613bb5565b8060005260206000f35b610b59600435612462565b8060005260206000f35b610b6e600435611e14565b8060005260206000f35b610b836004356149ab565b8060005260206000f35b610b98600435611c26565b8060005260206000f35b610bad600435612a7f565b8060005260206000f35b610bc2600435613457565b8060005260206000f35b610bd760043561340d565b8060005260206000f35b610bec60043561363d565b8060005260206000f35b610c01600435612e53565b8060005260206000f35b610c1660043561477b565b8060005260206000f35b610c2b600435612c6d565b8060005260206000f35b610c40600435612648565b8060005260206000f35b610c55600435612274565b8060005260206000f35b610c6a6004356138f9565b8060005260206000f35b610c7f600435612b55565b8060005260206000f35b610c94600435611eea565b8060005260206000f35b610ca9600435613ebb565b8060005260206000f35b610cbe600435613499565b8060005260206000f35b610cd3600435614807565b8060005260206000f35b610ce8600435611fb8565b8060005260206000f35b610cfd600435613083565b8060005260206000f35b610d126004356125bc565b8060005260206000f35b610d27600435613041565b8060005260206000f35b610d3c6004356140a1565b8060005260206000f35b610d516004356147bd565b8060005260206000f35b610d66600435611c70565b8060005260206000f35b610d7b600435612300565b8060005260206000f35b610d906004356123d6565b8060005260206000f35b610da5600435612c23565b8060005260206000f35b610dba600435614faf565b8060005260206000f35b610dcf600435612044565b8060005260206000f35b610de4600435613ae7565b8060005260206000f35b610df9600435614cf3565b8060005260206000f35b610e0e600435613d17565b8060005260206000f35b610e2360043561412d565b8060005260206000f35b610e38600435614177565b8060005260206000f35b610e4d60043561208e565b8060005260206000f35b610e62600435612dc7565b8060005260206000f35b610e77600435612f29565b8060005260206000f35b610e8c6004356124a4565b8060005260206000f35b610ea1600435611b58565b8060005260206000f35b610eb66004356136c9565b8060005260206000f35b610ecb600435613227565b8060005260206000f35b610ee0600435611acc565b8060005260206000f35b610ef5600435613687565b8060005260206000f35b610f0a6004356146a5565b8060005260206000f35b610f1f6004356121a6565b8060005260206000f35b610f346004356132f5565b8060005260206000f35b610f49600435613da3565b8060005260206000f35b610f5e60043561379f565b8060005260206000f35b610f73600435612878565b8060005260206000f35b610f88600435611b0e565b8060005260206000f35b610f9d600435611ea0565b8060005260206000f35b610fb2600435614ed9565b8060005260206000f35b610fc7600435614bdb565b8060005260206000f35b610fdc600435614c1d565b8060005260206000f35b610ff1600435614245565b8060005260206000f35b6110066004356146ef565b8060005260206000f35b61101b60043561428f565b8060005260206000f35b611030600435614ac3565b8060005260206000f35b611045600435613de5565b8060005260206000f35b61105a6004356132b3565b8060005260206000f35b61106f6004356122be565b8060005260206000f35b611084600435612e9d565b8060005260206000f35b611099600435611b9a565b8060005260206000f35b6110ae6004356127aa565b8060005260206000f35b6110c3600435613e2f565b8060005260206000f35b6110d8600435614849565b8060005260206000f35b6110ed600435614dc1565b8060005260206000f35b61110260043561333f565b8060005260206000f35b61111760043561211a565b8060005260206000f35b61112c600435612692565b8060005260206000f35b611141600435612904565b8060005260206000f35b611156600435612d3b565b8060005260206000f35b61116b600435614b91565b8060005260206000f35b611180600435613a5b565b8060005260206000f35b611195600435612232565b8060005260206000f35b6111aa600435612f6b565b8060005260206000f35b6111bf600435614d35565b8060005260206000f35b6111d4600435611a40565b8060005260206000f35b6111e9600435612ff7565b8060005260206000f35b6111fe60043561431b565b8060005260206000f35b611213600435613159565b8060005260206000f35b611228600435612b97565b8060005260206000f35b61123d600435612990565b8060005260206000f35b611252600435613b73565b8060005260206000f35b611267600435614961565b8060005260206000f35b61127c600435613381565b8060005260206000f35b611291600435613fd3565b8060005260206000f35b6112a660043561257a565b8060005260206000f35b6112bb600435614501565b8060005260206000f35b6112d0600435613d59565b8060005260206000f35b6112e56004356143a7565b8060005260206000f35b6112fa60043561405f565b8060005260206000f35b61130f60043561238c565b8060005260206000f35b611324600435612be1565b8060005260206000f35b611339600435613f89565b8060005260206000f35b61134e60043561294e565b8060005260206000f35b6113636004356124ee565b8060005260206000f35b611378600435614b4f565b8060005260206000f35b61138d6004356133cb565b8060005260206000f35b6113a26004356139cf565b8060005260206000f35b6113b7600435613c8b565b8060005260206000f35b6113cc600435612cf9565b8060005260206000f35b6113e1600435614a79565b8060005260206000f35b6113f66004356149ed565b8060005260206000f35b61140b600435613b29565b8060005260206000f35b611420600435613ccd565b8060005260206000f35b611435600435611f76565b8060005260206000f35b61144a600435614ff1565b8060005260206000f35b61145f600435613525565b8060005260206000f35b61147460043561356f565b8060005260206000f35b6114896004356129dc565b8060005260206000f35b61149e600435614ca9565b8060005260206000f35b6114b3600435612d85565b8060005260206000f35b6114c86004356141b9565b8060005260206000f35b6114dd600435614475565b8060005260206000f35b6114f26004356135fb565b8060005260206000f35b611507600435612530565b8060005260206000f35b61151c600435614663565b8060005260206000f35b611531600435614433565b8060005260206000f35b611546600435614f23565b8060005260206000f35b61155b600435614c67565b8060005260206000f35b611570600435611d3e565b8060005260206000f35b611585600435612a3d565b8060005260206000f35b61159a600435613a11565b8060005260206000f35b6115af600435614619565b8060005260206000f35b6115c4600435613985565b8060005260206000f35b6115d9600435613943565b8060005260206000f35b6115ee600435612418565b8060005260206000f35b6116036004356119b4565b8060005260206000f35b611618600435613a9d565b8060005260206000f35b61162d600435611cb2565b8060005260206000f35b6116426004356129d2565b8060005260206000f35b611657600435612caf565b8060005260206000f35b61166c600435611d88565b8060005260206000f35b611681600435614203565b8060005260206000f35b61169660043561458d565b8060005260206000f35b6116ab600435611f2c565b8060005260206000f35b6116c0600435612a23565b8060005260206000f35b6116d5600435612836565b8060005260206000f35b6116ea6004356138b7565b8060005260206000f35b6116ff6004356145d7565b8060005260206000f35b61171460043561454b565b8060005260206000f35b6117296004356142d1565b8060005260206000f35b61173e600435611e5e565b8060005260206000f35b611753600435614015565b8060005260206000f35b611768600435613c41565b8060005260206000f35b61177d600435611be4565b8060005260206000f35b611792600435614b05565b8060005260206000f35b6117a7600435613713565b8060005260206000f35b6117bc6004356135b1565b8060005260206000f35b6117d16004356144bf565b8060005260206000f35b6117e660043561491f565b8060005260206000f35b6117fb600435612ac9565b8060005260206000f35b6118106004356130cd565b8060005260206000f35b6118256004356140eb565b8060005260206000f35b61183a600435614f65565b8060005260206000f35b61184f60043561196a565b8060005260206000f35b6118646004356148d5565b8060005260206000f35b611879600435614d7f565b8060005260206000f35b61188e600435612002565b8060005260206000f35b6118a3600435613efd565b8060005260206000f35b6118b860043561271e565b8060005260206000f35b6118cd600435614e4d565b8060005260206000f35b6118e2600435611cfc565b8060005260206000f35b6118f7600435612760565b8060005260206000f35b61190c600435614e97565b8060005260206000f35b61192160043561435d565b8060005260206000f35b611936600435614731565b8060005260206000f35b61194b600435614893565b8060005260206000f35b611960600435614a37565b8060005260206000f35b6000600061197f61197a846129dc565b6129dc565b9050605d60020a811015611992576119a2565b61199b816119f6565b91506119ae565b6119ab816119b4565b91505b50919050565b600060006119c1836129dc565b9050605e60020a8110156119d4576119e4565b6119dd81611a40565b91506119f0565b6119ed81611a82565b91505b50919050565b60006000611a0b611a06846129dc565b6129dc565b9050605e60020a811015611a1e57611a2e565b611a2781611a82565b9150611a3a565b611a3781611a40565b91505b50919050565b60006000611a4d836129dc565b9050605f60020a811015611a6057611a70565b611a6981611acc565b9150611a7c565b611a7981611b0e565b91505b50919050565b60006000611a97611a92846129dc565b6129dc565b9050605f60020a811015611aaa57611aba565b611ab381611b0e565b9150611ac6565b611ac381611acc565b91505b50919050565b60006000611ad9836129dc565b9050606060020a811015611aec57611afc565b611af581611b58565b9150611b08565b611b0581611b9a565b91505b50919050565b60006000611b23611b1e846129dc565b6129dc565b9050606060020a811015611b3657611b46565b611b3f81611b9a565b9150611b52565b611b4f81611b58565b91505b50919050565b60006000611b65836129dc565b9050606160020a811015611b7857611b88565b611b8181611be4565b9150611b94565b611b9181611c26565b91505b50919050565b60006000611baf611baa846129dc565b6129dc565b9050606160020a811015611bc257611bd2565b611bcb81611c26565b9150611bde565b611bdb81611be4565b91505b50919050565b60006000611bf1836129dc565b9050606260020a811015611c0457611c14565b611c0d81611c70565b9150611c20565b611c1d81611cb2565b91505b50919050565b60006000611c3b611c36846129dc565b6129dc565b9050606260020a811015611c4e57611c5e565b611c5781611cb2565b9150611c6a565b611c6781611c70565b91505b50919050565b60006000611c7d836129dc565b9050606360020a811015611c9057611ca0565b611c9981611cfc565b9150611cac565b611ca981611d88565b91505b50919050565b60006000611cc7611cc2846129dc565b6129dc565b9050606360020a811015611cda57611cea565b611ce381611d88565b9150611cf6565b611cf381611cfc565b91505b50919050565b60006000611d09836129dc565b9050606460020a811015611d1c57611d2c565b611d2581611dd2565b9150611d38565b611d3581611e14565b91505b50919050565b60006000611d53611d4e846129dc565b6129dc565b9050607a60020a811015611d6657611d76565b611d6f81613269565b9150611d82565b611d7f81613227565b91505b50919050565b60006000611d9d611d98846129dc565b6129dc565b9050606460020a811015611db057611dc0565b611db981611e14565b9150611dcc565b611dc981611dd2565b91505b50919050565b60006000611ddf836129dc565b9050606560020a811015611df257611e02565b611dfb81611e5e565b9150611e0e565b611e0b81611ea0565b91505b50919050565b60006000611e29611e24846129dc565b6129dc565b9050606560020a811015611e3c57611e4c565b611e4581611ea0565b9150611e58565b611e5581611e5e565b91505b50919050565b60006000611e6b836129dc565b9050606660020a811015611e7e57611e8e565b611e8781611eea565b9150611e9a565b611e9781611f2c565b91505b50919050565b60006000611eb5611eb0846129dc565b6129dc565b9050606660020a811015611ec857611ed8565b611ed181611f2c565b9150611ee4565b611ee181611eea565b91505b50919050565b60006000611ef7836129dc565b9050606760020a811015611f0a57611f1a565b611f1381611f76565b9150611f26565b611f2381611fb8565b91505b50919050565b60006000611f41611f3c846129dc565b6129dc565b9050606760020a811015611f5457611f64565b611f5d81611fb8565b9150611f70565b611f6d81611f76565b91505b50919050565b60006000611f83836129dc565b9050606860020a811015611f9657611fa6565b611f9f81612002565b9150611fb2565b611faf81612044565b91505b50919050565b60006000611fcd611fc8846129dc565b6129dc565b9050606860020a811015611fe057611ff0565b611fe981612044565b9150611ffc565b611ff981612002565b91505b50919050565b6000600061200f836129dc565b9050606960020a81101561202257612032565b61202b8161208e565b915061203e565b61203b816120d0565b91505b50919050565b60006000612059612054846129dc565b6129dc565b9050606960020a81101561206c5761207c565b612075816120d0565b9150612088565b6120858161208e565b91505b50919050565b6000600061209b836129dc565b9050606a60020a8110156120ae576120be565b6120b78161211a565b91506120ca565b6120c78161215c565b91505b50919050565b600060006120e56120e0846129dc565b6129dc565b9050606a60020a8110156120f857612108565b6121018161215c565b9150612114565b6121118161211a565b91505b50919050565b60006000612127836129dc565b9050606b60020a81101561213a5761214a565b612143816121a6565b9150612156565b612153816121e8565b91505b50919050565b6000600061217161216c846129dc565b6129dc565b9050606b60020a81101561218457612194565b61218d816121e8565b91506121a0565b61219d816121a6565b91505b50919050565b600060006121b3836129dc565b9050606c60020a8110156121c6576121d6565b6121cf81612232565b91506121e2565b6121df81612274565b91505b50919050565b600060006121fd6121f8846129dc565b6129dc565b9050606c60020a81101561221057612220565b61221981612274565b915061222c565b61222981612232565b91505b50919050565b6000600061223f836129dc565b9050606d60020a81101561225257612262565b61225b816122be565b915061226e565b61226b81612300565b91505b50919050565b60006000612289612284846129dc565b6129dc565b9050606d60020a81101561229c576122ac565b6122a581612300565b91506122b8565b6122b5816122be565b91505b50919050565b600060006122cb836129dc565b9050606e60020a8110156122de576122ee565b6122e78161234a565b91506122fa565b6122f78161238c565b91505b50919050565b60006000612315612310846129dc565b6129dc565b9050606e60020a81101561232857612338565b6123318161238c565b9150612344565b6123418161234a565b91505b50919050565b60006000612357836129dc565b9050606f60020a81101561236a5761237a565b612373816123d6565b9150612386565b61238381612418565b91505b50919050565b600060006123a161239c846129dc565b6129dc565b9050606f60020a8110156123b4576123c4565b6123bd81612418565b91506123d0565b6123cd816123d6565b91505b50919050565b600060006123e3836129dc565b9050607060020a8110156123f657612406565b6123ff81612462565b9150612412565b61240f816124a4565b91505b50919050565b6000600061242d612428846129dc565b6129dc565b9050607060020a81101561244057612450565b612449816124a4565b915061245c565b61245981612462565b91505b50919050565b6000600061246f836129dc565b9050607160020a81101561248257612492565b61248b816124ee565b915061249e565b61249b81612530565b91505b50919050565b600060006124b96124b4846129dc565b6129dc565b9050607160020a8110156124cc576124dc565b6124d581612530565b91506124e8565b6124e5816124ee565b91505b50919050565b600060006124fb836129dc565b9050607260020a81101561250e5761251e565b6125178161257a565b915061252a565b612527816125bc565b91505b50919050565b60006000612545612540846129dc565b6129dc565b9050607260020a81101561255857612568565b612561816125bc565b9150612574565b6125718161257a565b91505b50919050565b60006000612587836129dc565b9050607360020a81101561259a576125aa565b6125a381612606565b91506125b6565b6125b381612648565b91505b50919050565b600060006125d16125cc846129dc565b6129dc565b9050607360020a8110156125e4576125f4565b6125ed81612648565b9150612600565b6125fd81612606565b91505b50919050565b60006000612613836129dc565b9050607460020a81101561262657612636565b61262f81612692565b9150612642565b61263f816126d4565b91505b50919050565b6000600061265d612658846129dc565b6129dc565b9050607460020a81101561267057612680565b612679816126d4565b915061268c565b61268981612692565b91505b50919050565b6000600061269f836129dc565b9050607560020a8110156126b2576126c2565b6126bb8161271e565b91506126ce565b6126cb81612760565b91505b50919050565b600060006126e96126e4846129dc565b6129dc565b9050607560020a8110156126fc5761270c565b61270581612760565b9150612718565b6127158161271e565b91505b50919050565b6000600061272b836129dc565b9050607660020a81101561273e5761274e565b612747816127aa565b915061275a565b612757816127ec565b91505b50919050565b60006000612775612770846129dc565b6129dc565b9050607660020a81101561278857612798565b612791816127ec565b91506127a4565b6127a1816127aa565b91505b50919050565b600060006127b7836129dc565b9050607760020a8110156127ca576127da565b6127d381612836565b91506127e6565b6127e381612878565b91505b50919050565b600060006128016127fc846129dc565b6129dc565b9050607760020a81101561281457612824565b61281d81612878565b9150612830565b61282d81612836565b91505b50919050565b60006000612843836129dc565b9050607860020a81101561285657612866565b61285f816128c2565b9150612872565b61286f81612904565b91505b50919050565b6000600061288d612888846129dc565b6129dc565b9050607860020a8110156128a0576128b0565b6128a981612904565b91506128bc565b6128b9816128c2565b91505b50919050565b600060006128cf836129dc565b9050607960020a8110156128e2576128f2565b6128eb8161294e565b91506128fe565b6128fb81611d3e565b91505b50919050565b60006000612919612914846129dc565b6129dc565b9050607960020a81101561292c5761293c565b61293581611d3e565b9150612948565b6129458161294e565b91505b50919050565b6000600061295b836129dc565b9050607a60020a81101561296e5761297e565b61297781613227565b915061298a565b61298781613269565b91505b50919050565b6000600061299d836129dc565b9050604e60020a8110156129b0576129c0565b6129b981612a7f565b91506129cc565b6129c981612a3d565b91505b50919050565b6000819050919050565b600060007f5851f42d4c957f2c0000000000000000000000000000000000000000000000019050828102600101915050919050565b6000612a1c826129d2565b9050919050565b6000612a36612a31836129dc565b6129d2565b9050919050565b60006000612a4a836129dc565b9050604f60020a811015612a5d57612a6d565b612a6681612ac9565b9150612a79565b612a7681612b0b565b91505b50919050565b60006000612a94612a8f846129dc565b6129dc565b9050604f60020a811015612aa757612ab7565b612ab081612b0b565b9150612ac3565b612ac081612ac9565b91505b50919050565b60006000612ad6836129dc565b9050605060020a811015612ae957612af9565b612af281612b55565b9150612b05565b612b0281612b97565b91505b50919050565b60006000612b20612b1b846129dc565b6129dc565b9050605060020a811015612b3357612b43565b612b3c81612b97565b9150612b4f565b612b4c81612b55565b91505b50919050565b60006000612b62836129dc565b9050605160020a811015612b7557612b85565b612b7e81612be1565b9150612b91565b612b8e81612c23565b91505b50919050565b60006000612bac612ba7846129dc565b6129dc565b9050605160020a811015612bbf57612bcf565b612bc881612c23565b9150612bdb565b612bd881612be1565b91505b50919050565b60006000612bee836129dc565b9050605260020a811015612c0157612c11565b612c0a81612c6d565b9150612c1d565b612c1a81612caf565b91505b50919050565b60006000612c38612c33846129dc565b6129dc565b9050605260020a811015612c4b57612c5b565b612c5481612caf565b9150612c67565b612c6481612c6d565b91505b50919050565b60006000612c7a836129dc565b9050605360020a811015612c8d57612c9d565b612c9681612cf9565b9150612ca9565b612ca681612d3b565b91505b50919050565b60006000612cc4612cbf846129dc565b6129dc565b9050605360020a811015612cd757612ce7565b612ce081612d3b565b9150612cf3565b612cf081612cf9565b91505b50919050565b60006000612d06836129dc565b9050605460020a811015612d1957612d29565b612d2281612d85565b9150612d35565b612d3281612dc7565b91505b50919050565b60006000612d50612d4b846129dc565b6129dc565b9050605460020a811015612d6357612d73565b612d6c81612dc7565b9150612d7f565b612d7c81612d85565b91505b50919050565b60006000612d92836129dc565b9050605560020a811015612da557612db5565b612dae81612e11565b9150612dc1565b612dbe81612e53565b91505b50919050565b60006000612ddc612dd7846129dc565b6129dc565b9050605560020a811015612def57612dff565b612df881612e53565b9150612e0b565b612e0881612e11565b91505b50919050565b60006000612e1e836129dc565b9050605660020a811015612e3157612e41565b612e3a81612e9d565b9150612e4d565b612e4a81612edf565b91505b50919050565b60006000612e68612e63846129dc565b6129dc565b9050605660020a811015612e7b57612e8b565b612e8481612edf565b9150612e97565b612e9481612e9d565b91505b50919050565b60006000612eaa836129dc565b9050605760020a811015612ebd57612ecd565b612ec681612f29565b9150612ed9565b612ed681612f6b565b91505b50919050565b60006000612ef4612eef846129dc565b6129dc565b9050605760020a811015612f0757612f17565b612f1081612f6b565b9150612f23565b612f2081612f29565b91505b50919050565b60006000612f36836129dc565b9050605860020a811015612f4957612f59565b612f5281612fb5565b9150612f65565b612f6281612ff7565b91505b50919050565b60006000612f80612f7b846129dc565b6129dc565b9050605860020a811015612f9357612fa3565b612f9c81612ff7565b9150612faf565b612fac81612fb5565b91505b50919050565b60006000612fc2836129dc565b9050605960020a811015612fd557612fe5565b612fde81613041565b9150612ff1565b612fee81613083565b91505b50919050565b6000600061300c613007846129dc565b6129dc565b9050605960020a81101561301f5761302f565b61302881613083565b915061303b565b61303881613041565b91505b50919050565b6000600061304e836129dc565b9050605a60020a81101561306157613071565b61306a816130cd565b915061307d565b61307a8161310f565b91505b50919050565b60006000613098613093846129dc565b6129dc565b9050605a60020a8110156130ab576130bb565b6130b48161310f565b91506130c7565b6130c4816130cd565b91505b50919050565b600060006130da836129dc565b9050605b60020a8110156130ed576130fd565b6130f681613159565b9150613109565b6131068161319b565b91505b50919050565b6000600061312461311f846129dc565b6129dc565b9050605b60020a81101561313757613147565b6131408161319b565b9150613153565b61315081613159565b91505b50919050565b60006000613166836129dc565b9050605c60020a81101561317957613189565b613182816131e5565b9150613195565b6131928161196a565b91505b50919050565b600060006131b06131ab846129dc565b6129dc565b9050605c60020a8110156131c3576131d3565b6131cc8161196a565b91506131df565b6131dc816131e5565b91505b50919050565b600060006131f2836129dc565b9050605d60020a81101561320557613215565b61320e816119b4565b9150613221565b61321e816119f6565b91505b50919050565b60006000613234836129dc565b9050607b60020a81101561324757613257565b613250816132b3565b9150613263565b613260816132f5565b91505b50919050565b6000600061327e613279846129dc565b6129dc565b9050607b60020a811015613291576132a1565b61329a816132f5565b91506132ad565b6132aa816132b3565b91505b50919050565b600060006132c0836129dc565b9050607c60020a8110156132d3576132e3565b6132dc8161333f565b91506132ef565b6132ec81613381565b91505b50919050565b6000600061330a613305846129dc565b6129dc565b9050607c60020a81101561331d5761332d565b61332681613381565b9150613339565b6133368161333f565b91505b50919050565b6000600061334c836129dc565b9050607d60020a81101561335f5761336f565b613368816133cb565b915061337b565b6133788161340d565b91505b50919050565b60006000613396613391846129dc565b6129dc565b9050607d60020a8110156133a9576133b9565b6133b28161340d565b91506133c5565b6133c2816133cb565b91505b50919050565b600060006133d8836129dc565b9050607e60020a8110156133eb576133fb565b6133f481613457565b9150613407565b61340481613499565b91505b50919050565b6000600061342261341d846129dc565b6129dc565b9050607e60020a81101561343557613445565b61343e81613499565b9150613451565b61344e81613457565b91505b50919050565b60006000613464836129dc565b9050607f60020a81101561347757613487565b613480816134e3565b9150613493565b61349081613525565b91505b50919050565b600060006134ae6134a9846129dc565b6129dc565b9050607f60020a8110156134c1576134d1565b6134ca81613525565b91506134dd565b6134da816134e3565b91505b50919050565b600060006134f0836129dc565b9050608060020a81101561350357613513565b61350c8161356f565b915061351f565b61351c816135b1565b91505b50919050565b6000600061353a613535846129dc565b6129dc565b9050608060020a81101561354d5761355d565b613556816135b1565b9150613569565b6135668161356f565b91505b50919050565b6000600061357c836129dc565b9050608160020a81101561358f5761359f565b613598816135fb565b91506135ab565b6135a88161363d565b91505b50919050565b600060006135c66135c1846129dc565b6129dc565b9050608160020a8110156135d9576135e9565b6135e28161363d565b91506135f5565b6135f2816135fb565b91505b50919050565b60006000613608836129dc565b9050608260020a81101561361b5761362b565b61362481613687565b9150613637565b613634816136c9565b91505b50919050565b6000600061365261364d846129dc565b6129dc565b9050608260020a81101561366557613675565b61366e816136c9565b9150613681565b61367e81613687565b91505b50919050565b60006000613694836129dc565b9050608360020a8110156136a7576136b7565b6136b081613713565b91506136c3565b6136c081613755565b91505b50919050565b600060006136de6136d9846129dc565b6129dc565b9050608360020a8110156136f157613701565b6136fa81613755565b915061370d565b61370a81613713565b91505b50919050565b60006000613720836129dc565b9050608460020a81101561373357613743565b61373c8161379f565b915061374f565b61374c816137e1565b91505b50919050565b6000600061376a613765846129dc565b6129dc565b9050608460020a81101561377d5761378d565b613786816137e1565b9150613799565b6137968161379f565b91505b50919050565b600060006137ac836129dc565b9050608560020a8110156137bf576137cf565b6137c88161382b565b91506137db565b6137d88161386d565b91505b50919050565b600060006137f66137f1846129dc565b6129dc565b9050608560020a81101561380957613819565b6138128161386d565b9150613825565b6138228161382b565b91505b50919050565b60006000613838836129dc565b9050608660020a81101561384b5761385b565b613854816138b7565b9150613867565b613864816138f9565b91505b50919050565b6000600061388261387d846129dc565b6129dc565b9050608660020a811015613895576138a5565b61389e816138f9565b91506138b1565b6138ae816138b7565b91505b50919050565b600060006138c4836129dc565b9050608760020a8110156138d7576138e7565b6138e081613943565b91506138f3565b6138f081613985565b91505b50919050565b6000600061390e613909846129dc565b6129dc565b9050608760020a81101561392157613931565b61392a81613985565b915061393d565b61393a81613943565b91505b50919050565b60006000613950836129dc565b9050608860020a81101561396357613973565b61396c816139cf565b915061397f565b61397c81613a11565b91505b50919050565b6000600061399a613995846129dc565b6129dc565b9050608860020a8110156139ad576139bd565b6139b681613a11565b91506139c9565b6139c6816139cf565b91505b50919050565b600060006139dc836129dc565b9050608960020a8110156139ef576139ff565b6139f881613a5b565b9150613a0b565b613a0881613a9d565b91505b50919050565b60006000613a26613a21846129dc565b6129dc565b9050608960020a811015613a3957613a49565b613a4281613a9d565b9150613a55565b613a5281613a5b565b91505b50919050565b60006000613a68836129dc565b9050608a60020a811015613a7b57613a8b565b613a8481613ae7565b9150613a97565b613a9481613b29565b91505b50919050565b60006000613ab2613aad846129dc565b6129dc565b9050608a60020a811015613ac557613ad5565b613ace81613b29565b9150613ae1565b613ade81613ae7565b91505b50919050565b60006000613af4836129dc565b9050608b60020a811015613b0757613b17565b613b1081613b73565b9150613b23565b613b2081613bb5565b91505b50919050565b60006000613b3e613b39846129dc565b6129dc565b9050608b60020a811015613b5157613b61565b613b5a81613bb5565b9150613b6d565b613b6a81613b73565b91505b50919050565b60006000613b80836129dc565b9050608c60020a811015613b9357613ba3565b613b9c81613bff565b9150613baf565b613bac81613c41565b91505b50919050565b60006000613bca613bc5846129dc565b6129dc565b9050608c60020a811015613bdd57613bed565b613be681613c41565b9150613bf9565b613bf681613bff565b91505b50919050565b60006000613c0c836129dc565b9050608d60020a811015613c1f57613c2f565b613c2881613c8b565b9150613c3b565b613c3881613ccd565b91505b50919050565b60006000613c56613c51846129dc565b6129dc565b9050608d60020a811015613c6957613c79565b613c7281613ccd565b9150613c85565b613c8281613c8b565b91505b50919050565b60006000613c98836129dc565b9050608e60020a811015613cab57613cbb565b613cb481613d17565b9150613cc7565b613cc481613d59565b91505b50919050565b60006000613ce2613cdd846129dc565b6129dc565b9050608e60020a811015613cf557613d05565b613cfe81613d59565b9150613d11565b613d0e81613d17565b91505b50919050565b60006000613d24836129dc565b9050608f60020a811015613d3757613d47565b613d4081613da3565b9150613d53565b613d5081613de5565b91505b50919050565b60006000613d6e613d69846129dc565b6129dc565b9050608f60020a811015613d8157613d91565b613d8a81613de5565b9150613d9d565b613d9a81613da3565b91505b50919050565b60006000613db0836129dc565b9050609060020a811015613dc357613dd3565b613dcc81613e2f565b9150613ddf565b613ddc81613e71565b91505b50919050565b60006000613dfa613df5846129dc565b6129dc565b9050609060020a811015613e0d57613e1d565b613e1681613e71565b9150613e29565b613e2681613e2f565b91505b50919050565b60006000613e3c836129dc565b9050609160020a811015613e4f57613e5f565b613e5881613ebb565b9150613e6b565b613e6881613efd565b91505b50919050565b60006000613e86613e81846129dc565b6129dc565b9050609160020a811015613e9957613ea9565b613ea281613efd565b9150613eb5565b613eb281613ebb565b91505b50919050565b60006000613ec8836129dc565b9050609260020a811015613edb57613eeb565b613ee481613f47565b9150613ef7565b613ef481613f89565b91505b50919050565b60006000613f12613f0d846129dc565b6129dc565b9050609260020a811015613f2557613f35565b613f2e81613f89565b9150613f41565b613f3e81613f47565b91505b50919050565b60006000613f54836129dc565b9050609360020a811015613f6757613f77565b613f7081613fd3565b9150613f83565b613f8081614015565b91505b50919050565b60006000613f9e613f99846129dc565b6129dc565b9050609360020a811015613fb157613fc1565b613fba81614015565b9150613fcd565b613fca81613fd3565b91505b50919050565b60006000613fe0836129dc565b9050609460020a811015613ff357614003565b613ffc8161405f565b915061400f565b61400c816140a1565b91505b50919050565b6000600061402a614025846129dc565b6129dc565b9050609460020a81101561403d5761404d565b614046816140a1565b9150614059565b6140568161405f565b91505b50919050565b6000600061406c836129dc565b9050609560020a81101561407f5761408f565b614088816140eb565b915061409b565b6140988161412d565b91505b50919050565b600060006140b66140b1846129dc565b6129dc565b9050609560020a8110156140c9576140d9565b6140d28161412d565b91506140e5565b6140e2816140eb565b91505b50919050565b600060006140f8836129dc565b9050609660020a81101561410b5761411b565b61411481614177565b9150614127565b614124816141b9565b91505b50919050565b6000600061414261413d846129dc565b6129dc565b9050609660020a81101561415557614165565b61415e816141b9565b9150614171565b61416e81614177565b91505b50919050565b60006000614184836129dc565b9050609760020a811015614197576141a7565b6141a081614203565b91506141b3565b6141b081614245565b91505b50919050565b600060006141ce6141c9846129dc565b6129dc565b9050609760020a8110156141e1576141f1565b6141ea81614245565b91506141fd565b6141fa81614203565b91505b50919050565b60006000614210836129dc565b9050609860020a81101561422357614233565b61422c8161428f565b915061423f565b61423c816142d1565b91505b50919050565b6000600061425a614255846129dc565b6129dc565b9050609860020a81101561426d5761427d565b614276816142d1565b9150614289565b6142868161428f565b91505b50919050565b6000600061429c836129dc565b9050609960020a8110156142af576142bf565b6142b88161431b565b91506142cb565b6142c88161435d565b91505b50919050565b600060006142e66142e1846129dc565b6129dc565b9050609960020a8110156142f957614309565b6143028161435d565b9150614315565b6143128161431b565b91505b50919050565b60006000614328836129dc565b9050609a60020a81101561433b5761434b565b614344816143a7565b9150614357565b614354816143e9565b91505b50919050565b6000600061437261436d846129dc565b6129dc565b9050609a60020a81101561438557614395565b61438e816143e9565b91506143a1565b61439e816143a7565b91505b50919050565b600060006143b4836129dc565b9050609b60020a8110156143c7576143d7565b6143d081614433565b91506143e3565b6143e081614475565b91505b50919050565b600060006143fe6143f9846129dc565b6129dc565b9050609b60020a81101561441157614421565b61441a81614475565b915061442d565b61442a81614433565b91505b50919050565b60006000614440836129dc565b9050609c60020a81101561445357614463565b61445c816144bf565b915061446f565b61446c81614501565b91505b50919050565b6000600061448a614485846129dc565b6129dc565b9050609c60020a81101561449d576144ad565b6144a681614501565b91506144b9565b6144b6816144bf565b91505b50919050565b600060006144cc836129dc565b9050609d60020a8110156144df576144ef565b6144e88161454b565b91506144fb565b6144f88161458d565b91505b50919050565b60006000614516614511846129dc565b6129dc565b9050609d60020a81101561452957614539565b6145328161458d565b9150614545565b6145428161454b565b91505b50919050565b60006000614558836129dc565b9050609e60020a81101561456b5761457b565b614574816145d7565b9150614587565b61458481614619565b91505b50919050565b600060006145a261459d846129dc565b6129dc565b9050609e60020a8110156145b5576145c5565b6145be81614619565b91506145d1565b6145ce816145d7565b91505b50919050565b600060006145e4836129dc565b9050609f60020a8110156145f757614607565b61460081614663565b9150614613565b614610816146a5565b91505b50919050565b6000600061462e614629846129dc565b6129dc565b9050609f60020a81101561464157614651565b61464a816146a5565b915061465d565b61465a81614663565b91505b50919050565b60006000614670836129dc565b905060a060020a81101561468357614693565b61468c816146ef565b915061469f565b61469c81614731565b91505b50919050565b600060006146ba6146b5846129dc565b6129dc565b905060a060020a8110156146cd576146dd565b6146d681614731565b91506146e9565b6146e6816146ef565b91505b50919050565b600060006146fc836129dc565b905060a160020a81101561470f5761471f565b6147188161477b565b915061472b565b614728816147bd565b91505b50919050565b60006000614746614741846129dc565b6129dc565b905060a160020a81101561475957614769565b614762816147bd565b9150614775565b6147728161477b565b91505b50919050565b60006000614788836129dc565b905060a260020a81101561479b576147ab565b6147a481614807565b91506147b7565b6147b481614849565b91505b50919050565b600060006147d26147cd846129dc565b6129dc565b905060a260020a8110156147e5576147f5565b6147ee81614849565b9150614801565b6147fe81614807565b91505b50919050565b60006000614814836129dc565b905060a360020a81101561482757614837565b61483081614893565b9150614843565b614840816148d5565b91505b50919050565b6000600061485e614859846129dc565b6129dc565b905060a360020a81101561487157614881565b61487a816148d5565b915061488d565b61488a81614893565b91505b50919050565b600060006148a0836129dc565b905060a460020a8110156148b3576148c3565b6148bc8161491f565b91506148cf565b6148cc81614961565b91505b50919050565b600060006148ea6148e5846129dc565b6129dc565b905060a460020a8110156148fd5761490d565b61490681614961565b9150614919565b6149168161491f565b91505b50919050565b6000600061492c836129dc565b905060a560020a81101561493f5761494f565b614948816149ab565b915061495b565b614958816149ed565b91505b50919050565b60006000614976614971846129dc565b6129dc565b905060a560020a81101561498957614999565b614992816149ed565b91506149a5565b6149a2816149ab565b91505b50919050565b600060006149b8836129dc565b905060a660020a8110156149cb576149db565b6149d481614a37565b91506149e7565b6149e481614a79565b91505b50919050565b60006000614a026149fd846129dc565b6129dc565b905060a660020a811015614a1557614a25565b614a1e81614a79565b9150614a31565b614a2e81614a37565b91505b50919050565b60006000614a44836129dc565b905060a760020a811015614a5757614a67565b614a6081614ac3565b9150614a73565b614a7081614b05565b91505b50919050565b60006000614a8e614a89846129dc565b6129dc565b905060a760020a811015614aa157614ab1565b614aaa81614b05565b9150614abd565b614aba81614ac3565b91505b50919050565b60006000614ad0836129dc565b905060a860020a811015614ae357614af3565b614aec81614b4f565b9150614aff565b614afc81614b91565b91505b50919050565b60006000614b1a614b15846129dc565b6129dc565b905060a860020a811015614b2d57614b3d565b614b3681614b91565b9150614b49565b614b4681614b4f565b91505b50919050565b60006000614b5c836129dc565b905060a960020a811015614b6f57614b7f565b614b7881614bdb565b9150614b8b565b614b8881614c1d565b91505b50919050565b60006000614ba6614ba1846129dc565b6129dc565b905060a960020a811015614bb957614bc9565b614bc281614c1d565b9150614bd5565b614bd281614bdb565b91505b50919050565b60006000614be8836129dc565b905060aa60020a811015614bfb57614c0b565b614c0481614c67565b9150614c17565b614c1481614ca9565b91505b50919050565b60006000614c32614c2d846129dc565b6129dc565b905060aa60020a811015614c4557614c55565b614c4e81614ca9565b9150614c61565b614c5e81614c67565b91505b50919050565b60006000614c74836129dc565b905060ab60020a811015614c8757614c97565b614c9081614cf3565b9150614ca3565b614ca081614d35565b91505b50919050565b60006000614cbe614cb9846129dc565b6129dc565b905060ab60020a811015614cd157614ce1565b614cda81614d35565b9150614ced565b614cea81614cf3565b91505b50919050565b60006000614d00836129dc565b905060ac60020a811015614d1357614d23565b614d1c81614d7f565b9150614d2f565b614d2c81614dc1565b91505b50919050565b60006000614d4a614d45846129dc565b6129dc565b905060ac60020a811015614d5d57614d6d565b614d6681614dc1565b9150614d79565b614d7681614d7f565b91505b50919050565b60006000614d8c836129dc565b905060ad60020a811015614d9f57614daf565b614da881614e0b565b9150614dbb565b614db881614e4d565b91505b50919050565b60006000614dd6614dd1846129dc565b6129dc565b905060ad60020a811015614de957614df9565b614df281614e4d565b9150614e05565b614e0281614e0b565b91505b50919050565b60006000614e18836129dc565b905060ae60020a811015614e2b57614e3b565b614e3481614e97565b9150614e47565b614e4481614ed9565b91505b50919050565b60006000614e62614e5d846129dc565b6129dc565b905060ae60020a811015614e7557614e85565b614e7e81614ed9565b9150614e91565b614e8e81614e97565b91505b50919050565b60006000614ea4836129dc565b905060af60020a811015614eb757614ec7565b614ec081614f23565b9150614ed3565b614ed081614f65565b91505b50919050565b60006000614eee614ee9846129dc565b6129dc565b905060af60020a811015614f0157614f11565b614f0a81614f65565b9150614f1d565b614f1a81614f23565b91505b50919050565b60006000614f30836129dc565b905060b060020a811015614f4357614f53565b614f4c81614faf565b9150614f5f565b614f5c81614ff1565b91505b50919050565b60006000614f7a614f75846129dc565b6129dc565b905060b060020a811015614f8d57614f9d565b614f9681614ff1565b9150614fa9565b614fa681614faf565b91505b50919050565b60006000614fbc836129dc565b905060b160020a811015614fcf57614fdf565b614fd881612a11565b9150614feb565b614fe881612a23565b91505b50919050565b60006000615006615001846129dc565b6129dc565b905060b160020a81101561501957615029565b61502281612a23565b9150615035565b61503281612a11565b91505b5091905056'))
-        #check outs
+        # check outs
         self.assertEqual(returndata, unhexlify('82a7b4b109d4fab00000000000000000000000000000000000000000000000c9'))
-        #check logs
-        data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
+        # check logs
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
         # test used gas
         self.assertEqual(to_constant(world.current_vm.gas), 71600)
     @unittest.skip('Gas or performance related')
 
-    def test_loop_exp_nop_1M(self):
-        '''
-            Textcase taken from https://github.com/ethereum/tests
-            File: loop-exp-nop-1M.json
-            sha256sum: 8ff68ed3e0ccc906a85466be208f92af7b5605fcd39e7b81f7f7f1d2b8cb2582
-            Code: PUSH1 0x60
-                  PUSH1 0x40
-                  MSTORE
-                  PUSH1 0xe0
-                  PUSH1 0x2
-                  EXP
-                  PUSH1 0x0
-                  CALLDATALOAD
-                  DIV
-                  PUSH4 0x3392ffc8
-                  DUP2
-                  EQ
-                  PUSH2 0x3f
-                  JUMPI
-                  DUP1
-                  PUSH4 0x3c77b95c
-                  EQ
-                  PUSH2 0x6a
-                  JUMPI
-                  DUP1
-                  PUSH4 0xce67bda6
-                  EQ
-                  PUSH2 0xc2
-                  JUMPI
-                  DUP1
-                  PUSH4 0xebbbe00b
-                  EQ
-                  PUSH2 0xe8
-                  JUMPI
-                  JUMPDEST
-                  PUSH2 0x2
-                  JUMP
-                  JUMPDEST
-                  CALLVALUE
-                  PUSH2 0x2
-                  JUMPI
-                  PUSH2 0x10e
-                  PUSH1 0x4
-                  CALLDATALOAD
-                  PUSH1 0x24
-                  CALLDATALOAD
-                  PUSH1 0x44
-                  CALLDATALOAD
-                  PUSH1 0x0
-                  DUP3
-                  DUP2
-                  JUMPDEST
-                  DUP4
-                  DUP2
-                  LT
-                  ISZERO
-                  PUSH2 0x120
-                  JUMPI
-                  SWAP1
-                  DUP6
-                  SWAP1
-                  EXP
-                  SWAP1
-                  PUSH1 0x1
-                  ADD
-                  PUSH2 0x55
-                  JUMP
-                  JUMPDEST
-                  CALLVALUE
-                  PUSH2 0x2
-                  JUMPI
-                  PUSH2 0x10e
-                  PUSH1 0x4
-                  CALLDATALOAD
-                  PUSH1 0x24
-                  CALLDATALOAD
-                  PUSH1 0x44
-                  CALLDATALOAD
-                  PUSH1 0x0
-                  DUP3
-                  DUP2
-                  JUMPDEST
-                  DUP4
-                  DUP2
-                  LT
-                  ISZERO
-                  PUSH2 0x120
-                  JUMPI
-                  SWAP1
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  SWAP1
-                  PUSH1 0x10
-                  ADD
-                  PUSH2 0x80
-                  JUMP
-                  JUMPDEST
-                  CALLVALUE
-                  PUSH2 0x2
-                  JUMPI
-                  PUSH2 0x10e
-                  PUSH1 0x4
-                  CALLDATALOAD
-                  PUSH1 0x24
-                  CALLDATALOAD
-                  PUSH1 0x44
-                  CALLDATALOAD
-                  PUSH1 0x0
-                  DUP1
-                  JUMPDEST
-                  DUP3
-                  DUP2
-                  LT
-                  ISZERO
-                  PUSH2 0x129
-                  JUMPI
-                  JUMPDEST
-                  PUSH1 0x1
-                  ADD
-                  PUSH2 0xd7
-                  JUMP
-                  JUMPDEST
-                  CALLVALUE
-                  PUSH2 0x2
-                  JUMPI
-                  PUSH2 0x10e
-                  PUSH1 0x4
-                  CALLDATALOAD
-                  PUSH1 0x24
-                  CALLDATALOAD
-                  PUSH1 0x44
-                  CALLDATALOAD
-                  PUSH1 0x0
-                  DUP1
-                  JUMPDEST
-                  DUP3
-                  DUP2
-                  LT
-                  ISZERO
-                  PUSH2 0x129
-                  JUMPI
-                  JUMPDEST
-                  PUSH1 0x10
-                  ADD
-                  PUSH2 0xfd
-                  JUMP
-                  JUMPDEST
-                  PUSH1 0x40
-                  DUP1
-                  MLOAD
-                  SWAP2
-                  DUP3
-                  MSTORE
-                  MLOAD
-                  SWAP1
-                  DUP2
-                  SWAP1
-                  SUB
-                  PUSH1 0x20
-                  ADD
-                  SWAP1
-                  RETURN
-                  JUMPDEST
-                  POP
-                  SWAP5
-                  SWAP4
-                  POP
-                  POP
-                  POP
-                  POP
-                  JUMP
-                  JUMPDEST
-                  POP
-                  SWAP2
-                  SWAP4
-                  SWAP3
-                  POP
-                  POP
-                  POP
-                  JUMP
-        '''    
-    
-        constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=9999, timestamp=1, difficulty=20000, coinbase=244687034288125203496486448490407391986876152250, gaslimit=100000000000)
-    
-        bytecode = unhexlify('606060405260e060020a60003504633392ffc8811461003f5780633c77b95c1461006a578063ce67bda6146100c2578063ebbbe00b146100e8575b610002565b346100025761010e600435602435604435600082815b83811015610120579085900a90600101610055565b346100025761010e600435602435604435600082815b83811015610120579085900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a90601001610080565b346100025761010e6004356024356044356000805b82811015610129575b6001016100d7565b346100025761010e6004356024356044356000805b82811015610129575b6010016100fd565b60408051918252519081900360200190f35b50949350505050565b5091939250505056')
-        world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-                             balance=100000000000000000000000,
-                             code=bytecode,
-                             nonce=0
-                            )
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = unhexlify('ce67bda60000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f00000000000000000000000000000000000000000000000000000000000f4240')
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        value = 0
-        gas = 1000000000000
-
-        # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
-
-        result = None
-        returndata = b''
-        try:
-            while True:
-                world.current_vm.execute()
-        except evm.EndTx as e:
-            result = e.result
-            if e.result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
-        except evm.StartTx as e:
-            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        #Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        #check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('606060405260e060020a60003504633392ffc8811461003f5780633c77b95c1461006a578063ce67bda6146100c2578063ebbbe00b146100e8575b610002565b346100025761010e600435602435604435600082815b83811015610120579085900a90600101610055565b346100025761010e600435602435604435600082815b83811015610120579085900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a90601001610080565b346100025761010e6004356024356044356000805b82811015610129575b6001016100d7565b346100025761010e6004356024356044356000805b82811015610129575b6010016100fd565b60408051918252519081900360200190f35b50949350505050565b5091939250505056'))
-        #check outs
-        self.assertEqual(returndata, unhexlify('000000000000000000000000000000000000000000000000000000000000000f'))
-        #check logs
-        data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
-        
-        # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 999955999738)
-    @unittest.skip('Gas or performance related')
-
     def test_loop_exp_4b_100k(self):
-        '''
-            Textcase taken from https://github.com/ethereum/tests
-            File: loop-exp-4b-100k.json
-            sha256sum: 6abe5671655177222cd21fe87fdf428378813647d662f4a217ae61c419be6600
-            Code: PUSH1 0x60
+        """
+        Textcase taken from https://github.com/ethereum/tests
+        File: loop-exp-4b-100k.json
+        sha256sum: 6abe5671655177222cd21fe87fdf428378813647d662f4a217ae61c419be6600
+        Code:     PUSH1 0x60
                   PUSH1 0x40
                   MSTORE
                   PUSH1 0xe0
@@ -16548,17 +13619,19 @@ class EVMTest_vmPerformance(unittest.TestCase):
                   POP
                   POP
                   JUMP
-        '''    
+        """    
     
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=9999, timestamp=1, difficulty=20000, coinbase=244687034288125203496486448490407391986876152250, gaslimit=100000000000)
+        world = evm.EVMWorld(constraints, blocknumber=9999, timestamp=1, difficulty=20000,
+                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=100000000000)
     
         bytecode = unhexlify('606060405260e060020a60003504633392ffc8811461003f5780633c77b95c1461006a578063ce67bda6146100c2578063ebbbe00b146100e8575b610002565b346100025761010e600435602435604435600082815b83811015610120579085900a90600101610055565b346100025761010e600435602435604435600082815b83811015610120579085900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a90601001610080565b346100025761010e6004356024356044356000805b82811015610129575b6001016100d7565b346100025761010e6004356024356044356000805b82811015610129575b6010016100fd565b60408051918252519081900360200190f35b50949350505050565b5091939250505056')
-        world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-                             balance=100000000000000000000000,
-                             code=bytecode,
-                             nonce=0
-                            )
+        world.create_account(
+            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
+            balance=100000000000000000000000,
+            code=bytecode,
+            nonce=0
+        )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = unhexlify('3392ffc800000000000000000000000000000000000000000000000000000000ffffffff0000000000000000000000000000000000000000000000005851f42d4c957f2d00000000000000000000000000000000000000000000000000000000000186a0')
@@ -16569,6 +13642,8 @@ class EVMTest_vmPerformance(unittest.TestCase):
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
+        # This variable might seem redundant in some tests - don't forget it is auto generated
+        # and there are cases in which we need it ;)
         result = None
         returndata = b''
         try:
@@ -16576,794 +13651,32 @@ class EVMTest_vmPerformance(unittest.TestCase):
                 world.current_vm.execute()
         except evm.EndTx as e:
             result = e.result
-            if e.result in ('RETURN', 'REVERT'):
+            if result in ('RETURN', 'REVERT'):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        #Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        #check nonce, balance, code
+        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        # check nonce, balance, code
         self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('606060405260e060020a60003504633392ffc8811461003f5780633c77b95c1461006a578063ce67bda6146100c2578063ebbbe00b146100e8575b610002565b346100025761010e600435602435604435600082815b83811015610120579085900a90600101610055565b346100025761010e600435602435604435600082815b83811015610120579085900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a90601001610080565b346100025761010e6004356024356044356000805b82811015610129575b6001016100d7565b346100025761010e6004356024356044356000805b82811015610129575b6010016100fd565b60408051918252519081900360200190f35b50949350505050565b5091939250505056'))
-        #check outs
+        # check outs
         self.assertEqual(returndata, unhexlify('d0e61f591bd78de46f37ced3590d1b5b8c9534ef27bcf11dd02d9fad4c957f2d'))
-        #check logs
-        data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
+        # check logs
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
         # test used gas
         self.assertEqual(to_constant(world.current_vm.gas), 999989499780)
     @unittest.skip('Gas or performance related')
 
-    def test_fibonacci10(self):
-        '''
-            Textcase taken from https://github.com/ethereum/tests
-            File: fibonacci10.json
-            sha256sum: 32d1c40828faa3363167a574b686bd62d3fde00e1cb0231f79e6af76bc40eac2
-            Code: PUSH1 0xe0
-                  PUSH1 0x2
-                  EXP
-                  PUSH1 0x0
-                  CALLDATALOAD
-                  DIV
-                  DUP1
-                  PUSH4 0x2839e928
-                  EQ
-                  PUSH1 0x1e
-                  JUMPI
-                  DUP1
-                  PUSH4 0x61047ff4
-                  EQ
-                  PUSH1 0x34
-                  JUMPI
-                  STOP
-                  JUMPDEST
-                  PUSH1 0x2a
-                  PUSH1 0x4
-                  CALLDATALOAD
-                  PUSH1 0x24
-                  CALLDATALOAD
-                  PUSH1 0x47
-                  JUMP
-                  JUMPDEST
-                  DUP1
-                  PUSH1 0x0
-                  MSTORE
-                  PUSH1 0x20
-                  PUSH1 0x0
-                  RETURN
-                  JUMPDEST
-                  PUSH1 0x3d
-                  PUSH1 0x4
-                  CALLDATALOAD
-                  PUSH1 0x99
-                  JUMP
-                  JUMPDEST
-                  DUP1
-                  PUSH1 0x0
-                  MSTORE
-                  PUSH1 0x20
-                  PUSH1 0x0
-                  RETURN
-                  JUMPDEST
-                  PUSH1 0x0
-                  DUP3
-                  PUSH1 0x0
-                  EQ
-                  PUSH1 0x54
-                  JUMPI
-                  PUSH1 0x5e
-                  JUMP
-                  JUMPDEST
-                  DUP2
-                  PUSH1 0x1
-                  ADD
-                  SWAP1
-                  POP
-                  PUSH1 0x93
-                  JUMP
-                  JUMPDEST
-                  DUP2
-                  PUSH1 0x0
-                  EQ
-                  PUSH1 0x69
-                  JUMPI
-                  PUSH1 0x7b
-                  JUMP
-                  JUMPDEST
-                  PUSH1 0x75
-                  PUSH1 0x1
-                  DUP5
-                  SUB
-                  PUSH1 0x1
-                  PUSH1 0x47
-                  JUMP
-                  JUMPDEST
-                  SWAP1
-                  POP
-                  PUSH1 0x93
-                  JUMP
-                  JUMPDEST
-                  PUSH1 0x90
-                  PUSH1 0x1
-                  DUP5
-                  SUB
-                  PUSH1 0x8c
-                  DUP6
-                  PUSH1 0x1
-                  DUP7
-                  SUB
-                  PUSH1 0x47
-                  JUMP
-                  JUMPDEST
-                  PUSH1 0x47
-                  JUMP
-                  JUMPDEST
-                  SWAP1
-                  POP
-                  JUMPDEST
-                  SWAP3
-                  SWAP2
-                  POP
-                  POP
-                  JUMP
-                  JUMPDEST
-                  PUSH1 0x0
-                  DUP2
-                  PUSH1 0x0
-                  EQ
-                  DUP1
-                  PUSH1 0xa9
-                  JUMPI
-                  POP
-                  DUP2
-                  PUSH1 0x1
-                  EQ
-                  JUMPDEST
-                  PUSH1 0xb0
-                  JUMPI
-                  PUSH1 0xb7
-                  JUMP
-                  JUMPDEST
-                  DUP2
-                  SWAP1
-                  POP
-                  PUSH1 0xcf
-                  JUMP
-                  JUMPDEST
-                  PUSH1 0xc1
-                  PUSH1 0x2
-                  DUP4
-                  SUB
-                  PUSH1 0x99
-                  JUMP
-                  JUMPDEST
-                  PUSH1 0xcb
-                  PUSH1 0x1
-                  DUP5
-                  SUB
-                  PUSH1 0x99
-                  JUMP
-                  JUMPDEST
-                  ADD
-                  SWAP1
-                  POP
-                  JUMPDEST
-                  SWAP2
-                  SWAP1
-                  POP
-                  JUMP
-        '''    
-    
-        constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=100000000000)
-    
-        bytecode = unhexlify('60e060020a6000350480632839e92814601e57806361047ff414603457005b602a6004356024356047565b8060005260206000f35b603d6004356099565b8060005260206000f35b600082600014605457605e565b8160010190506093565b81600014606957607b565b60756001840360016047565b90506093565b609060018403608c85600186036047565b6047565b90505b92915050565b6000816000148060a95750816001145b60b05760b7565b81905060cf565b60c1600283036099565b60cb600184036099565b0190505b91905056')
-        world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-                             balance=100000000000000000000000,
-                             code=bytecode,
-                             nonce=0
-                            )
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = unhexlify('61047ff4000000000000000000000000000000000000000000000000000000000000000a')
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        value = 1000000000000000000
-        gas = 100000
-
-        # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
-
-        result = None
-        returndata = b''
-        try:
-            while True:
-                world.current_vm.execute()
-        except evm.EndTx as e:
-            result = e.result
-            if e.result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
-        except evm.StartTx as e:
-            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        #Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        #check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60e060020a6000350480632839e92814601e57806361047ff414603457005b602a6004356024356047565b8060005260206000f35b603d6004356099565b8060005260206000f35b600082600014605457605e565b8160010190506093565b81600014606957607b565b60756001840360016047565b90506093565b609060018403608c85600186036047565b6047565b90505b92915050565b6000816000148060a95750816001145b60b05760b7565b81905060cf565b60c1600283036099565b60cb600184036099565b0190505b91905056'))
-        #check outs
-        self.assertEqual(returndata, unhexlify('0000000000000000000000000000000000000000000000000000000000000037'))
-        #check logs
-        data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
-        
-        # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 79922)
-    @unittest.skip('Gas or performance related')
-
-    def test_fibonacci16(self):
-        '''
-            Textcase taken from https://github.com/ethereum/tests
-            File: fibonacci16.json
-            sha256sum: e86f7704ffc75e00c174301fa0323d9281c1e0a924f41777d86435861d565ed4
-            Code: PUSH1 0xe0
-                  PUSH1 0x2
-                  EXP
-                  PUSH1 0x0
-                  CALLDATALOAD
-                  DIV
-                  DUP1
-                  PUSH4 0x2839e928
-                  EQ
-                  PUSH1 0x1e
-                  JUMPI
-                  DUP1
-                  PUSH4 0x61047ff4
-                  EQ
-                  PUSH1 0x34
-                  JUMPI
-                  STOP
-                  JUMPDEST
-                  PUSH1 0x2a
-                  PUSH1 0x4
-                  CALLDATALOAD
-                  PUSH1 0x24
-                  CALLDATALOAD
-                  PUSH1 0x47
-                  JUMP
-                  JUMPDEST
-                  DUP1
-                  PUSH1 0x0
-                  MSTORE
-                  PUSH1 0x20
-                  PUSH1 0x0
-                  RETURN
-                  JUMPDEST
-                  PUSH1 0x3d
-                  PUSH1 0x4
-                  CALLDATALOAD
-                  PUSH1 0x99
-                  JUMP
-                  JUMPDEST
-                  DUP1
-                  PUSH1 0x0
-                  MSTORE
-                  PUSH1 0x20
-                  PUSH1 0x0
-                  RETURN
-                  JUMPDEST
-                  PUSH1 0x0
-                  DUP3
-                  PUSH1 0x0
-                  EQ
-                  PUSH1 0x54
-                  JUMPI
-                  PUSH1 0x5e
-                  JUMP
-                  JUMPDEST
-                  DUP2
-                  PUSH1 0x1
-                  ADD
-                  SWAP1
-                  POP
-                  PUSH1 0x93
-                  JUMP
-                  JUMPDEST
-                  DUP2
-                  PUSH1 0x0
-                  EQ
-                  PUSH1 0x69
-                  JUMPI
-                  PUSH1 0x7b
-                  JUMP
-                  JUMPDEST
-                  PUSH1 0x75
-                  PUSH1 0x1
-                  DUP5
-                  SUB
-                  PUSH1 0x1
-                  PUSH1 0x47
-                  JUMP
-                  JUMPDEST
-                  SWAP1
-                  POP
-                  PUSH1 0x93
-                  JUMP
-                  JUMPDEST
-                  PUSH1 0x90
-                  PUSH1 0x1
-                  DUP5
-                  SUB
-                  PUSH1 0x8c
-                  DUP6
-                  PUSH1 0x1
-                  DUP7
-                  SUB
-                  PUSH1 0x47
-                  JUMP
-                  JUMPDEST
-                  PUSH1 0x47
-                  JUMP
-                  JUMPDEST
-                  SWAP1
-                  POP
-                  JUMPDEST
-                  SWAP3
-                  SWAP2
-                  POP
-                  POP
-                  JUMP
-                  JUMPDEST
-                  PUSH1 0x0
-                  DUP2
-                  PUSH1 0x0
-                  EQ
-                  DUP1
-                  PUSH1 0xa9
-                  JUMPI
-                  POP
-                  DUP2
-                  PUSH1 0x1
-                  EQ
-                  JUMPDEST
-                  PUSH1 0xb0
-                  JUMPI
-                  PUSH1 0xb7
-                  JUMP
-                  JUMPDEST
-                  DUP2
-                  SWAP1
-                  POP
-                  PUSH1 0xcf
-                  JUMP
-                  JUMPDEST
-                  PUSH1 0xc1
-                  PUSH1 0x2
-                  DUP4
-                  SUB
-                  PUSH1 0x99
-                  JUMP
-                  JUMPDEST
-                  PUSH1 0xcb
-                  PUSH1 0x1
-                  DUP5
-                  SUB
-                  PUSH1 0x99
-                  JUMP
-                  JUMPDEST
-                  ADD
-                  SWAP1
-                  POP
-                  JUMPDEST
-                  SWAP2
-                  SWAP1
-                  POP
-                  JUMP
-        '''    
-    
-        constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=100000000000)
-    
-        bytecode = unhexlify('60e060020a6000350480632839e92814601e57806361047ff414603457005b602a6004356024356047565b8060005260206000f35b603d6004356099565b8060005260206000f35b600082600014605457605e565b8160010190506093565b81600014606957607b565b60756001840360016047565b90506093565b609060018403608c85600186036047565b6047565b90505b92915050565b6000816000148060a95750816001145b60b05760b7565b81905060cf565b60c1600283036099565b60cb600184036099565b0190505b91905056')
-        world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-                             balance=100000000000000000000000,
-                             code=bytecode,
-                             nonce=0
-                            )
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = unhexlify('61047ff40000000000000000000000000000000000000000000000000000000000000010')
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        value = 1000000000000000000
-        gas = 100000000
-
-        # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
-
-        result = None
-        returndata = b''
-        try:
-            while True:
-                world.current_vm.execute()
-        except evm.EndTx as e:
-            result = e.result
-            if e.result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
-        except evm.StartTx as e:
-            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        #Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        #check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60e060020a6000350480632839e92814601e57806361047ff414603457005b602a6004356024356047565b8060005260206000f35b603d6004356099565b8060005260206000f35b600082600014605457605e565b8160010190506093565b81600014606957607b565b60756001840360016047565b90506093565b609060018403608c85600186036047565b6047565b90505b92915050565b6000816000148060a95750816001145b60b05760b7565b81905060cf565b60c1600283036099565b60cb600184036099565b0190505b91905056'))
-        #check outs
-        self.assertEqual(returndata, unhexlify('00000000000000000000000000000000000000000000000000000000000003db'))
-        #check logs
-        data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
-        
-        # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 99639418)
-    @unittest.skip('Gas or performance related')
-
-    def test_ackermann31(self):
-        '''
-            Textcase taken from https://github.com/ethereum/tests
-            File: ackermann31.json
-            sha256sum: f40f63dd99b398421c09232b4e33cabc62081156d80bd223db228c4c2bcfee4e
-            Code: PUSH1 0xe0
-                  PUSH1 0x2
-                  EXP
-                  PUSH1 0x0
-                  CALLDATALOAD
-                  DIV
-                  DUP1
-                  PUSH4 0x2839e928
-                  EQ
-                  PUSH1 0x1e
-                  JUMPI
-                  DUP1
-                  PUSH4 0x61047ff4
-                  EQ
-                  PUSH1 0x34
-                  JUMPI
-                  STOP
-                  JUMPDEST
-                  PUSH1 0x2a
-                  PUSH1 0x4
-                  CALLDATALOAD
-                  PUSH1 0x24
-                  CALLDATALOAD
-                  PUSH1 0x47
-                  JUMP
-                  JUMPDEST
-                  DUP1
-                  PUSH1 0x0
-                  MSTORE
-                  PUSH1 0x20
-                  PUSH1 0x0
-                  RETURN
-                  JUMPDEST
-                  PUSH1 0x3d
-                  PUSH1 0x4
-                  CALLDATALOAD
-                  PUSH1 0x99
-                  JUMP
-                  JUMPDEST
-                  DUP1
-                  PUSH1 0x0
-                  MSTORE
-                  PUSH1 0x20
-                  PUSH1 0x0
-                  RETURN
-                  JUMPDEST
-                  PUSH1 0x0
-                  DUP3
-                  PUSH1 0x0
-                  EQ
-                  PUSH1 0x54
-                  JUMPI
-                  PUSH1 0x5e
-                  JUMP
-                  JUMPDEST
-                  DUP2
-                  PUSH1 0x1
-                  ADD
-                  SWAP1
-                  POP
-                  PUSH1 0x93
-                  JUMP
-                  JUMPDEST
-                  DUP2
-                  PUSH1 0x0
-                  EQ
-                  PUSH1 0x69
-                  JUMPI
-                  PUSH1 0x7b
-                  JUMP
-                  JUMPDEST
-                  PUSH1 0x75
-                  PUSH1 0x1
-                  DUP5
-                  SUB
-                  PUSH1 0x1
-                  PUSH1 0x47
-                  JUMP
-                  JUMPDEST
-                  SWAP1
-                  POP
-                  PUSH1 0x93
-                  JUMP
-                  JUMPDEST
-                  PUSH1 0x90
-                  PUSH1 0x1
-                  DUP5
-                  SUB
-                  PUSH1 0x8c
-                  DUP6
-                  PUSH1 0x1
-                  DUP7
-                  SUB
-                  PUSH1 0x47
-                  JUMP
-                  JUMPDEST
-                  PUSH1 0x47
-                  JUMP
-                  JUMPDEST
-                  SWAP1
-                  POP
-                  JUMPDEST
-                  SWAP3
-                  SWAP2
-                  POP
-                  POP
-                  JUMP
-                  JUMPDEST
-                  PUSH1 0x0
-                  DUP2
-                  PUSH1 0x0
-                  EQ
-                  DUP1
-                  PUSH1 0xa9
-                  JUMPI
-                  POP
-                  DUP2
-                  PUSH1 0x1
-                  EQ
-                  JUMPDEST
-                  PUSH1 0xb0
-                  JUMPI
-                  PUSH1 0xb7
-                  JUMP
-                  JUMPDEST
-                  DUP2
-                  SWAP1
-                  POP
-                  PUSH1 0xcf
-                  JUMP
-                  JUMPDEST
-                  PUSH1 0xc1
-                  PUSH1 0x2
-                  DUP4
-                  SUB
-                  PUSH1 0x99
-                  JUMP
-                  JUMPDEST
-                  PUSH1 0xcb
-                  PUSH1 0x1
-                  DUP5
-                  SUB
-                  PUSH1 0x99
-                  JUMP
-                  JUMPDEST
-                  ADD
-                  SWAP1
-                  POP
-                  JUMPDEST
-                  SWAP2
-                  SWAP1
-                  POP
-                  JUMP
-        '''    
-    
-        constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=100000000000)
-    
-        bytecode = unhexlify('60e060020a6000350480632839e92814601e57806361047ff414603457005b602a6004356024356047565b8060005260206000f35b603d6004356099565b8060005260206000f35b600082600014605457605e565b8160010190506093565b81600014606957607b565b60756001840360016047565b90506093565b609060018403608c85600186036047565b6047565b90505b92915050565b6000816000148060a95750816001145b60b05760b7565b81905060cf565b60c1600283036099565b60cb600184036099565b0190505b91905056')
-        world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-                             balance=100000000000000000000000,
-                             code=bytecode,
-                             nonce=0
-                            )
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = unhexlify('2839e92800000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000000001')
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        value = 1000000000000000000
-        gas = 100000
-
-        # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
-
-        result = None
-        returndata = b''
-        try:
-            while True:
-                world.current_vm.execute()
-        except evm.EndTx as e:
-            result = e.result
-            if e.result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
-        except evm.StartTx as e:
-            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        #Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        #check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60e060020a6000350480632839e92814601e57806361047ff414603457005b602a6004356024356047565b8060005260206000f35b603d6004356099565b8060005260206000f35b600082600014605457605e565b8160010190506093565b81600014606957607b565b60756001840360016047565b90506093565b609060018403608c85600186036047565b6047565b90505b92915050565b6000816000148060a95750816001145b60b05760b7565b81905060cf565b60c1600283036099565b60cb600184036099565b0190505b91905056'))
-        #check outs
-        self.assertEqual(returndata, unhexlify('000000000000000000000000000000000000000000000000000000000000000d'))
-        #check logs
-        data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
-        
-        # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 88225)
-    @unittest.skip('Gas or performance related')
-
-    def test_loop_mulmod_2M(self):
-        '''
-            Textcase taken from https://github.com/ethereum/tests
-            File: loop-mulmod-2M.json
-            sha256sum: dd880ffd723fdba361f3cda94c2a8bbf881b611e30aa5df2bf79f288d888bfba
-            Code: PUSH1 0x60
-                  PUSH1 0x40
-                  MSTORE
-                  PUSH4 0xffffffff
-                  PUSH1 0xe0
-                  PUSH1 0x2
-                  EXP
-                  PUSH1 0x0
-                  CALLDATALOAD
-                  DIV
-                  AND
-                  PUSH4 0x15d42327
-                  DUP2
-                  EQ
-                  PUSH1 0x22
-                  JUMPI
-                  JUMPDEST
-                  PUSH1 0x0
-                  JUMP
-                  JUMPDEST
-                  CALLVALUE
-                  PUSH1 0x0
-                  JUMPI
-                  PUSH1 0x38
-                  PUSH1 0x4
-                  CALLDATALOAD
-                  PUSH1 0x24
-                  CALLDATALOAD
-                  PUSH1 0x44
-                  CALLDATALOAD
-                  PUSH1 0x64
-                  CALLDATALOAD
-                  PUSH1 0x4a
-                  JUMP
-                  JUMPDEST
-                  PUSH1 0x40
-                  DUP1
-                  MLOAD
-                  SWAP2
-                  DUP3
-                  MSTORE
-                  MLOAD
-                  SWAP1
-                  DUP2
-                  SWAP1
-                  SUB
-                  PUSH1 0x20
-                  ADD
-                  SWAP1
-                  RETURN
-                  JUMPDEST
-                  PUSH1 0x0
-                  DUP5
-                  DUP2
-                  JUMPDEST
-                  DUP4
-                  DUP2
-                  LT
-                  ISZERO
-                  PUSH1 0x64
-                  JUMPI
-                  DUP5
-                  DUP7
-                  DUP4
-                  MULMOD
-                  SWAP2
-                  POP
-                  JUMPDEST
-                  PUSH1 0x1
-                  ADD
-                  PUSH1 0x4f
-                  JUMP
-                  JUMPDEST
-                  DUP2
-                  SWAP3
-                  POP
-                  JUMPDEST
-                  POP
-                  POP
-                  SWAP5
-                  SWAP4
-                  POP
-                  POP
-                  POP
-                  POP
-                  JUMP
-                  STOP
-                  LOG1
-                  PUSH6 0x627a7a723058
-                  SHA3
-                  SIGNEXTEND
-                  INVALID
-                  MSTORE
-                  INVALID
-                  INVALID
-                  ORIGIN
-        '''    
-    
-        constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=9999, timestamp=1, difficulty=20000, coinbase=244687034288125203496486448490407391986876152250, gaslimit=100000000000)
-    
-        bytecode = unhexlify('606060405263ffffffff60e060020a60003504166315d4232781146022575b6000565b346000576038600435602435604435606435604a565b60408051918252519081900360200190f35b600084815b838110156064578486830991505b600101604f565b8192505b50509493505050505600a165627a7a723058200b2f52fbc8327bac47da1762338f70ad17310de956a58bbbca8ee58378f357900029')
-        world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-                             balance=100000000000000000000000,
-                             code=bytecode,
-                             nonce=0
-                            )
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = unhexlify('15d423278edad8b55b1586805ea8c245d8c16b06a5102b791fc6eb60693731c0677bf5011c68db1c179cd35ab3fc60c63704aa7fcbea40f19782b1611aaba86726a7686cffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00000000000000000000000000000000000000000000000000000000001e8480')
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        value = 0
-        gas = 1000000000000
-
-        # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
-
-        result = None
-        returndata = b''
-        try:
-            while True:
-                world.current_vm.execute()
-        except evm.EndTx as e:
-            result = e.result
-            if e.result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
-        except evm.StartTx as e:
-            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        #Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        #check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('606060405263ffffffff60e060020a60003504166315d4232781146022575b6000565b346000576038600435602435604435606435604a565b60408051918252519081900360200190f35b600084815b838110156064578486830991505b600101604f565b8192505b50509493505050505600a165627a7a723058200b2f52fbc8327bac47da1762338f70ad17310de956a58bbbca8ee58378f357900029'))
-        #check outs
-        self.assertEqual(returndata, unhexlify('0e1c6aac6663c379a52d9ccc7ba4757131020772d41447dfcf478cf9fb0c2bbf'))
-        #check logs
-        data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
-        
-        # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 999867999745)
-    @unittest.skip('Gas or performance related')
-
-    def test_loop_add_10M(self):
-        '''
-            Textcase taken from https://github.com/ethereum/tests
-            File: loop-add-10M.json
-            sha256sum: f9de7ea641e10ffac8348e991c80be421942ef5acda92bc303e39f80a95a70c1
-            Code: PUSH1 0x60
+    def test_loop_divadd_10M(self):
+        """
+        Textcase taken from https://github.com/ethereum/tests
+        File: loop-divadd-10M.json
+        sha256sum: 6f90142841d39bf228763d8e8bf96f47cc675b7185e9e80006aa4ce00fd33450
+        Code:     PUSH1 0x60
                   PUSH1 0x40
                   MSTORE
                   PUSH4 0xffffffff
@@ -17702,17 +14015,415 @@ class EVMTest_vmPerformance(unittest.TestCase):
                   LOG0
                   PUSH6 0x29599a9c67d0
                   INVALID
-        '''    
+        """    
     
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=9999, timestamp=1, difficulty=20000, coinbase=244687034288125203496486448490407391986876152250, gaslimit=100000000000)
+        world = evm.EVMWorld(constraints, blocknumber=9999, timestamp=1, difficulty=20000,
+                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=100000000000)
     
         bytecode = unhexlify('606060405263ffffffff60e060020a60003504166315d42327811461004257806359e3e1ea14610070578063c4f8b9fb1461009e578063e01330bb146100c9575bfe5b341561004a57fe5b61005e6004356024356044356064356100f4565b60408051918252519081900360200190f35b341561007857fe5b61005e60043560243560443560643561011e565b60408051918252519081900360200190f35b34156100a657fe5b61005e600435602435604435610152565b60408051918252519081900360200190f35b34156100d157fe5b61005e600435602435604435610179565b60408051918252519081900360200190f35b600084815b83811015610110578486830991505b6001016100f9565b8192505b5050949350505050565b600084815b8381101561011057858281151561013657fe5b04850191505b600101610123565b8192505b5050949350505050565b600083815b8381101561016c57908401905b600101610157565b8192505b50509392505050565b600083815b8381101561016c57908402905b60010161017e565b8192505b505093925050505600a165627a7a72305820065081bd1e9fdffccd251332523241eaabd0fb1881a06529599a9c67d0a568e50029')
-        world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-                             balance=100000000000000000000000,
-                             code=bytecode,
-                             nonce=0
-                            )
+        world.create_account(
+            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
+            balance=100000000000000000000000,
+            code=bytecode,
+            nonce=0
+        )
+        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        price = 0x5af3107a4000
+        data = unhexlify('59e3e1ea8edad8b55b1586805ea8c245d8c16b06a5102b791fc6eb60693731c0677bf5011c68db1c179cd35ab3fc60c63704aa7fcbea40f19782b1611aaba86726a7686cff00ffffffffffffffffffffffffffaaffffffffffffffffbbffffffffffffff0000000000000000000000000000000000000000000000000000000000989680')
+        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        value = 0
+        gas = 1000000000000
+
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+
+        # This variable might seem redundant in some tests - don't forget it is auto generated
+        # and there are cases in which we need it ;)
+        result = None
+        returndata = b''
+        try:
+            while True:
+                world.current_vm.execute()
+        except evm.EndTx as e:
+            result = e.result
+            if result in ('RETURN', 'REVERT'):
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
+        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        # check nonce, balance, code
+        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
+        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
+        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('606060405263ffffffff60e060020a60003504166315d42327811461004257806359e3e1ea14610070578063c4f8b9fb1461009e578063e01330bb146100c9575bfe5b341561004a57fe5b61005e6004356024356044356064356100f4565b60408051918252519081900360200190f35b341561007857fe5b61005e60043560243560443560643561011e565b60408051918252519081900360200190f35b34156100a657fe5b61005e600435602435604435610152565b60408051918252519081900360200190f35b34156100d157fe5b61005e600435602435604435610179565b60408051918252519081900360200190f35b600084815b83811015610110578486830991505b6001016100f9565b8192505b5050949350505050565b600084815b8381101561011057858281151561013657fe5b04850191505b600101610123565b8192505b5050949350505050565b600083815b8381101561016c57908401905b600101610157565b8192505b50509392505050565b600083815b8381101561016c57908402905b60010161017e565b8192505b505093925050505600a165627a7a72305820065081bd1e9fdffccd251332523241eaabd0fb1881a06529599a9c67d0a568e50029'))
+        # check outs
+        self.assertEqual(returndata, unhexlify('ff00ffffffffffffffffffffffffffaaffffffffffffffffbc00000000000007'))
+        # check logs
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        data = rlp.encode(logs)
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 999109999719)
+    @unittest.skip('Gas or performance related')
+
+    def test_loop_add_10M(self):
+        """
+        Textcase taken from https://github.com/ethereum/tests
+        File: loop-add-10M.json
+        sha256sum: f9de7ea641e10ffac8348e991c80be421942ef5acda92bc303e39f80a95a70c1
+        Code:     PUSH1 0x60
+                  PUSH1 0x40
+                  MSTORE
+                  PUSH4 0xffffffff
+                  PUSH1 0xe0
+                  PUSH1 0x2
+                  EXP
+                  PUSH1 0x0
+                  CALLDATALOAD
+                  DIV
+                  AND
+                  PUSH4 0x15d42327
+                  DUP2
+                  EQ
+                  PUSH2 0x42
+                  JUMPI
+                  DUP1
+                  PUSH4 0x59e3e1ea
+                  EQ
+                  PUSH2 0x70
+                  JUMPI
+                  DUP1
+                  PUSH4 0xc4f8b9fb
+                  EQ
+                  PUSH2 0x9e
+                  JUMPI
+                  DUP1
+                  PUSH4 0xe01330bb
+                  EQ
+                  PUSH2 0xc9
+                  JUMPI
+                  JUMPDEST
+                  INVALID
+                  JUMPDEST
+                  CALLVALUE
+                  ISZERO
+                  PUSH2 0x4a
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  PUSH2 0x5e
+                  PUSH1 0x4
+                  CALLDATALOAD
+                  PUSH1 0x24
+                  CALLDATALOAD
+                  PUSH1 0x44
+                  CALLDATALOAD
+                  PUSH1 0x64
+                  CALLDATALOAD
+                  PUSH2 0xf4
+                  JUMP
+                  JUMPDEST
+                  PUSH1 0x40
+                  DUP1
+                  MLOAD
+                  SWAP2
+                  DUP3
+                  MSTORE
+                  MLOAD
+                  SWAP1
+                  DUP2
+                  SWAP1
+                  SUB
+                  PUSH1 0x20
+                  ADD
+                  SWAP1
+                  RETURN
+                  JUMPDEST
+                  CALLVALUE
+                  ISZERO
+                  PUSH2 0x78
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  PUSH2 0x5e
+                  PUSH1 0x4
+                  CALLDATALOAD
+                  PUSH1 0x24
+                  CALLDATALOAD
+                  PUSH1 0x44
+                  CALLDATALOAD
+                  PUSH1 0x64
+                  CALLDATALOAD
+                  PUSH2 0x11e
+                  JUMP
+                  JUMPDEST
+                  PUSH1 0x40
+                  DUP1
+                  MLOAD
+                  SWAP2
+                  DUP3
+                  MSTORE
+                  MLOAD
+                  SWAP1
+                  DUP2
+                  SWAP1
+                  SUB
+                  PUSH1 0x20
+                  ADD
+                  SWAP1
+                  RETURN
+                  JUMPDEST
+                  CALLVALUE
+                  ISZERO
+                  PUSH2 0xa6
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  PUSH2 0x5e
+                  PUSH1 0x4
+                  CALLDATALOAD
+                  PUSH1 0x24
+                  CALLDATALOAD
+                  PUSH1 0x44
+                  CALLDATALOAD
+                  PUSH2 0x152
+                  JUMP
+                  JUMPDEST
+                  PUSH1 0x40
+                  DUP1
+                  MLOAD
+                  SWAP2
+                  DUP3
+                  MSTORE
+                  MLOAD
+                  SWAP1
+                  DUP2
+                  SWAP1
+                  SUB
+                  PUSH1 0x20
+                  ADD
+                  SWAP1
+                  RETURN
+                  JUMPDEST
+                  CALLVALUE
+                  ISZERO
+                  PUSH2 0xd1
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  PUSH2 0x5e
+                  PUSH1 0x4
+                  CALLDATALOAD
+                  PUSH1 0x24
+                  CALLDATALOAD
+                  PUSH1 0x44
+                  CALLDATALOAD
+                  PUSH2 0x179
+                  JUMP
+                  JUMPDEST
+                  PUSH1 0x40
+                  DUP1
+                  MLOAD
+                  SWAP2
+                  DUP3
+                  MSTORE
+                  MLOAD
+                  SWAP1
+                  DUP2
+                  SWAP1
+                  SUB
+                  PUSH1 0x20
+                  ADD
+                  SWAP1
+                  RETURN
+                  JUMPDEST
+                  PUSH1 0x0
+                  DUP5
+                  DUP2
+                  JUMPDEST
+                  DUP4
+                  DUP2
+                  LT
+                  ISZERO
+                  PUSH2 0x110
+                  JUMPI
+                  DUP5
+                  DUP7
+                  DUP4
+                  MULMOD
+                  SWAP2
+                  POP
+                  JUMPDEST
+                  PUSH1 0x1
+                  ADD
+                  PUSH2 0xf9
+                  JUMP
+                  JUMPDEST
+                  DUP2
+                  SWAP3
+                  POP
+                  JUMPDEST
+                  POP
+                  POP
+                  SWAP5
+                  SWAP4
+                  POP
+                  POP
+                  POP
+                  POP
+                  JUMP
+                  JUMPDEST
+                  PUSH1 0x0
+                  DUP5
+                  DUP2
+                  JUMPDEST
+                  DUP4
+                  DUP2
+                  LT
+                  ISZERO
+                  PUSH2 0x110
+                  JUMPI
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x136
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  DUP6
+                  ADD
+                  SWAP2
+                  POP
+                  JUMPDEST
+                  PUSH1 0x1
+                  ADD
+                  PUSH2 0x123
+                  JUMP
+                  JUMPDEST
+                  DUP2
+                  SWAP3
+                  POP
+                  JUMPDEST
+                  POP
+                  POP
+                  SWAP5
+                  SWAP4
+                  POP
+                  POP
+                  POP
+                  POP
+                  JUMP
+                  JUMPDEST
+                  PUSH1 0x0
+                  DUP4
+                  DUP2
+                  JUMPDEST
+                  DUP4
+                  DUP2
+                  LT
+                  ISZERO
+                  PUSH2 0x16c
+                  JUMPI
+                  SWAP1
+                  DUP5
+                  ADD
+                  SWAP1
+                  JUMPDEST
+                  PUSH1 0x1
+                  ADD
+                  PUSH2 0x157
+                  JUMP
+                  JUMPDEST
+                  DUP2
+                  SWAP3
+                  POP
+                  JUMPDEST
+                  POP
+                  POP
+                  SWAP4
+                  SWAP3
+                  POP
+                  POP
+                  POP
+                  JUMP
+                  JUMPDEST
+                  PUSH1 0x0
+                  DUP4
+                  DUP2
+                  JUMPDEST
+                  DUP4
+                  DUP2
+                  LT
+                  ISZERO
+                  PUSH2 0x16c
+                  JUMPI
+                  SWAP1
+                  DUP5
+                  MUL
+                  SWAP1
+                  JUMPDEST
+                  PUSH1 0x1
+                  ADD
+                  PUSH2 0x17e
+                  JUMP
+                  JUMPDEST
+                  DUP2
+                  SWAP3
+                  POP
+                  JUMPDEST
+                  POP
+                  POP
+                  SWAP4
+                  SWAP3
+                  POP
+                  POP
+                  POP
+                  JUMP
+                  STOP
+                  LOG1
+                  PUSH6 0x627a7a723058
+                  SHA3
+                  MOD
+                  POP
+                  DUP2
+                  INVALID
+                  INVALID
+                  SWAP16
+                  INVALID
+                  INVALID
+                  INVALID
+                  INVALID
+                  SGT
+                  ORIGIN
+                  MSTORE
+                  ORIGIN
+                  COINBASE
+                  INVALID
+                  INVALID
+                  INVALID
+                  INVALID
+                  XOR
+                  DUP2
+                  LOG0
+                  PUSH6 0x29599a9c67d0
+                  INVALID
+        """    
+    
+        constraints = ConstraintSet()
+        world = evm.EVMWorld(constraints, blocknumber=9999, timestamp=1, difficulty=20000,
+                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=100000000000)
+    
+        bytecode = unhexlify('606060405263ffffffff60e060020a60003504166315d42327811461004257806359e3e1ea14610070578063c4f8b9fb1461009e578063e01330bb146100c9575bfe5b341561004a57fe5b61005e6004356024356044356064356100f4565b60408051918252519081900360200190f35b341561007857fe5b61005e60043560243560443560643561011e565b60408051918252519081900360200190f35b34156100a657fe5b61005e600435602435604435610152565b60408051918252519081900360200190f35b34156100d157fe5b61005e600435602435604435610179565b60408051918252519081900360200190f35b600084815b83811015610110578486830991505b6001016100f9565b8192505b5050949350505050565b600084815b8381101561011057858281151561013657fe5b04850191505b600101610123565b8192505b5050949350505050565b600083815b8381101561016c57908401905b600101610157565b8192505b50509392505050565b600083815b8381101561016c57908402905b60010161017e565b8192505b505093925050505600a165627a7a72305820065081bd1e9fdffccd251332523241eaabd0fb1881a06529599a9c67d0a568e50029')
+        world.create_account(
+            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
+            balance=100000000000000000000000,
+            code=bytecode,
+            nonce=0
+        )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = unhexlify('c4f8b9fb8edad8b55b1586805ea8c245d8c16b06a5102b791fc6eb60693731c0677bf501ff00ffffffffffffffffffffffffffaaffffffffffffffffbbffffffffffffff0000000000000000000000000000000000000000000000000000000000989680')
@@ -17723,6 +14434,8 @@ class EVMTest_vmPerformance(unittest.TestCase):
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
+        # This variable might seem redundant in some tests - don't forget it is auto generated
+        # and there are cases in which we need it ;)
         result = None
         returndata = b''
         try:
@@ -17730,925 +14443,32 @@ class EVMTest_vmPerformance(unittest.TestCase):
                 world.current_vm.execute()
         except evm.EndTx as e:
             result = e.result
-            if e.result in ('RETURN', 'REVERT'):
+            if result in ('RETURN', 'REVERT'):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        #Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        #check nonce, balance, code
+        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        # check nonce, balance, code
         self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
         self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('606060405263ffffffff60e060020a60003504166315d42327811461004257806359e3e1ea14610070578063c4f8b9fb1461009e578063e01330bb146100c9575bfe5b341561004a57fe5b61005e6004356024356044356064356100f4565b60408051918252519081900360200190f35b341561007857fe5b61005e60043560243560443560643561011e565b60408051918252519081900360200190f35b34156100a657fe5b61005e600435602435604435610152565b60408051918252519081900360200190f35b34156100d157fe5b61005e600435602435604435610179565b60408051918252519081900360200190f35b600084815b83811015610110578486830991505b6001016100f9565b8192505b5050949350505050565b600084815b8381101561011057858281151561013657fe5b04850191505b600101610123565b8192505b5050949350505050565b600083815b8381101561016c57908401905b600101610157565b8192505b50509392505050565b600083815b8381101561016c57908402905b60010161017e565b8192505b505093925050505600a165627a7a72305820065081bd1e9fdffccd251332523241eaabd0fb1881a06529599a9c67d0a568e50029'))
-        #check outs
+        # check outs
         self.assertEqual(returndata, unhexlify('a55ad8b55b1586805ea8c245a6177286a5102b791f9e6366693731c066e35e81'))
-        #check logs
-        data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
+        # check logs
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
         
         # test used gas
         self.assertEqual(to_constant(world.current_vm.gas), 999439999705)
     @unittest.skip('Gas or performance related')
 
-    def test_loop_exp_1b_1M(self):
-        '''
-            Textcase taken from https://github.com/ethereum/tests
-            File: loop-exp-1b-1M.json
-            sha256sum: ce831c398cbfdb08bbad690fef66e19596aa5bfbb4b47cce7dc1d811e221fc86
-            Code: PUSH1 0x60
-                  PUSH1 0x40
-                  MSTORE
-                  PUSH1 0xe0
-                  PUSH1 0x2
-                  EXP
-                  PUSH1 0x0
-                  CALLDATALOAD
-                  DIV
-                  PUSH4 0x3392ffc8
-                  DUP2
-                  EQ
-                  PUSH2 0x3f
-                  JUMPI
-                  DUP1
-                  PUSH4 0x3c77b95c
-                  EQ
-                  PUSH2 0x6a
-                  JUMPI
-                  DUP1
-                  PUSH4 0xce67bda6
-                  EQ
-                  PUSH2 0xc2
-                  JUMPI
-                  DUP1
-                  PUSH4 0xebbbe00b
-                  EQ
-                  PUSH2 0xe8
-                  JUMPI
-                  JUMPDEST
-                  PUSH2 0x2
-                  JUMP
-                  JUMPDEST
-                  CALLVALUE
-                  PUSH2 0x2
-                  JUMPI
-                  PUSH2 0x10e
-                  PUSH1 0x4
-                  CALLDATALOAD
-                  PUSH1 0x24
-                  CALLDATALOAD
-                  PUSH1 0x44
-                  CALLDATALOAD
-                  PUSH1 0x0
-                  DUP3
-                  DUP2
-                  JUMPDEST
-                  DUP4
-                  DUP2
-                  LT
-                  ISZERO
-                  PUSH2 0x120
-                  JUMPI
-                  SWAP1
-                  DUP6
-                  SWAP1
-                  EXP
-                  SWAP1
-                  PUSH1 0x1
-                  ADD
-                  PUSH2 0x55
-                  JUMP
-                  JUMPDEST
-                  CALLVALUE
-                  PUSH2 0x2
-                  JUMPI
-                  PUSH2 0x10e
-                  PUSH1 0x4
-                  CALLDATALOAD
-                  PUSH1 0x24
-                  CALLDATALOAD
-                  PUSH1 0x44
-                  CALLDATALOAD
-                  PUSH1 0x0
-                  DUP3
-                  DUP2
-                  JUMPDEST
-                  DUP4
-                  DUP2
-                  LT
-                  ISZERO
-                  PUSH2 0x120
-                  JUMPI
-                  SWAP1
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  SWAP1
-                  PUSH1 0x10
-                  ADD
-                  PUSH2 0x80
-                  JUMP
-                  JUMPDEST
-                  CALLVALUE
-                  PUSH2 0x2
-                  JUMPI
-                  PUSH2 0x10e
-                  PUSH1 0x4
-                  CALLDATALOAD
-                  PUSH1 0x24
-                  CALLDATALOAD
-                  PUSH1 0x44
-                  CALLDATALOAD
-                  PUSH1 0x0
-                  DUP1
-                  JUMPDEST
-                  DUP3
-                  DUP2
-                  LT
-                  ISZERO
-                  PUSH2 0x129
-                  JUMPI
-                  JUMPDEST
-                  PUSH1 0x1
-                  ADD
-                  PUSH2 0xd7
-                  JUMP
-                  JUMPDEST
-                  CALLVALUE
-                  PUSH2 0x2
-                  JUMPI
-                  PUSH2 0x10e
-                  PUSH1 0x4
-                  CALLDATALOAD
-                  PUSH1 0x24
-                  CALLDATALOAD
-                  PUSH1 0x44
-                  CALLDATALOAD
-                  PUSH1 0x0
-                  DUP1
-                  JUMPDEST
-                  DUP3
-                  DUP2
-                  LT
-                  ISZERO
-                  PUSH2 0x129
-                  JUMPI
-                  JUMPDEST
-                  PUSH1 0x10
-                  ADD
-                  PUSH2 0xfd
-                  JUMP
-                  JUMPDEST
-                  PUSH1 0x40
-                  DUP1
-                  MLOAD
-                  SWAP2
-                  DUP3
-                  MSTORE
-                  MLOAD
-                  SWAP1
-                  DUP2
-                  SWAP1
-                  SUB
-                  PUSH1 0x20
-                  ADD
-                  SWAP1
-                  RETURN
-                  JUMPDEST
-                  POP
-                  SWAP5
-                  SWAP4
-                  POP
-                  POP
-                  POP
-                  POP
-                  JUMP
-                  JUMPDEST
-                  POP
-                  SWAP2
-                  SWAP4
-                  SWAP3
-                  POP
-                  POP
-                  POP
-                  JUMP
-        '''    
-    
-        constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=9999, timestamp=1, difficulty=20000, coinbase=244687034288125203496486448490407391986876152250, gaslimit=100000000000)
-    
-        bytecode = unhexlify('606060405260e060020a60003504633392ffc8811461003f5780633c77b95c1461006a578063ce67bda6146100c2578063ebbbe00b146100e8575b610002565b346100025761010e600435602435604435600082815b83811015610120579085900a90600101610055565b346100025761010e600435602435604435600082815b83811015610120579085900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a90601001610080565b346100025761010e6004356024356044356000805b82811015610129575b6001016100d7565b346100025761010e6004356024356044356000805b82811015610129575b6010016100fd565b60408051918252519081900360200190f35b50949350505050565b5091939250505056')
-        world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-                             balance=100000000000000000000000,
-                             code=bytecode,
-                             nonce=0
-                            )
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = unhexlify('3392ffc800000000000000000000000000000000000000000000000000000000000000ff0000000000000000000000000000000000000000000000005851f42d4c957f2d00000000000000000000000000000000000000000000000000000000000f4240')
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        value = 0
-        gas = 1000000000000
-
-        # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
-
-        result = None
-        returndata = b''
-        try:
-            while True:
-                world.current_vm.execute()
-        except evm.EndTx as e:
-            result = e.result
-            if e.result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
-        except evm.StartTx as e:
-            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        #Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        #check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('606060405260e060020a60003504633392ffc8811461003f5780633c77b95c1461006a578063ce67bda6146100c2578063ebbbe00b146100e8575b610002565b346100025761010e600435602435604435600082815b83811015610120579085900a90600101610055565b346100025761010e600435602435604435600082815b83811015610120579085900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a90601001610080565b346100025761010e6004356024356044356000805b82811015610129575b6001016100d7565b346100025761010e6004356024356044356000805b82811015610129575b6010016100fd565b60408051918252519081900360200190f35b50949350505050565b5091939250505056'))
-        #check outs
-        self.assertEqual(returndata, unhexlify('7dd3cdcdaa09b68a42b5ac372018960fcb3daae20a0d41f9e6b507245ac87f2d'))
-        #check logs
-        data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
-        
-        # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 999924999780)
-    @unittest.skip('Gas or performance related')
-
-    def test_loop_exp_16b_100k(self):
-        '''
-            Textcase taken from https://github.com/ethereum/tests
-            File: loop-exp-16b-100k.json
-            sha256sum: 620de370944ea72fd94c78a76c415ed4a95011ec08e0eb3b3bbed924fc400db7
-            Code: PUSH1 0x60
-                  PUSH1 0x40
-                  MSTORE
-                  PUSH1 0xe0
-                  PUSH1 0x2
-                  EXP
-                  PUSH1 0x0
-                  CALLDATALOAD
-                  DIV
-                  PUSH4 0x3392ffc8
-                  DUP2
-                  EQ
-                  PUSH2 0x3f
-                  JUMPI
-                  DUP1
-                  PUSH4 0x3c77b95c
-                  EQ
-                  PUSH2 0x6a
-                  JUMPI
-                  DUP1
-                  PUSH4 0xce67bda6
-                  EQ
-                  PUSH2 0xc2
-                  JUMPI
-                  DUP1
-                  PUSH4 0xebbbe00b
-                  EQ
-                  PUSH2 0xe8
-                  JUMPI
-                  JUMPDEST
-                  PUSH2 0x2
-                  JUMP
-                  JUMPDEST
-                  CALLVALUE
-                  PUSH2 0x2
-                  JUMPI
-                  PUSH2 0x10e
-                  PUSH1 0x4
-                  CALLDATALOAD
-                  PUSH1 0x24
-                  CALLDATALOAD
-                  PUSH1 0x44
-                  CALLDATALOAD
-                  PUSH1 0x0
-                  DUP3
-                  DUP2
-                  JUMPDEST
-                  DUP4
-                  DUP2
-                  LT
-                  ISZERO
-                  PUSH2 0x120
-                  JUMPI
-                  SWAP1
-                  DUP6
-                  SWAP1
-                  EXP
-                  SWAP1
-                  PUSH1 0x1
-                  ADD
-                  PUSH2 0x55
-                  JUMP
-                  JUMPDEST
-                  CALLVALUE
-                  PUSH2 0x2
-                  JUMPI
-                  PUSH2 0x10e
-                  PUSH1 0x4
-                  CALLDATALOAD
-                  PUSH1 0x24
-                  CALLDATALOAD
-                  PUSH1 0x44
-                  CALLDATALOAD
-                  PUSH1 0x0
-                  DUP3
-                  DUP2
-                  JUMPDEST
-                  DUP4
-                  DUP2
-                  LT
-                  ISZERO
-                  PUSH2 0x120
-                  JUMPI
-                  SWAP1
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  DUP6
-                  SWAP1
-                  EXP
-                  SWAP1
-                  PUSH1 0x10
-                  ADD
-                  PUSH2 0x80
-                  JUMP
-                  JUMPDEST
-                  CALLVALUE
-                  PUSH2 0x2
-                  JUMPI
-                  PUSH2 0x10e
-                  PUSH1 0x4
-                  CALLDATALOAD
-                  PUSH1 0x24
-                  CALLDATALOAD
-                  PUSH1 0x44
-                  CALLDATALOAD
-                  PUSH1 0x0
-                  DUP1
-                  JUMPDEST
-                  DUP3
-                  DUP2
-                  LT
-                  ISZERO
-                  PUSH2 0x129
-                  JUMPI
-                  JUMPDEST
-                  PUSH1 0x1
-                  ADD
-                  PUSH2 0xd7
-                  JUMP
-                  JUMPDEST
-                  CALLVALUE
-                  PUSH2 0x2
-                  JUMPI
-                  PUSH2 0x10e
-                  PUSH1 0x4
-                  CALLDATALOAD
-                  PUSH1 0x24
-                  CALLDATALOAD
-                  PUSH1 0x44
-                  CALLDATALOAD
-                  PUSH1 0x0
-                  DUP1
-                  JUMPDEST
-                  DUP3
-                  DUP2
-                  LT
-                  ISZERO
-                  PUSH2 0x129
-                  JUMPI
-                  JUMPDEST
-                  PUSH1 0x10
-                  ADD
-                  PUSH2 0xfd
-                  JUMP
-                  JUMPDEST
-                  PUSH1 0x40
-                  DUP1
-                  MLOAD
-                  SWAP2
-                  DUP3
-                  MSTORE
-                  MLOAD
-                  SWAP1
-                  DUP2
-                  SWAP1
-                  SUB
-                  PUSH1 0x20
-                  ADD
-                  SWAP1
-                  RETURN
-                  JUMPDEST
-                  POP
-                  SWAP5
-                  SWAP4
-                  POP
-                  POP
-                  POP
-                  POP
-                  JUMP
-                  JUMPDEST
-                  POP
-                  SWAP2
-                  SWAP4
-                  SWAP3
-                  POP
-                  POP
-                  POP
-                  JUMP
-        '''    
-    
-        constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=9999, timestamp=1, difficulty=20000, coinbase=244687034288125203496486448490407391986876152250, gaslimit=100000000000)
-    
-        bytecode = unhexlify('606060405260e060020a60003504633392ffc8811461003f5780633c77b95c1461006a578063ce67bda6146100c2578063ebbbe00b146100e8575b610002565b346100025761010e600435602435604435600082815b83811015610120579085900a90600101610055565b346100025761010e600435602435604435600082815b83811015610120579085900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a90601001610080565b346100025761010e6004356024356044356000805b82811015610129575b6001016100d7565b346100025761010e6004356024356044356000805b82811015610129575b6010016100fd565b60408051918252519081900360200190f35b50949350505050565b5091939250505056')
-        world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-                             balance=100000000000000000000000,
-                             code=bytecode,
-                             nonce=0
-                            )
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = unhexlify('3392ffc800000000000000000000000000000000ffffffffffffffffffffffffffffffff0000000000000000000000000000000000000000000000005851f42d4c957f2d00000000000000000000000000000000000000000000000000000000000186a0')
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        value = 0
-        gas = 1000000000000
-
-        # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
-
-        result = None
-        returndata = b''
-        try:
-            while True:
-                world.current_vm.execute()
-        except evm.EndTx as e:
-            result = e.result
-            if e.result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
-        except evm.StartTx as e:
-            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        #Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        #check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('606060405260e060020a60003504633392ffc8811461003f5780633c77b95c1461006a578063ce67bda6146100c2578063ebbbe00b146100e8575b610002565b346100025761010e600435602435604435600082815b83811015610120579085900a90600101610055565b346100025761010e600435602435604435600082815b83811015610120579085900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a90601001610080565b346100025761010e6004356024356044356000805b82811015610129575b6001016100d7565b346100025761010e6004356024356044356000805b82811015610129575b6010016100fd565b60408051918252519081900360200190f35b50949350505050565b5091939250505056'))
-        #check outs
-        self.assertEqual(returndata, unhexlify('b23af8a01bc4dfc6f808935d77dbab8000000000000000005851f42d4c957f2d'))
-        #check logs
-        data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
-        
-        # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 999977499780)
-    @unittest.skip('Gas or performance related')
-
-    def test_ackermann32(self):
-        '''
-            Textcase taken from https://github.com/ethereum/tests
-            File: ackermann32.json
-            sha256sum: 3b6a7236e1a976db748e23082ed3446196be2eab9ecd42c57a62c4c485655590
-            Code: PUSH1 0xe0
-                  PUSH1 0x2
-                  EXP
-                  PUSH1 0x0
-                  CALLDATALOAD
-                  DIV
-                  DUP1
-                  PUSH4 0x2839e928
-                  EQ
-                  PUSH1 0x1e
-                  JUMPI
-                  DUP1
-                  PUSH4 0x61047ff4
-                  EQ
-                  PUSH1 0x34
-                  JUMPI
-                  STOP
-                  JUMPDEST
-                  PUSH1 0x2a
-                  PUSH1 0x4
-                  CALLDATALOAD
-                  PUSH1 0x24
-                  CALLDATALOAD
-                  PUSH1 0x47
-                  JUMP
-                  JUMPDEST
-                  DUP1
-                  PUSH1 0x0
-                  MSTORE
-                  PUSH1 0x20
-                  PUSH1 0x0
-                  RETURN
-                  JUMPDEST
-                  PUSH1 0x3d
-                  PUSH1 0x4
-                  CALLDATALOAD
-                  PUSH1 0x99
-                  JUMP
-                  JUMPDEST
-                  DUP1
-                  PUSH1 0x0
-                  MSTORE
-                  PUSH1 0x20
-                  PUSH1 0x0
-                  RETURN
-                  JUMPDEST
-                  PUSH1 0x0
-                  DUP3
-                  PUSH1 0x0
-                  EQ
-                  PUSH1 0x54
-                  JUMPI
-                  PUSH1 0x5e
-                  JUMP
-                  JUMPDEST
-                  DUP2
-                  PUSH1 0x1
-                  ADD
-                  SWAP1
-                  POP
-                  PUSH1 0x93
-                  JUMP
-                  JUMPDEST
-                  DUP2
-                  PUSH1 0x0
-                  EQ
-                  PUSH1 0x69
-                  JUMPI
-                  PUSH1 0x7b
-                  JUMP
-                  JUMPDEST
-                  PUSH1 0x75
-                  PUSH1 0x1
-                  DUP5
-                  SUB
-                  PUSH1 0x1
-                  PUSH1 0x47
-                  JUMP
-                  JUMPDEST
-                  SWAP1
-                  POP
-                  PUSH1 0x93
-                  JUMP
-                  JUMPDEST
-                  PUSH1 0x90
-                  PUSH1 0x1
-                  DUP5
-                  SUB
-                  PUSH1 0x8c
-                  DUP6
-                  PUSH1 0x1
-                  DUP7
-                  SUB
-                  PUSH1 0x47
-                  JUMP
-                  JUMPDEST
-                  PUSH1 0x47
-                  JUMP
-                  JUMPDEST
-                  SWAP1
-                  POP
-                  JUMPDEST
-                  SWAP3
-                  SWAP2
-                  POP
-                  POP
-                  JUMP
-                  JUMPDEST
-                  PUSH1 0x0
-                  DUP2
-                  PUSH1 0x0
-                  EQ
-                  DUP1
-                  PUSH1 0xa9
-                  JUMPI
-                  POP
-                  DUP2
-                  PUSH1 0x1
-                  EQ
-                  JUMPDEST
-                  PUSH1 0xb0
-                  JUMPI
-                  PUSH1 0xb7
-                  JUMP
-                  JUMPDEST
-                  DUP2
-                  SWAP1
-                  POP
-                  PUSH1 0xcf
-                  JUMP
-                  JUMPDEST
-                  PUSH1 0xc1
-                  PUSH1 0x2
-                  DUP4
-                  SUB
-                  PUSH1 0x99
-                  JUMP
-                  JUMPDEST
-                  PUSH1 0xcb
-                  PUSH1 0x1
-                  DUP5
-                  SUB
-                  PUSH1 0x99
-                  JUMP
-                  JUMPDEST
-                  ADD
-                  SWAP1
-                  POP
-                  JUMPDEST
-                  SWAP2
-                  SWAP1
-                  POP
-                  JUMP
-        '''    
-    
-        constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=100000000000)
-    
-        bytecode = unhexlify('60e060020a6000350480632839e92814601e57806361047ff414603457005b602a6004356024356047565b8060005260206000f35b603d6004356099565b8060005260206000f35b600082600014605457605e565b8160010190506093565b81600014606957607b565b60756001840360016047565b90506093565b609060018403608c85600186036047565b6047565b90505b92915050565b6000816000148060a95750816001145b60b05760b7565b81905060cf565b60c1600283036099565b60cb600184036099565b0190505b91905056')
-        world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-                             balance=100000000000000000000000,
-                             code=bytecode,
-                             nonce=0
-                            )
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = unhexlify('2839e92800000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000000002')
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        value = 1000000000000000000
-        gas = 100000
-
-        # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
-
-        result = None
-        returndata = b''
-        try:
-            while True:
-                world.current_vm.execute()
-        except evm.EndTx as e:
-            result = e.result
-            if e.result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
-        except evm.StartTx as e:
-            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        #Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        #check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60e060020a6000350480632839e92814601e57806361047ff414603457005b602a6004356024356047565b8060005260206000f35b603d6004356099565b8060005260206000f35b600082600014605457605e565b8160010190506093565b81600014606957607b565b60756001840360016047565b90506093565b609060018403608c85600186036047565b6047565b90505b92915050565b6000816000148060a95750816001145b60b05760b7565b81905060cf565b60c1600283036099565b60cb600184036099565b0190505b91905056'))
-        #check outs
-        self.assertEqual(returndata, unhexlify('000000000000000000000000000000000000000000000000000000000000001d'))
-        #check logs
-        data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
-        
-        # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 40600)
-    @unittest.skip('Gas or performance related')
-
-    def test_loop_mul(self):
-        '''
-            Textcase taken from https://github.com/ethereum/tests
-            File: loop-mul.json
-            sha256sum: 600aefe4a83576ca54ffef7cc66d311787374ae277abbd012307c0c9bbd724d1
-            Code: PUSH1 0x60
-                  PUSH1 0x40
-                  MSTORE
-                  PUSH1 0xe0
-                  PUSH1 0x2
-                  EXP
-                  PUSH1 0x0
-                  CALLDATALOAD
-                  DIV
-                  PUSH4 0xeb8ac921
-                  DUP2
-                  EQ
-                  PUSH1 0x1c
-                  JUMPI
-                  JUMPDEST
-                  PUSH1 0x2
-                  JUMP
-                  JUMPDEST
-                  CALLVALUE
-                  PUSH1 0x2
-                  JUMPI
-                  PUSH1 0x64
-                  PUSH1 0x4
-                  CALLDATALOAD
-                  PUSH1 0x24
-                  CALLDATALOAD
-                  PUSH1 0x0
-                  PUSH8 0x5851f42d4c957f2d
-                  PUSH8 0x14057b7ef767814f
-                  DUP3
-                  DUP1
-                  JUMPDEST
-                  PUSH1 0x0
-                  DUP7
-                  EQ
-                  PUSH1 0x76
-                  JUMPI
-                  POP
-                  POP
-                  SWAP4
-                  DUP2
-                  MUL
-                  DUP5
-                  ADD
-                  DUP1
-                  DUP3
-                  MUL
-                  DUP6
-                  ADD
-                  DUP1
-                  DUP3
-                  MUL
-                  SWAP6
-                  PUSH1 0x0
-                  NOT
-                  SWAP6
-                  SWAP1
-                  SWAP6
-                  ADD
-                  SWAP5
-                  SWAP2
-                  SWAP1
-                  PUSH1 0x3f
-                  JUMP
-                  JUMPDEST
-                  PUSH1 0x40
-                  DUP1
-                  MLOAD
-                  SWAP2
-                  DUP3
-                  MSTORE
-                  MLOAD
-                  SWAP1
-                  DUP2
-                  SWAP1
-                  SUB
-                  PUSH1 0x20
-                  ADD
-                  SWAP1
-                  RETURN
-                  JUMPDEST
-                  POP
-                  SWAP5
-                  SWAP6
-                  SWAP5
-                  POP
-                  POP
-                  POP
-                  POP
-                  POP
-                  JUMP
-        '''    
-    
-        constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=9999, timestamp=1, difficulty=20000, coinbase=244687034288125203496486448490407391986876152250, gaslimit=100000000000)
-    
-        bytecode = unhexlify('606060405260e060020a6000350463eb8ac9218114601c575b6002565b3460025760646004356024356000675851f42d4c957f2d6714057b7ef767814f82805b600086146076575050938102840180820285018082029560001995909501949190603f565b60408051918252519081900360200190f35b50949594505050505056')
-        world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-                             balance=100000000000000000000000,
-                             code=bytecode,
-                             nonce=0
-                            )
-        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = unhexlify('eb8ac9215eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeed0000000000000000000000000000000000000000000000000000000000100000')
-        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        value = 0
-        gas = 1000000000000
-
-        # open a fake tx, no funds send
-        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
-
-        result = None
-        returndata = b''
-        try:
-            while True:
-                world.current_vm.execute()
-        except evm.EndTx as e:
-            result = e.result
-            if e.result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
-        except evm.StartTx as e:
-            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        #Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        #check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
-        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('606060405260e060020a6000350463eb8ac9218114601c575b6002565b3460025760646004356024356000675851f42d4c957f2d6714057b7ef767814f82805b600086146076575050938102840180820285018082029560001995909501949190603f565b60408051918252519081900360200190f35b50949594505050505056'))
-        #check outs
-        self.assertEqual(returndata, unhexlify('af5113aa9f5bf0371ae31b13a58edff7f3ce96c9f40d9bb4c7b2ed490a6396c6'))
-        #check logs
-        data = rlp.encode([Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs])
-        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
-        
-        # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 999881510690)
-    @unittest.skip('Gas or performance related')
-
     def test_ackermann33(self):
-        '''
-            Textcase taken from https://github.com/ethereum/tests
-            File: ackermann33.json
-            sha256sum: dcce15dfa23875702d36aada2f196b9c03cd37cd7f2f9de70d91cccb117ea255
-            Code: PUSH1 0xe0
+        """
+        Textcase taken from https://github.com/ethereum/tests
+        File: ackermann33.json
+        sha256sum: dcce15dfa23875702d36aada2f196b9c03cd37cd7f2f9de70d91cccb117ea255
+        Code:     PUSH1 0xe0
                   PUSH1 0x2
                   EXP
                   PUSH1 0x0
@@ -18801,17 +14621,19 @@ class EVMTest_vmPerformance(unittest.TestCase):
                   SWAP1
                   POP
                   JUMP
-        '''    
+        """    
     
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256, coinbase=244687034288125203496486448490407391986876152250, gaslimit=100000000000)
+        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
+                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=100000000000)
     
         bytecode = unhexlify('60e060020a6000350480632839e92814601e57806361047ff414603457005b602a6004356024356047565b8060005260206000f35b603d6004356099565b8060005260206000f35b600082600014605457605e565b8160010190506093565b81600014606957607b565b60756001840360016047565b90506093565b609060018403608c85600186036047565b6047565b90505b92915050565b6000816000148060a95750816001145b60b05760b7565b81905060cf565b60c1600283036099565b60cb600184036099565b0190505b91905056')
-        world.create_account(address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-                             balance=100000000000000000000000,
-                             code=bytecode,
-                             nonce=0
-                            )
+        world.create_account(
+            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
+            balance=100000000000000000000000,
+            code=bytecode,
+            nonce=0
+        )
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         price = 0x5af3107a4000
         data = unhexlify('2839e92800000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000000003')
@@ -18822,6 +14644,8 @@ class EVMTest_vmPerformance(unittest.TestCase):
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
+        # This variable might seem redundant in some tests - don't forget it is auto generated
+        # and there are cases in which we need it ;)
         result = None
         returndata = b''
         try:
@@ -18829,12 +14653,4288 @@ class EVMTest_vmPerformance(unittest.TestCase):
                 world.current_vm.execute()
         except evm.EndTx as e:
             result = e.result
-            if e.result in ('RETURN', 'REVERT'):
+            if result in ('RETURN', 'REVERT'):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        #If test end in exception ceck it here
-        self.assertTrue(result in ('THROW'))
+        #If test end in exception check it here
+        self.assertTrue(result == 'THROW')
+    @unittest.skip('Gas or performance related')
+
+    def test_ackermann32(self):
+        """
+        Textcase taken from https://github.com/ethereum/tests
+        File: ackermann32.json
+        sha256sum: 3b6a7236e1a976db748e23082ed3446196be2eab9ecd42c57a62c4c485655590
+        Code:     PUSH1 0xe0
+                  PUSH1 0x2
+                  EXP
+                  PUSH1 0x0
+                  CALLDATALOAD
+                  DIV
+                  DUP1
+                  PUSH4 0x2839e928
+                  EQ
+                  PUSH1 0x1e
+                  JUMPI
+                  DUP1
+                  PUSH4 0x61047ff4
+                  EQ
+                  PUSH1 0x34
+                  JUMPI
+                  STOP
+                  JUMPDEST
+                  PUSH1 0x2a
+                  PUSH1 0x4
+                  CALLDATALOAD
+                  PUSH1 0x24
+                  CALLDATALOAD
+                  PUSH1 0x47
+                  JUMP
+                  JUMPDEST
+                  DUP1
+                  PUSH1 0x0
+                  MSTORE
+                  PUSH1 0x20
+                  PUSH1 0x0
+                  RETURN
+                  JUMPDEST
+                  PUSH1 0x3d
+                  PUSH1 0x4
+                  CALLDATALOAD
+                  PUSH1 0x99
+                  JUMP
+                  JUMPDEST
+                  DUP1
+                  PUSH1 0x0
+                  MSTORE
+                  PUSH1 0x20
+                  PUSH1 0x0
+                  RETURN
+                  JUMPDEST
+                  PUSH1 0x0
+                  DUP3
+                  PUSH1 0x0
+                  EQ
+                  PUSH1 0x54
+                  JUMPI
+                  PUSH1 0x5e
+                  JUMP
+                  JUMPDEST
+                  DUP2
+                  PUSH1 0x1
+                  ADD
+                  SWAP1
+                  POP
+                  PUSH1 0x93
+                  JUMP
+                  JUMPDEST
+                  DUP2
+                  PUSH1 0x0
+                  EQ
+                  PUSH1 0x69
+                  JUMPI
+                  PUSH1 0x7b
+                  JUMP
+                  JUMPDEST
+                  PUSH1 0x75
+                  PUSH1 0x1
+                  DUP5
+                  SUB
+                  PUSH1 0x1
+                  PUSH1 0x47
+                  JUMP
+                  JUMPDEST
+                  SWAP1
+                  POP
+                  PUSH1 0x93
+                  JUMP
+                  JUMPDEST
+                  PUSH1 0x90
+                  PUSH1 0x1
+                  DUP5
+                  SUB
+                  PUSH1 0x8c
+                  DUP6
+                  PUSH1 0x1
+                  DUP7
+                  SUB
+                  PUSH1 0x47
+                  JUMP
+                  JUMPDEST
+                  PUSH1 0x47
+                  JUMP
+                  JUMPDEST
+                  SWAP1
+                  POP
+                  JUMPDEST
+                  SWAP3
+                  SWAP2
+                  POP
+                  POP
+                  JUMP
+                  JUMPDEST
+                  PUSH1 0x0
+                  DUP2
+                  PUSH1 0x0
+                  EQ
+                  DUP1
+                  PUSH1 0xa9
+                  JUMPI
+                  POP
+                  DUP2
+                  PUSH1 0x1
+                  EQ
+                  JUMPDEST
+                  PUSH1 0xb0
+                  JUMPI
+                  PUSH1 0xb7
+                  JUMP
+                  JUMPDEST
+                  DUP2
+                  SWAP1
+                  POP
+                  PUSH1 0xcf
+                  JUMP
+                  JUMPDEST
+                  PUSH1 0xc1
+                  PUSH1 0x2
+                  DUP4
+                  SUB
+                  PUSH1 0x99
+                  JUMP
+                  JUMPDEST
+                  PUSH1 0xcb
+                  PUSH1 0x1
+                  DUP5
+                  SUB
+                  PUSH1 0x99
+                  JUMP
+                  JUMPDEST
+                  ADD
+                  SWAP1
+                  POP
+                  JUMPDEST
+                  SWAP2
+                  SWAP1
+                  POP
+                  JUMP
+        """    
+    
+        constraints = ConstraintSet()
+        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
+                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=100000000000)
+    
+        bytecode = unhexlify('60e060020a6000350480632839e92814601e57806361047ff414603457005b602a6004356024356047565b8060005260206000f35b603d6004356099565b8060005260206000f35b600082600014605457605e565b8160010190506093565b81600014606957607b565b60756001840360016047565b90506093565b609060018403608c85600186036047565b6047565b90505b92915050565b6000816000148060a95750816001145b60b05760b7565b81905060cf565b60c1600283036099565b60cb600184036099565b0190505b91905056')
+        world.create_account(
+            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
+            balance=100000000000000000000000,
+            code=bytecode,
+            nonce=0
+        )
+        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        price = 0x5af3107a4000
+        data = unhexlify('2839e92800000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000000002')
+        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        value = 1000000000000000000
+        gas = 100000
+
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+
+        # This variable might seem redundant in some tests - don't forget it is auto generated
+        # and there are cases in which we need it ;)
+        result = None
+        returndata = b''
+        try:
+            while True:
+                world.current_vm.execute()
+        except evm.EndTx as e:
+            result = e.result
+            if result in ('RETURN', 'REVERT'):
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
+        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        # check nonce, balance, code
+        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
+        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
+        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60e060020a6000350480632839e92814601e57806361047ff414603457005b602a6004356024356047565b8060005260206000f35b603d6004356099565b8060005260206000f35b600082600014605457605e565b8160010190506093565b81600014606957607b565b60756001840360016047565b90506093565b609060018403608c85600186036047565b6047565b90505b92915050565b6000816000148060a95750816001145b60b05760b7565b81905060cf565b60c1600283036099565b60cb600184036099565b0190505b91905056'))
+        # check outs
+        self.assertEqual(returndata, unhexlify('000000000000000000000000000000000000000000000000000000000000001d'))
+        # check logs
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        data = rlp.encode(logs)
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 40600)
+    @unittest.skip('Gas or performance related')
+
+    def test_loop_mulmod_2M(self):
+        """
+        Textcase taken from https://github.com/ethereum/tests
+        File: loop-mulmod-2M.json
+        sha256sum: dd880ffd723fdba361f3cda94c2a8bbf881b611e30aa5df2bf79f288d888bfba
+        Code:     PUSH1 0x60
+                  PUSH1 0x40
+                  MSTORE
+                  PUSH4 0xffffffff
+                  PUSH1 0xe0
+                  PUSH1 0x2
+                  EXP
+                  PUSH1 0x0
+                  CALLDATALOAD
+                  DIV
+                  AND
+                  PUSH4 0x15d42327
+                  DUP2
+                  EQ
+                  PUSH1 0x22
+                  JUMPI
+                  JUMPDEST
+                  PUSH1 0x0
+                  JUMP
+                  JUMPDEST
+                  CALLVALUE
+                  PUSH1 0x0
+                  JUMPI
+                  PUSH1 0x38
+                  PUSH1 0x4
+                  CALLDATALOAD
+                  PUSH1 0x24
+                  CALLDATALOAD
+                  PUSH1 0x44
+                  CALLDATALOAD
+                  PUSH1 0x64
+                  CALLDATALOAD
+                  PUSH1 0x4a
+                  JUMP
+                  JUMPDEST
+                  PUSH1 0x40
+                  DUP1
+                  MLOAD
+                  SWAP2
+                  DUP3
+                  MSTORE
+                  MLOAD
+                  SWAP1
+                  DUP2
+                  SWAP1
+                  SUB
+                  PUSH1 0x20
+                  ADD
+                  SWAP1
+                  RETURN
+                  JUMPDEST
+                  PUSH1 0x0
+                  DUP5
+                  DUP2
+                  JUMPDEST
+                  DUP4
+                  DUP2
+                  LT
+                  ISZERO
+                  PUSH1 0x64
+                  JUMPI
+                  DUP5
+                  DUP7
+                  DUP4
+                  MULMOD
+                  SWAP2
+                  POP
+                  JUMPDEST
+                  PUSH1 0x1
+                  ADD
+                  PUSH1 0x4f
+                  JUMP
+                  JUMPDEST
+                  DUP2
+                  SWAP3
+                  POP
+                  JUMPDEST
+                  POP
+                  POP
+                  SWAP5
+                  SWAP4
+                  POP
+                  POP
+                  POP
+                  POP
+                  JUMP
+                  STOP
+                  LOG1
+                  PUSH6 0x627a7a723058
+                  SHA3
+                  SIGNEXTEND
+                  INVALID
+                  MSTORE
+                  INVALID
+                  INVALID
+                  ORIGIN
+        """    
+    
+        constraints = ConstraintSet()
+        world = evm.EVMWorld(constraints, blocknumber=9999, timestamp=1, difficulty=20000,
+                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=100000000000)
+    
+        bytecode = unhexlify('606060405263ffffffff60e060020a60003504166315d4232781146022575b6000565b346000576038600435602435604435606435604a565b60408051918252519081900360200190f35b600084815b838110156064578486830991505b600101604f565b8192505b50509493505050505600a165627a7a723058200b2f52fbc8327bac47da1762338f70ad17310de956a58bbbca8ee58378f357900029')
+        world.create_account(
+            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
+            balance=100000000000000000000000,
+            code=bytecode,
+            nonce=0
+        )
+        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        price = 0x5af3107a4000
+        data = unhexlify('15d423278edad8b55b1586805ea8c245d8c16b06a5102b791fc6eb60693731c0677bf5011c68db1c179cd35ab3fc60c63704aa7fcbea40f19782b1611aaba86726a7686cffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00000000000000000000000000000000000000000000000000000000001e8480')
+        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        value = 0
+        gas = 1000000000000
+
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+
+        # This variable might seem redundant in some tests - don't forget it is auto generated
+        # and there are cases in which we need it ;)
+        result = None
+        returndata = b''
+        try:
+            while True:
+                world.current_vm.execute()
+        except evm.EndTx as e:
+            result = e.result
+            if result in ('RETURN', 'REVERT'):
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
+        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        # check nonce, balance, code
+        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
+        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
+        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('606060405263ffffffff60e060020a60003504166315d4232781146022575b6000565b346000576038600435602435604435606435604a565b60408051918252519081900360200190f35b600084815b838110156064578486830991505b600101604f565b8192505b50509493505050505600a165627a7a723058200b2f52fbc8327bac47da1762338f70ad17310de956a58bbbca8ee58378f357900029'))
+        # check outs
+        self.assertEqual(returndata, unhexlify('0e1c6aac6663c379a52d9ccc7ba4757131020772d41447dfcf478cf9fb0c2bbf'))
+        # check logs
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        data = rlp.encode(logs)
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 999867999745)
+    @unittest.skip('Gas or performance related')
+
+    def test_loop_exp_1b_1M(self):
+        """
+        Textcase taken from https://github.com/ethereum/tests
+        File: loop-exp-1b-1M.json
+        sha256sum: ce831c398cbfdb08bbad690fef66e19596aa5bfbb4b47cce7dc1d811e221fc86
+        Code:     PUSH1 0x60
+                  PUSH1 0x40
+                  MSTORE
+                  PUSH1 0xe0
+                  PUSH1 0x2
+                  EXP
+                  PUSH1 0x0
+                  CALLDATALOAD
+                  DIV
+                  PUSH4 0x3392ffc8
+                  DUP2
+                  EQ
+                  PUSH2 0x3f
+                  JUMPI
+                  DUP1
+                  PUSH4 0x3c77b95c
+                  EQ
+                  PUSH2 0x6a
+                  JUMPI
+                  DUP1
+                  PUSH4 0xce67bda6
+                  EQ
+                  PUSH2 0xc2
+                  JUMPI
+                  DUP1
+                  PUSH4 0xebbbe00b
+                  EQ
+                  PUSH2 0xe8
+                  JUMPI
+                  JUMPDEST
+                  PUSH2 0x2
+                  JUMP
+                  JUMPDEST
+                  CALLVALUE
+                  PUSH2 0x2
+                  JUMPI
+                  PUSH2 0x10e
+                  PUSH1 0x4
+                  CALLDATALOAD
+                  PUSH1 0x24
+                  CALLDATALOAD
+                  PUSH1 0x44
+                  CALLDATALOAD
+                  PUSH1 0x0
+                  DUP3
+                  DUP2
+                  JUMPDEST
+                  DUP4
+                  DUP2
+                  LT
+                  ISZERO
+                  PUSH2 0x120
+                  JUMPI
+                  SWAP1
+                  DUP6
+                  SWAP1
+                  EXP
+                  SWAP1
+                  PUSH1 0x1
+                  ADD
+                  PUSH2 0x55
+                  JUMP
+                  JUMPDEST
+                  CALLVALUE
+                  PUSH2 0x2
+                  JUMPI
+                  PUSH2 0x10e
+                  PUSH1 0x4
+                  CALLDATALOAD
+                  PUSH1 0x24
+                  CALLDATALOAD
+                  PUSH1 0x44
+                  CALLDATALOAD
+                  PUSH1 0x0
+                  DUP3
+                  DUP2
+                  JUMPDEST
+                  DUP4
+                  DUP2
+                  LT
+                  ISZERO
+                  PUSH2 0x120
+                  JUMPI
+                  SWAP1
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  SWAP1
+                  PUSH1 0x10
+                  ADD
+                  PUSH2 0x80
+                  JUMP
+                  JUMPDEST
+                  CALLVALUE
+                  PUSH2 0x2
+                  JUMPI
+                  PUSH2 0x10e
+                  PUSH1 0x4
+                  CALLDATALOAD
+                  PUSH1 0x24
+                  CALLDATALOAD
+                  PUSH1 0x44
+                  CALLDATALOAD
+                  PUSH1 0x0
+                  DUP1
+                  JUMPDEST
+                  DUP3
+                  DUP2
+                  LT
+                  ISZERO
+                  PUSH2 0x129
+                  JUMPI
+                  JUMPDEST
+                  PUSH1 0x1
+                  ADD
+                  PUSH2 0xd7
+                  JUMP
+                  JUMPDEST
+                  CALLVALUE
+                  PUSH2 0x2
+                  JUMPI
+                  PUSH2 0x10e
+                  PUSH1 0x4
+                  CALLDATALOAD
+                  PUSH1 0x24
+                  CALLDATALOAD
+                  PUSH1 0x44
+                  CALLDATALOAD
+                  PUSH1 0x0
+                  DUP1
+                  JUMPDEST
+                  DUP3
+                  DUP2
+                  LT
+                  ISZERO
+                  PUSH2 0x129
+                  JUMPI
+                  JUMPDEST
+                  PUSH1 0x10
+                  ADD
+                  PUSH2 0xfd
+                  JUMP
+                  JUMPDEST
+                  PUSH1 0x40
+                  DUP1
+                  MLOAD
+                  SWAP2
+                  DUP3
+                  MSTORE
+                  MLOAD
+                  SWAP1
+                  DUP2
+                  SWAP1
+                  SUB
+                  PUSH1 0x20
+                  ADD
+                  SWAP1
+                  RETURN
+                  JUMPDEST
+                  POP
+                  SWAP5
+                  SWAP4
+                  POP
+                  POP
+                  POP
+                  POP
+                  JUMP
+                  JUMPDEST
+                  POP
+                  SWAP2
+                  SWAP4
+                  SWAP3
+                  POP
+                  POP
+                  POP
+                  JUMP
+        """    
+    
+        constraints = ConstraintSet()
+        world = evm.EVMWorld(constraints, blocknumber=9999, timestamp=1, difficulty=20000,
+                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=100000000000)
+    
+        bytecode = unhexlify('606060405260e060020a60003504633392ffc8811461003f5780633c77b95c1461006a578063ce67bda6146100c2578063ebbbe00b146100e8575b610002565b346100025761010e600435602435604435600082815b83811015610120579085900a90600101610055565b346100025761010e600435602435604435600082815b83811015610120579085900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a90601001610080565b346100025761010e6004356024356044356000805b82811015610129575b6001016100d7565b346100025761010e6004356024356044356000805b82811015610129575b6010016100fd565b60408051918252519081900360200190f35b50949350505050565b5091939250505056')
+        world.create_account(
+            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
+            balance=100000000000000000000000,
+            code=bytecode,
+            nonce=0
+        )
+        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        price = 0x5af3107a4000
+        data = unhexlify('3392ffc800000000000000000000000000000000000000000000000000000000000000ff0000000000000000000000000000000000000000000000005851f42d4c957f2d00000000000000000000000000000000000000000000000000000000000f4240')
+        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        value = 0
+        gas = 1000000000000
+
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+
+        # This variable might seem redundant in some tests - don't forget it is auto generated
+        # and there are cases in which we need it ;)
+        result = None
+        returndata = b''
+        try:
+            while True:
+                world.current_vm.execute()
+        except evm.EndTx as e:
+            result = e.result
+            if result in ('RETURN', 'REVERT'):
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
+        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        # check nonce, balance, code
+        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
+        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
+        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('606060405260e060020a60003504633392ffc8811461003f5780633c77b95c1461006a578063ce67bda6146100c2578063ebbbe00b146100e8575b610002565b346100025761010e600435602435604435600082815b83811015610120579085900a90600101610055565b346100025761010e600435602435604435600082815b83811015610120579085900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a90601001610080565b346100025761010e6004356024356044356000805b82811015610129575b6001016100d7565b346100025761010e6004356024356044356000805b82811015610129575b6010016100fd565b60408051918252519081900360200190f35b50949350505050565b5091939250505056'))
+        # check outs
+        self.assertEqual(returndata, unhexlify('7dd3cdcdaa09b68a42b5ac372018960fcb3daae20a0d41f9e6b507245ac87f2d'))
+        # check logs
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        data = rlp.encode(logs)
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 999924999780)
+    @unittest.skip('Gas or performance related')
+
+    def test_loop_exp_32b_100k(self):
+        """
+        Textcase taken from https://github.com/ethereum/tests
+        File: loop-exp-32b-100k.json
+        sha256sum: 3fdf71291eef83ada87015592ce6993042e883c5ced3c30cc5c5708723e362aa
+        Code:     PUSH1 0x60
+                  PUSH1 0x40
+                  MSTORE
+                  PUSH1 0xe0
+                  PUSH1 0x2
+                  EXP
+                  PUSH1 0x0
+                  CALLDATALOAD
+                  DIV
+                  PUSH4 0x3392ffc8
+                  DUP2
+                  EQ
+                  PUSH2 0x3f
+                  JUMPI
+                  DUP1
+                  PUSH4 0x3c77b95c
+                  EQ
+                  PUSH2 0x6a
+                  JUMPI
+                  DUP1
+                  PUSH4 0xce67bda6
+                  EQ
+                  PUSH2 0xc2
+                  JUMPI
+                  DUP1
+                  PUSH4 0xebbbe00b
+                  EQ
+                  PUSH2 0xe8
+                  JUMPI
+                  JUMPDEST
+                  PUSH2 0x2
+                  JUMP
+                  JUMPDEST
+                  CALLVALUE
+                  PUSH2 0x2
+                  JUMPI
+                  PUSH2 0x10e
+                  PUSH1 0x4
+                  CALLDATALOAD
+                  PUSH1 0x24
+                  CALLDATALOAD
+                  PUSH1 0x44
+                  CALLDATALOAD
+                  PUSH1 0x0
+                  DUP3
+                  DUP2
+                  JUMPDEST
+                  DUP4
+                  DUP2
+                  LT
+                  ISZERO
+                  PUSH2 0x120
+                  JUMPI
+                  SWAP1
+                  DUP6
+                  SWAP1
+                  EXP
+                  SWAP1
+                  PUSH1 0x1
+                  ADD
+                  PUSH2 0x55
+                  JUMP
+                  JUMPDEST
+                  CALLVALUE
+                  PUSH2 0x2
+                  JUMPI
+                  PUSH2 0x10e
+                  PUSH1 0x4
+                  CALLDATALOAD
+                  PUSH1 0x24
+                  CALLDATALOAD
+                  PUSH1 0x44
+                  CALLDATALOAD
+                  PUSH1 0x0
+                  DUP3
+                  DUP2
+                  JUMPDEST
+                  DUP4
+                  DUP2
+                  LT
+                  ISZERO
+                  PUSH2 0x120
+                  JUMPI
+                  SWAP1
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  SWAP1
+                  PUSH1 0x10
+                  ADD
+                  PUSH2 0x80
+                  JUMP
+                  JUMPDEST
+                  CALLVALUE
+                  PUSH2 0x2
+                  JUMPI
+                  PUSH2 0x10e
+                  PUSH1 0x4
+                  CALLDATALOAD
+                  PUSH1 0x24
+                  CALLDATALOAD
+                  PUSH1 0x44
+                  CALLDATALOAD
+                  PUSH1 0x0
+                  DUP1
+                  JUMPDEST
+                  DUP3
+                  DUP2
+                  LT
+                  ISZERO
+                  PUSH2 0x129
+                  JUMPI
+                  JUMPDEST
+                  PUSH1 0x1
+                  ADD
+                  PUSH2 0xd7
+                  JUMP
+                  JUMPDEST
+                  CALLVALUE
+                  PUSH2 0x2
+                  JUMPI
+                  PUSH2 0x10e
+                  PUSH1 0x4
+                  CALLDATALOAD
+                  PUSH1 0x24
+                  CALLDATALOAD
+                  PUSH1 0x44
+                  CALLDATALOAD
+                  PUSH1 0x0
+                  DUP1
+                  JUMPDEST
+                  DUP3
+                  DUP2
+                  LT
+                  ISZERO
+                  PUSH2 0x129
+                  JUMPI
+                  JUMPDEST
+                  PUSH1 0x10
+                  ADD
+                  PUSH2 0xfd
+                  JUMP
+                  JUMPDEST
+                  PUSH1 0x40
+                  DUP1
+                  MLOAD
+                  SWAP2
+                  DUP3
+                  MSTORE
+                  MLOAD
+                  SWAP1
+                  DUP2
+                  SWAP1
+                  SUB
+                  PUSH1 0x20
+                  ADD
+                  SWAP1
+                  RETURN
+                  JUMPDEST
+                  POP
+                  SWAP5
+                  SWAP4
+                  POP
+                  POP
+                  POP
+                  POP
+                  JUMP
+                  JUMPDEST
+                  POP
+                  SWAP2
+                  SWAP4
+                  SWAP3
+                  POP
+                  POP
+                  POP
+                  JUMP
+        """    
+    
+        constraints = ConstraintSet()
+        world = evm.EVMWorld(constraints, blocknumber=9999, timestamp=1, difficulty=20000,
+                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=100000000000)
+    
+        bytecode = unhexlify('606060405260e060020a60003504633392ffc8811461003f5780633c77b95c1461006a578063ce67bda6146100c2578063ebbbe00b146100e8575b610002565b346100025761010e600435602435604435600082815b83811015610120579085900a90600101610055565b346100025761010e600435602435604435600082815b83811015610120579085900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a90601001610080565b346100025761010e6004356024356044356000805b82811015610129575b6001016100d7565b346100025761010e6004356024356044356000805b82811015610129575b6010016100fd565b60408051918252519081900360200190f35b50949350505050565b5091939250505056')
+        world.create_account(
+            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
+            balance=100000000000000000000000,
+            code=bytecode,
+            nonce=0
+        )
+        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        price = 0x5af3107a4000
+        data = unhexlify('3392ffc8ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000000000000000000000000000000000000000000000005851f42d4c957f2d00000000000000000000000000000000000000000000000000000000000186a0')
+        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        value = 0
+        gas = 1000000000000
+
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+
+        # This variable might seem redundant in some tests - don't forget it is auto generated
+        # and there are cases in which we need it ;)
+        result = None
+        returndata = b''
+        try:
+            while True:
+                world.current_vm.execute()
+        except evm.EndTx as e:
+            result = e.result
+            if result in ('RETURN', 'REVERT'):
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
+        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        # check nonce, balance, code
+        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
+        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
+        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('606060405260e060020a60003504633392ffc8811461003f5780633c77b95c1461006a578063ce67bda6146100c2578063ebbbe00b146100e8575b610002565b346100025761010e600435602435604435600082815b83811015610120579085900a90600101610055565b346100025761010e600435602435604435600082815b83811015610120579085900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a90601001610080565b346100025761010e6004356024356044356000805b82811015610129575b6001016100d7565b346100025761010e6004356024356044356000805b82811015610129575b6010016100fd565b60408051918252519081900360200190f35b50949350505050565b5091939250505056'))
+        # check outs
+        self.assertEqual(returndata, unhexlify('0000000000000000000000000000000000000000000000005851f42d4c957f2d'))
+        # check logs
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        data = rlp.encode(logs)
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 999961499780)
+    @unittest.skip('Gas or performance related')
+
+    def test_ackermann31(self):
+        """
+        Textcase taken from https://github.com/ethereum/tests
+        File: ackermann31.json
+        sha256sum: f40f63dd99b398421c09232b4e33cabc62081156d80bd223db228c4c2bcfee4e
+        Code:     PUSH1 0xe0
+                  PUSH1 0x2
+                  EXP
+                  PUSH1 0x0
+                  CALLDATALOAD
+                  DIV
+                  DUP1
+                  PUSH4 0x2839e928
+                  EQ
+                  PUSH1 0x1e
+                  JUMPI
+                  DUP1
+                  PUSH4 0x61047ff4
+                  EQ
+                  PUSH1 0x34
+                  JUMPI
+                  STOP
+                  JUMPDEST
+                  PUSH1 0x2a
+                  PUSH1 0x4
+                  CALLDATALOAD
+                  PUSH1 0x24
+                  CALLDATALOAD
+                  PUSH1 0x47
+                  JUMP
+                  JUMPDEST
+                  DUP1
+                  PUSH1 0x0
+                  MSTORE
+                  PUSH1 0x20
+                  PUSH1 0x0
+                  RETURN
+                  JUMPDEST
+                  PUSH1 0x3d
+                  PUSH1 0x4
+                  CALLDATALOAD
+                  PUSH1 0x99
+                  JUMP
+                  JUMPDEST
+                  DUP1
+                  PUSH1 0x0
+                  MSTORE
+                  PUSH1 0x20
+                  PUSH1 0x0
+                  RETURN
+                  JUMPDEST
+                  PUSH1 0x0
+                  DUP3
+                  PUSH1 0x0
+                  EQ
+                  PUSH1 0x54
+                  JUMPI
+                  PUSH1 0x5e
+                  JUMP
+                  JUMPDEST
+                  DUP2
+                  PUSH1 0x1
+                  ADD
+                  SWAP1
+                  POP
+                  PUSH1 0x93
+                  JUMP
+                  JUMPDEST
+                  DUP2
+                  PUSH1 0x0
+                  EQ
+                  PUSH1 0x69
+                  JUMPI
+                  PUSH1 0x7b
+                  JUMP
+                  JUMPDEST
+                  PUSH1 0x75
+                  PUSH1 0x1
+                  DUP5
+                  SUB
+                  PUSH1 0x1
+                  PUSH1 0x47
+                  JUMP
+                  JUMPDEST
+                  SWAP1
+                  POP
+                  PUSH1 0x93
+                  JUMP
+                  JUMPDEST
+                  PUSH1 0x90
+                  PUSH1 0x1
+                  DUP5
+                  SUB
+                  PUSH1 0x8c
+                  DUP6
+                  PUSH1 0x1
+                  DUP7
+                  SUB
+                  PUSH1 0x47
+                  JUMP
+                  JUMPDEST
+                  PUSH1 0x47
+                  JUMP
+                  JUMPDEST
+                  SWAP1
+                  POP
+                  JUMPDEST
+                  SWAP3
+                  SWAP2
+                  POP
+                  POP
+                  JUMP
+                  JUMPDEST
+                  PUSH1 0x0
+                  DUP2
+                  PUSH1 0x0
+                  EQ
+                  DUP1
+                  PUSH1 0xa9
+                  JUMPI
+                  POP
+                  DUP2
+                  PUSH1 0x1
+                  EQ
+                  JUMPDEST
+                  PUSH1 0xb0
+                  JUMPI
+                  PUSH1 0xb7
+                  JUMP
+                  JUMPDEST
+                  DUP2
+                  SWAP1
+                  POP
+                  PUSH1 0xcf
+                  JUMP
+                  JUMPDEST
+                  PUSH1 0xc1
+                  PUSH1 0x2
+                  DUP4
+                  SUB
+                  PUSH1 0x99
+                  JUMP
+                  JUMPDEST
+                  PUSH1 0xcb
+                  PUSH1 0x1
+                  DUP5
+                  SUB
+                  PUSH1 0x99
+                  JUMP
+                  JUMPDEST
+                  ADD
+                  SWAP1
+                  POP
+                  JUMPDEST
+                  SWAP2
+                  SWAP1
+                  POP
+                  JUMP
+        """    
+    
+        constraints = ConstraintSet()
+        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
+                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=100000000000)
+    
+        bytecode = unhexlify('60e060020a6000350480632839e92814601e57806361047ff414603457005b602a6004356024356047565b8060005260206000f35b603d6004356099565b8060005260206000f35b600082600014605457605e565b8160010190506093565b81600014606957607b565b60756001840360016047565b90506093565b609060018403608c85600186036047565b6047565b90505b92915050565b6000816000148060a95750816001145b60b05760b7565b81905060cf565b60c1600283036099565b60cb600184036099565b0190505b91905056')
+        world.create_account(
+            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
+            balance=100000000000000000000000,
+            code=bytecode,
+            nonce=0
+        )
+        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        price = 0x5af3107a4000
+        data = unhexlify('2839e92800000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000000001')
+        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        value = 1000000000000000000
+        gas = 100000
+
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+
+        # This variable might seem redundant in some tests - don't forget it is auto generated
+        # and there are cases in which we need it ;)
+        result = None
+        returndata = b''
+        try:
+            while True:
+                world.current_vm.execute()
+        except evm.EndTx as e:
+            result = e.result
+            if result in ('RETURN', 'REVERT'):
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
+        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        # check nonce, balance, code
+        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
+        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
+        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60e060020a6000350480632839e92814601e57806361047ff414603457005b602a6004356024356047565b8060005260206000f35b603d6004356099565b8060005260206000f35b600082600014605457605e565b8160010190506093565b81600014606957607b565b60756001840360016047565b90506093565b609060018403608c85600186036047565b6047565b90505b92915050565b6000816000148060a95750816001145b60b05760b7565b81905060cf565b60c1600283036099565b60cb600184036099565b0190505b91905056'))
+        # check outs
+        self.assertEqual(returndata, unhexlify('000000000000000000000000000000000000000000000000000000000000000d'))
+        # check logs
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        data = rlp.encode(logs)
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 88225)
+    @unittest.skip('Gas or performance related')
+
+    def test_loop_exp_8b_100k(self):
+        """
+        Textcase taken from https://github.com/ethereum/tests
+        File: loop-exp-8b-100k.json
+        sha256sum: 2f076c2f9d7ce9e950e0ff5a65fe2ce54a9d7562997eba56d8ec4fa471b60b05
+        Code:     PUSH1 0x60
+                  PUSH1 0x40
+                  MSTORE
+                  PUSH1 0xe0
+                  PUSH1 0x2
+                  EXP
+                  PUSH1 0x0
+                  CALLDATALOAD
+                  DIV
+                  PUSH4 0x3392ffc8
+                  DUP2
+                  EQ
+                  PUSH2 0x3f
+                  JUMPI
+                  DUP1
+                  PUSH4 0x3c77b95c
+                  EQ
+                  PUSH2 0x6a
+                  JUMPI
+                  DUP1
+                  PUSH4 0xce67bda6
+                  EQ
+                  PUSH2 0xc2
+                  JUMPI
+                  DUP1
+                  PUSH4 0xebbbe00b
+                  EQ
+                  PUSH2 0xe8
+                  JUMPI
+                  JUMPDEST
+                  PUSH2 0x2
+                  JUMP
+                  JUMPDEST
+                  CALLVALUE
+                  PUSH2 0x2
+                  JUMPI
+                  PUSH2 0x10e
+                  PUSH1 0x4
+                  CALLDATALOAD
+                  PUSH1 0x24
+                  CALLDATALOAD
+                  PUSH1 0x44
+                  CALLDATALOAD
+                  PUSH1 0x0
+                  DUP3
+                  DUP2
+                  JUMPDEST
+                  DUP4
+                  DUP2
+                  LT
+                  ISZERO
+                  PUSH2 0x120
+                  JUMPI
+                  SWAP1
+                  DUP6
+                  SWAP1
+                  EXP
+                  SWAP1
+                  PUSH1 0x1
+                  ADD
+                  PUSH2 0x55
+                  JUMP
+                  JUMPDEST
+                  CALLVALUE
+                  PUSH2 0x2
+                  JUMPI
+                  PUSH2 0x10e
+                  PUSH1 0x4
+                  CALLDATALOAD
+                  PUSH1 0x24
+                  CALLDATALOAD
+                  PUSH1 0x44
+                  CALLDATALOAD
+                  PUSH1 0x0
+                  DUP3
+                  DUP2
+                  JUMPDEST
+                  DUP4
+                  DUP2
+                  LT
+                  ISZERO
+                  PUSH2 0x120
+                  JUMPI
+                  SWAP1
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  SWAP1
+                  PUSH1 0x10
+                  ADD
+                  PUSH2 0x80
+                  JUMP
+                  JUMPDEST
+                  CALLVALUE
+                  PUSH2 0x2
+                  JUMPI
+                  PUSH2 0x10e
+                  PUSH1 0x4
+                  CALLDATALOAD
+                  PUSH1 0x24
+                  CALLDATALOAD
+                  PUSH1 0x44
+                  CALLDATALOAD
+                  PUSH1 0x0
+                  DUP1
+                  JUMPDEST
+                  DUP3
+                  DUP2
+                  LT
+                  ISZERO
+                  PUSH2 0x129
+                  JUMPI
+                  JUMPDEST
+                  PUSH1 0x1
+                  ADD
+                  PUSH2 0xd7
+                  JUMP
+                  JUMPDEST
+                  CALLVALUE
+                  PUSH2 0x2
+                  JUMPI
+                  PUSH2 0x10e
+                  PUSH1 0x4
+                  CALLDATALOAD
+                  PUSH1 0x24
+                  CALLDATALOAD
+                  PUSH1 0x44
+                  CALLDATALOAD
+                  PUSH1 0x0
+                  DUP1
+                  JUMPDEST
+                  DUP3
+                  DUP2
+                  LT
+                  ISZERO
+                  PUSH2 0x129
+                  JUMPI
+                  JUMPDEST
+                  PUSH1 0x10
+                  ADD
+                  PUSH2 0xfd
+                  JUMP
+                  JUMPDEST
+                  PUSH1 0x40
+                  DUP1
+                  MLOAD
+                  SWAP2
+                  DUP3
+                  MSTORE
+                  MLOAD
+                  SWAP1
+                  DUP2
+                  SWAP1
+                  SUB
+                  PUSH1 0x20
+                  ADD
+                  SWAP1
+                  RETURN
+                  JUMPDEST
+                  POP
+                  SWAP5
+                  SWAP4
+                  POP
+                  POP
+                  POP
+                  POP
+                  JUMP
+                  JUMPDEST
+                  POP
+                  SWAP2
+                  SWAP4
+                  SWAP3
+                  POP
+                  POP
+                  POP
+                  JUMP
+        """    
+    
+        constraints = ConstraintSet()
+        world = evm.EVMWorld(constraints, blocknumber=9999, timestamp=1, difficulty=20000,
+                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=100000000000)
+    
+        bytecode = unhexlify('606060405260e060020a60003504633392ffc8811461003f5780633c77b95c1461006a578063ce67bda6146100c2578063ebbbe00b146100e8575b610002565b346100025761010e600435602435604435600082815b83811015610120579085900a90600101610055565b346100025761010e600435602435604435600082815b83811015610120579085900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a90601001610080565b346100025761010e6004356024356044356000805b82811015610129575b6001016100d7565b346100025761010e6004356024356044356000805b82811015610129575b6010016100fd565b60408051918252519081900360200190f35b50949350505050565b5091939250505056')
+        world.create_account(
+            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
+            balance=100000000000000000000000,
+            code=bytecode,
+            nonce=0
+        )
+        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        price = 0x5af3107a4000
+        data = unhexlify('3392ffc8000000000000000000000000000000000000000000000000ffffffffffffffff0000000000000000000000000000000000000000000000005851f42d4c957f2d00000000000000000000000000000000000000000000000000000000000186a0')
+        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        value = 0
+        gas = 1000000000000
+
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+
+        # This variable might seem redundant in some tests - don't forget it is auto generated
+        # and there are cases in which we need it ;)
+        result = None
+        returndata = b''
+        try:
+            while True:
+                world.current_vm.execute()
+        except evm.EndTx as e:
+            result = e.result
+            if result in ('RETURN', 'REVERT'):
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
+        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        # check nonce, balance, code
+        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
+        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
+        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('606060405260e060020a60003504633392ffc8811461003f5780633c77b95c1461006a578063ce67bda6146100c2578063ebbbe00b146100e8575b610002565b346100025761010e600435602435604435600082815b83811015610120579085900a90600101610055565b346100025761010e600435602435604435600082815b83811015610120579085900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a90601001610080565b346100025761010e6004356024356044356000805b82811015610129575b6001016100d7565b346100025761010e6004356024356044356000805b82811015610129575b6010016100fd565b60408051918252519081900360200190f35b50949350505050565b5091939250505056'))
+        # check outs
+        self.assertEqual(returndata, unhexlify('a0b60baf8a7d5ff1840537484b793d86f808935d77dbab805851f42d4c957f2d'))
+        # check logs
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        data = rlp.encode(logs)
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 999985499780)
+    @unittest.skip('Gas or performance related')
+
+    def test_fibonacci10(self):
+        """
+        Textcase taken from https://github.com/ethereum/tests
+        File: fibonacci10.json
+        sha256sum: 32d1c40828faa3363167a574b686bd62d3fde00e1cb0231f79e6af76bc40eac2
+        Code:     PUSH1 0xe0
+                  PUSH1 0x2
+                  EXP
+                  PUSH1 0x0
+                  CALLDATALOAD
+                  DIV
+                  DUP1
+                  PUSH4 0x2839e928
+                  EQ
+                  PUSH1 0x1e
+                  JUMPI
+                  DUP1
+                  PUSH4 0x61047ff4
+                  EQ
+                  PUSH1 0x34
+                  JUMPI
+                  STOP
+                  JUMPDEST
+                  PUSH1 0x2a
+                  PUSH1 0x4
+                  CALLDATALOAD
+                  PUSH1 0x24
+                  CALLDATALOAD
+                  PUSH1 0x47
+                  JUMP
+                  JUMPDEST
+                  DUP1
+                  PUSH1 0x0
+                  MSTORE
+                  PUSH1 0x20
+                  PUSH1 0x0
+                  RETURN
+                  JUMPDEST
+                  PUSH1 0x3d
+                  PUSH1 0x4
+                  CALLDATALOAD
+                  PUSH1 0x99
+                  JUMP
+                  JUMPDEST
+                  DUP1
+                  PUSH1 0x0
+                  MSTORE
+                  PUSH1 0x20
+                  PUSH1 0x0
+                  RETURN
+                  JUMPDEST
+                  PUSH1 0x0
+                  DUP3
+                  PUSH1 0x0
+                  EQ
+                  PUSH1 0x54
+                  JUMPI
+                  PUSH1 0x5e
+                  JUMP
+                  JUMPDEST
+                  DUP2
+                  PUSH1 0x1
+                  ADD
+                  SWAP1
+                  POP
+                  PUSH1 0x93
+                  JUMP
+                  JUMPDEST
+                  DUP2
+                  PUSH1 0x0
+                  EQ
+                  PUSH1 0x69
+                  JUMPI
+                  PUSH1 0x7b
+                  JUMP
+                  JUMPDEST
+                  PUSH1 0x75
+                  PUSH1 0x1
+                  DUP5
+                  SUB
+                  PUSH1 0x1
+                  PUSH1 0x47
+                  JUMP
+                  JUMPDEST
+                  SWAP1
+                  POP
+                  PUSH1 0x93
+                  JUMP
+                  JUMPDEST
+                  PUSH1 0x90
+                  PUSH1 0x1
+                  DUP5
+                  SUB
+                  PUSH1 0x8c
+                  DUP6
+                  PUSH1 0x1
+                  DUP7
+                  SUB
+                  PUSH1 0x47
+                  JUMP
+                  JUMPDEST
+                  PUSH1 0x47
+                  JUMP
+                  JUMPDEST
+                  SWAP1
+                  POP
+                  JUMPDEST
+                  SWAP3
+                  SWAP2
+                  POP
+                  POP
+                  JUMP
+                  JUMPDEST
+                  PUSH1 0x0
+                  DUP2
+                  PUSH1 0x0
+                  EQ
+                  DUP1
+                  PUSH1 0xa9
+                  JUMPI
+                  POP
+                  DUP2
+                  PUSH1 0x1
+                  EQ
+                  JUMPDEST
+                  PUSH1 0xb0
+                  JUMPI
+                  PUSH1 0xb7
+                  JUMP
+                  JUMPDEST
+                  DUP2
+                  SWAP1
+                  POP
+                  PUSH1 0xcf
+                  JUMP
+                  JUMPDEST
+                  PUSH1 0xc1
+                  PUSH1 0x2
+                  DUP4
+                  SUB
+                  PUSH1 0x99
+                  JUMP
+                  JUMPDEST
+                  PUSH1 0xcb
+                  PUSH1 0x1
+                  DUP5
+                  SUB
+                  PUSH1 0x99
+                  JUMP
+                  JUMPDEST
+                  ADD
+                  SWAP1
+                  POP
+                  JUMPDEST
+                  SWAP2
+                  SWAP1
+                  POP
+                  JUMP
+        """    
+    
+        constraints = ConstraintSet()
+        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
+                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=100000000000)
+    
+        bytecode = unhexlify('60e060020a6000350480632839e92814601e57806361047ff414603457005b602a6004356024356047565b8060005260206000f35b603d6004356099565b8060005260206000f35b600082600014605457605e565b8160010190506093565b81600014606957607b565b60756001840360016047565b90506093565b609060018403608c85600186036047565b6047565b90505b92915050565b6000816000148060a95750816001145b60b05760b7565b81905060cf565b60c1600283036099565b60cb600184036099565b0190505b91905056')
+        world.create_account(
+            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
+            balance=100000000000000000000000,
+            code=bytecode,
+            nonce=0
+        )
+        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        price = 0x5af3107a4000
+        data = unhexlify('61047ff4000000000000000000000000000000000000000000000000000000000000000a')
+        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        value = 1000000000000000000
+        gas = 100000
+
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+
+        # This variable might seem redundant in some tests - don't forget it is auto generated
+        # and there are cases in which we need it ;)
+        result = None
+        returndata = b''
+        try:
+            while True:
+                world.current_vm.execute()
+        except evm.EndTx as e:
+            result = e.result
+            if result in ('RETURN', 'REVERT'):
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
+        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        # check nonce, balance, code
+        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
+        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
+        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60e060020a6000350480632839e92814601e57806361047ff414603457005b602a6004356024356047565b8060005260206000f35b603d6004356099565b8060005260206000f35b600082600014605457605e565b8160010190506093565b81600014606957607b565b60756001840360016047565b90506093565b609060018403608c85600186036047565b6047565b90505b92915050565b6000816000148060a95750816001145b60b05760b7565b81905060cf565b60c1600283036099565b60cb600184036099565b0190505b91905056'))
+        # check outs
+        self.assertEqual(returndata, unhexlify('0000000000000000000000000000000000000000000000000000000000000037'))
+        # check logs
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        data = rlp.encode(logs)
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 79922)
+    @unittest.skip('Gas or performance related')
+
+    def test_loop_exp_16b_100k(self):
+        """
+        Textcase taken from https://github.com/ethereum/tests
+        File: loop-exp-16b-100k.json
+        sha256sum: 620de370944ea72fd94c78a76c415ed4a95011ec08e0eb3b3bbed924fc400db7
+        Code:     PUSH1 0x60
+                  PUSH1 0x40
+                  MSTORE
+                  PUSH1 0xe0
+                  PUSH1 0x2
+                  EXP
+                  PUSH1 0x0
+                  CALLDATALOAD
+                  DIV
+                  PUSH4 0x3392ffc8
+                  DUP2
+                  EQ
+                  PUSH2 0x3f
+                  JUMPI
+                  DUP1
+                  PUSH4 0x3c77b95c
+                  EQ
+                  PUSH2 0x6a
+                  JUMPI
+                  DUP1
+                  PUSH4 0xce67bda6
+                  EQ
+                  PUSH2 0xc2
+                  JUMPI
+                  DUP1
+                  PUSH4 0xebbbe00b
+                  EQ
+                  PUSH2 0xe8
+                  JUMPI
+                  JUMPDEST
+                  PUSH2 0x2
+                  JUMP
+                  JUMPDEST
+                  CALLVALUE
+                  PUSH2 0x2
+                  JUMPI
+                  PUSH2 0x10e
+                  PUSH1 0x4
+                  CALLDATALOAD
+                  PUSH1 0x24
+                  CALLDATALOAD
+                  PUSH1 0x44
+                  CALLDATALOAD
+                  PUSH1 0x0
+                  DUP3
+                  DUP2
+                  JUMPDEST
+                  DUP4
+                  DUP2
+                  LT
+                  ISZERO
+                  PUSH2 0x120
+                  JUMPI
+                  SWAP1
+                  DUP6
+                  SWAP1
+                  EXP
+                  SWAP1
+                  PUSH1 0x1
+                  ADD
+                  PUSH2 0x55
+                  JUMP
+                  JUMPDEST
+                  CALLVALUE
+                  PUSH2 0x2
+                  JUMPI
+                  PUSH2 0x10e
+                  PUSH1 0x4
+                  CALLDATALOAD
+                  PUSH1 0x24
+                  CALLDATALOAD
+                  PUSH1 0x44
+                  CALLDATALOAD
+                  PUSH1 0x0
+                  DUP3
+                  DUP2
+                  JUMPDEST
+                  DUP4
+                  DUP2
+                  LT
+                  ISZERO
+                  PUSH2 0x120
+                  JUMPI
+                  SWAP1
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  SWAP1
+                  PUSH1 0x10
+                  ADD
+                  PUSH2 0x80
+                  JUMP
+                  JUMPDEST
+                  CALLVALUE
+                  PUSH2 0x2
+                  JUMPI
+                  PUSH2 0x10e
+                  PUSH1 0x4
+                  CALLDATALOAD
+                  PUSH1 0x24
+                  CALLDATALOAD
+                  PUSH1 0x44
+                  CALLDATALOAD
+                  PUSH1 0x0
+                  DUP1
+                  JUMPDEST
+                  DUP3
+                  DUP2
+                  LT
+                  ISZERO
+                  PUSH2 0x129
+                  JUMPI
+                  JUMPDEST
+                  PUSH1 0x1
+                  ADD
+                  PUSH2 0xd7
+                  JUMP
+                  JUMPDEST
+                  CALLVALUE
+                  PUSH2 0x2
+                  JUMPI
+                  PUSH2 0x10e
+                  PUSH1 0x4
+                  CALLDATALOAD
+                  PUSH1 0x24
+                  CALLDATALOAD
+                  PUSH1 0x44
+                  CALLDATALOAD
+                  PUSH1 0x0
+                  DUP1
+                  JUMPDEST
+                  DUP3
+                  DUP2
+                  LT
+                  ISZERO
+                  PUSH2 0x129
+                  JUMPI
+                  JUMPDEST
+                  PUSH1 0x10
+                  ADD
+                  PUSH2 0xfd
+                  JUMP
+                  JUMPDEST
+                  PUSH1 0x40
+                  DUP1
+                  MLOAD
+                  SWAP2
+                  DUP3
+                  MSTORE
+                  MLOAD
+                  SWAP1
+                  DUP2
+                  SWAP1
+                  SUB
+                  PUSH1 0x20
+                  ADD
+                  SWAP1
+                  RETURN
+                  JUMPDEST
+                  POP
+                  SWAP5
+                  SWAP4
+                  POP
+                  POP
+                  POP
+                  POP
+                  JUMP
+                  JUMPDEST
+                  POP
+                  SWAP2
+                  SWAP4
+                  SWAP3
+                  POP
+                  POP
+                  POP
+                  JUMP
+        """    
+    
+        constraints = ConstraintSet()
+        world = evm.EVMWorld(constraints, blocknumber=9999, timestamp=1, difficulty=20000,
+                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=100000000000)
+    
+        bytecode = unhexlify('606060405260e060020a60003504633392ffc8811461003f5780633c77b95c1461006a578063ce67bda6146100c2578063ebbbe00b146100e8575b610002565b346100025761010e600435602435604435600082815b83811015610120579085900a90600101610055565b346100025761010e600435602435604435600082815b83811015610120579085900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a90601001610080565b346100025761010e6004356024356044356000805b82811015610129575b6001016100d7565b346100025761010e6004356024356044356000805b82811015610129575b6010016100fd565b60408051918252519081900360200190f35b50949350505050565b5091939250505056')
+        world.create_account(
+            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
+            balance=100000000000000000000000,
+            code=bytecode,
+            nonce=0
+        )
+        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        price = 0x5af3107a4000
+        data = unhexlify('3392ffc800000000000000000000000000000000ffffffffffffffffffffffffffffffff0000000000000000000000000000000000000000000000005851f42d4c957f2d00000000000000000000000000000000000000000000000000000000000186a0')
+        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        value = 0
+        gas = 1000000000000
+
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+
+        # This variable might seem redundant in some tests - don't forget it is auto generated
+        # and there are cases in which we need it ;)
+        result = None
+        returndata = b''
+        try:
+            while True:
+                world.current_vm.execute()
+        except evm.EndTx as e:
+            result = e.result
+            if result in ('RETURN', 'REVERT'):
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
+        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        # check nonce, balance, code
+        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
+        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
+        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('606060405260e060020a60003504633392ffc8811461003f5780633c77b95c1461006a578063ce67bda6146100c2578063ebbbe00b146100e8575b610002565b346100025761010e600435602435604435600082815b83811015610120579085900a90600101610055565b346100025761010e600435602435604435600082815b83811015610120579085900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a90601001610080565b346100025761010e6004356024356044356000805b82811015610129575b6001016100d7565b346100025761010e6004356024356044356000805b82811015610129575b6010016100fd565b60408051918252519081900360200190f35b50949350505050565b5091939250505056'))
+        # check outs
+        self.assertEqual(returndata, unhexlify('b23af8a01bc4dfc6f808935d77dbab8000000000000000005851f42d4c957f2d'))
+        # check logs
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        data = rlp.encode(logs)
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 999977499780)
+    @unittest.skip('Gas or performance related')
+
+    def test_loop_divadd_unr100_10M(self):
+        """
+        Textcase taken from https://github.com/ethereum/tests
+        File: loop-divadd-unr100-10M.json
+        sha256sum: b618313271e0e0ca82a116783509439d3fb82392fc8f77a5cef03f37f814b0e2
+        Code:     PUSH1 0x60
+                  PUSH1 0x40
+                  MSTORE
+                  PUSH1 0x0
+                  CALLDATALOAD
+                  PUSH29 0x100000000000000000000000000000000000000000000000000000000
+                  SWAP1
+                  DIV
+                  PUSH4 0xffffffff
+                  AND
+                  DUP1
+                  PUSH4 0x5bc0d2f1
+                  EQ
+                  PUSH2 0x3b
+                  JUMPI
+                  JUMPDEST
+                  INVALID
+                  JUMPDEST
+                  CALLVALUE
+                  ISZERO
+                  PUSH2 0x43
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  PUSH2 0x74
+                  PUSH1 0x4
+                  DUP1
+                  DUP1
+                  CALLDATALOAD
+                  SWAP1
+                  PUSH1 0x20
+                  ADD
+                  SWAP1
+                  SWAP2
+                  SWAP1
+                  DUP1
+                  CALLDATALOAD
+                  SWAP1
+                  PUSH1 0x20
+                  ADD
+                  SWAP1
+                  SWAP2
+                  SWAP1
+                  DUP1
+                  CALLDATALOAD
+                  SWAP1
+                  PUSH1 0x20
+                  ADD
+                  SWAP1
+                  SWAP2
+                  SWAP1
+                  DUP1
+                  CALLDATALOAD
+                  SWAP1
+                  PUSH1 0x20
+                  ADD
+                  SWAP1
+                  SWAP2
+                  SWAP1
+                  POP
+                  POP
+                  PUSH2 0x8a
+                  JUMP
+                  JUMPDEST
+                  PUSH1 0x40
+                  MLOAD
+                  DUP1
+                  DUP3
+                  DUP2
+                  MSTORE
+                  PUSH1 0x20
+                  ADD
+                  SWAP2
+                  POP
+                  POP
+                  PUSH1 0x40
+                  MLOAD
+                  DUP1
+                  SWAP2
+                  SUB
+                  SWAP1
+                  RETURN
+                  JUMPDEST
+                  PUSH1 0x0
+                  PUSH1 0x0
+                  PUSH1 0x0
+                  DUP7
+                  SWAP2
+                  POP
+                  PUSH1 0x0
+                  SWAP1
+                  POP
+                  JUMPDEST
+                  DUP4
+                  DUP2
+                  LT
+                  ISZERO
+                  PUSH2 0x818
+                  JUMPI
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0xab
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0xbe
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0xd1
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0xe4
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0xf7
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x10a
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x11d
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x130
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x143
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x156
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x169
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x17c
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x18f
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x1a2
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x1b5
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x1c8
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x1db
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x1ee
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x201
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x214
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x227
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x23a
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x24d
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x260
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x273
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x286
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x299
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x2ac
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x2bf
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x2d2
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x2e5
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x2f8
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x30b
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x31e
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x331
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x344
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x357
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x36a
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x37d
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x390
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x3a3
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x3b6
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x3c9
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x3dc
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x3ef
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x402
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x415
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x428
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x43b
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x44e
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x461
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x474
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x487
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x49a
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x4ad
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x4c0
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x4d3
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x4e6
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x4f9
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x50c
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x51f
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x532
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x545
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x558
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x56b
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x57e
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x591
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x5a4
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x5b7
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x5ca
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x5dd
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x5f0
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x603
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x616
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x629
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x63c
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x64f
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x662
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x675
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x688
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x69b
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x6ae
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x6c1
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x6d4
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x6e7
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x6fa
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x70d
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x720
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x733
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x746
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x759
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x76c
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x77f
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x792
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x7a5
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x7b8
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x7cb
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x7de
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x7f1
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  DUP6
+                  DUP3
+                  DUP2
+                  ISZERO
+                  ISZERO
+                  PUSH2 0x804
+                  JUMPI
+                  INVALID
+                  JUMPDEST
+                  DIV
+                  SWAP2
+                  POP
+                  DUP5
+                  DUP3
+                  ADD
+                  SWAP2
+                  POP
+                  JUMPDEST
+                  PUSH1 0x64
+                  DUP2
+                  ADD
+                  SWAP1
+                  POP
+                  PUSH2 0x98
+                  JUMP
+                  JUMPDEST
+                  DUP2
+                  SWAP3
+                  POP
+                  JUMPDEST
+                  POP
+                  POP
+                  SWAP5
+                  SWAP4
+                  POP
+                  POP
+                  POP
+                  POP
+                  JUMP
+                  STOP
+                  LOG1
+                  PUSH6 0x627a7a723058
+                  SHA3
+                  INVALID
+                  DUP13
+                  SHA3
+                  INVALID
+                  INVALID
+                  PUSH17 0xea745144fec130354270a65a17f75c8e4d
+                  BYTE
+                  INVALID
+                  GETPC
+                  ADDMOD
+        """    
+    
+        constraints = ConstraintSet()
+        world = evm.EVMWorld(constraints, blocknumber=9999, timestamp=1, difficulty=20000,
+                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=100000000000)
+    
+        bytecode = unhexlify('60606040526000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680635bc0d2f11461003b575bfe5b341561004357fe5b610074600480803590602001909190803590602001909190803590602001909190803590602001909190505061008a565b6040518082815260200191505060405180910390f35b600060006000869150600090505b838110156108185785828115156100ab57fe5b049150848201915085828115156100be57fe5b049150848201915085828115156100d157fe5b049150848201915085828115156100e457fe5b049150848201915085828115156100f757fe5b0491508482019150858281151561010a57fe5b0491508482019150858281151561011d57fe5b0491508482019150858281151561013057fe5b0491508482019150858281151561014357fe5b0491508482019150858281151561015657fe5b0491508482019150858281151561016957fe5b0491508482019150858281151561017c57fe5b0491508482019150858281151561018f57fe5b049150848201915085828115156101a257fe5b049150848201915085828115156101b557fe5b049150848201915085828115156101c857fe5b049150848201915085828115156101db57fe5b049150848201915085828115156101ee57fe5b0491508482019150858281151561020157fe5b0491508482019150858281151561021457fe5b0491508482019150858281151561022757fe5b0491508482019150858281151561023a57fe5b0491508482019150858281151561024d57fe5b0491508482019150858281151561026057fe5b0491508482019150858281151561027357fe5b0491508482019150858281151561028657fe5b0491508482019150858281151561029957fe5b049150848201915085828115156102ac57fe5b049150848201915085828115156102bf57fe5b049150848201915085828115156102d257fe5b049150848201915085828115156102e557fe5b049150848201915085828115156102f857fe5b0491508482019150858281151561030b57fe5b0491508482019150858281151561031e57fe5b0491508482019150858281151561033157fe5b0491508482019150858281151561034457fe5b0491508482019150858281151561035757fe5b0491508482019150858281151561036a57fe5b0491508482019150858281151561037d57fe5b0491508482019150858281151561039057fe5b049150848201915085828115156103a357fe5b049150848201915085828115156103b657fe5b049150848201915085828115156103c957fe5b049150848201915085828115156103dc57fe5b049150848201915085828115156103ef57fe5b0491508482019150858281151561040257fe5b0491508482019150858281151561041557fe5b0491508482019150858281151561042857fe5b0491508482019150858281151561043b57fe5b0491508482019150858281151561044e57fe5b0491508482019150858281151561046157fe5b0491508482019150858281151561047457fe5b0491508482019150858281151561048757fe5b0491508482019150858281151561049a57fe5b049150848201915085828115156104ad57fe5b049150848201915085828115156104c057fe5b049150848201915085828115156104d357fe5b049150848201915085828115156104e657fe5b049150848201915085828115156104f957fe5b0491508482019150858281151561050c57fe5b0491508482019150858281151561051f57fe5b0491508482019150858281151561053257fe5b0491508482019150858281151561054557fe5b0491508482019150858281151561055857fe5b0491508482019150858281151561056b57fe5b0491508482019150858281151561057e57fe5b0491508482019150858281151561059157fe5b049150848201915085828115156105a457fe5b049150848201915085828115156105b757fe5b049150848201915085828115156105ca57fe5b049150848201915085828115156105dd57fe5b049150848201915085828115156105f057fe5b0491508482019150858281151561060357fe5b0491508482019150858281151561061657fe5b0491508482019150858281151561062957fe5b0491508482019150858281151561063c57fe5b0491508482019150858281151561064f57fe5b0491508482019150858281151561066257fe5b0491508482019150858281151561067557fe5b0491508482019150858281151561068857fe5b0491508482019150858281151561069b57fe5b049150848201915085828115156106ae57fe5b049150848201915085828115156106c157fe5b049150848201915085828115156106d457fe5b049150848201915085828115156106e757fe5b049150848201915085828115156106fa57fe5b0491508482019150858281151561070d57fe5b0491508482019150858281151561072057fe5b0491508482019150858281151561073357fe5b0491508482019150858281151561074657fe5b0491508482019150858281151561075957fe5b0491508482019150858281151561076c57fe5b0491508482019150858281151561077f57fe5b0491508482019150858281151561079257fe5b049150848201915085828115156107a557fe5b049150848201915085828115156107b857fe5b049150848201915085828115156107cb57fe5b049150848201915085828115156107de57fe5b049150848201915085828115156107f157fe5b0491508482019150858281151561080457fe5b04915084820191505b606481019050610098565b8192505b50509493505050505600a165627a7a72305820c38c20b72770ea745144fec130354270a65a17f75c8e4d1ad15808766d62bcdc0029')
+        world.create_account(
+            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
+            balance=100000000000000000000000,
+            code=bytecode,
+            nonce=0
+        )
+        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        price = 0x5af3107a4000
+        data = unhexlify('5bc0d2f18edad8b55b1586805ea8c245d8c16b06a5102b791fc6eb60693731c0677bf5011c68db1c179cd35ab3fc60c63704aa7fcbea40f19782b1611aaba86726a7686cff00ffffffffffffffffffffffffffaaffffffffffffffffbbffffffffffffff0000000000000000000000000000000000000000000000000000000000989680')
+        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        value = 0
+        gas = 1000000000000
+
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+
+        # This variable might seem redundant in some tests - don't forget it is auto generated
+        # and there are cases in which we need it ;)
+        result = None
+        returndata = b''
+        try:
+            while True:
+                world.current_vm.execute()
+        except evm.EndTx as e:
+            result = e.result
+            if result in ('RETURN', 'REVERT'):
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
+        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        # check nonce, balance, code
+        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
+        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
+        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60606040526000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680635bc0d2f11461003b575bfe5b341561004357fe5b610074600480803590602001909190803590602001909190803590602001909190803590602001909190505061008a565b6040518082815260200191505060405180910390f35b600060006000869150600090505b838110156108185785828115156100ab57fe5b049150848201915085828115156100be57fe5b049150848201915085828115156100d157fe5b049150848201915085828115156100e457fe5b049150848201915085828115156100f757fe5b0491508482019150858281151561010a57fe5b0491508482019150858281151561011d57fe5b0491508482019150858281151561013057fe5b0491508482019150858281151561014357fe5b0491508482019150858281151561015657fe5b0491508482019150858281151561016957fe5b0491508482019150858281151561017c57fe5b0491508482019150858281151561018f57fe5b049150848201915085828115156101a257fe5b049150848201915085828115156101b557fe5b049150848201915085828115156101c857fe5b049150848201915085828115156101db57fe5b049150848201915085828115156101ee57fe5b0491508482019150858281151561020157fe5b0491508482019150858281151561021457fe5b0491508482019150858281151561022757fe5b0491508482019150858281151561023a57fe5b0491508482019150858281151561024d57fe5b0491508482019150858281151561026057fe5b0491508482019150858281151561027357fe5b0491508482019150858281151561028657fe5b0491508482019150858281151561029957fe5b049150848201915085828115156102ac57fe5b049150848201915085828115156102bf57fe5b049150848201915085828115156102d257fe5b049150848201915085828115156102e557fe5b049150848201915085828115156102f857fe5b0491508482019150858281151561030b57fe5b0491508482019150858281151561031e57fe5b0491508482019150858281151561033157fe5b0491508482019150858281151561034457fe5b0491508482019150858281151561035757fe5b0491508482019150858281151561036a57fe5b0491508482019150858281151561037d57fe5b0491508482019150858281151561039057fe5b049150848201915085828115156103a357fe5b049150848201915085828115156103b657fe5b049150848201915085828115156103c957fe5b049150848201915085828115156103dc57fe5b049150848201915085828115156103ef57fe5b0491508482019150858281151561040257fe5b0491508482019150858281151561041557fe5b0491508482019150858281151561042857fe5b0491508482019150858281151561043b57fe5b0491508482019150858281151561044e57fe5b0491508482019150858281151561046157fe5b0491508482019150858281151561047457fe5b0491508482019150858281151561048757fe5b0491508482019150858281151561049a57fe5b049150848201915085828115156104ad57fe5b049150848201915085828115156104c057fe5b049150848201915085828115156104d357fe5b049150848201915085828115156104e657fe5b049150848201915085828115156104f957fe5b0491508482019150858281151561050c57fe5b0491508482019150858281151561051f57fe5b0491508482019150858281151561053257fe5b0491508482019150858281151561054557fe5b0491508482019150858281151561055857fe5b0491508482019150858281151561056b57fe5b0491508482019150858281151561057e57fe5b0491508482019150858281151561059157fe5b049150848201915085828115156105a457fe5b049150848201915085828115156105b757fe5b049150848201915085828115156105ca57fe5b049150848201915085828115156105dd57fe5b049150848201915085828115156105f057fe5b0491508482019150858281151561060357fe5b0491508482019150858281151561061657fe5b0491508482019150858281151561062957fe5b0491508482019150858281151561063c57fe5b0491508482019150858281151561064f57fe5b0491508482019150858281151561066257fe5b0491508482019150858281151561067557fe5b0491508482019150858281151561068857fe5b0491508482019150858281151561069b57fe5b049150848201915085828115156106ae57fe5b049150848201915085828115156106c157fe5b049150848201915085828115156106d457fe5b049150848201915085828115156106e757fe5b049150848201915085828115156106fa57fe5b0491508482019150858281151561070d57fe5b0491508482019150858281151561072057fe5b0491508482019150858281151561073357fe5b0491508482019150858281151561074657fe5b0491508482019150858281151561075957fe5b0491508482019150858281151561076c57fe5b0491508482019150858281151561077f57fe5b0491508482019150858281151561079257fe5b049150848201915085828115156107a557fe5b049150848201915085828115156107b857fe5b049150848201915085828115156107cb57fe5b049150848201915085828115156107de57fe5b049150848201915085828115156107f157fe5b0491508482019150858281151561080457fe5b04915084820191505b606481019050610098565b8192505b50509493505050505600a165627a7a72305820c38c20b72770ea745144fec130354270a65a17f75c8e4d1ad15808766d62bcdc0029'))
+        # check outs
+        self.assertEqual(returndata, unhexlify('ff00ffffffffffffffffffffffffffaaffffffffffffffffbc00000000000007'))
+        # check logs
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        data = rlp.encode(logs)
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 999464799656)
+    @unittest.skip('Gas or performance related')
+
+    def test_fibonacci16(self):
+        """
+        Textcase taken from https://github.com/ethereum/tests
+        File: fibonacci16.json
+        sha256sum: e86f7704ffc75e00c174301fa0323d9281c1e0a924f41777d86435861d565ed4
+        Code:     PUSH1 0xe0
+                  PUSH1 0x2
+                  EXP
+                  PUSH1 0x0
+                  CALLDATALOAD
+                  DIV
+                  DUP1
+                  PUSH4 0x2839e928
+                  EQ
+                  PUSH1 0x1e
+                  JUMPI
+                  DUP1
+                  PUSH4 0x61047ff4
+                  EQ
+                  PUSH1 0x34
+                  JUMPI
+                  STOP
+                  JUMPDEST
+                  PUSH1 0x2a
+                  PUSH1 0x4
+                  CALLDATALOAD
+                  PUSH1 0x24
+                  CALLDATALOAD
+                  PUSH1 0x47
+                  JUMP
+                  JUMPDEST
+                  DUP1
+                  PUSH1 0x0
+                  MSTORE
+                  PUSH1 0x20
+                  PUSH1 0x0
+                  RETURN
+                  JUMPDEST
+                  PUSH1 0x3d
+                  PUSH1 0x4
+                  CALLDATALOAD
+                  PUSH1 0x99
+                  JUMP
+                  JUMPDEST
+                  DUP1
+                  PUSH1 0x0
+                  MSTORE
+                  PUSH1 0x20
+                  PUSH1 0x0
+                  RETURN
+                  JUMPDEST
+                  PUSH1 0x0
+                  DUP3
+                  PUSH1 0x0
+                  EQ
+                  PUSH1 0x54
+                  JUMPI
+                  PUSH1 0x5e
+                  JUMP
+                  JUMPDEST
+                  DUP2
+                  PUSH1 0x1
+                  ADD
+                  SWAP1
+                  POP
+                  PUSH1 0x93
+                  JUMP
+                  JUMPDEST
+                  DUP2
+                  PUSH1 0x0
+                  EQ
+                  PUSH1 0x69
+                  JUMPI
+                  PUSH1 0x7b
+                  JUMP
+                  JUMPDEST
+                  PUSH1 0x75
+                  PUSH1 0x1
+                  DUP5
+                  SUB
+                  PUSH1 0x1
+                  PUSH1 0x47
+                  JUMP
+                  JUMPDEST
+                  SWAP1
+                  POP
+                  PUSH1 0x93
+                  JUMP
+                  JUMPDEST
+                  PUSH1 0x90
+                  PUSH1 0x1
+                  DUP5
+                  SUB
+                  PUSH1 0x8c
+                  DUP6
+                  PUSH1 0x1
+                  DUP7
+                  SUB
+                  PUSH1 0x47
+                  JUMP
+                  JUMPDEST
+                  PUSH1 0x47
+                  JUMP
+                  JUMPDEST
+                  SWAP1
+                  POP
+                  JUMPDEST
+                  SWAP3
+                  SWAP2
+                  POP
+                  POP
+                  JUMP
+                  JUMPDEST
+                  PUSH1 0x0
+                  DUP2
+                  PUSH1 0x0
+                  EQ
+                  DUP1
+                  PUSH1 0xa9
+                  JUMPI
+                  POP
+                  DUP2
+                  PUSH1 0x1
+                  EQ
+                  JUMPDEST
+                  PUSH1 0xb0
+                  JUMPI
+                  PUSH1 0xb7
+                  JUMP
+                  JUMPDEST
+                  DUP2
+                  SWAP1
+                  POP
+                  PUSH1 0xcf
+                  JUMP
+                  JUMPDEST
+                  PUSH1 0xc1
+                  PUSH1 0x2
+                  DUP4
+                  SUB
+                  PUSH1 0x99
+                  JUMP
+                  JUMPDEST
+                  PUSH1 0xcb
+                  PUSH1 0x1
+                  DUP5
+                  SUB
+                  PUSH1 0x99
+                  JUMP
+                  JUMPDEST
+                  ADD
+                  SWAP1
+                  POP
+                  JUMPDEST
+                  SWAP2
+                  SWAP1
+                  POP
+                  JUMP
+        """    
+    
+        constraints = ConstraintSet()
+        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
+                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=100000000000)
+    
+        bytecode = unhexlify('60e060020a6000350480632839e92814601e57806361047ff414603457005b602a6004356024356047565b8060005260206000f35b603d6004356099565b8060005260206000f35b600082600014605457605e565b8160010190506093565b81600014606957607b565b60756001840360016047565b90506093565b609060018403608c85600186036047565b6047565b90505b92915050565b6000816000148060a95750816001145b60b05760b7565b81905060cf565b60c1600283036099565b60cb600184036099565b0190505b91905056')
+        world.create_account(
+            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
+            balance=100000000000000000000000,
+            code=bytecode,
+            nonce=0
+        )
+        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        price = 0x5af3107a4000
+        data = unhexlify('61047ff40000000000000000000000000000000000000000000000000000000000000010')
+        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        value = 1000000000000000000
+        gas = 100000000
+
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+
+        # This variable might seem redundant in some tests - don't forget it is auto generated
+        # and there are cases in which we need it ;)
+        result = None
+        returndata = b''
+        try:
+            while True:
+                world.current_vm.execute()
+        except evm.EndTx as e:
+            result = e.result
+            if result in ('RETURN', 'REVERT'):
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
+        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        # check nonce, balance, code
+        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
+        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
+        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60e060020a6000350480632839e92814601e57806361047ff414603457005b602a6004356024356047565b8060005260206000f35b603d6004356099565b8060005260206000f35b600082600014605457605e565b8160010190506093565b81600014606957607b565b60756001840360016047565b90506093565b609060018403608c85600186036047565b6047565b90505b92915050565b6000816000148060a95750816001145b60b05760b7565b81905060cf565b60c1600283036099565b60cb600184036099565b0190505b91905056'))
+        # check outs
+        self.assertEqual(returndata, unhexlify('00000000000000000000000000000000000000000000000000000000000003db'))
+        # check logs
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        data = rlp.encode(logs)
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 99639418)
+    @unittest.skip('Gas or performance related')
+
+    def test_loop_exp_2b_100k(self):
+        """
+        Textcase taken from https://github.com/ethereum/tests
+        File: loop-exp-2b-100k.json
+        sha256sum: 9200f2941c02073357bdc92cf456135dc9987a481dd1588aa5209c686146eae8
+        Code:     PUSH1 0x60
+                  PUSH1 0x40
+                  MSTORE
+                  PUSH1 0xe0
+                  PUSH1 0x2
+                  EXP
+                  PUSH1 0x0
+                  CALLDATALOAD
+                  DIV
+                  PUSH4 0x3392ffc8
+                  DUP2
+                  EQ
+                  PUSH2 0x3f
+                  JUMPI
+                  DUP1
+                  PUSH4 0x3c77b95c
+                  EQ
+                  PUSH2 0x6a
+                  JUMPI
+                  DUP1
+                  PUSH4 0xce67bda6
+                  EQ
+                  PUSH2 0xc2
+                  JUMPI
+                  DUP1
+                  PUSH4 0xebbbe00b
+                  EQ
+                  PUSH2 0xe8
+                  JUMPI
+                  JUMPDEST
+                  PUSH2 0x2
+                  JUMP
+                  JUMPDEST
+                  CALLVALUE
+                  PUSH2 0x2
+                  JUMPI
+                  PUSH2 0x10e
+                  PUSH1 0x4
+                  CALLDATALOAD
+                  PUSH1 0x24
+                  CALLDATALOAD
+                  PUSH1 0x44
+                  CALLDATALOAD
+                  PUSH1 0x0
+                  DUP3
+                  DUP2
+                  JUMPDEST
+                  DUP4
+                  DUP2
+                  LT
+                  ISZERO
+                  PUSH2 0x120
+                  JUMPI
+                  SWAP1
+                  DUP6
+                  SWAP1
+                  EXP
+                  SWAP1
+                  PUSH1 0x1
+                  ADD
+                  PUSH2 0x55
+                  JUMP
+                  JUMPDEST
+                  CALLVALUE
+                  PUSH2 0x2
+                  JUMPI
+                  PUSH2 0x10e
+                  PUSH1 0x4
+                  CALLDATALOAD
+                  PUSH1 0x24
+                  CALLDATALOAD
+                  PUSH1 0x44
+                  CALLDATALOAD
+                  PUSH1 0x0
+                  DUP3
+                  DUP2
+                  JUMPDEST
+                  DUP4
+                  DUP2
+                  LT
+                  ISZERO
+                  PUSH2 0x120
+                  JUMPI
+                  SWAP1
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  DUP6
+                  SWAP1
+                  EXP
+                  SWAP1
+                  PUSH1 0x10
+                  ADD
+                  PUSH2 0x80
+                  JUMP
+                  JUMPDEST
+                  CALLVALUE
+                  PUSH2 0x2
+                  JUMPI
+                  PUSH2 0x10e
+                  PUSH1 0x4
+                  CALLDATALOAD
+                  PUSH1 0x24
+                  CALLDATALOAD
+                  PUSH1 0x44
+                  CALLDATALOAD
+                  PUSH1 0x0
+                  DUP1
+                  JUMPDEST
+                  DUP3
+                  DUP2
+                  LT
+                  ISZERO
+                  PUSH2 0x129
+                  JUMPI
+                  JUMPDEST
+                  PUSH1 0x1
+                  ADD
+                  PUSH2 0xd7
+                  JUMP
+                  JUMPDEST
+                  CALLVALUE
+                  PUSH2 0x2
+                  JUMPI
+                  PUSH2 0x10e
+                  PUSH1 0x4
+                  CALLDATALOAD
+                  PUSH1 0x24
+                  CALLDATALOAD
+                  PUSH1 0x44
+                  CALLDATALOAD
+                  PUSH1 0x0
+                  DUP1
+                  JUMPDEST
+                  DUP3
+                  DUP2
+                  LT
+                  ISZERO
+                  PUSH2 0x129
+                  JUMPI
+                  JUMPDEST
+                  PUSH1 0x10
+                  ADD
+                  PUSH2 0xfd
+                  JUMP
+                  JUMPDEST
+                  PUSH1 0x40
+                  DUP1
+                  MLOAD
+                  SWAP2
+                  DUP3
+                  MSTORE
+                  MLOAD
+                  SWAP1
+                  DUP2
+                  SWAP1
+                  SUB
+                  PUSH1 0x20
+                  ADD
+                  SWAP1
+                  RETURN
+                  JUMPDEST
+                  POP
+                  SWAP5
+                  SWAP4
+                  POP
+                  POP
+                  POP
+                  POP
+                  JUMP
+                  JUMPDEST
+                  POP
+                  SWAP2
+                  SWAP4
+                  SWAP3
+                  POP
+                  POP
+                  POP
+                  JUMP
+        """    
+    
+        constraints = ConstraintSet()
+        world = evm.EVMWorld(constraints, blocknumber=9999, timestamp=1, difficulty=20000,
+                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=100000000000)
+    
+        bytecode = unhexlify('606060405260e060020a60003504633392ffc8811461003f5780633c77b95c1461006a578063ce67bda6146100c2578063ebbbe00b146100e8575b610002565b346100025761010e600435602435604435600082815b83811015610120579085900a90600101610055565b346100025761010e600435602435604435600082815b83811015610120579085900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a90601001610080565b346100025761010e6004356024356044356000805b82811015610129575b6001016100d7565b346100025761010e6004356024356044356000805b82811015610129575b6010016100fd565b60408051918252519081900360200190f35b50949350505050565b5091939250505056')
+        world.create_account(
+            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
+            balance=100000000000000000000000,
+            code=bytecode,
+            nonce=0
+        )
+        address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        price = 0x5af3107a4000
+        data = unhexlify('3392ffc8000000000000000000000000000000000000000000000000000000000000ffff0000000000000000000000000000000000000000000000005851f42d4c957f2d00000000000000000000000000000000000000000000000000000000000186a0')
+        caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        value = 0
+        gas = 1000000000000
+
+        # open a fake tx, no funds send
+        world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
+
+        # This variable might seem redundant in some tests - don't forget it is auto generated
+        # and there are cases in which we need it ;)
+        result = None
+        returndata = b''
+        try:
+            while True:
+                world.current_vm.execute()
+        except evm.EndTx as e:
+            result = e.result
+            if result in ('RETURN', 'REVERT'):
+                returndata = to_constant(e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
+        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        # check nonce, balance, code
+        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
+        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
+        self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('606060405260e060020a60003504633392ffc8811461003f5780633c77b95c1461006a578063ce67bda6146100c2578063ebbbe00b146100e8575b610002565b346100025761010e600435602435604435600082815b83811015610120579085900a90600101610055565b346100025761010e600435602435604435600082815b83811015610120579085900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a85900a90601001610080565b346100025761010e6004356024356044356000805b82811015610129575b6001016100d7565b346100025761010e6004356024356044356000805b82811015610129575b6010016100fd565b60408051918252519081900360200190f35b50949350505050565b5091939250505056'))
+        # check outs
+        self.assertEqual(returndata, unhexlify('87b9c676d0fd90e2d05a9f8621a374edc678a3fc7209929731e3c9c8f8157f2d'))
+        # check logs
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        data = rlp.encode(logs)
+        self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
+        
+        # test used gas
+        self.assertEqual(to_constant(world.current_vm.gas), 999991499780)
+
 
 if __name__ == '__main__':
     unittest.main()
