@@ -10,9 +10,9 @@ function install_mcore {
     pip uninstall -y Manticore || echo "Manticore not cached"  # uninstall any old, cached Manticore
 
 
-    # We only need to install keystone if we're just running regular tests
+    # We only need to install keystone if we're running tests other than ethereum
     EXTRAS="dev-noks"
-    if [ "$1" = "tests" ]; then
+    if [ "$1" != "ethereum" ]; then
         EXTRAS="dev"
     fi
 
