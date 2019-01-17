@@ -185,21 +185,6 @@ class Map(object, metaclass=ABCMeta):
     def __hash__(self):
         return object.__hash__(self)
 
-    def __cmp__(self, other):
-        def cmp(a, b):
-            return (a>b)-(a<b)
-        result = cmp(self.start, other.start)
-        if result != 0:
-            return result
-        result = cmp(self.end, other.end)
-        if result != 0:
-            return result
-        # go by each char permission
-        result = cmp(self.perms, other.perms)
-        if result != 0:
-            return result
-        return cmp(self.name, other.name)
-
     def _in_range(self, index):
         ''' Returns True if index is in range '''
         if isinstance(index, slice):
