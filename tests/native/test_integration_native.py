@@ -18,33 +18,7 @@ DIRPATH = os.path.dirname(__file__)
 PYTHON_BIN = sys.executable
 
 
-class TestBinaryPackage(unittest.TestCase):
-    _multiprocess_can_split_ = True
-
-    def test_elf(self):
-        filename = os.path.join(os.path.dirname(__file__), 'binaries', 'basic_linux_amd64')
-        f = Elf(filename)
-        self.assertTrue(
-            [(4194304, 823262, 'r x', 'tests/binaries/basic_linux_amd64', 0, 823262),
-             (7118520, 16112, 'rw ', 'tests/binaries/basic_linux_amd64', 827064, 7320)],
-            list(f.maps())
-        )
-        self.assertTrue([('Running', {'EIP': 4196624})], list(f.threads()))
-        self.assertIsNone(f.getInterpreter())
-        f.elf.stream.close()
-
-    def test_decree(self):
-        filename = os.path.join(os.path.dirname(__file__), 'binaries', 'cadet_decree_x86')
-        f = CGCElf(filename)
-        self.assertTrue(
-            [(134512640, 1478, 'r x', 'tests/binaries/cadet_decree_x86', 0, 1478)],
-            list(f.maps())
-        )
-        self.assertTrue([('Running', {'EIP': 134513708})], list(f.threads()))
-        f.elf.stream.close()
-
-
-class IntegrationTest(unittest.TestCase):
+class NativeIntegrationTest(unittest.TestCase):
     _multiprocess_can_split_ = True
 
     def setUp(self):
@@ -62,38 +36,6 @@ class IntegrationTest(unittest.TestCase):
             vitems = f.read().splitlines()
 
         return set(int(x[2:], 16) for x in vitems)
-
-    def _simple_cli_run(self, filename, contract=None, tx_limit=1, in_directory=None, args=None, workspace=None, testcases=False):
-        """
-        Simply run the Manticore command line with `filename`
-        :param filename: Name of file inside the `tests/binaries` directory
-        """
-        assert isinstance(args, (list, type(None)))
-
-        working_dir = os.path.join(DIRPATH, 'binaries')
-
-        if in_directory:
-            working_dir = os.path.join(working_dir, in_directory)
-
-        command = [PYTHON_BIN, '-m', 'manticore']
-
-        if contract:
-            command.extend(['--contract', contract])
-
-        if args:
-            command.extend(args)
-
-        if workspace:
-            command.extend(['--workspace', workspace])
-
-        command.extend(['--txlimit', str(tx_limit)])
-
-        if not testcases:
-            command.append('--no-testcases')
-
-        command.append(filename)
-
-        subprocess.check_call(command, stdout=subprocess.PIPE, cwd=working_dir)
 
     def _run_with_timeout(self, procargs, logfile, timeout=1200):
 
@@ -125,43 +67,6 @@ class IntegrationTest(unittest.TestCase):
                                 '+++++++++'], stdout=output)
 
         self.assertTrue(time.time()-t < 20)
-
-    def test_solidity_timeout(self):
-        filename = os.path.abspath(os.path.join(DIRPATH, 'binaries', 'int_overflow.sol'))
-        self.assertTrue(filename.startswith(os.getcwd()))
-        filename = filename[len(os.getcwd())+1:]
-        workspace = os.path.join(self.test_dir, 'workspace')
-
-        timeout_secs = 4
-
-        cmd = [
-            PYTHON_BIN, '-m', 'manticore',
-            '--workspace', workspace,
-            '--core.timeout', str(timeout_secs),
-            '--no-color',
-            filename
-        ]
-
-        start = time.time()
-        output = subprocess.check_output(cmd)
-        end = time.time()
-
-        output = output.splitlines()
-
-        # Because the run will timeout, we don't know the exact line numbers that will appear
-        # but this seems as a good default
-        self.assertGreaterEqual(len(output), 4)
-        self.assertIn(b'm.c.manticore:INFO: Verbosity set to 1.', output[0])
-        self.assertIn(b'm.main:INFO: Registered plugins: ', output[1])
-        self.assertIn(b'm.main:INFO: Beginning analysis', output[2])
-        self.assertIn(b'm.e.manticore:INFO: Starting symbolic create contract', output[3])
-
-        self.assertIn(b'm.c.manticore:INFO: Results in ', output[-2])
-        self.assertIn(b'm.c.manticore:INFO: Total time: ', output[-1])
-
-        # Since we count the total time of Python process that runs Manticore, it takes a bit more time
-        # e.g. for some finalization like generation of testcases
-        self.assertLessEqual(end - start, timeout_secs+20)
 
     def test_logger_verbosity(self):
         """
@@ -307,109 +212,6 @@ class IntegrationTest(unittest.TestCase):
 
         actual = self._load_visited_set(os.path.join(DIRPATH, workspace, 'visited.txt'))
         self.assertTrue(len(actual) > 100)
-
-    def test_eth_regressions_676(self):
-        issue = {'number': 676, 'contract': None, 'txlimit': 1}
-        self._simple_cli_run(
-                f'{issue["number"]}.sol', contract=issue['contract'], tx_limit=issue['txlimit'],
-                in_directory=issue.get('in_directory')
-            )
-
-    def test_eth_regressions_678(self):
-        issue = {'number': 678, 'contract': None, 'txlimit': 1}
-        self._simple_cli_run(
-                f'{issue["number"]}.sol', contract=issue['contract'], tx_limit=issue['txlimit'],
-                in_directory=issue.get('in_directory')
-            )
-
-    def test_eth_regressions_701(self):
-        issue = {'number': 701, 'contract': None, 'txlimit': 1}
-        self._simple_cli_run(
-                f'{issue["number"]}.sol', contract=issue['contract'], tx_limit=issue['txlimit'],
-                in_directory=issue.get('in_directory')
-            )
-
-    def test_eth_regressions_714(self):
-        issue = {'number': 714, 'contract': None, 'txlimit': 1}
-        self._simple_cli_run(
-                f'{issue["number"]}.sol', contract=issue['contract'], tx_limit=issue['txlimit'],
-                in_directory=issue.get('in_directory')
-            )
-
-    def test_eth_regressions_735(self):
-        issue = {'number': 735, 'contract': None, 'txlimit': 2}
-        self._simple_cli_run(
-                f'{issue["number"]}.sol', contract=issue['contract'], tx_limit=issue['txlimit'],
-                in_directory=issue.get('in_directory')
-            )
-
-    def test_eth_regressions_760(self):
-        issue = {'number': 760, 'contract': None, 'txlimit': 1}
-        self._simple_cli_run(
-                f'{issue["number"]}.sol', contract=issue['contract'], tx_limit=issue['txlimit'],
-                in_directory=issue.get('in_directory')
-            )
-
-    def test_eth_regressions_780(self):
-        issue = {'number': 780, 'contract': None, 'txlimit': 1}
-        self._simple_cli_run(
-                f'{issue["number"]}.sol', contract=issue['contract'], tx_limit=issue['txlimit'],
-                in_directory=issue.get('in_directory')
-            )
-
-    def test_eth_regressions_795(self):
-        issue = {'number': 795, 'contract': None, 'txlimit': 1}
-
-        self._simple_cli_run(
-                f'{issue["number"]}.sol', contract=issue['contract'], tx_limit=issue['txlimit'],
-                in_directory=issue.get('in_directory')
-            )
-
-    def test_eth_regressions_799(self):
-        issue = {'number': 799, 'contract': 'C', 'txlimit': 1}
-        self._simple_cli_run(
-                f'{issue["number"]}.sol', contract=issue['contract'], tx_limit=issue['txlimit'],
-                in_directory=issue.get('in_directory')
-            )
-
-    def test_eth_regressions_807(self):
-        issue = {'number': 807, 'contract': 'C', 'txlimit': 1}
-        self._simple_cli_run(
-                f'{issue["number"]}.sol', contract=issue['contract'], tx_limit=issue['txlimit'],
-                in_directory=issue.get('in_directory')
-            )
-
-    def test_eth_regressions_808(self):
-        issue = {'number': 808, 'contract': 'C', 'txlimit': 1}
-        self._simple_cli_run(
-                f'{issue["number"]}.sol', contract=issue['contract'], tx_limit=issue['txlimit'],
-                in_directory=issue.get('in_directory')
-            )
-
-    def test_eth_regressions_mainmain(self):
-        issue = {'number': 'main/main', 'contract': 'C', 'txlimit': 1, 'in_directory': 'imports_issue'}
-        self._simple_cli_run(
-                f'{issue["number"]}.sol', contract=issue['contract'], tx_limit=issue['txlimit'],
-                in_directory=issue.get('in_directory')
-            )
-
-    def test_eth_1102(self):
-        with tempfile.TemporaryDirectory() as workspace:
-            self._simple_cli_run('1102.sol', workspace=workspace, testcases=True)
-
-            with open(os.path.join(workspace, 'global.findings')) as gf:
-                global_findings = gf.read().splitlines()
-
-        self.assertEqual(global_findings[0], '- Unsigned integer overflow at SUB instruction -')
-        self.assertRegex(global_findings[1], '  Contract: 0x[0-9a-f]+  EVM Program counter: 0xaf')
-        self.assertEqual(global_findings[2], '  Solidity snippet:')
-        self.assertEqual(global_findings[3], '    10  count -= input')
-        self.assertEqual(global_findings[4], '')
-
-        self.assertEqual(len(global_findings), 5)
-
-    def test_eth_705(self):
-        self._simple_cli_run('705.sol')
 
     def test_basic_arm(self):
         filename = os.path.abspath(os.path.join(DIRPATH, 'binaries', 'basic_linux_armv7'))

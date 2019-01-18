@@ -27,12 +27,6 @@ from manticore.utils.deprecated import ManticoreDeprecationWarning
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
-def make_mock_evm_state():
-    cs = ConstraintSet()
-    fakestate = State(cs, EVMWorld(cs))
-    return fakestate
-
-
 @contextmanager
 def disposable_mevm(*args, **kwargs):
     mevm = ManticoreEVM(*args, **kwargs)
@@ -46,7 +40,7 @@ class EthDetectorsIntegrationTest(unittest.TestCase):
     def test_int_ovf(self):
         mevm = ManticoreEVM()
         mevm.register_detector(DetectIntegerOverflow())
-        filename = os.path.join(THIS_DIR, 'binaries/int_overflow.sol')
+        filename = os.path.join(THIS_DIR, 'contracts/int_overflow.sol')
         mevm.multi_tx_analysis(filename, tx_limit=1)
         self.assertEqual(len(mevm.global_findings), 3)
         all_findings = ''.join([x[2] for x in mevm.global_findings])
@@ -792,7 +786,7 @@ class EthTests(unittest.TestCase):
         p = TestDetector()
         mevm.register_detector(p)
 
-        filename = os.path.join(THIS_DIR, 'binaries/simple_int_overflow.sol')
+        filename = os.path.join(THIS_DIR, 'contracts/simple_int_overflow.sol')
         mevm.multi_tx_analysis(filename, tx_limit=2, tx_preconstrain=True)
 
         self.assertIn('endtx_instructions', p.context)
@@ -894,8 +888,7 @@ class EthTests(unittest.TestCase):
         p = TestPlugin()
         mevm.register_plugin(p)
 
-
-        filename = os.path.join(THIS_DIR, 'binaries/int_overflow.sol')
+        filename = os.path.join(THIS_DIR, 'contracts/int_overflow.sol')
 
         mevm.multi_tx_analysis(filename, tx_limit=1)
         mevm.finalize()
@@ -1030,36 +1023,36 @@ class EthTests(unittest.TestCase):
                 #Once this address is reached the challenge is won
                 if pc == 0x4141414141414141414141414141414141414141:
                     func_id = to_constant(state.platform.current_transaction.data[:4])
-                    if func_id == function_selector("print(string)"):
+                    if func_id == ABI.function_selector("print(string)"):
                         func_name, args = ABI.deserialize("print(string)", state.platform.current_transaction.data)
                         raise Return()
-                    elif func_id == function_selector("terminate(string)"):
+                    elif func_id == ABI.function_selector("terminate(string)"):
                         func_name, args = ABI.deserialize("terminate(string)", state.platform.current_transaction.data)
                         self.manticore.shutdown()
                         raise Return(TRUE)
-                    elif func_id == function_selector("assume(bool)"):
+                    elif func_id == ABI.function_selector("assume(bool)"):
                         func_name, args = ABI.deserialize("assume(bool)", state.platform.current_transaction.data)
                         state.add(args[0])
                         raise Return(TRUE)
-                    elif func_id == function_selector("is_symbolic(bytes)"):
+                    elif func_id == ABI.function_selector("is_symbolic(bytes)"):
                         func_name, args = ABI.deserialize("is_symbolic(bytes)", state.platform.current_transaction.data)
                         try:
                             arg = to_constant(args[0])
                         except:
                             raise Return(TRUE)
                         raise Return(FALSE)
-                    elif func_id == function_selector("is_symbolic(uint256)"):
+                    elif func_id == ABI.function_selector("is_symbolic(uint256)"):
                         func_name, args = ABI.deserialize("is_symbolic(uint256)", state.platform.current_transaction.data)
                         try:
                             arg = to_constant(args[0])
                         except Exception as e:
                             raise Return(TRUE)
                         raise Return(FALSE)
-                    elif func_id == function_selector("shutdown(string)"):
+                    elif func_id == ABI.function_selector("shutdown(string)"):
                         func_name, args = ABI.deserialize("shutdown(string)", state.platform.current_transaction.data)
                         print("Shutdown", to_constant(args[0]))
                         self.manticore.shutdown()
-                    elif func_id == function_selector("can_be_true(bool)"):
+                    elif func_id == ABI.function_selector("can_be_true(bool)"):
                         func_name, args = ABI.deserialize("can_be_true(bool)", state.platform.current_transaction.data)
                         result = solver.can_be_true(state.constraints, args[0] != 0)
                         if result:
@@ -1074,7 +1067,7 @@ class EthTests(unittest.TestCase):
         p = StopAtFirstJump414141()
         mevm.register_detector(p)
 
-        filename = os.path.join(THIS_DIR, 'binaries/reached.sol')
+        filename = os.path.join(THIS_DIR, 'contracts/reached.sol')
         mevm.multi_tx_analysis(filename, tx_limit=2, contract_name='Reachable')
 
         context = p.context.get('flags', {})
@@ -1492,6 +1485,7 @@ class EthPluginTests(unittest.TestCase):
             contract_account.otherCounter()
             self.assertEqual(len(m.world.all_transactions), 4)
             self.assertEqual(ABI.deserialize('uint', to_constant(m.world.transactions[-1].return_data)), 456)
+
 
 if __name__ == '__main__':
     unittest.main()
