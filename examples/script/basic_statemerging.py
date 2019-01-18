@@ -2,10 +2,10 @@
 
 import sys
 
+from manticore.core.plugin import Merger
 from manticore.utils import config
 
 from manticore.native import Manticore
-from manticore.core.executor import Merger
 '''
 Demonstrates the ability to set a basic hook on a specific program counter and
 the ability to read from memory.

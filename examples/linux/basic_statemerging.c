@@ -40,7 +40,7 @@
 
 int main(int argc, char* argv[], char* envp[]){
     unsigned int cmd1, cmd2;
-    unsigned int cmdChanged;
+    unsigned int cmdChanged = 0;
 
     if (read(0, &cmd1, sizeof(cmd1)) != sizeof(cmd1))
     {
@@ -59,7 +59,7 @@ int main(int argc, char* argv[], char* envp[]){
     }
     if (cmd2 < 0x41)
     {
-        cmdChanged = cmd1 - 0x42;
+        cmdChanged = cmd2 + 0x42;
     }
 
     if (cmdChanged == 0) printf("equal\n");

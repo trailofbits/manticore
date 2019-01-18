@@ -1,4 +1,3 @@
-from ..native.memory import SMemory
 
 from .smtlib import solver, ConstraintSet, Operators, issymbolic, BitVec
 
@@ -78,6 +77,7 @@ def compare_byte_vals(mem1, mem2, addr, merged_constraint):
         return True
 
 
+#TODO move this comparison into an Executor API that uses an internal State API
 def compare_mem(mem1, mem2, merged_constraint):
     '''
     This method compares the number of maps, and then their names, permissions, start, and end values.
@@ -104,12 +104,12 @@ def compare_mem(mem1, mem2, merged_constraint):
             return False
     checked_addrs = []
     # compare symbolic byte values in memory
-    if isinstance(mem1, SMemory):
+    if mem1.__class__.__name__ == 'SMemory':
         for addr1, _ in mem1._symbols.items():
             checked_addrs.append(addr1)
             if not compare_byte_vals(mem1, mem2, addr1, merged_constraint):
                 return False
-    if isinstance(mem2, SMemory):
+    if mem2.__class__.__name__ == 'SMemory':
         for addr2, _ in mem2._symbols.items():
             if addr2 not in checked_addrs:
                 if not compare_byte_vals(mem1, mem2, addr2, merged_constraint):
