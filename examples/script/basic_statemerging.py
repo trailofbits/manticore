@@ -5,7 +5,7 @@ import sys
 from manticore.utils import config
 
 from manticore.native import Manticore
-
+from manticore.core.executor import Merger
 '''
 Demonstrates the ability to set a basic hook on a specific program counter and
 the ability to read from memory.
@@ -26,6 +26,6 @@ if __name__ == '__main__':
 
     m.subscribe('will_load_state', will_load_state_callback)
     m.subscribe('did_load_state', did_load_state_callback)
-
+    m.register_plugin(Merger())
     m.run()
 

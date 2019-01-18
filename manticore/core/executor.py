@@ -4,6 +4,8 @@ import random
 import logging
 import signal
 
+from .state_merging import merge_constraints, is_merge_possible, merge
+from .plugin import Plugin
 from ..exceptions import ExecutorError, SolverError
 from ..utils.nointerrupt import WithKeyboardInterruptAs
 from ..utils.event import Eventful
@@ -14,8 +16,6 @@ from .state import Concretize, TerminateState
 from .workspace import Workspace
 from multiprocessing.managers import SyncManager
 from contextlib import contextmanager
-
-from core.state_merging import is_merge_possible, merge, merge_constraints
 
 # This is the single global manager that will handle all shared memory among workers
 
@@ -164,29 +164,30 @@ class BranchLimited(Policy):
         else:
             return None
 
-def Merger(Plugin):
+
+
+class Merger(Plugin):
     def load_state(self, state_id, delete=False):
         return self.manticore._executor._load_state(state_id, delete)
 
     def delete_state(self, state_id):
         return self.manticore._executor._delete_state(state_id)
-        
+
     def replace_state(self, state_id, state):
         return self.manticore._executor._replace_state(state_id, state)
 
-    def did_enqueue_state_callback(self, state, state_id):
-        # when a new state is addded to the list we save it so we do not have 
+    def did_enqueue_state_callback(self, state_id, state):
+        # when a new state is addded to the list we save it so we do not have
         # to repload all states when try to merges last PC
-        with self.locked_context('cpu_stateid_dict') as cpu_stateid_dict:
-            # as we may be riunning in a different process we need to access this
+        with self.locked_context('cpu_stateid_dict', dict) as cpu_stateid_dict:
+            # as we may be running in a different process we need to access this
             # on a lock and over shared memory like this
             l = cpu_stateid_dict.get(state.cpu.PC, list())
             l.append(state_id)
             cpu_stateid_dict[state.cpu.PC] = l
 
-
-    def will_load_state(self, current_state_id):
-        # When a state is loaded for exploration lets check if we can find it a 
+    def will_load_state_callback(self, current_state_id):
+        # When a state is loaded for exploration lets check if we can find it a
         # mate for merging
         with self.locked_context('cpu_stateid_dict') as cpu_stateid_dict:
             # we get the lock and get a copy of the shared context
@@ -195,7 +196,7 @@ def Merger(Plugin):
 
             # lets remove ourself from the list of waiting states
             assert current_state_id in states_at_pc
-            del states_at_pc[current_state_id]
+            states_at_pc.remove(current_state_id)
 
             #Iterate over all remaining states that are waiting for exploration
             #at the same PC
@@ -204,33 +205,32 @@ def Merger(Plugin):
                 new_state = self.load_state(new_state_id)
                 (exp_merged_state, exp_new_state, merged_constraint) = merge_constraints(merged_state.constraints, new_state.constraints)
                 is_mergeable, reason = is_merge_possible(merged_state, new_state, merged_constraint)
-                
+
                 if is_mergeable:
                     #Ok we'll merge it!
-                    merged_state = merge(merged_state, new_state, exp_merged_state, exp_new_state, merged_constraint)
+                    merged_state = merge(merged_state, new_state, exp_merged_state, merged_constraint)
 
                     #lets remove the vestigial links to the old state
                     self.delete_state(new_state_id)
-                    self._states.remove(new_state_id) # we are locked under locked context
 
                     merged_ids.append(new_state_id)
                     is_mergeable = "succeeded"
                 else:
                     is_mergeable = "failed because of " + reason
-                debug_string = "at PC = " + hex(current_state.cpu.PC) + \
+                debug_string = "at PC = " + hex(merged_state.cpu.PC) + \
                                ", merge " + is_mergeable + " for state id = " + \
                                str(current_state_id) + " and " + str(new_state_id)
                 print(debug_string)
 
             for i in merged_ids:
-                 states_at_pc.remove(i)
+                states_at_pc.remove(i)
 
-            cpu_stateid_dict[current_state.cpu.PC] = states_at_pc
+            cpu_stateid_dict[merged_state.cpu.PC] = states_at_pc
 
             #Ok so we have merged current_state_id with {merged_ids}
             #And removed all merged_ids from everywhere
 
-            #UGLY we are replacing a state_id. This may be breaking caches in 
+            #UGLY we are replacing a state_id. This may be breaking caches in
             #the future
             self.replace_state(current_state_id, merged_state)
 
@@ -414,24 +414,20 @@ class Executor(Eventful):
 
     @sync
     def _load_state(self, state_id, delete=False):
-        if state_id not in self._states:
-            raise Exception("State does not exist")
         if delete:
-            del self._states[self._states.index(state_id)]
-        return self._workspace.load_state(new_state_id, delete=delete)
+            if state_id in self._states:
+                del self._states[self._states.index(state_id)]
+        return self._workspace.load_state(state_id, delete=delete)
 
     @sync
     def _delete_state(self, state_id):
-        if state_id not in self._states:
-            raise Exception("State does not exist")
-        del self._states[self._states.index(state_id)]
-        return self._workspace.rm(state_id)
+        if state_id in self._states:
+            del self._states[self._states.index(state_id)]
+        return self._workspace.rm_state(state_id)
 
     @sync
     def _replace_state(self, state_id, state):
-        if state_id not in self._states:
-            raise Exception("State id does not exist")
-        self._workspace.rm(state_id)
+        # self._workspace.rm_state(state_id)
         self._workspace.save_state(state, state_id)
 
     def list(self):
