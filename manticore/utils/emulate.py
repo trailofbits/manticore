@@ -43,9 +43,9 @@ def sizeof_fmt(num, suffix='B'):
 
 
 class ConcreteUnicornEmulator(object):
-    '''
+    """
     Helper class to emulate instructions in bulk via Unicorn.
-    '''
+    """
     def __init__(self, cpu):
         self._cpu = cpu
         self._mem_delta = {}
@@ -73,15 +73,14 @@ class ConcreteUnicornEmulator(object):
         # Keep track of all memory mappings. We start with just the text section
         self.mem_map = {}
         for m in cpu.memory.maps:
-            if True:#type(m) is FileMap:
-                permissions = UC_PROT_NONE
-                if 'r' in m.perms:
-                    permissions |= UC_PROT_READ
-                if 'w' in m.perms:
-                    permissions |= UC_PROT_WRITE
-                if 'x' in m.perms:
-                    permissions |= UC_PROT_EXEC
-                self.mem_map[m.start] = (len(m), permissions)
+            permissions = UC_PROT_NONE
+            if 'r' in m.perms:
+                permissions |= UC_PROT_READ
+            if 'w' in m.perms:
+                permissions |= UC_PROT_WRITE
+            if 'x' in m.perms:
+                permissions |= UC_PROT_EXEC
+            self.mem_map[m.start] = (len(m), permissions)
 
         # Establish Manticore state, potentially from past emulation
         # attempts
@@ -89,12 +88,12 @@ class ConcreteUnicornEmulator(object):
             size, perms = self.mem_map[base]
             self._emu.mem_map(base, size, perms)
 
-        self._emu.hook_add(UC_HOOK_MEM_READ_UNMAPPED,  self._hook_unmapped)
+        self._emu.hook_add(UC_HOOK_MEM_READ_UNMAPPED, self._hook_unmapped)
         self._emu.hook_add(UC_HOOK_MEM_WRITE_UNMAPPED, self._hook_unmapped)
         self._emu.hook_add(UC_HOOK_MEM_FETCH_UNMAPPED, self._hook_unmapped)
-        self._emu.hook_add(UC_HOOK_MEM_WRITE,          self._hook_write_mem)
-        self._emu.hook_add(UC_HOOK_INTR,               self._interrupt)
-        self._emu.hook_add(UC_HOOK_INSN,               self._hook_syscall, arg1=UC_X86_INS_SYSCALL)
+        self._emu.hook_add(UC_HOOK_MEM_WRITE, self._hook_write_mem)
+        self._emu.hook_add(UC_HOOK_INTR, self._interrupt)
+        self._emu.hook_add(UC_HOOK_INSN, self._hook_syscall, arg1=UC_X86_INS_SYSCALL)
 
         self.registers = set(self._cpu.canonical_registers)
         # The last 8 canonical registers of x86 are individual flags; replace with the eflags
@@ -107,13 +106,15 @@ class ConcreteUnicornEmulator(object):
         # incorrect zero value being actually written to the XMM register. This is
         # fixed in Unicorn PR #819, so when that is included in a release, delete
         # these two lines.
-        self.registers -= set(['YMM0', 'YMM1', 'YMM2', 'YMM3', 'YMM4', 'YMM5', 'YMM6', 'YMM7', 'YMM8', 'YMM9', 'YMM10', 'YMM11', 'YMM12', 'YMM13', 'YMM14', 'YMM15'])
-        self.registers |= set(['XMM0', 'XMM1', 'XMM2', 'XMM3', 'XMM4', 'XMM5', 'XMM6', 'XMM7', 'XMM8', 'XMM9', 'XMM10', 'XMM11', 'XMM12', 'XMM13', 'XMM14', 'XMM15'])
+        self.registers -= {'YMM0', 'YMM1', 'YMM2', 'YMM3', 'YMM4', 'YMM5', 'YMM6', 'YMM7', 'YMM8', 'YMM9', 'YMM10',
+                           'YMM11', 'YMM12', 'YMM13', 'YMM14', 'YMM15'}
+        self.registers |= {'XMM0', 'XMM1', 'XMM2', 'XMM3', 'XMM4', 'XMM5', 'XMM6', 'XMM7', 'XMM8', 'XMM9', 'XMM10',
+                           'XMM11', 'XMM12', 'XMM13', 'XMM14', 'XMM15'}
 
         for reg in self.registers:
             val = self._cpu.read_register(reg)
             if issymbolic(val):
-                from ..core.cpu.abstractcpu import ConcretizeRegister
+                from ..native.cpu.abstractcpu import ConcretizeRegister
                 raise ConcretizeRegister(self._cpu, reg, "Concretizing for emulation.",
                                          policy='ONE')
             logger.debug("Writing %s into %s", val, reg)
@@ -143,7 +144,7 @@ class ConcreteUnicornEmulator(object):
         start_time = time.time()
         map_bytes = self._cpu._raw_read(address, size)
         logger.info("Reading %s map at 0x%02x took %s seconds", sizeof_fmt(size), address, time.time() - start_time)
-        if (time.time() - start_time > 2):
+        if time.time() - start_time > 2:
             logger.warning(f"Memory map took more than two seconds to copy: {self._cpu.memory.map_containing(address)}")
         self._emu.mem_write(address, map_bytes)
 
@@ -152,22 +153,22 @@ class ConcreteUnicornEmulator(object):
         Catches did_map_memory and copies the mapping into Manticore
         """
         logger.info(' '.join(("Mapping Memory @",
-              hex(address) if type(address) is int else "0x??",
-              sizeof_fmt(size), "-",
-              perms, "-",
-              f"{name}:{hex(offset) if name else ''}", "->",
-              hex(result))))
+                    hex(address) if type(address) is int else "0x??",
+                    sizeof_fmt(size), "-",
+                    perms, "-",
+                    f"{name}:{hex(offset) if name else ''}", "->",
+                    hex(result))))
         if address not in self.mem_map.keys() and address is not None:
             self.copy_mapping_to_unicorn(address)
             self.copy_map(address, size)
 
     def copy_mapping_to_unicorn(self, address):
-        '''
+        """
         Create a mapping in Unicorn and note that we'll need it if we retry.
 
         :param address: The address which is contained by the mapping.
         :rtype Map
-        '''
+        """
 
         m = self._cpu.memory.map_containing(address)
         size = m.end - m.start
@@ -202,16 +203,16 @@ class ConcreteUnicornEmulator(object):
         uc.emu_stop()
 
     def _hook_write_mem(self, uc, access, address, size, value, data):
-        '''
+        """
         Captures memory written by Unicorn
-        '''
+        """
         self._mem_delta[address] = (value, size)
         return True
 
     def _hook_unmapped(self, uc, access, address, size, value, data):
-        '''
+        """
         We hit an unmapped region; map it into unicorn.
-        '''
+        """
         try:
             self.sync_unicorn_to_manticore()
             logger.warning(f"Encountered an operation on unmapped memory at {hex(address)}")
@@ -227,9 +228,9 @@ class ConcreteUnicornEmulator(object):
         return False
 
     def _interrupt(self, uc, number, data):
-        '''
+        """
         Handle software interrupt (SVC/INT)
-        '''
+        """
         logger.info("Caught interrupt: %s" % number)
         from ..native.cpu.abstractcpu import Interruption  # prevent circular imports
         self._to_raise = Interruption(number)
@@ -252,9 +253,9 @@ class ConcreteUnicornEmulator(object):
             raise TypeError
 
     def emulate(self, instruction):
-        '''
+        """
         Wrapper that runs the _step function in a loop while handling exceptions
-        '''
+        """
 
         # The emulation might restart if Unicorn needs to bring in a memory map
         # or bring a value from Manticore state.
@@ -270,17 +271,17 @@ class ConcreteUnicornEmulator(object):
                 break
 
     def _step(self, instruction, chunksize=0):
-        '''
+        """
         Execute a chunk fo instructions starting from instruction
         :param instruction: Where to start
         :param chunksize: max number of instructions to execute. Defaults to infinite.
-        '''
+        """
 
         try:
             pc = self._cpu.PC
-            map = self._cpu.memory.map_containing(pc)
-            self._emu.emu_start(pc, map.end if not self._stop_at else self._stop_at, count=chunksize)
-        except UcError as e:
+            m = self._cpu.memory.map_containing(pc)
+            self._emu.emu_start(pc, m.end if not self._stop_at else self._stop_at, count=chunksize)
+        except UcError:
             # We request re-execution by signaling error; if we we didn't set
             # _should_try_again, it was likely an actual error
             if not self._should_try_again:
@@ -314,7 +315,7 @@ class ConcreteUnicornEmulator(object):
             logger.debug(f"Syncing {len(self._mem_delta)} writes back into Manticore")
         for location in self._mem_delta:
             value, size = self._mem_delta[location]
-            self._cpu.write_int(location, value, size*8)
+            self._cpu.write_int(location, value, size * 8)
         self.write_backs_disabled = False
         self._mem_delta = {}
 
@@ -365,9 +366,9 @@ class ConcreteUnicornEmulator(object):
             self.set_fs(base)
 
     def set_fs(self, addr):
-        '''
+        """
         set the FS.base hidden descriptor-register field to the given address.
         this enables referencing the fs segment on x86-64.
-        '''
+        """
         FSMSR = 0xC0000100
         return self._emu.msr_write(FSMSR, addr)

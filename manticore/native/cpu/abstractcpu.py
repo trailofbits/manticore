@@ -625,14 +625,12 @@ class Cpu(Eventful):
         map = self.memory.map_containing(where)
         if type(map) is FileMap:
             raw_data = map._data[where - map.start: where - map.start + size]
-            def flatten(overlay):
-                return overlay
 
             data = b''
-            flattened = flatten(map._overlay)
-            for offset in sorted(flattened.keys()):
+            raw = map._overlay
+            for offset in sorted(raw.keys()):
                 data += raw_data[len(data):offset]
-                data += flattened[offset]
+                data += raw[offset]
             data += raw_data[len(data):]
 
         else:

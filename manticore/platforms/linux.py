@@ -416,7 +416,7 @@ class Linux(Platform):
         # dict of [int -> (int, int)] where tuple is (soft, hard) limits
         self._rlimits = {
             self.RLIMIT_NOFILE: (256, 1024),
-            self.RLIMIT_STACK: (8192*1024, 0)
+            self.RLIMIT_STACK: (8192 * 1024, 0)
         }
 
         if program is not None:
@@ -1260,7 +1260,6 @@ class Linux(Platform):
             logger.info(("LSEEK: Not valid file descriptor on lseek."
                          "Fd not seekable. Returning EBADF"))
             return -e.err
-
 
     def sys_read(self, fd, buf, count):
         data: bytes = bytes()

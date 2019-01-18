@@ -285,4 +285,3 @@ class UnicornEmulator(object):
             raise self._to_raise
 
         return
-
