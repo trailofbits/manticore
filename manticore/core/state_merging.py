@@ -104,11 +104,13 @@ def compare_mem(mem1, mem2, merged_constraint):
             return False
     checked_addrs = []
     # compare symbolic byte values in memory
+    #hack to avoid importing SMemory because that import introduces a circular dependency on ManticoreBase
     if mem1.__class__.__name__ == 'SMemory':
         for addr1, _ in mem1._symbols.items():
             checked_addrs.append(addr1)
             if not compare_byte_vals(mem1, mem2, addr1, merged_constraint):
                 return False
+    #hack to avoid importing SMemory because that import introduces a circular dependency on ManticoreBase
     if mem2.__class__.__name__ == 'SMemory':
         for addr2, _ in mem2._symbols.items():
             if addr2 not in checked_addrs:
@@ -152,7 +154,7 @@ def is_merge_possible(state1, state2, merged_constraint):
     return True, None
 
 
-def merge_cpu(cpu1, cpu2, state, exp1):
+def merge_cpu(cpu1, cpu2, state, exp1, merged_constraint):
     '''
     Merge CPU objects into the state.CPU
     :param cpu1: one of two CPU objects that we wish to merge
@@ -160,18 +162,24 @@ def merge_cpu(cpu1, cpu2, state, exp1):
     :param state: the state whose CPU attribute we will be updating
     :param exp1: the expression that if satisfiable will cause the CPU registers to take corresponding values from
     `cpu1`, else they will take corresponding values from `cpu2`
-    :return: No return value
+    :param merged_constraint: ConstraintSet under which we would want inequality between CPU register values to be
+    satisfiable as checked using `solver.must_be_true()`
+    :return: List of registers that were merged
     '''
+    merged_regs = []
     for reg in cpu1.canonical_registers:
         val1 = cpu1.read_register(reg)
         val2 = cpu2.read_register(reg)
         if isinstance(val1, BitVec) and isinstance(val2, BitVec):
             assert val1.size == val2.size
         if issymbolic(val1) or issymbolic(val2) or val1 != val2:
-            if cpu1.regfile.sizeof(reg) == 1:
-                state.cpu.write_register(reg, Operators.ITE(exp1, val1, val2))
-            else:
-                state.cpu.write_register(reg, Operators.ITEBV(cpu1.regfile.sizeof(reg), exp1, val1, val2))
+            if solver.must_be_true(merged_constraint, val1 != val2):
+                merged_regs.append(reg)
+                if cpu1.regfile.sizeof(reg) == 1:
+                    state.cpu.write_register(reg, Operators.ITE(exp1, val1, val2))
+                else:
+                    state.cpu.write_register(reg, Operators.ITEBV(cpu1.regfile.sizeof(reg), exp1, val1, val2))
+    return merged_regs
 
 
 def merge(state1, state2, exp1, merged_constraint):
@@ -184,6 +192,8 @@ def merge(state1, state2, exp1, merged_constraint):
     :return: the state that is the result of the merging of `state1` and `state2`
     '''
     merged_state = state1
-    merge_cpu(state1.cpu, state2.cpu, merged_state, exp1)
+    merged_reg_list = merge_cpu(state1.cpu, state2.cpu, merged_state, exp1, merged_constraint)
+    print("Merged registers: ")
+    print(*merged_reg_list, sep=',')
     merged_state.constraints = merged_constraint
     return merged_state
