@@ -7,16 +7,14 @@ from manticore.utils import config
 
 from manticore.native import Manticore
 '''
-Demonstrates the ability to set a basic hook on a specific program counter and
-the ability to read from memory.
+Demonstrates the ability to do state merging on a simple program by merging states with id 2, 4 that happen to be 
+at the same program location 0x40060d. This script uses the Merger plugin to apply opportunistic state merging.
 '''
 if __name__ == '__main__':
     consts = config.get_group('executor')
     consts.seed = 2
     path = sys.argv[1]
-    # m = Manticore(path, policy='uncovered')
     m = Manticore(path, policy='random')
-    # m = Manticore(path, policy='branchlimited')
 
     def will_load_state_callback(_, state_id):
         print("about to load state_id = " + str(state_id))
