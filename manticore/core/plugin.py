@@ -313,25 +313,55 @@ class ExamplePlugin(Plugin):
 
 class Merger(Plugin):
     def load_state(self, state_id, delete=False):
+        '''
+        Loads a state in Manticore with state-id = `state_id` by using the corresponding API in Executor
+        :param state_id: state-id for state that is being loaded
+        :param delete: If set to True, deletes the state with state-id = `state_id`
+        :return: None
+        '''
         return self.manticore._executor._load_state(state_id, delete)
 
     def delete_state(self, state_id):
+        '''
+        Deletes a state in Manticore with state-id = `state_id` by using the corresponding API in Executor
+        :param state_id: state-id for state that is being deleted
+        :return: None
+        '''
         return self.manticore._executor._delete_state(state_id)
 
     def replace_state(self, state_id, state):
+        '''
+        Replaces a state in Manticore with state-id = `state_id` by using the corresponding API in Executor
+        :param state_id: state-id for state that is being replaced
+        :param state: State object that is replacing the existing state with `state_id`
+        :return: None
+        '''
         return self.manticore._executor._replace_state(state_id, state)
 
     def did_enqueue_state_callback(self, state_id, state):
+        '''
+        Maintains a `cpu_stateid_dict` in context that keeps maps program counter values to a list of state-id values
+        for states that will execute the instruction that that program counter as the next instruction
+        :param state_id: id for state that was just enqueued
+        :param state: State object that was just enqueued
+        :return: None
+        '''
         # when a new state is addded to the list we save it so we do not have
         # to repload all states when try to merges last PC
         with self.locked_context('cpu_stateid_dict', dict) as cpu_stateid_dict:
             # as we may be running in a different process we need to access this
             # on a lock and over shared memory like this
-            l = cpu_stateid_dict.get(state.cpu.PC, list())
-            l.append(state_id)
-            cpu_stateid_dict[state.cpu.PC] = l
+            state_id_list = cpu_stateid_dict.get(state.cpu.PC, list())
+            state_id_list.append(state_id)
+            cpu_stateid_dict[state.cpu.PC] = state_id_list
 
     def will_load_state_callback(self, current_state_id):
+        '''
+        Checks if the state to be loaded (referenced by `current_state_id` can be merged with another currently enqueued
+        state and replaced by the merged state
+        :param current_state_id: state about to be loaded
+        :return: None
+        '''
         # When a state is loaded for exploration lets check if we can find it a
         # mate for merging
         with self.locked_context('cpu_stateid_dict') as cpu_stateid_dict:

@@ -94,29 +94,37 @@ def compare_mem(mem1, mem2, merged_constraint):
     maps2 = sorted(list(mem2.maps))
     if len(maps1) != len(maps2):
         return False
+    ret_val = None
     for m1, m2 in zip(maps1, maps2):
         if m1 != m2:  # compares the maps' names, permissions, starts, and ends
-            return False
+            ret_val = False
+            break
         # Compare concrete byte values in the data in these memory maps for equality
         bytes1 = m1[m1.start:m1.end]
         bytes2 = m2[m2.start:m2.end]
         if bytes1 != bytes2:
-            return False
+            ret_val = False
+            break
     checked_addrs = []
     # compare symbolic byte values in memory
     #hack to avoid importing SMemory because that import introduces a circular dependency on ManticoreBase
-    if mem1.__class__.__name__ == 'SMemory':
+    if mem1.__class__.__name__ == 'SMemory' and ret_val is not None:
         for addr1, _ in mem1._symbols.items():
             checked_addrs.append(addr1)
             if not compare_byte_vals(mem1, mem2, addr1, merged_constraint):
-                return False
+                ret_val = False
+                break
     #hack to avoid importing SMemory because that import introduces a circular dependency on ManticoreBase
-    if mem2.__class__.__name__ == 'SMemory':
+    if mem2.__class__.__name__ == 'SMemory' and ret_val is not None:
         for addr2, _ in mem2._symbols.items():
             if addr2 not in checked_addrs:
                 if not compare_byte_vals(mem1, mem2, addr2, merged_constraint):
-                    return False
-    return True
+                    ret_val = False
+                    break
+    if ret_val is not None:
+        return ret_val
+    else:
+        return True
 
 
 def is_merge_possible(state1, state2, merged_constraint):
@@ -131,27 +139,34 @@ def is_merge_possible(state1, state2, merged_constraint):
     platform1 = state1.platform
     platform2 = state2.platform
 
+    ret_val = None
+
     # compare input and output sockets of the states
     if not compare_sockets(merged_constraint, platform1.input, platform2.input) or \
             not compare_sockets(merged_constraint, platform1.output, platform2.output):
-        return False, "inequivalent socket operations"
+        ret_val = False, "inequivalent socket operations"
 
     # compare symbolic files opened by the two states
-    if platform1.symbolic_files != platform2.symbolic_files:
-        return False, "inequivalent symbolic files"
+    if ret_val is None and platform1.symbolic_files != platform2.symbolic_files:
+        ret_val = False, "inequivalent symbolic files"
 
     # compare system call traces of the two states
-    if len(platform1.syscall_trace) != len(platform2.syscall_trace):
-        return False, "inequivalent syscall trace lengths"
-    for i, (name1, fd1, data1) in enumerate(platform1.syscall_trace):
-        (name2, fd2, data2) = platform2.syscall_trace[i]
-        if not (name1 == name2 and fd1 == fd2 and compare_buffers(merged_constraint, data1, data2)):
-            return False, "inequivalent syscall traces"
+    if ret_val is None and len(platform1.syscall_trace) != len(platform2.syscall_trace):
+        ret_val = False, "inequivalent syscall trace lengths"
+    if ret_val is None:
+        for i, (name1, fd1, data1) in enumerate(platform1.syscall_trace):
+            (name2, fd2, data2) = platform2.syscall_trace[i]
+            if not (name1 == name2 and fd1 == fd2 and compare_buffers(merged_constraint, data1, data2)):
+                ret_val = False, "inequivalent syscall traces"
+                break
 
     # compare memory of the two states
-    if not compare_mem(state1.mem, state2.mem, merged_constraint):
-        return False, "inequivalent memory"
-    return True, None
+    if ret_val is None and not compare_mem(state1.mem, state2.mem, merged_constraint):
+        ret_val = False, "inequivalent memory"
+    if ret_val is not None:
+        return ret_val
+    else:
+        return True, None
 
 
 def merge_cpu(cpu1, cpu2, state, exp1, merged_constraint):
