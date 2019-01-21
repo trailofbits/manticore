@@ -22,7 +22,7 @@ An example of a global context race condition, when modifying two context entrie
 
     m.context['flag1'] += ['a']
     --- interrupted by other worker
-    m.context['flag2] += ['b']
+    m.context['flag2'] += ['b']
 
 Client code should use the :meth:`~manticore.core.ManticoreBase.locked_context` API::
 
