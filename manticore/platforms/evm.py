@@ -1226,7 +1226,7 @@ class EVM(Eventful):
                     logger.error(f'EXP not supported with symbolic exponent yet: set concrete exponent value to {exponent}')
                 except Exception as e:
                     raise NotImplementedError(
-                        f"EXP not supported with symbolic exponent: can't set a concrete value (error :{e})"
+                        f"EXP not supported with symbolic exponent: can't set a concrete value (error: {e})"
                     )
 
         if exponent == 0:
