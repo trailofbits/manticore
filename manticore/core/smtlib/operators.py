@@ -122,6 +122,16 @@ def ULE(a, b):
     return a <= b
 
 
+def POW(base, constant_exponent):
+    """
+    Makes a POW of `base` with a given constant `exponent`.
+    """
+    result = base
+    for i in range(1, constant_exponent):
+        result = result * base
+    return result
+
+
 def EXTRACT(x, offset, size):
     if isinstance(x, BitVec):
         if offset == 0 and size == x.size:

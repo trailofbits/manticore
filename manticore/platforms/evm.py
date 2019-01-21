@@ -1211,11 +1211,32 @@ class EVM(Eventful):
 
     def EXP(self, base, exponent):
         """
-            Exponential operation
-            The zero-th power of zero 0^0 is defined to be one
+        Exponential operation
+        The zero-th power of zero 0^0 is defined to be one.
+
+        :param base: exponential base
+        :param exponent: exponent value, must be concrete or solvable (fully symbolic exponent is not implemented)
+        :return: BitVec* EXP result
         """
-        # fixme integer bitvec
-        return pow(base, exponent, TT256)
+        if issymbolic(exponent):
+            exponent = to_constant(exponent)
+            if issymbolic(exponent):
+                try:
+                    exponent = solver.get_value(self.constraints, exponent)
+                    logger.error(f'EXP not supported with symbolic exponent yet: set concrete exponent value to {exponent}')
+                except Exception as e:
+                    raise NotImplementedError(
+                        f"EXP not supported with symbolic exponent: can't set a concrete value (error :{e})"
+                    )
+
+        if exponent == 0:
+            return 1
+
+        return Operators.ITE(
+            base == 0,
+            0,
+            Operators.POW(base, exponent)
+        )
 
     def SIGNEXTEND(self, size, value):
         """Extend length of two's complement signed integer"""
@@ -1284,7 +1305,7 @@ class EVM(Eventful):
             if isinstance(simplified, Constant):
                 concrete_data.append(simplified.value)
             else:
-                #simplify by solving. probably means that we need to improve simplification
+                # simplify by solving. probably means that we need to improve simplification
                 solutions = solver.get_all_values(self.constraints, simplified, 2, silent=True)
                 if len(solutions) != 1:
                     break
