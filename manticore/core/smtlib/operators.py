@@ -122,12 +122,12 @@ def ULE(a, b):
     return a <= b
 
 
-def POW(base, constant_exponent):
+def POW(base, exponent):
     """
     Makes a POW of `base` with a given constant `exponent`.
     """
     result = base
-    for i in range(1, constant_exponent):
+    for i in range(1, exponent):
         result = result * base
     return result
 
