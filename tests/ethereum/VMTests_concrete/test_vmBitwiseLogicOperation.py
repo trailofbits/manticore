@@ -10,7 +10,7 @@ from rlp.sedes import (
     Binary,
 )
 
-from manticore.core.smtlib import ConstraintSet
+from manticore.core.smtlib import ConstraintSet, Z3Solver  # Ignore unused import in non-symbolic tests!
 from manticore.core.smtlib.visitors import to_constant
 from manticore.platforms import evm
 
@@ -53,24 +53,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('6002600003600012600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('6002600003600012600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -87,10 +99,18 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6002600003600012600055'))
         # check outs
         self.assertEqual(returndata, unhexlify(''))
@@ -100,7 +120,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 94982)
+        self.assertEqual(solve(world.current_vm.gas), 94982)
 
     def test_or2(self):
         """
@@ -114,24 +134,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('6001600317600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('6001600317600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -148,13 +180,21 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6001600317600055'))
-        #check storage
-        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x03)
+        # check storage
+        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x03)
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
@@ -163,7 +203,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 79988)
+        self.assertEqual(solve(world.current_vm.gas), 79988)
 
     def test_sgt3(self):
         """
@@ -177,24 +217,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff600013600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff600013600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -211,13 +263,21 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff600013600055'))
-        #check storage
-        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
+        # check storage
+        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
@@ -226,7 +286,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 79988)
+        self.assertEqual(solve(world.current_vm.gas), 79988)
 
     def test_xor2(self):
         """
@@ -240,24 +300,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('6001600318600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('6001600318600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -274,13 +346,21 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6001600318600055'))
-        #check storage
-        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x02)
+        # check storage
+        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x02)
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
@@ -289,7 +369,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 79988)
+        self.assertEqual(solve(world.current_vm.gas), 79988)
 
     def test_byte4(self):
         """
@@ -305,24 +385,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('6780402010080402016004601f031a600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('6780402010080402016004601f031a600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -339,13 +431,21 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6780402010080402016004601f031a600055'))
-        #check storage
-        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x10)
+        # check storage
+        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x10)
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
@@ -354,7 +454,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 79982)
+        self.assertEqual(solve(world.current_vm.gas), 79982)
 
     def test_not5(self):
         """
@@ -369,24 +469,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('600060000319600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('600060000319600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -403,13 +515,21 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600060000319600055'))
-        #check storage
-        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
+        # check storage
+        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
@@ -418,7 +538,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 79985)
+        self.assertEqual(solve(world.current_vm.gas), 79985)
 
     def test_eq2(self):
         """
@@ -432,24 +552,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff14600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff14600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -466,13 +598,21 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff14600055'))
-        #check storage
-        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
+        # check storage
+        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
@@ -481,7 +621,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 79988)
+        self.assertEqual(solve(world.current_vm.gas), 79988)
 
     def test_byte8(self):
         """
@@ -497,24 +637,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('678040201008040201601f601f031a600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('678040201008040201601f601f031a600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -531,10 +683,18 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('678040201008040201601f601f031a600055'))
         # check outs
         self.assertEqual(returndata, unhexlify(''))
@@ -544,7 +704,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 94982)
+        self.assertEqual(solve(world.current_vm.gas), 94982)
 
     def test_and0(self):
         """
@@ -558,24 +718,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('6002600216600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('6002600216600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -592,13 +764,21 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6002600216600055'))
-        #check storage
-        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x02)
+        # check storage
+        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x02)
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
@@ -607,7 +787,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 79988)
+        self.assertEqual(solve(world.current_vm.gas), 79988)
 
     def test_and1(self):
         """
@@ -621,24 +801,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('6001600216600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('6001600216600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -655,10 +847,18 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6001600216600055'))
         # check outs
         self.assertEqual(returndata, unhexlify(''))
@@ -668,7 +868,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 94988)
+        self.assertEqual(solve(world.current_vm.gas), 94988)
 
     def test_byte9(self):
         """
@@ -684,24 +884,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('6780402010080402016020601f051a600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('6780402010080402016020601f051a600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -718,10 +930,18 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6780402010080402016020601f051a600055'))
         # check outs
         self.assertEqual(returndata, unhexlify(''))
@@ -731,7 +951,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 94980)
+        self.assertEqual(solve(world.current_vm.gas), 94980)
 
     def test_not4(self):
         """
@@ -746,24 +966,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff60000319600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff60000319600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -780,13 +1012,21 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff60000319600055'))
-        #check storage
-        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe)
+        # check storage
+        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe)
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
@@ -795,7 +1035,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 79985)
+        self.assertEqual(solve(world.current_vm.gas), 79985)
 
     def test_byte5(self):
         """
@@ -811,24 +1051,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('6780402010080402016005601f031a600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('6780402010080402016005601f031a600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -845,13 +1097,21 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6780402010080402016005601f031a600055'))
-        #check storage
-        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x20)
+        # check storage
+        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x20)
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
@@ -860,7 +1120,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 79982)
+        self.assertEqual(solve(world.current_vm.gas), 79982)
 
     def test_xor3(self):
         """
@@ -874,24 +1134,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('7f0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff18600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('7f0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff18600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -908,13 +1180,21 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('7f0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff18600055'))
-        #check storage
-        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0xfedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210)
+        # check storage
+        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0xfedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210)
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
@@ -923,7 +1203,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 79988)
+        self.assertEqual(solve(world.current_vm.gas), 79988)
 
     def test_sgt2(self):
         """
@@ -937,24 +1217,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('60007fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff13600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('60007fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff13600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -971,10 +1263,18 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60007fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff13600055'))
         # check outs
         self.assertEqual(returndata, unhexlify(''))
@@ -984,7 +1284,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 94988)
+        self.assertEqual(solve(world.current_vm.gas), 94988)
 
     def test_or3(self):
         """
@@ -998,24 +1298,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('7f0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff17600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('7f0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff17600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -1032,13 +1344,21 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('7f0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff17600055'))
-        #check storage
-        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
+        # check storage
+        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
@@ -1047,7 +1367,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 79988)
+        self.assertEqual(solve(world.current_vm.gas), 79988)
 
     def test_slt0(self):
         """
@@ -1063,24 +1383,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('6000600260000312600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('6000600260000312600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -1097,13 +1429,21 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6000600260000312600055'))
-        #check storage
-        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
+        # check storage
+        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
@@ -1112,7 +1452,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 79982)
+        self.assertEqual(solve(world.current_vm.gas), 79982)
 
     def test_not3(self):
         """
@@ -1127,24 +1467,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('600260000319600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('600260000319600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -1161,13 +1513,21 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600260000319600055'))
-        #check storage
-        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
+        # check storage
+        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
@@ -1176,7 +1536,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 79985)
+        self.assertEqual(solve(world.current_vm.gas), 79985)
 
     def test_lt0(self):
         """
@@ -1192,24 +1552,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('6000600260000310600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=100000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('6000600260000310600055')
+        acc_balance = 100000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 10000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -1226,10 +1598,18 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 100000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6000600260000310600055'))
         # check outs
         self.assertEqual(returndata, unhexlify(''))
@@ -1239,7 +1619,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 94982)
+        self.assertEqual(solve(world.current_vm.gas), 94982)
 
     def test_gt2(self):
         """
@@ -1253,24 +1633,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('60007fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff11600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('60007fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff11600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -1287,13 +1679,21 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60007fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff11600055'))
-        #check storage
-        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
+        # check storage
+        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
@@ -1302,7 +1702,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 79988)
+        self.assertEqual(solve(world.current_vm.gas), 79988)
 
     def test_or4(self):
         """
@@ -1316,24 +1716,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7feeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee17600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7feeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee17600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -1350,13 +1762,21 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7feeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee17600055'))
-        #check storage
-        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
+        # check storage
+        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
@@ -1365,7 +1785,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 79988)
+        self.assertEqual(solve(world.current_vm.gas), 79988)
 
     def test_xor4(self):
         """
@@ -1379,24 +1799,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7feeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee18600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7feeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee18600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -1413,13 +1845,21 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7feeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee18600055'))
-        #check storage
-        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x1111111111111111111111111111111111111111111111111111111111111111)
+        # check storage
+        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x1111111111111111111111111111111111111111111111111111111111111111)
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
@@ -1428,7 +1868,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 79988)
+        self.assertEqual(solve(world.current_vm.gas), 79988)
 
     def test_byte2(self):
         """
@@ -1444,24 +1884,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('6780402010080402016002601f031a600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('6780402010080402016002601f031a600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -1478,13 +1930,21 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6780402010080402016002601f031a600055'))
-        #check storage
-        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x04)
+        # check storage
+        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x04)
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
@@ -1493,7 +1953,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 79982)
+        self.assertEqual(solve(world.current_vm.gas), 79982)
 
     def test_byte3(self):
         """
@@ -1509,24 +1969,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('6780402010080402016003601f031a600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('6780402010080402016003601f031a600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -1543,13 +2015,21 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6780402010080402016003601f031a600055'))
-        #check storage
-        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x08)
+        # check storage
+        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x08)
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
@@ -1558,7 +2038,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 79982)
+        self.assertEqual(solve(world.current_vm.gas), 79982)
 
     def test_xor5(self):
         """
@@ -1572,24 +2052,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7feeeeeeeeeeeeeeeeeeeeeeeeeeeeefeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee18600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7feeeeeeeeeeeeeeeeeeeeeeeeeeeeefeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee18600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -1606,13 +2098,21 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7feeeeeeeeeeeeeeeeeeeeeeeeeeeeefeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee18600055'))
-        #check storage
-        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x1111111111111111111111111111101111111111111111111111111111111111)
+        # check storage
+        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x1111111111111111111111111111101111111111111111111111111111111111)
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
@@ -1621,7 +2121,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 79988)
+        self.assertEqual(solve(world.current_vm.gas), 79988)
 
     def test_sgt4(self):
         """
@@ -1639,24 +2139,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('6003600003600560000313600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('6003600003600560000313600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -1673,10 +2185,18 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6003600003600560000313600055'))
         # check outs
         self.assertEqual(returndata, unhexlify(''))
@@ -1686,7 +2206,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 94976)
+        self.assertEqual(solve(world.current_vm.gas), 94976)
 
     def test_or5(self):
         """
@@ -1700,24 +2220,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7feeeeeeeeeeeeeeeeeeeeeeeeeeeeefeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee17600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7feeeeeeeeeeeeeeeeeeeeeeeeeeeeefeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee17600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -1734,13 +2266,21 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7feeeeeeeeeeeeeeeeeeeeeeeeeeeeefeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee17600055'))
-        #check storage
-        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
+        # check storage
+        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
@@ -1749,7 +2289,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 79988)
+        self.assertEqual(solve(world.current_vm.gas), 79988)
 
     def test_gt3(self):
         """
@@ -1763,24 +2303,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff600011600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff600011600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -1797,10 +2349,18 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff600011600055'))
         # check outs
         self.assertEqual(returndata, unhexlify(''))
@@ -1810,7 +2370,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 94988)
+        self.assertEqual(solve(world.current_vm.gas), 94988)
 
     def test_lt1(self):
         """
@@ -1826,24 +2386,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('6002600003600010600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=10000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('6002600003600010600055')
+        acc_balance = 10000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 10000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -1860,13 +2432,21 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 10000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 10000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6002600003600010600055'))
-        #check storage
-        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
+        # check storage
+        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
@@ -1875,7 +2455,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 79982)
+        self.assertEqual(solve(world.current_vm.gas), 79982)
 
     def test_not2(self):
         """
@@ -1888,24 +2468,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff19600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff19600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -1922,10 +2514,18 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff19600055'))
         # check outs
         self.assertEqual(returndata, unhexlify(''))
@@ -1935,7 +2535,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 94991)
+        self.assertEqual(solve(world.current_vm.gas), 94991)
 
     def test_and4(self):
         """
@@ -1949,24 +2549,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7feeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee16600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7feeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee16600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -1983,13 +2595,21 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7feeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee16600055'))
-        #check storage
-        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee)
+        # check storage
+        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee)
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
@@ -1998,7 +2618,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 79988)
+        self.assertEqual(solve(world.current_vm.gas), 79988)
 
     def test_gt0(self):
         """
@@ -2014,24 +2634,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('6000600260000311600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('6000600260000311600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -2048,13 +2680,21 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6000600260000311600055'))
-        #check storage
-        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
+        # check storage
+        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
@@ -2063,7 +2703,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 79982)
+        self.assertEqual(solve(world.current_vm.gas), 79982)
 
     def test_iszero0(self):
         """
@@ -2076,24 +2716,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff15600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff15600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -2110,10 +2762,18 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff15600055'))
         # check outs
         self.assertEqual(returndata, unhexlify(''))
@@ -2123,7 +2783,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 94991)
+        self.assertEqual(solve(world.current_vm.gas), 94991)
 
     def test_lt2(self):
         """
@@ -2137,24 +2797,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('60007fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff10600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=10000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('60007fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff10600055')
+        acc_balance = 10000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 10000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -2171,10 +2843,18 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 10000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 10000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60007fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff10600055'))
         # check outs
         self.assertEqual(returndata, unhexlify(''))
@@ -2184,7 +2864,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 94988)
+        self.assertEqual(solve(world.current_vm.gas), 94988)
 
     def test_not1(self):
         """
@@ -2197,24 +2877,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('600219600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('600219600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -2231,13 +2923,21 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600219600055'))
-        #check storage
-        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffd)
+        # check storage
+        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffd)
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
@@ -2246,7 +2946,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 79991)
+        self.assertEqual(solve(world.current_vm.gas), 79991)
 
     def test_byte0(self):
         """
@@ -2262,24 +2962,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('6780402010080402016000601f031a600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('6780402010080402016000601f031a600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -2296,13 +3008,21 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6780402010080402016000601f031a600055'))
-        #check storage
-        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
+        # check storage
+        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
@@ -2311,7 +3031,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 79982)
+        self.assertEqual(solve(world.current_vm.gas), 79982)
 
     def test_slt4(self):
         """
@@ -2329,24 +3049,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('6003600003600560000312600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('6003600003600560000312600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -2363,13 +3095,21 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6003600003600560000312600055'))
-        #check storage
-        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
+        # check storage
+        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
@@ -2378,7 +3118,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 79976)
+        self.assertEqual(solve(world.current_vm.gas), 79976)
 
     def test_byte1(self):
         """
@@ -2394,24 +3134,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('6780402010080402016001601f031a600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('6780402010080402016001601f031a600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -2428,13 +3180,21 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6780402010080402016001601f031a600055'))
-        #check storage
-        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x02)
+        # check storage
+        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x02)
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
@@ -2443,7 +3203,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 79982)
+        self.assertEqual(solve(world.current_vm.gas), 79982)
 
     def test_not0(self):
         """
@@ -2456,24 +3216,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('600019600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('600019600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -2490,13 +3262,21 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600019600055'))
-        #check storage
-        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
+        # check storage
+        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
@@ -2505,7 +3285,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 79991)
+        self.assertEqual(solve(world.current_vm.gas), 79991)
 
     def test_lt3(self):
         """
@@ -2519,24 +3299,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff600010600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff600010600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -2553,13 +3345,21 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff600010600055'))
-        #check storage
-        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
+        # check storage
+        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
@@ -2568,7 +3368,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 79988)
+        self.assertEqual(solve(world.current_vm.gas), 79988)
 
     def test_iszero1(self):
         """
@@ -2581,24 +3381,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('600015600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('600015600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -2615,13 +3427,21 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600015600055'))
-        #check storage
-        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
+        # check storage
+        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
@@ -2630,7 +3450,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 79991)
+        self.assertEqual(solve(world.current_vm.gas), 79991)
 
     def test_gt1(self):
         """
@@ -2646,24 +3466,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('6002600003600011600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('6002600003600011600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -2680,10 +3512,18 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6002600003600011600055'))
         # check outs
         self.assertEqual(returndata, unhexlify(''))
@@ -2693,7 +3533,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 94982)
+        self.assertEqual(solve(world.current_vm.gas), 94982)
 
     def test_byteBN(self):
         """
@@ -2709,24 +3549,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('641234523456601f1a8001600155')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('641234523456601f1a8001600155')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -2743,13 +3595,21 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('641234523456601f1a8001600155'))
-        #check storage
-        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x01)), 0xac)
+        # check storage
+        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x01)), 0xac)
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
@@ -2758,7 +3618,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 79982)
+        self.assertEqual(solve(world.current_vm.gas), 79982)
 
     def test_and5(self):
         """
@@ -2772,24 +3632,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7feeeeeeeeeeeeeeeeeeeeeeeeeeeeefeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee16600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7feeeeeeeeeeeeeeeeeeeeeeeeeeeeefeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee16600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -2806,13 +3678,21 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7feeeeeeeeeeeeeeeeeeeeeeeeeeeeefeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee16600055'))
-        #check storage
-        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeefeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee)
+        # check storage
+        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeefeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee)
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
@@ -2821,7 +3701,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 79988)
+        self.assertEqual(solve(world.current_vm.gas), 79988)
 
     def test_byte6(self):
         """
@@ -2837,24 +3717,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('6780402010080402016006601f031a600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('6780402010080402016006601f031a600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -2871,13 +3763,21 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6780402010080402016006601f031a600055'))
-        #check storage
-        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x40)
+        # check storage
+        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x40)
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
@@ -2886,7 +3786,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 79982)
+        self.assertEqual(solve(world.current_vm.gas), 79982)
 
     def test_xor0(self):
         """
@@ -2900,24 +3800,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('6002600218600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('6002600218600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -2934,10 +3846,18 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6002600218600055'))
         # check outs
         self.assertEqual(returndata, unhexlify(''))
@@ -2947,7 +3867,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 94988)
+        self.assertEqual(solve(world.current_vm.gas), 94988)
 
     def test_sgt1(self):
         """
@@ -2963,24 +3883,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('6002600003600013600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('6002600003600013600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -2997,13 +3929,21 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6002600003600013600055'))
-        #check storage
-        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
+        # check storage
+        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
@@ -3012,7 +3952,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 79982)
+        self.assertEqual(solve(world.current_vm.gas), 79982)
 
     def test_or0(self):
         """
@@ -3026,24 +3966,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('6002600217600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('6002600217600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -3060,13 +4012,21 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6002600217600055'))
-        #check storage
-        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x02)
+        # check storage
+        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x02)
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
@@ -3075,7 +4035,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 79988)
+        self.assertEqual(solve(world.current_vm.gas), 79988)
 
     def test_slt3(self):
         """
@@ -3089,24 +4049,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff600012600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff600012600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -3123,10 +4095,18 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff600012600055'))
         # check outs
         self.assertEqual(returndata, unhexlify(''))
@@ -3136,7 +4116,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 94988)
+        self.assertEqual(solve(world.current_vm.gas), 94988)
 
     def test_and2(self):
         """
@@ -3150,24 +4130,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('6001600316600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('6001600316600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -3184,13 +4176,21 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6001600316600055'))
-        #check storage
-        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
+        # check storage
+        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
@@ -3199,7 +4199,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 79988)
+        self.assertEqual(solve(world.current_vm.gas), 79988)
 
     def test_byte11(self):
         """
@@ -3213,24 +4213,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('67804020100804020160001a600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('67804020100804020160001a600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -3247,10 +4259,18 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('67804020100804020160001a600055'))
         # check outs
         self.assertEqual(returndata, unhexlify(''))
@@ -3260,7 +4280,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 94988)
+        self.assertEqual(solve(world.current_vm.gas), 94988)
 
     def test_iszeo2(self):
         """
@@ -3275,24 +4295,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('600260000315600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('600260000315600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -3309,10 +4341,18 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('600260000315600055'))
         # check outs
         self.assertEqual(returndata, unhexlify(''))
@@ -3322,7 +4362,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 94985)
+        self.assertEqual(solve(world.current_vm.gas), 94985)
 
     def test_eq0(self):
         """
@@ -3340,24 +4380,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('6003600003600560000314600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('6003600003600560000314600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -3374,10 +4426,18 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6003600003600560000314600055'))
         # check outs
         self.assertEqual(returndata, unhexlify(''))
@@ -3387,7 +4447,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 94976)
+        self.assertEqual(solve(world.current_vm.gas), 94976)
 
     def test_eq1(self):
         """
@@ -3401,24 +4461,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('6000600014600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('6000600014600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -3435,13 +4507,21 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6000600014600055'))
-        #check storage
-        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
+        # check storage
+        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
@@ -3450,7 +4530,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 79988)
+        self.assertEqual(solve(world.current_vm.gas), 79988)
 
     def test_byte10(self):
         """
@@ -3464,24 +4544,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('6780402010080402017fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1a600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('6780402010080402017fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1a600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -3498,10 +4590,18 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6780402010080402017fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1a600055'))
         # check outs
         self.assertEqual(returndata, unhexlify(''))
@@ -3511,7 +4611,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 94988)
+        self.assertEqual(solve(world.current_vm.gas), 94988)
 
     def test_and3(self):
         """
@@ -3525,24 +4625,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('7f0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff16600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('7f0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff16600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -3559,13 +4671,21 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('7f0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff16600055'))
-        #check storage
-        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef)
+        # check storage
+        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef)
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
@@ -3574,7 +4694,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 79988)
+        self.assertEqual(solve(world.current_vm.gas), 79988)
 
     def test_slt2(self):
         """
@@ -3588,24 +4708,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('60007fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff12600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('60007fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff12600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -3622,13 +4754,21 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('60007fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff12600055'))
-        #check storage
-        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
+        # check storage
+        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x01)
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
@@ -3637,7 +4777,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 79988)
+        self.assertEqual(solve(world.current_vm.gas), 79988)
 
     def test_or1(self):
         """
@@ -3651,24 +4791,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('6001600217600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('6001600217600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -3685,13 +4837,21 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6001600217600055'))
-        #check storage
-        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x03)
+        # check storage
+        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x03)
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
@@ -3700,7 +4860,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 79988)
+        self.assertEqual(solve(world.current_vm.gas), 79988)
 
     def test_sgt0(self):
         """
@@ -3716,24 +4876,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('6000600260000313600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('6000600260000313600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -3750,10 +4922,18 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6000600260000313600055'))
         # check outs
         self.assertEqual(returndata, unhexlify(''))
@@ -3763,7 +4943,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 94982)
+        self.assertEqual(solve(world.current_vm.gas), 94982)
 
     def test_xor1(self):
         """
@@ -3777,24 +4957,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('6001600218600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('6001600218600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -3811,13 +5003,21 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6001600218600055'))
-        #check storage
-        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x03)
+        # check storage
+        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x03)
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
@@ -3826,7 +5026,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 79988)
+        self.assertEqual(solve(world.current_vm.gas), 79988)
 
     def test_byte7(self):
         """
@@ -3842,24 +5042,36 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                   SSTORE
         """    
     
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber=0, timestamp=1, difficulty=256,
-                             coinbase=244687034288125203496486448490407391986876152250, gaslimit=1000000)
+
+        blocknumber = 0
+        timestamp = 1
+        difficulty = 256
+        coinbase = 244687034288125203496486448490407391986876152250
+        gaslimit = 1000000
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     
-        bytecode = unhexlify('6780402010080402016007601f031a600055')
-        world.create_account(
-            address=0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6,
-            balance=1000000000000000000000000,
-            code=bytecode,
-            nonce=0
-        )
+        acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+        acc_code = unhexlify('6780402010080402016007601f031a600055')
+        acc_balance = 1000000000000000000000000
+        acc_nonce = 0
+
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-        price = 0x5af3107a4000
-        data = ''
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
+        price = 0x5af3107a4000
         value = 1000000000000000000
         gas = 100000
-
+        data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -3876,13 +5088,21 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
-        # Add pos checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), 0)
+        self.assertEqual(solve(world.block_gaslimit()), 1000000)
+        self.assertEqual(solve(world.block_timestamp()), 1)
+        self.assertEqual(solve(world.block_difficulty()), 256)
+        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+
+        # Add post checks for account 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), 0)
-        self.assertEqual(to_constant(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
+        self.assertEqual(solve(world.get_nonce(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 0)
+        self.assertEqual(solve(world.get_balance(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6)), 1000000000000000000000000)
         self.assertEqual(world.get_code(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6), unhexlify('6780402010080402016007601f031a600055'))
-        #check storage
-        self.assertEqual(to_constant(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x80)
+        # check storage
+        self.assertEqual(solve(world.get_storage_data(0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6, 0x00)), 0x80)
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
@@ -3891,7 +5111,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), 79982)
+        self.assertEqual(solve(world.current_vm.gas), 79982)
 
 
 if __name__ == '__main__':

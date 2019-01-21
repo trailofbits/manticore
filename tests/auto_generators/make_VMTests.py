@@ -1,10 +1,24 @@
 """
 This script generates VMTests that are used to check EVM's Frontier fork correctness.
 
-$ cd manticore/tests/ethereum && mkdir VMTests
-$ git clone https://github.com/ethereum/tests --depth=1
-$ for i in ./tests/VMTests; do python ../auto_generators/make_VMTests.py ./tests/VMTests/$1; done
+### TO GENERATE ALL:
+
+## Initialize env:
+cd manticore/tests/ethereum && mkdir VMTests_concrete && mkdir VMTests_symbolic
+git clone https://github.com/ethereum/tests --depth=1
+
+## Generate concrete tests:
+for i in ./tests/VMTests/*; do python ../auto_generators/make_VMTests.py $i; done
+
+## Generate symbolic tests:
+$ for i in ./tests/VMTests/*; do python ../auto_generators/make_VMTests.py $i --symbolic; done
+
+## Remove the eth tests repo
 $ rm -rf ./tests  # cleanup/remove the ethereum/tests repo
+
+
+### To test just one:
+python ../auto_generators/make_VMTests.py ./tests/VMTests/VMTests
 """
 import json
 import os
@@ -15,7 +29,7 @@ import hashlib
 import pyevmasm as EVMAsm
 
 
-def gen_test(testcase, filename, skip):
+def gen_test(testcase, filename, symbolic, skip):
     output = '''    @unittest.skip('Gas or performance related')\n''' if skip else ''
 
     # Sanity checks
@@ -24,11 +38,11 @@ def gen_test(testcase, filename, skip):
     testcase.pop('_info')
     assert len(testcase.pop('callcreates', [])) == 0
 
-    output += generate_pre_output(testcase, filename)
+    output += generate_pre_output(testcase, filename, symbolic)
 
     if 'post' not in testcase:
         output += '''
-        #If test end in exception check it here
+        # If test end in exception check it here
         self.assertTrue(result == 'THROW')'''
     else:
         output += generate_post_output(testcase)
@@ -36,7 +50,7 @@ def gen_test(testcase, filename, skip):
     return output
 
 
-def generate_pre_output(testcase, filename):
+def generate_pre_output(testcase, filename, symbolic):
     testname = (os.path.split(filename)[1].replace('-', '_')).split('.')[0]
     bytecode = unhexlify(testcase['exec']['code'][2:])
     disassemble = ''
@@ -58,6 +72,27 @@ def generate_pre_output(testcase, filename):
         Code:     {disassemble}
         """    
     '''
+
+    if symbolic:
+        output += '''
+        solver = Z3Solver()
+
+        def solve(val):
+            results = solver.get_all_values(constraints, val)
+            # We constrain all values to single values!
+            self.assertEqual(len(results), 1)
+            return results[0]
+'''
+    else:
+        output += '''
+        def solve(val):
+            """
+            Those tests are **auto-generated** and `solve` is used in symbolic tests.
+            So yes, this returns just val; it makes it easier to generate tests like this.
+            """
+            return val
+'''
+
     env = testcase['env']
 
     gaslimit = int(env['currentGasLimit'], 0)
@@ -67,8 +102,29 @@ def generate_pre_output(testcase, filename):
     coinbase = int(env['currentCoinbase'], 0)
     output += f'''
         constraints = ConstraintSet()
-        world = evm.EVMWorld(constraints, blocknumber={blocknumber}, timestamp={timestamp}, difficulty={difficulty},
-                             coinbase={coinbase}, gaslimit={gaslimit})
+'''
+
+    def format_bitvec(name, val, bits=256, symbolic_name=None):
+        if symbolic_name is None:
+            symbolic_name = name
+
+        return f'''
+        {name} = constraints.new_bitvec({bits}, name='{symbolic_name}')
+        constraints.add({name} == {val})
+'''
+
+    def format_var(name, val):
+        return f'''
+        {name} = {val}'''
+
+    # Spawns/creates bitvectors in symbolic or pure variables in concrete
+    formatter = format_bitvec if symbolic else format_var
+    for var in ('blocknumber', 'timestamp', 'difficulty', 'coinbase', 'gaslimit'):
+        output += formatter(var, locals()[var])
+
+    output += f'''
+        world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
+                             coinbase=coinbase, gaslimit=gaslimit)
     '''
 
     for address, account in testcase['pre'].items():
@@ -79,18 +135,37 @@ def generate_pre_output(testcase, filename):
         account_nonce = int(account['nonce'], 0)
         account_balance = int(account['balance'], 0)
 
-        output += f'''
-        bytecode = unhexlify('{account_code}')
-        world.create_account(
-            address={hex(account_address)},
-            balance={account_balance},
-            code=bytecode,
-            nonce={account_nonce}
-        )'''
-
-        for key, value in account['storage'].items():
+        if symbolic:
+            postfix = hex(account_address)
             output += f'''
-        world.set_storage_data({hex(account_address)}, {key}, {value})'''
+        acc_addr = {hex(account_address)}
+        acc_code = unhexlify('{account_code}')
+            '''
+            output += format_bitvec('acc_balance', account_balance, symbolic_name=f'balance_{postfix}')
+            output += format_bitvec('acc_nonce', account_nonce, symbolic_name=f'nonce_{postfix}')
+        else:
+            output += f'''
+        acc_addr = {hex(account_address)}
+        acc_code = unhexlify('{account_code}')
+        acc_balance = {account_balance}
+        acc_nonce = {account_nonce}
+'''
+
+        output += f'''
+        world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
+'''
+        for key, value in account['storage'].items():
+            if symbolic:
+                postfix = hex(account_address)
+                output += format_bitvec('key', key, symbolic_name=f'storage_key_{postfix}')
+                output += format_bitvec('value', value, symbolic_name=f'storage_value_{postfix}')
+                output += '''
+        world.set_storage_data(acc_addr, key, value)
+'''
+            else:
+                output += f'''
+        world.set_storage_data(acc['address'], {key}, {value})
+'''
 
     address = int(testcase['exec']['address'], 0)
     caller = int(testcase['exec']['caller'], 0)
@@ -108,7 +183,17 @@ def generate_pre_output(testcase, filename):
 
     output += f'''
         address = {hex(address)}
-        price = {hex(price)}'''
+        caller = {hex(caller)}'''
+
+    if symbolic:
+        output += format_bitvec('price', price)
+        output += format_bitvec('value', value)
+        output += format_bitvec('gas', gas)
+    else:
+        output += f'''
+        price = {hex(price)}
+        value = {value}
+        gas = {gas}'''
 
     if calldata:
         output += f'''
@@ -118,10 +203,6 @@ def generate_pre_output(testcase, filename):
         data = ''"""
 
     output += f'''
-        caller = {hex(caller)}
-        value = {value}
-        gas = {gas}
-
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -137,7 +218,15 @@ def generate_pre_output(testcase, filename):
             if result in ('RETURN', 'REVERT'):
                 returndata = to_constant(e.data)
         except evm.StartTx as e:
-            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')'''
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
+
+        # World sanity checks - those should not change, right?
+        self.assertEqual(solve(world.block_number()), {blocknumber})
+        self.assertEqual(solve(world.block_gaslimit()), {gaslimit})
+        self.assertEqual(solve(world.block_timestamp()), {timestamp})
+        self.assertEqual(solve(world.block_difficulty()), {difficulty})
+        self.assertEqual(solve(world.block_coinbase()), {coinbase})
+'''
 
     return output
 
@@ -154,19 +243,19 @@ def generate_post_output(testcase):
         account_balance = int(account['balance'], 0)
 
         output += f'''
-        # Add pos checks for account {hex(account_address)}
+        # Add post checks for account {hex(account_address)}
         # check nonce, balance, code
-        self.assertEqual(world.get_nonce({hex(account_address)}), {account_nonce})
-        self.assertEqual(to_constant(world.get_balance({hex(account_address)})), {account_balance})
+        self.assertEqual(solve(world.get_nonce({hex(account_address)})), {account_nonce})
+        self.assertEqual(solve(world.get_balance({hex(account_address)})), {account_balance})
         self.assertEqual(world.get_code({hex(account_address)}), unhexlify('{account_code}'))'''
 
     if account['storage']:
         output += '''
-        #check storage'''
+        # check storage'''
 
         for key, value in account['storage'].items():
             output += f'''
-        self.assertEqual(to_constant(world.get_storage_data({hex(account_address)}, {key})), {value})'''
+        self.assertEqual(solve(world.get_storage_data({hex(account_address)}, {key})), {value})'''
 
     output += f'''
         # check outs
@@ -182,7 +271,7 @@ def generate_post_output(testcase):
 
     output += f'''
         # test used gas
-        self.assertEqual(to_constant(world.current_vm.gas), {int(testcase['gas'], 0)})'''
+        self.assertEqual(solve(world.current_vm.gas), {int(testcase['gas'], 0)})'''
 
     return output
 
@@ -191,6 +280,8 @@ if __name__ == '__main__':
     if len(sys.argv) < 2:
         print(__doc__)
         sys.exit()
+
+    symbolic = '--symbolic' in sys.argv
 
     filename_or_folder = os.path.abspath(sys.argv[1])
 
@@ -206,7 +297,7 @@ from rlp.sedes import (
     Binary,
 )
 
-from manticore.core.smtlib import ConstraintSet
+from manticore.core.smtlib import ConstraintSet, Z3Solver  # Ignore unused import in non-symbolic tests!
 from manticore.core.smtlib.visitors import to_constant
 from manticore.platforms import evm
 
@@ -249,7 +340,7 @@ class EVMTest_{os.path.splitext(os.path.basename(filename_or_folder))[0]}(unitte
             filename = os.path.join(folder, filename)
             testcase = dict(json.loads(open(filename).read()))
             for name, testcase in testcase.items():
-                output += gen_test(testcase, filename, skip='Performance' in filename) + '\n'
+                output += gen_test(testcase, filename, symbolic=symbolic, skip='Performance' in filename) + '\n'
                 cnt += 1
 
         print(f'Generated {cnt} testcases from jsons in {folder}.', file=sys.stderr)
@@ -258,19 +349,20 @@ class EVMTest_{os.path.splitext(os.path.basename(filename_or_folder))[0]}(unitte
         filename = os.path.abspath(filename_or_folder)
         testcase = dict(json.loads(open(filename).read()))
         for name, testcase in testcase.items():
-            output += gen_test(testcase, filename, skip='Performance' in filename) + '\n'
+            output += gen_test(testcase, filename, symbolic=symbolic, skip='Performance' in filename) + '\n'
 
     output += '''
 
 if __name__ == '__main__':
     unittest.main()
 '''
+    postfix = 'symbolic' if symbolic else 'concrete'
 
     if folder:
         testname = folder.split('/')[-1]
-        with open(f'VMTests/test_{testname}.py', 'w') as f:
+        with open(f'VMTests_{postfix}/test_{testname}.py', 'w') as f:
             f.write(output)
-        with open(f'VMTests/__init__.py', 'w') as f:
+        with open(f'VMTests_{postfix}/__init__.py', 'w') as f:
             f.write("# DO NOT DELETE")
         print("Tests generated. If this is the only output, u did sth bad.", file=sys.stderr)
     else:
