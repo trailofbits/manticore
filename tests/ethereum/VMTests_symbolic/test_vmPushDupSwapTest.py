@@ -116,7 +116,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -218,7 +218,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -320,7 +320,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -426,7 +426,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -541,7 +541,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -643,7 +643,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -746,7 +746,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -842,7 +842,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -973,7 +973,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -1061,7 +1061,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -1173,7 +1173,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -1286,7 +1286,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -1388,7 +1388,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -1490,7 +1490,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -1601,7 +1601,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -1703,7 +1703,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -1810,7 +1810,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -1924,7 +1924,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -2026,7 +2026,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -2128,7 +2128,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -2232,7 +2232,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -2343,7 +2343,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -2445,7 +2445,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -2547,7 +2547,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -2665,7 +2665,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -2772,7 +2772,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -2875,7 +2875,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -2975,7 +2975,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -3075,7 +3075,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -3190,7 +3190,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -3294,7 +3294,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -3396,7 +3396,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -3512,7 +3512,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -3617,7 +3617,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -3740,7 +3740,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -3840,7 +3840,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -3942,7 +3942,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -4048,7 +4048,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -4150,7 +4150,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -4252,7 +4252,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -4362,7 +4362,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -4478,7 +4478,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -4580,7 +4580,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -4682,7 +4682,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -4784,7 +4784,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -4893,7 +4893,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -4993,7 +4993,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -5099,7 +5099,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -5201,7 +5201,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -5303,7 +5303,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -5421,7 +5421,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -5524,7 +5524,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -5624,7 +5624,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -5724,7 +5724,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -5841,7 +5841,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -5949,7 +5949,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -6062,7 +6062,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -6164,7 +6164,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -6266,7 +6266,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -6369,7 +6369,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -6458,7 +6458,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -6572,7 +6572,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -6674,7 +6674,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -6776,7 +6776,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -6878,7 +6878,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -6980,7 +6980,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -7082,7 +7082,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -7184,7 +7184,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -7299,7 +7299,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -7401,7 +7401,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -7503,7 +7503,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -7612,7 +7612,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -7724,7 +7724,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -7824,7 +7824,7 @@ class EVMTest_vmPushDupSwapTest(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 

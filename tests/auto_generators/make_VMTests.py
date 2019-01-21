@@ -196,7 +196,13 @@ def generate_pre_output(testcase, filename, symbolic):
         gas = {gas}'''
 
     if calldata:
-        output += f'''
+        if symbolic:
+            output += f'''
+        data = constraints.new_array(index_max={len(calldata)})
+        constraints.add(data == '{calldata}')
+'''
+        else:
+            output += f'''
         data = unhexlify('{calldata}')'''
     else:
         output += f"""
@@ -216,7 +222,7 @@ def generate_pre_output(testcase, filename, symbolic):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 

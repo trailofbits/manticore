@@ -100,7 +100,9 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         gas = constraints.new_bitvec(256, name='gas')
         constraints.add(gas == 100000000000)
 
-        data = unhexlify('4200000000000000000000000000000000000000000000000000000000000000')
+        data = constraints.new_array(index_max=64)
+        constraints.add(data == '4200000000000000000000000000000000000000000000000000000000000000')
+
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -114,7 +116,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -205,7 +207,9 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         gas = constraints.new_bitvec(256, name='gas')
         constraints.add(gas == 100000000000)
 
-        data = unhexlify('1234567890abcdef01234567890abcdef0')
+        data = constraints.new_array(index_max=34)
+        constraints.add(data == '1234567890abcdef01234567890abcdef0')
+
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -219,7 +223,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -319,7 +323,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -415,7 +419,9 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         gas = constraints.new_bitvec(256, name='gas')
         constraints.add(gas == 100000000000)
 
-        data = unhexlify('1234567890abcdef01234567890abcdef0')
+        data = constraints.new_array(index_max=34)
+        constraints.add(data == '1234567890abcdef01234567890abcdef0')
+
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -429,7 +435,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -516,7 +522,9 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         gas = constraints.new_bitvec(256, name='gas')
         constraints.add(gas == 100000000000)
 
-        data = unhexlify('123456789abcdef00000000000000000000000000000000000000000000000000024')
+        data = constraints.new_array(index_max=68)
+        constraints.add(data == '123456789abcdef00000000000000000000000000000000000000000000000000024')
+
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -530,7 +538,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -632,7 +640,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -725,7 +733,9 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         gas = constraints.new_bitvec(256, name='gas')
         constraints.add(gas == 100000000000)
 
-        data = unhexlify('1234567890abcdef01234567890abcdef0')
+        data = constraints.new_array(index_max=34)
+        constraints.add(data == '1234567890abcdef01234567890abcdef0')
+
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -739,7 +749,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -839,7 +849,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -927,7 +937,9 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         gas = constraints.new_bitvec(256, name='gas')
         constraints.add(gas == 100000000000)
 
-        data = unhexlify('1234567890abcdef01234567890abcdef0')
+        data = constraints.new_array(index_max=34)
+        constraints.add(data == '1234567890abcdef01234567890abcdef0')
+
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -941,7 +953,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -1023,7 +1035,9 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         gas = constraints.new_bitvec(256, name='gas')
         constraints.add(gas == 100000000000)
 
-        data = unhexlify('1234567890abcdef01234567890abcdef0')
+        data = constraints.new_array(index_max=34)
+        constraints.add(data == '1234567890abcdef01234567890abcdef0')
+
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -1037,7 +1051,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -1137,7 +1151,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -1225,7 +1239,9 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         gas = constraints.new_bitvec(256, name='gas')
         constraints.add(gas == 100000000000)
 
-        data = unhexlify('1234567890abcdef01234567890abcdef0')
+        data = constraints.new_array(index_max=34)
+        constraints.add(data == '1234567890abcdef01234567890abcdef0')
+
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -1239,7 +1255,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -1332,7 +1348,9 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         gas = constraints.new_bitvec(256, name='gas')
         constraints.add(gas == 100000000000)
 
-        data = unhexlify('1234567890abcdef01234567890abcdef0')
+        data = constraints.new_array(index_max=34)
+        constraints.add(data == '1234567890abcdef01234567890abcdef0')
+
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -1346,7 +1364,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -1442,7 +1460,9 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         gas = constraints.new_bitvec(256, name='gas')
         constraints.add(gas == 100000000000)
 
-        data = unhexlify('1234567890abcdef01234567890abcdef0')
+        data = constraints.new_array(index_max=34)
+        constraints.add(data == '1234567890abcdef01234567890abcdef0')
+
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -1456,7 +1476,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -1550,7 +1570,9 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         gas = constraints.new_bitvec(256, name='gas')
         constraints.add(gas == 100000000000)
 
-        data = unhexlify('1234567890abcdef01234567890abcdef0')
+        data = constraints.new_array(index_max=34)
+        constraints.add(data == '1234567890abcdef01234567890abcdef0')
+
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -1564,7 +1586,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -1652,7 +1674,9 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         gas = constraints.new_bitvec(256, name='gas')
         constraints.add(gas == 100000000000)
 
-        data = unhexlify('230000000000000000000000000000000000000000000000000000000000000023')
+        data = constraints.new_array(index_max=66)
+        constraints.add(data == '230000000000000000000000000000000000000000000000000000000000000023')
+
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -1666,7 +1690,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -1759,7 +1783,9 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         gas = constraints.new_bitvec(256, name='gas')
         constraints.add(gas == 100000000000)
 
-        data = unhexlify('1234567890abcdef01234567890abcdef0')
+        data = constraints.new_array(index_max=34)
+        constraints.add(data == '1234567890abcdef01234567890abcdef0')
+
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -1773,7 +1799,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -1878,7 +1904,9 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         gas = constraints.new_bitvec(256, name='gas')
         constraints.add(gas == 100000000000)
 
-        data = unhexlify('1234567890abcdef01234567890abcdef0')
+        data = constraints.new_array(index_max=34)
+        constraints.add(data == '1234567890abcdef01234567890abcdef0')
+
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -1892,7 +1920,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -1980,7 +2008,9 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         gas = constraints.new_bitvec(256, name='gas')
         constraints.add(gas == 100000000000)
 
-        data = unhexlify('ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff23')
+        data = constraints.new_array(index_max=66)
+        constraints.add(data == 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff23')
+
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -1994,7 +2024,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -2087,7 +2117,9 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         gas = constraints.new_bitvec(256, name='gas')
         constraints.add(gas == 100000000000)
 
-        data = unhexlify('1234567890abcdef01234567890abcdef0')
+        data = constraints.new_array(index_max=34)
+        constraints.add(data == '1234567890abcdef01234567890abcdef0')
+
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -2101,7 +2133,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -2192,7 +2224,9 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         gas = constraints.new_bitvec(256, name='gas')
         constraints.add(gas == 100000000000)
 
-        data = unhexlify('1234567890abcdef01234567890abcdef0')
+        data = constraints.new_array(index_max=34)
+        constraints.add(data == '1234567890abcdef01234567890abcdef0')
+
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -2206,7 +2240,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -2292,7 +2326,9 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         gas = constraints.new_bitvec(256, name='gas')
         constraints.add(gas == 100000000000)
 
-        data = unhexlify('1234567890abcdef01234567890abcdef0')
+        data = constraints.new_array(index_max=34)
+        constraints.add(data == '1234567890abcdef01234567890abcdef0')
+
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -2306,7 +2342,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -2395,7 +2431,9 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         gas = constraints.new_bitvec(256, name='gas')
         constraints.add(gas == 100000000000)
 
-        data = unhexlify('123456789abcdef00000000000000000000000000000000000000000000024')
+        data = constraints.new_array(index_max=62)
+        constraints.add(data == '123456789abcdef00000000000000000000000000000000000000000000024')
+
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -2409,7 +2447,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -2502,7 +2540,9 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         gas = constraints.new_bitvec(256, name='gas')
         constraints.add(gas == 100000000000)
 
-        data = unhexlify('1234567890abcdef01234567890abcdef0')
+        data = constraints.new_array(index_max=34)
+        constraints.add(data == '1234567890abcdef01234567890abcdef0')
+
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -2516,7 +2556,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -2602,7 +2642,9 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         gas = constraints.new_bitvec(256, name='gas')
         constraints.add(gas == 100000000000)
 
-        data = unhexlify('2560')
+        data = constraints.new_array(index_max=4)
+        constraints.add(data == '2560')
+
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -2616,7 +2658,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -2705,7 +2747,9 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         gas = constraints.new_bitvec(256, name='gas')
         constraints.add(gas == 100000000000)
 
-        data = unhexlify('123456789abcdef00000000000000000000000000000000000000000000000000024')
+        data = constraints.new_array(index_max=68)
+        constraints.add(data == '123456789abcdef00000000000000000000000000000000000000000000000000024')
+
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -2719,7 +2763,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -2810,7 +2854,9 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         gas = constraints.new_bitvec(256, name='gas')
         constraints.add(gas == 100000000000)
 
-        data = unhexlify('1234567890abcdef01234567890abcdef0')
+        data = constraints.new_array(index_max=34)
+        constraints.add(data == '1234567890abcdef01234567890abcdef0')
+
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -2824,7 +2870,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -2920,7 +2966,9 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         gas = constraints.new_bitvec(256, name='gas')
         constraints.add(gas == 100000000000)
 
-        data = unhexlify('1234567890abcdef01234567890abcdef0')
+        data = constraints.new_array(index_max=34)
+        constraints.add(data == '1234567890abcdef01234567890abcdef0')
+
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -2934,7 +2982,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -3023,7 +3071,9 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         gas = constraints.new_bitvec(256, name='gas')
         constraints.add(gas == 100000000000)
 
-        data = unhexlify('2560')
+        data = constraints.new_array(index_max=4)
+        constraints.add(data == '2560')
+
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -3037,7 +3087,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -3133,7 +3183,9 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         gas = constraints.new_bitvec(256, name='gas')
         constraints.add(gas == 100000000000)
 
-        data = unhexlify('1234567890abcdef01234567890abcdef0')
+        data = constraints.new_array(index_max=34)
+        constraints.add(data == '1234567890abcdef01234567890abcdef0')
+
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -3147,7 +3199,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -3234,7 +3286,9 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         gas = constraints.new_bitvec(256, name='gas')
         constraints.add(gas == 100000000000)
 
-        data = unhexlify('ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff23')
+        data = constraints.new_array(index_max=66)
+        constraints.add(data == 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff23')
+
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -3248,7 +3302,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -3350,7 +3404,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -3443,7 +3497,9 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         gas = constraints.new_bitvec(256, name='gas')
         constraints.add(gas == 100000000000)
 
-        data = unhexlify('1234567890abcdef01234567890abcdef0')
+        data = constraints.new_array(index_max=34)
+        constraints.add(data == '1234567890abcdef01234567890abcdef0')
+
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
 
@@ -3457,7 +3513,7 @@ class EVMTest_vmEnvironmentalInfo(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
