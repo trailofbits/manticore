@@ -1224,7 +1224,7 @@ class EVM(Eventful):
         The zero-th power of zero 0^0 is defined to be one.
 
         :param base: exponential base
-        :param exponent: exponent value will be concretized
+        :param exponent: exponent value will be concretized with sampled values
         :return: BitVec* EXP result
         """
         if exponent == 0:
