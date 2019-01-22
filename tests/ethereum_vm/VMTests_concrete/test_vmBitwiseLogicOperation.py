@@ -58,7 +58,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -96,7 +96,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -115,7 +115,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -139,7 +139,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -177,7 +177,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -198,7 +198,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -222,7 +222,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -260,7 +260,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -281,7 +281,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -305,7 +305,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -343,7 +343,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -364,7 +364,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -390,7 +390,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -428,7 +428,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -449,7 +449,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -474,7 +474,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -512,7 +512,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -533,7 +533,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -557,7 +557,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -595,7 +595,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -616,7 +616,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -642,7 +642,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -680,7 +680,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -699,7 +699,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -723,7 +723,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -761,7 +761,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -782,7 +782,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -806,7 +806,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -844,7 +844,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -863,7 +863,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -889,7 +889,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -927,7 +927,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -946,7 +946,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -971,7 +971,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -1009,7 +1009,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -1030,7 +1030,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -1056,7 +1056,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -1094,7 +1094,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -1115,7 +1115,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -1139,7 +1139,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -1177,7 +1177,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -1198,7 +1198,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -1222,7 +1222,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -1260,7 +1260,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -1279,7 +1279,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -1303,7 +1303,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -1341,7 +1341,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -1362,7 +1362,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -1388,7 +1388,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -1426,7 +1426,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -1447,7 +1447,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -1472,7 +1472,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -1510,7 +1510,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -1531,7 +1531,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -1557,7 +1557,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -1595,7 +1595,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -1614,7 +1614,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -1638,7 +1638,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -1676,7 +1676,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -1697,7 +1697,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -1721,7 +1721,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -1759,7 +1759,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -1780,7 +1780,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -1804,7 +1804,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -1842,7 +1842,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -1863,7 +1863,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -1889,7 +1889,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -1927,7 +1927,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -1948,7 +1948,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -1974,7 +1974,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -2012,7 +2012,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -2033,7 +2033,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -2057,7 +2057,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -2095,7 +2095,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -2116,7 +2116,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -2144,7 +2144,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -2182,7 +2182,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -2201,7 +2201,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -2225,7 +2225,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -2263,7 +2263,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -2284,7 +2284,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -2308,7 +2308,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -2346,7 +2346,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -2365,7 +2365,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -2391,7 +2391,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -2429,7 +2429,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -2450,7 +2450,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -2473,7 +2473,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -2511,7 +2511,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -2530,7 +2530,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -2554,7 +2554,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -2592,7 +2592,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -2613,7 +2613,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -2639,7 +2639,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -2677,7 +2677,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -2698,7 +2698,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -2721,7 +2721,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -2759,7 +2759,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -2778,7 +2778,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -2802,7 +2802,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -2840,7 +2840,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -2859,7 +2859,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -2882,7 +2882,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -2920,7 +2920,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -2941,7 +2941,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -2967,7 +2967,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -3005,7 +3005,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -3026,7 +3026,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -3054,7 +3054,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -3092,7 +3092,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -3113,7 +3113,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -3139,7 +3139,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -3177,7 +3177,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -3198,7 +3198,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -3221,7 +3221,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -3259,7 +3259,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -3280,7 +3280,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -3304,7 +3304,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -3342,7 +3342,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -3363,7 +3363,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -3386,7 +3386,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -3424,7 +3424,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -3445,7 +3445,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -3471,7 +3471,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -3509,7 +3509,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -3528,7 +3528,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -3554,7 +3554,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -3592,7 +3592,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -3613,7 +3613,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -3637,7 +3637,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -3675,7 +3675,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -3696,7 +3696,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -3722,7 +3722,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -3760,7 +3760,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -3781,7 +3781,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -3805,7 +3805,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -3843,7 +3843,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -3862,7 +3862,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -3888,7 +3888,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -3926,7 +3926,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -3947,7 +3947,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -3971,7 +3971,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -4009,7 +4009,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -4030,7 +4030,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -4054,7 +4054,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -4092,7 +4092,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -4111,7 +4111,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -4135,7 +4135,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -4173,7 +4173,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -4194,7 +4194,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -4218,7 +4218,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -4256,7 +4256,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -4275,7 +4275,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -4300,7 +4300,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -4338,7 +4338,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -4357,7 +4357,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -4385,7 +4385,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -4423,7 +4423,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -4442,7 +4442,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -4466,7 +4466,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -4504,7 +4504,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -4525,7 +4525,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -4549,7 +4549,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -4587,7 +4587,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -4606,7 +4606,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -4630,7 +4630,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -4668,7 +4668,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -4689,7 +4689,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -4713,7 +4713,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -4751,7 +4751,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -4772,7 +4772,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -4796,7 +4796,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -4834,7 +4834,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -4855,7 +4855,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -4881,7 +4881,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -4919,7 +4919,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -4938,7 +4938,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -4962,7 +4962,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -5000,7 +5000,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -5021,7 +5021,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -5047,7 +5047,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 
         constraints = ConstraintSet()
 
@@ -5085,7 +5085,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -5106,7 +5106,7 @@ class EVMTest_vmBitwiseLogicOperation(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 

@@ -223,7 +223,7 @@ class EVMTest_vmPerformance(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify('af5113aa9f5bf0371ae31b13a58edff7f3ce96c9f40d9bb4c7b2ed490a6396c6'))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -544,7 +544,7 @@ class EVMTest_vmPerformance(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify('000000000000000000000000000000000000000000000000000000000000000f'))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -13514,7 +13514,7 @@ class EVMTest_vmPerformance(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify('82a7b4b109d4fab00000000000000000000000000000000000000000000000c9'))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -13835,7 +13835,7 @@ class EVMTest_vmPerformance(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify('d0e61f591bd78de46f37ced3590d1b5b8c9534ef27bcf11dd02d9fad4c957f2d'))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -14274,7 +14274,7 @@ class EVMTest_vmPerformance(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify('ff00ffffffffffffffffffffffffffaaffffffffffffffffbc00000000000007'))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -14713,7 +14713,7 @@ class EVMTest_vmPerformance(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify('a55ad8b55b1586805ea8c245a6177286a5102b791f9e6366693731c066e35e81'))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -15207,7 +15207,7 @@ class EVMTest_vmPerformance(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify('000000000000000000000000000000000000000000000000000000000000001d'))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -15403,7 +15403,7 @@ class EVMTest_vmPerformance(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify('0e1c6aac6663c379a52d9ccc7ba4757131020772d41447dfcf478cf9fb0c2bbf'))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -15724,7 +15724,7 @@ class EVMTest_vmPerformance(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify('7dd3cdcdaa09b68a42b5ac372018960fcb3daae20a0d41f9e6b507245ac87f2d'))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -16045,7 +16045,7 @@ class EVMTest_vmPerformance(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify('0000000000000000000000000000000000000000000000005851f42d4c957f2d'))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -16298,7 +16298,7 @@ class EVMTest_vmPerformance(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify('000000000000000000000000000000000000000000000000000000000000000d'))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -16619,7 +16619,7 @@ class EVMTest_vmPerformance(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify('a0b60baf8a7d5ff1840537484b793d86f808935d77dbab805851f42d4c957f2d'))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -16872,7 +16872,7 @@ class EVMTest_vmPerformance(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify('0000000000000000000000000000000000000000000000000000000000000037'))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -17193,7 +17193,7 @@ class EVMTest_vmPerformance(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify('b23af8a01bc4dfc6f808935d77dbab8000000000000000005851f42d4c957f2d'))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -19128,7 +19128,7 @@ class EVMTest_vmPerformance(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify('ff00ffffffffffffffffffffffffffaaffffffffffffffffbc00000000000007'))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -19381,7 +19381,7 @@ class EVMTest_vmPerformance(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify('00000000000000000000000000000000000000000000000000000000000003db'))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -19702,7 +19702,7 @@ class EVMTest_vmPerformance(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify('87b9c676d0fd90e2d05a9f8621a374edc678a3fc7209929731e3c9c8f8157f2d'))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
