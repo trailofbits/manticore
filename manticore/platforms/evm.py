@@ -432,10 +432,18 @@ def concretized_args(**policies):
                 if policy == "ACCOUNTS":
                     value = args[index]
                     world = args[0].world
-                    #special handler for EVM only policy
+                    # special handler for EVM only policy
                     cond = world._constraint_to_accounts(value, ty='both', include_zero=True)
                     world.constraints.add(cond)
                     policy = 'ALL'
+
+                if args[index].taint:
+                    # TODO / FIXME: The taint should persist!
+                    logger.warning(
+                        f"Concretizing {func.__name__}'s {index} argument and dropping its taints: "
+                        "the value might not be tracked properly (in case of using detectors)"
+                    )
+
                 raise ConcretizeArgument(index, policy=policy)
             return func(*args, **kwargs)
         wrapper.__signature__ = inspect.signature(func)
@@ -1209,26 +1217,16 @@ class EVM(Eventful):
             return result
         return EXP_SUPPLEMENTAL_GAS * nbytes(exponent)
 
+    @concretized_args(exponent='SAMPLED')
     def EXP(self, base, exponent):
         """
         Exponential operation
         The zero-th power of zero 0^0 is defined to be one.
 
         :param base: exponential base
-        :param exponent: exponent value, must be concrete or solvable (fully symbolic exponent is not implemented)
+        :param exponent: exponent value will be concretized
         :return: BitVec* EXP result
         """
-        if issymbolic(exponent):
-            exponent = to_constant(exponent)
-            if issymbolic(exponent):
-                try:
-                    exponent = solver.get_value(self.constraints, exponent)
-                    logger.error(f'EXP not supported with symbolic exponent yet: set concrete exponent value to {exponent}')
-                except Exception as e:
-                    raise NotImplementedError(
-                        f"EXP not supported with symbolic exponent: can't set a concrete value (error :{e})"
-                    )
-
         if exponent == 0:
             return 1
 
