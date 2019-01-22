@@ -164,7 +164,7 @@ def generate_pre_output(testcase, filename, symbolic):
 '''
             else:
                 output += f'''
-        world.set_storage_data(acc['address'], {key}, {value})
+        world.set_storage_data(acc_addr, {key}, {value})
 '''
 
     address = int(testcase['exec']['address'], 0)

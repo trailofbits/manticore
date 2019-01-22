@@ -165,7 +165,7 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        world.set_storage_data(acc['address'], 0x00, 0x04)
+        world.set_storage_data(acc_addr, 0x00, 0x04)
 
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
@@ -1104,7 +1104,7 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        world.set_storage_data(acc['address'], 0x00, 0x04)
+        world.set_storage_data(acc_addr, 0x00, 0x04)
 
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
@@ -2014,7 +2014,7 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        world.set_storage_data(acc['address'], 0x00, 0x04)
+        world.set_storage_data(acc_addr, 0x00, 0x04)
 
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
@@ -2294,7 +2294,7 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        world.set_storage_data(acc['address'], 0x00, 0x04)
+        world.set_storage_data(acc_addr, 0x00, 0x04)
 
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
@@ -3206,7 +3206,7 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        world.set_storage_data(acc['address'], 0x00, 0x04)
+        world.set_storage_data(acc_addr, 0x00, 0x04)
 
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
@@ -3433,7 +3433,7 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        world.set_storage_data(acc['address'], 0x00, 0x04)
+        world.set_storage_data(acc_addr, 0x00, 0x04)
 
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
@@ -4406,7 +4406,7 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        world.set_storage_data(acc['address'], 0x00, 0x04)
+        world.set_storage_data(acc_addr, 0x00, 0x04)
 
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
@@ -4704,7 +4704,7 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        world.set_storage_data(acc['address'], 0x00, 0x04)
+        world.set_storage_data(acc_addr, 0x00, 0x04)
 
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
@@ -5702,7 +5702,7 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        world.set_storage_data(acc['address'], 0x00, 0x04)
+        world.set_storage_data(acc_addr, 0x00, 0x04)
 
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
@@ -6565,7 +6565,7 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        world.set_storage_data(acc['address'], 0x00, 0x04)
+        world.set_storage_data(acc_addr, 0x00, 0x04)
 
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
@@ -6763,7 +6763,7 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        world.set_storage_data(acc['address'], 0x00, 0x04)
+        world.set_storage_data(acc_addr, 0x00, 0x04)
 
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
@@ -8267,7 +8267,7 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        world.set_storage_data(acc['address'], 0x00, 0x04)
+        world.set_storage_data(acc_addr, 0x00, 0x04)
 
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
@@ -8414,7 +8414,7 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        world.set_storage_data(acc['address'], 0x00, 0x04)
+        world.set_storage_data(acc_addr, 0x00, 0x04)
 
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
@@ -8675,7 +8675,7 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        world.set_storage_data(acc['address'], 0x00, 0x04)
+        world.set_storage_data(acc_addr, 0x00, 0x04)
 
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
@@ -9294,7 +9294,7 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        world.set_storage_data(acc['address'], 0x00, 0x04)
+        world.set_storage_data(acc_addr, 0x00, 0x04)
 
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
@@ -10785,7 +10785,7 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        world.set_storage_data(acc['address'], 0x00, 0x04)
+        world.set_storage_data(acc_addr, 0x00, 0x04)
 
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
@@ -11105,7 +11105,7 @@ class EVMTest_vmIOandFlowOperations(unittest.TestCase):
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
-        world.set_storage_data(acc['address'], 0x00, 0x04)
+        world.set_storage_data(acc_addr, 0x00, 0x04)
 
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
