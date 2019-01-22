@@ -1233,8 +1233,15 @@ class EVM(Eventful):
         return Operators.ITE(
             base == 0,
             0,
-            Operators.POW(base, exponent)
+            self._exp(base, exponent)
         )
+
+    @staticmethod
+    def _exp(base, exponent):
+        result = base
+        for i in range(1, exponent):
+            result = result * base
+        return result
 
     def SIGNEXTEND(self, size, value):
         """Extend length of two's complement signed integer"""
