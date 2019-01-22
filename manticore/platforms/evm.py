@@ -1230,7 +1230,8 @@ class EVM(Eventful):
         if exponent == 0:
             return 1
 
-        return Operators.ITE(
+        return Operators.ITEBV(
+            256,
             base == 0,
             0,
             self._exp(base, exponent)
