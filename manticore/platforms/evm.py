@@ -1217,32 +1217,23 @@ class EVM(Eventful):
             return result
         return EXP_SUPPLEMENTAL_GAS * nbytes(exponent)
 
-    @concretized_args(exponent='SAMPLED')
+    @concretized_args(base='SAMPLED', exponent='SAMPLED')
     def EXP(self, base, exponent):
         """
         Exponential operation
         The zero-th power of zero 0^0 is defined to be one.
 
-        :param base: exponential base
-        :param exponent: exponent value will be concretized with sampled values
+        :param base: exponential base, concretized with sampled values
+        :param exponent: exponent value, concretized with sampled values
         :return: BitVec* EXP result
         """
         if exponent == 0:
             return 1
 
-        return Operators.ITEBV(
-            256,
-            base == 0,
-            0,
-            self._exp(base, exponent)
-        )
+        if base == 0:
+            return 0
 
-    @staticmethod
-    def _exp(base, exponent):
-        result = base
-        for i in range(1, exponent):
-            result = result * base
-        return result
+        return pow(base, exponent, TT256)
 
     def SIGNEXTEND(self, size, value):
         """Extend length of two's complement signed integer"""
