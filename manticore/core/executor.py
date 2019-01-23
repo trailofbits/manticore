@@ -452,6 +452,8 @@ class Executor(Eventful):
                         # Allows to terminate manticore worker on user request
                         while not self.is_shutdown():
                             if not current_state.execute():
+                                self._publish('will_terminate_state', current_state, current_state_id, TerminateState('No more instructions to execution'))
+                                current_state = None
                                 break
                         else:
                             # Notify this worker is done

@@ -1071,6 +1071,7 @@ class EVM(Eventful):
         except EndTx as ex:
             self._advance(exception=True)
             raise
+        return True
 
     def read_buffer(self, offset, size):
         if issymbolic(size):
@@ -2366,7 +2367,7 @@ class EVMWorld(Platform):
         if self.current_vm is None:
             raise TerminateState("Trying to execute an empty transaction", testcase=False)
         try:
-            self.current_vm.execute()
+            return self.current_vm.execute()
         except StartTx:
             pass
         except EndTx as ex:
