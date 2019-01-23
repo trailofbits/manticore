@@ -448,7 +448,7 @@ class Cpu(Eventful):
     '''
 
     _published_events = {'write_register', 'read_register', 'write_memory', 'read_memory', 'decode_instruction',
-                         'execute_instruction', 'set_descriptor', 'map_memory', 'protect_memory'}
+                         'execute_instruction', 'set_descriptor', 'map_memory', 'protect_memory', 'unmap_memory'}
 
     def __init__(self, regfile, memory, **kwargs):
         assert isinstance(regfile, RegisterFile)
