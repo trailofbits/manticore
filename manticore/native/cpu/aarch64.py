@@ -10,7 +10,8 @@ from .register import Register
 # TODO / FIXME / REVIEWME: This is probably missing a lot of instructions
 # map different instructions to a single impl here
 INSTRUCTION_MAPPINGS = {
-    'MOVW': 'MOV'
+    # 'MOVW': 'MOV',
+    'MOVZ': 'MOV'
 }
 
 
@@ -138,9 +139,10 @@ class Aarch64Cpu(Cpu):
         :param Arm64Operand dest: The destination operand; register.
         :param Arm64Operand src: The source operand; register or immediate.
         """
-        result, carry_out = src.read(with_carry=True)
+        # XXX: Finish this.
+        result = src.read()
         dest.write(result)
-        cpu.set_flags(C=carry_out, N=HighBit(result), Z=(result == 0))
+        # cpu.set_flags(C=carry_out, N=HighBit(result), Z=(result == 0))
 
     @staticmethod
     def canonicalize_instruction_name(instr):
@@ -160,21 +162,22 @@ class Aarch64Cpu(Cpu):
     #
     # Register file has the actual CPU flags
     def set_flags(self, **flags):
-        """
-        Note: For any unmodified flags, update _last_flags with the most recent
-        committed value. Otherwise, for example, this could happen:
+        # """
+        # Note: For any unmodified flags, update _last_flags with the most recent
+        # committed value. Otherwise, for example, this could happen:
 
-            overflow=0
-            instr1 computes overflow=1, updates _last_flags, doesn't commit
-            instr2 updates all flags in _last_flags except overflow (overflow remains 1 in _last_flags)
-            instr2 commits all in _last_flags
-            now overflow=1 even though it should still be 0
-        """
-        unupdated_flags = self._last_flags.viewkeys() - flags.viewkeys()
-        for flag in unupdated_flags:
-            flag_name = 'APSR_{}'.format(flag)
-            self._last_flags[flag] = self.regfile.read(flag_name)
-        self._last_flags.update(flags)
+        #     overflow=0
+        #     instr1 computes overflow=1, updates _last_flags, doesn't commit
+        #     instr2 updates all flags in _last_flags except overflow (overflow remains 1 in _last_flags)
+        #     instr2 commits all in _last_flags
+        #     now overflow=1 even though it should still be 0
+        # """
+        # unupdated_flags = self._last_flags.viewkeys() - flags.viewkeys()
+        # for flag in unupdated_flags:
+        #     flag_name = 'APSR_{}'.format(flag)
+        #     self._last_flags[flag] = self.regfile.read(flag_name)
+        # self._last_flags.update(flags)
+        pass
 
 
 class Aarch64CdeclAbi(Abi):
@@ -233,50 +236,69 @@ class Aarch64Operand(Operand):
         return self._type
 
     def read(self, nbits=None, with_carry=False):
-        carry = self.cpu.regfile.read('APSR_C')
+        # XXX: Finish this.
+        assert nbits is None
+        assert not with_carry
+
         if self.type == cs.arm64.ARM64_OP_REG:
-            value = self.cpu.regfile.read(self.reg)
-            # PC in this case has to be set to the instruction after next. PC at this point
-            # is already pointing to next instruction; we bump it one more.
-            if self.reg in ('PC', 'R15'):
-                value += self.cpu.instruction.size
-            if self.is_shifted():
-                shift = self.op.shift
-                value, carry = self.cpu._shift(value, shift.type, shift.value, carry)
-            if with_carry:
-                return value, carry
-            return value
+            return self.cpu.regfile.read(self.reg)
         elif self.type == cs.arm64.ARM64_OP_IMM:
-            imm = self.op.imm
-            if with_carry:
-                return imm, self._get_expand_imm_carry(carry)
-            return imm
-        elif self.type == 'coprocessor':
-            imm = self.op.imm
-            return imm
-        elif self.type == 'memory':
-            val = self.cpu.read_int(self.address(), nbits)
-            if with_carry:
-                return val, carry
-            return val
+            return self.op.imm
         else:
-            raise NotImplementedError("readOperand unknown type", self.op.type)
+            raise NotImplementedError(f"Unsupported operand type: '{self.type}'")
+
+        # carry = self.cpu.regfile.read('APSR_C')
+        # if self.type == cs.arm64.ARM64_OP_REG:
+        #     value = self.cpu.regfile.read(self.reg)
+        #     # PC in this case has to be set to the instruction after next. PC at this point
+        #     # is already pointing to next instruction; we bump it one more.
+        #     if self.reg in ('PC', 'R15'):
+        #         value += self.cpu.instruction.size
+        #     if self.is_shifted():
+        #         shift = self.op.shift
+        #         value, carry = self.cpu._shift(value, shift.type, shift.value, carry)
+        #     if with_carry:
+        #         return value, carry
+        #     return value
+        # elif self.type == cs.arm64.ARM64_OP_IMM:
+        #     imm = self.op.imm
+        #     if with_carry:
+        #         return imm, self._get_expand_imm_carry(carry)
+        #     return imm
+        # elif self.type == 'coprocessor':
+        #     imm = self.op.imm
+        #     return imm
+        # elif self.type == 'memory':
+        #     val = self.cpu.read_int(self.address(), nbits)
+        #     if with_carry:
+        #         return val, carry
+        #     return val
+        # else:
+        #     raise NotImplementedError("readOperand unknown type", self.op.type)
 
     def write(self, value, nbits=None):
+        # XXX: Finish this.
+        assert nbits is None
+
         if self.type == cs.arm64.ARM64_OP_REG:
             self.cpu.regfile.write(self.reg, value)
-        elif self.type == 'memory':
-            raise NotImplementedError('need to impl arm store mem')
         else:
-            raise NotImplementedError("writeOperand unknown type", self.op.type)
+            raise NotImplementedError(f"Unsupported operand type: '{self.type}'")
 
-    def writeback(self, value):
-        if self.type == cs.arm64.ARM64_OP_REG:
-            self.write(value)
-        elif self.type == 'memory':
-            self.cpu.regfile.write(self.mem.base, value)
-        else:
-            raise NotImplementedError("writeback Operand unknown type", self.op.type)
+        # if self.type == cs.arm64.ARM64_OP_REG:
+        #     self.cpu.regfile.write(self.reg, value)
+        # elif self.type == 'memory':
+        #     raise NotImplementedError('need to impl arm store mem')
+        # else:
+        #     raise NotImplementedError("writeOperand unknown type", self.op.type)
 
-    def is_shifted(self):
-        return self.op.shift.type != cs.arm.ARM_SFT_INVALID
+    # def writeback(self, value):
+    #     if self.type == cs.arm64.ARM64_OP_REG:
+    #         self.write(value)
+    #     elif self.type == 'memory':
+    #         self.cpu.regfile.write(self.mem.base, value)
+    #     else:
+    #         raise NotImplementedError("writeback Operand unknown type", self.op.type)
+
+    # def is_shifted(self):
+    #     return self.op.shift.type != cs.arm.ARM_SFT_INVALID
