@@ -624,13 +624,19 @@ class Cpu(Eventful):
         '''
         map = self.memory.map_containing(where)
         if type(map) is FileMap:
-            raw_data = map._data[where - map.start: where - map.start + size]
+            end = map._get_offset(where+size)
+
+            if end > map._mapped_size:
+                logger.warning(f"Missing {end - map._mapped_size} bytes at the end of {map._filename}")
+
+            raw_data = map._data[map._get_offset(where): min(end, map._mapped_size)]
+            if len(raw_data) < end:
+                raw_data += b'\x00'*(end - len(raw_data))
 
             data = b''
-            raw = map._overlay
-            for offset in sorted(raw.keys()):
+            for offset in sorted(map._overlay.keys()):
                 data += raw_data[len(data):offset]
-                data += raw[offset]
+                data += map._overlay[offset]
             data += raw_data[len(data):]
 
         else:
