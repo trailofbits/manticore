@@ -203,10 +203,12 @@ class Aarch64CdeclAbi(Abi):
 class Aarch64LinuxSyscallAbi(SyscallAbi):
     """Aarch64/arm64 Linux system call ABI"""
 
-    # EABI standards:
-    #  syscall # is in X8
-    #  arguments are passed in X0-R5
-    #  retval is passed in R0
+    # From 'man 2 syscall':
+    # arch/ABI:       arm64
+    # instruction:    svc #0
+    # syscall number: x8
+    # arguments:      x0-x5 (arg1-arg6)
+    # return value:   x0
     def syscall_number(self):
         return self._cpu.X8
 
@@ -214,7 +216,7 @@ class Aarch64LinuxSyscallAbi(SyscallAbi):
         return ('X{}'.format(i) for i in range(6))
 
     def write_result(self, result):
-        self._cpu.R0 = result
+        self._cpu.X0 = result
 
 
 class Aarch64Operand(Operand):
