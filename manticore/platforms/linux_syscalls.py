@@ -1095,3 +1095,6 @@ armv7 = {
     983044: "sys_ARM_NR_usr32",
     983045: "sys_ARM_NR_set_tls",
 }
+aarch64 = {
+    64: "sys_write",
+}

@@ -120,7 +120,10 @@ class Aarch64Cpu(Cpu):
     """
     address_bit_size = 64
     max_instr_width = 4
-    machine = 'armv8'
+    # XXX: Possible values: 'aarch64_be', 'aarch64', 'armv8b', 'armv8l'.
+    # See 'UTS_MACHINE' and 'COMPAT_UTS_MACHINE' in the Linux kernel source.
+    # https://stackoverflow.com/a/45125525
+    machine = 'aarch64'
     arch = cs.CS_ARCH_ARM64
     # Though there is no thumb mode in aarch64, we still have to set it as some other components may require it
     # see https://stackoverflow.com/questions/46086329/can-i-use-thumb-instructions-in-an-arm64-binary

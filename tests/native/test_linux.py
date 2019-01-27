@@ -21,9 +21,14 @@ class LinuxTest(unittest.TestCase):
     def setUp(self):
         self.linux = linux.Linux(self.BIN_PATH)
         self.symbolic_linux_armv7 = linux.SLinux.empty_platform('armv7')
+        self.symbolic_linux_aarch64 = linux.SLinux.empty_platform('aarch64')
 
     def tearDown(self):
-        for f in self.linux.files + self.symbolic_linux_armv7.files:
+        for f in (
+            self.linux.files +
+            self.symbolic_linux_armv7.files +
+            self.symbolic_linux_aarch64.files
+        ):
             if isinstance(f, linux.File):
                 f.close()
 
@@ -71,6 +76,36 @@ class LinuxTest(unittest.TestCase):
         second_map_name = os.path.basename(second_map[4])
         self.assertEqual(first_map_name, 'basic_linux_amd64')
         self.assertEqual(second_map_name, 'basic_linux_amd64')
+
+    def test_aarch64_syscall_write(self):
+        nr_write = 64
+
+        # Create a minimal state.
+        platform = self.symbolic_linux_aarch64
+        platform.current.memory.mmap(0x1000, 0x1000, 'rw ')
+        platform.current.SP = 0x2000 - 8
+
+        # Create a buffer.
+        buf = platform.current.SP - 0x100
+        s = "hello\n"
+        platform.current.write_bytes(buf, s)
+
+        fd = 1  # stdout
+        size = len(s)
+
+        # Invoke the syscall.
+        platform.current.X0 = fd
+        platform.current.X1 = buf
+        platform.current.X2 = size
+        platform.current.X8 = nr_write
+        self.assertEqual(linux_syscalls.aarch64[nr_write], 'sys_write')
+
+        platform.syscall()
+
+        self.assertEqual(platform.current.regfile.read('X0'), size)
+
+        res = ''.join(map(chr, platform.output.read(size)))
+        self.assertEqual(res, s)
 
     def test_armv7_syscall_fstat(self):
         nr_fstat64 = 197

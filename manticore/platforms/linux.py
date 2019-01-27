@@ -2418,7 +2418,9 @@ class Linux(Platform):
             self.current._set_mode_by_val(self.current.PC)
             self.current.PC &= ~1
         elif self.arch == 'aarch64':
-            # TODO / FIXME / REVIEW PLS: is that okay? Seems some machines might have it set as armv8
+            # XXX: Possible values: 'aarch64_be', 'aarch64', 'armv8b', 'armv8l'.
+            # See 'UTS_MACHINE' and 'COMPAT_UTS_MACHINE' in the Linux kernel source.
+            # https://stackoverflow.com/a/45125525
             self._uname_machine = 'aarch64'
 
         # Establish segment registers for x86 architectures
