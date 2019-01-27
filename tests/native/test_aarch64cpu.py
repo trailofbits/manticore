@@ -6,7 +6,7 @@ from keystone import Ks, KS_ARCH_ARM64, KS_MODE_LITTLE_ENDIAN
 from manticore.core.smtlib import *
 from manticore.native.memory import SMemory32
 from manticore.native.cpu.aarch64 import Aarch64Cpu as Cpu
-from .test_armv7cpu import itest, itest_setregs
+from .test_armv7cpu import itest, itest_setregs, itest_multiple
 
 ks = Ks(KS_ARCH_ARM64, KS_MODE_LITTLE_ENDIAN)
 
@@ -28,8 +28,7 @@ class Aarch64CpuInstructions(unittest.TestCase):
         self.mem = self.cpu.memory
         self.rf = self.cpu.regfile
 
-    # XXX: Support multiple instructions.
-    def _setupCpu(self, asm, mode=CS_MODE_ARM):
+    def _setupCpu(self, asm, mode=CS_MODE_ARM, multiple_insts=False):
         if mode != CS_MODE_ARM:
             raise Exception(f"Unsupported mode: '{mode}'")
 
@@ -39,8 +38,14 @@ class Aarch64CpuInstructions(unittest.TestCase):
         self.stack = self.mem.mmap(0xf000, 0x1000, 'rw')
 
         start = self.code + 4
-
-        self.mem.write(start, assemble(asm))
+        if multiple_insts:
+            offset = 0
+            for asm_single in asm:
+                asm_inst = assemble(asm_single)
+                self.mem.write(start + offset, asm_inst)
+                offset += len(asm_inst)
+        else:
+            self.mem.write(start, assemble(asm))
 
         self.rf.write('PC', start)
         self.rf.write('SP', self.stack + 0x1000)
@@ -54,3 +59,25 @@ class Aarch64CpuInstructions(unittest.TestCase):
     @itest("mov x0, #43")
     def test_mov_imm(self):
         self.assertEqual(self.rf.read('X0'), 43)
+
+    # This immediate doesn't fit in 16-bits.  The instruction should be
+    # interpreted as 'movn x0, #0'.
+    @itest("mov x0, #0xffffffffffffffff")
+    def test_mov_imm64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffffffffffff)
+
+    @itest("movn x0, #0")
+    def test_movn_imm(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffffffffffff)
+
+    @itest_multiple(["movn x0, #0", "mov w0, #1"])
+    def test_mov_same_reg32(self):
+        self.assertEqual(self.rf.read('X0'), 1)
+
+    @itest_multiple(["movn x0, #0", "movk w0, #1"])
+    def test_movk_same_reg32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffff0001)
+
+    @itest_multiple(["movn x0, #0", "movk x0, #1"])
+    def test_movk_same_reg64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffffffff0001)

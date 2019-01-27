@@ -7,11 +7,10 @@ from .arm import HighBit, Armv7Operand
 from .register import Register
 
 
-# TODO / FIXME / REVIEWME: This is probably missing a lot of instructions
-# map different instructions to a single impl here
+# Map different instructions to a single implementation.
+# XXX: Avoiding this for now.
 INSTRUCTION_MAPPINGS = {
-    # 'MOVW': 'MOV',
-    'MOVZ': 'MOV'
+    # 'MOVZ': 'MOV'
 }
 
 
@@ -41,9 +40,29 @@ class Aarch64RegisterFile(RegisterFile):
         # Each register can be accessed as:
         # * A 64-bit general-purpose register named X0 to X30
         # * A 32-bit general-purpose register named W0 to W30.
-        alias_regs.update(
-            ('R%d' % i, 'X%d' % i) for i in range(len(self._X_REGS))
-        )
+
+        # XXX: See '_table' in 'AMD64RegFile' for how to handle 32-bit
+        # registers.
+        # _table = {
+        #     'RAX': Regspec('RAX', int, 0, 64, True),
+        #     'RBX': Regspec('RBX', int, 0, 64, True),
+        #     ...
+        #     'EAX': Regspec('RAX', int, 0, 32, True),
+        #     'EBX': Regspec('RBX', int, 0, 32, True),
+        # }
+
+        # XXX: Make sure that instructions like these work correctly:
+        # movn x0, #0
+        # mov  w0, #1
+        # This should return 1 in X0.
+        #
+        # movn x0, #0
+        # movk w0, #1
+        # This should return 0xffff0001 in X0.
+        #
+        # movn x0, #0
+        # movk x0, #1
+        # This should return 0xffffffffffff0001 in X0.
 
         # V0-V31 32 SIMD&FP registers, V0 to V31.
         # Each of those can be accessed as 128-bit registers named Q0 to Q31.
