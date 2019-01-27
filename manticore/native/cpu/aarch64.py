@@ -14,6 +14,7 @@ INSTRUCTION_MAPPINGS = {
 }
 
 
+# XXX: Update/rewrite this.
 class Aarch64RegisterFile(RegisterFile):
     _X_REGS = tuple('X%d' % i for i in range(31))  # R0-R30 31 general-purpose registers (called X registers for 64bit)
     _V_REGS = tuple('V%d' % i for i in range(32))  # V0-V31 32 SIMD & FP registers
@@ -112,6 +113,7 @@ class Aarch64RegisterFile(RegisterFile):
         return self._all_registers
 
 
+# XXX: Update/rewrite this.
 class Aarch64Cpu(Cpu):
     """
     Cpu specialization handling the ARM64 architecture.
@@ -243,6 +245,7 @@ class Aarch64LinuxSyscallAbi(SyscallAbi):
         self._cpu.X0 = result
 
 
+# XXX: Update/rewrite this.
 class Aarch64Operand(Operand):
     def __init__(self, cpu, op, **kwargs):
         super(Aarch64Operand, self).__init__(cpu, op)
