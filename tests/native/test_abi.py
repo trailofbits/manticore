@@ -86,6 +86,28 @@ class ABITest(unittest.TestCase):
         # Returned correctly.
         self.assertEqual(cpu.PC, cpu.LR)
 
+    def test_aarch64_syscall(self):
+        cpu = self._cpu_aarch64
+
+        cpu.X8 = 6
+        for i in range(6):
+            cpu.write_register(f'X{i}', i)
+
+        def test(one, two, three, four, five, six):
+            self.assertEqual(one, 0)
+            self.assertEqual(two, 1)
+            self.assertEqual(three, 2)
+            self.assertEqual(four, 3)
+            self.assertEqual(five, 4)
+            self.assertEqual(six, 5)
+            return 42
+
+        self.assertEqual(cpu.syscall_abi.syscall_number(), 6)
+
+        cpu.syscall_abi.invoke(test)
+
+        self.assertEqual(cpu.X0, 42)
+
     def test_arm_abi_simple(self):
         cpu = self._cpu_arm
 
