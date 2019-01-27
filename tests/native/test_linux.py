@@ -20,10 +20,10 @@ class LinuxTest(unittest.TestCase):
 
     def setUp(self):
         self.linux = linux.Linux(self.BIN_PATH)
-        self.symbolic_linux = linux.SLinux.empty_platform('armv7')
+        self.symbolic_linux_armv7 = linux.SLinux.empty_platform('armv7')
 
     def tearDown(self):
-        for f in self.linux.files + self.symbolic_linux.files:
+        for f in self.linux.files + self.symbolic_linux_armv7.files:
             if isinstance(f, linux.File):
                 f.close()
 
@@ -72,11 +72,11 @@ class LinuxTest(unittest.TestCase):
         self.assertEqual(first_map_name, 'basic_linux_amd64')
         self.assertEqual(second_map_name, 'basic_linux_amd64')
 
-    def test_syscall_fstat(self):
+    def test_armv7_syscall_fstat(self):
         nr_fstat64 = 197
 
         # Create a minimal state
-        platform = self.symbolic_linux
+        platform = self.symbolic_linux_armv7
         platform.current.memory.mmap(0x1000, 0x1000, 'rw ')
         platform.current.SP = 0x2000-4
 
@@ -94,9 +94,9 @@ class LinuxTest(unittest.TestCase):
 
         print(hexlify(b''.join(platform.current.read_bytes(stat, 100))))
 
-    def test_linux_symbolic_files_workspace_files(self):
+    def test_armv7_linux_symbolic_files_workspace_files(self):
         fname = 'symfile'
-        platform = self.symbolic_linux
+        platform = self.symbolic_linux_armv7
 
         # create symbolic file
         with open(fname, 'w') as f:
@@ -125,8 +125,8 @@ class LinuxTest(unittest.TestCase):
         self.assertEqual(len(files[fname]), 1)
 
 
-    def test_linux_workspace_files(self):
-        platform = self.symbolic_linux
+    def test_armv7_linux_workspace_files(self):
+        platform = self.symbolic_linux_armv7
         platform.argv = ["arg1", "arg2"]
 
         files = platform.generate_workspace_files()
@@ -139,7 +139,7 @@ class LinuxTest(unittest.TestCase):
         self.assertIn('stderr', files)
         self.assertIn('net', files)
 
-    def test_syscall_events(self):
+    def test_armv7_syscall_events(self):
         nr_fstat64 = 197
 
         class Receiver:
@@ -151,7 +151,7 @@ class LinuxTest(unittest.TestCase):
                 self.nevents += 1
 
         # Create a minimal state
-        platform = self.symbolic_linux
+        platform = self.symbolic_linux_armv7
         platform.current.memory.mmap(0x1000, 0x1000, 'rw ')
         platform.current.SP = 0x2000-4
         platform.current.memory.mmap(0x2000, 0x2000, 'rwx')
@@ -178,11 +178,11 @@ class LinuxTest(unittest.TestCase):
         self.assertEqual(pre_icount+1, post_icount)
         self.assertEqual(r.nevents, 2)
 
-    def _create_openat_state(self):
+    def _armv7_create_openat_state(self):
         nr_openat = 322
 
         # Create a minimal state
-        platform = self.symbolic_linux
+        platform = self.symbolic_linux_armv7
         platform.current.memory.mmap(0x1000, 0x1000, 'rw ')
         platform.current.SP = 0x2000-4
 
@@ -207,16 +207,16 @@ class LinuxTest(unittest.TestCase):
 
         return platform, dir_path
 
-    def test_syscall_openat_concrete(self):
-        platform, temp_dir = self._create_openat_state()
+    def test_armv7_syscall_openat_concrete(self):
+        platform, temp_dir = self._armv7_create_openat_state()
         try:
             platform.syscall()
             self.assertGreater(platform.current.R0, 2)
         finally:
             shutil.rmtree(temp_dir)
 
-    def test_syscall_openat_symbolic(self):
-        platform, temp_dir = self._create_openat_state()
+    def test_armv7_syscall_openat_symbolic(self):
+        platform, temp_dir = self._armv7_create_openat_state()
         try:
             platform.current.R0 = BitVecVariable(32, 'fd')
 
@@ -231,9 +231,9 @@ class LinuxTest(unittest.TestCase):
         finally:
             shutil.rmtree(temp_dir)
 
-    def test_chroot(self):
+    def test_armv7_chroot(self):
         # Create a minimal state
-        platform = self.symbolic_linux
+        platform = self.symbolic_linux_armv7
         platform.current.memory.mmap(0x1000, 0x1000, 'rw ')
         platform.current.SP = 0x2000-4
 
