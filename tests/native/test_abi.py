@@ -5,6 +5,7 @@ import unittest
 
 from manticore.native.cpu.abstractcpu import ConcretizeArgument, ConcretizeRegister, ConcretizeMemory
 from manticore.native.cpu.arm import Armv7Cpu, Armv7LinuxSyscallAbi, Armv7CdeclAbi
+from manticore.native.cpu.aarch64 import Aarch64Cpu, Aarch64LinuxSyscallAbi, Aarch64CdeclAbi
 from manticore.native.cpu.x86 import I386Cpu, AMD64Cpu, I386LinuxSyscallAbi, I386StdcallAbi, I386CdeclAbi, AMD64LinuxSyscallAbi, SystemVAbi
 from manticore.native.memory import SMemory32, SMemory64
 from manticore.core.smtlib import ConstraintSet, Operators
@@ -18,6 +19,11 @@ class ABITest(unittest.TestCase):
         mem32.mmap(0x1000, 0x1000, 'rw ')
         mem64 = SMemory64(ConstraintSet())
         mem64.mmap(0x1000, 0x1000, 'rw ')
+
+        self._cpu_aarch64 = Aarch64Cpu(mem64)
+        self._cpu_aarch64.SP = 0x1080
+        self._cpu_aarch64.func_abi = Aarch64CdeclAbi(self._cpu_aarch64)
+        self._cpu_aarch64.syscall_abi = Aarch64LinuxSyscallAbi(self._cpu_aarch64)
 
         self._cpu_arm = Armv7Cpu(mem32)
         self._cpu_arm.SP = 0x1080
@@ -43,6 +49,42 @@ class ABITest(unittest.TestCase):
 
     def test_executor(self):
         pass
+
+    def test_aarch64_abi(self):
+        cpu = self._cpu_aarch64
+
+        for i in range(8):
+            cpu.write_register(f'X{i}', i)
+
+        cpu.LR = 0x1234
+
+        self.assertEqual(cpu.read_int(cpu.SP), 0x80)
+
+        # First 8 arguments in registers, then on stack.
+        def test(one, two, three, four, five, six, seven, eight, nine, ten, eleven):
+            self.assertEqual(one,    0)
+            self.assertEqual(two,    1)
+            self.assertEqual(three,  2)
+            self.assertEqual(four,   3)
+            self.assertEqual(five,   4)
+            self.assertEqual(six,    5)
+            self.assertEqual(seven,  6)
+            self.assertEqual(eight,  7)
+            self.assertEqual(nine,   0x80)
+            self.assertEqual(ten,    0x88)
+            self.assertEqual(eleven, 0x90)
+
+            self.assertEqual(cpu.SP,  0x1080)
+            return 42
+
+        cpu.func_abi.invoke(test)
+
+        # Result is correctly captured.
+        self.assertEqual(cpu.X0, 42)
+        # SP is unchanged.
+        self.assertEqual(cpu.SP, 0x1080)
+        # Returned correctly.
+        self.assertEqual(cpu.PC, cpu.LR)
 
     def test_arm_abi_simple(self):
         cpu = self._cpu_arm

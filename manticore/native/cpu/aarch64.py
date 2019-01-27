@@ -202,10 +202,15 @@ class Aarch64Cpu(Cpu):
 class Aarch64CdeclAbi(Abi):
     """Aarch64/arm64 cdecl function call ABI"""
 
-    def get_arguments(self):
-        # TODO / FIXME: Is this valid? As this might be just lower part of X0-X7 = W0-W7
+    # XXX: Floating-point arguments are not supported.
+    # For floats and doubles, the first 8 arguments are passed via registers
+    # (S0-S7 for floats, D0-D7 for doubles), then on stack.
+    # The result is returned in S0 for floats and D0 for doubles.
 
-        # First eight arguments are passed via X0-X7 (or W0-W7 if they are 32bit), then on stack
+    def get_arguments(self):
+        # First 8 arguments are passed via X0-X7 (or W0-W7 if they are 32-bit),
+        # then on stack.
+
         for reg in ('X0', 'X1', 'X2', 'X3', 'X4', 'X5', 'X6', 'X7'):
             yield reg
 
@@ -213,7 +218,7 @@ class Aarch64CdeclAbi(Abi):
             yield address
 
     def write_result(self, result):
-        self._cpu.W0 = result
+        self._cpu.X0 = result
 
     def ret(self):
         self._cpu.PC = self._cpu.LR
