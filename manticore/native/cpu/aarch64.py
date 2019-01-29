@@ -1,10 +1,12 @@
 import warnings
 
 import capstone as cs
+import collections
 
 from .abstractcpu import Cpu, RegisterFile, Abi, SyscallAbi, Operand, instruction
 from .arm import HighBit, Armv7Operand
 from .register import Register
+from ...core.smtlib import Operators
 
 
 # Map different instructions to a single implementation.
@@ -14,99 +16,173 @@ INSTRUCTION_MAPPINGS = {
 }
 
 
-# XXX: Update/rewrite this.
 class Aarch64RegisterFile(RegisterFile):
-    _X_REGS = tuple('X%d' % i for i in range(31))  # R0-R30 31 general-purpose registers (called X registers for 64bit)
-    _V_REGS = tuple('V%d' % i for i in range(32))  # V0-V31 32 SIMD & FP registers
+    Regspec = collections.namedtuple('RegSpec', 'parent size')
+
+    # Register table.
+    _table = {}
+
+    # From "B1.2 Registers in AArch64 Execution state" in the ARM Architecture
+    # Reference Manual: ARMv8, for ARMv8-A architecture profile:
+    #
+    # 31 general-purpose registers, R0 to R30.
+    # Each register can be accessed as:
+    # * A 64-bit general-purpose register named X0 to X30.
+    # * A 32-bit general-purpose register named W0 to W30.
+    for i in range(31):
+        _table[f'X{i}'] = Regspec(f'X{i}', 64)
+        _table[f'W{i}'] = Regspec(f'X{i}', 32)
+
+    # A 64-bit dedicated Stack Pointer register.  The least significant 32 bits
+    # of the stack-pointer can be accessed via the register name WSP.
+    #
+    # The use of SP as an operand in an instruction, indicates the use of the
+    # current stack pointer.
+    _table['SP']  = Regspec('SP', 64)
+    _table['WSP'] = Regspec('SP', 32)
+
+    # A 64-bit Program Counter holding the address of the current instruction.
+    # Software cannot write directly to the PC.  It can only be updated on a
+    # branch, exception entry or exception return.
+    #
+    # Attempting to execute an A64 instruction that is not word-aligned
+    # generates a PC alignment fault, see "PC alignment checking".
+    _table['PC'] = Regspec('PC', 64)
+
+    # 32 SIMD&FP registers, V0 to V31.
+    # Each register can be accessed as:
+    # * A 128-bit register named Q0 to Q31.
+    # * A 64-bit register named D0 to D31.
+    # * A 32-bit register named S0 to S31.
+    # * A 16-bit register named H0 to H31.
+    # * An 8-bit register named B0 to B31.
+    # * A 128-bit vector of elements.
+    # * A 64-bit vector of elements.
+    #
+    # Where the number of bits described by a register name does not occupy an entire
+    # SIMD&FP register, it refers to the least significant bits.
+    for i in range(32):
+        _table[f'Q{i}'] = Regspec(f'Q{i}', 128)
+        _table[f'D{i}'] = Regspec(f'Q{i}', 64)
+        _table[f'S{i}'] = Regspec(f'Q{i}', 32)
+        _table[f'H{i}'] = Regspec(f'Q{i}', 16)
+        _table[f'B{i}'] = Regspec(f'Q{i}', 8)
+        # XXX: Support vectors.
+        # For more information about data types and vector formats, see "Supported
+        # data types".
+
+    # Two SIMD and floating-point control and status registers, FPCR and FPSR.
+    _table['FPCR'] = Regspec('FPCR', 64)
+    _table['FPSR'] = Regspec('FPSR', 64)
+
+    # Condition flags.
+    # Flag-setting instructions set these.
+    #
+    # N Negative Condition flag.  If the result of the instruction is regarded
+    # as a two's complement signed integer, the PE sets this to:
+    # * 1 if the result is negative.
+    # * 0 if the result is positive or zero.
+    #
+    # Z Zero Condition flag.  Set to:
+    # * 1 if the result of the instruction is zero.
+    # * 0 otherwise.
+    # A result of zero often indicates an equal result from a comparison.
+    #
+    # C Carry Condition flag.  Set to:
+    # * 1 if the instruction results in a carry condition, for example an unsigned overflow
+    #   that is the result of an addition.
+    # * 0 otherwise.
+    #
+    # V Overflow Condition flag.  Set to:
+    # * 1 if the instruction results in an overflow condition, for example a signed
+    #   overflow that is the result of an addition.
+    # * 0 otherwise.
+    #
+    # Conditional instructions test the N, Z, C and V Condition flags, combining them
+    # with the Condition code for the instruction to determine whether the instruction
+    # must be executed.  In this way, execution of the instruction is conditional on
+    # the result of a previous operation.  For more information about conditional
+    # execution, see "Condition flags and related instructions".
+    #
+    # Also see "C5.2.9 NZCV, Condition Flags".
+    # Counting from the right:
+    # N, bit [31]
+    # Z, bit [30]
+    # C, bit [29]
+    # V, bit [28]
+    _table['NZCV'] = Regspec('NZCV', 64)
+
+    # From "C1.2.5 Register names":
+    # Zero register.
+    _table['XZR'] = Regspec('XZR', 64)
+    _table['WZR'] = Regspec('XZR', 32)
 
     def __init__(self):
-        # TODO / FIXME: This is probably valid only for 'aarch32 state'
-        alias_regs = {
-            # 'SB': 'X9',
-            # 'SL': 'X10',
-            # 'FP': 'X11',
-            # 'IP': 'X12',
+        # Register aliases.
+        _aliases = {
+            # This one is required by the 'Cpu' class.
             'STACK': 'SP',
-            # 'SP': 'X13',
-            # 'LR': 'X14',
-            # 'PC': 'X15',
+            # From "5.1 Machine Registers" in Procedure Call Standard for the ARM 64-bit
+            # Architecture (AArch64):
+            # Frame pointer.
+            'FP': 'X29',
+            # Intra-procedure-call temporary registers (can be used by call veneers
+            # and PLT code); at other times may be used as temporary registers.
+            'IP1': 'X17',
+            'IP0': 'X16',
+            # From "B1.2 Registers in AArch64 Execution state" in the ARM Architecture
+            # Reference Manual: ARMv8, for ARMv8-A architecture profile:
+            # The X30 general-purpose register is used as the procedure call
+            # link register.
+            'LR': 'X30'
         }
+        super().__init__(_aliases)
 
-        # Via ARM Architecture Reference Manual - ARMv8, for ARMv8-A architecture profile
-        # B1.2.1 Registers in AArch64 state:
-        #
-        # In the AArch64 application level view, an ARM processing element has:
-        # R0-R30 31 general-purpose registers, R0 to R30.
-        #
-        # Each register can be accessed as:
-        # * A 64-bit general-purpose register named X0 to X30
-        # * A 32-bit general-purpose register named W0 to W30.
+        # Used for validity checking.
+        self._all_registers = set()
 
-        # XXX: See '_table' in 'AMD64RegFile' for how to handle 32-bit
-        # registers.
-        # _table = {
-        #     'RAX': Regspec('RAX', int, 0, 64, True),
-        #     'RBX': Regspec('RBX', int, 0, 64, True),
-        #     ...
-        #     'EAX': Regspec('RAX', int, 0, 32, True),
-        #     'EBX': Regspec('RBX', int, 0, 32, True),
-        # }
+        # Initialize the register cache.
+        # Only the full registers are stored here (called "parents").
+        # If a smaller register is used, it must find its "parent" in order to
+        # be stored here.
+        self._registers = {}
+        for name in self._table.keys():
+            self._all_registers.add(name)
 
-        # XXX: Make sure that instructions like these work correctly:
-        # movn x0, #0
-        # mov  w0, #1
-        # This should return 1 in X0.
-        #
-        # movn x0, #0
-        # movk w0, #1
-        # This should return 0xffff0001 in X0.
-        #
-        # movn x0, #0
-        # movk x0, #1
-        # This should return 0xffffffffffff0001 in X0.
+            parent, size = self._table[name]
+            if name != parent:
+                continue
+            self._registers[name] = Register(size)
 
-        # V0-V31 32 SIMD&FP registers, V0 to V31.
-        # Each of those can be accessed as 128-bit registers named Q0 to Q31.
-        alias_regs.update(
-            ('Q%d' % i, 'V%d' % i) for i in range(len(self._V_REGS))
-        )
-
-        super(Aarch64RegisterFile, self).__init__(alias_regs)
-
-        self._regs = {}
-
-        # 64 bit registers.
-        for reg_name in self._X_REGS:
-            self._regs[reg_name] = Register(64)
-
-        # 128 bit SIMD registers.
-        for reg_name in self._V_REGS:
-            self._regs[reg_name] = Register(128)
-
-        self._regs['SP'] = Register(64)
-        self._regs['PC'] = Register(64)
-
-        # Flags
-        self._regs['APSR_N'] = Register(1)
-        self._regs['APSR_Z'] = Register(1)
-        self._regs['APSR_C'] = Register(1)
-        self._regs['APSR_V'] = Register(1)
-        self._regs['APSR_GE'] = Register(4)
-
-        self._all_registers = super(Aarch64RegisterFile, self).all_registers + self._X_REGS + self._V_REGS + \
-                              ('SP', 'PC')
 
     def read(self, register):
-        register = self._alias(register)
-        return self._regs[register].read()
+        assert register in self
+        name = self._alias(register)
+        parent, size = self._table[name]
+        value = self._registers[parent].read()
+
+        if name != parent:
+            _, parent_size = self._table[parent]
+            if size < parent_size:
+                value = Operators.EXTRACT(value, 0, size)
+
+        return value
 
     def write(self, register, value):
-        register = self._alias(register)
-        self._regs[register].write(value)
+        assert register in self
+        name = self._alias(register)
+        parent, size = self._table[name]
+        assert value <= 2 ** size - 1
+        self._registers[parent].write(value)
 
     @property
     def canonical_registers(self):
-        return self._X_REGS + ('SP', 'PC')
+        # XXX: This one is used by 'UnicornEmulator._step'.
+        # And Unicorn doesn't support these.
+        not_supported = set()
+        not_supported.add('FPSR')
+        not_supported.add('FPCR')
+        return self._all_registers - not_supported
 
     @property
     def all_registers(self):
