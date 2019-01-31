@@ -55,29 +55,36 @@ class Aarch64CpuInstructions(unittest.TestCase):
     @itest("mov x0, x1")
     def test_mov_reg(self):
         self.assertEqual(self.rf.read('X0'), 42)
+        self.assertEqual(self.rf.read('W0'), 42)
 
     @itest("mov x0, #43")
     def test_mov_imm(self):
         self.assertEqual(self.rf.read('X0'), 43)
+        self.assertEqual(self.rf.read('W0'), 43)
 
     # This immediate doesn't fit in 16-bits.  The instruction should be
     # interpreted as 'movn x0, #0'.
     @itest("mov x0, #0xffffffffffffffff")
     def test_mov_imm64(self):
         self.assertEqual(self.rf.read('X0'), 0xffffffffffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
 
     @itest("movn x0, #0")
     def test_movn_imm(self):
         self.assertEqual(self.rf.read('X0'), 0xffffffffffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
 
     @itest_multiple(["movn x0, #0", "mov w0, #1"])
     def test_mov_same_reg32(self):
         self.assertEqual(self.rf.read('X0'), 1)
+        self.assertEqual(self.rf.read('W0'), 1)
 
     @itest_multiple(["movn x0, #0", "movk w0, #1"])
     def test_movk_same_reg32(self):
         self.assertEqual(self.rf.read('X0'), 0xffff0001)
+        self.assertEqual(self.rf.read('W0'), 0xffff0001)
 
     @itest_multiple(["movn x0, #0", "movk x0, #1"])
     def test_movk_same_reg64(self):
         self.assertEqual(self.rf.read('X0'), 0xffffffffffff0001)
+        self.assertEqual(self.rf.read('W0'), 0xffff0001)

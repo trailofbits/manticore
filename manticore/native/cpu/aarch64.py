@@ -141,6 +141,9 @@ class Aarch64RegisterFile(RegisterFile):
         # Used for validity checking.
         self._all_registers = set()
 
+        # XXX: Used for 'UnicornEmulator._step'.
+        self._parent_registers = set()
+
         # Initialize the register cache.
         # Only the full registers are stored here (called "parents").
         # If a smaller register is used, it must find its "parent" in order to
@@ -153,6 +156,7 @@ class Aarch64RegisterFile(RegisterFile):
             if name != parent:
                 continue
             self._registers[name] = Register(size)
+            self._parent_registers.add(name)
 
 
     def read(self, register):
@@ -177,12 +181,19 @@ class Aarch64RegisterFile(RegisterFile):
 
     @property
     def canonical_registers(self):
-        # XXX: This one is used by 'UnicornEmulator._step'.
-        # And Unicorn doesn't support these.
+        # XXX: 'UnicornEmulator._step' goes over all registers returned from
+        # here, reading from and writing to them as needed.  But 'read' and
+        # 'write' methods of this class internally operate only on "parent"
+        # registers.  So if '_step' reads a 32-bit register that internally
+        # stores a 64-bit value, 'read' will truncate the result to 32 bits,
+        # which is okay, but '_step' will then put the truncated value back in
+        # the register.  So return only "parent" registers from here.
+        #
+        # XXX: And Unicorn doesn't support these:
         not_supported = set()
         not_supported.add('FPSR')
         not_supported.add('FPCR')
-        return self._all_registers - not_supported
+        return self._parent_registers - not_supported
 
     @property
     def all_registers(self):
