@@ -4,7 +4,7 @@ from capstone import CS_MODE_ARM
 from keystone import Ks, KS_ARCH_ARM64, KS_MODE_LITTLE_ENDIAN
 
 from manticore.core.smtlib import *
-from manticore.native.memory import SMemory32
+from manticore.native.memory import SMemory64
 from manticore.native.cpu.aarch64 import Aarch64Cpu as Cpu
 from .test_armv7cpu import itest, itest_setregs, itest_multiple
 
@@ -21,10 +21,9 @@ class Aarch64CpuInstructions(unittest.TestCase):
     _multiprocess_can_split_ = True
 
     def setUp(self):
-        # XXX: Copied from the Armv7 test code.
-        # XXX: Should this use 'SMemory32'?
+        # XXX: Adapted from the Armv7 test code.
         cs = ConstraintSet()
-        self.cpu = Cpu(SMemory32(cs))
+        self.cpu = Cpu(SMemory64(cs))
         self.mem = self.cpu.memory
         self.rf = self.cpu.regfile
 
@@ -32,12 +31,12 @@ class Aarch64CpuInstructions(unittest.TestCase):
         if mode != CS_MODE_ARM:
             raise Exception(f"Unsupported mode: '{mode}'")
 
-        # XXX: Copied from the Armv7 test code.
+        # XXX: Adapted from the Armv7 test code.
         self.code = self.mem.mmap(0x1000, 0x1000, 'rwx')
         self.data = self.mem.mmap(0xd000, 0x1000, 'rw')
         self.stack = self.mem.mmap(0xf000, 0x1000, 'rw')
 
-        start = self.code + 4
+        start = self.code
         if multiple_insts:
             offset = 0
             for asm_single in asm:
