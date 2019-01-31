@@ -6,7 +6,8 @@ from keystone import Ks, KS_ARCH_ARM64, KS_MODE_LITTLE_ENDIAN
 from manticore.core.smtlib import *
 from manticore.native.memory import SMemory64
 from manticore.native.cpu.aarch64 import Aarch64Cpu as Cpu
-from .test_armv7cpu import itest, itest_setregs, itest_multiple
+from .test_armv7cpu import itest, itest_custom, itest_setregs, itest_multiple
+from .test_aarch64rf import MAGIC_64, MAGIC_32
 
 ks = Ks(KS_ARCH_ARM64, KS_MODE_LITTLE_ENDIAN)
 
@@ -50,11 +51,52 @@ class Aarch64CpuInstructions(unittest.TestCase):
         self.rf.write('SP', self.stack + 0x1000)
         self.cpu.mode = mode
 
+
+    # MOV (register).
+
     @itest_setregs("X1=42")
     @itest("mov x0, x1")
     def test_mov_reg(self):
         self.assertEqual(self.rf.read('X0'), 42)
         self.assertEqual(self.rf.read('W0'), 42)
+
+    @itest_setregs("W1=42")
+    @itest("mov w0, w1")
+    def test_mov_reg32(self):
+        self.assertEqual(self.rf.read('X0'), 42)
+        self.assertEqual(self.rf.read('W0'), 42)
+
+
+    # MOV (to/from SP).
+
+    @itest_setregs(f"X0={MAGIC_64}")
+    @itest("mov sp, x0")
+    def test_mov_to_sp(self):
+        self.assertEqual(self.rf.read('SP'), MAGIC_64)
+        self.assertEqual(self.rf.read('WSP'), MAGIC_32)
+
+    @itest_custom("mov x0, sp")
+    def test_mov_from_sp(self):
+        # Do not overwrite SP with '_setupCpu'.
+        self.rf.write('SP', MAGIC_64)
+        self.cpu.execute()
+        self.assertEqual(self.rf.read('X0'), MAGIC_64)
+        self.assertEqual(self.rf.read('W0'), MAGIC_32)
+
+    @itest_setregs(f"W0={MAGIC_32}")
+    @itest("mov wsp, w0")
+    def test_mov_to_sp32(self):
+        self.assertEqual(self.rf.read('SP'), MAGIC_32)
+        self.assertEqual(self.rf.read('WSP'), MAGIC_32)
+
+    @itest_custom("mov w0, wsp")
+    def test_mov_from_sp32(self):
+        # Do not overwrite WSP with '_setupCpu'.
+        self.rf.write('WSP', MAGIC_32)
+        self.cpu.execute()
+        self.assertEqual(self.rf.read('X0'), MAGIC_32)
+        self.assertEqual(self.rf.read('W0'), MAGIC_32)
+
 
     @itest("mov x0, #43")
     def test_mov_imm(self):

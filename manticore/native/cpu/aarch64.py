@@ -11,7 +11,7 @@ from ...core.smtlib import Operators
 
 # Map different instructions to a single implementation.
 # XXX: Avoiding this for now.
-INSTRUCTION_MAPPINGS = {
+OP_NAME_MAP = {
     # 'MOVZ': 'MOV'
 }
 
@@ -200,7 +200,7 @@ class Aarch64RegisterFile(RegisterFile):
         return self._all_registers
 
 
-# XXX: Update/rewrite this.
+# XXX: Add more instructions.
 class Aarch64Cpu(Cpu):
     """
     Cpu specialization handling the ARM64 architecture.
@@ -212,83 +212,53 @@ class Aarch64Cpu(Cpu):
     # https://stackoverflow.com/a/45125525
     machine = 'aarch64'
     arch = cs.CS_ARCH_ARM64
-    # Though there is no thumb mode in aarch64, we still have to set it as some other components may require it
-    # see https://stackoverflow.com/questions/46086329/can-i-use-thumb-instructions-in-an-arm64-binary
+    # From "A1.3.2 The ARMv8 instruction sets" in ARM Architecture Reference
+    # Manual ARMv8, for ARMv8-A architecture profile:
+    # AArch64 state supports only a single instruction set, called A64.  This is
+    # a fixed-length instruction set that uses 32-bit instruction encodings.
     mode = cs.CS_ARCH_ARM
+
+    # The A64 instruction set does not support conditional execution for every
+    # instruction.  There is a small set of conditional data processing
+    # instructions that are unconditionally executed but use the condition flags
+    # as an extra input to the instruction.
+    #
+    # The A64 instruction set enables conditional execution of only program flow
+    # control branch instructions.  This is in contrast to A32 and T32 where
+    # most instructions can be predicated with a condition code.
+    #
+    # See "6.2.5 Conditional instructions" in ARM Cortex-A Series
+    # Programmer's Guide for ARMv8-A.
 
     def __init__(self, memory):
         warnings.warn('Aarch64 support is experimental')
-        self._last_flags = {'C': 0, 'V': 0, 'N': 0, 'Z': 0, 'GE': 0}
-        super(Aarch64Cpu, self).__init__(Aarch64RegisterFile(), memory)
-
-    def __getstate__(self):
-        state = super(Aarch64Cpu, self).__getstate__()
-        state['_last_flags'] = self._last_flags
-        # TODO / FIXME / REVIEWME: do we need those in aarch64? [copied from armv7]
-        # state['at_symbolic_conditional'] = self._at_symbolic_conditional
-        # state['_it_conditional'] = self._it_conditional
-        return state
-
-    def __setstate__(self, state):
-        self._last_flags = state['_last_flags']
-        # TODO / FIXME / REVIEWME: do we need those in aarch64? [copied from armv7]
-        # self._at_symbolic_conditional = state['at_symbolic_conditional']
-        # self._it_conditional = state['_it_conditional']
-        super(Aarch64Cpu, self).__setstate__(state)
+        super().__init__(Aarch64RegisterFile(), memory)
 
     def _wrap_operands(self, ops):
         return [Aarch64Operand(self, op) for op in ops]
 
-    @instruction
-    def MOV(cpu, dest, src):
-        """
-        Implement the MOV{S} instruction.
-
-        Note: If src operand is PC, temporarily release our logical PC
-        view and conform to the spec, which dictates PC = curr instr + 8
-
-        :param Arm64Operand dest: The destination operand; register.
-        :param Arm64Operand src: The source operand; register or immediate.
-        """
-        # XXX: Finish this.
-        result = src.read()
-        dest.write(result)
-        # cpu.set_flags(C=carry_out, N=HighBit(result), Z=(result == 0))
-
     @staticmethod
-    def canonicalize_instruction_name(instr):
-        name = instr.insn_name().upper()
-        # XXX bypass a capstone bug that incorrectly labels some insns as mov
-        if name == 'MOV':
-            if instr.mnemonic.startswith('lsr'):
-                return 'LSR'
-            elif instr.mnemonic.startswith('lsl'):
-                return 'LSL'
-            elif instr.mnemonic.startswith('asr'):
-                return 'ASR'
-        return INSTRUCTION_MAPPINGS.get(name, name)
+    def canonicalize_instruction_name(insn):
+        name = insn.insn_name().upper()
+        # XXX: Check if a Capstone bug that incorrectly labels some instructions
+        # is still there.
+        assert name.lower() == insn.mnemonic
+        return OP_NAME_MAP.get(name, name)
 
-    # Flags that are the result of arithmetic instructions. Unconditionally
-    # set, but conditionally committed.
-    #
-    # Register file has the actual CPU flags
-    def set_flags(self, **flags):
-        # """
-        # Note: For any unmodified flags, update _last_flags with the most recent
-        # committed value. Otherwise, for example, this could happen:
+    @instruction
+    def MOV(cpu, dst, src):
+        """
+        Combines MOV (register) and MOV (to/from SP).
 
-        #     overflow=0
-        #     instr1 computes overflow=1, updates _last_flags, doesn't commit
-        #     instr2 updates all flags in _last_flags except overflow (overflow remains 1 in _last_flags)
-        #     instr2 commits all in _last_flags
-        #     now overflow=1 even though it should still be 0
-        # """
-        # unupdated_flags = self._last_flags.viewkeys() - flags.viewkeys()
-        # for flag in unupdated_flags:
-        #     flag_name = 'APSR_{}'.format(flag)
-        #     self._last_flags[flag] = self.regfile.read(flag_name)
-        # self._last_flags.update(flags)
-        pass
+        :param dst: destination register.
+        :param src: source register.
+        """
+        assert src.type is cs.arm64.ARM64_OP_REG
+        assert dst.type is cs.arm64.ARM64_OP_REG
+        assert dst.size >= src.size
+
+        result = src.read()
+        dst.write(result)
 
 
 class Aarch64CdeclAbi(Abi):
@@ -353,6 +323,12 @@ class Aarch64Operand(Operand):
     @property
     def type(self):
         return self._type
+
+    @property
+    def size(self):
+        # XXX: Support other operand types.
+        assert self.type is cs.arm64.ARM64_OP_REG
+        return self.cpu.regfile._table[self.reg].size
 
     def read(self, nbits=None, with_carry=False):
         # XXX: Finish this.
