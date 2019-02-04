@@ -5,6 +5,7 @@ import collections
 
 from .abstractcpu import Cpu, RegisterFile, Abi, SyscallAbi, Operand, instruction
 from .arm import HighBit, Armv7Operand
+from .bitwise import SInt, UInt, LSL
 from .register import Register
 from ...core.smtlib import Operators
 
@@ -179,6 +180,11 @@ class Aarch64RegisterFile(RegisterFile):
         assert value <= 2 ** size - 1
         self._registers[parent].write(value)
 
+    def size(self, register):
+        assert register in self
+        name = self._alias(register)
+        return self._table[name].size
+
     @property
     def canonical_registers(self):
         # XXX: 'UnicornEmulator._step' goes over all registers returned from
@@ -246,6 +252,54 @@ class Aarch64Cpu(Cpu):
         return OP_NAME_MAP.get(name, name)
 
     @instruction
+    def LDR(cpu, dst, src):
+        """
+        LDR (register).
+
+        Load Register (register) calculates an address from a base register
+        value and an offset register value, loads a word from memory, and writes
+        it to a register.  The offset register value can optionally be shifted
+        and extended.
+
+        :param dst: destination register.
+        :param src: memory: register offset or extended register offset.
+        """
+        assert dst.type is cs.arm64.ARM64_OP_REG
+        assert src.type is cs.arm64.ARM64_OP_MEM
+
+        base = cpu.regfile.read(src.mem.base)
+        index = cpu.regfile.read(src.mem.index)
+        index_size = cpu.regfile.size(src.mem.index)
+
+        if src.is_shifted():
+            shift = src.op.shift
+            assert shift.type == cs.arm64.ARM64_SFT_LSL
+            index = LSL(index, shift.value, index_size)
+
+        if src.is_extended():
+            ext = src.op.ext
+
+            assert ext in [
+                cs.arm64.ARM64_EXT_UXTW,
+                cs.arm64.ARM64_EXT_SXTW,
+                cs.arm64.ARM64_EXT_SXTX
+            ]
+
+            if ext == cs.arm64.ARM64_EXT_UXTW:
+                index = Operators.ZEXTEND(index, cpu.address_bit_size)
+
+            elif ext == cs.arm64.ARM64_EXT_SXTW:
+                index = Operators.SEXTEND(index, index_size, cpu.address_bit_size)
+
+            elif ext == cs.arm64.ARM64_EXT_SXTX:
+                index = Operators.SEXTEND(index, index_size, cpu.address_bit_size)
+
+        base = UInt(base, cpu.address_bit_size)
+        index = SInt(index, cpu.address_bit_size)
+        result = cpu.read_int(base + index, dst.size)
+        dst.write(result)
+
+    @instruction
     def MOV(cpu, dst, src):
         """
         Combines MOV (register) and MOV (to/from SP).
@@ -253,8 +307,8 @@ class Aarch64Cpu(Cpu):
         :param dst: destination register.
         :param src: source register.
         """
-        assert src.type is cs.arm64.ARM64_OP_REG
         assert dst.type is cs.arm64.ARM64_OP_REG
+        assert src.type is cs.arm64.ARM64_OP_REG
         assert dst.size >= src.size
 
         result = src.read()
@@ -329,6 +383,18 @@ class Aarch64Operand(Operand):
         # XXX: Support other operand types.
         assert self.type is cs.arm64.ARM64_OP_REG
         return self.cpu.regfile._table[self.reg].size
+
+    def is_shifted(self):
+        """
+        :return: True if operand is shifted, otherwise False.
+        """
+        return self.op.shift.type != cs.arm64.ARM64_SFT_INVALID
+
+    def is_extended(self):
+        """
+        :return: True if operand is extended, otherwise False.
+        """
+        return self.op.ext != cs.arm64.ARM64_EXT_INVALID
 
     def read(self, nbits=None, with_carry=False):
         # XXX: Finish this.
