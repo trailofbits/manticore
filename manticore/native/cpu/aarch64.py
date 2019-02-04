@@ -304,6 +304,11 @@ class Aarch64Cpu(Cpu):
         """
         Combines MOV (register) and MOV (to/from SP).
 
+        Move (register) copies the value in a source register to the destination
+        register.
+
+        Move (to/from SP) moves between register and stack pointer.
+
         :param dst: destination register.
         :param src: source register.
         """
