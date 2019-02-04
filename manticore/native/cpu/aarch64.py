@@ -251,8 +251,24 @@ class Aarch64Cpu(Cpu):
         assert name.lower() == insn.mnemonic
         return OP_NAME_MAP.get(name, name)
 
-    @instruction
-    def LDR(cpu, dst, src):
+    def _LDR_literal(cpu, dst, src):
+        """
+        LDR (literal).
+
+        Load Register (literal) calculates an address from the PC value and an
+        immediate offset, loads a word from memory, and writes it to a register.
+
+        :param dst: destination register.
+        :param src: immediate.
+        """
+        assert dst.type is cs.arm64.ARM64_OP_REG
+        assert src.type is cs.arm64.ARM64_OP_IMM
+
+        imm = src.op.imm
+        result = cpu.read_int(imm, dst.size)
+        dst.write(result)
+
+    def _LDR_register(cpu, dst, src):
         """
         LDR (register).
 
@@ -298,6 +314,22 @@ class Aarch64Cpu(Cpu):
         index = SInt(index, cpu.address_bit_size)
         result = cpu.read_int(base + index, dst.size)
         dst.write(result)
+
+    @instruction
+    def LDR(cpu, dst, src):
+        """
+        Combines LDR (literal) and LDR (register).
+
+        :param dst: destination register.
+        :param src: immediate or memory (register offset or extended register offset).
+        """
+        assert dst.type is cs.arm64.ARM64_OP_REG
+        assert src.type is cs.arm64.ARM64_OP_MEM or cs.arm64.ARM64_OP_IMM
+
+        if src.type == cs.arm64.ARM64_OP_MEM:
+            cpu._LDR_register(dst, src)
+        elif src.type == cs.arm64.ARM64_OP_IMM:
+            cpu._LDR_literal(dst, src)
 
     @instruction
     def MOV(cpu, dst, src):

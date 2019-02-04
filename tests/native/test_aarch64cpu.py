@@ -101,6 +101,43 @@ class Aarch64CpuInstructions(unittest.TestCase):
         self.assertEqual(self.rf.read('W0'), MAGIC_32)
 
 
+    # LDR (literal).
+
+    @itest_custom('ldr w0, .+8')
+    def test_ldr_lit32(self):
+        self.cpu.STACK = self.cpu.PC + 16
+        self.cpu.push_int(0x4142434445464748)
+        self.cpu.execute()
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @itest_custom('ldr x0, .+8')
+    def test_ldr_lit64(self):
+        self.cpu.STACK = self.cpu.PC + 16
+        self.cpu.push_int(0x4142434445464748)
+        self.cpu.execute()
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464748)
+
+    @itest_custom('ldr w0, .-8')
+    def test_ldr_lit_neg32(self):
+        insn = self.mem.read(self.code, 4)
+        self.mem.write(self.code + 16, insn)
+        self.cpu.PC += 16
+        self.cpu.STACK = self.cpu.PC
+        self.cpu.push_int(0x4142434445464748)
+        self.cpu.execute()
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @itest_custom('ldr x0, .-8')
+    def test_ldr_lit_neg64(self):
+        insn = self.mem.read(self.code, 4)
+        self.mem.write(self.code + 16, insn)
+        self.cpu.PC += 16
+        self.cpu.STACK = self.cpu.PC
+        self.cpu.push_int(0x4142434445464748)
+        self.cpu.execute()
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464748)
+
+
     # LDR (register).
 
     # 32-bit.
