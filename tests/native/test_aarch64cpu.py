@@ -1,13 +1,15 @@
 import unittest
 
 from capstone import CS_MODE_ARM
+from functools import wraps
 from keystone import Ks, KS_ARCH_ARM64, KS_MODE_LITTLE_ENDIAN
 
 from manticore.core.smtlib import *
-from manticore.native.memory import SMemory64
+from manticore.native.memory import SMemory64, Memory64
 from manticore.native.cpu.aarch64 import Aarch64Cpu as Cpu
 from manticore.native.cpu.bitwise import LSL
-from .test_armv7cpu import itest, itest_custom, itest_setregs, itest_multiple
+from .test_armv7cpu import itest_custom, itest_setregs
+from .test_armv7unicorn import emulate_next
 from .test_aarch64rf import MAGIC_64, MAGIC_32
 
 ks = Ks(KS_ARCH_ARM64, KS_MODE_LITTLE_ENDIAN)
@@ -19,15 +21,39 @@ def assemble(asm):
     return ''.join(map(chr, ords))
 
 
-class Aarch64CpuInstructions(unittest.TestCase):
-    _multiprocess_can_split_ = True
+# XXX: These functions are taken from 'test_armv7cpu' and modified to be more
+# generic, to support running under Unicorn and Manticore from the same test
+# definitions.  It would be nice to do the same for Armv7 code as well.
 
-    def setUp(self):
-        # XXX: Adapted from the Armv7 test code.
-        cs = ConstraintSet()
-        self.cpu = Cpu(SMemory64(cs))
-        self.mem = self.cpu.memory
-        self.rf = self.cpu.regfile
+def itest(asm):
+    def instr_dec(assertions_func):
+        @wraps(assertions_func)
+        def wrapper(self):
+            self._setupCpu(asm)
+            self._execute()
+            assertions_func(self)
+
+        return wrapper
+
+    return instr_dec
+
+
+def itest_multiple(asms):
+    def instr_dec(assertions_func):
+        @wraps(assertions_func)
+        def wrapper(self):
+            self._setupCpu(asms, mode=CS_MODE_ARM, multiple_insts=True)
+            for i in range(len(asms)):
+                self._execute()
+            assertions_func(self)
+
+        return wrapper
+
+    return instr_dec
+
+
+class Aarch64Instructions:
+    _multiprocess_can_split_ = True
 
     def _setupCpu(self, asm, mode=CS_MODE_ARM, multiple_insts=False):
         if mode != CS_MODE_ARM:
@@ -327,3 +353,24 @@ class Aarch64CpuInstructions(unittest.TestCase):
     def test_movk_same_reg64(self):
         self.assertEqual(self.rf.read('X0'), 0xffffffffffff0001)
         self.assertEqual(self.rf.read('W0'), 0xffff0001)
+
+class Aarch64CpuInstructions(unittest.TestCase, Aarch64Instructions):
+    def setUp(self):
+        # XXX: Adapted from the Armv7 test code.
+        cs = ConstraintSet()
+        self.cpu = Cpu(SMemory64(cs))
+        self.mem = self.cpu.memory
+        self.rf = self.cpu.regfile
+
+    def _execute(self):
+        self.cpu.execute()
+
+class Aarch64UnicornInstructions(unittest.TestCase, Aarch64Instructions):
+    def setUp(self):
+        # XXX: Adapted from the Armv7 test code.
+        self.cpu = Cpu(Memory64())
+        self.mem = self.cpu.memory
+        self.rf = self.cpu.regfile
+
+    def _execute(self):
+        emulate_next(self.cpu)
