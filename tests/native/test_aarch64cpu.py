@@ -52,6 +52,46 @@ def itest_multiple(asms):
     return instr_dec
 
 
+# XXX: Armv7 also has these methods: stack_pop, stack_push, stack_peek.
+class Aarch64CpuTest(unittest.TestCase):
+    # XXX: Adapted from the Armv7 test code.
+    _multiprocess_can_split_ = True
+
+    def setUp(self):
+        cs = ConstraintSet()
+        self.cpu = Cpu(SMemory64(cs))
+        self.rf = self.cpu.regfile
+        self._setupStack()
+
+    def _setupStack(self):
+        self.stack = self.cpu.memory.mmap(0xf000, 0x1000, 'rw')
+        self.rf.write('SP', self.stack + 0x1000)
+
+    def test_read_init(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+
+    def test_read_stack(self):
+        self.cpu.STACK = 0x1337
+        self.assertEqual(self.rf.read('SP'), 0x1337)
+
+    def test_read_stack2(self):
+        self.cpu.STACK = 0x1337 - 1
+        self.assertEqual(self.rf.read('SP'), 0x1336)
+
+    def test_read_stack3(self):
+        self.cpu.STACK = 0x1337 + 1
+        self.assertEqual(self.rf.read('SP'), 0x1338)
+
+    def test_read_stack4(self):
+        self.cpu.STACK = 0x1337
+        self.assertEqual(self.cpu.STACK, 0x1337)
+
+    def test_write_read_int(self):
+        self.cpu.STACK -= 8
+        self.cpu.write_int(self.cpu.STACK, MAGIC_64, 64)
+        self.assertEqual(self.cpu.read_int(self.cpu.STACK), MAGIC_64)
+
+
 class Aarch64Instructions:
     _multiprocess_can_split_ = True
 
