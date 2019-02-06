@@ -287,11 +287,6 @@ class Aarch64Cpu(Cpu):
         index = cpu.regfile.read(src.mem.index)
         index_size = cpu.regfile.size(src.mem.index)
 
-        if src.is_shifted():
-            shift = src.op.shift
-            assert shift.type == cs.arm64.ARM64_SFT_LSL
-            index = LSL(index, shift.value, index_size)
-
         if src.is_extended():
             ext = src.op.ext
 
@@ -303,12 +298,20 @@ class Aarch64Cpu(Cpu):
 
             if ext == cs.arm64.ARM64_EXT_UXTW:
                 index = Operators.ZEXTEND(index, cpu.address_bit_size)
+                index_size = cpu.address_bit_size
 
             elif ext == cs.arm64.ARM64_EXT_SXTW:
                 index = Operators.SEXTEND(index, index_size, cpu.address_bit_size)
+                index_size = cpu.address_bit_size
 
             elif ext == cs.arm64.ARM64_EXT_SXTX:
                 index = Operators.SEXTEND(index, index_size, cpu.address_bit_size)
+                index_size = cpu.address_bit_size
+
+        if src.is_shifted():
+            shift = src.op.shift
+            assert shift.type == cs.arm64.ARM64_SFT_LSL
+            index = LSL(index, shift.value, index_size)
 
         base = UInt(base, cpu.address_bit_size)
         index = SInt(index, cpu.address_bit_size)

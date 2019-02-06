@@ -226,7 +226,7 @@ class Aarch64Instructions:
         self.cpu.push_int(0x5152535455565758)
         # Account for -8 (0xfffffff8) being treated like a large positive value
         # after zero extension to 64 bits.
-        self.cpu.STACK -= LSL(0xfffffff8, 2, 32)
+        self.cpu.STACK -= LSL(0xfffffff8, 2, 64)
         self._execute()
         self.assertEqual(self.rf.read('W0'), 0x55565758)
 
@@ -302,7 +302,7 @@ class Aarch64Instructions:
         self.cpu.push_int(0x5152535455565758)
         # Account for -8 (0xfffffff8) being treated like a large positive value
         # after zero extension to 64 bits.
-        self.cpu.STACK -= LSL(0xfffffff8, 3, 32)
+        self.cpu.STACK -= LSL(0xfffffff8, 3, 64)
         self._execute()
         self.assertEqual(self.rf.read('X0'), 0x5152535455565758)
 
