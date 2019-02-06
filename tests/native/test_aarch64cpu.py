@@ -427,4 +427,3 @@ class Aarch64UnicornInstructions(unittest.TestCase, Aarch64Instructions):
         # XXX: Based on the Armv7 test code.
         self.cpu.decode_instruction(self.cpu.PC)
         self.emu.emulate(self.cpu.instruction)
-        return self.emu
