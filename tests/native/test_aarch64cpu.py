@@ -8,8 +8,8 @@ from manticore.core.smtlib import *
 from manticore.native.memory import SMemory64, Memory64
 from manticore.native.cpu.aarch64 import Aarch64Cpu as Cpu
 from manticore.native.cpu.bitwise import LSL
+from manticore.utils.emulate import UnicornEmulator
 from .test_armv7cpu import itest_custom, itest_setregs
-from .test_armv7unicorn import emulate_next
 from .test_aarch64rf import MAGIC_64, MAGIC_32
 
 ks = Ks(KS_ARCH_ARM64, KS_MODE_LITTLE_ENDIAN)
@@ -117,7 +117,7 @@ class Aarch64Instructions:
             self.mem.write(start, assemble(asm))
 
         self.rf.write('PC', start)
-        self.rf.write('SP', self.stack + 0x1000)
+        self.rf.write('SP', self.stack + 0x1000 - 8)
         self.cpu.mode = mode
 
 
@@ -148,7 +148,7 @@ class Aarch64Instructions:
     def test_mov_from_sp(self):
         # Do not overwrite SP with '_setupCpu'.
         self.rf.write('SP', MAGIC_64)
-        self.cpu.execute()
+        self._execute()
         self.assertEqual(self.rf.read('X0'), MAGIC_64)
         self.assertEqual(self.rf.read('W0'), MAGIC_32)
 
@@ -162,7 +162,7 @@ class Aarch64Instructions:
     def test_mov_from_sp32(self):
         # Do not overwrite WSP with '_setupCpu'.
         self.rf.write('WSP', MAGIC_32)
-        self.cpu.execute()
+        self._execute()
         self.assertEqual(self.rf.read('X0'), MAGIC_32)
         self.assertEqual(self.rf.read('W0'), MAGIC_32)
 
@@ -173,14 +173,14 @@ class Aarch64Instructions:
     def test_ldr_lit32(self):
         self.cpu.STACK = self.cpu.PC + 16
         self.cpu.push_int(0x4142434445464748)
-        self.cpu.execute()
+        self._execute()
         self.assertEqual(self.rf.read('W0'), 0x45464748)
 
     @itest_custom('ldr x0, .+8')
     def test_ldr_lit64(self):
         self.cpu.STACK = self.cpu.PC + 16
         self.cpu.push_int(0x4142434445464748)
-        self.cpu.execute()
+        self._execute()
         self.assertEqual(self.rf.read('X0'), 0x4142434445464748)
 
     @itest_custom('ldr w0, .-8')
@@ -190,7 +190,7 @@ class Aarch64Instructions:
         self.cpu.PC += 16
         self.cpu.STACK = self.cpu.PC
         self.cpu.push_int(0x4142434445464748)
-        self.cpu.execute()
+        self._execute()
         self.assertEqual(self.rf.read('W0'), 0x45464748)
 
     @itest_custom('ldr x0, .-8')
@@ -200,7 +200,7 @@ class Aarch64Instructions:
         self.cpu.PC += 16
         self.cpu.STACK = self.cpu.PC
         self.cpu.push_int(0x4142434445464748)
-        self.cpu.execute()
+        self._execute()
         self.assertEqual(self.rf.read('X0'), 0x4142434445464748)
 
 
@@ -216,7 +216,7 @@ class Aarch64Instructions:
         # Account for -8 (0xfffffff8) being treated like a large positive value
         # after zero extension to 64 bits.
         self.cpu.STACK -= 0xfffffff8
-        self.cpu.execute()
+        self._execute()
         self.assertEqual(self.rf.read('W0'), 0x55565758)
 
     @itest_setregs('W1=-8')
@@ -227,7 +227,7 @@ class Aarch64Instructions:
         # Account for -8 (0xfffffff8) being treated like a large positive value
         # after zero extension to 64 bits.
         self.cpu.STACK -= LSL(0xfffffff8, 2, 32)
-        self.cpu.execute()
+        self._execute()
         self.assertEqual(self.rf.read('W0'), 0x55565758)
 
     @itest_setregs('X1=8')
@@ -235,7 +235,7 @@ class Aarch64Instructions:
     def test_ldr_reg32(self):
         self.cpu.push_int(0x4142434445464748)
         self.cpu.push_int(0x5152535455565758)
-        self.cpu.execute()
+        self._execute()
         self.assertEqual(self.rf.read('W0'), 0x45464748)
 
     @itest_setregs('X1=2')
@@ -243,7 +243,7 @@ class Aarch64Instructions:
     def test_ldr_reg_lsl32(self):
         self.cpu.push_int(0x4142434445464748)
         self.cpu.push_int(0x5152535455565758)
-        self.cpu.execute()
+        self._execute()
         self.assertEqual(self.rf.read('W0'), 0x45464748)
 
     @itest_setregs('W1=-8')
@@ -252,7 +252,7 @@ class Aarch64Instructions:
         self.cpu.push_int(0x4142434445464748)
         self.cpu.push_int(0x5152535455565758)
         self.cpu.STACK += 8
-        self.cpu.execute()
+        self._execute()
         self.assertEqual(self.rf.read('W0'), 0x55565758)
 
     @itest_setregs('W1=-8')
@@ -261,7 +261,7 @@ class Aarch64Instructions:
         self.cpu.push_int(0x4142434445464748)
         self.cpu.push_int(0x5152535455565758)
         self.cpu.STACK += LSL(8, 2, 32)
-        self.cpu.execute()
+        self._execute()
         self.assertEqual(self.rf.read('W0'), 0x55565758)
 
     @itest_setregs('X1=-8')
@@ -270,7 +270,7 @@ class Aarch64Instructions:
         self.cpu.push_int(0x4142434445464748)
         self.cpu.push_int(0x5152535455565758)
         self.cpu.STACK += 8
-        self.cpu.execute()
+        self._execute()
         self.assertEqual(self.rf.read('W0'), 0x55565758)
 
     @itest_setregs('X1=-2')
@@ -279,7 +279,7 @@ class Aarch64Instructions:
         self.cpu.push_int(0x4142434445464748)
         self.cpu.push_int(0x5152535455565758)
         self.cpu.STACK += 8
-        self.cpu.execute()
+        self._execute()
         self.assertEqual(self.rf.read('W0'), 0x55565758)
 
     # 64-bit.
@@ -292,7 +292,7 @@ class Aarch64Instructions:
         # Account for -8 (0xfffffff8) being treated like a large positive value
         # after zero extension to 64 bits.
         self.cpu.STACK -= 0xfffffff8
-        self.cpu.execute()
+        self._execute()
         self.assertEqual(self.rf.read('X0'), 0x5152535455565758)
 
     @itest_setregs('W1=-8')
@@ -303,7 +303,7 @@ class Aarch64Instructions:
         # Account for -8 (0xfffffff8) being treated like a large positive value
         # after zero extension to 64 bits.
         self.cpu.STACK -= LSL(0xfffffff8, 3, 32)
-        self.cpu.execute()
+        self._execute()
         self.assertEqual(self.rf.read('X0'), 0x5152535455565758)
 
     @itest_setregs('X1=8')
@@ -311,7 +311,7 @@ class Aarch64Instructions:
     def test_ldr_reg64(self):
         self.cpu.push_int(0x4142434445464748)
         self.cpu.push_int(0x5152535455565758)
-        self.cpu.execute()
+        self._execute()
         self.assertEqual(self.rf.read('X0'), 0x4142434445464748)
 
     @itest_setregs('X1=2')
@@ -320,7 +320,7 @@ class Aarch64Instructions:
         self.cpu.push_int(0x4142434445464748)
         self.cpu.push_int(0x5152535455565758)
         self.cpu.push_int(0x5152535455565758)
-        self.cpu.execute()
+        self._execute()
         self.assertEqual(self.rf.read('X0'), 0x4142434445464748)
 
     @itest_setregs('W1=-8')
@@ -329,7 +329,7 @@ class Aarch64Instructions:
         self.cpu.push_int(0x4142434445464748)
         self.cpu.push_int(0x5152535455565758)
         self.cpu.STACK += 8
-        self.cpu.execute()
+        self._execute()
         self.assertEqual(self.rf.read('X0'), 0x5152535455565758)
 
     @itest_setregs('W1=-8')
@@ -338,7 +338,7 @@ class Aarch64Instructions:
         self.cpu.push_int(0x4142434445464748)
         self.cpu.push_int(0x5152535455565758)
         self.cpu.STACK += LSL(8, 3, 32)
-        self.cpu.execute()
+        self._execute()
         self.assertEqual(self.rf.read('X0'), 0x5152535455565758)
 
     @itest_setregs('X1=-8')
@@ -347,7 +347,7 @@ class Aarch64Instructions:
         self.cpu.push_int(0x4142434445464748)
         self.cpu.push_int(0x5152535455565758)
         self.cpu.STACK += 8
-        self.cpu.execute()
+        self._execute()
         self.assertEqual(self.rf.read('X0'), 0x5152535455565758)
 
     @itest_setregs('X1=-2')
@@ -356,7 +356,7 @@ class Aarch64Instructions:
         self.cpu.push_int(0x4142434445464748)
         self.cpu.push_int(0x5152535455565758)
         self.cpu.STACK += 16
-        self.cpu.execute()
+        self._execute()
         self.assertEqual(self.rf.read('X0'), 0x5152535455565758)
 
 
@@ -394,6 +394,7 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X0'), 0xffffffffffff0001)
         self.assertEqual(self.rf.read('W0'), 0xffff0001)
 
+
 class Aarch64CpuInstructions(unittest.TestCase, Aarch64Instructions):
     def setUp(self):
         # XXX: Adapted from the Armv7 test code.
@@ -405,6 +406,7 @@ class Aarch64CpuInstructions(unittest.TestCase, Aarch64Instructions):
     def _execute(self):
         self.cpu.execute()
 
+
 class Aarch64UnicornInstructions(unittest.TestCase, Aarch64Instructions):
     def setUp(self):
         # XXX: Adapted from the Armv7 test code.
@@ -412,5 +414,17 @@ class Aarch64UnicornInstructions(unittest.TestCase, Aarch64Instructions):
         self.mem = self.cpu.memory
         self.rf = self.cpu.regfile
 
+    def _setupCpu(self, asm, mode=CS_MODE_ARM, multiple_insts=False):
+        super()._setupCpu(asm, mode, multiple_insts)
+        self.emu = UnicornEmulator(self.cpu)
+        # Make sure that 'self._emu' is set.
+        self.emu.reset()
+        # XXX: Map the data region as well?
+        # Map the stack.
+        self.emu._create_emulated_mapping(self.emu._emu, self.cpu.STACK)
+
     def _execute(self):
-        emulate_next(self.cpu)
+        # XXX: Based on the Armv7 test code.
+        self.cpu.decode_instruction(self.cpu.PC)
+        self.emu.emulate(self.cpu.instruction)
+        return self.emu
