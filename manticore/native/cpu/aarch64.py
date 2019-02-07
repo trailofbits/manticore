@@ -2,6 +2,8 @@ import warnings
 
 import capstone as cs
 import collections
+import re
+import struct
 
 from .abstractcpu import Cpu, RegisterFile, Abi, SyscallAbi, Operand, instruction
 from .arm import HighBit, Armv7Operand
@@ -264,6 +266,18 @@ class Aarch64Cpu(Cpu):
         assert dst.type is cs.arm64.ARM64_OP_REG
         assert src.type is cs.arm64.ARM64_OP_IMM
 
+        insn = struct.unpack("<I", cpu.instruction.bytes)[0]
+        insn_str = f'{insn:032b}'
+
+        insn_rx  = '0[01]'     # opc
+        insn_rx += '011'
+        insn_rx += '0'
+        insn_rx += '00'
+        insn_rx += '[01]{19}'  # imm19
+        insn_rx += '[01]{5}'   # Rt
+
+        assert re.match(insn_rx, insn_str)
+
         imm = src.op.imm
         result = cpu.read_int(imm, dst.size)
         dst.write(result)
@@ -282,6 +296,24 @@ class Aarch64Cpu(Cpu):
         """
         assert dst.type is cs.arm64.ARM64_OP_REG
         assert src.type is cs.arm64.ARM64_OP_MEM
+
+        insn = struct.unpack("<I", cpu.instruction.bytes)[0]
+        insn_str = f'{insn:032b}'
+
+        insn_rx  = '1[01]'    # size
+        insn_rx += '111'
+        insn_rx += '0'
+        insn_rx += '00'
+        insn_rx += '01'       # opc
+        insn_rx += '1'
+        insn_rx += '[01]{5}'  # Rm
+        insn_rx += '[01]{3}'  # option
+        insn_rx += '[01]'     # S
+        insn_rx += '10'
+        insn_rx += '[01]{5}'  # Rn
+        insn_rx += '[01]{5}'  # Rt
+
+        assert re.match(insn_rx, insn_str)
 
         base = cpu.regfile.read(src.mem.base)
         index = cpu.regfile.read(src.mem.index)
@@ -350,6 +382,30 @@ class Aarch64Cpu(Cpu):
         assert dst.type is cs.arm64.ARM64_OP_REG
         assert src.type is cs.arm64.ARM64_OP_REG
         assert dst.size >= src.size
+
+        insn = struct.unpack("<I", cpu.instruction.bytes)[0]
+        insn_str = f'{insn:032b}'
+
+        mov_reg_rx  = '[01]'     # sf
+        mov_reg_rx += '01'       # opc
+        mov_reg_rx += '01010'
+        mov_reg_rx += '00'       # shift
+        mov_reg_rx += '0'        # N
+        mov_reg_rx += '[01]{5}'  # Rm
+        mov_reg_rx += '0{6}'     # imm6
+        mov_reg_rx += '1{5}'     # Rn
+        mov_reg_rx += '[01]{5}'  # Rd
+
+        mov_sp_rx  = '[01]'              # sf
+        mov_sp_rx += '0'                 # op
+        mov_sp_rx += '0'                 # S
+        mov_sp_rx += '10001'
+        mov_sp_rx += '(?!1[01])[01]{2}'  # shift != 1x
+        mov_sp_rx += '0{12}'             # imm12
+        mov_sp_rx += '[01]{5}'           # Rn
+        mov_sp_rx += '[01]{5}'           # Rd
+
+        assert re.match(mov_reg_rx, insn_str) or re.match(mov_sp_rx, insn_str)
 
         result = src.read()
         dst.write(result)
