@@ -259,6 +259,12 @@ class Aarch64Cpu(Cpu):
         assert name.lower() == insn.mnemonic
         return OP_NAME_MAP.get(name, name)
 
+    @property
+    def insn_bit_str(self):
+        # XXX: Hardcoded endianness and instruction size.
+        insn = struct.unpack("<I", self.instruction.bytes)[0]
+        return f'{insn:032b}'
+
     def _LDR_literal(cpu, dst, src):
         """
         LDR (literal).
@@ -272,9 +278,6 @@ class Aarch64Cpu(Cpu):
         assert dst.type is cs.arm64.ARM64_OP_REG
         assert src.type is cs.arm64.ARM64_OP_IMM
 
-        insn = struct.unpack("<I", cpu.instruction.bytes)[0]
-        insn_str = f'{insn:032b}'
-
         insn_rx  = '0[01]'     # opc
         insn_rx += '011'
         insn_rx += '0'
@@ -282,7 +285,7 @@ class Aarch64Cpu(Cpu):
         insn_rx += '[01]{19}'  # imm19
         insn_rx += '[01]{5}'   # Rt
 
-        assert re.match(insn_rx, insn_str)
+        assert re.match(insn_rx, cpu.insn_bit_str)
 
         imm = src.op.imm
         result = cpu.read_int(imm, dst.size)
@@ -303,9 +306,6 @@ class Aarch64Cpu(Cpu):
         assert dst.type is cs.arm64.ARM64_OP_REG
         assert src.type is cs.arm64.ARM64_OP_MEM
 
-        insn = struct.unpack("<I", cpu.instruction.bytes)[0]
-        insn_str = f'{insn:032b}'
-
         insn_rx  = '1[01]'    # size
         insn_rx += '111'
         insn_rx += '0'
@@ -319,7 +319,7 @@ class Aarch64Cpu(Cpu):
         insn_rx += '[01]{5}'  # Rn
         insn_rx += '[01]{5}'  # Rt
 
-        assert re.match(insn_rx, insn_str)
+        assert re.match(insn_rx, cpu.insn_bit_str)
 
         base = cpu.regfile.read(src.mem.base)
         index = cpu.regfile.read(src.mem.index)
@@ -394,9 +394,6 @@ class Aarch64Cpu(Cpu):
         assert src.type is cs.arm64.ARM64_OP_REG
         assert dst.size >= src.size
 
-        insn = struct.unpack("<I", cpu.instruction.bytes)[0]
-        insn_str = f'{insn:032b}'
-
         mov_reg_rx  = '[01]'     # sf
         mov_reg_rx += '01'       # opc
         mov_reg_rx += '01010'
@@ -416,7 +413,10 @@ class Aarch64Cpu(Cpu):
         mov_sp_rx += '[01]{5}'           # Rn
         mov_sp_rx += '[01]{5}'           # Rd
 
-        assert re.match(mov_reg_rx, insn_str) or re.match(mov_sp_rx, insn_str)
+        assert (
+            re.match(mov_reg_rx, cpu.insn_bit_str) or
+            re.match(mov_sp_rx,  cpu.insn_bit_str)
+        )
 
         result = src.read()
         dst.write(result)
