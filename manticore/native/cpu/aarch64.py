@@ -5,11 +5,17 @@ import collections
 import re
 import struct
 
-from .abstractcpu import Cpu, RegisterFile, Abi, SyscallAbi, Operand, instruction
+from .abstractcpu import (
+    Cpu, CpuException, RegisterFile, Abi, SyscallAbi, Operand, instruction
+)
 from .arm import HighBit, Armv7Operand
 from .bitwise import SInt, UInt, LSL
 from .register import Register
 from ...core.smtlib import Operators
+
+
+class Aarch64InvalidInstruction(CpuException):
+    pass
 
 
 # Map different instructions to a single implementation.
@@ -340,6 +346,9 @@ class Aarch64Cpu(Cpu):
                 index = Operators.SEXTEND(index, index_size, cpu.address_bit_size)
                 index_size = cpu.address_bit_size
 
+            else:
+                raise Aarch64InvalidInstruction
+
         if src.is_shifted():
             shift = src.op.shift
             assert shift.type == cs.arm64.ARM64_SFT_LSL
@@ -365,6 +374,8 @@ class Aarch64Cpu(Cpu):
             cpu._LDR_register(dst, src)
         elif src.type == cs.arm64.ARM64_OP_IMM:
             cpu._LDR_literal(dst, src)
+        else:
+            raise Aarch64InvalidInstruction
 
     @instruction
     def MOV(cpu, dst, src):
