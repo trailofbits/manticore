@@ -167,6 +167,138 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W0'), MAGIC_32)
 
 
+    # LDR (immediate).
+
+    # ldr w1, [x27]          base register (opt. offset omitted):  w1 = [x27]
+    # ldr w2, [x28, #8]      base plus offset:                     w2 = [x28 + 8]
+    # ldr w3, [x29], #8      post-indexed:                         w3 = [x29],     x29 += 8
+    # ldr w4, [x30, #8]!     pre-indexed:                          w4 = [x30 + 8], x30 += 8
+
+    # 32-bit.
+
+    @itest_custom('ldr w1, [sp]')
+    def test_ldr_imm_base32(self):
+        self.cpu.push_int(0x4142434445464748)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.rf.read('W1'), 0x45464748)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_custom('ldr w1, [sp, #8]')
+    def test_ldr_imm_base_offset32(self):
+        self.cpu.push_int(0x4142434445464748)
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.rf.read('W1'), 0x45464748)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_custom('ldr w1, [sp, #16380]')
+    def test_ldr_imm_base_offset_max32(self):
+        self.cpu.push_int(0x4142434445464748)
+        self.cpu.STACK -= 16380
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.rf.read('W1'), 0x45464748)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_custom('ldr w1, [sp], #8')
+    def test_ldr_imm_post_indexed32(self):
+        self.cpu.push_int(0x4142434445464748)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.rf.read('W1'), 0x45464748)
+        self.assertEqual(self.rf.read('SP'), stack + 8)  # writeback
+
+    @itest_custom('ldr w1, [sp], #-256')
+    def test_ldr_imm_post_indexed_neg32(self):
+        self.cpu.push_int(0x4142434445464748)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.rf.read('W1'), 0x45464748)
+        self.assertEqual(self.rf.read('SP'), stack - 256)  # writeback
+
+    @itest_custom('ldr w1, [sp, #8]!')
+    def test_ldr_imm_pre_indexed32(self):
+        self.cpu.push_int(0x4142434445464748)
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.rf.read('W1'), 0x45464748)
+        self.assertEqual(self.rf.read('SP'), stack + 8)  # writeback
+
+    @itest_custom('ldr w1, [sp, #-256]!')
+    def test_ldr_imm_pre_indexed_neg32(self):
+        self.cpu.push_int(0x4142434445464748)
+        self.cpu.STACK += 256
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.rf.read('W1'), 0x45464748)
+        self.assertEqual(self.rf.read('SP'), stack - 256)  # writeback
+
+    # 64-bit.
+
+    @itest_custom('ldr x1, [sp]')
+    def test_ldr_imm_base64(self):
+        self.cpu.push_int(0x4142434445464748)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_custom('ldr x1, [sp, #8]')
+    def test_ldr_imm_base_offset64(self):
+        self.cpu.push_int(0x4142434445464748)
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_custom('ldr x1, [sp, #32760]')
+    def test_ldr_imm_base_offset_max64(self):
+        self.cpu.push_int(0x4142434445464748)
+        self.cpu.STACK -= 32760
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_custom('ldr x1, [sp], #8')
+    def test_ldr_imm_post_indexed64(self):
+        self.cpu.push_int(0x4142434445464748)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack + 8)  # writeback
+
+    @itest_custom('ldr x1, [sp], #-256')
+    def test_ldr_imm_post_indexed_neg64(self):
+        self.cpu.push_int(0x4142434445464748)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack - 256)  # writeback
+
+    @itest_custom('ldr x1, [sp, #8]!')
+    def test_ldr_imm_pre_indexed64(self):
+        self.cpu.push_int(0x4142434445464748)
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack + 8)  # writeback
+
+    @itest_custom('ldr x1, [sp, #-256]!')
+    def test_ldr_imm_pre_indexed_neg64(self):
+        self.cpu.push_int(0x4142434445464748)
+        self.cpu.STACK += 256
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack - 256)  # writeback
+
+
     # LDR (literal).
 
     @itest_custom('ldr w0, .+8')
@@ -360,7 +492,50 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X0'), 0x5152535455565758)
 
 
-    # Unimplemented.
+    # XXX: Unimplemented.
+
+    # This is actually ldur since a positive offset must be a multiple of 4 for
+    # the 32-bit variant of ldr (immediate).
+    @itest_custom('ldr w1, [sp, #1]')
+    def test_ldur32(self):
+        self.cpu.push_int(0x4142434445464748)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.rf.read('W1'), 0x44454647)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    # This is actually ldur since negative offsets are not allowed with ldr
+    # (immediate).
+    @itest_custom('ldr w1, [sp, #-256]')
+    def test_ldur_neg32(self):
+        self.cpu.push_int(0x4142434445464748)
+        self.cpu.STACK += 256
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.rf.read('W1'), 0x45464748)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    # This is actually ldur since a positive offset must be a multiple of 8 for
+    # the 64-bit variant of ldr (immediate).
+    @itest_custom('ldr x1, [sp, #4]')
+    def test_ldur64(self):
+        self.cpu.push_int(0x4142434445464748)
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0x4546474851525354)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    # This is actually ldur since negative offsets are not allowed with ldr
+    # (immediate).
+    @itest_custom('ldr x1, [sp, #-256]')
+    def test_ldur_neg64(self):
+        self.cpu.push_int(0x4142434445464748)
+        self.cpu.STACK += 256
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
 
     @itest("mov x0, #43")
     def test_mov_imm(self):

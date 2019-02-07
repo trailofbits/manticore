@@ -265,6 +265,76 @@ class Aarch64Cpu(Cpu):
         insn = struct.unpack("<I", self.instruction.bytes)[0]
         return f'{insn:032b}'
 
+    # XXX: Use masking when writing to the destination register?  Avoiding this
+    # for now, but the assert in the 'write' method should catch such cases.
+
+    def _LDR_immediate(cpu, dst, src, rest):
+        """
+        LDR (immediate).
+
+        Load Register (immediate) loads a word or doubleword from memory and
+        writes it to a register.  The address that is used for the load is
+        calculated from a base register and an immediate offset.
+
+        :param dst: destination register.
+        :param src: memory (source register and immediate).
+        :param rest: None or immediate.
+        """
+        assert dst.type is cs.arm64.ARM64_OP_REG
+        assert src.type is cs.arm64.ARM64_OP_MEM
+        assert not rest or rest.type is cs.arm64.ARM64_OP_IMM
+
+        post_index_rx  = '1[01]'    # size
+        post_index_rx += '111'
+        post_index_rx += '0'
+        post_index_rx += '00'
+        post_index_rx += '01'       # opc
+        post_index_rx += '0'
+        post_index_rx += '[01]{9}'  # imm9
+        post_index_rx += '01'
+        post_index_rx += '[01]{5}'  # Rn
+        post_index_rx += '[01]{5}'  # Rt
+
+        pre_index_rx  = '1[01]'     # size
+        pre_index_rx += '111'
+        pre_index_rx += '0'
+        pre_index_rx += '00'
+        pre_index_rx += '01'        # opc
+        pre_index_rx += '0'
+        pre_index_rx += '[01]{9}'   # imm9
+        pre_index_rx += '11'
+        pre_index_rx += '[01]{5}'   # Rn
+        pre_index_rx += '[01]{5}'   # Rt
+
+        unsigned_offset_rx  = '1[01]'     # size
+        unsigned_offset_rx += '111'
+        unsigned_offset_rx += '0'
+        unsigned_offset_rx += '01'
+        unsigned_offset_rx += '01'        # opc
+        unsigned_offset_rx += '[01]{12}'  # imm12
+        unsigned_offset_rx += '[01]{5}'   # Rn
+        unsigned_offset_rx += '[01]{5}'   # Rt
+
+        assert (
+            re.match(post_index_rx, cpu.insn_bit_str) or
+            re.match(pre_index_rx, cpu.insn_bit_str) or
+            re.match(unsigned_offset_rx, cpu.insn_bit_str)
+        )
+
+        base = cpu.regfile.read(src.mem.base)
+        imm = src.mem.disp
+
+        if rest:  # post-indexed
+            wback = rest.op.imm
+        else:
+            wback = imm  # use it for writeback if applicable
+
+        result = cpu.read_int(base + imm, dst.size)
+        dst.write(result)
+
+        if cpu.instruction.writeback:
+            cpu.regfile.write(src.mem.base, base + wback)
+
     def _LDR_literal(cpu, dst, src):
         """
         LDR (literal).
@@ -360,20 +430,27 @@ class Aarch64Cpu(Cpu):
         dst.write(result)
 
     @instruction
-    def LDR(cpu, dst, src):
+    def LDR(cpu, dst, src, rest=None):
         """
-        Combines LDR (literal) and LDR (register).
+        Combines LDR (immediate), LDR (literal), and LDR (register).
 
         :param dst: destination register.
-        :param src: immediate or memory (register offset or extended register offset).
+        :param src: memory or immediate.
+        :param rest: None or immediate.
         """
         assert dst.type is cs.arm64.ARM64_OP_REG
         assert src.type is cs.arm64.ARM64_OP_MEM or cs.arm64.ARM64_OP_IMM
+        assert not rest or rest.type is cs.arm64.ARM64_OP_IMM
 
         if src.type == cs.arm64.ARM64_OP_MEM:
-            cpu._LDR_register(dst, src)
+            if src.mem.index:
+                cpu._LDR_register(dst, src)
+            else:
+                cpu._LDR_immediate(dst, src, rest)
+
         elif src.type == cs.arm64.ARM64_OP_IMM:
             cpu._LDR_literal(dst, src)
+
         else:
             raise Aarch64InvalidInstruction
 
