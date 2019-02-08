@@ -744,7 +744,7 @@ class ManticoreEVM(ManticoreBase):
             :type balance: int or BitVecVariable
             :param address: the address for the new account (optional)
             :type address: int
-            :param code: the runtime code for the new account (None means normal account) (optional)
+            :param code: the runtime code for the new account (None means normal account), str or bytes (optional)
             :param name: a global account name eg. for use as reference in the reports (optional)
             :return: an EVMAccount
         """
@@ -767,7 +767,7 @@ class ManticoreEVM(ManticoreBase):
             raise EthereumError("Balance invalid type")
 
         if isinstance(code, str):
-            code = bytearray(code)
+            code = bytes(code, "utf-8")
         if code is not None and not isinstance(code, (bytearray, Array)):
             raise EthereumError("code bad type")
 
