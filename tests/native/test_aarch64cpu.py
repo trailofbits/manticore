@@ -181,6 +181,7 @@ class Aarch64Instructions:
         self.cpu.push_int(0x4142434445464748)
         stack = self.cpu.STACK
         self._execute()
+        self.assertEqual(self.rf.read('X1'), 0x45464748)
         self.assertEqual(self.rf.read('W1'), 0x45464748)
         self.assertEqual(self.rf.read('SP'), stack)  # no writeback
 
@@ -190,6 +191,7 @@ class Aarch64Instructions:
         self.cpu.push_int(0x5152535455565758)
         stack = self.cpu.STACK
         self._execute()
+        self.assertEqual(self.rf.read('X1'), 0x45464748)
         self.assertEqual(self.rf.read('W1'), 0x45464748)
         self.assertEqual(self.rf.read('SP'), stack)  # no writeback
 
@@ -199,6 +201,7 @@ class Aarch64Instructions:
         self.cpu.STACK -= 16380
         stack = self.cpu.STACK
         self._execute()
+        self.assertEqual(self.rf.read('X1'), 0x45464748)
         self.assertEqual(self.rf.read('W1'), 0x45464748)
         self.assertEqual(self.rf.read('SP'), stack)  # no writeback
 
@@ -207,6 +210,7 @@ class Aarch64Instructions:
         self.cpu.push_int(0x4142434445464748)
         stack = self.cpu.STACK
         self._execute()
+        self.assertEqual(self.rf.read('X1'), 0x45464748)
         self.assertEqual(self.rf.read('W1'), 0x45464748)
         self.assertEqual(self.rf.read('SP'), stack + 8)  # writeback
 
@@ -215,6 +219,7 @@ class Aarch64Instructions:
         self.cpu.push_int(0x4142434445464748)
         stack = self.cpu.STACK
         self._execute()
+        self.assertEqual(self.rf.read('X1'), 0x45464748)
         self.assertEqual(self.rf.read('W1'), 0x45464748)
         self.assertEqual(self.rf.read('SP'), stack - 256)  # writeback
 
@@ -224,6 +229,7 @@ class Aarch64Instructions:
         self.cpu.push_int(0x5152535455565758)
         stack = self.cpu.STACK
         self._execute()
+        self.assertEqual(self.rf.read('X1'), 0x45464748)
         self.assertEqual(self.rf.read('W1'), 0x45464748)
         self.assertEqual(self.rf.read('SP'), stack + 8)  # writeback
 
@@ -233,6 +239,7 @@ class Aarch64Instructions:
         self.cpu.STACK += 256
         stack = self.cpu.STACK
         self._execute()
+        self.assertEqual(self.rf.read('X1'), 0x45464748)
         self.assertEqual(self.rf.read('W1'), 0x45464748)
         self.assertEqual(self.rf.read('SP'), stack - 256)  # writeback
 
@@ -306,6 +313,7 @@ class Aarch64Instructions:
         self.cpu.STACK = self.cpu.PC + 16
         self.cpu.push_int(0x4142434445464748)
         self._execute()
+        self.assertEqual(self.rf.read('X0'), 0x45464748)
         self.assertEqual(self.rf.read('W0'), 0x45464748)
 
     @itest_custom('ldr x0, .+8')
@@ -323,6 +331,7 @@ class Aarch64Instructions:
         self.cpu.STACK = self.cpu.PC
         self.cpu.push_int(0x4142434445464748)
         self._execute()
+        self.assertEqual(self.rf.read('X0'), 0x45464748)
         self.assertEqual(self.rf.read('W0'), 0x45464748)
 
     @itest_custom('ldr x0, .-8')
@@ -349,6 +358,7 @@ class Aarch64Instructions:
         # after zero extension to 64 bits.
         self.cpu.STACK -= 0xfffffff8
         self._execute()
+        self.assertEqual(self.rf.read('X0'), 0x55565758)
         self.assertEqual(self.rf.read('W0'), 0x55565758)
 
     @itest_setregs('W1=-8')
@@ -360,6 +370,7 @@ class Aarch64Instructions:
         # after zero extension to 64 bits.
         self.cpu.STACK -= LSL(0xfffffff8, 2, 64)
         self._execute()
+        self.assertEqual(self.rf.read('X0'), 0x55565758)
         self.assertEqual(self.rf.read('W0'), 0x55565758)
 
     @itest_setregs('X1=8')
@@ -368,6 +379,7 @@ class Aarch64Instructions:
         self.cpu.push_int(0x4142434445464748)
         self.cpu.push_int(0x5152535455565758)
         self._execute()
+        self.assertEqual(self.rf.read('X0'), 0x45464748)
         self.assertEqual(self.rf.read('W0'), 0x45464748)
 
     @itest_setregs('X1=2')
@@ -376,6 +388,7 @@ class Aarch64Instructions:
         self.cpu.push_int(0x4142434445464748)
         self.cpu.push_int(0x5152535455565758)
         self._execute()
+        self.assertEqual(self.rf.read('X0'), 0x45464748)
         self.assertEqual(self.rf.read('W0'), 0x45464748)
 
     @itest_setregs('W1=-8')
@@ -385,6 +398,7 @@ class Aarch64Instructions:
         self.cpu.push_int(0x5152535455565758)
         self.cpu.STACK += 8
         self._execute()
+        self.assertEqual(self.rf.read('X0'), 0x55565758)
         self.assertEqual(self.rf.read('W0'), 0x55565758)
 
     @itest_setregs('W1=-8')
@@ -394,6 +408,7 @@ class Aarch64Instructions:
         self.cpu.push_int(0x5152535455565758)
         self.cpu.STACK += LSL(8, 2, 32)
         self._execute()
+        self.assertEqual(self.rf.read('X0'), 0x55565758)
         self.assertEqual(self.rf.read('W0'), 0x55565758)
 
     @itest_setregs('X1=-8')
@@ -403,6 +418,7 @@ class Aarch64Instructions:
         self.cpu.push_int(0x5152535455565758)
         self.cpu.STACK += 8
         self._execute()
+        self.assertEqual(self.rf.read('X0'), 0x55565758)
         self.assertEqual(self.rf.read('W0'), 0x55565758)
 
     @itest_setregs('X1=-2')
@@ -412,6 +428,7 @@ class Aarch64Instructions:
         self.cpu.push_int(0x5152535455565758)
         self.cpu.STACK += 8
         self._execute()
+        self.assertEqual(self.rf.read('X0'), 0x55565758)
         self.assertEqual(self.rf.read('W0'), 0x55565758)
 
     # 64-bit.
@@ -501,6 +518,7 @@ class Aarch64Instructions:
         self.cpu.push_int(0x4142434445464748)
         stack = self.cpu.STACK
         self._execute()
+        self.assertEqual(self.rf.read('X1'), 0x44454647)
         self.assertEqual(self.rf.read('W1'), 0x44454647)
         self.assertEqual(self.rf.read('SP'), stack)  # no writeback
 
@@ -512,6 +530,7 @@ class Aarch64Instructions:
         self.cpu.STACK += 256
         stack = self.cpu.STACK
         self._execute()
+        self.assertEqual(self.rf.read('X1'), 0x45464748)
         self.assertEqual(self.rf.read('W1'), 0x45464748)
         self.assertEqual(self.rf.read('SP'), stack)  # no writeback
 
