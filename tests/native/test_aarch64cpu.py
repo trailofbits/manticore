@@ -617,6 +617,49 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X0'), 0x5152535455565758)
 
 
+    # ORR (immediate).
+
+    # 32-bit.
+
+    @itest_setregs('W1=0x41420000')
+    @itest('orr w0, w1, #0xffff')
+    def test_orr_imm32(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142ffff)
+        self.assertEqual(self.rf.read('W0'), 0x4142ffff)
+
+    @itest_setregs('W1=0x00004344')
+    @itest('orr w0, w1, #0xffff0000')
+    def test_orr_imm2_32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffff4344)
+        self.assertEqual(self.rf.read('W0'), 0xffff4344)
+
+    @itest_setregs('W1=0x41424344')
+    @itest('orr w0, w1, #1')
+    def test_orr_imm3_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424345)
+        self.assertEqual(self.rf.read('W0'), 0x41424345)
+
+    # 64-bit.
+
+    @itest_setregs('X1=0x0000414200004344')
+    @itest('orr x0, x1, #0xffff0000ffff0000')
+    def test_orr_imm64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffff4142ffff4344)
+        self.assertEqual(self.rf.read('W0'), 0xffff4344)
+
+    @itest_setregs('X1=0x4142000043440000')
+    @itest('orr x0, x1, #0x0000ffff0000ffff')
+    def test_orr_imm2_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142ffff4344ffff)
+        self.assertEqual(self.rf.read('W0'), 0x4344ffff)
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest('orr x0, x1, #1')
+    def test_orr_imm3_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464749)
+        self.assertEqual(self.rf.read('W0'), 0x45464749)
+
+
     # XXX: Unimplemented.
 
     # This is actually ldur since a positive offset must be a multiple of 4 for

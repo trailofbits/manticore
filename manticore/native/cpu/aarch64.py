@@ -575,6 +575,39 @@ class Aarch64Cpu(Cpu):
         result = UInt(LSL(imm, sft, dst.size), dst.size)
         dst.write(result)
 
+    @instruction
+    def ORR(cpu, res_op, reg_op, imm_op):
+        """
+        Bitwise OR (immediate) performs a bitwise (inclusive) OR of a register
+        value and an immediate value, and writes the result to the
+        destination register.
+
+        This instruction is used by the alias MOV (bitmask immediate).
+
+        :param res_op: destination register.
+        :param reg_op: source register.
+        :param imm_op: immediate.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+        assert imm_op.type is cs.arm64.ARM64_OP_IMM
+
+        insn_rx  = '[01]'     # sf
+        insn_rx += '01'       # opc
+        insn_rx += '100100'
+        insn_rx += '[01]'     # N
+        insn_rx += '[01]{6}'  # immr
+        insn_rx += '[01]{6}'  # imms
+        insn_rx += '[01]{5}'  # Rn
+        insn_rx += '[01]{5}'  # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        reg = reg_op.read()
+        imm = imm_op.op.imm
+        result = UInt(reg | imm, res_op.size)
+        res_op.write(result)
+
 
 class Aarch64CdeclAbi(Abi):
     """Aarch64/arm64 cdecl function call ABI"""
