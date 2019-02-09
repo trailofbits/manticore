@@ -537,6 +537,44 @@ class Aarch64Cpu(Cpu):
         result = UInt(~LSL(imm, sft, dst.size), dst.size)
         dst.write(result)
 
+    @instruction
+    def MOVZ(cpu, dst, src):
+        """
+        Move wide with zero moves an optionally-shifted 16-bit immediate value
+        to a register.
+
+        This instruction is used by the alias MOV (wide immediate).
+
+        :param dst: destination register.
+        :param src: immediate.
+        """
+        assert dst.type is cs.arm64.ARM64_OP_REG
+        assert src.type is cs.arm64.ARM64_OP_IMM
+
+        insn_rx  = '[01]'      # sf
+        insn_rx += '10'        # opc
+        insn_rx += '100101'
+        insn_rx += '[01]{2}'   # hw
+        insn_rx += '[01]{16}'  # imm16
+        insn_rx += '[01]{5}'   # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        imm = src.op.imm
+        sft = src.op.shift.value
+
+        if src.is_shifted():
+            assert src.op.shift.type == cs.arm64.ARM64_SFT_LSL
+
+        assert imm >= 0 and imm <= 65535
+        assert (
+            (dst.size == 32 and sft in [0, 16]) or
+            (dst.size == 64 and sft in [0, 16, 32, 48])
+        )
+
+        result = UInt(LSL(imm, sft, dst.size), dst.size)
+        dst.write(result)
+
 
 class Aarch64CdeclAbi(Abi):
     """Aarch64/arm64 cdecl function call ABI"""
