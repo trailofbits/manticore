@@ -660,6 +660,169 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W0'), 0x45464749)
 
 
+    # ORR (shifted register).
+
+    # 32-bit.
+
+    @itest_setregs('W1=0x41420000', 'W2=0x4344')
+    @itest('orr w0, w1, w2')
+    def test_orr_sft_reg32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344)
+        self.assertEqual(self.rf.read('W0'), 0x41424344)
+
+    @itest_setregs('W1=0x41420000', 'W2=0x4344')
+    @itest('orr w0, w1, w2, lsl #0')
+    def test_orr_sft_reg_lsl_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344)
+        self.assertEqual(self.rf.read('W0'), 0x41424344)
+
+    @itest_setregs('W1=0x4142', 'W2=1')
+    @itest('orr w0, w1, w2, lsl #31')
+    def test_orr_sft_reg_lsl_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0x80004142)
+        self.assertEqual(self.rf.read('W0'), 0x80004142)
+
+    @itest_setregs('W1=0x41420000', 'W2=0x4344')
+    @itest('orr w0, w1, w2, lsl #1')
+    def test_orr_sft_reg_lsl32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41428688)
+        self.assertEqual(self.rf.read('W0'), 0x41428688)
+
+    @itest_setregs('W1=0x41420000', 'W2=0x4344')
+    @itest('orr w0, w1, w2, lsr #0')
+    def test_orr_sft_reg_lsr_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344)
+        self.assertEqual(self.rf.read('W0'), 0x41424344)
+
+    @itest_setregs('W1=0x41420000', 'W2=0x80000000')
+    @itest('orr w0, w1, w2, lsr #31')
+    def test_orr_sft_reg_lsr_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41420001)
+        self.assertEqual(self.rf.read('W0'), 0x41420001)
+
+    @itest_setregs('W1=0x4142', 'W2=0x80000000')
+    @itest('orr w0, w1, w2, lsr #1')
+    def test_orr_sft_reg_lsr32(self):
+        self.assertEqual(self.rf.read('X0'), 0x40004142)
+        self.assertEqual(self.rf.read('W0'), 0x40004142)
+
+    @itest_setregs('W1=0x41420000', 'W2=0x4344')
+    @itest('orr w0, w1, w2, asr #0')
+    def test_orr_sft_reg_asr_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344)
+        self.assertEqual(self.rf.read('W0'), 0x41424344)
+
+    @itest_setregs('W1=0x41420000', 'W2=0x80000000')
+    @itest('orr w0, w1, w2, asr #31')
+    def test_orr_sft_reg_asr_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    @itest_setregs('W1=0x4142', 'W2=0x80000000')
+    @itest('orr w0, w1, w2, asr #1')
+    def test_orr_sft_reg_asr32(self):
+        self.assertEqual(self.rf.read('X0'), 0xc0004142)
+        self.assertEqual(self.rf.read('W0'), 0xc0004142)
+
+    @itest_setregs('W1=0x41420000', 'W2=0x4344')
+    @itest('orr w0, w1, w2, ror #0')
+    def test_orr_sft_reg_ror_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344)
+        self.assertEqual(self.rf.read('W0'), 0x41424344)
+
+    @itest_setregs('W1=0x4140', 'W2=0x80000001')
+    @itest('orr w0, w1, w2, ror #31')
+    def test_orr_sft_reg_ror_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0x00004143)
+        self.assertEqual(self.rf.read('W0'), 0x00004143)
+
+    @itest_setregs('W1=0x4142', 'W2=1')
+    @itest('orr w0, w1, w2, ror #1')
+    def test_orr_sft_reg_ror32(self):
+        self.assertEqual(self.rf.read('X0'), 0x80004142)
+        self.assertEqual(self.rf.read('W0'), 0x80004142)
+
+    # 64-bit.
+
+    @itest_setregs('X1=0x4142434400000000', 'X2=0x45464748')
+    @itest('orr x0, x1, x2')
+    def test_orr_sft_reg64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @itest_setregs('X1=0x4142434400000000', 'X2=0x45464748')
+    @itest('orr x0, x1, x2, lsl #0')
+    def test_orr_sft_reg_lsl_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @itest_setregs('X1=0x41424344', 'X2=1')
+    @itest('orr x0, x1, x2, lsl #63')
+    def test_orr_sft_reg_lsl_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0x8000000041424344)
+        self.assertEqual(self.rf.read('W0'), 0x41424344)
+
+    @itest_setregs('X1=0x4142434400000000', 'X2=0x45464748')
+    @itest('orr x0, x1, x2, lsl #1')
+    def test_orr_sft_reg_lsl64(self):
+        self.assertEqual(self.rf.read('X0'), 0x414243448a8c8e90)
+        self.assertEqual(self.rf.read('W0'), 0x8a8c8e90)
+
+    @itest_setregs('X1=0x4142434400000000', 'X2=0x45464748')
+    @itest('orr x0, x1, x2, lsr #0')
+    def test_orr_sft_reg_lsr_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @itest_setregs('X1=0x4142434400000000', 'X2=0x8000000000000000')
+    @itest('orr x0, x1, x2, lsr #63')
+    def test_orr_sft_reg_lsr_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434400000001)
+        self.assertEqual(self.rf.read('W0'), 1)
+
+    @itest_setregs('X1=0x41424344', 'X2=0x8000000000000000')
+    @itest('orr x0, x1, x2, lsr #1')
+    def test_orr_sft_reg_lsr64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4000000041424344)
+        self.assertEqual(self.rf.read('W0'), 0x41424344)
+
+    @itest_setregs('X1=0x4142434400000000', 'X2=0x45464748')
+    @itest('orr x0, x1, x2, asr #0')
+    def test_orr_sft_reg_asr_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @itest_setregs('X1=0x4142434400000000', 'X2=0x8000000000000000')
+    @itest('orr x0, x1, x2, asr #63')
+    def test_orr_sft_reg_asr_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffffffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    @itest_setregs('X1=0x41424344', 'X2=0x8000000000000000')
+    @itest('orr x0, x1, x2, asr #1')
+    def test_orr_sft_reg_asr64(self):
+        self.assertEqual(self.rf.read('X0'), 0xc000000041424344)
+        self.assertEqual(self.rf.read('W0'), 0x41424344)
+
+    @itest_setregs('X1=0x4142434400000000', 'X2=0x45464748')
+    @itest('orr x0, x1, x2, ror #0')
+    def test_orr_sft_reg_ror_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @itest_setregs('X1=0x4142434445464740', 'X2=0x8000000000000001')
+    @itest('orr x0, x1, x2, ror #63')
+    def test_orr_sft_reg_ror_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464743)
+        self.assertEqual(self.rf.read('W0'), 0x45464743)
+
+    @itest_setregs('X1=0x41424344', 'X2=1')
+    @itest('orr x0, x1, x2, ror #1')
+    def test_orr_sft_reg_ror64(self):
+        self.assertEqual(self.rf.read('X0'), 0x8000000041424344)
+        self.assertEqual(self.rf.read('W0'), 0x41424344)
+
+
     # XXX: Unimplemented.
 
     # This is actually ldur since a positive offset must be a multiple of 4 for

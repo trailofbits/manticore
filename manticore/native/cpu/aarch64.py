@@ -9,7 +9,7 @@ from .abstractcpu import (
     Cpu, CpuException, RegisterFile, Abi, SyscallAbi, Operand, instruction
 )
 from .arm import HighBit, Armv7Operand
-from .bitwise import SInt, UInt, LSL
+from .bitwise import SInt, UInt, ASR, LSL, LSR, ROR
 from .register import Register
 from ...core.smtlib import Operators
 
@@ -575,9 +575,10 @@ class Aarch64Cpu(Cpu):
         result = UInt(LSL(imm, sft, dst.size), dst.size)
         dst.write(result)
 
-    @instruction
-    def ORR(cpu, res_op, reg_op, imm_op):
+    def _ORR_immediate(cpu, res_op, reg_op, imm_op):
         """
+        ORR (immediate).
+
         Bitwise OR (immediate) performs a bitwise (inclusive) OR of a register
         value and an immediate value, and writes the result to the
         destination register.
@@ -607,6 +608,88 @@ class Aarch64Cpu(Cpu):
         imm = imm_op.op.imm
         result = UInt(reg | imm, res_op.size)
         res_op.write(result)
+
+    def _ORR_shifted_register(cpu, res_op, reg_op1, reg_op2):
+        """
+        ORR (shifted register).
+
+        Bitwise OR (shifted register) performs a bitwise (inclusive) OR of a
+        register value and an optionally-shifted register value, and writes the
+        result to the destination register.
+
+        This instruction is used by the alias MOV (register).
+
+        :param res_op: destination register.
+        :param reg_op1: source register.
+        :param reg_op2: source register.
+        """
+        assert res_op.type  is cs.arm64.ARM64_OP_REG
+        assert reg_op1.type is cs.arm64.ARM64_OP_REG
+        assert reg_op2.type is cs.arm64.ARM64_OP_REG
+
+        insn_rx  = '[01]'     # sf
+        insn_rx += '01'       # opc
+        insn_rx += '01010'
+        insn_rx += '[01]{2}'  # shift
+        insn_rx += '0'        # N
+        insn_rx += '[01]{5}'  # Rm
+        insn_rx += '[01]{6}'  # imm6
+        insn_rx += '[01]{5}'  # Rn
+        insn_rx += '[01]{5}'  # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        reg1 = reg_op1.read()
+        reg2 = reg_op2.read()
+        reg2_size = cpu.regfile.size(reg_op2.reg)
+
+        if reg_op2.is_shifted():
+            shift = reg_op2.shift
+
+            assert (
+                (res_op.size == 32 and shift.value in range(0, 32)) or
+                (res_op.size == 64 and shift.value in range(0, 64))
+            )
+
+            if shift.type == cs.arm64.ARM64_SFT_LSL:
+                reg2 = LSL(reg2, shift.value, reg2_size)
+
+            elif shift.type == cs.arm64.ARM64_SFT_LSR:
+                reg2 = LSR(reg2, shift.value, reg2_size)
+
+            elif shift.type == cs.arm64.ARM64_SFT_ASR:
+                reg2 = ASR(reg2, shift.value, reg2_size)
+
+            elif shift.type == cs.arm64.ARM64_SFT_ROR:
+                reg2 = ROR(reg2, shift.value, reg2_size)
+
+            else:
+                raise Aarch64InvalidInstruction
+
+        result = UInt(reg1 | reg2, res_op.size)
+        res_op.write(result)
+
+    @instruction
+    def ORR(cpu, res_op, op1, op2):
+        """
+        Combines ORR (immediate) and ORR (shifted register).
+
+        :param res_op: destination register.
+        :param op1: source register.
+        :param op2: source register or immediate.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert op1.type    is cs.arm64.ARM64_OP_REG
+        assert op2.type    is cs.arm64.ARM64_OP_REG or cs.arm64.ARM64_OP_IMM
+
+        if op2.type == cs.arm64.ARM64_OP_IMM:
+            cpu._ORR_immediate(res_op, op1, op2)
+
+        elif op2.type == cs.arm64.ARM64_OP_REG:
+            cpu._ORR_shifted_register(res_op, op1, op2)
+
+        else:
+            raise Aarch64InvalidInstruction
 
 
 class Aarch64CdeclAbi(Abi):
