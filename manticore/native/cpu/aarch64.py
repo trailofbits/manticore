@@ -268,6 +268,48 @@ class Aarch64Cpu(Cpu):
     # XXX: Use masking when writing to the destination register?  Avoiding this
     # for now, but the assert in the 'write' method should catch such cases.
 
+    @instruction
+    def ADD(cpu, res_op, reg_op, imm_op):
+        """
+        ADD (immediate).
+
+        Add (immediate) adds a register value and an optionally-shifted
+        immediate value, and writes the result to the destination register.
+
+        This instruction is used by the alias MOV (to/from SP).
+
+        :param res_op: destination register.
+        :param reg_op: source register.
+        :param imm_op: immediate.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+        assert imm_op.type is cs.arm64.ARM64_OP_IMM
+
+        insn_rx  = '[01]'              # sf
+        insn_rx += '0'                 # op
+        insn_rx += '0'                 # S
+        insn_rx += '10001'
+        insn_rx += '(?!1[01])[01]{2}'  # shift != 1x
+        insn_rx += '[01]{12}'          # imm12
+        insn_rx += '[01]{5}'           # Rn
+        insn_rx += '[01]{5}'           # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        reg = reg_op.read()
+        imm = imm_op.op.imm
+        assert imm in range(0, 4096)
+
+        if imm_op.is_shifted():
+            shift = imm_op.op.shift
+            assert shift.type == cs.arm64.ARM64_SFT_LSL
+            assert shift.value in [0, 12]
+            imm = LSL(imm, shift.value, res_op.size)
+
+        result = UInt(reg + imm, res_op.size)
+        res_op.write(result)
+
     def _LDR_immediate(cpu, dst, src, rest):
         """
         LDR (immediate).

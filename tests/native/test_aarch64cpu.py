@@ -121,6 +121,73 @@ class Aarch64Instructions:
         self.cpu.mode = mode
 
 
+    # ADD (immediate).
+
+    # 32-bit.
+
+    @itest_setregs('W1=0x41424344')
+    @itest('add w0, w1, #0')
+    def test_add_imm_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344)
+        self.assertEqual(self.rf.read('W0'), 0x41424344)
+
+    @itest_setregs('W1=0x41424344')
+    @itest('add w0, w1, #4095')
+    def test_add_imm_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41425343)
+        self.assertEqual(self.rf.read('W0'), 0x41425343)
+
+    @itest_setregs('W1=0x41424344')
+    @itest('add w0, w1, #1')
+    def test_add_imm32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424345)
+        self.assertEqual(self.rf.read('W0'), 0x41424345)
+
+    @itest_setregs('W1=0x41424344')
+    @itest('add w0, w1, #1, lsl #0')
+    def test_add_imm_lsl0_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424345)
+        self.assertEqual(self.rf.read('W0'), 0x41424345)
+
+    @itest_setregs('W1=0x41424344')
+    @itest('add w0, w1, #1, lsl #12')
+    def test_add_imm_lsl12_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41425344)
+        self.assertEqual(self.rf.read('W0'), 0x41425344)
+
+    # 64-bit.
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest('add x0, x1, #0')
+    def test_add_imm_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest('add x0, x1, #4095')
+    def test_add_imm_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445465747)
+        self.assertEqual(self.rf.read('W0'), 0x45465747)
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest('add x0, x1, #1')
+    def test_add_imm64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464749)
+        self.assertEqual(self.rf.read('W0'), 0x45464749)
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest('add x0, x1, #1, lsl #0')
+    def test_add_imm_lsl0_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464749)
+        self.assertEqual(self.rf.read('W0'), 0x45464749)
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest('add x0, x1, #1, lsl #12')
+    def test_add_imm_lsl12_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445465748)
+        self.assertEqual(self.rf.read('W0'), 0x45465748)
+
+
     # MOV (register).
 
     @itest_setregs("X1=42")
