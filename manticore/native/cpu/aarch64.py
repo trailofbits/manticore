@@ -502,6 +502,8 @@ class Aarch64Cpu(Cpu):
     @instruction
     def MOVN(cpu, dst, src):
         """
+        MOVN.
+
         Move wide with NOT moves the inverse of an optionally-shifted 16-bit
         immediate value to a register.
 
@@ -540,6 +542,8 @@ class Aarch64Cpu(Cpu):
     @instruction
     def MOVZ(cpu, dst, src):
         """
+        MOVZ.
+
         Move wide with zero moves an optionally-shifted 16-bit immediate value
         to a register.
 
