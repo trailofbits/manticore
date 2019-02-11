@@ -93,9 +93,10 @@ run_examples() {
 
 # Test type
 case $1 in
-    native)         ;&  # Fallthrough
-    ethereum)       ;&  # Fallthrough
-    ethereum_vm)    ;&  # Fallthrough
+    native)                 ;&  # Fallthrough
+    ethereum)               ;&  # Fallthrough
+    VMTests_concrete)       ;&  # Fallthrough
+    VMTests_symbolic)       ;&  # Fallthrough
     other)
         echo "Running only the tests from 'tests/$1' directory"
         run_tests_from_dir $1
@@ -115,7 +116,9 @@ case $1 in
         RV=$(($RV + $?))
         run_tests_from_dir ethereum
         RV=$(($RV + $?))
-        run_tests_from_dir ethereum_vm
+        run_tests_from_dir VMTests_concrete
+        RV=$(($RV + $?))
+        run_tests_from_dir VMTests_symbolic
         RV=$(($RV + $?))
         run_tests_from_dir other
         RV=$(($RV + $?))
@@ -124,7 +127,7 @@ case $1 in
         ;;
 
     *)
-        echo "Usage: $0 [examples|native|ethereum|other|all]"
+        echo "Usage: $0 [examples|native|ethereum|VMTests_concrete|VMTests_symbolic|other|all]"
         exit 3;
         ;;
 esac
