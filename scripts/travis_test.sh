@@ -97,6 +97,7 @@ case $1 in
     ethereum)               ;&  # Fallthrough
     VMTests_concrete)       ;&  # Fallthrough
     VMTests_symbolic)       ;&  # Fallthrough
+    VMTests_symbolic2)      ;&  # Fallthrough
     other)
         echo "Running only the tests from 'tests/$1' directory"
         run_tests_from_dir $1
@@ -120,6 +121,8 @@ case $1 in
         RV=$(($RV + $?))
         run_tests_from_dir VMTests_symbolic
         RV=$(($RV + $?))
+        run_tests_from_dir VMTests_symbolic2
+        RV=$(($RV + $?))
         run_tests_from_dir other
         RV=$(($RV + $?))
         run_examples
@@ -127,7 +130,7 @@ case $1 in
         ;;
 
     *)
-        echo "Usage: $0 [examples|native|ethereum|VMTests_concrete|VMTests_symbolic|other|all]"
+        echo "Usage: $0 [examples|native|ethereum|VMTests_concrete|VMTests_symbolic|VMTests_symbolic2|other|all]"
         exit 3;
         ;;
 esac
