@@ -188,21 +188,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W0'), 0x45465748)
 
 
-    # MOV (register).
-
-    @itest_setregs("X1=42")
-    @itest("mov x0, x1")
-    def test_mov_reg(self):
-        self.assertEqual(self.rf.read('X0'), 42)
-        self.assertEqual(self.rf.read('W0'), 42)
-
-    @itest_setregs("W1=42")
-    @itest("mov w0, w1")
-    def test_mov_reg32(self):
-        self.assertEqual(self.rf.read('X0'), 42)
-        self.assertEqual(self.rf.read('W0'), 42)
-
-
     # MOV (to/from SP).
 
     @itest_setregs(f"X0={MAGIC_64}")
@@ -234,16 +219,109 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W0'), MAGIC_32)
 
 
-    # MOVN.
+    # MOV (inverted wide immediate).
 
     # 32-bit.
 
-    # This immediate doesn't fit in 16-bits.  The instruction should be
-    # interpreted as 'movn w0, #0'.
-    @itest("mov w0, #0xffffffffffffffff")
-    def test_mov_imm64_32(self):
+    @itest('mov w0, #0xffffffff')
+    def test_mov_inv_wide_imm32(self):
         self.assertEqual(self.rf.read('X0'), 0xffffffff)
         self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    @itest('mov w0, #-1')
+    def test_mov_inv_wide_imm_neg32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    # 64-bit.
+
+    @itest('mov x0, #0xffffffffffffffff')
+    def test_mov_inv_wide_imm64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffffffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    @itest('mov x0, #-1')
+    def test_mov_inv_wide_imm_neg64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffffffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+
+    # MOV (wide immediate).
+
+    # 32-bit.
+
+    @itest('mov w0, #0')
+    def test_mov_wide_imm_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest('mov w0, #0xffff0000')
+    def test_mov_wide_imm_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffff0000)
+        self.assertEqual(self.rf.read('W0'), 0xffff0000)
+
+    @itest('mov w0, #1')
+    def test_mov_wide_imm32(self):
+        self.assertEqual(self.rf.read('X0'), 1)
+        self.assertEqual(self.rf.read('W0'), 1)
+
+    # 64-bit.
+
+    @itest('mov x0, #0')
+    def test_mov_wide_imm_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest('mov x0, #0xffff000000000000')
+    def test_mov_wide_imm_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffff000000000000)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest('mov x0, #1')
+    def test_mov_wide_imm64(self):
+        self.assertEqual(self.rf.read('X0'), 1)
+        self.assertEqual(self.rf.read('W0'), 1)
+
+
+    # MOV (bitmask immediate).
+
+    @itest('mov w0, #0x7ffffffe')
+    def test_mov_bmask_imm32(self):
+        self.assertEqual(self.rf.read('X0'), 0x7ffffffe)
+        self.assertEqual(self.rf.read('W0'), 0x7ffffffe)
+
+    @itest('mov x0, #0x7ffffffffffffffe')
+    def test_mov_bmask_imm64(self):
+        self.assertEqual(self.rf.read('X0'), 0x7ffffffffffffffe)
+        self.assertEqual(self.rf.read('W0'), 0xfffffffe)
+
+
+    # MOV (register).
+
+    @itest_setregs("X1=42")
+    @itest("mov x0, x1")
+    def test_mov_reg(self):
+        self.assertEqual(self.rf.read('X0'), 42)
+        self.assertEqual(self.rf.read('W0'), 42)
+
+    @itest_setregs("W1=42")
+    @itest("mov w0, w1")
+    def test_mov_reg32(self):
+        self.assertEqual(self.rf.read('X0'), 42)
+        self.assertEqual(self.rf.read('W0'), 42)
+
+
+    # MOV misc.
+
+    @itest_multiple(["movn x0, #0", "mov w0, #1"])
+    def test_mov_same_reg32(self):
+        self.assertEqual(self.rf.read('X0'), 1)
+        self.assertEqual(self.rf.read('W0'), 1)
+
+
+    # MOVN.
+
+    # 32-bit.
 
     @itest("movn w0, #0")
     def test_movn32(self):
@@ -261,13 +339,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W0'), 0xffff)
 
     # 64-bit.
-
-    # This immediate doesn't fit in 16-bits.  The instruction should be
-    # interpreted as 'movn x0, #0'.
-    @itest("mov x0, #0xffffffffffffffff")
-    def test_mov_imm64_64(self):
-        self.assertEqual(self.rf.read('X0'), 0xffffffffffffffff)
-        self.assertEqual(self.rf.read('W0'), 0xffffffff)
 
     @itest("movn x0, #0")
     def test_movn64(self):
@@ -936,16 +1007,6 @@ class Aarch64Instructions:
         self._execute()
         self.assertEqual(self.rf.read('X1'), 0x4142434445464748)
         self.assertEqual(self.rf.read('SP'), stack)  # no writeback
-
-    @itest("mov x0, #43")
-    def test_mov_imm(self):
-        self.assertEqual(self.rf.read('X0'), 43)
-        self.assertEqual(self.rf.read('W0'), 43)
-
-    @itest_multiple(["movn x0, #0", "mov w0, #1"])
-    def test_mov_same_reg32(self):
-        self.assertEqual(self.rf.read('X0'), 1)
-        self.assertEqual(self.rf.read('W0'), 1)
 
     @itest_multiple(["movn x0, #0", "movk w0, #1"])
     def test_movk_same_reg32(self):

@@ -19,9 +19,10 @@ class Aarch64InvalidInstruction(CpuException):
 
 
 # Map different instructions to a single implementation.
-# XXX: Avoiding this for now.
 OP_NAME_MAP = {
-    # 'MOVZ': 'MOV'
+    # Make these go through 'MOV' to ensure that code path is reached.
+    'MOVZ': 'MOV',
+    'MOVN': 'MOV'
 }
 
 
@@ -257,7 +258,20 @@ class Aarch64Cpu(Cpu):
         # XXX: Check if a Capstone bug that incorrectly labels some instructions
         # is still there.
         assert name.lower() == insn.mnemonic
-        return OP_NAME_MAP.get(name, name)
+
+        name = OP_NAME_MAP.get(name, name)
+        ops = insn.operands
+
+        # Make sure MOV (bitmask immediate) and MOV (register) go through 'MOV'.
+        if (name == 'ORR' and len(ops) == 3 and
+            ops[1].type == cs.arm64.ARM64_OP_REG and
+            ops[1].reg in ['WZR', 'XZR'] and
+            not ops[2].is_shifted()
+           ):
+            name = 'MOV'
+            del ops[1]
+
+        return name
 
     @property
     def insn_bit_str(self):
@@ -496,50 +510,80 @@ class Aarch64Cpu(Cpu):
         else:
             raise Aarch64InvalidInstruction
 
-    # XXX: Make an alias when all instructions used by 'MOV' are added.
     @instruction
     def MOV(cpu, dst, src):
         """
-        Combines MOV (register) and MOV (to/from SP).
-
-        Move (register) copies the value in a source register to the destination
-        register.
-
-        Move (to/from SP) moves between register and stack pointer.
+        Combines MOV (to/from SP), MOV (inverted wide immediate), MOV (wide
+        immediate), MOV (bitmask immediate), and MOV (register).
 
         :param dst: destination register.
-        :param src: source register.
+        :param src: source register or immediate.
         """
         assert dst.type is cs.arm64.ARM64_OP_REG
-        assert src.type is cs.arm64.ARM64_OP_REG
-        assert dst.size >= src.size
+        assert src.type is cs.arm64.ARM64_OP_REG or cs.arm64.ARM64_OP_IMM
 
-        mov_reg_rx  = '[01]'     # sf
-        mov_reg_rx += '01'       # opc
-        mov_reg_rx += '01010'
-        mov_reg_rx += '00'       # shift
-        mov_reg_rx += '0'        # N
-        mov_reg_rx += '[01]{5}'  # Rm
-        mov_reg_rx += '0{6}'     # imm6
-        mov_reg_rx += '1{5}'     # Rn
-        mov_reg_rx += '[01]{5}'  # Rd
+        # Fake a register operand.
+        zr = cs.arm64.Arm64Op()
 
-        mov_sp_rx  = '[01]'              # sf
-        mov_sp_rx += '0'                 # op
-        mov_sp_rx += '0'                 # S
-        mov_sp_rx += '10001'
-        mov_sp_rx += '(?!1[01])[01]{2}'  # shift != 1x
-        mov_sp_rx += '0{12}'             # imm12
-        mov_sp_rx += '[01]{5}'           # Rn
-        mov_sp_rx += '[01]{5}'           # Rd
+        if dst.size == 32:
+            zr.value.reg = cs.arm64.ARM64_REG_WZR
+        elif dst.size == 64:
+            zr.value.reg = cs.arm64.ARM64_REG_XZR
+        else:
+            raise Aarch64InvalidInstruction
 
-        assert (
-            re.match(mov_reg_rx, cpu.insn_bit_str) or
-            re.match(mov_sp_rx,  cpu.insn_bit_str)
-        )
+        zr.type = cs.arm64.ARM64_OP_REG
+        zr = Aarch64Operand(cpu, zr)
 
-        result = src.read()
-        dst.write(result)
+        opc = cpu.insn_bit_str[1:3]  # 'op S' for MOV (to/from SP)
+
+        if src.type is cs.arm64.ARM64_OP_REG:
+            # MOV (to/from SP).
+            if opc == '00':
+                # Fake an immediate operand.
+                zero = cs.arm64.Arm64Op()
+                zero.value.imm = 0
+                zero.type = cs.arm64.ARM64_OP_IMM
+                zero = Aarch64Operand(cpu, zero)
+
+                # The 'instruction' decorator advances PC, so call the original
+                # method.
+                cpu.ADD.__wrapped__(cpu, dst, src, zero)
+
+
+            # MOV (register).
+            elif opc == '01':
+                # The 'instruction' decorator advances PC, so call the original
+                # method.
+                cpu.ORR.__wrapped__(cpu, dst, zr, src)
+
+            else:
+                raise Aarch64InvalidInstruction
+
+        elif src.type is cs.arm64.ARM64_OP_IMM:
+            # MOV (inverted wide immediate).
+            if opc == '00':
+                # The 'instruction' decorator advances PC, so call the original
+                # method.
+                cpu.MOVN.__wrapped__(cpu, dst, src)
+
+            # MOV (wide immediate).
+            elif opc == '10':
+                # The 'instruction' decorator advances PC, so call the original
+                # method.
+                cpu.MOVZ.__wrapped__(cpu, dst, src)
+
+            # MOV (bitmask immediate).
+            elif opc == '01':
+                # The 'instruction' decorator advances PC, so call the original
+                # method.
+                cpu.ORR.__wrapped__(cpu, dst, zr, src)
+
+            else:
+                raise Aarch64InvalidInstruction
+
+        else:
+            raise Aarch64InvalidInstruction
 
     @instruction
     def MOVN(cpu, dst, src):
