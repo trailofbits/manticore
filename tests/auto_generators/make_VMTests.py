@@ -4,14 +4,14 @@ This script generates VMTests that are used to check EVM's Frontier fork correct
 ### TO GENERATE ALL:
 
 ## Initialize env:
-cd manticore/tests/ethereum && mkdir VMTests_concrete && mkdir VMTests_symbolic
+cd manticore/tests/ && mkdir -p  ethereum_vm/VMTests_concrete && mkdir ethereum_vm/VMTests_symbolic
 git clone https://github.com/ethereum/tests --depth=1
 
 ## Generate concrete tests:
-for i in ./tests/VMTests/*; do python ../auto_generators/make_VMTests.py $i; done
+for i in ./tests/VMTests/*; do python ./auto_generators/make_VMTests.py $i; done
 
 ## Generate symbolic tests:
-$ for i in ./tests/VMTests/*; do python ../auto_generators/make_VMTests.py $i --symbolic; done
+$ for i in ./tests/VMTests/*; do python ./auto_generators/make_VMTests.py $i --symbolic; done
 
 ## Remove the eth tests repo
 $ rm -rf ./tests  # cleanup/remove the ethereum/tests repo
@@ -90,7 +90,7 @@ def generate_pre_output(testcase, filename, symbolic):
             Those tests are **auto-generated** and `solve` is used in symbolic tests.
             So yes, this returns just val; it makes it easier to generate tests like this.
             """
-            return val
+            return to_constant(val)
 '''
 
     env = testcase['env']
@@ -164,7 +164,7 @@ def generate_pre_output(testcase, filename, symbolic):
 '''
             else:
                 output += f'''
-        world.set_storage_data(acc['address'], {key}, {value})
+        world.set_storage_data(acc_addr, {key}, {value})
 '''
 
     address = int(testcase['exec']['address'], 0)
@@ -269,7 +269,7 @@ def generate_post_output(testcase):
 
     output += '''
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)'''
     output += f'''
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '{testcase['logs'][2:]}')
@@ -366,9 +366,9 @@ if __name__ == '__main__':
 
     if folder:
         testname = folder.split('/')[-1]
-        with open(f'VMTests_{postfix}/test_{testname}.py', 'w') as f:
+        with open(f'ethereum_vm/VMTests_{postfix}/test_{testname}.py', 'w') as f:
             f.write(output)
-        with open(f'VMTests_{postfix}/__init__.py', 'w') as f:
+        with open(f'ethereum_vm/VMTests_{postfix}/__init__.py', 'w') as f:
             f.write("# DO NOT DELETE")
         print("Tests generated. If this is the only output, u did sth bad.", file=sys.stderr)
     else:

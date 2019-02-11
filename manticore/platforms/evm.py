@@ -432,10 +432,18 @@ def concretized_args(**policies):
                 if policy == "ACCOUNTS":
                     value = args[index]
                     world = args[0].world
-                    #special handler for EVM only policy
+                    # special handler for EVM only policy
                     cond = world._constraint_to_accounts(value, ty='both', include_zero=True)
                     world.constraints.add(cond)
                     policy = 'ALL'
+
+                if args[index].taint:
+                    # TODO / FIXME: The taint should persist!
+                    logger.warning(
+                        f"Concretizing {func.__name__}'s {index} argument and dropping its taints: "
+                        "the value might not be tracked properly (in case of using detectors)"
+                    )
+
                 raise ConcretizeArgument(index, policy=policy)
             return func(*args, **kwargs)
         wrapper.__signature__ = inspect.signature(func)
@@ -1209,12 +1217,22 @@ class EVM(Eventful):
             return result
         return EXP_SUPPLEMENTAL_GAS * nbytes(exponent)
 
+    @concretized_args(base='SAMPLED', exponent='SAMPLED')
     def EXP(self, base, exponent):
         """
-            Exponential operation
-            The zero-th power of zero 0^0 is defined to be one
+        Exponential operation
+        The zero-th power of zero 0^0 is defined to be one.
+
+        :param base: exponential base, concretized with sampled values
+        :param exponent: exponent value, concretized with sampled values
+        :return: BitVec* EXP result
         """
-        # fixme integer bitvec
+        if exponent == 0:
+            return 1
+
+        if base == 0:
+            return 0
+
         return pow(base, exponent, TT256)
 
     def SIGNEXTEND(self, size, value):
@@ -1284,7 +1302,7 @@ class EVM(Eventful):
             if isinstance(simplified, Constant):
                 concrete_data.append(simplified.value)
             else:
-                #simplify by solving. probably means that we need to improve simplification
+                # simplify by solving. probably means that we need to improve simplification
                 solutions = solver.get_all_values(self.constraints, simplified, 2, silent=True)
                 if len(solutions) != 1:
                     break

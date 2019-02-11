@@ -93,8 +93,9 @@ run_examples() {
 
 # Test type
 case $1 in
-    native)     ;&  # Fallthrough
-    ethereum)   ;&  # Fallthrough
+    native)         ;&  # Fallthrough
+    ethereum)       ;&  # Fallthrough
+    ethereum_vm)    ;&  # Fallthrough
     other)
         echo "Running only the tests from 'tests/$1' directory"
         run_tests_from_dir $1
@@ -113,6 +114,8 @@ case $1 in
         run_tests_from_dir native
         RV=$(($RV + $?))
         run_tests_from_dir ethereum
+        RV=$(($RV + $?))
+        run_tests_from_dir ethereum_vm
         RV=$(($RV + $?))
         run_tests_from_dir other
         RV=$(($RV + $?))

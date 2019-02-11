@@ -51,35 +51,56 @@ class EVMTest_vmSha3Test(unittest.TestCase):
                   SSTORE
         """    
     
+        solver = Z3Solver()
+
         def solve(val):
-            """
-            Those tests are **auto-generated** and `solve` is used in symbolic tests.
-            So yes, this returns just val; it makes it easier to generate tests like this.
-            """
-            return val
+            results = solver.get_all_values(constraints, val)
+            # We constrain all values to single values!
+            self.assertEqual(len(results), 1)
+            return results[0]
 
         constraints = ConstraintSet()
 
-        blocknumber = 0
-        timestamp = 1
-        difficulty = 256
-        coinbase = 244687034288125203496486448490407391986876152250
-        gaslimit = 1000000
+        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        constraints.add(blocknumber == 0)
+
+        timestamp = constraints.new_bitvec(256, name='timestamp')
+        constraints.add(timestamp == 1)
+
+        difficulty = constraints.new_bitvec(256, name='difficulty')
+        constraints.add(difficulty == 256)
+
+        coinbase = constraints.new_bitvec(256, name='coinbase')
+        constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
+
+        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        constraints.add(gaslimit == 1000000)
+
         world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
                              coinbase=coinbase, gaslimit=gaslimit)
     
         acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         acc_code = unhexlify('6000600020600055')
-        acc_balance = 100000000000000000000000
-        acc_nonce = 0
+            
+        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        constraints.add(acc_balance == 100000000000000000000000)
+
+        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = 0x3b9aca00
-        value = 1000000000000000000
-        gas = 100000000000
+        price = constraints.new_bitvec(256, name='price')
+        constraints.add(price == 1000000000)
+
+        value = constraints.new_bitvec(256, name='value')
+        constraints.add(value == 1000000000000000000)
+
+        gas = constraints.new_bitvec(256, name='gas')
+        constraints.add(gas == 100000000000)
+
         data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
@@ -94,7 +115,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -115,7 +136,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -134,35 +155,56 @@ class EVMTest_vmSha3Test(unittest.TestCase):
                   SSTORE
         """    
     
+        solver = Z3Solver()
+
         def solve(val):
-            """
-            Those tests are **auto-generated** and `solve` is used in symbolic tests.
-            So yes, this returns just val; it makes it easier to generate tests like this.
-            """
-            return val
+            results = solver.get_all_values(constraints, val)
+            # We constrain all values to single values!
+            self.assertEqual(len(results), 1)
+            return results[0]
 
         constraints = ConstraintSet()
 
-        blocknumber = 0
-        timestamp = 1
-        difficulty = 256
-        coinbase = 244687034288125203496486448490407391986876152250
-        gaslimit = 1000000
+        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        constraints.add(blocknumber == 0)
+
+        timestamp = constraints.new_bitvec(256, name='timestamp')
+        constraints.add(timestamp == 1)
+
+        difficulty = constraints.new_bitvec(256, name='difficulty')
+        constraints.add(difficulty == 256)
+
+        coinbase = constraints.new_bitvec(256, name='coinbase')
+        constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
+
+        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        constraints.add(gaslimit == 1000000)
+
         world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
                              coinbase=coinbase, gaslimit=gaslimit)
     
         acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         acc_code = unhexlify('60016103c020600055')
-        acc_balance = 115792089237316195423570985008687907853269984665640564039457584007913129639935
-        acc_nonce = 0
+            
+        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        constraints.add(acc_balance == 115792089237316195423570985008687907853269984665640564039457584007913129639935)
+
+        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = 0x1
-        value = 115792089237316195423570985008687907853269984665640564039457584007913129639935
-        gas = 4294967296
+        price = constraints.new_bitvec(256, name='price')
+        constraints.add(price == 1)
+
+        value = constraints.new_bitvec(256, name='value')
+        constraints.add(value == 115792089237316195423570985008687907853269984665640564039457584007913129639935)
+
+        gas = constraints.new_bitvec(256, name='gas')
+        constraints.add(gas == 4294967296)
+
         data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
@@ -177,7 +219,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -198,7 +240,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -217,35 +259,56 @@ class EVMTest_vmSha3Test(unittest.TestCase):
                   SSTORE
         """    
     
+        solver = Z3Solver()
+
         def solve(val):
-            """
-            Those tests are **auto-generated** and `solve` is used in symbolic tests.
-            So yes, this returns just val; it makes it easier to generate tests like this.
-            """
-            return val
+            results = solver.get_all_values(constraints, val)
+            # We constrain all values to single values!
+            self.assertEqual(len(results), 1)
+            return results[0]
 
         constraints = ConstraintSet()
 
-        blocknumber = 0
-        timestamp = 1
-        difficulty = 256
-        coinbase = 244687034288125203496486448490407391986876152250
-        gaslimit = 1000000
+        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        constraints.add(blocknumber == 0)
+
+        timestamp = constraints.new_bitvec(256, name='timestamp')
+        constraints.add(timestamp == 1)
+
+        difficulty = constraints.new_bitvec(256, name='difficulty')
+        constraints.add(difficulty == 256)
+
+        coinbase = constraints.new_bitvec(256, name='coinbase')
+        constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
+
+        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        constraints.add(gaslimit == 1000000)
+
         world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
                              coinbase=coinbase, gaslimit=gaslimit)
     
         acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         acc_code = unhexlify('60016107c020600055')
-        acc_balance = 115792089237316195423570985008687907853269984665640564039457584007913129639935
-        acc_nonce = 0
+            
+        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        constraints.add(acc_balance == 115792089237316195423570985008687907853269984665640564039457584007913129639935)
+
+        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = 0x1
-        value = 115792089237316195423570985008687907853269984665640564039457584007913129639935
-        gas = 4294967296
+        price = constraints.new_bitvec(256, name='price')
+        constraints.add(price == 1)
+
+        value = constraints.new_bitvec(256, name='value')
+        constraints.add(value == 115792089237316195423570985008687907853269984665640564039457584007913129639935)
+
+        gas = constraints.new_bitvec(256, name='gas')
+        constraints.add(gas == 4294967296)
+
         data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
@@ -260,7 +323,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -281,7 +344,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -300,35 +363,56 @@ class EVMTest_vmSha3Test(unittest.TestCase):
                   SSTORE
         """    
     
+        solver = Z3Solver()
+
         def solve(val):
-            """
-            Those tests are **auto-generated** and `solve` is used in symbolic tests.
-            So yes, this returns just val; it makes it easier to generate tests like this.
-            """
-            return val
+            results = solver.get_all_values(constraints, val)
+            # We constrain all values to single values!
+            self.assertEqual(len(results), 1)
+            return results[0]
 
         constraints = ConstraintSet()
 
-        blocknumber = 0
-        timestamp = 1
-        difficulty = 256
-        coinbase = 244687034288125203496486448490407391986876152250
-        gaslimit = 1000000
+        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        constraints.add(blocknumber == 0)
+
+        timestamp = constraints.new_bitvec(256, name='timestamp')
+        constraints.add(timestamp == 1)
+
+        difficulty = constraints.new_bitvec(256, name='difficulty')
+        constraints.add(difficulty == 256)
+
+        coinbase = constraints.new_bitvec(256, name='coinbase')
+        constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
+
+        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        constraints.add(gaslimit == 1000000)
+
         world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
                              coinbase=coinbase, gaslimit=gaslimit)
     
         acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         acc_code = unhexlify('6005600420600055')
-        acc_balance = 100000000000000000000000
-        acc_nonce = 0
+            
+        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        constraints.add(acc_balance == 100000000000000000000000)
+
+        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = 0x5af3107a4000
-        value = 1000000000000000000
-        gas = 100000
+        price = constraints.new_bitvec(256, name='price')
+        constraints.add(price == 100000000000000)
+
+        value = constraints.new_bitvec(256, name='value')
+        constraints.add(value == 1000000000000000000)
+
+        gas = constraints.new_bitvec(256, name='gas')
+        constraints.add(gas == 100000)
+
         data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
@@ -343,7 +427,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -364,7 +448,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -383,35 +467,56 @@ class EVMTest_vmSha3Test(unittest.TestCase):
                   SSTORE
         """    
     
+        solver = Z3Solver()
+
         def solve(val):
-            """
-            Those tests are **auto-generated** and `solve` is used in symbolic tests.
-            So yes, this returns just val; it makes it easier to generate tests like this.
-            """
-            return val
+            results = solver.get_all_values(constraints, val)
+            # We constrain all values to single values!
+            self.assertEqual(len(results), 1)
+            return results[0]
 
         constraints = ConstraintSet()
 
-        blocknumber = 0
-        timestamp = 1
-        difficulty = 256
-        coinbase = 244687034288125203496486448490407391986876152250
-        gaslimit = 1000000
+        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        constraints.add(blocknumber == 0)
+
+        timestamp = constraints.new_bitvec(256, name='timestamp')
+        constraints.add(timestamp == 1)
+
+        difficulty = constraints.new_bitvec(256, name='difficulty')
+        constraints.add(difficulty == 256)
+
+        coinbase = constraints.new_bitvec(256, name='coinbase')
+        constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
+
+        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        constraints.add(gaslimit == 1000000)
+
         world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
                              coinbase=coinbase, gaslimit=gaslimit)
     
         acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         acc_code = unhexlify('600161080020600055')
-        acc_balance = 115792089237316195423570985008687907853269984665640564039457584007913129639935
-        acc_nonce = 0
+            
+        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        constraints.add(acc_balance == 115792089237316195423570985008687907853269984665640564039457584007913129639935)
+
+        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = 0x1
-        value = 115792089237316195423570985008687907853269984665640564039457584007913129639935
-        gas = 4294967296
+        price = constraints.new_bitvec(256, name='price')
+        constraints.add(price == 1)
+
+        value = constraints.new_bitvec(256, name='value')
+        constraints.add(value == 115792089237316195423570985008687907853269984665640564039457584007913129639935)
+
+        gas = constraints.new_bitvec(256, name='gas')
+        constraints.add(gas == 4294967296)
+
         data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
@@ -426,7 +531,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -447,7 +552,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -466,35 +571,56 @@ class EVMTest_vmSha3Test(unittest.TestCase):
                   SSTORE
         """    
     
+        solver = Z3Solver()
+
         def solve(val):
-            """
-            Those tests are **auto-generated** and `solve` is used in symbolic tests.
-            So yes, this returns just val; it makes it easier to generate tests like this.
-            """
-            return val
+            results = solver.get_all_values(constraints, val)
+            # We constrain all values to single values!
+            self.assertEqual(len(results), 1)
+            return results[0]
 
         constraints = ConstraintSet()
 
-        blocknumber = 0
-        timestamp = 1
-        difficulty = 256
-        coinbase = 244687034288125203496486448490407391986876152250
-        gaslimit = 1000000
+        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        constraints.add(blocknumber == 0)
+
+        timestamp = constraints.new_bitvec(256, name='timestamp')
+        constraints.add(timestamp == 1)
+
+        difficulty = constraints.new_bitvec(256, name='difficulty')
+        constraints.add(difficulty == 256)
+
+        coinbase = constraints.new_bitvec(256, name='coinbase')
+        constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
+
+        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        constraints.add(gaslimit == 1000000)
+
         world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
                              coinbase=coinbase, gaslimit=gaslimit)
     
         acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         acc_code = unhexlify('60016103e020600055')
-        acc_balance = 115792089237316195423570985008687907853269984665640564039457584007913129639935
-        acc_nonce = 0
+            
+        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        constraints.add(acc_balance == 115792089237316195423570985008687907853269984665640564039457584007913129639935)
+
+        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = 0x1
-        value = 115792089237316195423570985008687907853269984665640564039457584007913129639935
-        gas = 4294967296
+        price = constraints.new_bitvec(256, name='price')
+        constraints.add(price == 1)
+
+        value = constraints.new_bitvec(256, name='value')
+        constraints.add(value == 115792089237316195423570985008687907853269984665640564039457584007913129639935)
+
+        gas = constraints.new_bitvec(256, name='gas')
+        constraints.add(gas == 4294967296)
+
         data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
@@ -509,7 +635,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -530,7 +656,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -549,35 +675,56 @@ class EVMTest_vmSha3Test(unittest.TestCase):
                   SSTORE
         """    
     
+        solver = Z3Solver()
+
         def solve(val):
-            """
-            Those tests are **auto-generated** and `solve` is used in symbolic tests.
-            So yes, this returns just val; it makes it easier to generate tests like this.
-            """
-            return val
+            results = solver.get_all_values(constraints, val)
+            # We constrain all values to single values!
+            self.assertEqual(len(results), 1)
+            return results[0]
 
         constraints = ConstraintSet()
 
-        blocknumber = 0
-        timestamp = 1
-        difficulty = 256
-        coinbase = 244687034288125203496486448490407391986876152250
-        gaslimit = 1000000
+        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        constraints.add(blocknumber == 0)
+
+        timestamp = constraints.new_bitvec(256, name='timestamp')
+        constraints.add(timestamp == 1)
+
+        difficulty = constraints.new_bitvec(256, name='difficulty')
+        constraints.add(difficulty == 256)
+
+        coinbase = constraints.new_bitvec(256, name='coinbase')
+        constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
+
+        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        constraints.add(gaslimit == 1000000)
+
         world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
                              coinbase=coinbase, gaslimit=gaslimit)
     
         acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         acc_code = unhexlify('60027e0fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff20600055')
-        acc_balance = 115792089237316195423570985008687907853269984665640564039457584007913129639935
-        acc_nonce = 0
+            
+        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        constraints.add(acc_balance == 115792089237316195423570985008687907853269984665640564039457584007913129639935)
+
+        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = 0x1
-        value = 115792089237316195423570985008687907853269984665640564039457584007913129639935
-        gas = 1099511627776
+        price = constraints.new_bitvec(256, name='price')
+        constraints.add(price == 1)
+
+        value = constraints.new_bitvec(256, name='value')
+        constraints.add(value == 115792089237316195423570985008687907853269984665640564039457584007913129639935)
+
+        gas = constraints.new_bitvec(256, name='gas')
+        constraints.add(gas == 1099511627776)
+
         data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
@@ -592,7 +739,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -618,35 +765,56 @@ class EVMTest_vmSha3Test(unittest.TestCase):
                   SSTORE
         """    
     
+        solver = Z3Solver()
+
         def solve(val):
-            """
-            Those tests are **auto-generated** and `solve` is used in symbolic tests.
-            So yes, this returns just val; it makes it easier to generate tests like this.
-            """
-            return val
+            results = solver.get_all_values(constraints, val)
+            # We constrain all values to single values!
+            self.assertEqual(len(results), 1)
+            return results[0]
 
         constraints = ConstraintSet()
 
-        blocknumber = 0
-        timestamp = 1
-        difficulty = 256
-        coinbase = 244687034288125203496486448490407391986876152250
-        gaslimit = 1000000
+        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        constraints.add(blocknumber == 0)
+
+        timestamp = constraints.new_bitvec(256, name='timestamp')
+        constraints.add(timestamp == 1)
+
+        difficulty = constraints.new_bitvec(256, name='difficulty')
+        constraints.add(difficulty == 256)
+
+        coinbase = constraints.new_bitvec(256, name='coinbase')
+        constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
+
+        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        constraints.add(gaslimit == 1000000)
+
         world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
                              coinbase=coinbase, gaslimit=gaslimit)
     
         acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         acc_code = unhexlify('7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff20600055')
-        acc_balance = 100000000000000000000000
-        acc_nonce = 0
+            
+        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        constraints.add(acc_balance == 100000000000000000000000)
+
+        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = 0x5af3107a4000
-        value = 1000000000000000000
-        gas = 100000
+        price = constraints.new_bitvec(256, name='price')
+        constraints.add(price == 100000000000000)
+
+        value = constraints.new_bitvec(256, name='value')
+        constraints.add(value == 1000000000000000000)
+
+        gas = constraints.new_bitvec(256, name='gas')
+        constraints.add(gas == 100000)
+
         data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
@@ -661,7 +829,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -687,35 +855,56 @@ class EVMTest_vmSha3Test(unittest.TestCase):
                   SSTORE
         """    
     
+        solver = Z3Solver()
+
         def solve(val):
-            """
-            Those tests are **auto-generated** and `solve` is used in symbolic tests.
-            So yes, this returns just val; it makes it easier to generate tests like this.
-            """
-            return val
+            results = solver.get_all_values(constraints, val)
+            # We constrain all values to single values!
+            self.assertEqual(len(results), 1)
+            return results[0]
 
         constraints = ConstraintSet()
 
-        blocknumber = 0
-        timestamp = 1
-        difficulty = 256
-        coinbase = 244687034288125203496486448490407391986876152250
-        gaslimit = 1000000
+        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        constraints.add(blocknumber == 0)
+
+        timestamp = constraints.new_bitvec(256, name='timestamp')
+        constraints.add(timestamp == 1)
+
+        difficulty = constraints.new_bitvec(256, name='difficulty')
+        constraints.add(difficulty == 256)
+
+        coinbase = constraints.new_bitvec(256, name='coinbase')
+        constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
+
+        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        constraints.add(gaslimit == 1000000)
+
         world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
                              coinbase=coinbase, gaslimit=gaslimit)
     
         acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         acc_code = unhexlify('600161040020600055')
-        acc_balance = 115792089237316195423570985008687907853269984665640564039457584007913129639935
-        acc_nonce = 0
+            
+        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        constraints.add(acc_balance == 115792089237316195423570985008687907853269984665640564039457584007913129639935)
+
+        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = 0x1
-        value = 115792089237316195423570985008687907853269984665640564039457584007913129639935
-        gas = 4294967296
+        price = constraints.new_bitvec(256, name='price')
+        constraints.add(price == 1)
+
+        value = constraints.new_bitvec(256, name='value')
+        constraints.add(value == 115792089237316195423570985008687907853269984665640564039457584007913129639935)
+
+        gas = constraints.new_bitvec(256, name='gas')
+        constraints.add(gas == 4294967296)
+
         data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
@@ -730,7 +919,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -751,7 +940,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -770,35 +959,56 @@ class EVMTest_vmSha3Test(unittest.TestCase):
                   SSTORE
         """    
     
+        solver = Z3Solver()
+
         def solve(val):
-            """
-            Those tests are **auto-generated** and `solve` is used in symbolic tests.
-            So yes, this returns just val; it makes it easier to generate tests like this.
-            """
-            return val
+            results = solver.get_all_values(constraints, val)
+            # We constrain all values to single values!
+            self.assertEqual(len(results), 1)
+            return results[0]
 
         constraints = ConstraintSet()
 
-        blocknumber = 0
-        timestamp = 1
-        difficulty = 256
-        coinbase = 244687034288125203496486448490407391986876152250
-        gaslimit = 1000000
+        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        constraints.add(blocknumber == 0)
+
+        timestamp = constraints.new_bitvec(256, name='timestamp')
+        constraints.add(timestamp == 1)
+
+        difficulty = constraints.new_bitvec(256, name='difficulty')
+        constraints.add(difficulty == 256)
+
+        coinbase = constraints.new_bitvec(256, name='coinbase')
+        constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
+
+        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        constraints.add(gaslimit == 1000000)
+
         world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
                              coinbase=coinbase, gaslimit=gaslimit)
     
         acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         acc_code = unhexlify('60016107e020600055')
-        acc_balance = 115792089237316195423570985008687907853269984665640564039457584007913129639935
-        acc_nonce = 0
+            
+        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        constraints.add(acc_balance == 115792089237316195423570985008687907853269984665640564039457584007913129639935)
+
+        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = 0x1
-        value = 115792089237316195423570985008687907853269984665640564039457584007913129639935
-        gas = 4294967296
+        price = constraints.new_bitvec(256, name='price')
+        constraints.add(price == 1)
+
+        value = constraints.new_bitvec(256, name='value')
+        constraints.add(value == 115792089237316195423570985008687907853269984665640564039457584007913129639935)
+
+        gas = constraints.new_bitvec(256, name='gas')
+        constraints.add(gas == 4294967296)
+
         data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
@@ -813,7 +1023,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -834,7 +1044,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -853,35 +1063,56 @@ class EVMTest_vmSha3Test(unittest.TestCase):
                   SSTORE
         """    
     
+        solver = Z3Solver()
+
         def solve(val):
-            """
-            Those tests are **auto-generated** and `solve` is used in symbolic tests.
-            So yes, this returns just val; it makes it easier to generate tests like this.
-            """
-            return val
+            results = solver.get_all_values(constraints, val)
+            # We constrain all values to single values!
+            self.assertEqual(len(results), 1)
+            return results[0]
 
         constraints = ConstraintSet()
 
-        blocknumber = 0
-        timestamp = 1
-        difficulty = 256
-        coinbase = 244687034288125203496486448490407391986876152250
-        gaslimit = 1000000
+        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        constraints.add(blocknumber == 0)
+
+        timestamp = constraints.new_bitvec(256, name='timestamp')
+        constraints.add(timestamp == 1)
+
+        difficulty = constraints.new_bitvec(256, name='difficulty')
+        constraints.add(difficulty == 256)
+
+        coinbase = constraints.new_bitvec(256, name='coinbase')
+        constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
+
+        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        constraints.add(gaslimit == 1000000)
+
         world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
                              coinbase=coinbase, gaslimit=gaslimit)
     
         acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         acc_code = unhexlify('60206107e020600055')
-        acc_balance = 115792089237316195423570985008687907853269984665640564039457584007913129639935
-        acc_nonce = 0
+            
+        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        constraints.add(acc_balance == 115792089237316195423570985008687907853269984665640564039457584007913129639935)
+
+        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = 0x1
-        value = 115792089237316195423570985008687907853269984665640564039457584007913129639935
-        gas = 4294967296
+        price = constraints.new_bitvec(256, name='price')
+        constraints.add(price == 1)
+
+        value = constraints.new_bitvec(256, name='value')
+        constraints.add(value == 115792089237316195423570985008687907853269984665640564039457584007913129639935)
+
+        gas = constraints.new_bitvec(256, name='gas')
+        constraints.add(gas == 4294967296)
+
         data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
@@ -896,7 +1127,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -917,7 +1148,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -936,35 +1167,56 @@ class EVMTest_vmSha3Test(unittest.TestCase):
                   SSTORE
         """    
     
+        solver = Z3Solver()
+
         def solve(val):
-            """
-            Those tests are **auto-generated** and `solve` is used in symbolic tests.
-            So yes, this returns just val; it makes it easier to generate tests like this.
-            """
-            return val
+            results = solver.get_all_values(constraints, val)
+            # We constrain all values to single values!
+            self.assertEqual(len(results), 1)
+            return results[0]
 
         constraints = ConstraintSet()
 
-        blocknumber = 0
-        timestamp = 1
-        difficulty = 256
-        coinbase = 244687034288125203496486448490407391986876152250
-        gaslimit = 1000000
+        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        constraints.add(blocknumber == 0)
+
+        timestamp = constraints.new_bitvec(256, name='timestamp')
+        constraints.add(timestamp == 1)
+
+        difficulty = constraints.new_bitvec(256, name='difficulty')
+        constraints.add(difficulty == 256)
+
+        coinbase = constraints.new_bitvec(256, name='coinbase')
+        constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
+
+        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        constraints.add(gaslimit == 1000000)
+
         world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
                              coinbase=coinbase, gaslimit=gaslimit)
     
         acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         acc_code = unhexlify('6064640fffffffff20600055')
-        acc_balance = 100000000000000000000000
-        acc_nonce = 0
+            
+        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        constraints.add(acc_balance == 100000000000000000000000)
+
+        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = 0x5af3107a4000
-        value = 1000000000000000000
-        gas = 100000
+        price = constraints.new_bitvec(256, name='price')
+        constraints.add(price == 100000000000000)
+
+        value = constraints.new_bitvec(256, name='value')
+        constraints.add(value == 1000000000000000000)
+
+        gas = constraints.new_bitvec(256, name='gas')
+        constraints.add(gas == 100000)
+
         data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
@@ -979,7 +1231,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -1005,35 +1257,56 @@ class EVMTest_vmSha3Test(unittest.TestCase):
                   SSTORE
         """    
     
+        solver = Z3Solver()
+
         def solve(val):
-            """
-            Those tests are **auto-generated** and `solve` is used in symbolic tests.
-            So yes, this returns just val; it makes it easier to generate tests like this.
-            """
-            return val
+            results = solver.get_all_values(constraints, val)
+            # We constrain all values to single values!
+            self.assertEqual(len(results), 1)
+            return results[0]
 
         constraints = ConstraintSet()
 
-        blocknumber = 0
-        timestamp = 1
-        difficulty = 256
-        coinbase = 244687034288125203496486448490407391986876152250
-        gaslimit = 1000000
+        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        constraints.add(blocknumber == 0)
+
+        timestamp = constraints.new_bitvec(256, name='timestamp')
+        constraints.add(timestamp == 1)
+
+        difficulty = constraints.new_bitvec(256, name='difficulty')
+        constraints.add(difficulty == 256)
+
+        coinbase = constraints.new_bitvec(256, name='coinbase')
+        constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
+
+        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        constraints.add(gaslimit == 1000000)
+
         world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
                              coinbase=coinbase, gaslimit=gaslimit)
     
         acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         acc_code = unhexlify('640fffffffff61271020600055')
-        acc_balance = 100000000000000000000000
-        acc_nonce = 0
+            
+        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        constraints.add(acc_balance == 100000000000000000000000)
+
+        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = 0x5af3107a4000
-        value = 1000000000000000000
-        gas = 100000
+        price = constraints.new_bitvec(256, name='price')
+        constraints.add(price == 100000000000000)
+
+        value = constraints.new_bitvec(256, name='value')
+        constraints.add(value == 1000000000000000000)
+
+        gas = constraints.new_bitvec(256, name='gas')
+        constraints.add(gas == 100000)
+
         data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
@@ -1048,7 +1321,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -1074,35 +1347,56 @@ class EVMTest_vmSha3Test(unittest.TestCase):
                   SSTORE
         """    
     
+        solver = Z3Solver()
+
         def solve(val):
-            """
-            Those tests are **auto-generated** and `solve` is used in symbolic tests.
-            So yes, this returns just val; it makes it easier to generate tests like this.
-            """
-            return val
+            results = solver.get_all_values(constraints, val)
+            # We constrain all values to single values!
+            self.assertEqual(len(results), 1)
+            return results[0]
 
         constraints = ConstraintSet()
 
-        blocknumber = 0
-        timestamp = 1
-        difficulty = 256
-        coinbase = 244687034288125203496486448490407391986876152250
-        gaslimit = 1000000
+        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        constraints.add(blocknumber == 0)
+
+        timestamp = constraints.new_bitvec(256, name='timestamp')
+        constraints.add(timestamp == 1)
+
+        difficulty = constraints.new_bitvec(256, name='difficulty')
+        constraints.add(difficulty == 256)
+
+        coinbase = constraints.new_bitvec(256, name='coinbase')
+        constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
+
+        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        constraints.add(gaslimit == 1000000)
+
         world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
                              coinbase=coinbase, gaslimit=gaslimit)
     
         acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         acc_code = unhexlify('7effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff20600055')
-        acc_balance = 115792089237316195423570985008687907853269984665640564039457584007913129639935
-        acc_nonce = 0
+            
+        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        constraints.add(acc_balance == 115792089237316195423570985008687907853269984665640564039457584007913129639935)
+
+        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = 0x1
-        value = 115792089237316195423570985008687907853269984665640564039457584007913129639935
-        gas = 1099511627776
+        price = constraints.new_bitvec(256, name='price')
+        constraints.add(price == 1)
+
+        value = constraints.new_bitvec(256, name='value')
+        constraints.add(value == 115792089237316195423570985008687907853269984665640564039457584007913129639935)
+
+        gas = constraints.new_bitvec(256, name='gas')
+        constraints.add(gas == 1099511627776)
+
         data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
@@ -1117,7 +1411,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -1143,35 +1437,56 @@ class EVMTest_vmSha3Test(unittest.TestCase):
                   SSTORE
         """    
     
+        solver = Z3Solver()
+
         def solve(val):
-            """
-            Those tests are **auto-generated** and `solve` is used in symbolic tests.
-            So yes, this returns just val; it makes it easier to generate tests like this.
-            """
-            return val
+            results = solver.get_all_values(constraints, val)
+            # We constrain all values to single values!
+            self.assertEqual(len(results), 1)
+            return results[0]
 
         constraints = ConstraintSet()
 
-        blocknumber = 0
-        timestamp = 1
-        difficulty = 256
-        coinbase = 244687034288125203496486448490407391986876152250
-        gaslimit = 1000000
+        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        constraints.add(blocknumber == 0)
+
+        timestamp = constraints.new_bitvec(256, name='timestamp')
+        constraints.add(timestamp == 1)
+
+        difficulty = constraints.new_bitvec(256, name='difficulty')
+        constraints.add(difficulty == 256)
+
+        coinbase = constraints.new_bitvec(256, name='coinbase')
+        constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
+
+        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        constraints.add(gaslimit == 1000000)
+
         world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
                              coinbase=coinbase, gaslimit=gaslimit)
     
         acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         acc_code = unhexlify('600a600a20600055')
-        acc_balance = 100000000000000000000000
-        acc_nonce = 0
+            
+        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        constraints.add(acc_balance == 100000000000000000000000)
+
+        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = 0x5af3107a4000
-        value = 1000000000000000000
-        gas = 100000
+        price = constraints.new_bitvec(256, name='price')
+        constraints.add(price == 100000000000000)
+
+        value = constraints.new_bitvec(256, name='value')
+        constraints.add(value == 1000000000000000000)
+
+        gas = constraints.new_bitvec(256, name='gas')
+        constraints.add(gas == 100000)
+
         data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
@@ -1186,7 +1501,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -1207,7 +1522,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -1226,35 +1541,56 @@ class EVMTest_vmSha3Test(unittest.TestCase):
                   SSTORE
         """    
     
+        solver = Z3Solver()
+
         def solve(val):
-            """
-            Those tests are **auto-generated** and `solve` is used in symbolic tests.
-            So yes, this returns just val; it makes it easier to generate tests like this.
-            """
-            return val
+            results = solver.get_all_values(constraints, val)
+            # We constrain all values to single values!
+            self.assertEqual(len(results), 1)
+            return results[0]
 
         constraints = ConstraintSet()
 
-        blocknumber = 0
-        timestamp = 1
-        difficulty = 256
-        coinbase = 244687034288125203496486448490407391986876152250
-        gaslimit = 1000000
+        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        constraints.add(blocknumber == 0)
+
+        timestamp = constraints.new_bitvec(256, name='timestamp')
+        constraints.add(timestamp == 1)
+
+        difficulty = constraints.new_bitvec(256, name='difficulty')
+        constraints.add(difficulty == 256)
+
+        coinbase = constraints.new_bitvec(256, name='coinbase')
+        constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
+
+        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        constraints.add(gaslimit == 1000000)
+
         world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
                              coinbase=coinbase, gaslimit=gaslimit)
     
         acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         acc_code = unhexlify('600061040020600055')
-        acc_balance = 115792089237316195423570985008687907853269984665640564039457584007913129639935
-        acc_nonce = 0
+            
+        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        constraints.add(acc_balance == 115792089237316195423570985008687907853269984665640564039457584007913129639935)
+
+        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = 0x1
-        value = 115792089237316195423570985008687907853269984665640564039457584007913129639935
-        gas = 4294967296
+        price = constraints.new_bitvec(256, name='price')
+        constraints.add(price == 1)
+
+        value = constraints.new_bitvec(256, name='value')
+        constraints.add(value == 115792089237316195423570985008687907853269984665640564039457584007913129639935)
+
+        gas = constraints.new_bitvec(256, name='gas')
+        constraints.add(gas == 4294967296)
+
         data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
@@ -1269,7 +1605,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -1290,7 +1626,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
@@ -1309,35 +1645,56 @@ class EVMTest_vmSha3Test(unittest.TestCase):
                   SSTORE
         """    
     
+        solver = Z3Solver()
+
         def solve(val):
-            """
-            Those tests are **auto-generated** and `solve` is used in symbolic tests.
-            So yes, this returns just val; it makes it easier to generate tests like this.
-            """
-            return val
+            results = solver.get_all_values(constraints, val)
+            # We constrain all values to single values!
+            self.assertEqual(len(results), 1)
+            return results[0]
 
         constraints = ConstraintSet()
 
-        blocknumber = 0
-        timestamp = 1
-        difficulty = 256
-        coinbase = 244687034288125203496486448490407391986876152250
-        gaslimit = 1000000
+        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        constraints.add(blocknumber == 0)
+
+        timestamp = constraints.new_bitvec(256, name='timestamp')
+        constraints.add(timestamp == 1)
+
+        difficulty = constraints.new_bitvec(256, name='difficulty')
+        constraints.add(difficulty == 256)
+
+        coinbase = constraints.new_bitvec(256, name='coinbase')
+        constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
+
+        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        constraints.add(gaslimit == 1000000)
+
         world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
                              coinbase=coinbase, gaslimit=gaslimit)
     
         acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         acc_code = unhexlify('620fffff6103e820600055')
-        acc_balance = 100000000000000000000000
-        acc_nonce = 0
+            
+        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        constraints.add(acc_balance == 100000000000000000000000)
+
+        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = 0x5af3107a4000
-        value = 1000000000000000000
-        gas = 100000
+        price = constraints.new_bitvec(256, name='price')
+        constraints.add(price == 100000000000000)
+
+        value = constraints.new_bitvec(256, name='value')
+        constraints.add(value == 1000000000000000000)
+
+        gas = constraints.new_bitvec(256, name='gas')
+        constraints.add(gas == 100000)
+
         data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
@@ -1352,7 +1709,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -1378,35 +1735,56 @@ class EVMTest_vmSha3Test(unittest.TestCase):
                   SSTORE
         """    
     
+        solver = Z3Solver()
+
         def solve(val):
-            """
-            Those tests are **auto-generated** and `solve` is used in symbolic tests.
-            So yes, this returns just val; it makes it easier to generate tests like this.
-            """
-            return val
+            results = solver.get_all_values(constraints, val)
+            # We constrain all values to single values!
+            self.assertEqual(len(results), 1)
+            return results[0]
 
         constraints = ConstraintSet()
 
-        blocknumber = 0
-        timestamp = 1
-        difficulty = 256
-        coinbase = 244687034288125203496486448490407391986876152250
-        gaslimit = 1000000
+        blocknumber = constraints.new_bitvec(256, name='blocknumber')
+        constraints.add(blocknumber == 0)
+
+        timestamp = constraints.new_bitvec(256, name='timestamp')
+        constraints.add(timestamp == 1)
+
+        difficulty = constraints.new_bitvec(256, name='difficulty')
+        constraints.add(difficulty == 256)
+
+        coinbase = constraints.new_bitvec(256, name='coinbase')
+        constraints.add(coinbase == 244687034288125203496486448490407391986876152250)
+
+        gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        constraints.add(gaslimit == 1000000)
+
         world = evm.EVMWorld(constraints, blocknumber=blocknumber, timestamp=timestamp, difficulty=difficulty,
                              coinbase=coinbase, gaslimit=gaslimit)
     
         acc_addr = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         acc_code = unhexlify('6002630100000020600055')
-        acc_balance = 115792089237316195423570985008687907853269984665640564039457584007913129639935
-        acc_nonce = 0
+            
+        acc_balance = constraints.new_bitvec(256, name='balance_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        constraints.add(acc_balance == 115792089237316195423570985008687907853269984665640564039457584007913129639935)
+
+        acc_nonce = constraints.new_bitvec(256, name='nonce_0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6')
+        constraints.add(acc_nonce == 0)
 
         world.create_account(address=acc_addr, balance=acc_balance, code=acc_code, nonce=acc_nonce)
 
         address = 0xf572e5295c57f15886f9b263e2f6d2d6c7b5ec6
         caller = 0xcd1722f3947def4cf144679da39c4c32bdc35681
-        price = 0x1
-        value = 115792089237316195423570985008687907853269984665640564039457584007913129639935
-        gas = 4294967296
+        price = constraints.new_bitvec(256, name='price')
+        constraints.add(price == 1)
+
+        value = constraints.new_bitvec(256, name='value')
+        constraints.add(value == 115792089237316195423570985008687907853269984665640564039457584007913129639935)
+
+        gas = constraints.new_bitvec(256, name='gas')
+        constraints.add(gas == 4294967296)
+
         data = ''
         # open a fake tx, no funds send
         world._open_transaction('CALL', address, price, data, caller, value, gas=gas)
@@ -1421,7 +1799,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         except evm.EndTx as e:
             result = e.result
             if result in ('RETURN', 'REVERT'):
-                returndata = to_constant(e.data)
+                returndata = solve(e.data)
         except evm.StartTx as e:
             self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
 
@@ -1442,7 +1820,7 @@ class EVMTest_vmSha3Test(unittest.TestCase):
         # check outs
         self.assertEqual(returndata, unhexlify(''))
         # check logs
-        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, to_constant(l.memlog)) for l in world.logs]
+        logs = [Log(unhexlify('{:040x}'.format(l.address)), l.topics, solve(l.memlog)) for l in world.logs]
         data = rlp.encode(logs)
         self.assertEqual(sha3.keccak_256(data).hexdigest(), '1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347')
 
