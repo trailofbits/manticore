@@ -19,7 +19,8 @@ env:
   matrix:
     - TEST_TYPE=examples
     - TEST_TYPE=ethereum
-    - TEST_TYPE=ethereum_vm
+    - TEST_TYPE=VMTests_symbolic
+    - TEST_TYPE=VMTests_concrete
     - TEST_TYPE=native
     - TEST_TYPE=other
 
