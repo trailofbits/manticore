@@ -336,6 +336,27 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X0'), pc + 8)
 
 
+    # ADRP.
+
+    @itest_custom('adrp x0, .0')
+    def test_adrp_0(self):
+        pc = self.cpu.PC
+        self._execute()
+        self.assertEqual(self.rf.read('X0'), pc)
+
+    @itest_custom('adrp x0, .-0x1000')
+    def test_adrp_neg(self):
+        pc = self.cpu.PC
+        self._execute()
+        self.assertEqual(self.rf.read('X0'), pc - 0x1000)
+
+    @itest_custom('adrp x0, .+0x1000')
+    def test_adrp_pos(self):
+        pc = self.cpu.PC
+        self._execute()
+        self.assertEqual(self.rf.read('X0'), pc + 0x1000)
+
+
     # MOV (to/from SP).
 
     @itest_setregs(f"X0={MAGIC_64}")

@@ -450,6 +450,33 @@ class Aarch64Cpu(Cpu):
         imm = imm_op.op.imm  # PC + offset
         res_op.write(imm)
 
+    @instruction
+    def ADRP(cpu, res_op, imm_op):
+        """
+        ADRP.
+
+        Form PC-relative address to 4KB page adds an immediate value that is
+        shifted left by 12 bits, to the PC value to form a PC-relative address,
+        with the bottom 12 bits masked out, and writes the result to the
+        destination register.
+
+        :param res_op: destination register.
+        :param imm_op: immediate.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert imm_op.type is cs.arm64.ARM64_OP_IMM
+
+        insn_rx  = '1'         # op
+        insn_rx += '[01]{2}'   # immlo
+        insn_rx += '10000'
+        insn_rx += '[01]{19}'  # immhi
+        insn_rx += '[01]{5}'   # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        imm = imm_op.op.imm  # PC + offset
+        res_op.write(imm)
+
     def _LDR_immediate(cpu, dst, src, rest):
         """
         LDR (immediate).
