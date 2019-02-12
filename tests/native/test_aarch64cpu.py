@@ -315,6 +315,27 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W0'), 0x45464748)
 
 
+    # ADR.
+
+    @itest_custom('adr x0, .0')
+    def test_adr_0(self):
+        pc = self.cpu.PC
+        self._execute()
+        self.assertEqual(self.rf.read('X0'), pc)
+
+    @itest_custom('adr x0, .-8')
+    def test_adr_neg(self):
+        pc = self.cpu.PC
+        self._execute()
+        self.assertEqual(self.rf.read('X0'), pc - 8)
+
+    @itest_custom('adr x0, .+8')
+    def test_adr_pos(self):
+        pc = self.cpu.PC
+        self._execute()
+        self.assertEqual(self.rf.read('X0'), pc + 8)
+
+
     # MOV (to/from SP).
 
     @itest_setregs(f"X0={MAGIC_64}")
