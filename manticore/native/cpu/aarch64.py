@@ -495,7 +495,7 @@ class Aarch64Cpu(Cpu):
         :param rest: None or immediate.
         """
         assert dst.type is cs.arm64.ARM64_OP_REG
-        assert src.type is cs.arm64.ARM64_OP_MEM or cs.arm64.ARM64_OP_IMM
+        assert src.type in [cs.arm64.ARM64_OP_MEM, cs.arm64.ARM64_OP_IMM]
         assert not rest or rest.type is cs.arm64.ARM64_OP_IMM
 
         if src.type == cs.arm64.ARM64_OP_MEM:
@@ -520,7 +520,7 @@ class Aarch64Cpu(Cpu):
         :param src: source register or immediate.
         """
         assert dst.type is cs.arm64.ARM64_OP_REG
-        assert src.type is cs.arm64.ARM64_OP_REG or cs.arm64.ARM64_OP_IMM
+        assert src.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
 
         # Fake a register operand.
         zr = cs.arm64.Arm64Op()
@@ -770,7 +770,7 @@ class Aarch64Cpu(Cpu):
         """
         assert res_op.type is cs.arm64.ARM64_OP_REG
         assert op1.type    is cs.arm64.ARM64_OP_REG
-        assert op2.type    is cs.arm64.ARM64_OP_REG or cs.arm64.ARM64_OP_IMM
+        assert op2.type    in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
 
         if op2.type == cs.arm64.ARM64_OP_IMM:
             cpu._ORR_immediate(res_op, op1, op2)
