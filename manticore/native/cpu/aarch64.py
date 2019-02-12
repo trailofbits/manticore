@@ -282,8 +282,7 @@ class Aarch64Cpu(Cpu):
     # XXX: Use masking when writing to the destination register?  Avoiding this
     # for now, but the assert in the 'write' method should catch such cases.
 
-    @instruction
-    def ADD(cpu, res_op, reg_op, imm_op):
+    def _ADD_immediate(cpu, res_op, reg_op, imm_op):
         """
         ADD (immediate).
 
@@ -323,6 +322,88 @@ class Aarch64Cpu(Cpu):
 
         result = UInt(reg + imm, res_op.size)
         res_op.write(result)
+
+    def _ADD_shifted_register(cpu, res_op, reg_op1, reg_op2):
+        """
+        ADD (shifted register).
+
+        Add (shifted register) adds a register value and an optionally-shifted
+        register value, and writes the result to the destination register.
+
+        :param res_op: destination register.
+        :param reg_op1: source register.
+        :param reg_op2: source register.
+        """
+        assert res_op.type  is cs.arm64.ARM64_OP_REG
+        assert reg_op1.type is cs.arm64.ARM64_OP_REG
+        assert reg_op2.type is cs.arm64.ARM64_OP_REG
+
+        insn_rx  = '[01]'     # sf
+        insn_rx += '0'        # op
+        insn_rx += '0'        # S
+        insn_rx += '01011'
+        insn_rx += '[01]{2}'  # shift
+        insn_rx += '0'
+        insn_rx += '[01]{5}'  # Rm
+        insn_rx += '[01]{6}'  # imm6
+        insn_rx += '[01]{5}'  # Rn
+        insn_rx += '[01]{5}'  # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        reg1 = reg_op1.read()
+        reg2 = reg_op2.read()
+        reg2_size = cpu.regfile.size(reg_op2.reg)
+
+        if reg_op2.is_shifted():
+            shift = reg_op2.shift
+
+            assert (
+                (res_op.size == 32 and shift.value in range(0, 32)) or
+                (res_op.size == 64 and shift.value in range(0, 64))
+            )
+
+            if shift.type == cs.arm64.ARM64_SFT_LSL:
+                reg2 = LSL(reg2, shift.value, reg2_size)
+
+            elif shift.type == cs.arm64.ARM64_SFT_LSR:
+                reg2 = LSR(reg2, shift.value, reg2_size)
+
+            elif shift.type == cs.arm64.ARM64_SFT_ASR:
+                reg2 = ASR(reg2, shift.value, reg2_size)
+
+            else:
+                raise Aarch64InvalidInstruction
+
+        result = UInt(reg1 + reg2, res_op.size)
+        res_op.write(result)
+
+    @instruction
+    def ADD(cpu, res_op, op1, op2):
+        """
+        Combines ADD (immediate) and ADD (shifted register).
+
+        :param res_op: destination register.
+        :param op1: source register.
+        :param op2: source register or immediate.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert op1.type    is cs.arm64.ARM64_OP_REG
+        assert op2.type    in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
+
+        bit21 = cpu.insn_bit_str[-22]
+
+        if op2.type == cs.arm64.ARM64_OP_IMM:
+            cpu._ADD_immediate(res_op, op1, op2)
+
+        elif op2.type == cs.arm64.ARM64_OP_REG and bit21 == '0':
+            cpu._ADD_shifted_register(res_op, op1, op2)
+
+        # XXX: Support the extended register variant (update the docstring).
+        # elif op2.type == cs.arm64.ARM64_OP_REG and bit21 == '1':
+
+        else:
+            raise Aarch64InvalidInstruction
 
     def _LDR_immediate(cpu, dst, src, rest):
         """

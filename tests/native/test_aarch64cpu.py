@@ -188,6 +188,133 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W0'), 0x45465748)
 
 
+    # ADD (shifted register).
+
+    # 32-bit.
+
+    @itest_setregs('W1=0x41424344', 'W2=0x45464748')
+    @itest('add w0, w1, w2')
+    def test_add_sft_reg32(self):
+        self.assertEqual(self.rf.read('X0'), 0x86888a8c)
+        self.assertEqual(self.rf.read('W0'), 0x86888a8c)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x45464748')
+    @itest('add w0, w1, w2, lsl #0')
+    def test_add_sft_reg_lsl_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0x86888a8c)
+        self.assertEqual(self.rf.read('W0'), 0x86888a8c)
+
+    @itest_setregs('W1=0x41424344', 'W2=1')
+    @itest('add w0, w1, w2, lsl #31')
+    def test_add_sft_reg_lsl_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0xc1424344)
+        self.assertEqual(self.rf.read('W0'), 0xc1424344)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x45464748')
+    @itest('add w0, w1, w2, lsl #1')
+    def test_add_sft_reg_lsl32(self):
+        self.assertEqual(self.rf.read('X0'), 0xcbced1d4)
+        self.assertEqual(self.rf.read('W0'), 0xcbced1d4)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x45464748')
+    @itest('add w0, w1, w2, lsr #0')
+    def test_add_sft_reg_lsr_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0x86888a8c)
+        self.assertEqual(self.rf.read('W0'), 0x86888a8c)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x80000000')
+    @itest('add w0, w1, w2, lsr #31')
+    def test_add_sft_reg_lsr_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424345)
+        self.assertEqual(self.rf.read('W0'), 0x41424345)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x80000000')
+    @itest('add w0, w1, w2, lsr #1')
+    def test_add_sft_reg_lsr32(self):
+        self.assertEqual(self.rf.read('X0'), 0x81424344)
+        self.assertEqual(self.rf.read('W0'), 0x81424344)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x45464748')
+    @itest('add w0, w1, w2, asr #0')
+    def test_add_sft_reg_asr_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0x86888a8c)
+        self.assertEqual(self.rf.read('W0'), 0x86888a8c)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x80000000')
+    @itest('add w0, w1, w2, asr #31')
+    def test_add_sft_reg_asr_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424343)
+        self.assertEqual(self.rf.read('W0'), 0x41424343)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x80000000')
+    @itest('add w0, w1, w2, asr #1')
+    def test_add_sft_reg_asr32(self):
+        self.assertEqual(self.rf.read('X0'), 0x01424344)
+        self.assertEqual(self.rf.read('W0'), 0x01424344)
+
+    # 64-bit.
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x5152535455565758')
+    @itest('add x0, x1, x2')
+    def test_add_sft_reg64(self):
+        self.assertEqual(self.rf.read('X0'), 0x929496989a9c9ea0)
+        self.assertEqual(self.rf.read('W0'), 0x9a9c9ea0)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x5152535455565758')
+    @itest('add x0, x1, x2, lsl #0')
+    def test_add_sft_reg_lsl_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0x929496989a9c9ea0)
+        self.assertEqual(self.rf.read('W0'), 0x9a9c9ea0)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=1')
+    @itest('add x0, x1, x2, lsl #63')
+    def test_add_sft_reg_lsl_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0xc142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x5152535455565758')
+    @itest('add x0, x1, x2, lsl #1')
+    def test_add_sft_reg_lsl64(self):
+        self.assertEqual(self.rf.read('X0'), 0xe3e6e9eceff2f5f8)
+        self.assertEqual(self.rf.read('W0'), 0xeff2f5f8)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x5152535455565758')
+    @itest('add x0, x1, x2, lsr #0')
+    def test_add_sft_reg_lsr_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0x929496989a9c9ea0)
+        self.assertEqual(self.rf.read('W0'), 0x9a9c9ea0)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x8000000000000000')
+    @itest('add x0, x1, x2, lsr #63')
+    def test_add_sft_reg_lsr_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464749)
+        self.assertEqual(self.rf.read('W0'), 0x45464749)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x8000000000000000')
+    @itest('add x0, x1, x2, lsr #1')
+    def test_add_sft_reg_lsr64(self):
+        self.assertEqual(self.rf.read('X0'), 0x8142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x5152535455565758')
+    @itest('add x0, x1, x2, asr #0')
+    def test_add_sft_reg_asr_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0x929496989a9c9ea0)
+        self.assertEqual(self.rf.read('W0'), 0x9a9c9ea0)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x8000000000000000')
+    @itest('add x0, x1, x2, asr #63')
+    def test_add_sft_reg_asr_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464747)
+        self.assertEqual(self.rf.read('W0'), 0x45464747)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x8000000000000000')
+    @itest('add x0, x1, x2, asr #1')
+    def test_add_sft_reg_asr64(self):
+        self.assertEqual(self.rf.read('X0'), 0x0142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+
     # MOV (to/from SP).
 
     @itest_setregs(f"X0={MAGIC_64}")
