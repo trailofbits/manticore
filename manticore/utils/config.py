@@ -47,6 +47,13 @@ class _Group:
     And then use their value in the code as:
         group.some_var
 
+    Can also be used with a `with-statement context` so it would revert the value, e.g.:
+    group.var = 100
+    with group.temp_vals():
+        group.var = 123
+        # group.var is 123 for the time of with statement
+    # group.var is back to 100
+
     Note that it is not recommended to use it as a default argument value for a function as it will be evaluated once.
     Also don't forget that a given variable can be set through CLI or .yaml file!
     (see config.py)
@@ -114,9 +121,10 @@ class _Group:
         return self._vars[name]
 
     def __getattr__(self, name):
-        if name not in self._vars:
+        try:
+            return self._vars[name].value
+        except KeyError:
             raise AttributeError(f"Group '{self.name}' has no variable '{name}'")
-        return self._vars[name].value
 
     def __setattr__(self, name, new_value):
         self._vars[name].value = new_value
@@ -126,6 +134,46 @@ class _Group:
 
     def __contains__(self, key):
         return key in self._vars
+
+    def temp_vals(self) -> "_TemporaryGroup":
+        """
+        Returns a contextmanager that can be used to set temporary config variables.
+        E.g.:
+        group.var = 123
+
+        with group.temp_vals():
+            group.var = 456
+            # var is 456
+
+        # group.var is back to 123
+        """
+        return _TemporaryGroup(self)
+
+
+class _TemporaryGroup:
+    def __init__(self, group: _Group):
+        object.__setattr__(self, '_group', group)
+        object.__setattr__(self, '_entered', False)
+        object.__setattr__(self, '_saved', {k: v.value for k, v in group._vars.items()})
+
+    def __getattr__(self, item):
+        return getattr(self._grp, item)
+
+    def __setattr__(self, key, value):
+        if self._entered and key not in self._saved:
+            self._saved[key] = getattr(self._group, key).value
+
+    def __enter__(self):
+        if self._entered is True:
+            raise ConfigError("Can't use temporary group recursively!")
+
+        object.__setattr__(self, '_entered', True)
+
+    def __exit__(self, *_):
+        for k in self._saved:
+            setattr(self._group, k, self._saved[k])
+
+        object.__setattr__(self, '_entered', False)
 
 
 def get_group(name: str) -> _Group:

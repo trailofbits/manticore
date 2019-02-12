@@ -902,12 +902,12 @@ class EVM(Eventful):
             assert instruction.pushes == 0
             assert result is None
 
-    def _calculate_extra_gas(self, *arguments):
+    def _calculate_gas(self, *arguments):
         current = self.instruction
         implementation = getattr(self, f"{current.semantics}_gas", None)
         if implementation is None:
-            return 0
-        return implementation(*arguments)
+            return current.fee
+        return current.fee + implementation(*arguments)
 
     def _handler(self, *arguments):
         current = self.instruction
@@ -933,7 +933,7 @@ class EVM(Eventful):
             #FIXME Not clear which exception should trigger first. OOG or insuficient stack
             # this could raise an insuficient stack exception
             arguments = self._pop_arguments()
-            fee = instruction.fee + self._calculate_extra_gas(*arguments)
+            fee = self._calculate_gas(*arguments)
             self._checkpoint_data = (pc, old_gas, instruction, arguments, fee, allocated)
         return self._checkpoint_data
 
@@ -972,7 +972,10 @@ class EVM(Eventful):
 
         if should_check_jumpdest:
             self._check_jumpdest = False
-            if self.pc not in self._valid_jumpdests:
+
+            pc = self.pc.value if isinstance(self.pc, Constant) else self.pc
+
+            if pc not in self._valid_jumpdests:
                 raise InvalidOpcode()
 
     def _advance(self, result=None, exception=False):
@@ -2023,6 +2026,7 @@ class EVMWorld(Platform):
         else:
             self._deleted_accounts = deleted_accounts
 
+            #FIXME: BUG: a CREATE can be succesfull and still return an empty contract :shrug:
             if not issymbolic(tx.caller) and (tx.sort == 'CREATE' or not self._world_state[tx.caller]['code']):
                 # Increment the nonce if this transaction created a contract, or if it was called by a non-contract account
                 self.increase_nonce(tx.caller)
@@ -2426,7 +2430,7 @@ class EVMWorld(Platform):
 
         return address
 
-    def create_contract(self, price=0, address=None, caller=None, balance=0, init=None, gas=2300):
+    def create_contract(self, price=0, address=None, caller=None, balance=0, init=None, gas=None):
         """
         Create a contract account. Sends a transaction to initialize the contract
 

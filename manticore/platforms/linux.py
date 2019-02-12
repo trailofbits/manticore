@@ -1248,18 +1248,16 @@ class Linux(Platform):
                        SEEK_CUR: The file offset is set to its current location plus offset bytes.
                        SEEK_END: The file offset is set to the size of the file plus offset bytes.
 
-        :return: 0 (Success), or EBADF (fd is not a valid file descriptor or is not open)
+        :return: offset from file beginning, or EBADF (fd is not a valid file descriptor or is not open)
 
         '''
         signed_offset = self._to_signed_dword(offset)
         try:
-            self._get_fd(fd).seek(signed_offset, whence)
+            return self._get_fd(fd).seek(signed_offset, whence)
         except FdError as e:
             logger.info(("LSEEK: Not valid file descriptor on lseek."
                          "Fd not seekable. Returning EBADF"))
             return -e.err
-
-        return 0
 
     def sys_read(self, fd, buf, count):
         data: bytes = bytes()
