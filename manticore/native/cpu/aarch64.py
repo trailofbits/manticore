@@ -477,6 +477,27 @@ class Aarch64Cpu(Cpu):
         imm = imm_op.op.imm  # PC + offset
         res_op.write(imm)
 
+    @instruction
+    def B(cpu, imm_op):
+        """
+        B.
+
+        Branch causes an unconditional branch to a label at a PC-relative
+        offset, with a hint that this is not a subroutine call or return.
+
+        :param imm_op: immediate.
+        """
+        assert imm_op.type is cs.arm64.ARM64_OP_IMM
+
+        insn_rx  = '0'         # op
+        insn_rx += '00101'
+        insn_rx += '[01]{26}'  # imm26
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        imm = imm_op.op.imm
+        cpu.PC = imm
+
     def _LDR_immediate(cpu, dst, src, rest):
         """
         LDR (immediate).

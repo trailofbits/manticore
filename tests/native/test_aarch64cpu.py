@@ -9,7 +9,7 @@ from manticore.native.memory import SMemory64, Memory64
 from manticore.native.cpu.aarch64 import Aarch64Cpu as Cpu
 from manticore.native.cpu.bitwise import LSL
 from manticore.utils.emulate import UnicornEmulator
-from .test_armv7cpu import itest_custom, itest_setregs
+from .test_armv7cpu import itest_setregs
 from .test_aarch64rf import MAGIC_64, MAGIC_32
 
 ks = Ks(KS_ARCH_ARM64, KS_MODE_LITTLE_ENDIAN)
@@ -38,12 +38,28 @@ def itest(asm):
     return instr_dec
 
 
-def itest_multiple(asms):
+def itest_custom(asms, multiple_insts=False):
+    def instr_dec(custom_func):
+        @wraps(custom_func)
+        def wrapper(self):
+            self._setupCpu(
+                asms,
+                mode=CS_MODE_ARM,
+                multiple_insts=multiple_insts
+            )
+            custom_func(self)
+
+        return wrapper
+
+    return instr_dec
+
+
+def itest_multiple(asms, count=None):
     def instr_dec(assertions_func):
         @wraps(assertions_func)
         def wrapper(self):
             self._setupCpu(asms, mode=CS_MODE_ARM, multiple_insts=True)
-            for i in range(len(asms)):
+            for i in range(count if count else len(asms)):
                 self._execute()
             assertions_func(self)
 
@@ -355,6 +371,26 @@ class Aarch64Instructions:
         pc = self.cpu.PC
         self._execute()
         self.assertEqual(self.rf.read('X0'), pc + 0x1000)
+
+
+    # B.
+
+    # Jump over the second instruction.  Specify 'count', so it doesn't attempt
+    # to execute beyond valid code.
+    @itest_multiple(['b .+8', 'mov x1, 42', 'mov x2, 43'], count=2)
+    def test_b_pos(self):
+        self.assertEqual(self.rf.read('X1'), 0)
+        self.assertEqual(self.rf.read('X2'), 43)
+
+    # Jump two instructions back.
+    @itest_custom(['mov x1, 42', 'mov x2, 43', 'b .-8'], multiple_insts=True)
+    def test_b_neg(self):
+        self.cpu.PC += 8  # start at 'b'
+        # Execute just two instructions, so it doesn't loop indefinitely.
+        self._execute()
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 42)
+        self.assertEqual(self.rf.read('X2'), 0)
 
 
     # MOV (to/from SP).
