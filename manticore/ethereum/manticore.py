@@ -768,7 +768,7 @@ class ManticoreEVM(ManticoreBase):
 
         if isinstance(code, str):
             code = bytes(code, "utf-8")
-        if code is not None and not isinstance(code, (bytearray, Array)):
+        if code is not None and not isinstance(code, (bytes, Array)):
             raise EthereumError("code bad type")
 
         # Address check
