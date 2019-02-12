@@ -560,6 +560,16 @@ class EthTests(unittest.TestCase):
         # is actually deleted at the end of the human tx
         self.assertEqual(ABI.deserialize('uint', to_constant(self.mevm.world.transactions[-1].return_data)), 42)
 
+    def test_create_bytecode_contract(self):
+        account = self.mevm.create_account(code="0x00AAFF")
+        self.assertIsNotNone(account)
+
+        account = self.mevm.create_account(code=bytes("0x00AAFF","utf-8"))
+        self.assertIsNotNone(account)
+
+        with self.assertRaises(EthereumError) as ctx:
+            self.mevm.create_account(code=bytearray("0x00AAFF", "utf-8"))
+
     def test_states_querying_1325(self):
         """
         Tests issue 1325.
