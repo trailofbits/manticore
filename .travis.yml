@@ -21,6 +21,7 @@ env:
     - TEST_TYPE=ethereum
     - TEST_TYPE=VMTests_symbolic
     - TEST_TYPE=VMTests_symbolic2
+    - TEST_TYPE=VMTests_symbolic3
     - TEST_TYPE=VMTests_concrete
     - TEST_TYPE=native
     - TEST_TYPE=other
