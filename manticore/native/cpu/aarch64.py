@@ -282,6 +282,41 @@ class Aarch64Cpu(Cpu):
     # XXX: Use masking when writing to the destination register?  Avoiding this
     # for now, but the assert in the 'write' method should catch such cases.
 
+    def _shifted_register(cpu, res_op, reg_op1, reg_op2, action, shifts):
+        reg1 = reg_op1.read()
+        reg2 = reg_op2.read()
+        reg2_size = cpu.regfile.size(reg_op2.reg)
+
+        if reg_op2.is_shifted():
+            shift = reg_op2.shift
+
+            assert (
+                (res_op.size == 32 and shift.value in range(0, 32)) or
+                (res_op.size == 64 and shift.value in range(0, 64))
+            )
+
+            if (shift.type == cs.arm64.ARM64_SFT_LSL and
+                shift.type in shifts):
+                reg2 = LSL(reg2, shift.value, reg2_size)
+
+            elif (shift.type == cs.arm64.ARM64_SFT_LSR and
+                  shift.type in shifts):
+                reg2 = LSR(reg2, shift.value, reg2_size)
+
+            elif (shift.type == cs.arm64.ARM64_SFT_ASR and
+                  shift.type in shifts):
+                reg2 = ASR(reg2, shift.value, reg2_size)
+
+            elif (shift.type == cs.arm64.ARM64_SFT_ROR and
+                  shift.type in shifts):
+                reg2 = ROR(reg2, shift.value, reg2_size)
+
+            else:
+                raise Aarch64InvalidInstruction
+
+        result = UInt(action(reg1, reg2), res_op.size)
+        res_op.write(result)
+
     def _ADD_immediate(cpu, res_op, reg_op, imm_op):
         """
         ADD (immediate).
@@ -351,32 +386,16 @@ class Aarch64Cpu(Cpu):
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
-        reg1 = reg_op1.read()
-        reg2 = reg_op2.read()
-        reg2_size = cpu.regfile.size(reg_op2.reg)
-
-        if reg_op2.is_shifted():
-            shift = reg_op2.shift
-
-            assert (
-                (res_op.size == 32 and shift.value in range(0, 32)) or
-                (res_op.size == 64 and shift.value in range(0, 64))
-            )
-
-            if shift.type == cs.arm64.ARM64_SFT_LSL:
-                reg2 = LSL(reg2, shift.value, reg2_size)
-
-            elif shift.type == cs.arm64.ARM64_SFT_LSR:
-                reg2 = LSR(reg2, shift.value, reg2_size)
-
-            elif shift.type == cs.arm64.ARM64_SFT_ASR:
-                reg2 = ASR(reg2, shift.value, reg2_size)
-
-            else:
-                raise Aarch64InvalidInstruction
-
-        result = UInt(reg1 + reg2, res_op.size)
-        res_op.write(result)
+        cpu._shifted_register(
+            res_op = res_op,
+            reg_op1 = reg_op1,
+            reg_op2 = reg_op2,
+            action = lambda x, y: x + y,
+            shifts = [
+                cs.arm64.ARM64_SFT_LSL,
+                cs.arm64.ARM64_SFT_LSR,
+                cs.arm64.ARM64_SFT_ASR
+            ])
 
     @instruction
     def ADD(cpu, res_op, op1, op2):
@@ -810,35 +829,17 @@ class Aarch64Cpu(Cpu):
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
-        reg1 = reg_op1.read()
-        reg2 = reg_op2.read()
-        reg2_size = cpu.regfile.size(reg_op2.reg)
-
-        if reg_op2.is_shifted():
-            shift = reg_op2.shift
-
-            assert (
-                (res_op.size == 32 and shift.value in range(0, 32)) or
-                (res_op.size == 64 and shift.value in range(0, 64))
-            )
-
-            if shift.type == cs.arm64.ARM64_SFT_LSL:
-                reg2 = LSL(reg2, shift.value, reg2_size)
-
-            elif shift.type == cs.arm64.ARM64_SFT_LSR:
-                reg2 = LSR(reg2, shift.value, reg2_size)
-
-            elif shift.type == cs.arm64.ARM64_SFT_ASR:
-                reg2 = ASR(reg2, shift.value, reg2_size)
-
-            elif shift.type == cs.arm64.ARM64_SFT_ROR:
-                reg2 = ROR(reg2, shift.value, reg2_size)
-
-            else:
-                raise Aarch64InvalidInstruction
-
-        result = UInt(reg1 | reg2, res_op.size)
-        res_op.write(result)
+        cpu._shifted_register(
+            res_op = res_op,
+            reg_op1 = reg_op1,
+            reg_op2 = reg_op2,
+            action = lambda x, y: x | y,
+            shifts = [
+                cs.arm64.ARM64_SFT_LSL,
+                cs.arm64.ARM64_SFT_LSR,
+                cs.arm64.ARM64_SFT_ASR,
+                cs.arm64.ARM64_SFT_ROR
+            ])
 
     @instruction
     def ORR(cpu, res_op, op1, op2):
