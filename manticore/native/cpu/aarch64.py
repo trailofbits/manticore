@@ -538,6 +538,27 @@ class Aarch64Cpu(Cpu):
                 cs.arm64.ARM64_SFT_ROR
             ])
 
+    def BL(cpu, imm_op):
+        """
+        BL.
+
+        Branch with Link branches to a PC-relative offset, setting the register
+        X30 to PC+4.  It provides a hint that this is a subroutine call.
+
+        :param imm_op: immediate.
+        """
+        assert imm_op.type is cs.arm64.ARM64_OP_IMM
+
+        insn_rx  = '1'         # op
+        insn_rx += '00101'
+        insn_rx += '[01]{26}'  # imm26
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        imm = imm_op.op.imm
+        cpu.X30 = cpu.PC + 4
+        cpu.PC = imm
+
     def _LDR_immediate(cpu, dst, src, rest):
         """
         LDR (immediate).

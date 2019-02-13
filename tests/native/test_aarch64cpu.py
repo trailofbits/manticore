@@ -556,6 +556,37 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W0'), 0x5464748)
 
 
+    # BL.
+
+    # Jump over the second instruction.
+    @itest_custom(['bl .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
+    def test_bl_pos(self):
+        pc = self.cpu.PC
+        # Execute just two instructions, so it doesn't attempt to run beyond
+        # valid code.
+        self._execute()
+        self.assertEqual(self.rf.read('PC'), pc + 8)
+        self.assertEqual(self.rf.read('LR'), pc + 4)
+        self.assertEqual(self.rf.read('X30'), pc + 4)
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0)
+        self.assertEqual(self.rf.read('X2'), 43)
+
+    # Jump two instructions back.
+    @itest_custom(['mov x1, 42', 'mov x2, 43', 'bl .-8'], multiple_insts=True)
+    def test_bl_neg(self):
+        self.cpu.PC += 8  # start at 'bl'
+        pc = self.cpu.PC
+        # Execute just two instructions, so it doesn't loop indefinitely.
+        self._execute()
+        self.assertEqual(self.rf.read('PC'), pc - 8)
+        self.assertEqual(self.rf.read('LR'), pc + 4)
+        self.assertEqual(self.rf.read('X30'), pc + 4)
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 42)
+        self.assertEqual(self.rf.read('X2'), 0)
+
+
     # MOV (to/from SP).
 
     @itest_setregs(f"X0={MAGIC_64}")
