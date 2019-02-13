@@ -498,6 +498,46 @@ class Aarch64Cpu(Cpu):
         imm = imm_op.op.imm
         cpu.PC = imm
 
+    def BIC(cpu, res_op, reg_op1, reg_op2):
+        """
+        BIC (shifted register).
+
+        Bitwise Bit Clear (shifted register) performs a bitwise AND of a
+        register value and the complement of an optionally-shifted register
+        value, and writes the result to the destination register.
+
+        :param res_op: destination register.
+        :param reg_op1: source register.
+        :param reg_op2: source register.
+        """
+        assert res_op.type  is cs.arm64.ARM64_OP_REG
+        assert reg_op1.type is cs.arm64.ARM64_OP_REG
+        assert reg_op2.type is cs.arm64.ARM64_OP_REG
+
+        insn_rx  = '[01]'
+        insn_rx += '00'       # opc
+        insn_rx += '01010'
+        insn_rx += '[01]{2}'  # shift
+        insn_rx += '1'        # N
+        insn_rx += '[01]{5}'  # Rm
+        insn_rx += '[01]{6}'  # imm6
+        insn_rx += '[01]{5}'  # Rn
+        insn_rx += '[01]{5}'  # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        cpu._shifted_register(
+            res_op = res_op,
+            reg_op1 = reg_op1,
+            reg_op2 = reg_op2,
+            action = lambda x, y: x & ~y,
+            shifts = [
+                cs.arm64.ARM64_SFT_LSL,
+                cs.arm64.ARM64_SFT_LSR,
+                cs.arm64.ARM64_SFT_ASR,
+                cs.arm64.ARM64_SFT_ROR
+            ])
+
     def _LDR_immediate(cpu, dst, src, rest):
         """
         LDR (immediate).

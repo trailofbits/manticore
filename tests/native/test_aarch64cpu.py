@@ -393,6 +393,169 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X2'), 0)
 
 
+    # BIC (shifted register).
+
+    # 32-bit.
+
+    @itest_setregs('W1=0x41424344', 'W2=0xffff0000')
+    @itest('bic w0, w1, w2')
+    def test_bic32(self):
+        self.assertEqual(self.rf.read('X0'), 0x4344)
+        self.assertEqual(self.rf.read('W0'), 0x4344)
+
+    @itest_setregs('W1=0x41424344', 'W2=0xffff0000')
+    @itest('bic w0, w1, w2, lsl #0')
+    def test_bic_lsl_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0x4344)
+        self.assertEqual(self.rf.read('W0'), 0x4344)
+
+    @itest_setregs('W1=0xf1424344', 'W2=1')
+    @itest('bic w0, w1, w2, lsl #31')
+    def test_bic_lsl_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0x71424344)
+        self.assertEqual(self.rf.read('W0'), 0x71424344)
+
+    @itest_setregs('W1=0x41424344', 'W2=0xffff000')
+    @itest('bic w0, w1, w2, lsl #4')
+    def test_bic_lsl32(self):
+        self.assertEqual(self.rf.read('X0'), 0x4344)
+        self.assertEqual(self.rf.read('W0'), 0x4344)
+
+    @itest_setregs('W1=0x41424344', 'W2=0xffff0000')
+    @itest('bic w0, w1, w2, lsr #0')
+    def test_bic_lsr_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0x4344)
+        self.assertEqual(self.rf.read('W0'), 0x4344)
+
+    @itest_setregs('W1=0x4142434f', 'W2=0x80000000')
+    @itest('bic w0, w1, w2, lsr #31')
+    def test_bic_lsr_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434e)
+        self.assertEqual(self.rf.read('W0'), 0x4142434e)
+
+    @itest_setregs('W1=0x41424344', 'W2=0xffff0000')
+    @itest('bic w0, w1, w2, lsr #4')
+    def test_bic_lsr32(self):
+        self.assertEqual(self.rf.read('X0'), 0x40000344)
+        self.assertEqual(self.rf.read('W0'), 0x40000344)
+
+    @itest_setregs('W1=0x41424344', 'W2=0xffff0000')
+    @itest('bic w0, w1, w2, asr #0')
+    def test_bic_asr_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0x4344)
+        self.assertEqual(self.rf.read('W0'), 0x4344)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x80000000')
+    @itest('bic w0, w1, w2, asr #31')
+    def test_bic_asr_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs('W1=0x41424344', 'W2=0xf0000000')
+    @itest('bic w0, w1, w2, asr #4')
+    def test_bic_asr32(self):
+        self.assertEqual(self.rf.read('X0'), 0x424344)
+        self.assertEqual(self.rf.read('W0'), 0x424344)
+
+    @itest_setregs('W1=0x41424344', 'W2=0xffff0000')
+    @itest('bic w0, w1, w2, ror #0')
+    def test_bic_ror_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0x4344)
+        self.assertEqual(self.rf.read('W0'), 0x4344)
+
+    @itest_setregs('W1=0x4142434f', 'W2=0x80000001')
+    @itest('bic w0, w1, w2, ror #31')
+    def test_bic_ror_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434c)
+        self.assertEqual(self.rf.read('W0'), 0x4142434c)
+
+    @itest_setregs('W1=0x41424344', 'W2=0xffff000f')
+    @itest('bic w0, w1, w2, ror #4')
+    def test_bic_ror32(self):
+        self.assertEqual(self.rf.read('X0'), 0x344)
+        self.assertEqual(self.rf.read('W0'), 0x344)
+
+    # 64-bit.
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0xffffffff00000000')
+    @itest('bic x0, x1, x2')
+    def test_bic64(self):
+        self.assertEqual(self.rf.read('X0'), 0x45464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0xffffffff00000000')
+    @itest('bic x0, x1, x2, lsl #0')
+    def test_bic_lsl_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0x45464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @itest_setregs('X1=0xf142434445464748', 'X2=1')
+    @itest('bic x0, x1, x2, lsl #63')
+    def test_bic_lsl_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0x7142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0xffffffff0000000')
+    @itest('bic x0, x1, x2, lsl #4')
+    def test_bic_lsl64(self):
+        self.assertEqual(self.rf.read('X0'), 0x45464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0xffffffff00000000')
+    @itest('bic x0, x1, x2, lsr #0')
+    def test_bic_lsr_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0x45464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @itest_setregs('X1=0x414243444546474f', 'X2=0x8000000000000000')
+    @itest('bic x0, x1, x2, lsr #63')
+    def test_bic_lsr_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0x414243444546474e)
+        self.assertEqual(self.rf.read('W0'), 0x4546474e)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0xffffffff00000000')
+    @itest('bic x0, x1, x2, lsr #4')
+    def test_bic_lsr64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4000000005464748)
+        self.assertEqual(self.rf.read('W0'), 0x5464748)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0xffffffff00000000')
+    @itest('bic x0, x1, x2, asr #0')
+    def test_bic_asr_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0x45464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x8000000000000000')
+    @itest('bic x0, x1, x2, asr #63')
+    def test_bic_asr_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0xf000000000000000')
+    @itest('bic x0, x1, x2, asr #4')
+    def test_bic_asr64(self):
+        self.assertEqual(self.rf.read('X0'), 0x42434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0xffffffff00000000')
+    @itest('bic x0, x1, x2, ror #0')
+    def test_bic_ror_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0x45464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @itest_setregs('X1=0x414243444546474f', 'X2=0x8000000000000001')
+    @itest('bic x0, x1, x2, ror #63')
+    def test_bic_ror_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0x414243444546474c)
+        self.assertEqual(self.rf.read('W0'), 0x4546474c)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0xffffffff0000000f')
+    @itest('bic x0, x1, x2, ror #4')
+    def test_bic_ror64(self):
+        self.assertEqual(self.rf.read('X0'), 0x5464748)
+        self.assertEqual(self.rf.read('W0'), 0x5464748)
+
+
     # MOV (to/from SP).
 
     @itest_setregs(f"X0={MAGIC_64}")
