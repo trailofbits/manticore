@@ -498,6 +498,7 @@ class Aarch64Cpu(Cpu):
         imm = imm_op.op.imm
         cpu.PC = imm
 
+    @instruction
     def BIC(cpu, res_op, reg_op1, reg_op2):
         """
         BIC (shifted register).
@@ -538,6 +539,7 @@ class Aarch64Cpu(Cpu):
                 cs.arm64.ARM64_SFT_ROR
             ])
 
+    @instruction
     def BL(cpu, imm_op):
         """
         BL.
@@ -556,9 +558,11 @@ class Aarch64Cpu(Cpu):
         assert re.match(insn_rx, cpu.insn_bit_str)
 
         imm = imm_op.op.imm
-        cpu.X30 = cpu.PC + 4
+        # The 'instruction' decorator makes PC point to the next instruction.
+        cpu.X30 = cpu.PC
         cpu.PC = imm
 
+    @instruction
     def BLR(cpu, reg_op):
         """
         BLR.
@@ -584,9 +588,11 @@ class Aarch64Cpu(Cpu):
         assert re.match(insn_rx, cpu.insn_bit_str)
 
         reg = reg_op.read()
-        cpu.X30 = cpu.PC + 4
+        # The 'instruction' decorator makes PC point to the next instruction.
+        cpu.X30 = cpu.PC
         cpu.PC = reg
 
+    @instruction
     def BR(cpu, reg_op):
         """
         BR.

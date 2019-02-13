@@ -381,7 +381,7 @@ class Aarch64Instructions:
         pc = self.cpu.PC
         # Execute just two instructions, so it doesn't attempt to run beyond
         # valid code.
-        self._execute()
+        self._execute(check_pc=False)
         self.assertEqual(self.rf.read('PC'), pc + 8)
         self.assertEqual(self.rf.read('LR'), 0)
         self.assertEqual(self.rf.read('X30'), 0)
@@ -395,7 +395,7 @@ class Aarch64Instructions:
         self.cpu.PC += 8  # start at 'b'
         pc = self.cpu.PC
         # Execute just two instructions, so it doesn't loop indefinitely.
-        self._execute()
+        self._execute(check_pc=False)
         self.assertEqual(self.rf.read('PC'), pc - 8)
         self.assertEqual(self.rf.read('LR'), 0)
         self.assertEqual(self.rf.read('X30'), 0)
@@ -575,7 +575,7 @@ class Aarch64Instructions:
         pc = self.cpu.PC
         # Execute just two instructions, so it doesn't attempt to run beyond
         # valid code.
-        self._execute()
+        self._execute(check_pc=False)
         self.assertEqual(self.rf.read('PC'), pc + 8)
         self.assertEqual(self.rf.read('LR'), pc + 4)
         self.assertEqual(self.rf.read('X30'), pc + 4)
@@ -589,7 +589,7 @@ class Aarch64Instructions:
         self.cpu.PC += 8  # start at 'bl'
         pc = self.cpu.PC
         # Execute just two instructions, so it doesn't loop indefinitely.
-        self._execute()
+        self._execute(check_pc=False)
         self.assertEqual(self.rf.read('PC'), pc - 8)
         self.assertEqual(self.rf.read('LR'), pc + 4)
         self.assertEqual(self.rf.read('X30'), pc + 4)
@@ -607,7 +607,7 @@ class Aarch64Instructions:
         self.cpu.X0 = pc + 8
         # Execute just two instructions, so it doesn't attempt to run beyond
         # valid code.
-        self._execute()
+        self._execute(check_pc=False)
         self.assertEqual(self.rf.read('PC'), pc + 8)
         self.assertEqual(self.rf.read('LR'), pc + 4)
         self.assertEqual(self.rf.read('X30'), pc + 4)
@@ -622,7 +622,7 @@ class Aarch64Instructions:
         pc = self.cpu.PC
         self.cpu.X0 = pc - 8
         # Execute just two instructions, so it doesn't loop indefinitely.
-        self._execute()
+        self._execute(check_pc=False)
         self.assertEqual(self.rf.read('PC'), pc - 8)
         self.assertEqual(self.rf.read('LR'), pc + 4)
         self.assertEqual(self.rf.read('X30'), pc + 4)
@@ -640,7 +640,7 @@ class Aarch64Instructions:
         self.cpu.X0 = pc + 8
         # Execute just two instructions, so it doesn't attempt to run beyond
         # valid code.
-        self._execute()
+        self._execute(check_pc=False)
         self.assertEqual(self.rf.read('PC'), pc + 8)
         self.assertEqual(self.rf.read('LR'), 0)
         self.assertEqual(self.rf.read('X30'), 0)
@@ -655,7 +655,7 @@ class Aarch64Instructions:
         pc = self.cpu.PC
         self.cpu.X0 = pc - 8
         # Execute just two instructions, so it doesn't loop indefinitely.
-        self._execute()
+        self._execute(check_pc=False)
         self.assertEqual(self.rf.read('PC'), pc - 8)
         self.assertEqual(self.rf.read('LR'), 0)
         self.assertEqual(self.rf.read('X30'), 0)
@@ -1503,8 +1503,11 @@ class Aarch64CpuInstructions(unittest.TestCase, Aarch64Instructions):
         self.mem = self.cpu.memory
         self.rf = self.cpu.regfile
 
-    def _execute(self):
+    def _execute(self, check_pc=True):
+        pc = self.cpu.PC
         self.cpu.execute()
+        if check_pc:
+            self.assertEqual(self.cpu.PC, pc + 4)
 
 
 class Aarch64UnicornInstructions(unittest.TestCase, Aarch64Instructions):
@@ -1523,7 +1526,10 @@ class Aarch64UnicornInstructions(unittest.TestCase, Aarch64Instructions):
         # Map the stack.
         self.emu._create_emulated_mapping(self.emu._emu, self.cpu.STACK)
 
-    def _execute(self):
+    def _execute(self, check_pc=True):
         # XXX: Based on the Armv7 test code.
-        self.cpu.decode_instruction(self.cpu.PC)
+        pc = self.cpu.PC
+        self.cpu.decode_instruction(pc)
         self.emu.emulate(self.cpu.instruction)
+        if check_pc:
+            self.assertEqual(self.cpu.PC, pc + 4)
