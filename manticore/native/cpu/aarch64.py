@@ -559,6 +559,34 @@ class Aarch64Cpu(Cpu):
         cpu.X30 = cpu.PC + 4
         cpu.PC = imm
 
+    def BLR(cpu, reg_op):
+        """
+        BLR.
+
+        Branch with Link to Register calls a subroutine at an address in a
+        register, setting register X30 to PC+4.
+
+        :param reg_op: register.
+        """
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+
+        insn_rx  = '1101011'
+        insn_rx += '0'        # Z
+        insn_rx += '0'
+        insn_rx += '01'       # op
+        insn_rx += '1{5}'
+        insn_rx += '0{4}'
+        insn_rx += '0'        # A
+        insn_rx += '0'        # M
+        insn_rx += '[01]{5}'  # Rn
+        insn_rx += '0{5}'     # Rm
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        reg = reg_op.read()
+        cpu.X30 = cpu.PC + 4
+        cpu.PC = reg
+
     def _LDR_immediate(cpu, dst, src, rest):
         """
         LDR (immediate).
