@@ -587,6 +587,33 @@ class Aarch64Cpu(Cpu):
         cpu.X30 = cpu.PC + 4
         cpu.PC = reg
 
+    def BR(cpu, reg_op):
+        """
+        BR.
+
+        Branch to Register branches unconditionally to an address in a register,
+        with a hint that this is not a subroutine return.
+
+        :param reg_op: register.
+        """
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+
+        insn_rx  = '1101011'
+        insn_rx += '0'        # Z
+        insn_rx += '0'
+        insn_rx += '00'       # op
+        insn_rx += '1{5}'
+        insn_rx += '0{4}'
+        insn_rx += '0'        # A
+        insn_rx += '0'        # M
+        insn_rx += '[01]{5}'  # Rn
+        insn_rx += '0{5}'     # Rm
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        reg = reg_op.read()
+        cpu.PC = reg
+
     def _LDR_immediate(cpu, dst, src, rest):
         """
         LDR (immediate).
