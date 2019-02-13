@@ -375,10 +375,17 @@ class Aarch64Instructions:
 
     # B.
 
-    # Jump over the second instruction.  Specify 'count', so it doesn't attempt
-    # to execute beyond valid code.
-    @itest_multiple(['b .+8', 'mov x1, 42', 'mov x2, 43'], count=2)
+    # Jump over the second instruction.
+    @itest_custom(['b .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
     def test_b_pos(self):
+        pc = self.cpu.PC
+        # Execute just two instructions, so it doesn't attempt to run beyond
+        # valid code.
+        self._execute()
+        self.assertEqual(self.rf.read('PC'), pc + 8)
+        self.assertEqual(self.rf.read('LR'), 0)
+        self.assertEqual(self.rf.read('X30'), 0)
+        self._execute()
         self.assertEqual(self.rf.read('X1'), 0)
         self.assertEqual(self.rf.read('X2'), 43)
 
@@ -386,8 +393,12 @@ class Aarch64Instructions:
     @itest_custom(['mov x1, 42', 'mov x2, 43', 'b .-8'], multiple_insts=True)
     def test_b_neg(self):
         self.cpu.PC += 8  # start at 'b'
+        pc = self.cpu.PC
         # Execute just two instructions, so it doesn't loop indefinitely.
         self._execute()
+        self.assertEqual(self.rf.read('PC'), pc - 8)
+        self.assertEqual(self.rf.read('LR'), 0)
+        self.assertEqual(self.rf.read('X30'), 0)
         self._execute()
         self.assertEqual(self.rf.read('X1'), 42)
         self.assertEqual(self.rf.read('X2'), 0)
