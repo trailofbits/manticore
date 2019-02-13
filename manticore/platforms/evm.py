@@ -789,12 +789,6 @@ class EVM(Eventful):
             if fee.size != 512:
                 raise ValueError("Fees should be 512 bit long")
 
-        def get_possible_solutions():
-            if not issymbolic(self._gas) and not issymbolic(fee):
-                return (self._gas - fee >= 0,)
-            else:
-                return solver.get_all_values(self.constraints, Operators.UGT(self._gas, fee))
-        
         # This configuration variable allows the user to control and perhaps relax the gas calculation
         # pedantic: gas is faithfully accounted and checked at instruction level. State may get forked in OOG/NoOOG
         # complete: gas is faithfully accounted and checked at basic blocks limits. State may get forked in OOG/NoOOG
@@ -807,8 +801,13 @@ class EVM(Eventful):
             # gas is faithfully accounted and ogg checked at instruction/BB level.
             if consts.oog == 'pedantic' or self.instruction.is_terminator:
                 # explore both options / fork
+
                 # FIXME this will reenter here and generate redundant queries
-                enough_gas_solutions = get_possible_solutions()
+                if not issymbolic(self._gas) and not issymbolic(fee):
+                    enough_gas_solutions = (self._gas - fee >= 0,)
+                else:
+                    enough_gas_solutions = solver.get_all_values(self.constraints, Operators.UGT(self._gas, fee))
+
                 if len(enough_gas_solutions) == 2:
                     # if gas can be both enough and insufficient, fork
                     raise Concretize("Concretize gas fee",
