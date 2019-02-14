@@ -714,7 +714,7 @@ class X86Cpu(Cpu):
         assert selector > 0 and selector < 0xffff
         assert base >= 0 and base < (1 << self.address_bit_size)
         assert limit >= 0 and limit < 0xffff or limit & 0xfff == 0
-        #perms ? not used yet Also is not really perms but rather a bunch of attributes
+        # perms ? not used yet Also is not really perms but rather a bunch of attributes
         self._publish('will_set_descriptor', selector, base, limit, perms)
         self._segments[selector] = (base, limit, perms)
         self._publish('did_set_descriptor', selector, base, limit, perms)

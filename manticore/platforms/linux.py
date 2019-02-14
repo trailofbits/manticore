@@ -1922,7 +1922,7 @@ class Linux(Platform):
         return -1
 
     def sys_exit(self, error_code):
-        '''Wrapper for sys_exit_group'''
+        """Wrapper for sys_exit_group"""
         return self.sys_exit_group(error_code)
 
     def sys_exit_group(self, error_code):

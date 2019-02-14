@@ -575,13 +575,13 @@ class Cpu(Eventful):
         except AttributeError:
             object.__setattr__(self, name, value)
 
-    def emulate_until(self, target):
-        '''
+    def emulate_until(self, target: int):
+        """
         Tells the CPU to set up a concrete unicorn emulator and use it to execute instructions
         until target is reached.
 
-        :param int target: Where Unicorn should hand control back to Manticore. Set to 0 for all instructions.
-        '''
+        :param target: Where Unicorn should hand control back to Manticore. Set to 0 for all instructions.
+        """
         self._concrete = True
         self._break_unicorn_at = target
         if hasattr(self, 'emu'):
@@ -613,15 +613,14 @@ class Cpu(Eventful):
 
         self._publish('did_write_memory', where, expression, size)
 
-    def _raw_read(self, where, size=1):
-        '''
+    def _raw_read(self, where: int, size=1) -> bytes:
+        """
         Selects bytes from memory. Attempts to do so faster than via read_bytes.
 
-        :param int where: address to read from
+        :param where: address to read from
         :param size: number of bytes to read
         :return: the bytes in memory
-        :rtype: bytes
-        '''
+        """
         map = self.memory.map_containing(where)
         start = map._get_offset(where)
         if type(map) is FileMap:
@@ -949,11 +948,11 @@ class Cpu(Eventful):
         self._publish('did_execute_instruction', self._last_pc, self.PC, insn)
 
     def emulate(self, insn):
-        '''
+        """
         Pick the right emulate function (maintains API compatiblity)
 
         :param insn: single instruction to emulate/start emulation from
-        '''
+        """
 
         if self._concrete:
             self.concrete_emulate(insn)
@@ -961,11 +960,11 @@ class Cpu(Eventful):
             self.backup_emulate(insn)
 
     def concrete_emulate(self, insn):
-        '''
+        """
         Start executing in Unicorn from this point until we hit a syscall or reach break_unicorn_at
 
         :param capstone.CsInsn insn: The instruction object to emulate
-        '''
+        """
 
         if not hasattr(self, 'emu'):
             self.emu = ConcreteUnicornEmulator(self)

@@ -1027,7 +1027,7 @@ class ArraySelect(BitVec, Operation):
         return self.operands[1]
 
     def __repr__(self):
-        return "smtlib.expression.ArraySelect Object with index %s:\n%s" % (self.index, self.array)
+        return f"ArraySelect obj with index={self.index}:\n{self.array}"
 
 
 class BitVecSignExtend(BitVecOperation):
