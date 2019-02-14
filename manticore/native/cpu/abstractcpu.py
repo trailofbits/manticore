@@ -9,7 +9,7 @@ import unicorn
 
 from .disasm import init_disassembler
 from ..memory import (
-    ConcretizeMemory, InvalidMemoryAccess, FileMap
+    ConcretizeMemory, InvalidMemoryAccess, FileMap, AnonMap, MemoryException
 )
 from ..memory import LazySMemory
 from ...core.smtlib import Expression, BitVec, Operators, Constant
@@ -623,6 +623,7 @@ class Cpu(Eventful):
         :rtype: bytes
         '''
         map = self.memory.map_containing(where)
+        start = map._get_offset(where)
         if type(map) is FileMap:
             end = map._get_offset(where+size)
 
@@ -639,6 +640,8 @@ class Cpu(Eventful):
                 data += map._overlay[offset]
             data += raw_data[len(data):]
 
+        elif type(map) is AnonMap:
+            data = bytes(map._data[start:start+size])
         else:
             data = b''.join(self.memory[where:where + size])
         assert (len(data)) == size
@@ -675,8 +678,23 @@ class Cpu(Eventful):
         :type data: str or list
         :param force: whether to ignore memory permissions
         '''
-        for i in range(len(data)):
-            self.write_int(where + i, Operators.ORD(data[i]), 8, force)
+
+        mp = self.memory.map_containing(where)
+        try:
+            can_write_raw = (mp == self.memory.map_containing(where + len(data))) and type(mp) is AnonMap and type(data) in (str, bytes)
+        except MemoryException:
+            can_write_raw = False
+
+        if can_write_raw:
+            logger.info("Using fast write")
+            offset = mp._get_offset(where)
+            if type(data) is str:
+                data = bytes(data.encode('utf-8'))
+            mp._data[offset:offset+len(data)] = data
+            self._publish('did_write_memory', where, data, 8*len(data))
+        else:
+            for i in range(len(data)):
+                self.write_int(where + i, Operators.ORD(data[i]), 8, force)
 
     def read_bytes(self, where, size, force=False):
         '''
