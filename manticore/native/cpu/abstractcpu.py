@@ -9,7 +9,7 @@ import unicorn
 
 from .disasm import init_disassembler
 from ..memory import (
-    ConcretizeMemory, InvalidMemoryAccess, FileMap, AnonMap, MemoryException
+    ConcretizeMemory, InvalidMemoryAccess, FileMap, AnonMap
 )
 from ..memory import LazySMemory
 from ...core.smtlib import Expression, BitVec, Operators, Constant
@@ -679,13 +679,14 @@ class Cpu(Eventful):
         '''
 
         mp = self.memory.map_containing(where)
-        try:
-            can_write_raw = (mp == self.memory.map_containing(where + len(data))) and type(mp) is AnonMap and type(data) in (str, bytes)
-        except MemoryException:
-            can_write_raw = False
+        can_write_raw = type(mp) is AnonMap and \
+            type(data) in {str, bytes} and \
+            (mp.end - mp.start + 1) >= len(data) >= 1024 and \
+            not issymbolic(data) and \
+            self._concrete  # fast write breaks symbolic strcmp/len model, so only use in concrete mode
 
         if can_write_raw:
-            logger.info("Using fast write")
+            logger.debug("Using fast write")
             offset = mp._get_offset(where)
             if type(data) is str:
                 data = bytes(data.encode('utf-8'))
