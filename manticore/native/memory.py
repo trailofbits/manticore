@@ -485,13 +485,18 @@ class COWMap(Map):
         return head, tail
 
 
+class StubCPU:
+
+    def _publish(self, *args, **kwargs):
+        return None
+
 class Memory(object, metaclass=ABCMeta):
     '''
     The memory manager.
     This class handles all virtual memory mappings and symbolic chunks.
     '''
 
-    def __init__(self, maps=None, cpu=None):
+    def __init__(self, maps=None, cpu=StubCPU()):
         '''
         Builds a memory manager.
         '''
