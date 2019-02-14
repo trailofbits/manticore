@@ -621,6 +621,15 @@ class ManticoreEVM(ManticoreBase):
                     else:
                         constructor_data = b''
 
+                    if balance != 0:
+                        if not md.constructor_abi['payable']:
+                            raise EthereumError(f"Can't create solidity contract with balance ({balance}) "
+                                                f"different than 0 because the contract's constructor is not payable.")
+                        elif self.world.get_balance(owner.address) < balance:
+                            raise EthereumError(f"Can't create solidity contract with balance ({balance}) "
+                                                f"because the owner account ({owner}) has insufficient balance "
+                                                f"({self.world.get_balance(owner.address)}).")
+
                     contract_account = self.create_contract(owner=owner,
                                                             balance=balance,
                                                             address=address,
@@ -744,7 +753,7 @@ class ManticoreEVM(ManticoreBase):
             :type balance: int or BitVecVariable
             :param address: the address for the new account (optional)
             :type address: int
-            :param code: the runtime code for the new account (None means normal account) (optional)
+            :param code: the runtime code for the new account (None means normal account), str or bytes (optional)
             :param name: a global account name eg. for use as reference in the reports (optional)
             :return: an EVMAccount
         """
@@ -767,8 +776,8 @@ class ManticoreEVM(ManticoreBase):
             raise EthereumError("Balance invalid type")
 
         if isinstance(code, str):
-            code = bytearray(code)
-        if code is not None and not isinstance(code, (bytearray, Array)):
+            code = bytes(code, "utf-8")
+        if code is not None and not isinstance(code, (bytes, Array)):
             raise EthereumError("code bad type")
 
         # Address check

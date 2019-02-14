@@ -40,6 +40,7 @@ def main():
     if args.argv[0].endswith('.sol'):
         ethereum_main(args, logger)
     else:
+        install_helper.ensure_native_deps()
         native_main(args, logger)
 
 

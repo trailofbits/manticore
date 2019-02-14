@@ -17,7 +17,7 @@ from manticore.core.smtlib.expression import BitVec
 from manticore.core.smtlib.visitors import to_constant
 from manticore.core.state import TerminateState
 from manticore.ethereum import ManticoreEVM, State, DetectExternalCallAndLeak, DetectIntegerOverflow, Detector, \
-    NoAliveStates, ABI, EthereumError
+    NoAliveStates, ABI, EthereumError, EVMContract
 from manticore.ethereum.plugins import FilterFunctions
 from manticore.ethereum.solidity import SolidityMetadata
 from manticore.platforms import evm
@@ -414,7 +414,7 @@ class EthTests(unittest.TestCase):
         shutil.rmtree(self.mevm.workspace)
         del self.mevm
 
-    def test_create_contract_no_args(self):
+    def test_solidity_create_contract_no_args(self):
         source_code = 'contract A { constructor() {} }'
         owner = self.mevm.create_account()
 
@@ -424,7 +424,37 @@ class EthTests(unittest.TestCase):
 
         self.assertNotEqual(contract1, contract2)
 
-    def test_create_contract_with_missing_args(self):
+    def test_solidity_create_contract_with_not_payable_constructor_and_balance(self):
+        source_code = 'contract A { constructor() {} }'
+        owner = self.mevm.create_account()
+
+        with self.assertRaises(EthereumError) as e:
+            self.mevm.solidity_create_contract(source_code, owner=owner, balance=1)
+
+        expected_exception = "Can't create solidity contract with balance (1) different " \
+                             "than 0 because the contract's constructor is not payable."
+        self.assertEqual(str(e.exception), expected_exception)
+
+    def test_solidity_create_contract_with_payable_constructor_and_balance_owner_insufficient_founds(self):
+        source_code = 'contract A { constructor() public payable {} }'
+        owner = self.mevm.create_account(balance=1)
+
+        with self.assertRaises(EthereumError) as e:
+            self.mevm.solidity_create_contract(source_code, owner=owner, balance=2)
+
+        expected_exception = f"Can't create solidity contract with balance (2) because " \
+                             f"the owner account ({owner}) has insufficient balance (1)."
+        self.assertEqual(str(e.exception), expected_exception)
+
+    def test_solidity_create_contract_with_payable_constructor(self):
+        source_code = 'contract A { constructor() public payable {} }'
+        owner = self.mevm.create_account(balance=1000)
+
+        contract = self.mevm.solidity_create_contract(source_code, owner=owner, balance=100)
+
+        self.assertIsInstance(contract, EVMContract)
+
+    def test_solidity_create_contract_with_missing_args(self):
         source_code = 'contract A { constructor(uint arg) {} }'
         owner = self.mevm.create_account()
 
@@ -529,6 +559,16 @@ class EthTests(unittest.TestCase):
         # That is that calling a selfdestructed contract works as the account
         # is actually deleted at the end of the human tx
         self.assertEqual(ABI.deserialize('uint', to_constant(self.mevm.world.transactions[-1].return_data)), 42)
+
+    def test_create_bytecode_contract(self):
+        account = self.mevm.create_account(code="0x00AAFF")
+        self.assertIsNotNone(account)
+
+        account = self.mevm.create_account(code=bytes("0x00AAFF","utf-8"))
+        self.assertIsNotNone(account)
+
+        with self.assertRaises(EthereumError) as ctx:
+            self.mevm.create_account(code=bytearray("0x00AAFF", "utf-8"))
 
     def test_states_querying_1325(self):
         """

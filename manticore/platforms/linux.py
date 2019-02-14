@@ -1255,7 +1255,7 @@ class Linux(Platform):
                        SEEK_CUR: The file offset is set to its current location plus offset bytes.
                        SEEK_END: The file offset is set to the size of the file plus offset bytes.
 
-        :return: 0 (Success), or EBADF (fd is not a valid file descriptor or is not open)
+        :return: offset from file beginning, or EBADF (fd is not a valid file descriptor or is not open)
 
         '''
         signed_offset = self._to_signed_dword(offset)
