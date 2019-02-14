@@ -620,6 +620,44 @@ class Aarch64Cpu(Cpu):
         reg = reg_op.read()
         cpu.PC = reg
 
+    @instruction
+    def CLZ(cpu, res_op, reg_op):
+        """
+        CLZ.
+
+        Count Leading Zeros counts the number of binary zero bits before the
+        first binary one bit in the value of the source register, and writes the
+        result to the destination register.
+
+        :param res_op: destination register.
+        :param reg_op: source register.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+
+        insn_rx  = '[01]'     # sf
+        insn_rx += '1'
+        insn_rx += '0'
+        insn_rx += '11010110'
+        insn_rx += '0{5}'
+        insn_rx += '00010'
+        insn_rx += '0'        # op
+        insn_rx += '[01]{5}'  # Rn
+        insn_rx += '[01]{5}'  # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        reg = reg_op.read()
+        size = reg_op.size
+
+        count = 0
+        for pos in range(size - 1, -1, -1):
+            if Operators.EXTRACT(reg, pos, 1) == 1:
+                break
+            count += 1
+
+        res_op.write(count)
+
     def _LDR_immediate(cpu, dst, src, rest):
         """
         LDR (immediate).

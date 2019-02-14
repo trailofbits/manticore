@@ -664,6 +664,49 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X2'), 0)
 
 
+    # CLZ.
+
+    # 32-bit.
+
+    @itest_setregs('W1=0')
+    @itest('clz w0, w1')
+    def test_clz_min32(self):
+        self.assertEqual(self.rf.read('X0'), 32)
+        self.assertEqual(self.rf.read('W0'), 32)
+
+    @itest_setregs('W1=0xffffffff')
+    @itest('clz w0, w1')
+    def test_clz_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs('W1=0x70f010')
+    @itest('clz w0, w1')
+    def test_clz32(self):
+        self.assertEqual(self.rf.read('X0'), 9)
+        self.assertEqual(self.rf.read('W0'), 9)
+
+    # 64-bit.
+
+    @itest_setregs('X1=0')
+    @itest('clz x0, x1')
+    def test_clz_min64(self):
+        self.assertEqual(self.rf.read('X0'), 64)
+        self.assertEqual(self.rf.read('W0'), 64)
+
+    @itest_setregs('X1=0xffffffffffffffff')
+    @itest('clz x0, x1')
+    def test_clz_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs('X1=0x70f0100000')
+    @itest('clz x0, x1')
+    def test_clz64(self):
+        self.assertEqual(self.rf.read('X0'), 25)
+        self.assertEqual(self.rf.read('W0'), 25)
+
+
     # MOV (to/from SP).
 
     @itest_setregs(f"X0={MAGIC_64}")
