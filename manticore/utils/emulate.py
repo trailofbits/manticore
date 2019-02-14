@@ -57,7 +57,8 @@ class ConcreteUnicornEmulator(object):
         cpu.subscribe('did_write_register', self.write_back_register)
         cpu.subscribe('did_set_descriptor', self.update_segment)
         cpu.subscribe('did_map_memory', self.map_memory_callback)
-        # cpu.subscribe('did_protect_memory', self.protect_memory)
+        cpu.subscribe('did_unmap_memory', self.unmap_memory_callback)
+        cpu.subscribe('did_protect_memory', self.protect_memory_callback)
 
         if self._cpu.arch == CS_ARCH_X86:
             self._uc_arch = UC_ARCH_X86
@@ -69,24 +70,6 @@ class ConcreteUnicornEmulator(object):
             raise NotImplementedError(f'Unsupported architecture: {self._cpu.arch}')
 
         self.reset()
-
-        # Keep track of all memory mappings. We start with just the text section
-        self.mem_map = {}
-        for m in cpu.memory.maps:
-            permissions = UC_PROT_NONE
-            if 'r' in m.perms:
-                permissions |= UC_PROT_READ
-            if 'w' in m.perms:
-                permissions |= UC_PROT_WRITE
-            if 'x' in m.perms:
-                permissions |= UC_PROT_EXEC
-            self.mem_map[m.start] = (len(m), permissions)
-
-        # Establish Manticore state, potentially from past emulation
-        # attempts
-        for base in self.mem_map:
-            size, perms = self.mem_map[base]
-            self._emu.mem_map(base, size, perms)
 
         self._emu.hook_add(UC_HOOK_MEM_READ_UNMAPPED, self._hook_unmapped)
         self._emu.hook_add(UC_HOOK_MEM_WRITE_UNMAPPED, self._hook_unmapped)
@@ -120,21 +103,14 @@ class ConcreteUnicornEmulator(object):
             logger.debug("Writing %s into %s", val, reg)
             self._emu.reg_write(self._to_unicorn_id(reg), val)
 
-        for m in self.mem_map:
-            size = self.mem_map[m][0]
-            self.copy_map(m, size)
+        for m in cpu.memory.maps:
+            self.map_memory_callback(m.start, len(m), m.perms, m.name, 0, m.start)
 
     def reset(self):
         self._emu = Uc(self._uc_arch, self._uc_mode)
         self._to_raise = None
 
-    def in_map(self, addr):
-        for m in self.mem_map:
-            if m <= addr <= (m + self.mem_map[m][0]):
-                return True
-        return False
-
-    def copy_map(self, address, size):
+    def copy_memory(self, address, size):
         """
         Copy the bytes from address to address+size into Unicorn
         Used primarily for copying memory maps
@@ -143,10 +119,9 @@ class ConcreteUnicornEmulator(object):
         """
         start_time = time.time()
         map_bytes = self._cpu._raw_read(address, size)
-        logger.info("Reading %s map at 0x%02x took %s seconds", sizeof_fmt(size), address, time.time() - start_time)
-        if time.time() - start_time > 2:
-            logger.warning(f"Memory map took more than two seconds to copy: {self._cpu.memory.map_containing(address)}")
         self._emu.mem_write(address, map_bytes)
+        if time.time() - start_time > 3:
+            logger.info(f"Copying {sizeof_fmt(size)} map at {hex(address)} took {time.time() - start_time} seconds")
 
     def map_memory_callback(self, address, size, perms, name, offset, result):
         """
@@ -158,28 +133,27 @@ class ConcreteUnicornEmulator(object):
                     perms, "-",
                     f"{name}:{hex(offset) if name else ''}", "->",
                     hex(result))))
-        if address not in self.mem_map.keys() and address is not None:
-            self.copy_mapping_to_unicorn(address)
-            self.copy_map(address, size)
+        self._emu.mem_map(address, size, convert_permissions(perms))
+        self.copy_memory(address, size)
 
-    def copy_mapping_to_unicorn(self, address):
-        """
-        Create a mapping in Unicorn and note that we'll need it if we retry.
+    def unmap_memory_callback(self, start, size):
+        """Unmap Unicorn maps when Manticore unmaps them"""
+        logger.info(f"Unmapping memory from {hex(start)} to {hex(start + size)}")
 
-        :param address: The address which is contained by the mapping.
-        :rtype Map
-        """
+        mask = (1 << 12) - 1
+        if (start & mask) != 0:
+            logger.error("Memory to be unmapped is not aligned to a page")
 
-        m = self._cpu.memory.map_containing(address)
-        size = m.end - m.start
-        if m.start not in self.mem_map.keys():
-            logger.info(f"Creating {sizeof_fmt(size)} map @ {hex(m.start)} in Unicorn")
-            permissions = convert_permissions(m.perms)
-            self._emu.mem_map(m.start, size, permissions)
+        if (size & mask) != 0:
+            size = ((size >> 12) + 1) << 12
+            logger.warning("Forcing unmap size to align to a page")
 
-            self.mem_map[m.start] = (size, permissions)
+        self._emu.mem_unmap(start, size)
 
-        return m
+    def protect_memory_callback(self, start, size, perms):
+        """ Set memory protections in Unicorn correctly """
+        logger.info(f"Changing permissions on {hex(start)}:{hex(start + size)} to {perms}")
+        self._emu.mem_protect(start, size, convert_permissions(perms))
 
     def get_unicorn_pc(self):
         """ Get the program counter from Unicorn regardless of architecture.
@@ -216,8 +190,7 @@ class ConcreteUnicornEmulator(object):
         try:
             self.sync_unicorn_to_manticore()
             logger.warning(f"Encountered an operation on unmapped memory at {hex(address)}")
-            m = self.copy_mapping_to_unicorn(address)
-            self.copy_map(m.start, m.end - m.start)
+            self.copy_memory(m.start, m.end - m.start)
         except MemoryException as e:
             logger.error("Failed to map memory {}-{}, ({}): {}".format(hex(address), hex(address + size), access, e))
             self._to_raise = e
@@ -280,6 +253,8 @@ class ConcreteUnicornEmulator(object):
         try:
             pc = self._cpu.PC
             m = self._cpu.memory.map_containing(pc)
+            if self._stop_at:
+                logger.info(f"Emulating from {hex(pc)} to  {hex(self._stop_at)}")
             self._emu.emu_start(pc, m.end if not self._stop_at else self._stop_at, count=chunksize)
         except UcError:
             # We request re-execution by signaling error; if we we didn't set
@@ -293,14 +268,18 @@ class ConcreteUnicornEmulator(object):
         # self.sync_unicorn_to_manticore()
         self._cpu.PC = self.get_unicorn_pc()
         if self._cpu.PC == self._stop_at:
+            logger.info("Reached emulation target, switching to Manticore mode")
             self.sync_unicorn_to_manticore()
             self._stop_at = None
 
         # Raise the exception from a hook that Unicorn would have eaten
         if self._to_raise:
-            logger.info("Raising %s", self._to_raise)
+            from ..native.cpu.abstractcpu import Syscall
+            if type(self._to_raise) is not Syscall:
+                logger.info("Raising %s", self._to_raise)
             raise self._to_raise
 
+        logger.info(f"Exiting Unicorn Mode at {hex(self._cpu.PC)}")
         return
 
     def sync_unicorn_to_manticore(self):
@@ -319,33 +298,26 @@ class ConcreteUnicornEmulator(object):
         self.write_backs_disabled = False
         self._mem_delta = {}
 
-    def protect_memory(self, start, size, perms):
-        """ Set memory protections in Unicorn correctly """
-        self.copy_mapping_to_unicorn(start)
-        logger.info(f"Changing permissions on {hex(start)}:{hex(start + size)} to {perms}")
-        for mp in self._cpu.memory.maps:
-            print(f"{type(mp)} -- {hex(mp.start)}:{hex(mp.end)} ({mp.perms})")
-        self._emu.mem_protect(start, size, convert_permissions(perms))
-
     def write_back_memory(self, where, expr, size):
         """ Copy memory writes from Manticore back into Unicorn in real-time """
         if self.write_backs_disabled:
             return
-        if issymbolic(expr):
-            data = [Operators.CHR(Operators.EXTRACT(expr, offset, 8)) for offset in range(0, size, 8)]
-            concrete_data = []
-            for c in data:
-                if issymbolic(c):
-                    c = chr(solver.get_value(self._cpu.memory.constraints, c))
-                concrete_data.append(c)
-            data = concrete_data
+        if type(expr) is bytes:
+            self._emu.mem_write(where, expr)
         else:
-            data = [Operators.CHR(Operators.EXTRACT(expr, offset, 8)) for offset in range(0, size, 8)]
-        logger.debug(f"Writing back {sizeof_fmt(size // 8)} to {hex(where)}: {data}")
-        if not self.in_map(where):
-            self.copy_mapping_to_unicorn(where)
-        # TODO - the extra encoding is to handle null bytes output as strings when we concretize. That's probably a bug.
-        self._emu.mem_write(where, b''.join(b.encode('utf-8') if type(b) is str else b for b in data))
+            if issymbolic(expr):
+                data = [Operators.CHR(Operators.EXTRACT(expr, offset, 8)) for offset in range(0, size, 8)]
+                concrete_data = []
+                for c in data:
+                    if issymbolic(c):
+                        c = chr(solver.get_value(self._cpu.memory.constraints, c))
+                    concrete_data.append(c)
+                data = concrete_data
+            else:
+                data = [Operators.CHR(Operators.EXTRACT(expr, offset, 8)) for offset in range(0, size, 8)]
+            logger.debug(f"Writing back {sizeof_fmt(size // 8)} to {hex(where)}: {data}")
+            # TODO - the extra encoding is to handle null bytes output as strings when we concretize. That's probably a bug.
+            self._emu.mem_write(where, b''.join(b.encode('utf-8') if type(b) is str else b for b in data))
 
     def write_back_register(self, reg, val):
         """ Sync register state from Manticore -> Unicorn"""
