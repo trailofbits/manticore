@@ -4,7 +4,7 @@ os:
   - linux
 language: python
 python:
-  - 3.6.5
+  - 3.7
 
 stages:
   - prepare
@@ -30,8 +30,8 @@ branches:
 cache:
   pip: true
   directories:
-  - $HOME/virtualenv/python3.6.5/lib/python3.6/site-packages
-  - $HOME/virtualenv/python3.6.5/bin/
+  - $HOME/virtualenv/python3.7/lib/python3.7/site-packages
+  - $HOME/virtualenv/python3.7/bin/
 
 jobs:
   include:
