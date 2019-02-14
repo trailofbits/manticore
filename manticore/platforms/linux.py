@@ -5,6 +5,7 @@ import fcntl
 import logging
 import socket
 import struct
+import time
 from typing import Union, List, TypeVar, cast
 
 import io
@@ -114,7 +115,11 @@ class File:
 
     def ioctl(self, request, argp):
         # argp ignored...
-        return fcntl.fcntl(self, request)
+        try:
+            return fcntl.fcntl(self, request, argp)
+        except OSError:
+            logger.error(f"Invalid Fcntl request: {request}")
+            return -1
 
     def tell(self, *args):
         return self.file.tell(*args)
@@ -1393,7 +1398,9 @@ class Linux(Platform):
             if brk > mem._ceil(self.brk):
                 perms = mem.perms(self.brk - 1)
                 addr = mem.mmap(mem._ceil(self.brk), size, perms)
-                assert mem._ceil(self.brk) == addr, "Error in brk!"
+                if not mem._ceil(self.brk) == addr:
+                    logger.error(f"Error in brk: ceil: {hex(mem._ceil(self.brk))} brk: {hex(brk)} self.brk: {hex(self.brk)} addr: {hex(addr)}")
+                    return self.brk
             self.brk += size
         return self.brk
 
@@ -1976,6 +1983,10 @@ class Linux(Platform):
         logger.warning("Unimplemented system call: sys_gettimeofday")
         return 0
 
+    def sys_clone_ptregs(self, flags, child_stack, ptid, ctid, regs):
+        logger.warning("Unimplemented system call: sys_clone/ptregs")
+        return 0
+
     def sys_socket(self, domain, socket_type, protocol):
         if domain != socket.AF_INET:
             return -errno.EINVAL
@@ -2114,6 +2125,9 @@ class Linux(Platform):
 
     def sys_clock_gettime(self, clock_id, timespec):
         logger.warning("sys_clock_time not really implemented")
+        if clock_id == 1:
+            t = int(time.monotonic() * 1000000000)
+            self.current.write_bytes(timespec, struct.pack('l', t // 1000000000) + struct.pack('l', t))
         return 0
 
     def sys_time(self, tloc):
