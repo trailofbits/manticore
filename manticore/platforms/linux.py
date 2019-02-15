@@ -115,7 +115,6 @@ class File:
         return os.fstat(self.fileno())
 
     def ioctl(self, request, argp):
-        # argp ignored...
         try:
             return fcntl.fcntl(self, request, argp)
         except OSError:
