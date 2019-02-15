@@ -707,6 +707,81 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W0'), 25)
 
 
+    # MADD.
+
+    # 32-bit.
+
+    @itest_setregs('W1=0xffffffff', 'W2=0xffffffff', 'W3=0xffffffff')
+    @itest('madd w0, w1, w2, w3')
+    def test_madd_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs('W1=-1', 'W2=-1', 'W3=-1')
+    @itest('madd w0, w1, w2, w3')
+    def test_madd_neg32(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs('W1=1', 'W2=1', 'W3=0xffffffff')
+    @itest('madd w0, w1, w2, w3')
+    def test_madd_of1_32(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs('W1=0xffffffff', 'W2=2', 'W3=0xffffffff')
+    @itest('madd w0, w1, w2, w3')
+    def test_madd_of2_32(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffd)
+        self.assertEqual(self.rf.read('W0'), 0xfffffffd)
+
+    @itest_setregs('W1=2', 'W2=3', 'W3=4')
+    @itest('madd w0, w1, w2, w3')
+    def test_madd32(self):
+        self.assertEqual(self.rf.read('X0'), 10)
+        self.assertEqual(self.rf.read('W0'), 10)
+
+    # 64-bit.
+
+    @itest_setregs(
+        'X1=0xffffffffffffffff',
+        'X2=0xffffffffffffffff',
+        'X3=0xffffffffffffffff'
+    )
+    @itest('madd x0, x1, x2, x3')
+    def test_madd_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs('X1=-1', 'X2=-1', 'X3=-1')
+    @itest('madd x0, x1, x2, x3')
+    def test_madd_neg64(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs('X1=1', 'X2=1', 'X3=0xffffffffffffffff')
+    @itest('madd x0, x1, x2, x3')
+    def test_madd_of1_64(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs(
+        'X1=0xffffffffffffffff',
+        'X2=2',
+        'X3=0xffffffffffffffff'
+    )
+    @itest('madd x0, x1, x2, x3')
+    def test_madd_of2_64(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffffffffffd)
+        self.assertEqual(self.rf.read('W0'), 0xfffffffd)
+
+    @itest_setregs('X1=2', 'X2=3', 'X3=4')
+    @itest('madd x0, x1, x2, x3')
+    def test_madd64(self):
+        self.assertEqual(self.rf.read('X0'), 10)
+        self.assertEqual(self.rf.read('W0'), 10)
+
+
     # MOV (to/from SP).
 
     @itest_setregs(f"X0={MAGIC_64}")

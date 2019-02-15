@@ -881,6 +881,45 @@ class Aarch64Cpu(Cpu):
         res_op.write(result)
 
     @instruction
+    def MADD(cpu, res_op, reg_op1, reg_op2, reg_op3):
+        """
+        MADD.
+
+        Multiply-Add multiplies two register values, adds a third register
+        value, and writes the result to the destination register.
+
+        This instruction is used by the alias MUL.
+
+        :param res_op: destination register.
+        :param reg_op1: source register.
+        :param reg_op2: source register.
+        :param reg_op3: source register.
+        """
+        assert res_op.type  is cs.arm64.ARM64_OP_REG
+        assert reg_op1.type is cs.arm64.ARM64_OP_REG
+        assert reg_op2.type is cs.arm64.ARM64_OP_REG
+        assert reg_op3.type is cs.arm64.ARM64_OP_REG
+
+        insn_rx  = '[01]'     # sf
+        insn_rx += '00'
+        insn_rx += '11011'
+        insn_rx += '000'
+        insn_rx += '[01]{5}'  # Rm
+        insn_rx += '0'        # o0
+        insn_rx += '[01]{5}'  # Ra
+        insn_rx += '[01]{5}'  # Rn
+        insn_rx += '[01]{5}'  # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        reg1 = reg_op1.read()
+        reg2 = reg_op2.read()
+        reg3 = reg_op3.read()
+
+        result = reg3 + (reg1 * reg2)
+        res_op.write(UInt(result, res_op.size))
+
+    @instruction
     def MOV(cpu, dst, src):
         """
         Combines MOV (to/from SP), MOV (inverted wide immediate), MOV (wide
