@@ -1007,6 +1007,73 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W0'), 0)
 
 
+    # MUL.
+
+    # 32-bit.
+
+    @itest_setregs('W1=0xffffffff', 'W2=0xffffffff')
+    @itest('mul w0, w1, w2')
+    def test_mul_max32(self):
+        self.assertEqual(self.rf.read('X0'), 1)
+        self.assertEqual(self.rf.read('W0'), 1)
+
+    @itest_setregs('W1=-1', 'W2=-1')
+    @itest('mul w0, w1, w2')
+    def test_mul_neg32(self):
+        self.assertEqual(self.rf.read('X0'), 1)
+        self.assertEqual(self.rf.read('W0'), 1)
+
+    @itest_setregs('W1=0x80000000', 'W2=2')
+    @itest('mul w0, w1, w2')
+    def test_mul_of32(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs('W1=2', 'W2=3')
+    @itest('mul w0, w1, w2')
+    def test_mul32(self):
+        self.assertEqual(self.rf.read('X0'), 6)
+        self.assertEqual(self.rf.read('W0'), 6)
+
+    @itest_setregs('W1=2', 'W2=-3')
+    @itest('mul w0, w1, w2')
+    def test_mul_pos_neg32(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffa)
+        self.assertEqual(self.rf.read('W0'), 0xfffffffa)
+
+    # 64-bit.
+
+    @itest_setregs('X1=0xffffffffffffffff', 'X2=0xffffffffffffffff')
+    @itest('mul x0, x1, x2')
+    def test_mul_max64(self):
+        self.assertEqual(self.rf.read('X0'), 1)
+        self.assertEqual(self.rf.read('W0'), 1)
+
+    @itest_setregs('X1=-1', 'X2=-1')
+    @itest('mul x0, x1, x2')
+    def test_mul_neg64(self):
+        self.assertEqual(self.rf.read('X0'), 1)
+        self.assertEqual(self.rf.read('W0'), 1)
+
+    @itest_setregs('X1=0x8000000000000000', 'X2=2')
+    @itest('mul x0, x1, x2')
+    def test_mul_of64(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs('X1=2', 'X2=3')
+    @itest('mul x0, x1, x2')
+    def test_mul64(self):
+        self.assertEqual(self.rf.read('X0'), 6)
+        self.assertEqual(self.rf.read('W0'), 6)
+
+    @itest_setregs('X1=2', 'X2=-3')
+    @itest('mul x0, x1, x2')
+    def test_mul_pos_neg64(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffffffffffa)
+        self.assertEqual(self.rf.read('W0'), 0xfffffffa)
+
+
     # LDR (immediate).
 
     # ldr w1, [x27]          base register (opt. offset omitted):  w1 = [x27]

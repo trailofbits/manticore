@@ -1074,6 +1074,52 @@ class Aarch64Cpu(Cpu):
         result = UInt(LSL(imm, sft, dst.size), dst.size)
         dst.write(result)
 
+    @instruction
+    def MUL(cpu, res_op, reg_op1, reg_op2):
+        """
+        MUL.
+
+        Multiply: Rd = Rn * Rm.
+
+        This instruction is an alias of the MADD instruction.
+
+        :param res_op: destination register.
+        :param reg_op1: source register.
+        :param reg_op2: source register.
+        """
+        assert res_op.type  is cs.arm64.ARM64_OP_REG
+        assert reg_op1.type is cs.arm64.ARM64_OP_REG
+        assert reg_op2.type is cs.arm64.ARM64_OP_REG
+
+        insn_rx  = '[01]'     # sf
+        insn_rx += '00'
+        insn_rx += '11011'
+        insn_rx += '000'
+        insn_rx += '[01]{5}'  # Rm
+        insn_rx += '0'        # o0
+        insn_rx += '1{5}'     # Ra
+        insn_rx += '[01]{5}'  # Rn
+        insn_rx += '[01]{5}'  # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        # Fake a register operand.
+        zr = cs.arm64.Arm64Op()
+
+        if res_op.size == 32:
+            zr.value.reg = cs.arm64.ARM64_REG_WZR
+        elif res_op.size == 64:
+            zr.value.reg = cs.arm64.ARM64_REG_XZR
+        else:
+            raise Aarch64InvalidInstruction
+
+        zr.type = cs.arm64.ARM64_OP_REG
+        zr = Aarch64Operand(cpu, zr)
+
+        # The 'instruction' decorator advances PC, so call the original
+        # method.
+        cpu.MADD.__wrapped__(cpu, res_op, reg_op1, reg_op2, zr)
+
     def _ORR_immediate(cpu, res_op, reg_op, imm_op):
         """
         ORR (immediate).
