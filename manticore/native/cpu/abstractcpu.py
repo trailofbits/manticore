@@ -627,7 +627,8 @@ class Cpu(Eventful):
         """
         map = self.memory.map_containing(where)
         start = map._get_offset(where)
-        if type(map) is FileMap:
+        mapType = type(map)
+        if mapType is FileMap:
             end = map._get_offset(where + size)
 
             if end > map._mapped_size:
@@ -643,7 +644,7 @@ class Cpu(Eventful):
                 data += map._overlay[offset]
             data += raw_data[len(data):]
 
-        elif type(map) is AnonMap:
+        elif mapType is AnonMap:
             data = bytes(map._data[start:start + size])
         else:
             data = b''.join(self.memory[where:where + size])
@@ -683,16 +684,20 @@ class Cpu(Eventful):
         '''
 
         mp = self.memory.map_containing(where)
+        # TODO (ehennenfent) - fast write can have some yet-unstudied unintended side effects.
+        # At the very least, using it in non-concrete mode will break the symbolic strcmp/strlen models. The 1024 byte
+        # minimum is intended to minimize the potential effects of this by ensuring that if there _are_ any other
+        # issues, they'll only crop up when we're doing very large writes, which are fairly uncommon.
         can_write_raw = type(mp) is AnonMap and \
-            type(data) in {str, bytes} and \
+            isinstance(data, (str, bytes)) and \
             (mp.end - mp.start + 1) >= len(data) >= 1024 and \
             not issymbolic(data) and \
-            self._concrete  # fast write breaks symbolic strcmp/len model, so only use in concrete mode
+            self._concrete
 
         if can_write_raw:
             logger.debug("Using fast write")
             offset = mp._get_offset(where)
-            if type(data) is str:
+            if isinstance(data, str):
                 data = bytes(data.encode('utf-8'))
             mp._data[offset:offset + len(data)] = data
             self._publish('did_write_memory', where, data, 8 * len(data))

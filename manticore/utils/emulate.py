@@ -33,8 +33,14 @@ def convert_permissions(m_perms):
     return permissions
 
 
-# https://stackoverflow.com/a/1094933
-def sizeof_fmt(num, suffix='B'):
+def hr_size(num, suffix='B') -> str:
+    """
+    Human-readable data size
+    From https://stackoverflow.com/a/1094933
+    :param num: number of bytes
+    :param suffix: Optional size specifier
+    :return: Formatted string
+    """
     for unit in ' KMGTPEZ':
         if abs(num) < 1024.0:
             return "%3.1f%s%s" % (num, unit if unit != ' ' else '', suffix)
@@ -121,18 +127,18 @@ class ConcreteUnicornEmulator(object):
         map_bytes = self._cpu._raw_read(address, size)
         self._emu.mem_write(address, map_bytes)
         if time.time() - start_time > 3:
-            logger.info(f"Copying {sizeof_fmt(size)} map at {hex(address)} took {time.time() - start_time} seconds")
+            logger.info(f"Copying {hr_size(size)} map at {hex(address)} took {time.time() - start_time} seconds")
 
     def map_memory_callback(self, address, size, perms, name, offset, result):
         """
         Catches did_map_memory and copies the mapping into Manticore
         """
         logger.info(' '.join(("Mapping Memory @",
-                    hex(address) if type(address) is int else "0x??",
-                    sizeof_fmt(size), "-",
-                    perms, "-",
-                    f"{name}:{hex(offset) if name else ''}", "->",
-                    hex(result))))
+                              hex(address) if type(address) is int else "0x??",
+                              hr_size(size), "-",
+                              perms, "-",
+                              f"{name}:{hex(offset) if name else ''}", "->",
+                              hex(result))))
         self._emu.mem_map(address, size, convert_permissions(perms))
         self.copy_memory(address, size)
 
@@ -190,6 +196,7 @@ class ConcreteUnicornEmulator(object):
         try:
             self.sync_unicorn_to_manticore()
             logger.warning(f"Encountered an operation on unmapped memory at {hex(address)}")
+            m = self._cpu.memory.map_containing(address)
             self.copy_memory(m.start, m.end - m.start)
         except MemoryException as e:
             logger.error("Failed to map memory {}-{}, ({}): {}".format(hex(address), hex(address + size), access, e))
@@ -315,7 +322,7 @@ class ConcreteUnicornEmulator(object):
                 data = concrete_data
             else:
                 data = [Operators.CHR(Operators.EXTRACT(expr, offset, 8)) for offset in range(0, size, 8)]
-            logger.debug(f"Writing back {sizeof_fmt(size // 8)} to {hex(where)}: {data}")
+            logger.debug(f"Writing back {hr_size(size // 8)} to {hex(where)}: {data}")
             # TODO - the extra encoding is to handle null bytes output as strings when we concretize. That's probably a bug.
             self._emu.mem_write(where, b''.join(b.encode('utf-8') if type(b) is str else b for b in data))
 

@@ -6,6 +6,7 @@ import logging
 import socket
 import struct
 import time
+import resource
 from typing import Union, List, TypeVar, cast
 
 import io
@@ -391,8 +392,6 @@ class Linux(Platform):
     '''
 
     # from /usr/include/asm-generic/resource.h
-    RLIMIT_NOFILE = 7  # /* max number of open files */
-    RLIMIT_STACK = 3
     FCNTL_FDCWD = -100  # /* Special value used to indicate openat should use the cwd */
 
     def __init__(self, program, argv=None, envp=None, disasm='capstone', **kwargs):
@@ -420,8 +419,8 @@ class Linux(Platform):
 
         # dict of [int -> (int, int)] where tuple is (soft, hard) limits
         self._rlimits = {
-            self.RLIMIT_NOFILE: (256, 1024),
-            self.RLIMIT_STACK: (8192 * 1024, 0)
+            resource.RLIMIT_NOFILE: (256, 1024),
+            resource.RLIMIT_STACK: (8192 * 1024, 0)
         }
 
         if program is not None:
@@ -1570,7 +1569,7 @@ class Linux(Platform):
         return self.sys_sigprocmask(cpu, how, newset, oldset)
 
     def sys_sigprocmask(self, cpu, how, newset, oldset):
-        logger.warning(f"SIGACTION, Ignoring changing signal mask set cmd:{how}", )
+        logger.warning(f"SIGACTION, Ignoring changing signal mask set cmd:%s", how)
         return 0
 
     def sys_dup(self, fd):
@@ -1961,8 +1960,7 @@ class Linux(Platform):
         return -1
 
     def sys_futex(self, uaddr, op, val, timeout, uaddr2, val3):
-        logger.warning("sys_futex isn't really implemented")
-        logger.debug(f"Futex at: {hex(uaddr)} -- {op}:{val} ({self.current.read_int(uaddr)})")
+        logger.warning("Unimplemented system_call: sys_futex")
         return 0
 
     def sys_getrlimit(self, resource, rlim):
