@@ -490,6 +490,7 @@ class StubCPU:
     def _publish(self, *args, **kwargs):
         return None
 
+
 class Memory(object, metaclass=ABCMeta):
     '''
     The memory manager.
@@ -991,7 +992,7 @@ class SMemory(Memory):
             self._symbols = dict(symbols)
 
     def __reduce__(self):
-        return (self.__class__, (self.constraints, self._symbols, self._maps, ), {'cpu':self.cpu})
+        return self.__class__, (self.constraints, self._symbols, self._maps, ), {'cpu': self.cpu}
 
     @property
     def constraints(self):

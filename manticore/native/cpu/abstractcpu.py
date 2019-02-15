@@ -628,14 +628,14 @@ class Cpu(Eventful):
         map = self.memory.map_containing(where)
         start = map._get_offset(where)
         if type(map) is FileMap:
-            end = map._get_offset(where+size)
+            end = map._get_offset(where + size)
 
             if end > map._mapped_size:
                 logger.warning(f"Missing {end - map._mapped_size} bytes at the end of {map._filename}")
 
             raw_data = map._data[map._get_offset(where): min(end, map._mapped_size)]
             if len(raw_data) < end:
-                raw_data += b'\x00'*(end - len(raw_data))
+                raw_data += b'\x00' * (end - len(raw_data))
 
             data = b''
             for offset in sorted(map._overlay.keys()):
@@ -644,7 +644,7 @@ class Cpu(Eventful):
             data += raw_data[len(data):]
 
         elif type(map) is AnonMap:
-            data = bytes(map._data[start:start+size])
+            data = bytes(map._data[start:start + size])
         else:
             data = b''.join(self.memory[where:where + size])
         assert (len(data)) == size
@@ -694,8 +694,8 @@ class Cpu(Eventful):
             offset = mp._get_offset(where)
             if type(data) is str:
                 data = bytes(data.encode('utf-8'))
-            mp._data[offset:offset+len(data)] = data
-            self._publish('did_write_memory', where, data, 8*len(data))
+            mp._data[offset:offset + len(data)] = data
+            self._publish('did_write_memory', where, data, 8 * len(data))
         else:
             for i in range(len(data)):
                 self.write_int(where + i, Operators.ORD(data[i]), 8, force)
@@ -855,7 +855,7 @@ class Cpu(Eventful):
                                            policy='INSTRUCTION')
             text += c
 
-        #Pad potentially incomplete instruction with zeroes
+        # Pad potentially incomplete instruction with zeroes
         code = text.ljust(self.max_instr_width, b'\x00')
 
         try:
