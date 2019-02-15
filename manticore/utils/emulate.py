@@ -42,7 +42,7 @@ def sizeof_fmt(num, suffix='B'):
     return "%.1f%s%s" % (num, 'Y', suffix)
 
 
-class ConcreteUnicornEmulator(object):
+class ConcreteUnicornEmulator:
     """
     Helper class to emulate instructions in bulk via Unicorn.
     """

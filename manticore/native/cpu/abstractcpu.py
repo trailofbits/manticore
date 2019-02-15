@@ -146,7 +146,7 @@ class Operand:
 
         :param int reg_id: Register ID
         '''
-        if reg_id > X86_REG_ENDING:
+        if reg_id >= X86_REG_ENDING:
             logger.warning("Trying to get register name for a non-register")
             return None
         cs_reg_name = self.cpu.instruction.reg_name(reg_id)
@@ -647,7 +647,7 @@ class Cpu(Eventful):
             data = bytes(map._data[start:start + size])
         else:
             data = b''.join(self.memory[where:where + size])
-        assert (len(data)) == size
+        assert len(data) == size, 'Raw read resulted in wrong data read which should never happen'
         return data
 
     def read_int(self, where, size=None, force=False):
@@ -692,7 +692,7 @@ class Cpu(Eventful):
         if can_write_raw:
             logger.debug("Using fast write")
             offset = mp._get_offset(where)
-            if type(data) is str:
+            if isinstance(data, str):
                 data = bytes(data.encode('utf-8'))
             mp._data[offset:offset + len(data)] = data
             self._publish('did_write_memory', where, data, 8 * len(data))
