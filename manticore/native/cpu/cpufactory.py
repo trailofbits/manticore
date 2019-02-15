@@ -12,7 +12,7 @@ class CpuFactory:
     @staticmethod
     def get_cpu(mem, machine):
         cpu = CpuFactory._cpus[machine](mem)
-        mem.setCPU(cpu)
+        mem.cpu = cpu
         return cpu
 
     @staticmethod

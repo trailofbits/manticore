@@ -547,9 +547,6 @@ class Memory(object, metaclass=ABCMeta):
     def maps(self):
         return self._maps
 
-    def setCPU(self, cpu):
-        self.cpu = cpu
-
     def _ceil(self, address):
         '''
         Returns the smallest page boundary value not less than the address.
