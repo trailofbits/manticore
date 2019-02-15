@@ -20,6 +20,8 @@ from ...utils.event import Eventful
 from ...utils.fallback_emulator import UnicornEmulator
 from ...utils.helpers import issymbolic
 
+from capstone.x86 import X86_REG_ENDING
+
 logger = logging.getLogger(__name__)
 register_logger = logging.getLogger(f'{__name__}.registers')
 
@@ -144,7 +146,9 @@ class Operand:
 
         :param int reg_id: Register ID
         '''
-        if reg_id > 234: return None  # https://github.com/aquynh/capstone/blob/master/bindings/python/capstone/x86_const.py#L239
+        if reg_id > X86_REG_ENDING:
+            logger.warning("Trying to get register name for a non-register")
+            return None
         cs_reg_name = self.cpu.instruction.reg_name(reg_id)
         if cs_reg_name is None or cs_reg_name.lower() == '(invalid)':
             return None
