@@ -845,6 +845,42 @@ class Aarch64Cpu(Cpu):
             raise Aarch64InvalidInstruction
 
     @instruction
+    def LDUR(cpu, res_op, mem_op):
+        """
+        LDUR.
+
+        Load Register (unscaled) calculates an address from a base register and
+        an immediate offset, loads a 32-bit word or 64-bit doubleword from
+        memory, zero-extends it, and writes it to a register.
+
+        :param res_op: destination register.
+        :param mem_op: memory.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert mem_op.type is cs.arm64.ARM64_OP_MEM
+
+        insn_rx  = '1[01]'    # size
+        insn_rx += '111'
+        insn_rx += '0'
+        insn_rx += '00'
+        insn_rx += '01'       # opc
+        insn_rx += '0'
+        insn_rx += '[01]{9}'  # imm9
+        insn_rx += '00'
+        insn_rx += '[01]{5}'  # Rn
+        insn_rx += '[01]{5}'  # Rt
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        base = cpu.regfile.read(mem_op.mem.base)
+        imm = mem_op.mem.disp
+
+        assert imm >= -256 and imm <= 255
+
+        result = cpu.read_int(base + imm, res_op.size)
+        res_op.write(result)
+
+    @instruction
     def MOV(cpu, dst, src):
         """
         Combines MOV (to/from SP), MOV (inverted wide immediate), MOV (wide
