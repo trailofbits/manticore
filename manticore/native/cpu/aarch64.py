@@ -995,6 +995,47 @@ class Aarch64Cpu(Cpu):
             raise Aarch64InvalidInstruction
 
     @instruction
+    def MOVK(cpu, res_op, imm_op):
+        """
+        MOVK.
+
+        Move wide with keep moves an optionally-shifted 16-bit immediate value
+        into a register, keeping other bits unchanged.
+
+        :param res_op: destination register.
+        :param imm_op: immediate.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert imm_op.type is cs.arm64.ARM64_OP_IMM
+
+        insn_rx  = '[01]'      # sf
+        insn_rx += '11'        # opc
+        insn_rx += '100101'
+        insn_rx += '[01]{2}'   # hw
+        insn_rx += '[01]{16}'  # imm16
+        insn_rx += '[01]{5}'   # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        res = res_op.read()
+        imm = imm_op.op.imm
+        sft = imm_op.op.shift.value
+
+        if imm_op.is_shifted():
+            assert imm_op.op.shift.type == cs.arm64.ARM64_SFT_LSL
+
+        assert imm >= 0 and imm <= 65535
+        assert (
+            (res_op.size == 32 and sft in [0, 16]) or
+            (res_op.size == 64 and sft in [0, 16, 32, 48])
+        )
+
+        imm = LSL(imm, sft, res_op.size)
+        mask = LSL(65535, sft, res_op.size)
+        result = (res & ~mask) | imm
+        res_op.write(result)
+
+    @instruction
     def MOVN(cpu, dst, src):
         """
         MOVN.

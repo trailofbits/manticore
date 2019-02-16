@@ -913,6 +913,157 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W0'), 1)
 
 
+    # MOVK.
+
+    # 32-bit.
+
+    @itest_setregs('W0=0x41424344')
+    @itest('movk w0, #0')
+    def test_movk_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41420000)
+        self.assertEqual(self.rf.read('W0'), 0x41420000)
+
+    @itest_setregs('W0=0x41424344')
+    @itest('movk w0, #0xffff')
+    def test_movk_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142ffff)
+        self.assertEqual(self.rf.read('W0'), 0x4142ffff)
+
+    @itest_setregs('W0=0x41424344')
+    @itest('movk w0, #0x1001')
+    def test_movk32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41421001)
+        self.assertEqual(self.rf.read('W0'), 0x41421001)
+
+    @itest_setregs('W0=0x41424344')
+    @itest('movk w0, #0, lsl #0')
+    def test_movk_sft0_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41420000)
+        self.assertEqual(self.rf.read('W0'), 0x41420000)
+
+    @itest_setregs('W0=0x41424344')
+    @itest('movk w0, #0xffff, lsl #0')
+    def test_movk_sft0_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142ffff)
+        self.assertEqual(self.rf.read('W0'), 0x4142ffff)
+
+    @itest_setregs('W0=0x41424344')
+    @itest('movk w0, #0x1001, lsl #0')
+    def test_movk_sft0_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41421001)
+        self.assertEqual(self.rf.read('W0'), 0x41421001)
+
+    @itest_setregs('W0=0x41424344')
+    @itest('movk w0, #0, lsl #16')
+    def test_movk_sft16_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0x4344)
+        self.assertEqual(self.rf.read('W0'), 0x4344)
+
+    @itest_setregs('W0=0x41424344')
+    @itest('movk w0, #0xffff, lsl #16')
+    def test_movk_sft16_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffff4344)
+        self.assertEqual(self.rf.read('W0'), 0xffff4344)
+
+    @itest_setregs('W0=0x41424344')
+    @itest('movk w0, #0x1001, lsl #16')
+    def test_movk_sft16_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x10014344)
+        self.assertEqual(self.rf.read('W0'), 0x10014344)
+
+    # 64-bit.
+
+    @itest_setregs('X0=0x4142434445464748')
+    @itest('movk x0, #0')
+    def test_movk_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445460000)
+        self.assertEqual(self.rf.read('W0'), 0x45460000)
+
+    @itest_setregs('X0=0x4142434445464748')
+    @itest('movk x0, #0xffff')
+    def test_movk_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0x414243444546ffff)
+        self.assertEqual(self.rf.read('W0'), 0x4546ffff)
+
+    @itest_setregs('X0=0x4142434445464748')
+    @itest('movk x0, #0x1001')
+    def test_movk64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445461001)
+        self.assertEqual(self.rf.read('W0'), 0x45461001)
+
+    @itest_setregs('X0=0x4142434445464748')
+    @itest('movk x0, #0, lsl #0')
+    def test_movk_sft0_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445460000)
+        self.assertEqual(self.rf.read('W0'), 0x45460000)
+
+    @itest_setregs('X0=0x4142434445464748')
+    @itest('movk x0, #0xffff, lsl #0')
+    def test_movk_sft0_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0x414243444546ffff)
+        self.assertEqual(self.rf.read('W0'), 0x4546ffff)
+
+    @itest_setregs('X0=0x4142434445464748')
+    @itest('movk x0, #0x1001, lsl #0')
+    def test_movk_sft0_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445461001)
+        self.assertEqual(self.rf.read('W0'), 0x45461001)
+
+    @itest_setregs('X0=0x4142434445464748')
+    @itest('movk x0, #0, lsl #16')
+    def test_movk_sft16_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434400004748)
+        self.assertEqual(self.rf.read('W0'), 0x4748)
+
+    @itest_setregs('X0=0x4142434445464748')
+    @itest('movk x0, #0xffff, lsl #16')
+    def test_movk_sft16_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344ffff4748)
+        self.assertEqual(self.rf.read('W0'), 0xffff4748)
+
+    @itest_setregs('X0=0x4142434445464748')
+    @itest('movk x0, #0x1001, lsl #16')
+    def test_movk_sft16_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434410014748)
+        self.assertEqual(self.rf.read('W0'), 0x10014748)
+
+    @itest_setregs('X0=0x4142434445464748')
+    @itest('movk x0, #0, lsl #32')
+    def test_movk_sft32_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142000045464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @itest_setregs('X0=0x4142434445464748')
+    @itest('movk x0, #0xffff, lsl #32')
+    def test_movk_sft32_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142ffff45464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @itest_setregs('X0=0x4142434445464748')
+    @itest('movk x0, #0x1001, lsl #32')
+    def test_movk_sft32_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142100145464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @itest_setregs('X0=0x4142434445464748')
+    @itest('movk x0, #0, lsl #48')
+    def test_movk_sft48_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0x434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @itest_setregs('X0=0x4142434445464748')
+    @itest('movk x0, #0xffff, lsl #48')
+    def test_movk_sft48_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffff434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @itest_setregs('X0=0x4142434445464748')
+    @itest('movk x0, #0x1001, lsl #48')
+    def test_movk_sft48_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x1001434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+
     # MOVN.
 
     # 32-bit.
@@ -1733,19 +1884,6 @@ class Aarch64Instructions:
     def test_orr_sft_reg_ror64(self):
         self.assertEqual(self.rf.read('X0'), 0x8000000041424344)
         self.assertEqual(self.rf.read('W0'), 0x41424344)
-
-
-    # XXX: Unimplemented.
-
-    @itest_multiple(["movn x0, #0", "movk w0, #1"])
-    def test_movk_same_reg32(self):
-        self.assertEqual(self.rf.read('X0'), 0xffff0001)
-        self.assertEqual(self.rf.read('W0'), 0xffff0001)
-
-    @itest_multiple(["movn x0, #0", "movk x0, #1"])
-    def test_movk_same_reg64(self):
-        self.assertEqual(self.rf.read('X0'), 0xffffffffffff0001)
-        self.assertEqual(self.rf.read('W0'), 0xffff0001)
 
 
 class Aarch64CpuInstructions(unittest.TestCase, Aarch64Instructions):
