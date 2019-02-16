@@ -1201,6 +1201,26 @@ class Aarch64Cpu(Cpu):
         # method.
         cpu.MADD.__wrapped__(cpu, res_op, reg_op1, reg_op2, zr)
 
+    @instruction
+    def NOP(cpu):
+        """
+        NOP.
+
+        No Operation does nothing, other than advance the value of the program
+        counter by 4.  This instruction can be used for instruction alignment
+        purposes.
+        """
+        insn_rx  = '1101010100'
+        insn_rx += '0'
+        insn_rx += '00'
+        insn_rx += '011'
+        insn_rx += '0010'
+        insn_rx += '0000'        # CRm
+        insn_rx += '000'         # op2
+        insn_rx += '11111'
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
     def _ORR_immediate(cpu, res_op, reg_op, imm_op):
         """
         ORR (immediate).

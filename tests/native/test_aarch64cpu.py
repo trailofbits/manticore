@@ -1739,6 +1739,15 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('SP'), stack)  # no writeback
 
 
+    # NOP.
+
+    @itest_custom('nop')
+    def test_nop(self):
+        pc = self.cpu.PC
+        self._execute(check_pc=False)  # check explicitly
+        self.assertEqual(self.rf.read('PC'), pc + 4)
+
+
     # ORR (immediate).
 
     # 32-bit.
