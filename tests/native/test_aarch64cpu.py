@@ -1954,6 +1954,23 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W0'), 0x41424344)
 
 
+    # RET.
+
+    @itest_custom('ret')
+    def test_ret(self):
+        pc = self.cpu.PC
+        self.cpu.X30 = pc + 16
+        self._execute(check_pc=False)
+        self.assertEqual(self.rf.read('PC'), pc + 16)
+
+    @itest_custom('ret X0')
+    def test_ret_reg(self):
+        pc = self.cpu.PC
+        self.cpu.X0 = pc + 32
+        self._execute(check_pc=False)
+        self.assertEqual(self.rf.read('PC'), pc + 32)
+
+
 class Aarch64CpuInstructions(unittest.TestCase, Aarch64Instructions):
     def setUp(self):
         # XXX: Adapted from the Armv7 test code.

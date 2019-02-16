@@ -1319,6 +1319,37 @@ class Aarch64Cpu(Cpu):
         else:
             raise Aarch64InvalidInstruction
 
+    @instruction
+    def RET(cpu, reg_op=None):
+        """
+        RET.
+
+        Return from subroutine branches unconditionally to an address in a
+        register, with a hint that this is a subroutine return.
+
+        :param reg_op: None or register.
+        """
+        assert not reg_op or reg_op.type is cs.arm64.ARM64_OP_REG
+
+        insn_rx  = '1101011'
+        insn_rx += '0'        # Z
+        insn_rx += '0'
+        insn_rx += '10'       # op
+        insn_rx += '1{5}'
+        insn_rx += '0{4}'
+        insn_rx += '0'        # A
+        insn_rx += '0'        # M
+        insn_rx += '[01]{5}'  # Rn
+        insn_rx += '0{5}'     # Rm
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        if reg_op:
+            reg = reg_op.read()
+        else:
+            reg = cpu.X30
+        cpu.PC = reg
+
 
 class Aarch64CdeclAbi(Abi):
     """Aarch64/arm64 cdecl function call ABI"""
