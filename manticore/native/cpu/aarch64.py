@@ -1116,6 +1116,46 @@ class Aarch64Cpu(Cpu):
         dst.write(result)
 
     @instruction
+    def MSUB(cpu, res_op, reg_op1, reg_op2, reg_op3):
+        """
+        MSUB.
+
+        Multiply-Subtract multiplies two register values, subtracts the product
+        from a third register value, and writes the result to the destination
+        register.
+
+        This instruction is used by the alias MNEG.
+
+        :param res_op: destination register.
+        :param reg_op1: source register.
+        :param reg_op2: source register.
+        :param reg_op3: source register.
+        """
+        assert res_op.type  is cs.arm64.ARM64_OP_REG
+        assert reg_op1.type is cs.arm64.ARM64_OP_REG
+        assert reg_op2.type is cs.arm64.ARM64_OP_REG
+        assert reg_op3.type is cs.arm64.ARM64_OP_REG
+
+        insn_rx  = '[01]'     # sf
+        insn_rx += '00'
+        insn_rx += '11011'
+        insn_rx += '000'
+        insn_rx += '[01]{5}'  # Rm
+        insn_rx += '1'        # o0
+        insn_rx += '[01]{5}'  # Ra
+        insn_rx += '[01]{5}'  # Rn
+        insn_rx += '[01]{5}'  # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        reg1 = reg_op1.read()
+        reg2 = reg_op2.read()
+        reg3 = reg_op3.read()
+
+        result = reg3 - (reg1 * reg2)
+        res_op.write(UInt(result, res_op.size))
+
+    @instruction
     def MUL(cpu, res_op, reg_op1, reg_op2):
         """
         MUL.

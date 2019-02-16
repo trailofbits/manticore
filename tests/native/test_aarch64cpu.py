@@ -1158,6 +1158,65 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W0'), 0)
 
 
+    # MSUB.
+
+    # 32-bit.
+
+    @itest_setregs('W1=0xffffffff', 'W2=0xffffffff', 'W3=0xffffffff')
+    @itest('msub w0, w1, w2, w3')
+    def test_msub_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffe)
+        self.assertEqual(self.rf.read('W0'), 0xfffffffe)
+
+    @itest_setregs('W1=-1', 'W2=-1', 'W3=-1')
+    @itest('msub w0, w1, w2, w3')
+    def test_msub_neg32(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffe)
+        self.assertEqual(self.rf.read('W0'), 0xfffffffe)
+
+    @itest_setregs('W1=0xffffffff', 'W2=2', 'W3=1')
+    @itest('msub w0, w1, w2, w3')
+    def test_msub_of32(self):
+        self.assertEqual(self.rf.read('X0'), 3)
+        self.assertEqual(self.rf.read('W0'), 3)
+
+    @itest_setregs('W1=3', 'W2=4', 'W3=5')
+    @itest('msub w0, w1, w2, w3')
+    def test_msub32(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffff9)
+        self.assertEqual(self.rf.read('W0'), 0xfffffff9)
+
+    # 64-bit.
+
+    @itest_setregs(
+        'X1=0xffffffffffffffff',
+        'X2=0xffffffffffffffff',
+        'X3=0xffffffffffffffff'
+    )
+    @itest('msub x0, x1, x2, x3')
+    def test_msub_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffffffffffe)
+        self.assertEqual(self.rf.read('W0'), 0xfffffffe)
+
+    @itest_setregs('X1=-1', 'X2=-1', 'X3=-1')
+    @itest('msub x0, x1, x2, x3')
+    def test_msub_neg64(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffffffffffe)
+        self.assertEqual(self.rf.read('W0'), 0xfffffffe)
+
+    @itest_setregs('X1=0xffffffffffffffff', 'X2=2', 'X3=1')
+    @itest('msub x0, x1, x2, x3')
+    def test_msub_of64(self):
+        self.assertEqual(self.rf.read('X0'), 3)
+        self.assertEqual(self.rf.read('W0'), 3)
+
+    @itest_setregs('X1=3', 'X2=4', 'X3=5')
+    @itest('msub x0, x1, x2, x3')
+    def test_msub64(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffffffffff9)
+        self.assertEqual(self.rf.read('W0'), 0xfffffff9)
+
+
     # MUL.
 
     # 32-bit.
