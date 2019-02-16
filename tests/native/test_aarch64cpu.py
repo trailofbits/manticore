@@ -2026,6 +2026,49 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('PC'), pc + 32)
 
 
+    # REV.
+
+    # 32-bit.
+
+    @itest_setregs('W1=0')
+    @itest('rev w0, w1')
+    def test_rev_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs('W1=0xffffffff')
+    @itest('rev w0, w1')
+    def test_rev_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    @itest_setregs('W1=0x41424344')
+    @itest('rev w0, w1')
+    def test_rev32(self):
+        self.assertEqual(self.rf.read('X0'), 0x44434241)
+        self.assertEqual(self.rf.read('W0'), 0x44434241)
+
+    # 64-bit.
+
+    @itest_setregs('X1=0')
+    @itest('rev x0, x1')
+    def test_rev_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs('X1=0xffffffffffffffff')
+    @itest('rev x0, x1')
+    def test_rev_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffffffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest('rev x0, x1')
+    def test_rev64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4847464544434241)
+        self.assertEqual(self.rf.read('W0'), 0x44434241)
+
+
 class Aarch64CpuInstructions(unittest.TestCase, Aarch64Instructions):
     def setUp(self):
         # XXX: Adapted from the Armv7 test code.

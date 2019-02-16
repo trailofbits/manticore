@@ -1386,6 +1386,45 @@ class Aarch64Cpu(Cpu):
             reg = cpu.X30
         cpu.PC = reg
 
+    @instruction
+    def REV(cpu, res_op, reg_op):
+        """
+        REV.
+
+        Reverse Bytes reverses the byte order in a register.
+
+        This instruction is used by the pseudo-instruction REV64.
+
+        :param res_op: destination register.
+        :param reg_op: source register.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+
+        insn_rx  = '[01]'     # sf
+        insn_rx += '1'
+        insn_rx += '0'
+        insn_rx += '11010110'
+        insn_rx += '0{5}'
+        insn_rx += '0{4}'
+        insn_rx += '1[01]'    # opc
+        insn_rx += '[01]{5}'  # Rn
+        insn_rx += '[01]{5}'  # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        reg = reg_op.read()
+        size = reg_op.size
+
+        result = 0
+        step = 8
+        for pos in range(0, size, step):
+            byte = Operators.EXTRACT(reg, pos, step)
+            result <<= step
+            result |= byte
+
+        res_op.write(result)
+
 
 class Aarch64CdeclAbi(Abi):
     """Aarch64/arm64 cdecl function call ABI"""
