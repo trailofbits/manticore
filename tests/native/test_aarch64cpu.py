@@ -1954,6 +1954,61 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W0'), 0x41424344)
 
 
+    # RBIT.
+
+    # 32-bit.
+
+    @itest_setregs('W1=0')
+    @itest('rbit w0, w1')
+    def test_rbit_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs('W1=0xffffffff')
+    @itest('rbit w0, w1')
+    def test_rbit_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    @itest_setregs('W1=1')
+    @itest('rbit w0, w1')
+    def test_rbit_one32(self):
+        self.assertEqual(self.rf.read('X0'), 0x80000000)
+        self.assertEqual(self.rf.read('W0'), 0x80000000)
+
+    @itest_setregs('W1=0x41424344')
+    @itest('rbit w0, w1')
+    def test_rbit32(self):
+        self.assertEqual(self.rf.read('X0'), 0x22c24282)
+        self.assertEqual(self.rf.read('W0'), 0x22c24282)
+
+    # 64-bit.
+
+    @itest_setregs('X1=0')
+    @itest('rbit x0, x1')
+    def test_rbit_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs('X1=0xffffffffffffffff')
+    @itest('rbit x0, x1')
+    def test_rbit_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffffffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    @itest_setregs('X1=1')
+    @itest('rbit x0, x1')
+    def test_rbit_one64(self):
+        self.assertEqual(self.rf.read('X0'), 0x8000000000000000)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest('rbit x0, x1')
+    def test_rbit64(self):
+        self.assertEqual(self.rf.read('X0'), 0x12e262a222c24282)
+        self.assertEqual(self.rf.read('W0'), 0x22c24282)
+
+
     # RET.
 
     @itest_custom('ret')

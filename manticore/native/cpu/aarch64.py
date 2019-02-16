@@ -1320,6 +1320,42 @@ class Aarch64Cpu(Cpu):
             raise Aarch64InvalidInstruction
 
     @instruction
+    def RBIT(cpu, res_op, reg_op):
+        """
+        RBIT.
+
+        Reverse Bits reverses the bit order in a register.
+
+        :param res_op: destination register.
+        :param reg_op: source register.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+
+        insn_rx  = '[01]'     # sf
+        insn_rx += '1'
+        insn_rx += '0'
+        insn_rx += '11010110'
+        insn_rx += '0{5}'
+        insn_rx += '0{4}'
+        insn_rx += '0{2}'
+        insn_rx += '[01]{5}'  # Rn
+        insn_rx += '[01]{5}'  # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        reg = reg_op.read()
+        size = reg_op.size
+
+        result = 0
+        for pos in range(size):
+            bit = Operators.EXTRACT(reg, pos, 1)
+            result <<= 1
+            result |= bit
+
+        res_op.write(result)
+
+    @instruction
     def RET(cpu, reg_op=None):
         """
         RET.
