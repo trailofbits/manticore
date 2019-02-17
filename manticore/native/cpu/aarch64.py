@@ -6,7 +6,8 @@ import re
 import struct
 
 from .abstractcpu import (
-    Cpu, CpuException, RegisterFile, Abi, SyscallAbi, Operand, instruction
+    Cpu, CpuException, Interruption, InstructionNotImplementedError,
+    RegisterFile, Abi, SyscallAbi, Operand, instruction
 )
 from .arm import HighBit, Armv7Operand
 from .bitwise import SInt, UInt, ASR, LSL, LSR, ROR
@@ -1460,6 +1461,27 @@ class Aarch64Cpu(Cpu):
         assert imm >= -256 and imm <= 255
 
         cpu.write_int(base + imm, reg, reg_op.size)
+
+    @instruction
+    def SVC(cpu, imm_op):
+        """
+        SVC.
+
+        Supervisor Call causes an exception to be taken to EL1.  On executing an
+        SVC instruction, the PE records the exception as a Supervisor Call
+        exception in ESR_ELx, using the EC value 0x15, and the value of the
+        immediate argument.
+
+        :param imm_op: immediate.
+        """
+        assert imm_op.type is cs.arm64.ARM64_OP_IMM
+
+        imm = imm_op.op.imm
+        assert imm >= 0 and imm <= 65535
+
+        if imm != 0:
+            raise InstructionNotImplementedError(f'SVC #{imm}')
+        raise Interruption(imm)
 
 
 class Aarch64CdeclAbi(Abi):

@@ -7,6 +7,9 @@ from keystone import Ks, KS_ARCH_ARM64, KS_MODE_LITTLE_ENDIAN
 from manticore.core.smtlib import *
 from manticore.native.memory import SMemory64, Memory64
 from manticore.native.cpu.aarch64 import Aarch64Cpu as Cpu
+from manticore.native.cpu.abstractcpu import (
+    Interruption, InstructionNotImplementedError
+)
 from manticore.native.cpu.bitwise import LSL
 from manticore.utils.emulate import UnicornEmulator
 from .test_armv7cpu import itest_setregs
@@ -2151,6 +2154,25 @@ class Aarch64Instructions:
         self._execute()
         self.assertEqual(self.cpu.read_int(stack), 0x4142434445464748)
         self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+
+    # SVC.
+
+    def test_svc0(self):
+        # XXX: Enable when this is fixed.
+        if self.__class__.__name__ == 'Aarch64UnicornInstructions':
+            raise unittest.SkipTest('Unicorn hangs')
+        with self.assertRaises(Interruption):
+            self._setupCpu("svc #0")
+            self._execute()
+
+    def test_svc1(self):
+        # XXX: Enable when this is fixed.
+        if self.__class__.__name__ == 'Aarch64UnicornInstructions':
+            raise unittest.SkipTest('Unicorn hangs')
+        with self.assertRaises(InstructionNotImplementedError):
+            self._setupCpu("svc #1")
+            self._execute()
 
 
 class Aarch64CpuInstructions(unittest.TestCase, Aarch64Instructions):
