@@ -2,6 +2,7 @@ import warnings
 
 import capstone as cs
 import collections
+from decimal import Decimal
 import re
 import struct
 
@@ -1482,6 +1483,45 @@ class Aarch64Cpu(Cpu):
         if imm != 0:
             raise InstructionNotImplementedError(f'SVC #{imm}')
         raise Interruption(imm)
+
+    @instruction
+    def UDIV(cpu, res_op, reg_op1, reg_op2):
+        """
+        UDIV.
+
+        Unsigned Divide divides an unsigned integer register value by another
+        unsigned integer register value, and writes the result to the
+        destination register.  The condition flags are not affected.
+
+        :param res_op: destination register.
+        :param reg_op1: source register.
+        :param reg_op2: source register.
+        """
+        assert res_op.type  is cs.arm64.ARM64_OP_REG
+        assert reg_op1.type is cs.arm64.ARM64_OP_REG
+        assert reg_op2.type is cs.arm64.ARM64_OP_REG
+
+        insn_rx  = '[01]'      # sf
+        insn_rx += '0'
+        insn_rx += '0'
+        insn_rx += '11010110'
+        insn_rx += '[01]{5}'   # Rm
+        insn_rx += '00001'
+        insn_rx += '0'         # o1
+        insn_rx += '[01]{5}'   # Rn
+        insn_rx += '[01]{5}'   # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        reg1 = UInt(reg_op1.read(), reg_op1.size)
+        reg2 = UInt(reg_op2.read(), reg_op2.size)
+
+        if reg2 == 0:
+            result = 0
+        else:
+            result = int(Decimal(reg1) / Decimal(reg2))  # round toward zero
+
+        res_op.write(result)
 
 
 class Aarch64CdeclAbi(Abi):

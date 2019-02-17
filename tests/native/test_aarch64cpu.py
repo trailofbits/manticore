@@ -2175,6 +2175,73 @@ class Aarch64Instructions:
             self._execute()
 
 
+    # UDIV.
+
+    # 32-bit.
+
+    @itest_setregs('W1=0', 'W2=0')
+    @itest('udiv w0, w1, w2')
+    def test_udiv_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs('W1=0xffffffff', 'W2=0xffffffff')
+    @itest('udiv w0, w1, w2')
+    def test_udiv_max32(self):
+        self.assertEqual(self.rf.read('X0'), 1)
+        self.assertEqual(self.rf.read('W0'), 1)
+
+    @itest_setregs('W1=0xffffffff', 'W2=0')
+    @itest('udiv w0, w1, w2')
+    def test_udiv0_32(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs('W1=0xffffffff', 'W2=2')
+    @itest('udiv w0, w1, w2')
+    def test_udiv_neg32(self):
+        self.assertEqual(self.rf.read('X0'), 0x7fffffff)
+        self.assertEqual(self.rf.read('W0'), 0x7fffffff)
+
+    @itest_setregs('W1=1', 'W2=2')
+    @itest('udiv w0, w1, w2')
+    def test_udiv_pos32(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    # 64-bit.
+
+    @itest_setregs('X1=0', 'X2=0')
+    @itest('udiv x0, x1, x2')
+    def test_udiv_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs('X1=0xffffffffffffffff', 'X2=0xffffffffffffffff')
+    @itest('udiv x0, x1, x2')
+    def test_udiv_max64(self):
+        self.assertEqual(self.rf.read('X0'), 1)
+        self.assertEqual(self.rf.read('W0'), 1)
+
+    @itest_setregs('X1=0xffffffffffffffff', 'X2=0')
+    @itest('udiv x0, x1, x2')
+    def test_udiv0_64(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs('X1=0xffffffffffffffff', 'X2=2')
+    @itest('udiv x0, x1, x2')
+    def test_udiv_neg64(self):
+        self.assertEqual(self.rf.read('X0'), 0x7fffffffffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    @itest_setregs('X1=1', 'X2=2')
+    @itest('udiv x0, x1, x2')
+    def test_udiv_pos64(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+
 class Aarch64CpuInstructions(unittest.TestCase, Aarch64Instructions):
     def setUp(self):
         # XXX: Adapted from the Armv7 test code.
