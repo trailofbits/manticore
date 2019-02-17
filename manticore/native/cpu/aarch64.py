@@ -1523,6 +1523,41 @@ class Aarch64Cpu(Cpu):
 
         res_op.write(result)
 
+    @instruction
+    def UMULH(cpu, res_op, reg_op1, reg_op2):
+        """
+        UMULH.
+
+        Unsigned Multiply High multiplies two 64-bit register values, and writes
+        bits[127:64] of the 128-bit result to the 64-bit destination register.
+
+        :param res_op: destination register.
+        :param reg_op1: source register.
+        :param reg_op2: source register.
+        """
+        assert res_op.type  is cs.arm64.ARM64_OP_REG
+        assert reg_op1.type is cs.arm64.ARM64_OP_REG
+        assert reg_op2.type is cs.arm64.ARM64_OP_REG
+
+        insn_rx  = '1'
+        insn_rx += '00'
+        insn_rx += '11011'
+        insn_rx += '1'        # U
+        insn_rx += '10'
+        insn_rx += '[01]{5}'  # Rm
+        insn_rx += '0'
+        insn_rx += '1{5}'     # Ra
+        insn_rx += '[01]{5}'  # Rn
+        insn_rx += '[01]{5}'  # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        reg1 = UInt(reg_op1.read(), reg_op1.size)
+        reg2 = UInt(reg_op2.read(), reg_op2.size)
+
+        result = Operators.EXTRACT(reg1 * reg2, 64, 128)
+        res_op.write(result)
+
 
 class Aarch64CdeclAbi(Abi):
     """Aarch64/arm64 cdecl function call ABI"""

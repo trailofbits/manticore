@@ -2242,6 +2242,27 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W0'), 0)
 
 
+    # UMULH.
+
+    @itest_setregs('X1=0', 'X2=0')
+    @itest('umulh x0, x1, x2')
+    def test_umulh_min(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs('X1=0xffffffffffffffff', 'X2=0xffffffffffffffff')
+    @itest('umulh x0, x1, x2')
+    def test_umulh_max(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffffffffffe)
+        self.assertEqual(self.rf.read('W0'), 0xfffffffe)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x4142434445464748')
+    @itest('umulh x0, x1, x2')
+    def test_umulh(self):
+        self.assertEqual(self.rf.read('X0'), 0x10a2b74f6c0e36e6)
+        self.assertEqual(self.rf.read('W0'), 0x6c0e36e6)
+
+
 class Aarch64CpuInstructions(unittest.TestCase, Aarch64Instructions):
     def setUp(self):
         # XXX: Adapted from the Armv7 test code.
