@@ -1425,6 +1425,42 @@ class Aarch64Cpu(Cpu):
 
         res_op.write(result)
 
+    @instruction
+    def STUR(cpu, reg_op, mem_op):
+        """
+        STUR.
+
+        Store Register (unscaled) calculates an address from a base register
+        value and an immediate offset, and stores a 32-bit word or a 64-bit
+        doubleword to the calculated address, from a register.
+
+        :param reg_op: source register.
+        :param mem_op: memory.
+        """
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+        assert mem_op.type is cs.arm64.ARM64_OP_MEM
+
+        insn_rx  = '1[01]'    # size
+        insn_rx += '111'
+        insn_rx += '0'
+        insn_rx += '00'
+        insn_rx += '00'       # opc
+        insn_rx += '0'
+        insn_rx += '[01]{9}'  # imm9
+        insn_rx += '00'
+        insn_rx += '[01]{5}'  # Rn
+        insn_rx += '[01]{5}'  # Rt
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        reg = reg_op.read()
+        base = cpu.regfile.read(mem_op.mem.base)
+        imm = mem_op.mem.disp
+
+        assert imm >= -256 and imm <= 255
+
+        cpu.write_int(base + imm, reg, reg_op.size)
+
 
 class Aarch64CdeclAbi(Abi):
     """Aarch64/arm64 cdecl function call ABI"""
