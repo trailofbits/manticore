@@ -319,6 +319,38 @@ class Aarch64Cpu(Cpu):
         result = UInt(action(reg1, reg2), res_op.size)
         res_op.write(result)
 
+    def _ldur_stur(cpu, reg_op, mem_op, ldur):
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+        assert mem_op.type is cs.arm64.ARM64_OP_MEM
+
+        insn_rx  = '1[01]'    # size
+        insn_rx += '111'
+        insn_rx += '0'
+        insn_rx += '00'
+        if ldur:
+            insn_rx += '01'   # opc
+        else:
+            insn_rx += '00'   # opc
+        insn_rx += '0'
+        insn_rx += '[01]{9}'  # imm9
+        insn_rx += '00'
+        insn_rx += '[01]{5}'  # Rn
+        insn_rx += '[01]{5}'  # Rt
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        base = cpu.regfile.read(mem_op.mem.base)
+        imm = mem_op.mem.disp
+
+        assert imm >= -256 and imm <= 255
+
+        if ldur:
+            result = cpu.read_int(base + imm, reg_op.size)
+            reg_op.write(result)
+        else:
+            reg = reg_op.read()
+            cpu.write_int(base + imm, reg, reg_op.size)
+
     def _ADD_immediate(cpu, res_op, reg_op, imm_op):
         """
         ADD (immediate).
@@ -847,7 +879,7 @@ class Aarch64Cpu(Cpu):
             raise Aarch64InvalidInstruction
 
     @instruction
-    def LDUR(cpu, res_op, mem_op):
+    def LDUR(cpu, reg_op, mem_op):
         """
         LDUR.
 
@@ -855,32 +887,10 @@ class Aarch64Cpu(Cpu):
         an immediate offset, loads a 32-bit word or 64-bit doubleword from
         memory, zero-extends it, and writes it to a register.
 
-        :param res_op: destination register.
+        :param reg_op: destination register.
         :param mem_op: memory.
         """
-        assert res_op.type is cs.arm64.ARM64_OP_REG
-        assert mem_op.type is cs.arm64.ARM64_OP_MEM
-
-        insn_rx  = '1[01]'    # size
-        insn_rx += '111'
-        insn_rx += '0'
-        insn_rx += '00'
-        insn_rx += '01'       # opc
-        insn_rx += '0'
-        insn_rx += '[01]{9}'  # imm9
-        insn_rx += '00'
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '[01]{5}'  # Rt
-
-        assert re.match(insn_rx, cpu.insn_bit_str)
-
-        base = cpu.regfile.read(mem_op.mem.base)
-        imm = mem_op.mem.disp
-
-        assert imm >= -256 and imm <= 255
-
-        result = cpu.read_int(base + imm, res_op.size)
-        res_op.write(result)
+        cpu._ldur_stur(reg_op, mem_op, ldur=True)
 
     @instruction
     def MADD(cpu, res_op, reg_op1, reg_op2, reg_op3):
@@ -1439,29 +1449,7 @@ class Aarch64Cpu(Cpu):
         :param reg_op: source register.
         :param mem_op: memory.
         """
-        assert reg_op.type is cs.arm64.ARM64_OP_REG
-        assert mem_op.type is cs.arm64.ARM64_OP_MEM
-
-        insn_rx  = '1[01]'    # size
-        insn_rx += '111'
-        insn_rx += '0'
-        insn_rx += '00'
-        insn_rx += '00'       # opc
-        insn_rx += '0'
-        insn_rx += '[01]{9}'  # imm9
-        insn_rx += '00'
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '[01]{5}'  # Rt
-
-        assert re.match(insn_rx, cpu.insn_bit_str)
-
-        reg = reg_op.read()
-        base = cpu.regfile.read(mem_op.mem.base)
-        imm = mem_op.mem.disp
-
-        assert imm >= -256 and imm <= 255
-
-        cpu.write_int(base + imm, reg, reg_op.size)
+        cpu._ldur_stur(reg_op, mem_op, ldur=False)
 
     @instruction
     def SVC(cpu, imm_op):
