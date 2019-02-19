@@ -319,6 +319,71 @@ class Aarch64Cpu(Cpu):
         result = UInt(action(reg1, reg2), res_op.size)
         res_op.write(result)
 
+    def _ldr_str_register(cpu, reg_op, mem_op, ldr):
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+        assert mem_op.type is cs.arm64.ARM64_OP_MEM
+
+        insn_rx  = '1[01]'    # size
+        insn_rx += '111'
+        insn_rx += '0'
+        insn_rx += '00'
+        if ldr:
+            insn_rx += '01'   # opc
+        else:
+            insn_rx += '00'   # opc
+        insn_rx += '1'
+        insn_rx += '[01]{5}'  # Rm
+        insn_rx += '[01]{3}'  # option
+        insn_rx += '[01]'     # S
+        insn_rx += '10'
+        insn_rx += '[01]{5}'  # Rn
+        insn_rx += '[01]{5}'  # Rt
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        base = cpu.regfile.read(mem_op.mem.base)
+        index = cpu.regfile.read(mem_op.mem.index)
+        index_size = cpu.regfile.size(mem_op.mem.index)
+
+        if mem_op.is_extended():
+            ext = mem_op.op.ext
+
+            assert ext in [
+                cs.arm64.ARM64_EXT_UXTW,
+                cs.arm64.ARM64_EXT_SXTW,
+                cs.arm64.ARM64_EXT_SXTX
+            ]
+
+            if ext == cs.arm64.ARM64_EXT_UXTW:
+                index = Operators.ZEXTEND(index, cpu.address_bit_size)
+                index_size = cpu.address_bit_size
+
+            elif ext == cs.arm64.ARM64_EXT_SXTW:
+                index = Operators.SEXTEND(index, index_size, cpu.address_bit_size)
+                index_size = cpu.address_bit_size
+
+            elif ext == cs.arm64.ARM64_EXT_SXTX:
+                index = Operators.SEXTEND(index, index_size, cpu.address_bit_size)
+                index_size = cpu.address_bit_size
+
+            else:
+                raise Aarch64InvalidInstruction
+
+        if mem_op.is_shifted():
+            shift = mem_op.op.shift
+            assert shift.type == cs.arm64.ARM64_SFT_LSL
+            index = LSL(index, shift.value, index_size)
+
+        base = UInt(base, cpu.address_bit_size)
+        index = SInt(index, cpu.address_bit_size)
+
+        if ldr:
+            result = cpu.read_int(base + index, reg_op.size)
+            reg_op.write(result)
+        else:
+            reg = reg_op.read()
+            cpu.write_int(base + index, reg, reg_op.size)
+
     def _ldur_stur(cpu, reg_op, mem_op, ldur):
         assert reg_op.type is cs.arm64.ARM64_OP_REG
         assert mem_op.type is cs.arm64.ARM64_OP_MEM
@@ -785,7 +850,7 @@ class Aarch64Cpu(Cpu):
         result = cpu.read_int(imm, dst.size)
         dst.write(result)
 
-    def _LDR_register(cpu, dst, src):
+    def _LDR_register(cpu, reg_op, mem_op):
         """
         LDR (register).
 
@@ -794,64 +859,10 @@ class Aarch64Cpu(Cpu):
         it to a register.  The offset register value can optionally be shifted
         and extended.
 
-        :param dst: destination register.
-        :param src: memory: register offset or extended register offset.
+        :param reg_op: destination register.
+        :param mem_op: memory.
         """
-        assert dst.type is cs.arm64.ARM64_OP_REG
-        assert src.type is cs.arm64.ARM64_OP_MEM
-
-        insn_rx  = '1[01]'    # size
-        insn_rx += '111'
-        insn_rx += '0'
-        insn_rx += '00'
-        insn_rx += '01'       # opc
-        insn_rx += '1'
-        insn_rx += '[01]{5}'  # Rm
-        insn_rx += '[01]{3}'  # option
-        insn_rx += '[01]'     # S
-        insn_rx += '10'
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '[01]{5}'  # Rt
-
-        assert re.match(insn_rx, cpu.insn_bit_str)
-
-        base = cpu.regfile.read(src.mem.base)
-        index = cpu.regfile.read(src.mem.index)
-        index_size = cpu.regfile.size(src.mem.index)
-
-        if src.is_extended():
-            ext = src.op.ext
-
-            assert ext in [
-                cs.arm64.ARM64_EXT_UXTW,
-                cs.arm64.ARM64_EXT_SXTW,
-                cs.arm64.ARM64_EXT_SXTX
-            ]
-
-            if ext == cs.arm64.ARM64_EXT_UXTW:
-                index = Operators.ZEXTEND(index, cpu.address_bit_size)
-                index_size = cpu.address_bit_size
-
-            elif ext == cs.arm64.ARM64_EXT_SXTW:
-                index = Operators.SEXTEND(index, index_size, cpu.address_bit_size)
-                index_size = cpu.address_bit_size
-
-            elif ext == cs.arm64.ARM64_EXT_SXTX:
-                index = Operators.SEXTEND(index, index_size, cpu.address_bit_size)
-                index_size = cpu.address_bit_size
-
-            else:
-                raise Aarch64InvalidInstruction
-
-        if src.is_shifted():
-            shift = src.op.shift
-            assert shift.type == cs.arm64.ARM64_SFT_LSL
-            index = LSL(index, shift.value, index_size)
-
-        base = UInt(base, cpu.address_bit_size)
-        index = SInt(index, cpu.address_bit_size)
-        result = cpu.read_int(base + index, dst.size)
-        dst.write(result)
+        cpu._ldr_str_register(reg_op, mem_op, ldr=True)
 
     @instruction
     def LDR(cpu, dst, src, rest=None):
@@ -1436,6 +1447,26 @@ class Aarch64Cpu(Cpu):
             result |= byte
 
         res_op.write(result)
+
+    # XXX: Support STR (immediate).
+    @instruction
+    def STR(cpu, reg_op, mem_op):
+        """
+        STR (register).
+
+        Store Register (register) calculates an address from a base register
+        value and an offset register value, and stores a 32-bit word or a 64-bit
+        doubleword to the calculated address, from a register.
+
+        The instruction uses an offset addressing mode, that calculates the
+        address used for the memory access from a base register value and an
+        offset register value.  The offset can be optionally shifted and
+        extended.
+
+        :param reg_op: source register.
+        :param mem_op: memory.
+        """
+        cpu._ldr_str_register(reg_op, mem_op, ldr=False)
 
     @instruction
     def STUR(cpu, reg_op, mem_op):
