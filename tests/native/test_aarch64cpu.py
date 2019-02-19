@@ -2072,6 +2072,152 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W0'), 0x44434241)
 
 
+    # STR (immediate).
+
+    # str w1, [x27]          base register (opt. offset omitted):  [x27]     = w1
+    # str w2, [x28, #8]      base plus offset:                     [x28 + 8] = w2
+    # str w3, [x29], #8      post-indexed:                         [x29]     = w3, x29 += 8
+    # str w4, [x30, #8]!     pre-indexed:                          [x30 + 8] = w4, x30 += 8
+
+    # 32-bit.
+
+    @itest_setregs('W1=0x41424344')
+    @itest_custom('str w1, [sp]')
+    def test_str_imm_base32(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x5152535441424344)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('W1=0x41424344')
+    @itest_custom('str w1, [sp, #8]')
+    def test_str_imm_base_offset32(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.push_int(0x6162636465666768)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x5152535441424344)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('W1=0x41424344')
+    @itest_custom('str w1, [sp, #16380]')
+    def test_str_imm_base_offset_max32(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.STACK -= 16380
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack + 16380), 0x5152535441424344)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('W1=0x41424344')
+    @itest_custom('str w1, [sp], #8')
+    def test_str_imm_post_indexed32(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x5152535441424344)
+        self.assertEqual(self.rf.read('SP'), stack + 8)  # writeback
+
+    @itest_setregs('W1=0x41424344')
+    @itest_custom('str w1, [sp], #-256')
+    def test_str_imm_post_indexed_neg32(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x5152535441424344)
+        self.assertEqual(self.rf.read('SP'), stack - 256)  # writeback
+
+    @itest_setregs('W1=0x41424344')
+    @itest_custom('str w1, [sp, #8]!')
+    def test_str_imm_pre_indexed32(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.push_int(0x6162636465666768)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x5152535441424344)
+        self.assertEqual(self.rf.read('SP'), stack + 8)  # writeback
+
+    @itest_setregs('W1=0x41424344')
+    @itest_custom('str w1, [sp, #-256]!')
+    def test_str_imm_pre_indexed_neg32(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.STACK += 256
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack - 256), 0x5152535441424344)
+        self.assertEqual(self.rf.read('SP'), stack - 256)  # writeback
+
+    # 64-bit.
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest_custom('str x1, [sp]')
+    def test_str_imm_base64(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest_custom('str x1, [sp, #8]')
+    def test_str_imm_base_offset64(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.push_int(0x6162636465666768)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest_custom('str x1, [sp, #32760]')
+    def test_str_imm_base_offset_max64(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.STACK -= 32760
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack + 32760), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest_custom('str x1, [sp], #8')
+    def test_str_imm_post_indexed64(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack + 8)  # writeback
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest_custom('str x1, [sp], #-256')
+    def test_str_imm_post_indexed_neg64(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack - 256)  # writeback
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest_custom('str x1, [sp, #8]!')
+    def test_str_imm_pre_indexed64(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.push_int(0x6162636465666768)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack + 8)  # writeback
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest_custom('str x1, [sp, #-256]!')
+    def test_str_imm_pre_indexed_neg64(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.STACK += 256
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack - 256), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack - 256)  # writeback
+
+
     # STR (register).
 
     # 32-bit.

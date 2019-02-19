@@ -319,6 +319,75 @@ class Aarch64Cpu(Cpu):
         result = UInt(action(reg1, reg2), res_op.size)
         res_op.write(result)
 
+    def _ldr_str_immediate(cpu, reg_op, mem_op, mimm_op, ldr):
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+        assert mem_op.type is cs.arm64.ARM64_OP_MEM
+        assert not mimm_op or mimm_op.type is cs.arm64.ARM64_OP_IMM
+
+        post_index_rx  = '1[01]'    # size
+        post_index_rx += '111'
+        post_index_rx += '0'
+        post_index_rx += '00'
+        if ldr:
+            post_index_rx += '01'   # opc
+        else:
+            post_index_rx += '00'   # opc
+        post_index_rx += '0'
+        post_index_rx += '[01]{9}'  # imm9
+        post_index_rx += '01'
+        post_index_rx += '[01]{5}'  # Rn
+        post_index_rx += '[01]{5}'  # Rt
+
+        pre_index_rx  = '1[01]'     # size
+        pre_index_rx += '111'
+        pre_index_rx += '0'
+        pre_index_rx += '00'
+        if ldr:
+            pre_index_rx += '01'    # opc
+        else:
+            pre_index_rx += '00'    # opc
+        pre_index_rx += '0'
+        pre_index_rx += '[01]{9}'   # imm9
+        pre_index_rx += '11'
+        pre_index_rx += '[01]{5}'   # Rn
+        pre_index_rx += '[01]{5}'   # Rt
+
+        unsigned_offset_rx  = '1[01]'     # size
+        unsigned_offset_rx += '111'
+        unsigned_offset_rx += '0'
+        unsigned_offset_rx += '01'
+        if ldr:
+            unsigned_offset_rx += '01'    # opc
+        else:
+            unsigned_offset_rx += '00'    # opc
+        unsigned_offset_rx += '[01]{12}'  # imm12
+        unsigned_offset_rx += '[01]{5}'   # Rn
+        unsigned_offset_rx += '[01]{5}'   # Rt
+
+        assert (
+            re.match(post_index_rx, cpu.insn_bit_str) or
+            re.match(pre_index_rx, cpu.insn_bit_str) or
+            re.match(unsigned_offset_rx, cpu.insn_bit_str)
+        )
+
+        base = cpu.regfile.read(mem_op.mem.base)
+        imm = mem_op.mem.disp
+
+        if mimm_op:  # post-indexed
+            wback = mimm_op.op.imm
+        else:
+            wback = imm  # use it for writeback if applicable
+
+        if ldr:
+            result = cpu.read_int(base + imm, reg_op.size)
+            reg_op.write(result)
+        else:
+            reg = reg_op.read()
+            cpu.write_int(base + imm, reg, reg_op.size)
+
+        if cpu.instruction.writeback:
+            cpu.regfile.write(mem_op.mem.base, base + wback)
+
     def _ldr_str_register(cpu, reg_op, mem_op, ldr):
         assert reg_op.type is cs.arm64.ARM64_OP_REG
         assert mem_op.type is cs.arm64.ARM64_OP_MEM
@@ -757,7 +826,7 @@ class Aarch64Cpu(Cpu):
 
         res_op.write(count)
 
-    def _LDR_immediate(cpu, dst, src, rest):
+    def _LDR_immediate(cpu, reg_op, mem_op, mimm_op):
         """
         LDR (immediate).
 
@@ -765,64 +834,11 @@ class Aarch64Cpu(Cpu):
         writes it to a register.  The address that is used for the load is
         calculated from a base register and an immediate offset.
 
-        :param dst: destination register.
-        :param src: memory (source register and immediate).
-        :param rest: None or immediate.
+        :param reg_op: destination register.
+        :param mem_op: memory.
+        :param mimm_op: None or immediate.
         """
-        assert dst.type is cs.arm64.ARM64_OP_REG
-        assert src.type is cs.arm64.ARM64_OP_MEM
-        assert not rest or rest.type is cs.arm64.ARM64_OP_IMM
-
-        post_index_rx  = '1[01]'    # size
-        post_index_rx += '111'
-        post_index_rx += '0'
-        post_index_rx += '00'
-        post_index_rx += '01'       # opc
-        post_index_rx += '0'
-        post_index_rx += '[01]{9}'  # imm9
-        post_index_rx += '01'
-        post_index_rx += '[01]{5}'  # Rn
-        post_index_rx += '[01]{5}'  # Rt
-
-        pre_index_rx  = '1[01]'     # size
-        pre_index_rx += '111'
-        pre_index_rx += '0'
-        pre_index_rx += '00'
-        pre_index_rx += '01'        # opc
-        pre_index_rx += '0'
-        pre_index_rx += '[01]{9}'   # imm9
-        pre_index_rx += '11'
-        pre_index_rx += '[01]{5}'   # Rn
-        pre_index_rx += '[01]{5}'   # Rt
-
-        unsigned_offset_rx  = '1[01]'     # size
-        unsigned_offset_rx += '111'
-        unsigned_offset_rx += '0'
-        unsigned_offset_rx += '01'
-        unsigned_offset_rx += '01'        # opc
-        unsigned_offset_rx += '[01]{12}'  # imm12
-        unsigned_offset_rx += '[01]{5}'   # Rn
-        unsigned_offset_rx += '[01]{5}'   # Rt
-
-        assert (
-            re.match(post_index_rx, cpu.insn_bit_str) or
-            re.match(pre_index_rx, cpu.insn_bit_str) or
-            re.match(unsigned_offset_rx, cpu.insn_bit_str)
-        )
-
-        base = cpu.regfile.read(src.mem.base)
-        imm = src.mem.disp
-
-        if rest:  # post-indexed
-            wback = rest.op.imm
-        else:
-            wback = imm  # use it for writeback if applicable
-
-        result = cpu.read_int(base + imm, dst.size)
-        dst.write(result)
-
-        if cpu.instruction.writeback:
-            cpu.regfile.write(src.mem.base, base + wback)
+        cpu._ldr_str_immediate(reg_op, mem_op, mimm_op, ldr=True)
 
     def _LDR_literal(cpu, dst, src):
         """
@@ -1448,9 +1464,21 @@ class Aarch64Cpu(Cpu):
 
         res_op.write(result)
 
-    # XXX: Support STR (immediate).
-    @instruction
-    def STR(cpu, reg_op, mem_op):
+    def _STR_immediate(cpu, reg_op, mem_op, mimm_op):
+        """
+        STR (immediate).
+
+        Store Register (immediate) stores a word or a doubleword from a register
+        to memory.  The address that is used for the store is calculated from a
+        base register and an immediate offset.
+
+        :param reg_op: source register.
+        :param mem_op: memory.
+        :param mimm_op: None or immediate.
+        """
+        cpu._ldr_str_immediate(reg_op, mem_op, mimm_op, ldr=False)
+
+    def _STR_register(cpu, reg_op, mem_op):
         """
         STR (register).
 
@@ -1467,6 +1495,24 @@ class Aarch64Cpu(Cpu):
         :param mem_op: memory.
         """
         cpu._ldr_str_register(reg_op, mem_op, ldr=False)
+
+    @instruction
+    def STR(cpu, reg_op, mem_op, mimm_op=None):
+        """
+        Combines STR (immediate) and STR (register).
+
+        :param reg_op: source register.
+        :param mem_op: memory.
+        :param mimm_op: None or immediate.
+        """
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+        assert mem_op.type is cs.arm64.ARM64_OP_MEM
+        assert not mimm_op or mimm_op.type is cs.arm64.ARM64_OP_IMM
+
+        if mem_op.mem.index:
+            cpu._STR_register(reg_op, mem_op)
+        else:
+            cpu._STR_immediate(reg_op, mem_op, mimm_op)
 
     @instruction
     def STUR(cpu, reg_op, mem_op):
