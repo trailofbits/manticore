@@ -1612,7 +1612,7 @@ class Aarch64Instructions:
 
     @itest_setregs('X1=-8')
     @itest_custom('ldr x0, [sp, x1, sxtx]')
-    def test_ldr_reg_sxtx_64(self):
+    def test_ldr_reg_sxtx64(self):
         self.cpu.push_int(0x4142434445464748)
         self.cpu.push_int(0x5152535455565758)
         self.cpu.STACK += 8
@@ -2211,7 +2211,7 @@ class Aarch64Instructions:
 
     @itest_setregs('X0=0x4142434445464748', 'X1=-8')
     @itest_custom('str x0, [sp, x1, sxtx]')
-    def test_str_reg_sxtx_64(self):
+    def test_str_reg_sxtx64(self):
         self.cpu.push_int(0x5152535455565758)
         stack = self.cpu.STACK
         self.cpu.STACK += 8
