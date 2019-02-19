@@ -1954,10 +1954,6 @@ class Linux(Platform):
         logger.warning("Unimplemented system call: sys_sysinfo")
         return -1
 
-    def sys_madvise(self, infop):
-        logger.warning("Unimplemented system call: sys_madvise")
-        return -1
-
     def sys_futex(self, uaddr, op, val, timeout, uaddr2, val3):
         logger.warning("Unimplemented system_call: sys_futex")
         return 0
@@ -1972,16 +1968,20 @@ class Linux(Platform):
             ret = 0
         return ret
 
-    def sys_fadvise64(self, fd, offset, length, advice):
-        logger.warning("Unimplemented system call: sys_fadvise64")
-        return 0
-
     def sys_gettimeofday(self, tv, tz):
         logger.warning("Unimplemented system call: sys_gettimeofday")
         return 0
 
     def sys_clone_ptregs(self, flags, child_stack, ptid, ctid, regs):
         logger.warning("Unimplemented system call: sys_clone/ptregs")
+        return 0
+
+    def sys_madvise(self, infop):
+        logger.info("Ignoring sys_madvise")
+        return 0
+
+    def sys_fadvise64(self, fd, offset, length, advice):
+        logger.info("Ignoring sys_fadvise64")
         return 0
 
     def sys_socket(self, domain, socket_type, protocol):
