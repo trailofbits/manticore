@@ -2235,39 +2235,40 @@ class Aarch64Instructions:
     @itest_setregs('W1=0x41424344')
     @itest_custom('stur w1, [sp, #-256]')
     def test_stur_min32(self):
-        self.cpu.push_int(0)
+        self.cpu.push_int(0x5152535455565758)
         self.cpu.STACK += 256
         stack = self.cpu.STACK
         self._execute()
-        self.assertEqual(self.cpu.read_int(stack - 256), 0x41424344)
+        self.assertEqual(self.cpu.read_int(stack - 256), 0x5152535441424344)
         self.assertEqual(self.rf.read('SP'), stack)  # no writeback
 
     @itest_setregs('W1=0x41424344')
     @itest_custom('stur w1, [sp, #255]')
     def test_stur_max32(self):
-        self.cpu.push_int(0)
+        self.cpu.push_int(0x5152535455565758)
         self.cpu.STACK -= 255
         stack = self.cpu.STACK
         self._execute()
-        self.assertEqual(self.cpu.read_int(stack + 255), 0x41424344)
+        self.assertEqual(self.cpu.read_int(stack + 255), 0x5152535441424344)
         self.assertEqual(self.rf.read('SP'), stack)  # no writeback
 
     @itest_setregs('W1=0x41424344')
     @itest_custom('stur w1, [sp, #1]')
     def test_stur_one32(self):
-        self.cpu.push_int(0)
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.push_int(0x6162636465666768)
         stack = self.cpu.STACK
         self._execute()
-        self.assertEqual(self.cpu.read_int(stack + 1), 0x41424344)
+        self.assertEqual(self.cpu.read_int(stack + 1), 0x5861626341424344)
         self.assertEqual(self.rf.read('SP'), stack)  # no writeback
 
     @itest_setregs('W1=0x41424344')
     @itest_custom('stur w1, [sp]')
     def test_stur32(self):
-        self.cpu.push_int(0)
+        self.cpu.push_int(0x5152535455565758)
         stack = self.cpu.STACK
         self._execute()
-        self.assertEqual(self.cpu.read_int(stack), 0x41424344)
+        self.assertEqual(self.cpu.read_int(stack), 0x5152535441424344)
         self.assertEqual(self.rf.read('SP'), stack)  # no writeback
 
     # 64-bit.
@@ -2275,7 +2276,7 @@ class Aarch64Instructions:
     @itest_setregs('X1=0x4142434445464748')
     @itest_custom('stur x1, [sp, #-256]')
     def test_stur_min64(self):
-        self.cpu.push_int(0)
+        self.cpu.push_int(0x5152535455565758)
         self.cpu.STACK += 256
         stack = self.cpu.STACK
         self._execute()
@@ -2285,7 +2286,7 @@ class Aarch64Instructions:
     @itest_setregs('X1=0x4142434445464748')
     @itest_custom('stur x1, [sp, #255]')
     def test_stur_max64(self):
-        self.cpu.push_int(0)
+        self.cpu.push_int(0x5152535455565758)
         self.cpu.STACK -= 255
         stack = self.cpu.STACK
         self._execute()
@@ -2295,8 +2296,8 @@ class Aarch64Instructions:
     @itest_setregs('X1=0x4142434445464748')
     @itest_custom('stur x1, [sp, #1]')
     def test_stur_one64(self):
-        self.cpu.push_int(0)
-        self.cpu.push_int(0)
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.push_int(0x6162636465666768)
         stack = self.cpu.STACK
         self._execute()
         self.assertEqual(self.cpu.read_int(stack + 1), 0x4142434445464748)
@@ -2305,7 +2306,7 @@ class Aarch64Instructions:
     @itest_setregs('X1=0x4142434445464748')
     @itest_custom('stur x1, [sp]')
     def test_stur64(self):
-        self.cpu.push_int(0)
+        self.cpu.push_int(0x5152535455565758)
         stack = self.cpu.STACK
         self._execute()
         self.assertEqual(self.cpu.read_int(stack), 0x4142434445464748)
