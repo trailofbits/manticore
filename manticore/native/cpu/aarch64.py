@@ -895,6 +895,36 @@ class Aarch64Cpu(Cpu):
             cpu.PC = imm
 
     @instruction
+    def CBZ(cpu, reg_op, imm_op):
+        """
+        CBZ.
+
+        Compare and Branch on Zero compares the value in a register with zero,
+        and conditionally branches to a label at a PC-relative offset if the
+        comparison is equal.  It provides a hint that this is not a subroutine
+        call or return.  This instruction does not affect condition flags.
+
+        :param reg_op: register.
+        :param imm_op: immediate.
+        """
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+        assert imm_op.type is cs.arm64.ARM64_OP_IMM
+
+        insn_rx  = '[01]'      # sf
+        insn_rx += '011010'
+        insn_rx += '0'         # op
+        insn_rx += '[01]{19}'  # imm19
+        insn_rx += '[01]{5}'   # Rt
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        reg = reg_op.read()
+        imm = imm_op.op.imm
+
+        if reg == 0:
+            cpu.PC = imm
+
+    @instruction
     def CLZ(cpu, res_op, reg_op):
         """
         CLZ.
