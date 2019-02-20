@@ -2659,18 +2659,20 @@ class Aarch64Instructions:
     # SVC.
 
     def test_svc0(self):
-        # XXX: Enable when this is fixed.
-        if self.__class__.__name__ == 'Aarch64UnicornInstructions':
-            raise unittest.SkipTest('Unicorn hangs')
         with self.assertRaises(Interruption):
             self._setupCpu("svc #0")
             self._execute()
 
     def test_svc1(self):
-        # XXX: Enable when this is fixed.
-        if self.__class__.__name__ == 'Aarch64UnicornInstructions':
-            raise unittest.SkipTest('Unicorn hangs')
-        with self.assertRaises(InstructionNotImplementedError):
+        # XXX: Maybe change the behavior to be consistent with Unicorn?
+        if self.__class__.__name__ == 'Aarch64CpuInstructions':
+            e = InstructionNotImplementedError
+        elif self.__class__.__name__ == 'Aarch64UnicornInstructions':
+            e = Interruption
+        else:
+            self.fail()
+
+        with self.assertRaises(e):
             self._setupCpu("svc #1")
             self._execute()
 
