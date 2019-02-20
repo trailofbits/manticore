@@ -28,6 +28,33 @@ OP_NAME_MAP = {
 }
 
 
+# See "C1.2.4 Condition code" in ARM Architecture Reference Manual
+# ARMv8, for ARMv8-A architecture profile.
+COND_MAP = {
+    'EQ': lambda n, z, c, v: z == 1,
+    'NE': lambda n, z, c, v: z == 0,
+
+    'CS': lambda n, z, c, v: c == 1,
+    'HS': lambda n, z, c, v: c == 1,
+
+    'CC': lambda n, z, c, v: c == 0,
+    'LO': lambda n, z, c, v: c == 0,
+
+    'MI': lambda n, z, c, v: n == 1,
+    'PL': lambda n, z, c, v: n == 0,
+    'VS': lambda n, z, c, v: v == 1,
+    'VC': lambda n, z, c, v: v == 0,
+    'HI': lambda n, z, c, v: c == 1 and z == 0,
+    'LS': lambda n, z, c, v: not (c == 1 and z == 0),
+    'GE': lambda n, z, c, v: n == v,
+    'LT': lambda n, z, c, v: n != v,
+    'GT': lambda n, z, c, v: z == 0 and n == v,
+    'LE': lambda n, z, c, v: not (z == 0 and n == v),
+    'AL': lambda n, z, c, v: True,
+    'NV': lambda n, z, c, v: True
+}
+
+
 class Aarch64RegisterFile(RegisterFile):
     Regspec = collections.namedtuple('RegSpec', 'parent size')
 
@@ -216,6 +243,20 @@ class Aarch64RegisterFile(RegisterFile):
     def all_registers(self):
         return self._all_registers
 
+    # See "C5.2.9 NZCV, Condition Flags".
+    # Counting from the right:
+    # N, bit [31]
+    # Z, bit [30]
+    # C, bit [29]
+    # V, bit [28]
+    def nzcv(self):
+        nzcv = self.read('NZCV')
+        n = Operators.EXTRACT(nzcv, 31, 1)
+        z = Operators.EXTRACT(nzcv, 30, 1)
+        c = Operators.EXTRACT(nzcv, 29, 1)
+        v = Operators.EXTRACT(nzcv, 28, 1)
+        return (n, z, c, v)
+
 
 # XXX: Add more instructions.
 class Aarch64Cpu(Cpu):
@@ -256,13 +297,13 @@ class Aarch64Cpu(Cpu):
 
     @staticmethod
     def canonicalize_instruction_name(insn):
-        name = insn.insn_name().upper()
-        # XXX: Check if a Capstone bug that incorrectly labels some instructions
-        # is still there.
-        assert name.lower() == insn.mnemonic
-
+        # Using 'mnemonic' rather than 'insn_name' because the latter doesn't
+        # work for B.cond.  Instead of being set to something like 'b.eq',
+        # it just returns 'b'.
+        name = insn.mnemonic.upper()
         name = OP_NAME_MAP.get(name, name)
         ops = insn.operands
+        name_list = name.split('.')
 
         # Make sure MOV (bitmask immediate) and MOV (register) go through 'MOV'.
         if (name == 'ORR' and len(ops) == 3 and
@@ -272,6 +313,14 @@ class Aarch64Cpu(Cpu):
            ):
             name = 'MOV'
             del ops[1]
+
+        # Map all B.cond variants to a single implementation.
+        elif (len(name_list) == 2 and
+              name_list[0] == 'B' and
+              name_list[1] in COND_MAP
+             ):
+            name = 'B_cond'
+            ops.append(name_list[1])
 
         return name
 
@@ -644,6 +693,32 @@ class Aarch64Cpu(Cpu):
 
         imm = imm_op.op.imm  # PC + offset
         res_op.write(imm)
+
+    @instruction
+    def B_cond(cpu, imm_op, cond):
+        """
+        B.cond.
+
+        Branch conditionally to a label at a PC-relative offset, with a hint
+        that this is not a subroutine call or return.
+
+        :param imm_op: immediate.
+        :param cond: condition code.
+        """
+        assert imm_op.type is cs.arm64.ARM64_OP_IMM
+        assert cond in COND_MAP
+
+        insn_rx  = '0101010'
+        insn_rx += '0'
+        insn_rx += '[01]{19}'  # imm19
+        insn_rx += '0'
+        insn_rx += '[01]{4}'   # cond
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        imm = imm_op.op.imm
+        if COND_MAP[cond](*cpu.regfile.nzcv()):
+            cpu.PC = imm
 
     @instruction
     def B(cpu, imm_op):
