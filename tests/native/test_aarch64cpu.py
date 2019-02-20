@@ -864,6 +864,121 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X2'), 0)
 
 
+    # CBNZ.
+
+    # 32-bit.
+
+    # Execute sequentially.
+    @itest_custom(['cbnz w0, .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
+    def test_cbnz_pos_zero32(self):
+        self.cpu.W0 = 0
+        pc = self.cpu.PC
+        self._execute(check_pc=False)
+        self.assertEqual(self.rf.read('PC'), pc + 4)
+        self.assertEqual(self.rf.read('LR'), 0)
+        self.assertEqual(self.rf.read('X30'), 0)
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 42)
+        self.assertEqual(self.rf.read('X2'), 0)
+
+    # Jump over the second instruction.
+    @itest_custom(['cbnz w0, .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
+    def test_cbnz_pos_non_zero32(self):
+        self.cpu.W0 = 1
+        pc = self.cpu.PC
+        self._execute(check_pc=False)
+        self.assertEqual(self.rf.read('PC'), pc + 8)
+        self.assertEqual(self.rf.read('LR'), 0)
+        self.assertEqual(self.rf.read('X30'), 0)
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0)
+        self.assertEqual(self.rf.read('X2'), 43)
+
+    # Execute sequentially.
+    @itest_custom(['mov x1, 42', 'cbnz w0, .-4', 'mov x2, 43'], multiple_insts=True)
+    def test_cbnz_neg_zero32(self):
+        self.cpu.W0 = 0
+        self.cpu.PC += 4
+        pc = self.cpu.PC
+        self._execute(check_pc=False)
+        self.assertEqual(self.rf.read('PC'), pc + 4)
+        self.assertEqual(self.rf.read('LR'), 0)
+        self.assertEqual(self.rf.read('X30'), 0)
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0)
+        self.assertEqual(self.rf.read('X2'), 43)
+
+    # Jump one instruction back.
+    @itest_custom(['mov x1, 42', 'cbnz w0, .-4', 'mov x2, 43'], multiple_insts=True)
+    def test_cbnz_neg_non_zero32(self):
+        self.cpu.W0 = 1
+        self.cpu.PC += 4
+        pc = self.cpu.PC
+        self._execute(check_pc=False)
+        self.assertEqual(self.rf.read('PC'), pc - 4)
+        self.assertEqual(self.rf.read('LR'), 0)
+        self.assertEqual(self.rf.read('X30'), 0)
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 42)
+        self.assertEqual(self.rf.read('X2'), 0)
+
+    # 64-bit.
+
+    # Execute sequentially.
+    @itest_custom(['cbnz x0, .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
+    def test_cbnz_pos_zero64(self):
+        self.cpu.X0 = 0
+        pc = self.cpu.PC
+        self._execute(check_pc=False)
+        self.assertEqual(self.rf.read('PC'), pc + 4)
+        self.assertEqual(self.rf.read('LR'), 0)
+        self.assertEqual(self.rf.read('X30'), 0)
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 42)
+        self.assertEqual(self.rf.read('X2'), 0)
+
+    # Jump over the second instruction.
+    @itest_custom(['cbnz x0, .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
+    def test_cbnz_pos_non_zero64(self):
+        self.cpu.X0 = 1
+        pc = self.cpu.PC
+        self._execute(check_pc=False)
+        self.assertEqual(self.rf.read('PC'), pc + 8)
+        self.assertEqual(self.rf.read('LR'), 0)
+        self.assertEqual(self.rf.read('X30'), 0)
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0)
+        self.assertEqual(self.rf.read('X2'), 43)
+
+    # Execute sequentially.
+    @itest_custom(['mov x1, 42', 'cbnz x0, .-4', 'mov x2, 43'], multiple_insts=True)
+    def test_cbnz_neg_zero64(self):
+        self.cpu.X0 = 0
+        self.cpu.PC += 4
+        pc = self.cpu.PC
+        self._execute(check_pc=False)
+        self.assertEqual(self.rf.read('PC'), pc + 4)
+        self.assertEqual(self.rf.read('LR'), 0)
+        self.assertEqual(self.rf.read('X30'), 0)
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0)
+        self.assertEqual(self.rf.read('X2'), 43)
+
+    # Jump one instruction back.
+    @itest_custom(['mov x1, 42', 'cbnz x0, .-4', 'mov x2, 43'], multiple_insts=True)
+    def test_cbnz_neg_non_zero64(self):
+        self.cpu.X0 = 1
+        self.cpu.PC += 4
+        pc = self.cpu.PC
+        self._execute(check_pc=False)
+        self.assertEqual(self.rf.read('PC'), pc - 4)
+        self.assertEqual(self.rf.read('LR'), 0)
+        self.assertEqual(self.rf.read('X30'), 0)
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 42)
+        self.assertEqual(self.rf.read('X2'), 0)
+
+
     # CLZ.
 
     # 32-bit.
