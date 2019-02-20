@@ -7,20 +7,19 @@ m = ManticoreEVM()
 #And now make the contract account to analyze
 # cat  | solc --bin 
 source_code = '''
-pragma solidity ^0.4.13;
 contract NoDistpatcher {
     event Log(string);
 
-    function  named_func(uint x) returns (uint) {
+    function  named_func(uint x) public returns (uint) {
     return 5 + x;
     }
 
-    function() payable {
+    function() external payable {
         if (msg.data[0] == 'A') {
-            Log("Got an A");
+            emit Log("Got an A");
         }
         else{
-            Log("Got something else");
+            emit Log("Got something else");
         }
     } 
 }
