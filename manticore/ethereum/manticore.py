@@ -605,9 +605,11 @@ class ManticoreEVM(ManticoreBase):
             if type in ('function'):
                 signature = SolidityMetadata.function_signature_for_name_and_inputs(item['name'], item['inputs'])
                 hashes[signature] = sha3.keccak_256(signature.encode()).hexdigest()[:8]
-                assert item['signature'] ==  '0x'+hashes[signature]
+                if 'signature' in item:
+                    if item['signature'] !=  '0x'+hashes[signature]:
+                        raise Exception(f"Something wrong with the sha3 of the method {signature} signature (a.k.a. the hash)")
 
-        md = SolidityMetadata('', '' , binascii.unhexlify(truffle['bytecode'][2:]), '', {}, {}, hashes, truffle['abi'], '')
+        md = SolidityMetadata('', '' , binascii.unhexlify(truffle['bytecode'][2:]), b'', {}, {}, hashes, truffle['abi'], b'')
         contract_account = self.create_contract(owner=owner, init=md._init_bytecode)
 
         if contract_account is None:
