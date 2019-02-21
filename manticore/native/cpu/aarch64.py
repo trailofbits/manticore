@@ -1755,6 +1755,43 @@ class Aarch64Cpu(Cpu):
         raise Interruption(imm)
 
     @instruction
+    def TBNZ(cpu, reg_op, imm_op, lab_op):
+        """
+        TBNZ.
+
+        Test bit and Branch if Nonzero compares the value of a bit in a
+        general-purpose register with zero, and conditionally branches to a
+        label at a PC-relative offset if the comparison is not equal.  It
+        provides a hint that this is not a subroutine call or return.  This
+        instruction does not affect condition flags.
+
+        :param reg_op: register.
+        :param imm_op: immediate.
+        :param lab_op: immediate.
+        """
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+        assert imm_op.type is cs.arm64.ARM64_OP_IMM
+        assert lab_op.type is cs.arm64.ARM64_OP_IMM
+
+        insn_rx  = '[01]'      # b5
+        insn_rx += '011011'
+        insn_rx += '1'         # op
+        insn_rx += '[01]{5}'   # b40
+        insn_rx += '[01]{14}'  # imm14
+        insn_rx += '[01]{5}'   # Rt
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        reg = reg_op.read()
+        imm = imm_op.op.imm
+        lab = lab_op.op.imm
+
+        assert imm in range(reg_op.size)
+
+        if Operators.EXTRACT(reg, imm, 1) != 0:
+            cpu.PC = lab
+
+    @instruction
     def UDIV(cpu, res_op, reg_op1, reg_op2):
         """
         UDIV.
