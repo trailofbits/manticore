@@ -249,6 +249,7 @@ class Aarch64RegisterFile(RegisterFile):
     # Z, bit [30]
     # C, bit [29]
     # V, bit [28]
+    @property
     def nzcv(self):
         nzcv = self.read('NZCV')
         n = Operators.EXTRACT(nzcv, 31, 1)
@@ -256,6 +257,25 @@ class Aarch64RegisterFile(RegisterFile):
         c = Operators.EXTRACT(nzcv, 29, 1)
         v = Operators.EXTRACT(nzcv, 28, 1)
         return (n, z, c, v)
+
+    @nzcv.setter
+    def nzcv(self, value):
+        n, z, c, v = value
+        assert n in [0, 1]
+        assert z in [0, 1]
+        assert c in [0, 1]
+        assert v in [0, 1]
+
+        nzcv = self.read('NZCV')
+        mask = 0xf0000000
+
+        n = LSL(n, 31, 32)
+        z = LSL(z, 30, 32)
+        c = LSL(c, 29, 32)
+        v = LSL(v, 28, 32)
+
+        result = (nzcv & ~mask) | n | z | c | v
+        self.write('NZCV', result)
 
 
 # XXX: Add more instructions.
@@ -367,6 +387,7 @@ class Aarch64Cpu(Cpu):
 
         result = UInt(action(reg1, reg2), res_op.size)
         res_op.write(result)
+        return result
 
     def _ldr_str_immediate(cpu, reg_op, mem_op, mimm_op, ldr):
         assert reg_op.type is cs.arm64.ARM64_OP_REG
@@ -717,7 +738,7 @@ class Aarch64Cpu(Cpu):
         assert re.match(insn_rx, cpu.insn_bit_str)
 
         imm = imm_op.op.imm
-        if COND_MAP[cond](*cpu.regfile.nzcv()):
+        if COND_MAP[cond](*cpu.regfile.nzcv):
             cpu.PC = imm
 
     @instruction
@@ -758,7 +779,7 @@ class Aarch64Cpu(Cpu):
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx  = '[01]'
+        insn_rx  = '[01]'     # sf
         insn_rx += '00'       # opc
         insn_rx += '01010'
         insn_rx += '[01]{2}'  # shift
@@ -781,6 +802,54 @@ class Aarch64Cpu(Cpu):
                 cs.arm64.ARM64_SFT_ASR,
                 cs.arm64.ARM64_SFT_ROR
             ])
+
+    @instruction
+    def BICS(cpu, res_op, reg_op1, reg_op2):
+        """
+        BICS (shifted register).
+
+        Bitwise Bit Clear (shifted register), setting flags, performs a bitwise
+        AND of a register value and the complement of an optionally-shifted
+        register value, and writes the result to the destination register.  It
+        updates the condition flags based on the result.
+
+        :param res_op: destination register.
+        :param reg_op1: source register.
+        :param reg_op2: source register.
+        """
+        assert res_op.type  is cs.arm64.ARM64_OP_REG
+        assert reg_op1.type is cs.arm64.ARM64_OP_REG
+        assert reg_op2.type is cs.arm64.ARM64_OP_REG
+
+        insn_rx  = '[01]'     # sf
+        insn_rx += '11'       # opc
+        insn_rx += '01010'
+        insn_rx += '[01]{2}'  # shift
+        insn_rx += '1'        # N
+        insn_rx += '[01]{5}'  # Rm
+        insn_rx += '[01]{6}'  # imm6
+        insn_rx += '[01]{5}'  # Rn
+        insn_rx += '[01]{5}'  # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        result = cpu._shifted_register(
+            res_op = res_op,
+            reg_op1 = reg_op1,
+            reg_op2 = reg_op2,
+            action = lambda x, y: x & ~y,
+            shifts = [
+                cs.arm64.ARM64_SFT_LSL,
+                cs.arm64.ARM64_SFT_LSR,
+                cs.arm64.ARM64_SFT_ASR,
+                cs.arm64.ARM64_SFT_ROR
+            ])
+
+        # XXX: If other flag-setting instructions that use '_shifted_register'
+        # are added, maybe move this inside the method.
+        n = Operators.EXTRACT(result, res_op.size - 1, 1)
+        z = 1 if result == 0 else 0
+        cpu.regfile.nzcv = (n, z, 0, 0)
 
     @instruction
     def BL(cpu, imm_op):
