@@ -89,17 +89,6 @@ class ConcreteUnicornEmulator:
         self.registers -= self.flag_registers
         self.registers.add('EFLAGS')
 
-        # TODO(mark): Unicorn 1.0.1 does not support reading YMM registers,
-        # and simply returns back zero. If a unicorn emulated instruction writes to an
-        # XMM reg, we will read back the corresponding YMM register, resulting in an
-        # incorrect zero value being actually written to the XMM register. This is
-        # fixed in Unicorn PR #819, so when that is included in a release, delete
-        # these two lines.
-        self.registers -= {'YMM0', 'YMM1', 'YMM2', 'YMM3', 'YMM4', 'YMM5', 'YMM6', 'YMM7', 'YMM8', 'YMM9', 'YMM10',
-                           'YMM11', 'YMM12', 'YMM13', 'YMM14', 'YMM15'}
-        self.registers |= {'XMM0', 'XMM1', 'XMM2', 'XMM3', 'XMM4', 'XMM5', 'XMM6', 'XMM7', 'XMM8', 'XMM9', 'XMM10',
-                           'XMM11', 'XMM12', 'XMM13', 'XMM14', 'XMM15'}
-
         for reg in self.registers:
             val = self._cpu.read_register(reg)
             if issymbolic(val):
@@ -343,6 +332,8 @@ class ConcreteUnicornEmulator:
         logger.info("Updating selector %s to 0x%02x (%s bytes) (%s)", selector, base, size, perms)
         if selector == 99:
             self.set_fs(base)
+        else:
+            logger.error("No way to write segment: %d", selector)
 
     def set_fs(self, addr):
         """

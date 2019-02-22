@@ -1989,7 +1989,7 @@ class Linux(Platform):
 
     def sys_clone_ptregs(self, flags, child_stack, ptid, ctid, regs):
         logger.warning("Unimplemented system call: sys_clone/ptregs")
-        return 0
+        return 1000
 
     def sys_mkdir(self, pathname, mode):
         logger.warning("Unimplemented system call: sys_mkdir")
