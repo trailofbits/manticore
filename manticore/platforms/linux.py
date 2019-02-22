@@ -1955,8 +1955,12 @@ class Linux(Platform):
         return -1
 
     def sys_futex(self, uaddr, op, val, timeout, uaddr2, val3):
-        logger.warning("Unimplemented system_call: sys_futex")
+        logger.warning("Unimplemented system call: sys_futex")
         return 0
+
+    def sys_setrlimit(self, resource, rlim):
+        logger.warning("Unimplemented system call: sys_setrlimit")
+        return -1
 
     def sys_getrlimit(self, resource, rlim):
         ret = -1
@@ -1966,6 +1970,17 @@ class Linux(Platform):
             # see the BUGS section in getrlimit(2) man page.
             self.current.write_bytes(rlim, struct.pack('<LL', *rlimit_tup))
             ret = 0
+        return ret
+
+    def sys_prlimit64(self, pid, resource, new_lim, old_lim):
+        ret = -1
+        if pid == 0:
+            if old_lim:
+                ret = self.sys_getrlimit(resource, old_lim)
+            elif new_lim:
+                ret = self.sys_setrlimit(resource, new_lim)
+        else:
+            logger.warning("Cowardly refusing to set resource limits for process %d", pid)
         return ret
 
     def sys_gettimeofday(self, tv, tz):
