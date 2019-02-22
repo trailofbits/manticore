@@ -1976,6 +1976,10 @@ class Linux(Platform):
         logger.warning("Unimplemented system call: sys_clone/ptregs")
         return 0
 
+    def sys_mkdir(self, pathname, mode):
+        logger.warning("Unimplemented system call: sys_mkdir")
+        return 0
+
     def sys_madvise(self, infop):
         logger.info("Ignoring sys_madvise")
         return 0

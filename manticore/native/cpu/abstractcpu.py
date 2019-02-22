@@ -464,6 +464,7 @@ class Cpu(Eventful):
         self._icount = 0
         self._last_pc = None
         self._concrete = kwargs.pop("concrete", False)
+        self.emu = None
         self._break_unicorn_at = None
         if not hasattr(self, "disasm"):
             self.disasm = init_disassembler(self._disasm, self.arch, self.mode)
@@ -588,7 +589,7 @@ class Cpu(Eventful):
         """
         self._concrete = True
         self._break_unicorn_at = target
-        if hasattr(self, 'emu'):
+        if self.emu:
             self.emu._stop_at = target
 
     #############################
@@ -976,7 +977,7 @@ class Cpu(Eventful):
         :param capstone.CsInsn insn: The instruction object to emulate
         """
 
-        if not hasattr(self, 'emu'):
+        if not self.emu:
             self.emu = ConcreteUnicornEmulator(self)
             self.emu._stop_at = self._break_unicorn_at
         try:
