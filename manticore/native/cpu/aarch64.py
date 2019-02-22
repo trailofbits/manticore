@@ -11,7 +11,7 @@ from .abstractcpu import (
     RegisterFile, Abi, SyscallAbi, Operand, instruction
 )
 from .arm import HighBit, Armv7Operand
-from .bitwise import SInt, UInt, ASR, LSL, LSR, ROR
+from .bitwise import SInt, UInt, ASR, LSL, LSR, ROR, Mask
 from .register import Register
 from ...core.smtlib import Operators
 
@@ -1124,6 +1124,95 @@ class Aarch64Cpu(Cpu):
         """
         cpu._ldur_stur(reg_op, mem_op, ldur=True)
 
+    # XXX: Support LSL (register).
+    @instruction
+    def LSL(cpu, res_op, reg_op, imm_op):
+        """
+        LSL (immediate).
+
+        Logical Shift Left (immediate) shifts a register value left by an
+        immediate number of bits, shifting in zeros, and writes the result to
+        the destination register.
+
+        This instruction is an alias of the UBFM instruction.
+
+        :param res_op: destination register.
+        :param reg_op: source register.
+        :param imm_op: immediate.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+        assert imm_op.type is cs.arm64.ARM64_OP_IMM
+
+        insn_rx  = '[01]'     # sf
+        insn_rx += '10'       # opc
+        insn_rx += '100110'
+        insn_rx += '[01]'     # N
+        insn_rx += '[01]{6}'  # immr
+        insn_rx += '[01]{6}'  # imms
+        insn_rx += '[01]{5}'  # Rn
+        insn_rx += '[01]{5}'  # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        imm = imm_op.op.imm
+
+        # Fake immediate operands.
+        immr_op = cs.arm64.Arm64Op()
+        immr_op.value.imm = -imm % res_op.size
+        immr_op.type = cs.arm64.ARM64_OP_IMM
+        immr_op = Aarch64Operand(cpu, immr_op)
+
+        imms_op = cs.arm64.Arm64Op()
+        imms_op.value.imm = res_op.size - 1 - imm
+        imms_op.type = cs.arm64.ARM64_OP_IMM
+        imms_op = Aarch64Operand(cpu, imms_op)
+
+        # The 'instruction' decorator advances PC, so call the original
+        # method.
+        cpu.UBFM.__wrapped__(cpu, res_op, reg_op, immr_op, imms_op)
+
+    # XXX: Support LSR (register).
+    @instruction
+    def LSR(cpu, res_op, reg_op, immr_op):
+        """
+        LSR (immediate).
+
+        Logical Shift Right (immediate) shifts a register value right by an
+        immediate number of bits, shifting in zeros, and writes the result to
+        the destination register.
+
+        This instruction is an alias of the UBFM instruction.
+
+        :param res_op: destination register.
+        :param reg_op: source register.
+        :param immr_op: immediate.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+        assert immr_op.type is cs.arm64.ARM64_OP_IMM
+
+        insn_rx  = '[01]'      # sf
+        insn_rx += '10'        # opc
+        insn_rx += '100110'
+        insn_rx += '[01]'      # N
+        insn_rx += '[01]{6}'   # immr
+        insn_rx += '[01]1{5}'  # imms
+        insn_rx += '[01]{5}'   # Rn
+        insn_rx += '[01]{5}'   # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        # Fake an immediate operand.
+        imms_op = cs.arm64.Arm64Op()
+        imms_op.value.imm = res_op.size - 1
+        imms_op.type = cs.arm64.ARM64_OP_IMM
+        imms_op = Aarch64Operand(cpu, imms_op)
+
+        # The 'instruction' decorator advances PC, so call the original
+        # method.
+        cpu.UBFM.__wrapped__(cpu, res_op, reg_op, immr_op, imms_op)
+
     @instruction
     def MADD(cpu, res_op, reg_op1, reg_op2, reg_op3):
         """
@@ -1828,6 +1917,152 @@ class Aarch64Cpu(Cpu):
             cpu.PC = lab
 
     @instruction
+    def UBFIZ(cpu, res_op, reg_op, lsb_op, width_op):
+        """
+        UBFIZ.
+
+        Unsigned Bitfield Insert in Zeros copies a bitfield of <width> bits from
+        the least significant bits of the source register to bit position <lsb>
+        of the destination register, setting the destination bits above and
+        below the bitfield to zero.
+
+        This instruction is an alias of the UBFM instruction.
+
+        :param res_op: destination register.
+        :param reg_op: source register.
+        :param lsb_op: immediate.
+        :param width_op: immediate.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+        assert lsb_op.type is cs.arm64.ARM64_OP_IMM
+        assert width_op.type is cs.arm64.ARM64_OP_IMM
+
+        insn_rx  = '[01]'     # sf
+        insn_rx += '10'       # opc
+        insn_rx += '100110'
+        insn_rx += '[01]'     # N
+        insn_rx += '[01]{6}'  # immr
+        insn_rx += '[01]{6}'  # imms
+        insn_rx += '[01]{5}'  # Rn
+        insn_rx += '[01]{5}'  # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        lsb = lsb_op.op.imm
+        lsb_op.value.imm = -lsb % res_op.size
+        width_op.value.imm -= 1
+
+        # The 'instruction' decorator advances PC, so call the original
+        # method.
+        cpu.UBFM.__wrapped__(cpu, res_op, reg_op, lsb_op, width_op)
+
+    @instruction
+    def UBFM(cpu, res_op, reg_op, immr_op, imms_op):
+        """
+        UBFM.
+
+        Unigned Bitfield Move is usually accessed via one of its aliases, which
+        are always preferred for disassembly.
+
+        If <imms> is greater than or equal to <immr>, this copies a bitfield of
+        (<imms>-<immr>+1) bits starting from bit position <immr> in the source
+        register to the least significant bits of the destination register.
+
+        If <imms> is less than <immr>, this copies a bitfield of (<imms>+1) bits
+        from the least significant bits of the source register to bit position
+        (regsize-<immr>) of the destination register, where regsize is the
+        destination register size of 32 or 64 bits.
+
+        In both cases the destination bits below and above the bitfield are set
+        to zero.
+
+        This instruction is used by the aliases LSL (immediate), LSR
+        (immediate), UBFIZ, UBFX, UXTB, and UXTH.
+
+        :param res_op: destination register.
+        :param reg_op: source register.
+        :param immr_op: immediate.
+        :param imms_op: immediate.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+        assert immr_op.type is cs.arm64.ARM64_OP_IMM
+        assert imms_op.type is cs.arm64.ARM64_OP_IMM
+
+        insn_rx  = '[01]'     # sf
+        insn_rx += '10'       # opc
+        insn_rx += '100110'
+        insn_rx += '[01]'     # N
+        insn_rx += '[01]{6}'  # immr
+        insn_rx += '[01]{6}'  # imms
+        insn_rx += '[01]{5}'  # Rn
+        insn_rx += '[01]{5}'  # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        reg = reg_op.read()
+        immr = immr_op.op.imm
+        imms = imms_op.op.imm
+
+        assert immr in range(res_op.size)
+        assert imms in range(res_op.size)
+
+        if imms >= immr:
+            width = imms - immr + 1
+            copy_from = immr
+            copy_to = 0
+        else:
+            width = imms + 1
+            copy_from = 0
+            copy_to = res_op.size - immr
+
+        mask = Mask(width)
+        result = ((reg & (mask << copy_from)) >> copy_from) << copy_to
+        res_op.write(result)
+
+    @instruction
+    def UBFX(cpu, res_op, reg_op, lsb_op, width_op):
+        """
+        UBFX.
+
+        Unsigned Bitfield Extract copies a bitfield of <width> bits starting
+        from bit position <lsb> in the source register to the least significant
+        bits of the destination register, and sets destination bits above the
+        bitfield to zero.
+
+        This instruction is an alias of the UBFM instruction.
+
+        :param res_op: destination register.
+        :param reg_op: source register.
+        :param lsb_op: immediate.
+        :param width_op: immediate.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+        assert lsb_op.type is cs.arm64.ARM64_OP_IMM
+        assert width_op.type is cs.arm64.ARM64_OP_IMM
+
+        insn_rx  = '[01]'     # sf
+        insn_rx += '10'       # opc
+        insn_rx += '100110'
+        insn_rx += '[01]'     # N
+        insn_rx += '[01]{6}'  # immr
+        insn_rx += '[01]{6}'  # imms
+        insn_rx += '[01]{5}'  # Rn
+        insn_rx += '[01]{5}'  # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        lsb = lsb_op.op.imm
+        width = width_op.op.imm
+        width_op.value.imm = lsb + width - 1
+
+        # The 'instruction' decorator advances PC, so call the original
+        # method.
+        cpu.UBFM.__wrapped__(cpu, res_op, reg_op, lsb_op, width_op)
+
+    @instruction
     def UDIV(cpu, res_op, reg_op1, reg_op2):
         """
         UDIV.
@@ -1900,6 +2135,92 @@ class Aarch64Cpu(Cpu):
 
         result = Operators.EXTRACT(reg1 * reg2, 64, 128)
         res_op.write(result)
+
+    @instruction
+    def UXTB(cpu, res_op, reg_op):
+        """
+        UXTB.
+
+        Unsigned Extend Byte extracts an 8-bit value from a register,
+        zero-extends it to the size of the register, and writes the result to
+        the destination register.
+
+        This instruction is an alias of the UBFM instruction.
+
+        :param res_op: destination register.
+        :param reg_op: source register.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+
+        insn_rx  = '0'        # sf
+        insn_rx += '10'       # opc
+        insn_rx += '100110'
+        insn_rx += '0'        # N
+        insn_rx += '0{6}'     # immr
+        insn_rx += '000111'   # imms
+        insn_rx += '[01]{5}'  # Rn
+        insn_rx += '[01]{5}'  # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        # Fake immediate operands.
+        immr_op = cs.arm64.Arm64Op()
+        immr_op.value.imm = 0
+        immr_op.type = cs.arm64.ARM64_OP_IMM
+        immr_op = Aarch64Operand(cpu, immr_op)
+
+        imms_op = cs.arm64.Arm64Op()
+        imms_op.value.imm = 7
+        imms_op.type = cs.arm64.ARM64_OP_IMM
+        imms_op = Aarch64Operand(cpu, imms_op)
+
+        # The 'instruction' decorator advances PC, so call the original
+        # method.
+        cpu.UBFM.__wrapped__(cpu, res_op, reg_op, immr_op, imms_op)
+
+    @instruction
+    def UXTH(cpu, res_op, reg_op):
+        """
+        UXTH.
+
+        Unsigned Extend Halfword extracts a 16-bit value from a register,
+        zero-extends it to the size of the register, and writes the result to
+        the destination register.
+
+        This instruction is an alias of the UBFM instruction.
+
+        :param res_op: destination register.
+        :param reg_op: source register.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+
+        insn_rx  = '0'        # sf
+        insn_rx += '10'       # opc
+        insn_rx += '100110'
+        insn_rx += '0'        # N
+        insn_rx += '0{6}'     # immr
+        insn_rx += '001111'   # imms
+        insn_rx += '[01]{5}'  # Rn
+        insn_rx += '[01]{5}'  # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        # Fake immediate operands.
+        immr_op = cs.arm64.Arm64Op()
+        immr_op.value.imm = 0
+        immr_op.type = cs.arm64.ARM64_OP_IMM
+        immr_op = Aarch64Operand(cpu, immr_op)
+
+        imms_op = cs.arm64.Arm64Op()
+        imms_op.value.imm = 15
+        imms_op.type = cs.arm64.ARM64_OP_IMM
+        imms_op = Aarch64Operand(cpu, imms_op)
+
+        # The 'instruction' decorator advances PC, so call the original
+        # method.
+        cpu.UBFM.__wrapped__(cpu, res_op, reg_op, immr_op, imms_op)
 
 
 class Aarch64CdeclAbi(Abi):

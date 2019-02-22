@@ -3422,6 +3422,153 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X2'), 0)
 
 
+    # UBFM.
+
+    # 32-bit.
+
+    # This is actually ubfx.
+    # Copy 5 - 3 + 1 bits from bit position 3 of the source register to the
+    # least significant bits of the destination register.  Set bits below and
+    # above the bitfield to zero.
+    @itest_setregs('W0=0xffffffff', 'W1=0x41424328')
+    @itest('ubfm w0, w1, #3, #5')
+    def test_ubfm_ge32(self):
+        self.assertEqual(self.rf.read('X0'), 5)
+        self.assertEqual(self.rf.read('W0'), 5)
+
+    # This is actually ubfiz.
+    # Copy 3 + 1 bits from the least significant bits of the source register to
+    # bit position 32 - 5 of the destination register.  Set bits below and
+    # above the bitfield to zero.
+    @itest_setregs('W0=0xffffffff', 'W1=0x41424349')
+    @itest('ubfm w0, w1, #5, #3')
+    def test_ubfm_lt32(self):
+        self.assertEqual(self.rf.read('X0'), 0x48000000)
+        self.assertEqual(self.rf.read('W0'), 0x48000000)
+
+    # This is actually lsr.
+    # Copy 31 - 0 + 1 bits from bit position 0 of the source register to the
+    # least significant bits of the destination register.  Set bits below and
+    # above the bitfield to zero.
+    @itest_setregs('W0=0xffffffff', 'W1=0x41424344')
+    @itest('ubfm w0, w1, #0, #31')
+    def test_ubfm_ge_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344)
+        self.assertEqual(self.rf.read('W0'), 0x41424344)
+
+    # This is actually ubfiz.
+    # Copy 0 + 1 bits from the least significant bits of the source register to
+    # bit position 32 - 31 of the destination register.  Set bits below and
+    # above the bitfield to zero.
+    @itest_setregs('W0=0xffffffff','W1=0x44434241')
+    @itest('ubfm w0, w1, #31, #0')
+    def test_ubfm_lt_max32(self):
+        self.assertEqual(self.rf.read('X0'), 2)
+        self.assertEqual(self.rf.read('W0'), 2)
+
+    # This is actually ubfx.
+    # Copy 0 - 0 + 1 bits from bit position 0 of the source register to the
+    # least significant bits of the destination register.  Set bits below and
+    # above the bitfield to zero.
+    @itest_setregs('W0=0xffffffff', 'W1=0x44434241')
+    @itest('ubfm w0, w1, #0, #0')
+    def test_ubfm_ge_min32(self):
+        self.assertEqual(self.rf.read('X0'), 1)
+        self.assertEqual(self.rf.read('W0'), 1)
+
+    # This is actually lsl.
+    # Copy 0 + 1 bits from the least significant bits of the source register to
+    # bit position 32 - 1 of the destination register.  Set bits below and
+    # above the bitfield to zero.
+    @itest_setregs('W0=0xffffffff', 'W1=0x44434241')
+    @itest('ubfm w0, w1, #1, #0')
+    def test_ubfm_lt_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0x80000000)
+        self.assertEqual(self.rf.read('W0'), 0x80000000)
+
+    # This is actually uxtb.
+    # Copy 7 - 0 + 1 bits from bit position 0 of the source register to the
+    # least significant bits of the destination register.  Set bits below and
+    # above the bitfield to zero.
+    @itest_setregs('W0=0xffffffff', 'W1=0x41424344')
+    @itest('ubfm w0, w1, #0, #7')
+    def test_ubfm_uxtb(self):
+        self.assertEqual(self.rf.read('X0'), 0x44)
+        self.assertEqual(self.rf.read('W0'), 0x44)
+
+    # This is actually uxth.
+    # Copy 15 - 0 + 1 bits from bit position 0 of the source register to the
+    # least significant bits of the destination register.  Set bits below and
+    # above the bitfield to zero.
+    @itest_setregs('W0=0xffffffff', 'W1=0x41424344')
+    @itest('ubfm w0, w1, #0, #15')
+    def test_ubfm_uxth(self):
+        self.assertEqual(self.rf.read('X0'), 0x4344)
+        self.assertEqual(self.rf.read('W0'), 0x4344)
+
+    # 64-bit.
+
+    # This is actually ubfx.
+    # Copy 5 - 3 + 1 bits from bit position 3 of the source register to the
+    # least significant bits of the destination register.  Set bits below and
+    # above the bitfield to zero.
+    @itest_setregs('X0=0xffffffffffffffff', 'X1=0x4142434445464728')
+    @itest('ubfm x0, x1, #3, #5')
+    def test_ubfm_ge64(self):
+        self.assertEqual(self.rf.read('X0'), 5)
+        self.assertEqual(self.rf.read('W0'), 5)
+
+    # This is actually ubfiz.
+    # Copy 3 + 1 bits from the least significant bits of the source register to
+    # bit position 64 - 5 of the destination register.  Set bits below and
+    # above the bitfield to zero.
+    @itest_setregs('X0=0xffffffffffffffff', 'X1=0x4142434445464749')
+    @itest('ubfm x0, x1, #5, #3')
+    def test_ubfm_lt64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4800000000000000)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    # This is actually lsr.
+    # Copy 63 - 0 + 1 bits from bit position 0 of the source register to the
+    # least significant bits of the destination register.  Set bits below and
+    # above the bitfield to zero.
+    @itest_setregs('X0=0xffffffffffffffff', 'X1=0x4142434445464748')
+    @itest('ubfm x0, x1, #0, #63')
+    def test_ubfm_ge_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    # This is actually ubfiz.
+    # Copy 0 + 1 bits from the least significant bits of the source register to
+    # bit position 64 - 63 of the destination register.  Set bits below and
+    # above the bitfield to zero.
+    @itest_setregs('X0=0xffffffffffffffff','X1=0x4847464544434241')
+    @itest('ubfm x0, x1, #63, #0')
+    def test_ubfm_lt_max64(self):
+        self.assertEqual(self.rf.read('X0'), 2)
+        self.assertEqual(self.rf.read('W0'), 2)
+
+    # This is actually ubfx.
+    # Copy 0 - 0 + 1 bits from bit position 0 of the source register to the
+    # least significant bits of the destination register.  Set bits below and
+    # above the bitfield to zero.
+    @itest_setregs('X0=0xffffffffffffffff', 'X1=0x4847464544434241')
+    @itest('ubfm x0, x1, #0, #0')
+    def test_ubfm_ge_min64(self):
+        self.assertEqual(self.rf.read('X0'), 1)
+        self.assertEqual(self.rf.read('W0'), 1)
+
+    # This is actually lsl.
+    # Copy 0 + 1 bits from the least significant bits of the source register to
+    # bit position 64 - 1 of the destination register.  Set bits below and
+    # above the bitfield to zero.
+    @itest_setregs('X0=0xffffffffffffffff', 'X1=0x4847464544434241')
+    @itest('ubfm x0, x1, #1, #0')
+    def test_ubfm_lt_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0x8000000000000000)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+
     # UDIV.
 
     # 32-bit.
