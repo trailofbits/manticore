@@ -1781,6 +1781,583 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('SP'), stack)  # no writeback
 
 
+    # MADD.
+
+    # 32-bit.
+
+    @itest_setregs('W1=0xffffffff', 'W2=0xffffffff', 'W3=0xffffffff')
+    @itest('madd w0, w1, w2, w3')
+    def test_madd_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs('W1=-1', 'W2=-1', 'W3=-1')
+    @itest('madd w0, w1, w2, w3')
+    def test_madd_neg32(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs('W1=1', 'W2=1', 'W3=0xffffffff')
+    @itest('madd w0, w1, w2, w3')
+    def test_madd_of1_32(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs('W1=0xffffffff', 'W2=2', 'W3=0xffffffff')
+    @itest('madd w0, w1, w2, w3')
+    def test_madd_of2_32(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffd)
+        self.assertEqual(self.rf.read('W0'), 0xfffffffd)
+
+    @itest_setregs('W1=2', 'W2=3', 'W3=4')
+    @itest('madd w0, w1, w2, w3')
+    def test_madd32(self):
+        self.assertEqual(self.rf.read('X0'), 10)
+        self.assertEqual(self.rf.read('W0'), 10)
+
+    # 64-bit.
+
+    @itest_setregs(
+        'X1=0xffffffffffffffff',
+        'X2=0xffffffffffffffff',
+        'X3=0xffffffffffffffff'
+    )
+    @itest('madd x0, x1, x2, x3')
+    def test_madd_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs('X1=-1', 'X2=-1', 'X3=-1')
+    @itest('madd x0, x1, x2, x3')
+    def test_madd_neg64(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs('X1=1', 'X2=1', 'X3=0xffffffffffffffff')
+    @itest('madd x0, x1, x2, x3')
+    def test_madd_of1_64(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs(
+        'X1=0xffffffffffffffff',
+        'X2=2',
+        'X3=0xffffffffffffffff'
+    )
+    @itest('madd x0, x1, x2, x3')
+    def test_madd_of2_64(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffffffffffd)
+        self.assertEqual(self.rf.read('W0'), 0xfffffffd)
+
+    @itest_setregs('X1=2', 'X2=3', 'X3=4')
+    @itest('madd x0, x1, x2, x3')
+    def test_madd64(self):
+        self.assertEqual(self.rf.read('X0'), 10)
+        self.assertEqual(self.rf.read('W0'), 10)
+
+
+    # MOV (to/from SP).
+
+    @itest_setregs(f"X0={MAGIC_64}")
+    @itest("mov sp, x0")
+    def test_mov_to_sp(self):
+        self.assertEqual(self.rf.read('SP'), MAGIC_64)
+        self.assertEqual(self.rf.read('WSP'), MAGIC_32)
+
+    @itest_custom("mov x0, sp")
+    def test_mov_from_sp(self):
+        # Do not overwrite SP with '_setupCpu'.
+        self.rf.write('SP', MAGIC_64)
+        self._execute()
+        self.assertEqual(self.rf.read('X0'), MAGIC_64)
+        self.assertEqual(self.rf.read('W0'), MAGIC_32)
+
+    @itest_setregs(f"W0={MAGIC_32}")
+    @itest("mov wsp, w0")
+    def test_mov_to_sp32(self):
+        self.assertEqual(self.rf.read('SP'), MAGIC_32)
+        self.assertEqual(self.rf.read('WSP'), MAGIC_32)
+
+    @itest_custom("mov w0, wsp")
+    def test_mov_from_sp32(self):
+        # Do not overwrite WSP with '_setupCpu'.
+        self.rf.write('WSP', MAGIC_32)
+        self._execute()
+        self.assertEqual(self.rf.read('X0'), MAGIC_32)
+        self.assertEqual(self.rf.read('W0'), MAGIC_32)
+
+
+    # MOV (inverted wide immediate).
+
+    # 32-bit.
+
+    @itest('mov w0, #0xffffffff')
+    def test_mov_inv_wide_imm32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    @itest('mov w0, #-1')
+    def test_mov_inv_wide_imm_neg32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    # 64-bit.
+
+    @itest('mov x0, #0xffffffffffffffff')
+    def test_mov_inv_wide_imm64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffffffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    @itest('mov x0, #-1')
+    def test_mov_inv_wide_imm_neg64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffffffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+
+    # MOV (wide immediate).
+
+    # 32-bit.
+
+    @itest('mov w0, #0')
+    def test_mov_wide_imm_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest('mov w0, #0xffff0000')
+    def test_mov_wide_imm_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffff0000)
+        self.assertEqual(self.rf.read('W0'), 0xffff0000)
+
+    @itest('mov w0, #1')
+    def test_mov_wide_imm32(self):
+        self.assertEqual(self.rf.read('X0'), 1)
+        self.assertEqual(self.rf.read('W0'), 1)
+
+    # 64-bit.
+
+    @itest('mov x0, #0')
+    def test_mov_wide_imm_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest('mov x0, #0xffff000000000000')
+    def test_mov_wide_imm_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffff000000000000)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest('mov x0, #1')
+    def test_mov_wide_imm64(self):
+        self.assertEqual(self.rf.read('X0'), 1)
+        self.assertEqual(self.rf.read('W0'), 1)
+
+
+    # MOV (bitmask immediate).
+
+    @itest('mov w0, #0x7ffffffe')
+    def test_mov_bmask_imm32(self):
+        self.assertEqual(self.rf.read('X0'), 0x7ffffffe)
+        self.assertEqual(self.rf.read('W0'), 0x7ffffffe)
+
+    @itest('mov x0, #0x7ffffffffffffffe')
+    def test_mov_bmask_imm64(self):
+        self.assertEqual(self.rf.read('X0'), 0x7ffffffffffffffe)
+        self.assertEqual(self.rf.read('W0'), 0xfffffffe)
+
+
+    # MOV (register).
+
+    @itest_setregs("X1=42")
+    @itest("mov x0, x1")
+    def test_mov_reg(self):
+        self.assertEqual(self.rf.read('X0'), 42)
+        self.assertEqual(self.rf.read('W0'), 42)
+
+    @itest_setregs("W1=42")
+    @itest("mov w0, w1")
+    def test_mov_reg32(self):
+        self.assertEqual(self.rf.read('X0'), 42)
+        self.assertEqual(self.rf.read('W0'), 42)
+
+
+    # MOV misc.
+
+    @itest_multiple(["movn x0, #0", "mov w0, #1"])
+    def test_mov_same_reg32(self):
+        self.assertEqual(self.rf.read('X0'), 1)
+        self.assertEqual(self.rf.read('W0'), 1)
+
+
+    # MOVK.
+
+    # 32-bit.
+
+    @itest_setregs('W0=0x41424344')
+    @itest('movk w0, #0')
+    def test_movk_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41420000)
+        self.assertEqual(self.rf.read('W0'), 0x41420000)
+
+    @itest_setregs('W0=0x41424344')
+    @itest('movk w0, #0xffff')
+    def test_movk_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142ffff)
+        self.assertEqual(self.rf.read('W0'), 0x4142ffff)
+
+    @itest_setregs('W0=0x41424344')
+    @itest('movk w0, #0x1001')
+    def test_movk32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41421001)
+        self.assertEqual(self.rf.read('W0'), 0x41421001)
+
+    @itest_setregs('W0=0x41424344')
+    @itest('movk w0, #0, lsl #0')
+    def test_movk_sft0_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41420000)
+        self.assertEqual(self.rf.read('W0'), 0x41420000)
+
+    @itest_setregs('W0=0x41424344')
+    @itest('movk w0, #0xffff, lsl #0')
+    def test_movk_sft0_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142ffff)
+        self.assertEqual(self.rf.read('W0'), 0x4142ffff)
+
+    @itest_setregs('W0=0x41424344')
+    @itest('movk w0, #0x1001, lsl #0')
+    def test_movk_sft0_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41421001)
+        self.assertEqual(self.rf.read('W0'), 0x41421001)
+
+    @itest_setregs('W0=0x41424344')
+    @itest('movk w0, #0, lsl #16')
+    def test_movk_sft16_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0x4344)
+        self.assertEqual(self.rf.read('W0'), 0x4344)
+
+    @itest_setregs('W0=0x41424344')
+    @itest('movk w0, #0xffff, lsl #16')
+    def test_movk_sft16_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffff4344)
+        self.assertEqual(self.rf.read('W0'), 0xffff4344)
+
+    @itest_setregs('W0=0x41424344')
+    @itest('movk w0, #0x1001, lsl #16')
+    def test_movk_sft16_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x10014344)
+        self.assertEqual(self.rf.read('W0'), 0x10014344)
+
+    # 64-bit.
+
+    @itest_setregs('X0=0x4142434445464748')
+    @itest('movk x0, #0')
+    def test_movk_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445460000)
+        self.assertEqual(self.rf.read('W0'), 0x45460000)
+
+    @itest_setregs('X0=0x4142434445464748')
+    @itest('movk x0, #0xffff')
+    def test_movk_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0x414243444546ffff)
+        self.assertEqual(self.rf.read('W0'), 0x4546ffff)
+
+    @itest_setregs('X0=0x4142434445464748')
+    @itest('movk x0, #0x1001')
+    def test_movk64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445461001)
+        self.assertEqual(self.rf.read('W0'), 0x45461001)
+
+    @itest_setregs('X0=0x4142434445464748')
+    @itest('movk x0, #0, lsl #0')
+    def test_movk_sft0_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445460000)
+        self.assertEqual(self.rf.read('W0'), 0x45460000)
+
+    @itest_setregs('X0=0x4142434445464748')
+    @itest('movk x0, #0xffff, lsl #0')
+    def test_movk_sft0_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0x414243444546ffff)
+        self.assertEqual(self.rf.read('W0'), 0x4546ffff)
+
+    @itest_setregs('X0=0x4142434445464748')
+    @itest('movk x0, #0x1001, lsl #0')
+    def test_movk_sft0_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445461001)
+        self.assertEqual(self.rf.read('W0'), 0x45461001)
+
+    @itest_setregs('X0=0x4142434445464748')
+    @itest('movk x0, #0, lsl #16')
+    def test_movk_sft16_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434400004748)
+        self.assertEqual(self.rf.read('W0'), 0x4748)
+
+    @itest_setregs('X0=0x4142434445464748')
+    @itest('movk x0, #0xffff, lsl #16')
+    def test_movk_sft16_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344ffff4748)
+        self.assertEqual(self.rf.read('W0'), 0xffff4748)
+
+    @itest_setregs('X0=0x4142434445464748')
+    @itest('movk x0, #0x1001, lsl #16')
+    def test_movk_sft16_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434410014748)
+        self.assertEqual(self.rf.read('W0'), 0x10014748)
+
+    @itest_setregs('X0=0x4142434445464748')
+    @itest('movk x0, #0, lsl #32')
+    def test_movk_sft32_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142000045464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @itest_setregs('X0=0x4142434445464748')
+    @itest('movk x0, #0xffff, lsl #32')
+    def test_movk_sft32_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142ffff45464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @itest_setregs('X0=0x4142434445464748')
+    @itest('movk x0, #0x1001, lsl #32')
+    def test_movk_sft32_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142100145464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @itest_setregs('X0=0x4142434445464748')
+    @itest('movk x0, #0, lsl #48')
+    def test_movk_sft48_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0x434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @itest_setregs('X0=0x4142434445464748')
+    @itest('movk x0, #0xffff, lsl #48')
+    def test_movk_sft48_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffff434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @itest_setregs('X0=0x4142434445464748')
+    @itest('movk x0, #0x1001, lsl #48')
+    def test_movk_sft48_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x1001434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+
+    # MOVN.
+
+    # 32-bit.
+
+    @itest("movn w0, #0")
+    def test_movn32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    @itest("movn w0, #65535")
+    def test_movn_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffff0000)
+        self.assertEqual(self.rf.read('W0'), 0xffff0000)
+
+    @itest("movn w0, #65535, lsl #16")
+    def test_movn_sft16_32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffff)
+        self.assertEqual(self.rf.read('W0'), 0xffff)
+
+    # 64-bit.
+
+    @itest("movn x0, #0")
+    def test_movn64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffffffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    @itest("movn x0, #65535")
+    def test_movn_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffffffff0000)
+        self.assertEqual(self.rf.read('W0'), 0xffff0000)
+
+    @itest("movn x0, #65535, lsl #16")
+    def test_movn_sft16_64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffff0000ffff)
+        self.assertEqual(self.rf.read('W0'), 0xffff)
+
+    @itest("movn x0, #65535, lsl #32")
+    def test_movn_sft32_64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffff0000ffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    @itest("movn x0, #65535, lsl #48")
+    def test_movn_sft48_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x0000ffffffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+
+    # MOVZ.
+
+    # 32-bit.
+
+    @itest("movz w0, #0")
+    def test_movz32(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest("movz w0, #65535")
+    def test_movz_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffff)
+        self.assertEqual(self.rf.read('W0'), 0xffff)
+
+    @itest("movz w0, #65535, lsl #16")
+    def test_movz_sft16_32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffff0000)
+        self.assertEqual(self.rf.read('W0'), 0xffff0000)
+
+    # 64-bit.
+
+    @itest("movz x0, #0")
+    def test_movz64(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest("movz x0, #65535")
+    def test_movz_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffff)
+        self.assertEqual(self.rf.read('W0'), 0xffff)
+
+    @itest("movz x0, #65535, lsl #16")
+    def test_movz_sft16_64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffff0000)
+        self.assertEqual(self.rf.read('W0'), 0xffff0000)
+
+    @itest("movz x0, #65535, lsl #32")
+    def test_movz_sft32_64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffff00000000)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest("movz x0, #65535, lsl #48")
+    def test_movz_sft48_64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffff000000000000)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+
+    # MSUB.
+
+    # 32-bit.
+
+    @itest_setregs('W1=0xffffffff', 'W2=0xffffffff', 'W3=0xffffffff')
+    @itest('msub w0, w1, w2, w3')
+    def test_msub_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffe)
+        self.assertEqual(self.rf.read('W0'), 0xfffffffe)
+
+    @itest_setregs('W1=-1', 'W2=-1', 'W3=-1')
+    @itest('msub w0, w1, w2, w3')
+    def test_msub_neg32(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffe)
+        self.assertEqual(self.rf.read('W0'), 0xfffffffe)
+
+    @itest_setregs('W1=0xffffffff', 'W2=2', 'W3=1')
+    @itest('msub w0, w1, w2, w3')
+    def test_msub_of32(self):
+        self.assertEqual(self.rf.read('X0'), 3)
+        self.assertEqual(self.rf.read('W0'), 3)
+
+    @itest_setregs('W1=3', 'W2=4', 'W3=5')
+    @itest('msub w0, w1, w2, w3')
+    def test_msub32(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffff9)
+        self.assertEqual(self.rf.read('W0'), 0xfffffff9)
+
+    # 64-bit.
+
+    @itest_setregs(
+        'X1=0xffffffffffffffff',
+        'X2=0xffffffffffffffff',
+        'X3=0xffffffffffffffff'
+    )
+    @itest('msub x0, x1, x2, x3')
+    def test_msub_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffffffffffe)
+        self.assertEqual(self.rf.read('W0'), 0xfffffffe)
+
+    @itest_setregs('X1=-1', 'X2=-1', 'X3=-1')
+    @itest('msub x0, x1, x2, x3')
+    def test_msub_neg64(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffffffffffe)
+        self.assertEqual(self.rf.read('W0'), 0xfffffffe)
+
+    @itest_setregs('X1=0xffffffffffffffff', 'X2=2', 'X3=1')
+    @itest('msub x0, x1, x2, x3')
+    def test_msub_of64(self):
+        self.assertEqual(self.rf.read('X0'), 3)
+        self.assertEqual(self.rf.read('W0'), 3)
+
+    @itest_setregs('X1=3', 'X2=4', 'X3=5')
+    @itest('msub x0, x1, x2, x3')
+    def test_msub64(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffffffffff9)
+        self.assertEqual(self.rf.read('W0'), 0xfffffff9)
+
+
+    # MUL.
+
+    # 32-bit.
+
+    @itest_setregs('W1=0xffffffff', 'W2=0xffffffff')
+    @itest('mul w0, w1, w2')
+    def test_mul_max32(self):
+        self.assertEqual(self.rf.read('X0'), 1)
+        self.assertEqual(self.rf.read('W0'), 1)
+
+    @itest_setregs('W1=-1', 'W2=-1')
+    @itest('mul w0, w1, w2')
+    def test_mul_neg32(self):
+        self.assertEqual(self.rf.read('X0'), 1)
+        self.assertEqual(self.rf.read('W0'), 1)
+
+    @itest_setregs('W1=0x80000000', 'W2=2')
+    @itest('mul w0, w1, w2')
+    def test_mul_of32(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs('W1=2', 'W2=3')
+    @itest('mul w0, w1, w2')
+    def test_mul32(self):
+        self.assertEqual(self.rf.read('X0'), 6)
+        self.assertEqual(self.rf.read('W0'), 6)
+
+    @itest_setregs('W1=2', 'W2=-3')
+    @itest('mul w0, w1, w2')
+    def test_mul_pos_neg32(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffa)
+        self.assertEqual(self.rf.read('W0'), 0xfffffffa)
+
+    # 64-bit.
+
+    @itest_setregs('X1=0xffffffffffffffff', 'X2=0xffffffffffffffff')
+    @itest('mul x0, x1, x2')
+    def test_mul_max64(self):
+        self.assertEqual(self.rf.read('X0'), 1)
+        self.assertEqual(self.rf.read('W0'), 1)
+
+    @itest_setregs('X1=-1', 'X2=-1')
+    @itest('mul x0, x1, x2')
+    def test_mul_neg64(self):
+        self.assertEqual(self.rf.read('X0'), 1)
+        self.assertEqual(self.rf.read('W0'), 1)
+
+    @itest_setregs('X1=0x8000000000000000', 'X2=2')
+    @itest('mul x0, x1, x2')
+    def test_mul_of64(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs('X1=2', 'X2=3')
+    @itest('mul x0, x1, x2')
+    def test_mul64(self):
+        self.assertEqual(self.rf.read('X0'), 6)
+        self.assertEqual(self.rf.read('W0'), 6)
+
+    @itest_setregs('X1=2', 'X2=-3')
+    @itest('mul x0, x1, x2')
+    def test_mul_pos_neg64(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffffffffffa)
+        self.assertEqual(self.rf.read('W0'), 0xfffffffa)
+
+
     # NOP.
 
     @itest_custom('nop')
