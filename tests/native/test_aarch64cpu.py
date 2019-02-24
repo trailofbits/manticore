@@ -3726,6 +3726,77 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W0'), 0)
 
 
+    # UBFX.
+
+    # 32-bit.
+
+    # Copy 1 bit from bit position 0 in the source register to the least
+    # significant bits of the destination register.
+    @itest_setregs('W1=0x44434241')
+    @itest('ubfx w0, w1, #0, #1')
+    def test_ubfx_min_min32(self):
+        self.assertEqual(self.rf.read('X0'), 1)
+        self.assertEqual(self.rf.read('W0'), 1)
+
+    # Copy 32 bits from bit position 0 in the source register to the least
+    # significant bits of the destination register.
+    @itest_setregs('W1=0x41424344')
+    @itest('ubfx w0, w1, #0, #32')
+    def test_ubfx_min_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344)
+        self.assertEqual(self.rf.read('W0'), 0x41424344)
+
+    # Copy 1 bit from bit position 31 in the source register to the least
+    # significant bits of the destination register.
+    @itest_setregs('W1=0x81424344')
+    @itest('ubfx w0, w1, #31, #1')
+    def test_ubfx_max_min32(self):
+        self.assertEqual(self.rf.read('X0'), 1)
+        self.assertEqual(self.rf.read('W0'), 1)
+
+    # Copy 16 bits from bit position 16 in the source register to the least
+    # significant bits of the destination register.
+    @itest_setregs('W1=0xffff4344')
+    @itest('ubfx w0, w1, #16, #16')
+    def test_ubfx32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffff)
+        self.assertEqual(self.rf.read('W0'), 0xffff)
+
+    # 64-bit.
+
+    # Copy 1 bit from bit position 0 in the source register to the least
+    # significant bits of the destination register.
+    @itest_setregs('X1=0x4847464544434241')
+    @itest('ubfx x0, x1, #0, #1')
+    def test_ubfx_min_min64(self):
+        self.assertEqual(self.rf.read('X0'), 1)
+        self.assertEqual(self.rf.read('W0'), 1)
+
+    # Copy 64 bits from bit position 0 in the source register to the least
+    # significant bits of the destination register.
+    @itest_setregs('X1=0x4142434445464748')
+    @itest('ubfx x0, x1, #0, #64')
+    def test_ubfx_min_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    # Copy 1 bit from bit position 63 in the source register to the least
+    # significant bits of the destination register.
+    @itest_setregs('X1=0x8142434445464748')
+    @itest('ubfx x0, x1, #63, #1')
+    def test_ubfx_max_min64(self):
+        self.assertEqual(self.rf.read('X0'), 1)
+        self.assertEqual(self.rf.read('W0'), 1)
+
+    # Copy 32 bits from bit position 32 in the source register to the least
+    # significant bits of the destination register.
+    @itest_setregs('X1=0xffffffff45464748')
+    @itest('ubfx x0, x1, #32, #32')
+    def test_ubfx64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+
     # UDIV.
 
     # 32-bit.
