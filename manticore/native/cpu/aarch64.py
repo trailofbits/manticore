@@ -1158,15 +1158,8 @@ class Aarch64Cpu(Cpu):
         imm = imm_op.op.imm
 
         # Fake immediate operands.
-        immr_op = cs.arm64.Arm64Op()
-        immr_op.value.imm = -imm % res_op.size
-        immr_op.type = cs.arm64.ARM64_OP_IMM
-        immr_op = Aarch64Operand(cpu, immr_op)
-
-        imms_op = cs.arm64.Arm64Op()
-        imms_op.value.imm = res_op.size - 1 - imm
-        imms_op.type = cs.arm64.ARM64_OP_IMM
-        imms_op = Aarch64Operand(cpu, imms_op)
+        immr_op = Aarch64Operand.make_imm(cpu, -imm % res_op.size)
+        imms_op = Aarch64Operand.make_imm(cpu, res_op.size - 1 - imm)
 
         # The 'instruction' decorator advances PC, so call the original
         # method.
@@ -1204,10 +1197,7 @@ class Aarch64Cpu(Cpu):
         assert re.match(insn_rx, cpu.insn_bit_str)
 
         # Fake an immediate operand.
-        imms_op = cs.arm64.Arm64Op()
-        imms_op.value.imm = res_op.size - 1
-        imms_op.type = cs.arm64.ARM64_OP_IMM
-        imms_op = Aarch64Operand(cpu, imms_op)
+        imms_op = Aarch64Operand.make_imm(cpu, res_op.size - 1)
 
         # The 'instruction' decorator advances PC, so call the original
         # method.
@@ -1265,17 +1255,12 @@ class Aarch64Cpu(Cpu):
         assert src.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
 
         # Fake a register operand.
-        zr = cs.arm64.Arm64Op()
-
         if dst.size == 32:
-            zr.value.reg = cs.arm64.ARM64_REG_WZR
+            zr = Aarch64Operand.make_reg(cpu, cs.arm64.ARM64_REG_WZR)
         elif dst.size == 64:
-            zr.value.reg = cs.arm64.ARM64_REG_XZR
+            zr = Aarch64Operand.make_reg(cpu, cs.arm64.ARM64_REG_XZR)
         else:
             raise Aarch64InvalidInstruction
-
-        zr.type = cs.arm64.ARM64_OP_REG
-        zr = Aarch64Operand(cpu, zr)
 
         opc = cpu.insn_bit_str[1:3]  # 'op S' for MOV (to/from SP)
 
@@ -1283,10 +1268,7 @@ class Aarch64Cpu(Cpu):
             # MOV (to/from SP).
             if opc == '00':
                 # Fake an immediate operand.
-                zero = cs.arm64.Arm64Op()
-                zero.value.imm = 0
-                zero.type = cs.arm64.ARM64_OP_IMM
-                zero = Aarch64Operand(cpu, zero)
+                zero = Aarch64Operand.make_imm(cpu, 0)
 
                 # The 'instruction' decorator advances PC, so call the original
                 # method.
@@ -1518,17 +1500,12 @@ class Aarch64Cpu(Cpu):
         assert re.match(insn_rx, cpu.insn_bit_str)
 
         # Fake a register operand.
-        zr = cs.arm64.Arm64Op()
-
         if res_op.size == 32:
-            zr.value.reg = cs.arm64.ARM64_REG_WZR
+            zr = Aarch64Operand.make_reg(cpu, cs.arm64.ARM64_REG_WZR)
         elif res_op.size == 64:
-            zr.value.reg = cs.arm64.ARM64_REG_XZR
+            zr = Aarch64Operand.make_reg(cpu, cs.arm64.ARM64_REG_XZR)
         else:
             raise Aarch64InvalidInstruction
-
-        zr.type = cs.arm64.ARM64_OP_REG
-        zr = Aarch64Operand(cpu, zr)
 
         # The 'instruction' decorator advances PC, so call the original
         # method.
@@ -2165,15 +2142,8 @@ class Aarch64Cpu(Cpu):
         assert re.match(insn_rx, cpu.insn_bit_str)
 
         # Fake immediate operands.
-        immr_op = cs.arm64.Arm64Op()
-        immr_op.value.imm = 0
-        immr_op.type = cs.arm64.ARM64_OP_IMM
-        immr_op = Aarch64Operand(cpu, immr_op)
-
-        imms_op = cs.arm64.Arm64Op()
-        imms_op.value.imm = 7
-        imms_op.type = cs.arm64.ARM64_OP_IMM
-        imms_op = Aarch64Operand(cpu, imms_op)
+        immr_op = Aarch64Operand.make_imm(cpu, 0)
+        imms_op = Aarch64Operand.make_imm(cpu, 7)
 
         # The 'instruction' decorator advances PC, so call the original
         # method.
@@ -2208,15 +2178,8 @@ class Aarch64Cpu(Cpu):
         assert re.match(insn_rx, cpu.insn_bit_str)
 
         # Fake immediate operands.
-        immr_op = cs.arm64.Arm64Op()
-        immr_op.value.imm = 0
-        immr_op.type = cs.arm64.ARM64_OP_IMM
-        immr_op = Aarch64Operand(cpu, immr_op)
-
-        imms_op = cs.arm64.Arm64Op()
-        imms_op.value.imm = 15
-        imms_op.type = cs.arm64.ARM64_OP_IMM
-        imms_op = Aarch64Operand(cpu, imms_op)
+        immr_op = Aarch64Operand.make_imm(cpu, 0)
+        imms_op = Aarch64Operand.make_imm(cpu, 15)
 
         # The 'instruction' decorator advances PC, so call the original
         # method.
@@ -2281,6 +2244,22 @@ class Aarch64Operand(Operand):
         )
 
         self._type = self.op.type
+
+    @classmethod
+    def make_imm(cls, cpu, value):
+        imm_op = cs.arm64.Arm64Op()
+        imm_op.value.imm = value
+        imm_op.type = cs.arm64.ARM64_OP_IMM
+        imm_op = cls(cpu, imm_op)
+        return imm_op
+
+    @classmethod
+    def make_reg(cls, cpu, value):
+        reg_op = cs.arm64.Arm64Op()
+        reg_op.value.reg = value
+        reg_op.type = cs.arm64.ARM64_OP_REG
+        reg_op = cls(cpu, reg_op)
+        return reg_op
 
     @property
     def type(self):
