@@ -3885,6 +3885,15 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W0'), 0x6c0e36e6)
 
 
+    # UXTB.
+
+    @itest_setregs('W1=0x41424381')
+    @itest('uxtb w0, w1')
+    def test_uxtb(self):
+        self.assertEqual(self.rf.read('X0'), 0x81)
+        self.assertEqual(self.rf.read('W0'), 0x81)
+
+
 class Aarch64CpuInstructions(unittest.TestCase, Aarch64Instructions):
     def setUp(self):
         # XXX: Adapted from the Armv7 test code.
