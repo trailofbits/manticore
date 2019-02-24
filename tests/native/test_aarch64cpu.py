@@ -1824,6 +1824,49 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W0'), 0x54647480)
 
 
+    # LSR (immediate).
+
+    # 32-bit.
+
+    @itest_setregs('W1=0x41424344')
+    @itest('lsr w0, w1, #0')
+    def test_lsr_imm_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344)
+        self.assertEqual(self.rf.read('W0'), 0x41424344)
+
+    @itest_setregs('W1=0x81424344')
+    @itest('lsr w0, w1, #31')
+    def test_lsr_imm_max32(self):
+        self.assertEqual(self.rf.read('X0'), 1)
+        self.assertEqual(self.rf.read('W0'), 1)
+
+    @itest_setregs('W1=0x41424344')
+    @itest('lsr w0, w1, #4')
+    def test_lsr_imm32(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434)
+        self.assertEqual(self.rf.read('W0'), 0x4142434)
+
+    # 64-bit.
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest('lsr x0, x1, #0')
+    def test_lsr_imm_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @itest_setregs('X1=0x8142434445464748')
+    @itest('lsr x0, x1, #63')
+    def test_lsr_imm_max64(self):
+        self.assertEqual(self.rf.read('X0'), 1)
+        self.assertEqual(self.rf.read('W0'), 1)
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest('lsr x0, x1, #4')
+    def test_lsr_imm64(self):
+        self.assertEqual(self.rf.read('X0'), 0x414243444546474)
+        self.assertEqual(self.rf.read('W0'), 0x44546474)
+
+
     # MADD.
 
     # 32-bit.
