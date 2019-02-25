@@ -1257,12 +1257,7 @@ class Aarch64Cpu(Cpu):
         reg = reg_op1.read()
         sft = reg_op2.read()
 
-        assert (
-            (res_op.size == 32 and sft in range(32)) or
-            (res_op.size == 64 and sft in range(64))
-        )
-
-        result = LSL(reg, sft, res_op.size)
+        result = LSL(reg, sft % res_op.size, res_op.size)
         res_op.write(result)
 
     def _LSR_immediate(cpu, res_op, reg_op, immr_op):
@@ -1395,12 +1390,7 @@ class Aarch64Cpu(Cpu):
         reg = reg_op1.read()
         sft = reg_op2.read()
 
-        assert (
-            (res_op.size == 32 and sft in range(32)) or
-            (res_op.size == 64 and sft in range(64))
-        )
-
-        result = LSR(reg, sft, res_op.size)
+        result = LSR(reg, sft % res_op.size, res_op.size)
         res_op.write(result)
 
     @instruction
