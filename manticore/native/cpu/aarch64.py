@@ -31,27 +31,22 @@ OP_NAME_MAP = {
 # See "C1.2.4 Condition code" in ARM Architecture Reference Manual
 # ARMv8, for ARMv8-A architecture profile.
 COND_MAP = {
-    'EQ': lambda n, z, c, v: z == 1,
-    'NE': lambda n, z, c, v: z == 0,
-
-    'CS': lambda n, z, c, v: c == 1,
-    'HS': lambda n, z, c, v: c == 1,
-
-    'CC': lambda n, z, c, v: c == 0,
-    'LO': lambda n, z, c, v: c == 0,
-
-    'MI': lambda n, z, c, v: n == 1,
-    'PL': lambda n, z, c, v: n == 0,
-    'VS': lambda n, z, c, v: v == 1,
-    'VC': lambda n, z, c, v: v == 0,
-    'HI': lambda n, z, c, v: c == 1 and z == 0,
-    'LS': lambda n, z, c, v: not (c == 1 and z == 0),
-    'GE': lambda n, z, c, v: n == v,
-    'LT': lambda n, z, c, v: n != v,
-    'GT': lambda n, z, c, v: z == 0 and n == v,
-    'LE': lambda n, z, c, v: not (z == 0 and n == v),
-    'AL': lambda n, z, c, v: True,
-    'NV': lambda n, z, c, v: True
+    cs.arm64.ARM64_CC_EQ: lambda n, z, c, v: z == 1,
+    cs.arm64.ARM64_CC_NE: lambda n, z, c, v: z == 0,
+    cs.arm64.ARM64_CC_HS: lambda n, z, c, v: c == 1,
+    cs.arm64.ARM64_CC_LO: lambda n, z, c, v: c == 0,
+    cs.arm64.ARM64_CC_MI: lambda n, z, c, v: n == 1,
+    cs.arm64.ARM64_CC_PL: lambda n, z, c, v: n == 0,
+    cs.arm64.ARM64_CC_VS: lambda n, z, c, v: v == 1,
+    cs.arm64.ARM64_CC_VC: lambda n, z, c, v: v == 0,
+    cs.arm64.ARM64_CC_HI: lambda n, z, c, v: c == 1 and z == 0,
+    cs.arm64.ARM64_CC_LS: lambda n, z, c, v: not (c == 1 and z == 0),
+    cs.arm64.ARM64_CC_GE: lambda n, z, c, v: n == v,
+    cs.arm64.ARM64_CC_LT: lambda n, z, c, v: n != v,
+    cs.arm64.ARM64_CC_GT: lambda n, z, c, v: z == 0 and n == v,
+    cs.arm64.ARM64_CC_LE: lambda n, z, c, v: not (z == 0 and n == v),
+    cs.arm64.ARM64_CC_AL: lambda n, z, c, v: True,
+    cs.arm64.ARM64_CC_NV: lambda n, z, c, v: True
 }
 
 
@@ -337,10 +332,9 @@ class Aarch64Cpu(Cpu):
         # Map all B.cond variants to a single implementation.
         elif (len(name_list) == 2 and
               name_list[0] == 'B' and
-              name_list[1] in COND_MAP
+              insn.cc != cs.arm64.ARM64_CC_INVALID
              ):
             name = 'B_cond'
-            ops.append(name_list[1])
 
         return name
 
@@ -716,7 +710,7 @@ class Aarch64Cpu(Cpu):
         res_op.write(imm)
 
     @instruction
-    def B_cond(cpu, imm_op, cond):
+    def B_cond(cpu, imm_op):
         """
         B.cond.
 
@@ -724,10 +718,8 @@ class Aarch64Cpu(Cpu):
         that this is not a subroutine call or return.
 
         :param imm_op: immediate.
-        :param cond: condition code.
         """
         assert imm_op.type is cs.arm64.ARM64_OP_IMM
-        assert cond in COND_MAP
 
         insn_rx  = '0101010'
         insn_rx += '0'
@@ -738,6 +730,8 @@ class Aarch64Cpu(Cpu):
         assert re.match(insn_rx, cpu.insn_bit_str)
 
         imm = imm_op.op.imm
+        cond = cpu.instruction.cc
+
         if COND_MAP[cond](*cpu.regfile.nzcv):
             cpu.PC = imm
 
