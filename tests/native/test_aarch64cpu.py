@@ -1781,6 +1781,49 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('SP'), stack)  # no writeback
 
 
+    # LSL (register).
+
+    # 32-bit.
+
+    @itest_setregs('W1=0x41424344', 'W2=0')
+    @itest('lsl w0, w1, w2')
+    def test_lsl_reg_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344)
+        self.assertEqual(self.rf.read('W0'), 0x41424344)
+
+    @itest_setregs('W1=0x44434241', 'W2=31')
+    @itest('lsl w0, w1, w2')
+    def test_lsl_reg_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0x80000000)
+        self.assertEqual(self.rf.read('W0'), 0x80000000)
+
+    @itest_setregs('W1=0x41424344', 'W2=4')
+    @itest('lsl w0, w1, w2')
+    def test_lsl_reg32(self):
+        self.assertEqual(self.rf.read('X0'), 0x14243440)
+        self.assertEqual(self.rf.read('W0'), 0x14243440)
+
+    # 64-bit.
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0')
+    @itest('lsl x0, x1, x2')
+    def test_lsl_reg_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @itest_setregs('X1=0x4847464544434241', 'X2=63')
+    @itest('lsl x0, x1, x2')
+    def test_lsl_reg_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0x8000000000000000)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=4')
+    @itest('lsl x0, x1, x2')
+    def test_lsl_reg64(self):
+        self.assertEqual(self.rf.read('X0'), 0x1424344454647480)
+        self.assertEqual(self.rf.read('W0'), 0x54647480)
+
+
     # LSL (immediate).
 
     # 32-bit.
@@ -1820,6 +1863,49 @@ class Aarch64Instructions:
     @itest_setregs('X1=0x4142434445464748')
     @itest('lsl x0, x1, #4')
     def test_lsl_imm64(self):
+        self.assertEqual(self.rf.read('X0'), 0x1424344454647480)
+        self.assertEqual(self.rf.read('W0'), 0x54647480)
+
+
+    # LSLV.
+
+    # 32-bit.
+
+    @itest_setregs('W1=0x41424344', 'W2=0')
+    @itest('lslv w0, w1, w2')
+    def test_lslv_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344)
+        self.assertEqual(self.rf.read('W0'), 0x41424344)
+
+    @itest_setregs('W1=0x44434241', 'W2=31')
+    @itest('lslv w0, w1, w2')
+    def test_lslv_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0x80000000)
+        self.assertEqual(self.rf.read('W0'), 0x80000000)
+
+    @itest_setregs('W1=0x41424344', 'W2=4')
+    @itest('lslv w0, w1, w2')
+    def test_lslv32(self):
+        self.assertEqual(self.rf.read('X0'), 0x14243440)
+        self.assertEqual(self.rf.read('W0'), 0x14243440)
+
+    # 64-bit.
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0')
+    @itest('lslv x0, x1, x2')
+    def test_lslv_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @itest_setregs('X1=0x4847464544434241', 'X2=63')
+    @itest('lslv x0, x1, x2')
+    def test_lslv_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0x8000000000000000)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=4')
+    @itest('lslv x0, x1, x2')
+    def test_lslv64(self):
         self.assertEqual(self.rf.read('X0'), 0x1424344454647480)
         self.assertEqual(self.rf.read('W0'), 0x54647480)
 

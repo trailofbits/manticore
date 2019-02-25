@@ -1124,9 +1124,7 @@ class Aarch64Cpu(Cpu):
         """
         cpu._ldur_stur(reg_op, mem_op, ldur=True)
 
-    # XXX: Support LSL (register).
-    @instruction
-    def LSL(cpu, res_op, reg_op, imm_op):
+    def _LSL_immediate(cpu, res_op, reg_op, imm_op):
         """
         LSL (immediate).
 
@@ -1164,6 +1162,108 @@ class Aarch64Cpu(Cpu):
         # The 'instruction' decorator advances PC, so call the original
         # method.
         cpu.UBFM.__wrapped__(cpu, res_op, reg_op, immr_op, imms_op)
+
+    def _LSL_register(cpu, res_op, reg_op1, reg_op2):
+        """
+        LSL (register).
+
+        Logical Shift Left (register) shifts a register value left by a variable
+        number of bits, shifting in zeros, and writes the result to the
+        destination register.  The remainder obtained by dividing the second
+        source register by the data size defines the number of bits by which the
+        first source register is left-shifted.
+
+        This instruction is an alias of the LSLV instruction.
+
+        :param res_op: destination register.
+        :param reg_op1: source register.
+        :param reg_op2: source register.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_op1.type is cs.arm64.ARM64_OP_REG
+        assert reg_op2.type is cs.arm64.ARM64_OP_REG
+
+        insn_rx  = '[01]'      # sf
+        insn_rx += '0'
+        insn_rx += '0'
+        insn_rx += '11010110'
+        insn_rx += '[01]{5}'   # Rm
+        insn_rx += '0010'
+        insn_rx += '00'        # op2
+        insn_rx += '[01]{5}'   # Rn
+        insn_rx += '[01]{5}'   # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        # The 'instruction' decorator advances PC, so call the original
+        # method.
+        cpu.LSLV.__wrapped__(cpu, res_op, reg_op1, reg_op2)
+
+    @instruction
+    def LSL(cpu, res_op, op1, op2):
+        """
+        Combines LSL (register) and LSL (immediate).
+
+        :param res_op: destination register.
+        :param op1: source register.
+        :param op2: source register or immediate.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert op1.type is cs.arm64.ARM64_OP_REG
+        assert op2.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
+
+        if op2.type == cs.arm64.ARM64_OP_REG:
+            cpu._LSL_register(res_op, op1, op2)
+
+        elif op2.type == cs.arm64.ARM64_OP_IMM:
+            cpu._LSL_immediate(res_op, op1, op2)
+
+        else:
+            raise Aarch64InvalidInstruction
+
+    @instruction
+    def LSLV(cpu, res_op, reg_op1, reg_op2):
+        """
+        LSLV.
+
+        Logical Shift Left Variable shifts a register value left by a variable
+        number of bits, shifting in zeros, and writes the result to the
+        destination register.  The remainder obtained by dividing the second
+        source register by the data size defines the number of bits by which the
+        first source register is left-shifted.
+
+        This instruction is used by the alias LSL (register).
+
+        :param res_op: destination register.
+        :param reg_op1: source register.
+        :param reg_op2: source register.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_op1.type is cs.arm64.ARM64_OP_REG
+        assert reg_op2.type is cs.arm64.ARM64_OP_REG
+
+        insn_rx  = '[01]'      # sf
+        insn_rx += '0'
+        insn_rx += '0'
+        insn_rx += '11010110'
+        insn_rx += '[01]{5}'   # Rm
+        insn_rx += '0010'
+        insn_rx += '00'        # op2
+        insn_rx += '[01]{5}'   # Rn
+        insn_rx += '[01]{5}'   # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        reg = reg_op1.read()
+        sft = reg_op2.read()
+
+        assert (
+            (res_op.size == 32 and sft in range(32)) or
+            (res_op.size == 64 and sft in range(64))
+        )
+
+        result = LSL(reg, sft, res_op.size)
+        res_op.write(result)
 
     # XXX: Support LSR (register).
     @instruction
