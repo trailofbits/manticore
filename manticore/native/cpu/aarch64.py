@@ -1265,9 +1265,7 @@ class Aarch64Cpu(Cpu):
         result = LSL(reg, sft, res_op.size)
         res_op.write(result)
 
-    # XXX: Support LSR (register).
-    @instruction
-    def LSR(cpu, res_op, reg_op, immr_op):
+    def _LSR_immediate(cpu, res_op, reg_op, immr_op):
         """
         LSR (immediate).
 
@@ -1302,6 +1300,108 @@ class Aarch64Cpu(Cpu):
         # The 'instruction' decorator advances PC, so call the original
         # method.
         cpu.UBFM.__wrapped__(cpu, res_op, reg_op, immr_op, imms_op)
+
+    def _LSR_register(cpu, res_op, reg_op1, reg_op2):
+        """
+        LSR (register).
+
+        Logical Shift Right (register) shifts a register value right by a
+        variable number of bits, shifting in zeros, and writes the result to the
+        destination register.  The remainder obtained by dividing the second
+        source register by the data size defines the number of bits by which the
+        first source register is right-shifted.
+
+        This instruction is an alias of the LSRV instruction.
+
+        :param res_op: destination register.
+        :param reg_op1: source register.
+        :param reg_op2: source register.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_op1.type is cs.arm64.ARM64_OP_REG
+        assert reg_op2.type is cs.arm64.ARM64_OP_REG
+
+        insn_rx  = '[01]'      # sf
+        insn_rx += '0'
+        insn_rx += '0'
+        insn_rx += '11010110'
+        insn_rx += '[01]{5}'   # Rm
+        insn_rx += '0010'
+        insn_rx += '01'        # op2
+        insn_rx += '[01]{5}'   # Rn
+        insn_rx += '[01]{5}'   # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        # The 'instruction' decorator advances PC, so call the original
+        # method.
+        cpu.LSRV.__wrapped__(cpu, res_op, reg_op1, reg_op2)
+
+    @instruction
+    def LSR(cpu, res_op, op1, op2):
+        """
+        Combines LSR (register) and LSR (immediate).
+
+        :param res_op: destination register.
+        :param op1: source register.
+        :param op2: source register or immediate.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert op1.type is cs.arm64.ARM64_OP_REG
+        assert op2.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
+
+        if op2.type == cs.arm64.ARM64_OP_REG:
+            cpu._LSR_register(res_op, op1, op2)
+
+        elif op2.type == cs.arm64.ARM64_OP_IMM:
+            cpu._LSR_immediate(res_op, op1, op2)
+
+        else:
+            raise Aarch64InvalidInstruction
+
+    @instruction
+    def LSRV(cpu, res_op, reg_op1, reg_op2):
+        """
+        LSRV.
+
+        Logical Shift Right Variable shifts a register value right by a variable
+        number of bits, shifting in zeros, and writes the result to the
+        destination register.  The remainder obtained by dividing the second
+        source register by the data size defines the number of bits by which the
+        first source register is right-shifted.
+
+        This instruction is used by the alias LSR (register).
+
+        :param res_op: destination register.
+        :param reg_op1: source register.
+        :param reg_op2: source register.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_op1.type is cs.arm64.ARM64_OP_REG
+        assert reg_op2.type is cs.arm64.ARM64_OP_REG
+
+        insn_rx  = '[01]'      # sf
+        insn_rx += '0'
+        insn_rx += '0'
+        insn_rx += '11010110'
+        insn_rx += '[01]{5}'   # Rm
+        insn_rx += '0010'
+        insn_rx += '01'        # op2
+        insn_rx += '[01]{5}'   # Rn
+        insn_rx += '[01]{5}'   # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        reg = reg_op1.read()
+        sft = reg_op2.read()
+
+        assert (
+            (res_op.size == 32 and sft in range(32)) or
+            (res_op.size == 64 and sft in range(64))
+        )
+
+        result = LSR(reg, sft, res_op.size)
+        res_op.write(result)
 
     @instruction
     def MADD(cpu, res_op, reg_op1, reg_op2, reg_op3):

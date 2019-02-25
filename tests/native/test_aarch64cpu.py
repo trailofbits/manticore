@@ -1910,6 +1910,49 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W0'), 0x54647480)
 
 
+    # LSR (register).
+
+    # 32-bit.
+
+    @itest_setregs('W1=0x41424344', 'W2=0')
+    @itest('lsr w0, w1, w2')
+    def test_lsr_reg_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344)
+        self.assertEqual(self.rf.read('W0'), 0x41424344)
+
+    @itest_setregs('W1=0x81424344', 'W2=31')
+    @itest('lsr w0, w1, w2')
+    def test_lsr_reg_max32(self):
+        self.assertEqual(self.rf.read('X0'), 1)
+        self.assertEqual(self.rf.read('W0'), 1)
+
+    @itest_setregs('W1=0x41424344', 'W2=4')
+    @itest('lsr w0, w1, w2')
+    def test_lsr_reg32(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434)
+        self.assertEqual(self.rf.read('W0'), 0x4142434)
+
+    # 64-bit.
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0')
+    @itest('lsr x0, x1, x2')
+    def test_lsr_reg_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @itest_setregs('X1=0x8142434445464748', 'X2=63')
+    @itest('lsr x0, x1, x2')
+    def test_lsr_reg_max64(self):
+        self.assertEqual(self.rf.read('X0'), 1)
+        self.assertEqual(self.rf.read('W0'), 1)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=4')
+    @itest('lsr x0, x1, x2')
+    def test_lsr_reg64(self):
+        self.assertEqual(self.rf.read('X0'), 0x414243444546474)
+        self.assertEqual(self.rf.read('W0'), 0x44546474)
+
+
     # LSR (immediate).
 
     # 32-bit.
@@ -1949,6 +1992,49 @@ class Aarch64Instructions:
     @itest_setregs('X1=0x4142434445464748')
     @itest('lsr x0, x1, #4')
     def test_lsr_imm64(self):
+        self.assertEqual(self.rf.read('X0'), 0x414243444546474)
+        self.assertEqual(self.rf.read('W0'), 0x44546474)
+
+
+    # LSRV.
+
+    # 32-bit.
+
+    @itest_setregs('W1=0x41424344', 'W2=0')
+    @itest('lsrv w0, w1, w2')
+    def test_lsrv_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344)
+        self.assertEqual(self.rf.read('W0'), 0x41424344)
+
+    @itest_setregs('W1=0x81424344', 'W2=31')
+    @itest('lsrv w0, w1, w2')
+    def test_lsrv_max32(self):
+        self.assertEqual(self.rf.read('X0'), 1)
+        self.assertEqual(self.rf.read('W0'), 1)
+
+    @itest_setregs('W1=0x41424344', 'W2=4')
+    @itest('lsrv w0, w1, w2')
+    def test_lsrv32(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434)
+        self.assertEqual(self.rf.read('W0'), 0x4142434)
+
+    # 64-bit.
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0')
+    @itest('lsrv x0, x1, x2')
+    def test_lsrv_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @itest_setregs('X1=0x8142434445464748', 'X2=63')
+    @itest('lsrv x0, x1, x2')
+    def test_lsrv_max64(self):
+        self.assertEqual(self.rf.read('X0'), 1)
+        self.assertEqual(self.rf.read('W0'), 1)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=4')
+    @itest('lsrv x0, x1, x2')
+    def test_lsrv64(self):
         self.assertEqual(self.rf.read('X0'), 0x414243444546474)
         self.assertEqual(self.rf.read('W0'), 0x44546474)
 
