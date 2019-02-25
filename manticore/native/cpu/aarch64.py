@@ -344,6 +344,10 @@ class Aarch64Cpu(Cpu):
         insn = struct.unpack("<I", self.instruction.bytes)[0]
         return f'{insn:032b}'
 
+    def cond_holds(cpu):
+        cond = cpu.instruction.cc
+        return COND_MAP[cond](*cpu.regfile.nzcv)
+
     # XXX: Use masking when writing to the destination register?  Avoiding this
     # for now, but the assert in the 'write' method should catch such cases.
 
@@ -730,9 +734,8 @@ class Aarch64Cpu(Cpu):
         assert re.match(insn_rx, cpu.insn_bit_str)
 
         imm = imm_op.op.imm
-        cond = cpu.instruction.cc
 
-        if COND_MAP[cond](*cpu.regfile.nzcv):
+        if cpu.cond_holds():
             cpu.PC = imm
 
     @instruction
