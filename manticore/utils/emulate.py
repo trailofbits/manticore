@@ -51,6 +51,21 @@ def hr_size(num, suffix='B') -> str:
 class ConcreteUnicornEmulator:
     """
     Helper class to emulate instructions in bulk via Unicorn.
+    ---
+    The regular Unicorn Emulator is used as a fallback for emulating single instructions that don't have their own
+    implementations in Manticore. This Emulator is instead intended to completely replace Manticore's executor when
+    operating on purely concrete data.
+
+    To use the emulator, register a callback for the will_start_run event that calls `state.cpu.emulate_until` with an
+    address at which it should switch back from Unicorn to Manticore. Passing 0 will result in the entire target being
+    executed concretely.
+
+    As a result of the concrete data requirement, this emulator is good for preloading concrete state, but typically
+    should not be used once symbolic data is introduced. At time of writing, if you try emulate under Unicorn up until
+    the point where symbolic data is introduced, switch to Manticore, fork states, then switch back, it *definitely*
+    won't work.
+
+    Only supports X86_64 for now.
     """
     def __init__(self, cpu):
         self._cpu = cpu
