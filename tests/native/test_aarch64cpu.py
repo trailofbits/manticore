@@ -71,6 +71,29 @@ def itest_multiple(asms, count=None):
     return instr_dec
 
 
+NZCV_COND_MAP = {
+  # name: (true, false)
+  'eq': (0x40000000, 0xb0000000),
+  'ne': (0xb0000000, 0x40000000),
+  'cs': (0x20000000, 0xd0000000),
+  'hs': (0x20000000, 0xd0000000),
+  'cc': (0xd0000000, 0x20000000),
+  'lo': (0xd0000000, 0x20000000),
+  'mi': (0x80000000, 0x70000000),
+  'pl': (0x70000000, 0x80000000),
+  'vs': (0x10000000, 0xe0000000),
+  'vc': (0xe0000000, 0x10000000),
+  'hi': (0x20000000, 0x40000000),
+  'ls': (0x40000000, 0x20000000),
+  'ge': (0xd0000000, 0xc0000000),
+  'lt': (0xc0000000, 0xd0000000),
+  'gt': (0x90000000, 0xd0000000),
+  'le': (0xd0000000, 0x90000000),
+  'al': (0xf0000000, None),
+  'nv': (0,          None)
+}
+
+
 # XXX: Armv7 also has these methods: stack_pop, stack_push, stack_peek.
 class Aarch64CpuTest(unittest.TestCase):
     # XXX: Adapted from the Armv7 test code.
@@ -378,199 +401,42 @@ class Aarch64Instructions:
 
     # B.cond.
 
-    def _b_cond_true(self):
-        pc = self.cpu.PC
-        # Execute just two instructions, so it doesn't attempt to run beyond
-        # valid code.
-        self._execute(check_pc=False)
-        self.assertEqual(self.rf.read('PC'), pc + 8)
-        self.assertEqual(self.rf.read('LR'), 0)
-        self.assertEqual(self.rf.read('X30'), 0)
-        self._execute()
-        self.assertEqual(self.rf.read('X1'), 0)
-        self.assertEqual(self.rf.read('X2'), 43)
+    # XXX: Bundles everything into one testcase.
+    def test_b_cond(self):
+        for cond in NZCV_COND_MAP:
+            cond_true, cond_false = NZCV_COND_MAP[cond]
+            asms = [f'b.{cond} .+8', 'mov x1, 42', 'mov x2, 43']
 
-    def _b_cond_false(self):
-        pc = self.cpu.PC
-        # Execute just two instructions, so it doesn't attempt to run beyond
-        # valid code.
-        self._execute(check_pc=False)
-        self.assertEqual(self.rf.read('PC'), pc + 4)
-        self.assertEqual(self.rf.read('LR'), 0)
-        self.assertEqual(self.rf.read('X30'), 0)
-        self._execute()
-        self.assertEqual(self.rf.read('X1'), 42)
-        self.assertEqual(self.rf.read('X2'), 0)
+            def b_cond(self, add_pc, x1, x2):
+                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                pc = self.cpu.PC
+                # Execute just two instructions, so it doesn't attempt to run
+                # beyond valid code.
+                self._execute(check_pc=False)
+                assertEqual(self.rf.read('PC'), pc + add_pc)
+                assertEqual(self.rf.read('LR'), 0)
+                assertEqual(self.rf.read('X30'), 0)
+                self._execute()
+                assertEqual(self.rf.read('X1'), x1)
+                assertEqual(self.rf.read('X2'), x2)
 
-    @itest_setregs('NZCV=0x40000000')
-    @itest_custom(['b.eq .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
-    def test_b_cond_eq_true(self):
-        self._b_cond_true()
+            @itest_setregs(f'NZCV={cond_true}')
+            @itest_custom(asms, multiple_insts=True)
+            def b_cond_true(self):
+                b_cond(self, add_pc=8, x1=0, x2=43)
 
-    @itest_setregs('NZCV=0xb0000000')
-    @itest_custom(['b.eq .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
-    def test_b_cond_eq_false(self):
-        self._b_cond_false()
+            @itest_setregs(f'NZCV={cond_false}')
+            @itest_custom(asms, multiple_insts=True)
+            def b_cond_false(self):
+                b_cond(self, add_pc=4, x1=42, x2=0)
 
-    @itest_setregs('NZCV=0xb0000000')
-    @itest_custom(['b.ne .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
-    def test_b_cond_ne_true(self):
-        self._b_cond_true()
+            if cond_true:
+                self.setUp()
+                b_cond_true(self)
 
-    @itest_setregs('NZCV=0x40000000')
-    @itest_custom(['b.ne .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
-    def test_b_cond_ne_false(self):
-        self._b_cond_false()
-
-    @itest_setregs('NZCV=0x20000000')
-    @itest_custom(['b.cs .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
-    def test_b_cond_cs_true(self):
-        self._b_cond_true()
-
-    @itest_setregs('NZCV=0xd0000000')
-    @itest_custom(['b.cs .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
-    def test_b_cond_cs_false(self):
-        self._b_cond_false()
-
-    @itest_setregs('NZCV=0x20000000')
-    @itest_custom(['b.hs .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
-    def test_b_cond_hs_true(self):
-        self._b_cond_true()
-
-    @itest_setregs('NZCV=0xd0000000')
-    @itest_custom(['b.hs .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
-    def test_b_cond_hs_false(self):
-        self._b_cond_false()
-
-    @itest_setregs('NZCV=0xd0000000')
-    @itest_custom(['b.cc .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
-    def test_b_cond_cc_true(self):
-        self._b_cond_true()
-
-    @itest_setregs('NZCV=0x20000000')
-    @itest_custom(['b.cc .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
-    def test_b_cond_cc_false(self):
-        self._b_cond_false()
-
-    @itest_setregs('NZCV=0xd0000000')
-    @itest_custom(['b.lo .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
-    def test_b_cond_lo_true(self):
-        self._b_cond_true()
-
-    @itest_setregs('NZCV=0x20000000')
-    @itest_custom(['b.lo .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
-    def test_b_cond_lo_false(self):
-        self._b_cond_false()
-
-    @itest_setregs('NZCV=0x80000000')
-    @itest_custom(['b.mi .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
-    def test_b_cond_mi_true(self):
-        self._b_cond_true()
-
-    @itest_setregs('NZCV=0x70000000')
-    @itest_custom(['b.mi .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
-    def test_b_cond_mi_false(self):
-        self._b_cond_false()
-
-    @itest_setregs('NZCV=0x70000000')
-    @itest_custom(['b.pl .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
-    def test_b_cond_pl_true(self):
-        self._b_cond_true()
-
-    @itest_setregs('NZCV=0x80000000')
-    @itest_custom(['b.pl .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
-    def test_b_cond_pl_false(self):
-        self._b_cond_false()
-
-    @itest_setregs('NZCV=0x10000000')
-    @itest_custom(['b.vs .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
-    def test_b_cond_vs_true(self):
-        self._b_cond_true()
-
-    @itest_setregs('NZCV=0xe0000000')
-    @itest_custom(['b.vs .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
-    def test_b_cond_vs_false(self):
-        self._b_cond_false()
-
-    @itest_setregs('NZCV=0xe0000000')
-    @itest_custom(['b.vc .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
-    def test_b_cond_vc_true(self):
-        self._b_cond_true()
-
-    @itest_setregs('NZCV=0x10000000')
-    @itest_custom(['b.vc .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
-    def test_b_cond_vc_false(self):
-        self._b_cond_false()
-
-    @itest_setregs('NZCV=0x20000000')
-    @itest_custom(['b.hi .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
-    def test_b_cond_hi_true(self):
-        self._b_cond_true()
-
-    @itest_setregs('NZCV=0x40000000')
-    @itest_custom(['b.hi .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
-    def test_b_cond_hi_false(self):
-        self._b_cond_false()
-
-    @itest_setregs('NZCV=0x40000000')
-    @itest_custom(['b.ls .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
-    def test_b_cond_ls_true(self):
-        self._b_cond_true()
-
-    @itest_setregs('NZCV=0x20000000')
-    @itest_custom(['b.ls .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
-    def test_b_cond_ls_false(self):
-        self._b_cond_false()
-
-    @itest_setregs('NZCV=0xd0000000')
-    @itest_custom(['b.ge .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
-    def test_b_cond_ge_true(self):
-        self._b_cond_true()
-
-    @itest_setregs('NZCV=0xc0000000')
-    @itest_custom(['b.ge .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
-    def test_b_cond_ge_false(self):
-        self._b_cond_false()
-
-    @itest_setregs('NZCV=0xc0000000')
-    @itest_custom(['b.lt .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
-    def test_b_cond_lt_true(self):
-        self._b_cond_true()
-
-    @itest_setregs('NZCV=0xd0000000')
-    @itest_custom(['b.lt .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
-    def test_b_cond_lt_false(self):
-        self._b_cond_false()
-
-    @itest_setregs('NZCV=0x90000000')
-    @itest_custom(['b.gt .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
-    def test_b_cond_gt_true(self):
-        self._b_cond_true()
-
-    @itest_setregs('NZCV=0xd0000000')
-    @itest_custom(['b.gt .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
-    def test_b_cond_gt_false(self):
-        self._b_cond_false()
-
-    @itest_setregs('NZCV=0xd0000000')
-    @itest_custom(['b.le .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
-    def test_b_cond_le_true(self):
-        self._b_cond_true()
-
-    @itest_setregs('NZCV=0x90000000')
-    @itest_custom(['b.le .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
-    def test_b_cond_le_false(self):
-        self._b_cond_false()
-
-    @itest_setregs('NZCV=0xf0000000')
-    @itest_custom(['b.al .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
-    def test_b_cond_al_true(self):
-        self._b_cond_true()
-
-    @itest_setregs('NZCV=0')
-    @itest_custom(['b.nv .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
-    def test_b_cond_nv_true(self):
-        self._b_cond_true()
+            if cond_false:
+                self.setUp()
+                b_cond_false(self)
 
 
     # B.
