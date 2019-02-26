@@ -715,7 +715,9 @@ class X86Cpu(Cpu):
         assert base >= 0 and base < (1 << self.address_bit_size)
         assert limit >= 0 and limit < 0xffff or limit & 0xfff == 0
         # perms ? not used yet Also is not really perms but rather a bunch of attributes
+        self._publish('will_set_descriptor', selector, base, limit, perms)
         self._segments[selector] = (base, limit, perms)
+        self._publish('did_set_descriptor', selector, base, limit, perms)
 
     def get_descriptor(self, selector):
         return self._segments.setdefault(selector, (0, 0xfffff000, 'rwx'))
@@ -4604,7 +4606,7 @@ class X86Cpu(Cpu):
         PMAXUB: returns maximum of packed unsigned byte integers in the dest operand
 
         Performs a SIMD compare of the packed unsigned byte in the second source operand
-        and the first source operand and returns the maximum value for each pair of 
+        and the first source operand and returns the maximum value for each pair of
         integers to the destination operand.
 
         Example :
@@ -4981,7 +4983,7 @@ class X86Cpu(Cpu):
         """
         PSLLD: Packed shift left logical with double words
 
-        Shifts the destination operand (first operand) to the left by the number of bytes specified 
+        Shifts the destination operand (first operand) to the left by the number of bytes specified
         in the count operand (second operand). The empty low-order bytes are cleared (set to all 0s).
         If the value specified by the count operand is greater than 15, the destination operand is
         set to all 0s. The count operand is an 8-bit immediate.

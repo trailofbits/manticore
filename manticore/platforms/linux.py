@@ -5,6 +5,8 @@ import fcntl
 import logging
 import socket
 import struct
+import time
+import resource
 from typing import Union, List, TypeVar, cast
 
 import io
@@ -113,8 +115,11 @@ class File:
         return os.fstat(self.fileno())
 
     def ioctl(self, request, argp):
-        # argp ignored...
-        return fcntl.fcntl(self, request)
+        try:
+            return fcntl.fcntl(self, request, argp)
+        except OSError:
+            logger.error(f"Invalid Fcntl request: {request}")
+            return -1
 
     def tell(self, *args):
         return self.file.tell(*args)
@@ -386,7 +391,6 @@ class Linux(Platform):
     '''
 
     # from /usr/include/asm-generic/resource.h
-    RLIMIT_NOFILE = 7  # /* max number of open files */
     FCNTL_FDCWD = -100  # /* Special value used to indicate openat should use the cwd */
 
     def __init__(self, program, argv=None, envp=None, disasm='capstone', **kwargs):
@@ -414,7 +418,8 @@ class Linux(Platform):
 
         # dict of [int -> (int, int)] where tuple is (soft, hard) limits
         self._rlimits = {
-            self.RLIMIT_NOFILE: (256, 1024)
+            resource.RLIMIT_NOFILE: (256, 1024),
+            resource.RLIMIT_STACK: (8192 * 1024, 0)
         }
 
         if program is not None:
@@ -1391,7 +1396,9 @@ class Linux(Platform):
             if brk > mem._ceil(self.brk):
                 perms = mem.perms(self.brk - 1)
                 addr = mem.mmap(mem._ceil(self.brk), size, perms)
-                assert mem._ceil(self.brk) == addr, "Error in brk!"
+                if not mem._ceil(self.brk) == addr:
+                    logger.error(f"Error in brk: ceil: {hex(mem._ceil(self.brk))} brk: {hex(brk)} self.brk: {hex(self.brk)} addr: {hex(addr)}")
+                    return self.brk
             self.brk += size
         return self.brk
 
@@ -1545,7 +1552,7 @@ class Linux(Platform):
 
     # Signals..
     def sys_kill(self, pid, sig):
-        logger.debug(f"KILL, Ignoring Sending signal {sig} to pid {pid}")
+        logger.warning(f"KILL, Ignoring Sending signal {sig} to pid {pid}")
         return 0
 
     def sys_rt_sigaction(self, signum, act, oldact):
@@ -1553,7 +1560,7 @@ class Linux(Platform):
         return self.sys_sigaction(signum, act, oldact)
 
     def sys_sigaction(self, signum, act, oldact):
-        logger.debug(f"SIGACTION, Ignoring changing signal handler for signal {signum}")
+        logger.warning(f"SIGACTION, Ignoring changing signal handler for signal {signum}")
         return 0
 
     def sys_rt_sigprocmask(self, cpu, how, newset, oldset):
@@ -1561,7 +1568,7 @@ class Linux(Platform):
         return self.sys_sigprocmask(cpu, how, newset, oldset)
 
     def sys_sigprocmask(self, cpu, how, newset, oldset):
-        logger.debug(f"SIGACTION, Ignoring changing signal mask set cmd:{how}", )
+        logger.warning(f"SIGACTION, Ignoring changing signal mask set cmd:%s", how)
         return 0
 
     def sys_dup(self, fd):
@@ -1606,6 +1613,7 @@ class Linux(Platform):
 
         self.files[newfd] = self.files[fd]
 
+        logger.debug('sys_dup2(%d,%d) -> %d', fd, newfd, newfd)
         return newfd
 
     def sys_chroot(self, path):
@@ -1884,7 +1892,7 @@ class Linux(Platform):
 
         :return: C{0}
         '''
-        logger.debug("Ignoring sys_get_priority")
+        logger.warning("Unimplemented system call: sys_get_priority")
         return 0
 
     def sys_setpriority(self, which, who, prio):
@@ -1894,7 +1902,11 @@ class Linux(Platform):
 
         :return: C{0}
         '''
-        logger.debug("Ignoring sys_setpriority")
+        logger.warning("Unimplemented system call: sys_setpriority")
+        return 0
+
+    def sys_tgkill(self, tgid, pid, sig):
+        logger.warning("Unimplemented system call: sys_tgkill")
         return 0
 
     def sys_acct(self, path):
@@ -1908,7 +1920,7 @@ class Linux(Platform):
         return -1
 
     def sys_exit(self, error_code):
-        'Wrapper for sys_exit_group'
+        """Wrapper for sys_exit_group"""
         return self.sys_exit_group(error_code)
 
     def sys_exit_group(self, error_code):
@@ -1919,22 +1931,35 @@ class Linux(Platform):
         return self._exit(f"Program finished with exit status: {ctypes.c_int32(error_code).value}")
 
     def sys_ptrace(self, request, pid, addr, data):
+        logger.warning("Unimplemented system call: sys_ptrace")
         return 0
 
     def sys_nanosleep(self, req, rem):
+        logger.warning("Unimplemented system call: sys_nanosleep")
         return 0
 
     def sys_set_tid_address(self, tidptr):
         return 1000  # tha pid
 
     def sys_faccessat(self, dirfd, pathname, mode, flags):
+        logger.warning("Unimplemented system call: sys_faccessat")
         filename = self.current.read_string(pathname)
         return -1
 
     def sys_set_robust_list(self, head, length):
+        logger.warning("Unimplemented system call: sys_set_robust_list")
+        return -1
+
+    def sys_sysinfo(self, infop):
+        logger.warning("Unimplemented system call: sys_sysinfo")
         return -1
 
     def sys_futex(self, uaddr, op, val, timeout, uaddr2, val3):
+        logger.warning("Unimplemented system call: sys_futex")
+        return 0
+
+    def sys_setrlimit(self, resource, rlim):
+        logger.warning("Unimplemented system call: sys_setrlimit")
         return -1
 
     def sys_getrlimit(self, resource, rlim):
@@ -1947,10 +1972,35 @@ class Linux(Platform):
             ret = 0
         return ret
 
-    def sys_fadvise64(self, fd, offset, length, advice):
-        return 0
+    def sys_prlimit64(self, pid, resource, new_lim, old_lim):
+        ret = -1
+        if pid == 0:
+            if old_lim:
+                ret = self.sys_getrlimit(resource, old_lim)
+            elif new_lim:
+                ret = self.sys_setrlimit(resource, new_lim)
+        else:
+            logger.warning("Cowardly refusing to set resource limits for process %d", pid)
+        return ret
 
     def sys_gettimeofday(self, tv, tz):
+        logger.warning("Unimplemented system call: sys_gettimeofday")
+        return 0
+
+    def sys_clone_ptregs(self, flags, child_stack, ptid, ctid, regs):
+        logger.warning("Unimplemented system call: sys_clone/ptregs")
+        return 1000
+
+    def sys_mkdir(self, pathname, mode):
+        logger.warning("Unimplemented system call: sys_mkdir")
+        return 0
+
+    def sys_madvise(self, infop):
+        logger.info("Ignoring sys_madvise")
+        return 0
+
+    def sys_fadvise64(self, fd, offset, length, advice):
+        logger.info("Ignoring sys_fadvise64")
         return 0
 
     def sys_socket(self, domain, socket_type, protocol):
@@ -2090,7 +2140,10 @@ class Linux(Platform):
         return self._syscall_abi.invoke(implementation)
 
     def sys_clock_gettime(self, clock_id, timespec):
-        logger.info("sys_clock_time not really implemented")
+        logger.warning("sys_clock_time not really implemented")
+        if clock_id == 1:
+            t = int(time.monotonic() * 1000000000)
+            self.current.write_bytes(timespec, struct.pack('l', t // 1000000000) + struct.pack('l', t))
         return 0
 
     def sys_time(self, tloc):

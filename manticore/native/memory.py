@@ -485,13 +485,19 @@ class COWMap(Map):
         return head, tail
 
 
+class StubCPU:
+
+    def _publish(self, *args, **kwargs):
+        return None
+
+
 class Memory(object, metaclass=ABCMeta):
     '''
     The memory manager.
     This class handles all virtual memory mappings and symbolic chunks.
     '''
 
-    def __init__(self, maps=None):
+    def __init__(self, maps=None, cpu=StubCPU()):
         '''
         Builds a memory manager.
         '''
@@ -500,6 +506,7 @@ class Memory(object, metaclass=ABCMeta):
             self._maps = set()
         else:
             self._maps = set(maps)
+        self.cpu = cpu
         self._page2map = WeakValueDictionary()  # {page -> ref{MAP}}
         self._recording_stack = []
         for m in self._maps:
@@ -508,7 +515,7 @@ class Memory(object, metaclass=ABCMeta):
                 self._page2map[i] = m
 
     def __reduce__(self):
-        return (self.__class__, (self._maps, ))
+        return (self.__class__, (self._maps, self.cpu))
 
     @property
     @abstractmethod
@@ -629,6 +636,8 @@ class Memory(object, metaclass=ABCMeta):
         assert addr is None or isinstance(addr, int), 'Address shall be concrete'
         assert size > 0
 
+        self.cpu._publish('will_map_memory', addr, size, perms, filename, offset)
+
         # address is rounded down to the nearest multiple of the allocation granularity
         if addr is not None:
             assert addr < self.memory_size, 'Address too big'
@@ -651,6 +660,7 @@ class Memory(object, metaclass=ABCMeta):
         self._add(m)
 
         logger.debug('New file-memory map @%x size:%x', addr, size)
+        self.cpu._publish('did_map_memory', addr, size, perms, filename, offset, addr)
         return addr
 
     def mmap(self, addr, size, perms, data_init=None, name=None):
@@ -674,6 +684,8 @@ class Memory(object, metaclass=ABCMeta):
         # If addr is NULL, the system determines where to allocate the region.
         assert addr is None or isinstance(addr, int), 'Address shall be concrete'
 
+        self.cpu._publish('will_map_memory', addr, size, perms, None, None)
+
         # address is rounded down to the nearest multiple of the allocation granularity
         if addr is not None:
             assert addr < self.memory_size, 'Address too big'
@@ -696,6 +708,8 @@ class Memory(object, metaclass=ABCMeta):
         self._add(m)
 
         logger.debug('New memory map @%x size:%x', addr, size)
+
+        self.cpu._publish('did_map_memory', addr, size, perms, None, None, addr)
         return addr
 
     def _add(self, m):
@@ -779,6 +793,8 @@ class Memory(object, metaclass=ABCMeta):
         start = self._floor(start)
         end = self._ceil(start + size)
 
+        self.cpu._publish('will_unmap_memory', start, size)
+
         for m in self._maps_in_range(start, end):
             self._del(m)
             head, tail = m.split(start)
@@ -789,12 +805,15 @@ class Memory(object, metaclass=ABCMeta):
             if tail:
                 self._add(tail)
 
+        self.cpu._publish('did_unmap_memory', start, size)
         logger.debug(f'Unmap memory @{start:x} size:{size:x}')
 
     def mprotect(self, start, size, perms):
         assert size > 0
         start = self._floor(start)
         end = self._ceil(start + size)
+
+        self.cpu._publish('will_protect_memory', start, size, perms)
 
         for m in self._maps_in_range(start, end):
             self._del(m)
@@ -810,6 +829,8 @@ class Memory(object, metaclass=ABCMeta):
                 self._add(head)
             if tail:
                 self._add(tail)
+
+        self.cpu._publish('did_protect_memory', start, size, perms)
 
     # Permissions
     def __contains__(self, address):
@@ -968,7 +989,7 @@ class SMemory(Memory):
             self._symbols = dict(symbols)
 
     def __reduce__(self):
-        return (self.__class__, (self.constraints, self._symbols, self._maps, ))
+        return self.__class__, (self.constraints, self._symbols, self._maps, ), {'cpu': self.cpu}
 
     @property
     def constraints(self):
@@ -1148,7 +1169,8 @@ class LazySMemory(SMemory):
     def __reduce__(self):
         return (self.__class__, (self.constraints, self._symbols, self._maps),
                 {'backing_array': self.backing_array,
-                 'backed_by_symbolic_store': self.backed_by_symbolic_store})
+                 'backed_by_symbolic_store': self.backed_by_symbolic_store,
+                 'cpu': self.cpu})
 
     def __setstate__(self, state):
         self.backing_array = state['backing_array']
@@ -1178,6 +1200,8 @@ class LazySMemory(SMemory):
         assert addr < self.memory_size, 'Address too big'
         assert size > 0
 
+        self.cpu._publish('will_map_memory', addr, size, perms, filename, offset)
+
         map = AnonMap(addr, size, perms)
         self._add(map)
 
@@ -1199,6 +1223,7 @@ class LazySMemory(SMemory):
             Memory.write(self, addr + i, chr(fdata[i]), force=True)
 
         logger.debug('New file-memory map @%x size:%x', addr, size)
+        self.cpu._publish('did_map_memory', addr, size, perms, filename, offset, addr)
 
         return addr
 

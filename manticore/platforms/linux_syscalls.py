@@ -426,7 +426,7 @@ amd64 = {
     53: "sys_socketpair",
     54: "sys_setsockopt",
     55: "sys_getsockopt",
-    56: "sys_clone/ptregs",
+    56: "sys_clone_ptregs",
     57: "sys_fork/ptregs",
     58: "sys_vfork/ptregs",
     59: "sys_execve/ptregs",

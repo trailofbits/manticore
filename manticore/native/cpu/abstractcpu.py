@@ -1,19 +1,26 @@
 import inspect
+import io
 import logging
+import struct
+from functools import wraps
 from itertools import islice
 
-import io
-import struct
 import unicorn
-from functools import wraps
 
 from .disasm import init_disassembler
-from ..memory import ConcretizeMemory, InvalidMemoryAccess, LazySMemory
-from ...core.smtlib import BitVec, Operators, Constant, visitors
+from ..memory import (
+    ConcretizeMemory, InvalidMemoryAccess, FileMap, AnonMap
+)
+from ..memory import LazySMemory
+from ...core.smtlib import Expression, BitVec, Operators, Constant
+from ...core.smtlib import visitors
 from ...core.smtlib.solver import solver
-from ...utils.emulate import UnicornEmulator
+from ...utils.emulate import ConcreteUnicornEmulator
 from ...utils.event import Eventful
+from ...utils.fallback_emulator import UnicornEmulator
 from ...utils.helpers import issymbolic
+
+from capstone.x86 import X86_REG_ENDING
 
 logger = logging.getLogger(__name__)
 register_logger = logging.getLogger(f'{__name__}.registers')
@@ -139,6 +146,9 @@ class Operand:
 
         :param int reg_id: Register ID
         '''
+        if reg_id >= X86_REG_ENDING:
+            logger.warning("Trying to get register name for a non-register")
+            return None
         cs_reg_name = self.cpu.instruction.reg_name(reg_id)
         if cs_reg_name is None or cs_reg_name.lower() == '(invalid)':
             return None
@@ -442,7 +452,7 @@ class Cpu(Eventful):
     '''
 
     _published_events = {'write_register', 'read_register', 'write_memory', 'read_memory', 'decode_instruction',
-                         'execute_instruction'}
+                         'execute_instruction', 'set_descriptor', 'map_memory', 'protect_memory', 'unmap_memory'}
 
     def __init__(self, regfile, memory, **kwargs):
         assert isinstance(regfile, RegisterFile)
@@ -453,6 +463,9 @@ class Cpu(Eventful):
         self._instruction_cache = {}
         self._icount = 0
         self._last_pc = None
+        self._concrete = kwargs.pop("concrete", False)
+        self.emu = None
+        self._break_unicorn_at = None
         if not hasattr(self, "disasm"):
             self.disasm = init_disassembler(self._disasm, self.arch, self.mode)
         # Ensure that regfile created STACK/PC aliases
@@ -466,15 +479,19 @@ class Cpu(Eventful):
         state['icount'] = self._icount
         state['last_pc'] = self._last_pc
         state['disassembler'] = self._disasm
+        state['concrete'] = self._concrete
+        state['break_unicorn_at'] = self._break_unicorn_at
         return state
 
     def __setstate__(self, state):
         Cpu.__init__(self, state['regfile'],
                      state['memory'],
-                     disasm=state['disassembler'])
+                     disasm=state['disassembler'], concrete=state['concrete'])
         self._icount = state['icount']
         self._last_pc = state['last_pc']
         self._disasm = state['disassembler']
+        self._concrete = state['concrete']
+        self._break_unicorn_at = state['break_unicorn_at']
         super().__setstate__(state)
 
     @property
@@ -563,6 +580,18 @@ class Cpu(Eventful):
         except AttributeError:
             object.__setattr__(self, name, value)
 
+    def emulate_until(self, target: int):
+        """
+        Tells the CPU to set up a concrete unicorn emulator and use it to execute instructions
+        until target is reached.
+
+        :param target: Where Unicorn should hand control back to Manticore. Set to 0 for all instructions.
+        """
+        self._concrete = True
+        self._break_unicorn_at = target
+        if self.emu:
+            self.emu._stop_at = target
+
     #############################
     # Memory access
     @property
@@ -588,6 +617,40 @@ class Cpu(Eventful):
         self._memory.write(where, data, force)
 
         self._publish('did_write_memory', where, expression, size)
+
+    def _raw_read(self, where: int, size=1) -> bytes:
+        """
+        Selects bytes from memory. Attempts to do so faster than via read_bytes.
+
+        :param where: address to read from
+        :param size: number of bytes to read
+        :return: the bytes in memory
+        """
+        map = self.memory.map_containing(where)
+        start = map._get_offset(where)
+        mapType = type(map)
+        if mapType is FileMap:
+            end = map._get_offset(where + size)
+
+            if end > map._mapped_size:
+                logger.warning(f"Missing {end - map._mapped_size} bytes at the end of {map._filename}")
+
+            raw_data = map._data[map._get_offset(where): min(end, map._mapped_size)]
+            if len(raw_data) < end:
+                raw_data += b'\x00' * (end - len(raw_data))
+
+            data = b''
+            for offset in sorted(map._overlay.keys()):
+                data += raw_data[len(data):offset]
+                data += map._overlay[offset]
+            data += raw_data[len(data):]
+
+        elif mapType is AnonMap:
+            data = bytes(map._data[start:start + size])
+        else:
+            data = b''.join(self.memory[where:where + size])
+        assert len(data) == size, 'Raw read resulted in wrong data read which should never happen'
+        return data
 
     def read_int(self, where, size=None, force=False):
         '''
@@ -620,8 +683,28 @@ class Cpu(Eventful):
         :type data: str or list
         :param force: whether to ignore memory permissions
         '''
-        for i in range(len(data)):
-            self.write_int(where + i, Operators.ORD(data[i]), 8, force)
+
+        mp = self.memory.map_containing(where)
+        # TODO (ehennenfent) - fast write can have some yet-unstudied unintended side effects.
+        # At the very least, using it in non-concrete mode will break the symbolic strcmp/strlen models. The 1024 byte
+        # minimum is intended to minimize the potential effects of this by ensuring that if there _are_ any other
+        # issues, they'll only crop up when we're doing very large writes, which are fairly uncommon.
+        can_write_raw = type(mp) is AnonMap and \
+            isinstance(data, (str, bytes)) and \
+            (mp.end - mp.start + 1) >= len(data) >= 1024 and \
+            not issymbolic(data) and \
+            self._concrete
+
+        if can_write_raw:
+            logger.debug("Using fast write")
+            offset = mp._get_offset(where)
+            if isinstance(data, str):
+                data = bytes(data.encode('utf-8'))
+            mp._data[offset:offset + len(data)] = data
+            self._publish('did_write_memory', where, data, 8 * len(data))
+        else:
+            for i in range(len(data)):
+                self.write_int(where + i, Operators.ORD(data[i]), 8, force)
 
     def read_bytes(self, where, size, force=False):
         '''
@@ -778,7 +861,7 @@ class Cpu(Eventful):
                                            policy='INSTRUCTION')
             text += c
 
-        #Pad potentially incomplete instruction with zeroes
+        # Pad potentially incomplete instruction with zeroes
         code = text.ljust(self.max_instr_width, b'\x00')
 
         try:
@@ -840,17 +923,25 @@ class Cpu(Eventful):
                 register_logger.debug(l)
 
         try:
-            implementation = getattr(self, name, None)
-
-            if implementation is not None:
-                implementation(*insn.operands)
-
-            else:
-                text_bytes = ' '.join('%02x' % x for x in insn.bytes)
-                logger.warning("Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
-                               insn.address, text_bytes, insn.mnemonic, insn.op_str)
+            if self._concrete and 'SYSCALL' in name:
+                self.emu.sync_unicorn_to_manticore()
+            if self._concrete and 'SYSCALL' not in name:
                 self.emulate(insn)
+                if self.PC == self._break_unicorn_at:
+                    logger.debug("Switching from Unicorn to Manticore")
+                    self._break_unicorn_at = None
+                    self._concrete = False
+            else:
+                implementation = getattr(self, name, None)
 
+                if implementation is not None:
+                    implementation(*insn.operands)
+
+                else:
+                    text_bytes = ' '.join('%02x' % x for x in insn.bytes)
+                    logger.warning("Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
+                                   insn.address, text_bytes, insn.mnemonic, insn.op_str)
+                    self.backup_emulate(insn)
         except (Interruption, Syscall) as e:
             e.on_handled = lambda: self._publish_instruction_as_executed(insn)
             raise e
@@ -868,6 +959,37 @@ class Cpu(Eventful):
         self._publish('did_execute_instruction', self._last_pc, self.PC, insn)
 
     def emulate(self, insn):
+        """
+        Pick the right emulate function (maintains API compatiblity)
+
+        :param insn: single instruction to emulate/start emulation from
+        """
+
+        if self._concrete:
+            self.concrete_emulate(insn)
+        else:
+            self.backup_emulate(insn)
+
+    def concrete_emulate(self, insn):
+        """
+        Start executing in Unicorn from this point until we hit a syscall or reach break_unicorn_at
+
+        :param capstone.CsInsn insn: The instruction object to emulate
+        """
+
+        if not self.emu:
+            self.emu = ConcreteUnicornEmulator(self)
+            self.emu._stop_at = self._break_unicorn_at
+        try:
+            self.emu.emulate(insn)
+        except unicorn.UcError as e:
+            if e.errno == unicorn.UC_ERR_INSN_INVALID:
+                text_bytes = ' '.join('%02x' % x for x in insn.bytes)
+                logger.error("Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
+                             insn.address, text_bytes, insn.mnemonic, insn.op_str)
+            raise InstructionEmulationError(str(e))
+
+    def backup_emulate(self, insn):
         '''
         If we could not handle emulating an instruction, use Unicorn to emulate
         it.
@@ -875,9 +997,10 @@ class Cpu(Eventful):
         :param capstone.CsInsn instruction: The instruction object to emulate
         '''
 
-        emu = UnicornEmulator(self)
+        if not hasattr(self, 'backup_emu'):
+            self.backup_emu = UnicornEmulator(self)
         try:
-            emu.emulate(insn)
+            self.backup_emu.emulate(insn)
         except unicorn.UcError as e:
             if e.errno == unicorn.UC_ERR_INSN_INVALID:
                 text_bytes = ' '.join('%02x' % x for x in insn.bytes)
@@ -888,7 +1011,7 @@ class Cpu(Eventful):
             # We have been seeing occasional Unicorn issues with it not clearing
             # the backing unicorn instance. Saw fewer issues with the following
             # line present.
-            del emu
+            del self.backup_emu
 
     def render_instruction(self, insn=None):
         try:
