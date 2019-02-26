@@ -5,6 +5,8 @@ LABEL src="https://github.com/trailofbits/manticore"
 LABEL creator="Trail of Bits"
 LABEL dockerfile_maintenance=trailofbits
 
+ENV LANG C.UTF-8
+
 RUN apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install python3 python3-pip git wget
 
 # Install solc 0.4.25 and validate it
