@@ -1192,6 +1192,68 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W0'), 25)
 
 
+    # CSEL.
+
+    # XXX: Bundles everything into one testcase.
+    def test_csel(self):
+        for cond in NZCV_COND_MAP:
+            cond_true, cond_false = NZCV_COND_MAP[cond]
+
+            # 32-bit.
+
+            @itest_setregs(f'NZCV={cond_true}', 'W1=0x41424344', 'W2=0x51525354')
+            @itest(f'csel w0, w1, w2, {cond}')
+            def csel_true32(self):
+                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                assertEqual(self.rf.read('X0'), 0x41424344)
+                assertEqual(self.rf.read('W0'), 0x41424344)
+
+            @itest_setregs(f'NZCV={cond_false}', 'W1=0x41424344', 'W2=0x51525354')
+            @itest(f'csel w0, w1, w2, {cond}')
+            def csel_false32(self):
+                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                assertEqual(self.rf.read('X0'), 0x51525354)
+                assertEqual(self.rf.read('W0'), 0x51525354)
+
+            # 64-bit.
+
+            @itest_setregs(
+                f'NZCV={cond_true}',
+                'X1=0x4142434445464748',
+                'X2=0x5152535455565758'
+            )
+            @itest(f'csel x0, x1, x2, {cond}')
+            def csel_true64(self):
+                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                assertEqual(self.rf.read('X0'), 0x4142434445464748)
+                assertEqual(self.rf.read('W0'), 0x45464748)
+
+            @itest_setregs(
+                f'NZCV={cond_false}',
+                'X1=0x4142434445464748',
+                'X2=0x5152535455565758'
+            )
+            @itest(f'csel x0, x1, x2, {cond}')
+            def csel_false64(self):
+                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                assertEqual(self.rf.read('X0'), 0x5152535455565758)
+                assertEqual(self.rf.read('W0'), 0x55565758)
+
+            if cond_true:
+                self.setUp()
+                csel_true32(self)
+
+                self.setUp()
+                csel_true64(self)
+
+            if cond_false:
+                self.setUp()
+                csel_false32(self)
+
+                self.setUp()
+                csel_false64(self)
+
+
     # LDR (immediate).
 
     # ldr w1, [x27]          base register (opt. offset omitted):  w1 = [x27]

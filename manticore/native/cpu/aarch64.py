@@ -1028,6 +1028,46 @@ class Aarch64Cpu(Cpu):
 
         res_op.write(count)
 
+    @instruction
+    def CSEL(cpu, res_op, reg_op1, reg_op2):
+        """
+        CSEL.
+
+        Conditional Select returns, in the destination register, the value of
+        the first source register if the condition is TRUE, and otherwise
+        returns the value of the second source register.
+
+        :param res_op: destination register.
+        :param reg_op1: source register.
+        :param reg_op2: source register.
+        """
+        assert res_op.type  is cs.arm64.ARM64_OP_REG
+        assert reg_op1.type is cs.arm64.ARM64_OP_REG
+        assert reg_op2.type is cs.arm64.ARM64_OP_REG
+
+        insn_rx  = '[01]'      # sf
+        insn_rx += '0'         # op
+        insn_rx += '0'
+        insn_rx += '11010100'
+        insn_rx += '[01]{5}'   # Rm
+        insn_rx += '[01]{4}'   # cond
+        insn_rx += '0'
+        insn_rx += '0'         # o2
+        insn_rx += '[01]{5}'   # Rn
+        insn_rx += '[01]{5}'   # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        reg1 = reg_op1.read()
+        reg2 = reg_op2.read()
+
+        if cpu.cond_holds():
+            result = reg1
+        else:
+            result = reg2
+
+        res_op.write(result)
+
     def _LDR_immediate(cpu, reg_op, mem_op, mimm_op):
         """
         LDR (immediate).
