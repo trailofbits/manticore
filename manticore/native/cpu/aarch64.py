@@ -713,6 +713,99 @@ class Aarch64Cpu(Cpu):
         imm = imm_op.op.imm  # PC + offset
         res_op.write(imm)
 
+    def _AND_immediate(cpu, res_op, reg_op, imm_op):
+        """
+        AND (immediate).
+
+        Bitwise AND (immediate) performs a bitwise AND of a register value and
+        an immediate value, and writes the result to the destination register.
+
+        :param res_op: destination register.
+        :param reg_op: source register.
+        :param imm_op: immediate.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+        assert imm_op.type is cs.arm64.ARM64_OP_IMM
+
+        insn_rx  = '[01]'     # sf
+        insn_rx += '00'       # opc
+        insn_rx += '100100'
+        insn_rx += '[01]'     # N
+        insn_rx += '[01]{6}'  # immr
+        insn_rx += '[01]{6}'  # imms
+        insn_rx += '[01]{5}'  # Rn
+        insn_rx += '[01]{5}'  # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        reg = reg_op.read()
+        imm = imm_op.op.imm
+        result = UInt(reg & imm, res_op.size)
+        res_op.write(result)
+
+    def _AND_shifted_register(cpu, res_op, reg_op1, reg_op2):
+        """
+        AND (shifted register).
+
+        Bitwise AND (shifted register) performs a bitwise AND of a register
+        value and an optionally-shifted register value, and writes the result to
+        the destination register.
+
+        :param res_op: destination register.
+        :param reg_op1: source register.
+        :param reg_op2: source register.
+        """
+        assert res_op.type  is cs.arm64.ARM64_OP_REG
+        assert reg_op1.type is cs.arm64.ARM64_OP_REG
+        assert reg_op2.type is cs.arm64.ARM64_OP_REG
+
+        insn_rx  = '[01]'     # sf
+        insn_rx += '00'       # opc
+        insn_rx += '01010'
+        insn_rx += '[01]{2}'  # shift
+        insn_rx += '0'        # N
+        insn_rx += '[01]{5}'  # Rm
+        insn_rx += '[01]{6}'  # imm6
+        insn_rx += '[01]{5}'  # Rn
+        insn_rx += '[01]{5}'  # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        cpu._shifted_register(
+            res_op = res_op,
+            reg_op1 = reg_op1,
+            reg_op2 = reg_op2,
+            action = lambda x, y: x & y,
+            shifts = [
+                cs.arm64.ARM64_SFT_LSL,
+                cs.arm64.ARM64_SFT_LSR,
+                cs.arm64.ARM64_SFT_ASR,
+                cs.arm64.ARM64_SFT_ROR
+            ])
+
+    @instruction
+    def AND(cpu, res_op, op1, op2):
+        """
+        Combines AND (immediate) and AND (shifted register).
+
+        :param res_op: destination register.
+        :param op1: source register.
+        :param op2: source register or immediate.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert op1.type is cs.arm64.ARM64_OP_REG
+        assert op2.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
+
+        if op2.type == cs.arm64.ARM64_OP_REG:
+            cpu._AND_shifted_register(res_op, op1, op2)
+
+        elif op2.type == cs.arm64.ARM64_OP_IMM:
+            cpu._AND_immediate(res_op, op1, op2)
+
+        else:
+            raise Aarch64InvalidInstruction
+
     @instruction
     def B_cond(cpu, imm_op):
         """
