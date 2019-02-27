@@ -609,7 +609,16 @@ class ManticoreEVM(ManticoreBase):
                     if item['signature'] !=  '0x'+hashes[signature]:
                         raise Exception(f"Something wrong with the sha3 of the method {signature} signature (a.k.a. the hash)")
 
-        md = SolidityMetadata('', '' , binascii.unhexlify(truffle['bytecode'][2:]), b'', {}, {}, hashes, truffle['abi'], b'')
+        if contract_name is None:
+            contract_name = truffle["contractName"]
+
+        source_code = truffle["source"]
+        bytecode = binascii.unhexlify(truffle["bytecode"][2:])
+        runtime = binascii.unhexlify(truffle["deployedBytecode"][2:])
+        srcmap = truffle["sourceMap"].split(';')
+        srcmap_runtime = truffle["deployedSourceMap"].split(';')
+        abi = truffle['abi']
+        md = SolidityMetadata(contract_name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, b'')
         contract_account = self.create_contract(owner=owner, init=md._init_bytecode)
 
         if contract_account is None:
