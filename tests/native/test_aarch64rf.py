@@ -94,8 +94,8 @@ class Aarch64RFTest(unittest.TestCase):
         self.assertEqual(self.r.read('FPCR'), 65)
         self.assertEqual(self.r.read('FPSR'), 66)
         self.assertEqual(self.r.read('NZCV'), 67)
-        self.assertEqual(self.r.read('XZR'), 68)
-        self.assertEqual(self.r.read('WZR'), 68)
+        self.assertEqual(self.r.read('XZR'), 0)
+        self.assertEqual(self.r.read('WZR'), 0)
 
     def test_write_read_same(self):
         self.r.write('PC', MAGIC_64)
@@ -135,8 +135,8 @@ class Aarch64RFTest(unittest.TestCase):
             self.assertEqual(self.r.read(f'B{i}'), MAGIC_8)
 
         self.r.write('XZR', MAGIC_64)
-        self.assertEqual(self.r.read('XZR'), MAGIC_64)
-        self.assertEqual(self.r.read('WZR'), MAGIC_32)
+        self.assertEqual(self.r.read('XZR'), 0)
+        self.assertEqual(self.r.read('WZR'), 0)
 
     def test_write_read_small_large(self):
         for i in range(31):
@@ -171,8 +171,8 @@ class Aarch64RFTest(unittest.TestCase):
             self.assertEqual(self.r.read(f'Q{i}'), MAGIC_128)
 
         self.r.write('WZR', MAGIC_32)
-        self.assertEqual(self.r.read('XZR'), MAGIC_32)
-        self.assertEqual(self.r.read('WZR'), MAGIC_32)
+        self.assertEqual(self.r.read('XZR'), 0)
+        self.assertEqual(self.r.read('WZR'), 0)
 
     def test_invalid_write_size(self):
         with self.assertRaises(AssertionError):

@@ -211,7 +211,9 @@ class Aarch64RegisterFile(RegisterFile):
         name = self._alias(register)
         parent, size = self._table[name]
         assert value <= 2 ** size - 1
-        self._registers[parent].write(value)
+        # Ignore writes to the zero register.
+        if parent != 'XZR':
+            self._registers[parent].write(value)
 
     def size(self, register):
         assert register in self
