@@ -806,6 +806,115 @@ class Aarch64Cpu(Cpu):
         else:
             raise Aarch64InvalidInstruction
 
+    def _ANDS_immediate(cpu, res_op, reg_op, imm_op):
+        """
+        ANDS (immediate).
+
+        Bitwise AND (immediate), setting flags, performs a bitwise AND of a
+        register value and an immediate value, and writes the result to the
+        destination register.  It updates the condition flags based on the
+        result.
+
+        This instruction is used by the alias TST (immediate).
+
+        :param res_op: destination register.
+        :param reg_op: source register.
+        :param imm_op: immediate.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+        assert imm_op.type is cs.arm64.ARM64_OP_IMM
+
+        insn_rx  = '[01]'     # sf
+        insn_rx += '11'       # opc
+        insn_rx += '100100'
+        insn_rx += '[01]'     # N
+        insn_rx += '[01]{6}'  # immr
+        insn_rx += '[01]{6}'  # imms
+        insn_rx += '[01]{5}'  # Rn
+        insn_rx += '[01]{5}'  # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        reg = reg_op.read()
+        imm = imm_op.op.imm
+        result = UInt(reg & imm, res_op.size)
+        res_op.write(result)
+
+        n = Operators.EXTRACT(result, res_op.size - 1, 1)
+        z = 1 if result == 0 else 0
+        cpu.regfile.nzcv = (n, z, 0, 0)
+
+    def _ANDS_shifted_register(cpu, res_op, reg_op1, reg_op2):
+        """
+        ANDS (shifted register).
+
+        Bitwise AND (shifted register), setting flags, performs a bitwise AND of
+        a register value and an optionally-shifted register value, and writes
+        the result to the destination register.  It updates the condition flags
+        based on the result.
+
+        This instruction is used by the alias TST (shifted register).
+
+        :param res_op: destination register.
+        :param reg_op1: source register.
+        :param reg_op2: source register.
+        """
+        assert res_op.type  is cs.arm64.ARM64_OP_REG
+        assert reg_op1.type is cs.arm64.ARM64_OP_REG
+        assert reg_op2.type is cs.arm64.ARM64_OP_REG
+
+        insn_rx  = '[01]'     # sf
+        insn_rx += '11'       # opc
+        insn_rx += '01010'
+        insn_rx += '[01]{2}'  # shift
+        insn_rx += '0'        # N
+        insn_rx += '[01]{5}'  # Rm
+        insn_rx += '[01]{6}'  # imm6
+        insn_rx += '[01]{5}'  # Rn
+        insn_rx += '[01]{5}'  # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        result = cpu._shifted_register(
+            res_op = res_op,
+            reg_op1 = reg_op1,
+            reg_op2 = reg_op2,
+            action = lambda x, y: x & y,
+            shifts = [
+                cs.arm64.ARM64_SFT_LSL,
+                cs.arm64.ARM64_SFT_LSR,
+                cs.arm64.ARM64_SFT_ASR,
+                cs.arm64.ARM64_SFT_ROR
+            ])
+
+        # XXX: Maybe move this inside the method.
+        n = Operators.EXTRACT(result, res_op.size - 1, 1)
+        z = 1 if result == 0 else 0
+        cpu.regfile.nzcv = (n, z, 0, 0)
+
+    @instruction
+    def ANDS(cpu, res_op, op1, op2):
+        """
+        Combines ANDS (immediate) and ANDS (shifted register).
+
+        :param res_op: destination register.
+        :param op1: source register.
+        :param op2: source register or immediate.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert op1.type is cs.arm64.ARM64_OP_REG
+        assert op2.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
+
+        if op2.type == cs.arm64.ARM64_OP_REG:
+            cpu._ANDS_shifted_register(res_op, op1, op2)
+
+        elif op2.type == cs.arm64.ARM64_OP_IMM:
+            cpu._ANDS_immediate(res_op, op1, op2)
+
+        else:
+            raise Aarch64InvalidInstruction
+
     @instruction
     def B_cond(cpu, imm_op):
         """
@@ -935,8 +1044,7 @@ class Aarch64Cpu(Cpu):
                 cs.arm64.ARM64_SFT_ROR
             ])
 
-        # XXX: If other flag-setting instructions that use '_shifted_register'
-        # are added, maybe move this inside the method.
+        # XXX: Maybe move this inside the method.
         n = Operators.EXTRACT(result, res_op.size - 1, 1)
         z = 1 if result == 0 else 0
         cpu.regfile.nzcv = (n, z, 0, 0)
