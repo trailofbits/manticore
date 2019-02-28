@@ -1323,6 +1323,47 @@ class Aarch64Cpu(Cpu):
         res_op.write(result)
 
     @instruction
+    def CSET(cpu, res_op):
+        """
+        CSET.
+
+        Conditional Set sets the destination register to 1 if the condition is
+        TRUE, and otherwise sets it to 0.
+
+        This instruction is an alias of the CSINC instruction.
+
+        :param res_op: destination register.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+
+        insn_rx  = '[01]'                # sf
+        insn_rx += '0'                   # op
+        insn_rx += '0'
+        insn_rx += '11010100'
+        insn_rx += '1{5}'                # Rm
+        insn_rx += '(?!111[01])[01]{4}'  # cond != 111x
+        insn_rx += '0'
+        insn_rx += '1'                   # o2
+        insn_rx += '1{5}'                # Rn
+        insn_rx += '[01]{5}'             # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        cpu.invert_cond()
+
+        # Fake a register operand.
+        if res_op.size == 32:
+            zr = Aarch64Operand.make_reg(cpu, cs.arm64.ARM64_REG_WZR)
+        elif res_op.size == 64:
+            zr = Aarch64Operand.make_reg(cpu, cs.arm64.ARM64_REG_XZR)
+        else:
+            raise Aarch64InvalidInstruction
+
+        # The 'instruction' decorator advances PC, so call the original
+        # method.
+        cpu.CSINC.__wrapped__(cpu, res_op, zr, zr)
+
+    @instruction
     def CSINC(cpu, res_op, reg_op1, reg_op2):
         """
         CSINC.

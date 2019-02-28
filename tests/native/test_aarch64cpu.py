@@ -1803,6 +1803,62 @@ class Aarch64Instructions:
                 csel_false64(self)
 
 
+    # CSET.
+
+    # XXX: Bundles everything into one testcase.
+    def test_cset(self):
+        for cond in NZCV_COND_MAP:
+            if cond in ['al', 'nv']:
+                continue
+            cond_true, cond_false = NZCV_COND_MAP[cond]
+
+            # 32-bit.
+
+            @itest_setregs(f'NZCV={cond_true}')
+            @itest(f'cset w0, {cond}')
+            def cset_true32(self):
+                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                assertEqual(self.rf.read('X0'), 1)
+                assertEqual(self.rf.read('W0'), 1)
+
+            @itest_setregs(f'NZCV={cond_false}')
+            @itest(f'cset w0, {cond}')
+            def cset_false32(self):
+                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                assertEqual(self.rf.read('X0'), 0)
+                assertEqual(self.rf.read('W0'), 0)
+
+            # 64-bit.
+
+            @itest_setregs(f'NZCV={cond_true}')
+            @itest(f'cset x0, {cond}')
+            def cset_true64(self):
+                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                assertEqual(self.rf.read('X0'), 1)
+                assertEqual(self.rf.read('W0'), 1)
+
+            @itest_setregs(f'NZCV={cond_false}')
+            @itest(f'cset x0, {cond}')
+            def cset_false64(self):
+                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                assertEqual(self.rf.read('X0'), 0)
+                assertEqual(self.rf.read('W0'), 0)
+
+            if cond_true:
+                self.setUp()
+                cset_true32(self)
+
+                self.setUp()
+                cset_true64(self)
+
+            if cond_false:
+                self.setUp()
+                cset_false32(self)
+
+                self.setUp()
+                cset_false64(self)
+
+
     # CSINC.
 
     # XXX: Bundles everything into one testcase.
