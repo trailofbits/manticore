@@ -1726,6 +1726,93 @@ class Aarch64Instructions:
                 csel_false64(self)
 
 
+    # CSINC.
+
+    # XXX: Bundles everything into one testcase.
+    def test_csinc(self):
+        for cond in NZCV_COND_MAP:
+            cond_true, cond_false = NZCV_COND_MAP[cond]
+
+            # 32-bit.
+
+            @itest_setregs(f'NZCV={cond_true}', 'W1=0x41424344', 'W2=0x51525354')
+            @itest(f'csinc w0, w1, w2, {cond}')
+            def csinc_true32(self):
+                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                assertEqual(self.rf.read('X0'), 0x41424344)
+                assertEqual(self.rf.read('W0'), 0x41424344)
+
+            @itest_setregs(f'NZCV={cond_false}', 'W1=0x41424344', 'W2=0x51525354')
+            @itest(f'csinc w0, w1, w2, {cond}')
+            def csinc_false32(self):
+                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                assertEqual(self.rf.read('X0'), 0x51525355)
+                assertEqual(self.rf.read('W0'), 0x51525355)
+
+            @itest_setregs(f'NZCV={cond_false}', 'W1=0x41424344', 'W2=0xffffffff')
+            @itest(f'csinc w0, w1, w2, {cond}')
+            def csinc_false_of32(self):
+                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                assertEqual(self.rf.read('X0'), 0)
+                assertEqual(self.rf.read('W0'), 0)
+
+            # 64-bit.
+
+            @itest_setregs(
+                f'NZCV={cond_true}',
+                'X1=0x4142434445464748',
+                'X2=0x5152535455565758'
+            )
+            @itest(f'csinc x0, x1, x2, {cond}')
+            def csinc_true64(self):
+                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                assertEqual(self.rf.read('X0'), 0x4142434445464748)
+                assertEqual(self.rf.read('W0'), 0x45464748)
+
+            @itest_setregs(
+                f'NZCV={cond_false}',
+                'X1=0x4142434445464748',
+                'X2=0x5152535455565758'
+            )
+            @itest(f'csinc x0, x1, x2, {cond}')
+            def csinc_false64(self):
+                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                assertEqual(self.rf.read('X0'), 0x5152535455565759)
+                assertEqual(self.rf.read('W0'), 0x55565759)
+
+            @itest_setregs(
+                f'NZCV={cond_false}',
+                'X1=0x4142434445464748',
+                'X2=0xffffffffffffffff'
+            )
+            @itest(f'csinc x0, x1, x2, {cond}')
+            def csinc_false_of64(self):
+                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                assertEqual(self.rf.read('X0'), 0)
+                assertEqual(self.rf.read('W0'), 0)
+
+
+            if cond_true:
+                self.setUp()
+                csinc_true32(self)
+
+                self.setUp()
+                csinc_true64(self)
+
+            if cond_false:
+                self.setUp()
+                csinc_false32(self)
+
+                self.setUp()
+                csinc_false64(self)
+
+                self.setUp()
+                csinc_false_of32(self)
+
+                self.setUp()
+                csinc_false_of64(self)
+
+
     # LDR (immediate).
 
     # ldr w1, [x27]          base register (opt. offset omitted):  w1 = [x27]
