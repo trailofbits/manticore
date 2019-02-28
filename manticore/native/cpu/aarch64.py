@@ -30,23 +30,31 @@ OP_NAME_MAP = {
 
 # See "C1.2.4 Condition code" in ARM Architecture Reference Manual
 # ARMv8, for ARMv8-A architecture profile.
+Condspec = collections.namedtuple('CondSpec', 'inverse func')
 COND_MAP = {
-    cs.arm64.ARM64_CC_EQ: lambda n, z, c, v: z == 1,
-    cs.arm64.ARM64_CC_NE: lambda n, z, c, v: z == 0,
-    cs.arm64.ARM64_CC_HS: lambda n, z, c, v: c == 1,
-    cs.arm64.ARM64_CC_LO: lambda n, z, c, v: c == 0,
-    cs.arm64.ARM64_CC_MI: lambda n, z, c, v: n == 1,
-    cs.arm64.ARM64_CC_PL: lambda n, z, c, v: n == 0,
-    cs.arm64.ARM64_CC_VS: lambda n, z, c, v: v == 1,
-    cs.arm64.ARM64_CC_VC: lambda n, z, c, v: v == 0,
-    cs.arm64.ARM64_CC_HI: lambda n, z, c, v: c == 1 and z == 0,
-    cs.arm64.ARM64_CC_LS: lambda n, z, c, v: not (c == 1 and z == 0),
-    cs.arm64.ARM64_CC_GE: lambda n, z, c, v: n == v,
-    cs.arm64.ARM64_CC_LT: lambda n, z, c, v: n != v,
-    cs.arm64.ARM64_CC_GT: lambda n, z, c, v: z == 0 and n == v,
-    cs.arm64.ARM64_CC_LE: lambda n, z, c, v: not (z == 0 and n == v),
-    cs.arm64.ARM64_CC_AL: lambda n, z, c, v: True,
-    cs.arm64.ARM64_CC_NV: lambda n, z, c, v: True
+    cs.arm64.ARM64_CC_EQ: Condspec(cs.arm64.ARM64_CC_NE, lambda n, z, c, v: z == 1),
+    cs.arm64.ARM64_CC_NE: Condspec(cs.arm64.ARM64_CC_EQ, lambda n, z, c, v: z == 0),
+
+    cs.arm64.ARM64_CC_HS: Condspec(cs.arm64.ARM64_CC_LO, lambda n, z, c, v: c == 1),
+    cs.arm64.ARM64_CC_LO: Condspec(cs.arm64.ARM64_CC_HS, lambda n, z, c, v: c == 0),
+
+    cs.arm64.ARM64_CC_MI: Condspec(cs.arm64.ARM64_CC_PL, lambda n, z, c, v: n == 1),
+    cs.arm64.ARM64_CC_PL: Condspec(cs.arm64.ARM64_CC_MI, lambda n, z, c, v: n == 0),
+
+    cs.arm64.ARM64_CC_VS: Condspec(cs.arm64.ARM64_CC_VC, lambda n, z, c, v: v == 1),
+    cs.arm64.ARM64_CC_VC: Condspec(cs.arm64.ARM64_CC_VS, lambda n, z, c, v: v == 0),
+
+    cs.arm64.ARM64_CC_HI: Condspec(cs.arm64.ARM64_CC_LS, lambda n, z, c, v: c == 1 and z == 0),
+    cs.arm64.ARM64_CC_LS: Condspec(cs.arm64.ARM64_CC_HI, lambda n, z, c, v: not (c == 1 and z == 0)),
+
+    cs.arm64.ARM64_CC_GE: Condspec(cs.arm64.ARM64_CC_LT, lambda n, z, c, v: n == v),
+    cs.arm64.ARM64_CC_LT: Condspec(cs.arm64.ARM64_CC_GE, lambda n, z, c, v: n != v),
+
+    cs.arm64.ARM64_CC_GT: Condspec(cs.arm64.ARM64_CC_LE, lambda n, z, c, v: z == 0 and n == v),
+    cs.arm64.ARM64_CC_LE: Condspec(cs.arm64.ARM64_CC_GT, lambda n, z, c, v: not (z == 0 and n == v)),
+
+    cs.arm64.ARM64_CC_AL: Condspec(None,                 lambda n, z, c, v: True),
+    cs.arm64.ARM64_CC_NV: Condspec(None,                 lambda n, z, c, v: True)
 }
 
 
@@ -348,7 +356,14 @@ class Aarch64Cpu(Cpu):
 
     def cond_holds(cpu):
         cond = cpu.instruction.cc
-        return COND_MAP[cond](*cpu.regfile.nzcv)
+        return COND_MAP[cond].func(*cpu.regfile.nzcv)
+
+    # XXX: If it becomes an issue, also invert the 'cond' field in the
+    # instruction encoding.
+    def invert_cond(cpu):
+        cond = cpu.instruction.cc
+        assert cond not in [cs.arm64.ARM64_CC_AL, cs.arm64.ARM64_CC_NV]
+        cpu.instruction.cc = COND_MAP[cond].inverse
 
     # XXX: Use masking when writing to the destination register?  Avoiding this
     # for now, but the assert in the 'write' method should catch such cases.
@@ -1192,6 +1207,42 @@ class Aarch64Cpu(Cpu):
 
         if reg == 0:
             cpu.PC = imm
+
+    @instruction
+    def CINC(cpu, res_op, reg_op):
+        """
+        CINC.
+
+        Conditional Increment returns, in the destination register, the value of
+        the source register incremented by 1 if the condition is TRUE, and
+        otherwise returns the value of the source register.
+
+        This instruction is an alias of the CSINC instruction.
+
+        :param res_op: destination register.
+        :param reg_op: source register.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+
+        insn_rx  = '[01]'                # sf
+        insn_rx += '0'                   # op
+        insn_rx += '0'
+        insn_rx += '11010100'
+        insn_rx += '(?!1{5})[01]{5}'     # Rm != 11111
+        insn_rx += '(?!111[01])[01]{4}'  # cond != 111x
+        insn_rx += '0'
+        insn_rx += '1'                   # o2
+        insn_rx += '(?!1{5})[01]{5}'     # Rn != 11111
+        insn_rx += '[01]{5}'             # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        cpu.invert_cond()
+
+        # The 'instruction' decorator advances PC, so call the original
+        # method.
+        cpu.CSINC.__wrapped__(cpu, res_op, reg_op, reg_op)
 
     @instruction
     def CLZ(cpu, res_op, reg_op):

@@ -1621,6 +1621,83 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X2'), 43)
 
 
+    # CINC.
+
+    # XXX: Bundles everything into one testcase.
+    def test_cinc(self):
+        for cond in NZCV_COND_MAP:
+            if cond in ['al', 'nv']:
+                continue
+            cond_true, cond_false = NZCV_COND_MAP[cond]
+
+            # 32-bit.
+
+            @itest_setregs(f'NZCV={cond_true}', 'W1=0x41424344')
+            @itest(f'cinc w0, w1, {cond}')
+            def cinc_true32(self):
+                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                assertEqual(self.rf.read('X0'), 0x41424345)
+                assertEqual(self.rf.read('W0'), 0x41424345)
+
+            @itest_setregs(f'NZCV={cond_true}', 'W1=0xffffffff')
+            @itest(f'cinc w0, w1, {cond}')
+            def cinc_true_of32(self):
+                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                assertEqual(self.rf.read('X0'), 0)
+                assertEqual(self.rf.read('W0'), 0)
+
+            @itest_setregs(f'NZCV={cond_false}', 'W1=0x41424344')
+            @itest(f'cinc w0, w1, {cond}')
+            def cinc_false32(self):
+                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                assertEqual(self.rf.read('X0'), 0x41424344)
+                assertEqual(self.rf.read('W0'), 0x41424344)
+
+            # 64-bit.
+
+            @itest_setregs(f'NZCV={cond_true}', 'X1=0x4142434445464748')
+            @itest(f'cinc x0, x1, {cond}')
+            def cinc_true64(self):
+                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                assertEqual(self.rf.read('X0'), 0x4142434445464749)
+                assertEqual(self.rf.read('W0'), 0x45464749)
+
+            @itest_setregs(f'NZCV={cond_true}', 'X1=0xffffffffffffffff')
+            @itest(f'cinc x0, x1, {cond}')
+            def cinc_true_of64(self):
+                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                assertEqual(self.rf.read('X0'), 0)
+                assertEqual(self.rf.read('W0'), 0)
+
+            @itest_setregs(f'NZCV={cond_false}', 'X1=0x4142434445464748')
+            @itest(f'cinc x0, x1, {cond}')
+            def cinc_false64(self):
+                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                assertEqual(self.rf.read('X0'), 0x4142434445464748)
+                assertEqual(self.rf.read('W0'), 0x45464748)
+
+
+            if cond_true:
+                self.setUp()
+                cinc_true32(self)
+
+                self.setUp()
+                cinc_true64(self)
+
+                self.setUp()
+                cinc_true_of32(self)
+
+                self.setUp()
+                cinc_true_of64(self)
+
+            if cond_false:
+                self.setUp()
+                cinc_false32(self)
+
+                self.setUp()
+                cinc_false64(self)
+
+
     # CLZ.
 
     # 32-bit.
