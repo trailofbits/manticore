@@ -932,6 +932,83 @@ class Aarch64Cpu(Cpu):
         else:
             raise Aarch64InvalidInstruction
 
+    # XXX: Support ASR (immediate).
+    @instruction
+    def ASR(cpu, res_op, reg_op1, reg_op2):
+        """
+        ASR (register).
+
+        Arithmetic Shift Right (register) shifts a register value right by a
+        variable number of bits, shifting in copies of its sign bit, and writes
+        the result to the destination register.  The remainder obtained by
+        dividing the second source register by the data size defines the number
+        of bits by which the first source register is right-shifted.
+
+        This instruction is an alias of the ASRV instruction.
+
+        :param res_op: destination register.
+        :param reg_op1: source register.
+        :param reg_op2: source register.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_op1.type is cs.arm64.ARM64_OP_REG
+        assert reg_op2.type is cs.arm64.ARM64_OP_REG
+
+        insn_rx  = '[01]'      # sf
+        insn_rx += '0'
+        insn_rx += '0'
+        insn_rx += '11010110'
+        insn_rx += '[01]{5}'   # Rm
+        insn_rx += '0010'
+        insn_rx += '10'        # op2
+        insn_rx += '[01]{5}'   # Rn
+        insn_rx += '[01]{5}'   # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        # The 'instruction' decorator advances PC, so call the original
+        # method.
+        cpu.ASRV.__wrapped__(cpu, res_op, reg_op1, reg_op2)
+
+    @instruction
+    def ASRV(cpu, res_op, reg_op1, reg_op2):
+        """
+        ASRV.
+
+        Arithmetic Shift Right Variable shifts a register value right by a
+        variable number of bits, shifting in copies of its sign bit, and writes
+        the result to the destination register.  The remainder obtained by
+        dividing the second source register by the data size defines the number
+        of bits by which the first source register is right-shifted.
+
+        This instruction is used by the alias ASR (register).
+
+        :param res_op: destination register.
+        :param reg_op1: source register.
+        :param reg_op2: source register.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_op1.type is cs.arm64.ARM64_OP_REG
+        assert reg_op2.type is cs.arm64.ARM64_OP_REG
+
+        insn_rx  = '[01]'      # sf
+        insn_rx += '0'
+        insn_rx += '0'
+        insn_rx += '11010110'
+        insn_rx += '[01]{5}'   # Rm
+        insn_rx += '0010'
+        insn_rx += '10'        # op2
+        insn_rx += '[01]{5}'   # Rn
+        insn_rx += '[01]{5}'   # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        reg = reg_op1.read()
+        sft = reg_op2.read()
+
+        result = ASR(reg, sft % res_op.size, res_op.size)
+        res_op.write(result)
+
     @instruction
     def B_cond(cpu, imm_op):
         """

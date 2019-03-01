@@ -871,6 +871,92 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('NZCV'), 0x80000000)
 
 
+    # ASR (register).
+
+    # 32-bit.
+
+    @itest_setregs('W1=0x81424344', 'W2=0')
+    @itest('asr w0, w1, w2')
+    def test_asr_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0x81424344)
+        self.assertEqual(self.rf.read('W0'), 0x81424344)
+
+    @itest_setregs('W1=0x81424344', 'W2=0xffffffff')
+    @itest('asr w0, w1, w2')
+    def test_asr_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    @itest_setregs('W1=0x81424344', 'W2=4')
+    @itest('asr w0, w1, w2')
+    def test_asr32(self):
+        self.assertEqual(self.rf.read('X0'), 0xf8142434)
+        self.assertEqual(self.rf.read('W0'), 0xf8142434)
+
+    # 64-bit.
+
+    @itest_setregs('X1=0x8142434445464748', 'X2=0')
+    @itest('asr x0, x1, x2')
+    def test_asr_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0x8142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @itest_setregs('X1=0x8142434445464748', 'X2=0xffffffffffffffff')
+    @itest('asr x0, x1, x2')
+    def test_asr_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffffffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    @itest_setregs('X1=0x8142434445464748', 'X2=4')
+    @itest('asr x0, x1, x2')
+    def test_asr64(self):
+        self.assertEqual(self.rf.read('X0'), 0xf814243444546474)
+        self.assertEqual(self.rf.read('W0'), 0x44546474)
+
+
+    # ASRV.
+
+    # 32-bit.
+
+    @itest_setregs('W1=0x81424344', 'W2=0')
+    @itest('asrv w0, w1, w2')
+    def test_asrv_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0x81424344)
+        self.assertEqual(self.rf.read('W0'), 0x81424344)
+
+    @itest_setregs('W1=0x81424344', 'W2=0xffffffff')
+    @itest('asrv w0, w1, w2')
+    def test_asrv_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    @itest_setregs('W1=0x81424344', 'W2=4')
+    @itest('asrv w0, w1, w2')
+    def test_asrv32(self):
+        self.assertEqual(self.rf.read('X0'), 0xf8142434)
+        self.assertEqual(self.rf.read('W0'), 0xf8142434)
+
+    # 64-bit.
+
+    @itest_setregs('X1=0x8142434445464748', 'X2=0')
+    @itest('asrv x0, x1, x2')
+    def test_asrv_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0x8142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @itest_setregs('X1=0x8142434445464748', 'X2=0xffffffffffffffff')
+    @itest('asrv x0, x1, x2')
+    def test_asrv_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffffffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    @itest_setregs('X1=0x8142434445464748', 'X2=4')
+    @itest('asrv x0, x1, x2')
+    def test_asrv64(self):
+        self.assertEqual(self.rf.read('X0'), 0xf814243444546474)
+        self.assertEqual(self.rf.read('W0'), 0x44546474)
+
+
     # B.cond.
 
     # XXX: Bundles everything into one testcase.
