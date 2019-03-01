@@ -7,6 +7,7 @@ import socket
 import struct
 import time
 import resource
+import wrapt
 from typing import Union, List, TypeVar, cast
 
 import io
@@ -50,6 +51,12 @@ class FdError(Exception):
     def __init__(self, message='', err=errno.EBADF):
         self.err = err
         super().__init__(message)
+
+
+@wrapt.decorator
+def unimplemented(wrapped, _instance, args, kwargs):
+    logger.warning("Unimplemented system call: %s", wrapped.__name__)
+    return wrapped(*args, **kwargs)
 
 
 def perms_from_elf(elf_flags):
@@ -1885,6 +1892,7 @@ class Linux(Platform):
         self.current.write_int(user_info, (0x63 - 3) // 8, 32)
         return 0
 
+    @unimplemented
     def sys_getpriority(self, which, who):
         '''
         System call ignored.
@@ -1892,9 +1900,9 @@ class Linux(Platform):
 
         :return: C{0}
         '''
-        logger.warning("Unimplemented system call: sys_get_priority")
         return 0
 
+    @unimplemented
     def sys_setpriority(self, which, who, prio):
         '''
         System call ignored.
@@ -1902,11 +1910,10 @@ class Linux(Platform):
 
         :return: C{0}
         '''
-        logger.warning("Unimplemented system call: sys_setpriority")
         return 0
 
+    @unimplemented
     def sys_tgkill(self, tgid, pid, sig):
-        logger.warning("Unimplemented system call: sys_tgkill")
         return 0
 
     def sys_acct(self, path):
@@ -1930,36 +1937,36 @@ class Linux(Platform):
         '''
         return self._exit(f"Program finished with exit status: {ctypes.c_int32(error_code).value}")
 
+    @unimplemented
     def sys_ptrace(self, request, pid, addr, data):
-        logger.warning("Unimplemented system call: sys_ptrace")
         return 0
 
+    @unimplemented
     def sys_nanosleep(self, req, rem):
-        logger.warning("Unimplemented system call: sys_nanosleep")
         return 0
 
     def sys_set_tid_address(self, tidptr):
         return 1000  # tha pid
 
+    @unimplemented
     def sys_faccessat(self, dirfd, pathname, mode, flags):
-        logger.warning("Unimplemented system call: sys_faccessat")
         filename = self.current.read_string(pathname)
         return -1
 
+    @unimplemented
     def sys_set_robust_list(self, head, length):
-        logger.warning("Unimplemented system call: sys_set_robust_list")
         return -1
 
+    @unimplemented
     def sys_sysinfo(self, infop):
-        logger.warning("Unimplemented system call: sys_sysinfo")
         return -1
 
+    @unimplemented
     def sys_futex(self, uaddr, op, val, timeout, uaddr2, val3):
-        logger.warning("Unimplemented system call: sys_futex")
         return 0
 
+    @unimplemented
     def sys_setrlimit(self, resource, rlim):
-        logger.warning("Unimplemented system call: sys_setrlimit")
         return -1
 
     def sys_getrlimit(self, resource, rlim):
@@ -1983,16 +1990,16 @@ class Linux(Platform):
             logger.warning("Cowardly refusing to set resource limits for process %d", pid)
         return ret
 
+    @unimplemented
     def sys_gettimeofday(self, tv, tz):
-        logger.warning("Unimplemented system call: sys_gettimeofday")
         return 0
 
+    @unimplemented
     def sys_clone_ptregs(self, flags, child_stack, ptid, ctid, regs):
-        logger.warning("Unimplemented system call: sys_clone/ptregs")
         return 1000
 
+    @unimplemented
     def sys_mkdir(self, pathname, mode):
-        logger.warning("Unimplemented system call: sys_mkdir")
         return 0
 
     def sys_madvise(self, infop):
