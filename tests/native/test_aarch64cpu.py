@@ -4531,6 +4531,21 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W0'), 0xffff8748)
 
 
+    # SXTW.
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest('sxtw x0, x1')
+    def test_sxtw_zero(self):
+        self.assertEqual(self.rf.read('X0'), 0x45464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @itest_setregs('X1=0x4142434485464748')
+    @itest('sxtw x0, x1')
+    def test_sxtw_one(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffff85464748)
+        self.assertEqual(self.rf.read('W0'), 0x85464748)
+
+
     # TBNZ.
 
     # 32-bit.
