@@ -4469,6 +4469,37 @@ class Aarch64Instructions:
             self._execute()
 
 
+    # SXTB.
+
+    # 32-bit.
+
+    @itest_setregs('W1=0x41424344')
+    @itest('sxtb w0, w1')
+    def test_sxtb_zero32(self):
+        self.assertEqual(self.rf.read('X0'), 0x44)
+        self.assertEqual(self.rf.read('W0'), 0x44)
+
+    @itest_setregs('W1=0x41424384')
+    @itest('sxtb w0, w1')
+    def test_sxtb_one32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffff84)
+        self.assertEqual(self.rf.read('W0'), 0xffffff84)
+
+    # 64-bit.
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest('sxtb x0, x1')
+    def test_sxtb_zero64(self):
+        self.assertEqual(self.rf.read('X0'), 0x48)
+        self.assertEqual(self.rf.read('W0'), 0x48)
+
+    @itest_setregs('X1=0x4142434445464788')
+    @itest('sxtb x0, x1')
+    def test_sxtb_one64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffffffffff88)
+        self.assertEqual(self.rf.read('W0'), 0xffffff88)
+
+
     # TBNZ.
 
     # 32-bit.
