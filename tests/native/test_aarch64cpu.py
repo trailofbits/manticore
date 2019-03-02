@@ -2044,6 +2044,62 @@ class Aarch64Instructions:
                 cset_false64(self)
 
 
+    # CSETM.
+
+    # XXX: Bundles everything into one testcase.
+    def test_csetm(self):
+        for cond in NZCV_COND_MAP:
+            if cond in ['al', 'nv']:
+                continue
+            cond_true, cond_false = NZCV_COND_MAP[cond]
+
+            # 32-bit.
+
+            @itest_setregs(f'NZCV={cond_true}')
+            @itest(f'csetm w0, {cond}')
+            def csetm_true32(self):
+                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                assertEqual(self.rf.read('X0'), 0xffffffff)
+                assertEqual(self.rf.read('W0'), 0xffffffff)
+
+            @itest_setregs(f'NZCV={cond_false}')
+            @itest(f'csetm w0, {cond}')
+            def csetm_false32(self):
+                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                assertEqual(self.rf.read('X0'), 0)
+                assertEqual(self.rf.read('W0'), 0)
+
+            # 64-bit.
+
+            @itest_setregs(f'NZCV={cond_true}')
+            @itest(f'csetm x0, {cond}')
+            def csetm_true64(self):
+                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                assertEqual(self.rf.read('X0'), 0xffffffffffffffff)
+                assertEqual(self.rf.read('W0'), 0xffffffff)
+
+            @itest_setregs(f'NZCV={cond_false}')
+            @itest(f'csetm x0, {cond}')
+            def csetm_false64(self):
+                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                assertEqual(self.rf.read('X0'), 0)
+                assertEqual(self.rf.read('W0'), 0)
+
+            if cond_true:
+                self.setUp()
+                csetm_true32(self)
+
+                self.setUp()
+                csetm_true64(self)
+
+            if cond_false:
+                self.setUp()
+                csetm_false32(self)
+
+                self.setUp()
+                csetm_false64(self)
+
+
     # CSINC.
 
     # XXX: Bundles everything into one testcase.
