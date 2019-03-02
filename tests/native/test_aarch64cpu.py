@@ -2249,6 +2249,240 @@ class Aarch64Instructions:
                 csinv_false64(self)
 
 
+    # LDP.
+
+    # ldp w1, w2, [x27]       base register:     w1 = [x27],     w2 = [x27 + 4]
+    # ldp w3, w4, [x28, #8]   base plus offset:  w3 = [x28 + 8], w4 = [x28 + 8 + 4]
+    # ldp w5, w6, [x29], #8   post-indexed:      w5 = [x29],     w6 = [x29 + 4],     x29 += 8
+    # ldp w7, w8, [x30, #8]!  pre-indexed:       w7 = [x30 + 8], w8 = [x30 + 8 + 4], x30 += 8
+
+    # 32-bit.
+
+    @itest_custom('ldp w1, w2, [sp]')
+    def test_ldp_base32(self):
+        self.cpu.push_int(0x4142434445464748)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0x45464748)
+        self.assertEqual(self.rf.read('W1'), 0x45464748)
+        self.assertEqual(self.rf.read('X2'), 0x41424344)
+        self.assertEqual(self.rf.read('W2'), 0x41424344)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_custom('ldp w1, w2, [sp, #8]')
+    def test_ldp_base_offset32(self):
+        self.cpu.push_int(0x4142434445464748)
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0x45464748)
+        self.assertEqual(self.rf.read('W1'), 0x45464748)
+        self.assertEqual(self.rf.read('X2'), 0x41424344)
+        self.assertEqual(self.rf.read('W2'), 0x41424344)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_custom('ldp w1, w2, [sp, #252]')
+    def test_ldp_base_offset_max32(self):
+        self.cpu.push_int(0x4142434445464748)
+        self.cpu.STACK -= 252
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0x45464748)
+        self.assertEqual(self.rf.read('W1'), 0x45464748)
+        self.assertEqual(self.rf.read('X2'), 0x41424344)
+        self.assertEqual(self.rf.read('W2'), 0x41424344)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_custom('ldp w1, w2, [sp, #-256]')
+    def test_ldp_base_offset_min32(self):
+        self.cpu.push_int(0x4142434445464748)
+        self.cpu.STACK += 256
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0x45464748)
+        self.assertEqual(self.rf.read('W1'), 0x45464748)
+        self.assertEqual(self.rf.read('X2'), 0x41424344)
+        self.assertEqual(self.rf.read('W2'), 0x41424344)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_custom('ldp w1, w2, [sp], #8')
+    def test_ldp_post_indexed32(self):
+        self.cpu.push_int(0x4142434445464748)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0x45464748)
+        self.assertEqual(self.rf.read('W1'), 0x45464748)
+        self.assertEqual(self.rf.read('X2'), 0x41424344)
+        self.assertEqual(self.rf.read('W2'), 0x41424344)
+        self.assertEqual(self.rf.read('SP'), stack + 8)  # writeback
+
+    @itest_custom('ldp w1, w2, [sp], #252')
+    def test_ldp_post_indexed_max32(self):
+        self.cpu.push_int(0x4142434445464748)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0x45464748)
+        self.assertEqual(self.rf.read('W1'), 0x45464748)
+        self.assertEqual(self.rf.read('X2'), 0x41424344)
+        self.assertEqual(self.rf.read('W2'), 0x41424344)
+        self.assertEqual(self.rf.read('SP'), stack + 252)  # writeback
+
+    @itest_custom('ldp w1, w2, [sp], #-256')
+    def test_ldp_post_indexed_min32(self):
+        self.cpu.push_int(0x4142434445464748)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0x45464748)
+        self.assertEqual(self.rf.read('W1'), 0x45464748)
+        self.assertEqual(self.rf.read('X2'), 0x41424344)
+        self.assertEqual(self.rf.read('W2'), 0x41424344)
+        self.assertEqual(self.rf.read('SP'), stack - 256)  # writeback
+
+    @itest_custom('ldp w1, w2, [sp, #8]!')
+    def test_ldp_pre_indexed32(self):
+        self.cpu.push_int(0x4142434445464748)
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0x45464748)
+        self.assertEqual(self.rf.read('W1'), 0x45464748)
+        self.assertEqual(self.rf.read('X2'), 0x41424344)
+        self.assertEqual(self.rf.read('W2'), 0x41424344)
+        self.assertEqual(self.rf.read('SP'), stack + 8)  # writeback
+
+    @itest_custom('ldp w1, w2, [sp, #252]!')
+    def test_ldp_pre_indexed_max32(self):
+        self.cpu.push_int(0x4142434445464748)
+        self.cpu.STACK -= 252
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0x45464748)
+        self.assertEqual(self.rf.read('W1'), 0x45464748)
+        self.assertEqual(self.rf.read('X2'), 0x41424344)
+        self.assertEqual(self.rf.read('W2'), 0x41424344)
+        self.assertEqual(self.rf.read('SP'), stack + 252)  # writeback
+
+    @itest_custom('ldp w1, w2, [sp, #-256]!')
+    def test_ldp_pre_indexed_min32(self):
+        self.cpu.push_int(0x4142434445464748)
+        self.cpu.STACK += 256
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0x45464748)
+        self.assertEqual(self.rf.read('W1'), 0x45464748)
+        self.assertEqual(self.rf.read('X2'), 0x41424344)
+        self.assertEqual(self.rf.read('W2'), 0x41424344)
+        self.assertEqual(self.rf.read('SP'), stack - 256)  # writeback
+
+    # 64-bit.
+
+    @itest_custom('ldp x1, x2, [sp]')
+    def test_ldp_base64(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.push_int(0x4142434445464748)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('X2'), 0x5152535455565758)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_custom('ldp x1, x2, [sp, #8]')
+    def test_ldp_base_offset64(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.push_int(0x4142434445464748)
+        self.cpu.push_int(0x6162636465666768)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('X2'), 0x5152535455565758)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_custom('ldp x1, x2, [sp, #504]')
+    def test_ldp_base_offset_max64(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.push_int(0x4142434445464748)
+        self.cpu.STACK -= 504
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('X2'), 0x5152535455565758)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_custom('ldp x1, x2, [sp, #-512]')
+    def test_ldp_base_offset_min64(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.push_int(0x4142434445464748)
+        self.cpu.STACK += 512
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('X2'), 0x5152535455565758)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_custom('ldp x1, x2, [sp], #8')
+    def test_ldp_post_indexed64(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.push_int(0x4142434445464748)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('X2'), 0x5152535455565758)
+        self.assertEqual(self.rf.read('SP'), stack + 8)  # writeback
+
+    @itest_custom('ldp x1, x2, [sp], #504')
+    def test_ldp_post_indexed_max64(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.push_int(0x4142434445464748)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('X2'), 0x5152535455565758)
+        self.assertEqual(self.rf.read('SP'), stack + 504)  # writeback
+
+    @itest_custom('ldp x1, x2, [sp], #-512')
+    def test_ldp_post_indexed_min64(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.push_int(0x4142434445464748)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('X2'), 0x5152535455565758)
+        self.assertEqual(self.rf.read('SP'), stack - 512)  # writeback
+
+    @itest_custom('ldp x1, x2, [sp, #8]!')
+    def test_ldp_pre_indexed64(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.push_int(0x4142434445464748)
+        self.cpu.push_int(0x6162636465666768)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('X2'), 0x5152535455565758)
+        self.assertEqual(self.rf.read('SP'), stack + 8)  # writeback
+
+    @itest_custom('ldp x1, x2, [sp, #504]!')
+    def test_ldp_pre_indexed_max64(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.push_int(0x4142434445464748)
+        self.cpu.STACK -= 504
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('X2'), 0x5152535455565758)
+        self.assertEqual(self.rf.read('SP'), stack + 504)  # writeback
+
+    @itest_custom('ldp x1, x2, [sp, #-512]!')
+    def test_ldp_pre_indexed_min64(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.push_int(0x4142434445464748)
+        self.cpu.STACK += 512
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('X2'), 0x5152535455565758)
+        self.assertEqual(self.rf.read('SP'), stack - 512)  # writeback
+
+
     # LDR (immediate).
 
     # ldr w1, [x27]          base register (opt. offset omitted):  w1 = [x27]

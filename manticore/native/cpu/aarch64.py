@@ -1660,6 +1660,78 @@ class Aarch64Cpu(Cpu):
 
         res_op.write(UInt(result, res_op.size))
 
+    @instruction
+    def LDP(cpu, reg_op1, reg_op2, mem_op, mimm_op=None):
+        """
+        LDP.
+
+        Load Pair of Registers calculates an address from a base register value
+        and an immediate offset, loads two 32-bit words or two 64-bit
+        doublewords from memory, and writes them to two registers.
+
+        :param reg_op1: destination register.
+        :param reg_op2: destination register.
+        :param mem_op: memory.
+        :param mimm_op: None or immediate.
+        """
+        assert reg_op1.type is cs.arm64.ARM64_OP_REG
+        assert reg_op2.type is cs.arm64.ARM64_OP_REG
+        assert mem_op.type is cs.arm64.ARM64_OP_MEM
+        assert not mimm_op or mimm_op.type is cs.arm64.ARM64_OP_IMM
+
+        post_index_rx  = '[01]0'    # opc
+        post_index_rx += '101'
+        post_index_rx += '0'
+        post_index_rx += '001'
+        post_index_rx += '1'        # L
+        post_index_rx += '[01]{7}'  # imm7
+        post_index_rx += '[01]{5}'  # Rt2
+        post_index_rx += '[01]{5}'  # Rn
+        post_index_rx += '[01]{5}'  # Rt
+
+        pre_index_rx  = '[01]0'    # opc
+        pre_index_rx += '101'
+        pre_index_rx += '0'
+        pre_index_rx += '011'
+        pre_index_rx += '1'        # L
+        pre_index_rx += '[01]{7}'  # imm7
+        pre_index_rx += '[01]{5}'  # Rt2
+        pre_index_rx += '[01]{5}'  # Rn
+        pre_index_rx += '[01]{5}'  # Rt
+
+        signed_offset_rx  = '[01]0'    # opc
+        signed_offset_rx += '101'
+        signed_offset_rx += '0'
+        signed_offset_rx += '010'
+        signed_offset_rx += '1'        # L
+        signed_offset_rx += '[01]{7}'  # imm7
+        signed_offset_rx += '[01]{5}'  # Rt2
+        signed_offset_rx += '[01]{5}'  # Rn
+        signed_offset_rx += '[01]{5}'  # Rt
+
+        assert (
+            re.match(post_index_rx, cpu.insn_bit_str) or
+            re.match(pre_index_rx, cpu.insn_bit_str) or
+            re.match(signed_offset_rx, cpu.insn_bit_str)
+        )
+
+        base = cpu.regfile.read(mem_op.mem.base)
+        imm = mem_op.mem.disp
+
+        if mimm_op:  # post-indexed
+            wback = mimm_op.op.imm
+        else:
+            wback = imm  # use it for writeback if applicable
+
+        result1 = cpu.read_int(base + imm, reg_op1.size)
+        reg_op1.write(result1)
+
+        result2 = cpu.read_int(base + imm + reg_op1.size // 8, reg_op2.size)
+        reg_op2.write(result2)
+
+        if cpu.instruction.writeback:
+            cpu.regfile.write(mem_op.mem.base, base + wback)
+
     def _LDR_immediate(cpu, reg_op, mem_op, mimm_op):
         """
         LDR (immediate).
