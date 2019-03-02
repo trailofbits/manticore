@@ -422,6 +422,7 @@ class Linux(Platform):
         self.disasm = disasm
         self.envp = envp
         self.argv = argv
+        self.default_to_fail = True
 
         # dict of [int -> (int, int)] where tuple is (soft, hard) limits
         self._rlimits = {
@@ -1892,30 +1893,6 @@ class Linux(Platform):
         self.current.write_int(user_info, (0x63 - 3) // 8, 32)
         return 0
 
-    @unimplemented
-    def sys_getpriority(self, which, who):
-        '''
-        System call ignored.
-        :rtype: int
-
-        :return: C{0}
-        '''
-        return 0
-
-    @unimplemented
-    def sys_setpriority(self, which, who, prio):
-        '''
-        System call ignored.
-        :rtype: int
-
-        :return: C{0}
-        '''
-        return 0
-
-    @unimplemented
-    def sys_tgkill(self, tgid, pid, sig):
-        return 0
-
     def sys_acct(self, path):
         '''
         System call not implemented.
@@ -1937,37 +1914,8 @@ class Linux(Platform):
         '''
         return self._exit(f"Program finished with exit status: {ctypes.c_int32(error_code).value}")
 
-    @unimplemented
-    def sys_ptrace(self, request, pid, addr, data):
-        return 0
-
-    @unimplemented
-    def sys_nanosleep(self, req, rem):
-        return 0
-
     def sys_set_tid_address(self, tidptr):
         return 1000  # tha pid
-
-    @unimplemented
-    def sys_faccessat(self, dirfd, pathname, mode, flags):
-        filename = self.current.read_string(pathname)
-        return -1
-
-    @unimplemented
-    def sys_set_robust_list(self, head, length):
-        return -1
-
-    @unimplemented
-    def sys_sysinfo(self, infop):
-        return -1
-
-    @unimplemented
-    def sys_futex(self, uaddr, op, val, timeout, uaddr2, val3):
-        return 0
-
-    @unimplemented
-    def sys_setrlimit(self, resource, rlim):
-        return -1
 
     def sys_getrlimit(self, resource, rlim):
         ret = -1
@@ -1989,18 +1937,6 @@ class Linux(Platform):
         else:
             logger.warning("Cowardly refusing to set resource limits for process %d", pid)
         return ret
-
-    @unimplemented
-    def sys_gettimeofday(self, tv, tz):
-        return 0
-
-    @unimplemented
-    def sys_clone_ptregs(self, flags, child_stack, ptid, ctid, regs):
-        return 1000
-
-    @unimplemented
-    def sys_mkdir(self, pathname, mode):
-        return 0
 
     def sys_madvise(self, infop):
         logger.info("Ignoring sys_madvise")
@@ -2125,6 +2061,71 @@ class Linux(Platform):
         self.current.write_bytes(buf, '\x00' * size)
 
         return size
+
+    @unimplemented
+    def sys_getpriority(self, which, who):
+        '''
+        System call ignored.
+        :rtype: int
+
+        :return: C{0}
+        '''
+        return 0
+
+    @unimplemented
+    def sys_setpriority(self, which, who, prio):
+        '''
+        System call ignored.
+        :rtype: int
+
+        :return: C{0}
+        '''
+        return 0
+
+    @unimplemented
+    def sys_tgkill(self, tgid, pid, sig):
+        return 0
+
+    @unimplemented
+    def sys_ptrace(self, request, pid, addr, data):
+        return 0
+
+    @unimplemented
+    def sys_nanosleep(self, req, rem):
+        return 0
+
+    @unimplemented
+    def sys_faccessat(self, dirfd, pathname, mode, flags):
+        filename = self.current.read_string(pathname)
+        return -1
+
+    @unimplemented
+    def sys_set_robust_list(self, head, length):
+        return -1
+
+    @unimplemented
+    def sys_sysinfo(self, infop):
+        return -1
+
+    @unimplemented
+    def sys_futex(self, uaddr, op, val, timeout, uaddr2, val3):
+        return 0
+
+    @unimplemented
+    def sys_setrlimit(self, resource, rlim):
+        return -1
+
+    @unimplemented
+    def sys_gettimeofday(self, tv, tz):
+        return 0
+
+    @unimplemented
+    def sys_clone_ptregs(self, flags, child_stack, ptid, ctid, regs):
+        return 1000
+
+    @unimplemented
+    def sys_mkdir(self, pathname, mode):
+        return 0
 
     # Dispatchers...
     def syscall(self):
