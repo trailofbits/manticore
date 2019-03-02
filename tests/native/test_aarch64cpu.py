@@ -1827,6 +1827,62 @@ class Aarch64Instructions:
                 cinc_false64(self)
 
 
+    # CINV.
+
+    # XXX: Bundles everything into one testcase.
+    def test_cinv(self):
+        for cond in NZCV_COND_MAP:
+            if cond in ['al', 'nv']:
+                continue
+            cond_true, cond_false = NZCV_COND_MAP[cond]
+
+            # 32-bit.
+
+            @itest_setregs(f'NZCV={cond_true}', 'W1=0x41424344')
+            @itest(f'cinv w0, w1, {cond}')
+            def cinv_true32(self):
+                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                assertEqual(self.rf.read('X0'), 0xbebdbcbb)
+                assertEqual(self.rf.read('W0'), 0xbebdbcbb)
+
+            @itest_setregs(f'NZCV={cond_false}', 'W1=0x41424344')
+            @itest(f'cinv w0, w1, {cond}')
+            def cinv_false32(self):
+                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                assertEqual(self.rf.read('X0'), 0x41424344)
+                assertEqual(self.rf.read('W0'), 0x41424344)
+
+            # 64-bit.
+
+            @itest_setregs(f'NZCV={cond_true}', 'X1=0x4142434445464748')
+            @itest(f'cinv x0, x1, {cond}')
+            def cinv_true64(self):
+                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                assertEqual(self.rf.read('X0'), 0xbebdbcbbbab9b8b7)
+                assertEqual(self.rf.read('W0'), 0xbab9b8b7)
+
+            @itest_setregs(f'NZCV={cond_false}', 'X1=0x4142434445464748')
+            @itest(f'cinv x0, x1, {cond}')
+            def cinv_false64(self):
+                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                assertEqual(self.rf.read('X0'), 0x4142434445464748)
+                assertEqual(self.rf.read('W0'), 0x45464748)
+
+            if cond_true:
+                self.setUp()
+                cinv_true32(self)
+
+                self.setUp()
+                cinv_true64(self)
+
+            if cond_false:
+                self.setUp()
+                cinv_false32(self)
+
+                self.setUp()
+                cinv_false64(self)
+
+
     # CLZ.
 
     # 32-bit.
