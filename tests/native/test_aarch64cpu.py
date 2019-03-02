@@ -3652,6 +3652,230 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W0'), 0x44434241)
 
 
+    # SBFM.
+
+    # 32-bit.
+
+    # This is actually sbfx.
+    # Copy 5 - 3 + 1 bits from bit position 3 of the source register to the
+    # least significant bits of the destination register.  Set bits above
+    # the bitfield to the most significant bit of the bitfield and to zero
+    # below the bitfield.
+    @itest_setregs('W0=0xffffffff', 'W1=0x41424328')
+    @itest('sbfm w0, w1, #3, #5')
+    def test_sbfm_ge32(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffd)
+        self.assertEqual(self.rf.read('W0'), 0xfffffffd)
+
+    # This is actually sbfiz.
+    # Copy 3 + 1 bits from the least significant bits of the source register to
+    # bit position 32 - 5 of the destination register.  Set bits above
+    # the bitfield to the most significant bit of the bitfield and to zero
+    # below the bitfield.
+    @itest_setregs('W0=0xffffffff', 'W1=0x41424349')
+    @itest('sbfm w0, w1, #5, #3')
+    def test_sbfm_lt32(self):
+        self.assertEqual(self.rf.read('X0'), 0xc8000000)
+        self.assertEqual(self.rf.read('W0'), 0xc8000000)
+
+    # This is actually asr.
+    # Copy 31 - 0 + 1 bits from bit position 0 of the source register to the
+    # least significant bits of the destination register.  Set bits above
+    # the bitfield to the most significant bit of the bitfield and to zero
+    # below the bitfield.
+    @itest_setregs('W0=0xffffffff', 'W1=0x41424344')
+    @itest('sbfm w0, w1, #0, #31')
+    def test_sbfm_ge_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344)
+        self.assertEqual(self.rf.read('W0'), 0x41424344)
+
+    # This is actually sbfiz.
+    # Copy 0 + 1 bits from the least significant bits of the source register to
+    # bit position 32 - 31 of the destination register.  Set bits above
+    # the bitfield to the most significant bit of the bitfield and to zero
+    # below the bitfield.
+    @itest_setregs('W0=0xffffffff','W1=0x44434241')
+    @itest('sbfm w0, w1, #31, #0')
+    def test_sbfm_lt_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffe)
+        self.assertEqual(self.rf.read('W0'), 0xfffffffe)
+
+    # This is actually sbfx.
+    # Copy 0 - 0 + 1 bits from bit position 0 of the source register to the
+    # least significant bits of the destination register.  Set bits above
+    # the bitfield to the most significant bit of the bitfield and to zero
+    # below the bitfield.
+    @itest_setregs('W0=0xffffffff', 'W1=0x44434241')
+    @itest('sbfm w0, w1, #0, #0')
+    def test_sbfm_ge_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    # This is actually sbfiz.
+    # Copy 0 + 1 bits from the least significant bits of the source register to
+    # bit position 32 - 1 of the destination register.  Set bits above
+    # the bitfield to the most significant bit of the bitfield and to zero
+    # below the bitfield.
+    @itest_setregs('W0=0xffffffff', 'W1=0x44434241')
+    @itest('sbfm w0, w1, #1, #0')
+    def test_sbfm_lt_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0x80000000)
+        self.assertEqual(self.rf.read('W0'), 0x80000000)
+
+    # This is actually sxtb.
+    # Copy 7 - 0 + 1 bits from bit position 0 of the source register to the
+    # least significant bits of the destination register.  Set bits above
+    # the bitfield to the most significant bit of the bitfield and to zero
+    # below the bitfield.
+    @itest_setregs('W0=0xffffffff', 'W1=0x41424344')
+    @itest('sbfm w0, w1, #0, #7')
+    def test_sbfm_sxtb_zero32(self):
+        self.assertEqual(self.rf.read('X0'), 0x44)
+        self.assertEqual(self.rf.read('W0'), 0x44)
+
+    @itest_setregs('W0=0xffffffff', 'W1=0x41424384')
+    @itest('sbfm w0, w1, #0, #7')
+    def test_sbfm_sxtb_one32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffff84)
+        self.assertEqual(self.rf.read('W0'), 0xffffff84)
+
+    # This is actually sxth.
+    # Copy 15 - 0 + 1 bits from bit position 0 of the source register to the
+    # least significant bits of the destination register.  Set bits above
+    # the bitfield to the most significant bit of the bitfield and to zero
+    # below the bitfield.
+    @itest_setregs('W0=0xffffffff', 'W1=0x41424344')
+    @itest('sbfm w0, w1, #0, #15')
+    def test_sbfm_sxth_zero32(self):
+        self.assertEqual(self.rf.read('X0'), 0x4344)
+        self.assertEqual(self.rf.read('W0'), 0x4344)
+
+    @itest_setregs('W0=0xffffffff', 'W1=0x41428344')
+    @itest('sbfm w0, w1, #0, #15')
+    def test_sbfm_sxth_one32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffff8344)
+        self.assertEqual(self.rf.read('W0'), 0xffff8344)
+
+    # 64-bit.
+
+    # This is actually sbfx.
+    # Copy 5 - 3 + 1 bits from bit position 3 of the source register to the
+    # least significant bits of the destination register.  Set bits above
+    # the bitfield to the most significant bit of the bitfield and to zero
+    # below the bitfield.
+    @itest_setregs('X0=0xffffffffffffffff', 'X1=0x4142434445464728')
+    @itest('sbfm x0, x1, #3, #5')
+    def test_sbfm_ge64(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffffffffffd)
+        self.assertEqual(self.rf.read('W0'), 0xfffffffd)
+
+    # This is actually sbfiz.
+    # Copy 3 + 1 bits from the least significant bits of the source register to
+    # bit position 64 - 5 of the destination register.  Set bits above
+    # the bitfield to the most significant bit of the bitfield and to zero
+    # below the bitfield.
+    @itest_setregs('X0=0xffffffffffffffff', 'X1=0x4142434445464749')
+    @itest('sbfm x0, x1, #5, #3')
+    def test_sbfm_lt64(self):
+        self.assertEqual(self.rf.read('X0'), 0xc800000000000000)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    # This is actually asr.
+    # Copy 63 - 0 + 1 bits from bit position 0 of the source register to the
+    # least significant bits of the destination register.  Set bits above
+    # the bitfield to the most significant bit of the bitfield and to zero
+    # below the bitfield.
+    @itest_setregs('X0=0xffffffffffffffff', 'X1=0x4142434445464748')
+    @itest('sbfm x0, x1, #0, #63')
+    def test_sbfm_ge_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    # This is actually sbfiz.
+    # Copy 0 + 1 bits from the least significant bits of the source register to
+    # bit position 64 - 63 of the destination register.  Set bits above
+    # the bitfield to the most significant bit of the bitfield and to zero
+    # below the bitfield.
+    @itest_setregs('X0=0xffffffffffffffff','X1=0x4847464544434241')
+    @itest('sbfm x0, x1, #63, #0')
+    def test_sbfm_lt_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffffffffffe)
+        self.assertEqual(self.rf.read('W0'), 0xfffffffe)
+
+    # This is actually sbfx.
+    # Copy 0 - 0 + 1 bits from bit position 0 of the source register to the
+    # least significant bits of the destination register.  Set bits above
+    # the bitfield to the most significant bit of the bitfield and to zero
+    # below the bitfield.
+    @itest_setregs('X0=0xffffffffffffffff', 'X1=0x4847464544434241')
+    @itest('sbfm x0, x1, #0, #0')
+    def test_sbfm_ge_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffffffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    # This is actually sbfiz.
+    # Copy 0 + 1 bits from the least significant bits of the source register to
+    # bit position 64 - 1 of the destination register.  Set bits above
+    # the bitfield to the most significant bit of the bitfield and to zero
+    # below the bitfield.
+    @itest_setregs('X0=0xffffffffffffffff', 'X1=0x4847464544434241')
+    @itest('sbfm x0, x1, #1, #0')
+    def test_sbfm_lt_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0x8000000000000000)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    # This is actually sxtb.
+    # Copy 7 - 0 + 1 bits from bit position 0 of the source register to the
+    # least significant bits of the destination register.  Set bits above
+    # the bitfield to the most significant bit of the bitfield and to zero
+    # below the bitfield.
+    @itest_setregs('X0=0xffffffffffffffff', 'X1=0x4142434445464748')
+    @itest('sbfm x0, x1, #0, #7')
+    def test_sbfm_sxtb_zero64(self):
+        self.assertEqual(self.rf.read('X0'), 0x48)
+        self.assertEqual(self.rf.read('W0'), 0x48)
+
+    @itest_setregs('X0=0xffffffffffffffff', 'X1=0x4142434445464788')
+    @itest('sbfm x0, x1, #0, #7')
+    def test_sbfm_sxtb_one64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffffffffff88)
+        self.assertEqual(self.rf.read('W0'), 0xffffff88)
+
+    # This is actually sxth.
+    # Copy 15 - 0 + 1 bits from bit position 0 of the source register to the
+    # least significant bits of the destination register.  Set bits above
+    # the bitfield to the most significant bit of the bitfield and to zero
+    # below the bitfield.
+    @itest_setregs('X0=0xffffffffffffffff', 'X1=0x4142434445464748')
+    @itest('sbfm x0, x1, #0, #15')
+    def test_sbfm_sxth_zero64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4748)
+        self.assertEqual(self.rf.read('W0'), 0x4748)
+
+    @itest_setregs('X0=0xffffffffffffffff', 'X1=0x4142434445468748')
+    @itest('sbfm x0, x1, #0, #15')
+    def test_sbfm_sxth_one64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffffffff8748)
+        self.assertEqual(self.rf.read('W0'), 0xffff8748)
+
+    # This is actually sxtw.
+    # Copy 31 - 0 + 1 bits from bit position 0 of the source register to the
+    # least significant bits of the destination register.  Set bits above
+    # the bitfield to the most significant bit of the bitfield and to zero
+    # below the bitfield.
+    @itest_setregs('X0=0xffffffffffffffff', 'X1=0x4142434445464748')
+    @itest('sbfm x0, x1, #0, #31')
+    def test_sbfm_sxtw_zero(self):
+        self.assertEqual(self.rf.read('X0'), 0x45464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @itest_setregs('X0=0xffffffffffffffff', 'X1=0x4142434485464748')
+    @itest('sbfm x0, x1, #0, #31')
+    def test_sbfm_sxtw_one(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffff85464748)
+        self.assertEqual(self.rf.read('W0'), 0x85464748)
+
+
     # STR (immediate).
 
     # str w1, [x27]          base register (opt. offset omitted):  [x27]     = w1

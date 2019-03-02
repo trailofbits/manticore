@@ -932,9 +932,44 @@ class Aarch64Cpu(Cpu):
         else:
             raise Aarch64InvalidInstruction
 
-    # XXX: Support ASR (immediate).
-    @instruction
-    def ASR(cpu, res_op, reg_op1, reg_op2):
+    def _ASR_immediate(cpu, res_op, reg_op, immr_op):
+        """
+        ASR (immediate).
+
+        Arithmetic Shift Right (immediate) shifts a register value right by an
+        immediate number of bits, shifting in copies of the sign bit in the
+        upper bits and zeros in the lower bits, and writes the result to the
+        destination register.
+
+        This instruction is an alias of the SBFM instruction.
+
+        :param res_op: destination register.
+        :param reg_op: source register.
+        :param immr_op: immediate.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+        assert immr_op.type is cs.arm64.ARM64_OP_IMM
+
+        insn_rx  = '[01]'      # sf
+        insn_rx += '00'        # opc
+        insn_rx += '100110'
+        insn_rx += '[01]'      # N
+        insn_rx += '[01]{6}'   # immr
+        insn_rx += '[01]1{5}'  # imms
+        insn_rx += '[01]{5}'   # Rn
+        insn_rx += '[01]{5}'   # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        # Fake an immediate operand.
+        imms_op = Aarch64Operand.make_imm(cpu, res_op.size - 1)
+
+        # The 'instruction' decorator advances PC, so call the original
+        # method.
+        cpu.SBFM.__wrapped__(cpu, res_op, reg_op, immr_op, imms_op)
+
+    def _ASR_register(cpu, res_op, reg_op1, reg_op2):
         """
         ASR (register).
 
@@ -969,6 +1004,28 @@ class Aarch64Cpu(Cpu):
         # The 'instruction' decorator advances PC, so call the original
         # method.
         cpu.ASRV.__wrapped__(cpu, res_op, reg_op1, reg_op2)
+
+    @instruction
+    def ASR(cpu, res_op, op1, op2):
+        """
+        Combines ASR (register) and ASR (immediate).
+
+        :param res_op: destination register.
+        :param op1: source register.
+        :param op2: source register or immediate.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert op1.type is cs.arm64.ARM64_OP_REG
+        assert op2.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
+
+        if op2.type == cs.arm64.ARM64_OP_REG:
+            cpu._ASR_register(res_op, op1, op2)
+
+        elif op2.type == cs.arm64.ARM64_OP_IMM:
+            cpu._ASR_immediate(res_op, op1, op2)
+
+        else:
+            raise Aarch64InvalidInstruction
 
     @instruction
     def ASRV(cpu, res_op, reg_op1, reg_op2):
@@ -2377,6 +2434,156 @@ class Aarch64Cpu(Cpu):
 
         res_op.write(result)
 
+    @instruction
+    def SBFIZ(cpu, res_op, reg_op, lsb_op, width_op):
+        """
+        SBFIZ.
+
+        Signed Bitfield Insert in Zeros copies a bitfield of <width> bits from
+        the least significant bits of the source register to bit position <lsb>
+        of the destination register, setting the destination bits below the
+        bitfield to zero, and the bits above the bitfield to a copy of the most
+        significant bit of the bitfield.
+
+        This instruction is an alias of the SBFM instruction.
+
+        :param res_op: destination register.
+        :param reg_op: source register.
+        :param lsb_op: immediate.
+        :param width_op: immediate.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+        assert lsb_op.type is cs.arm64.ARM64_OP_IMM
+        assert width_op.type is cs.arm64.ARM64_OP_IMM
+
+        insn_rx  = '[01]'     # sf
+        insn_rx += '00'       # opc
+        insn_rx += '100110'
+        insn_rx += '[01]'     # N
+        insn_rx += '[01]{6}'  # immr
+        insn_rx += '[01]{6}'  # imms
+        insn_rx += '[01]{5}'  # Rn
+        insn_rx += '[01]{5}'  # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        lsb = lsb_op.op.imm
+        lsb_op.value.imm = -lsb % res_op.size
+        width_op.value.imm -= 1
+
+        # The 'instruction' decorator advances PC, so call the original
+        # method.
+        cpu.SBFM.__wrapped__(cpu, res_op, reg_op, lsb_op, width_op)
+
+    @instruction
+    def SBFM(cpu, res_op, reg_op, immr_op, imms_op):
+        """
+        SBFM.
+
+        Signed Bitfield Move is usually accessed via one of its aliases, which
+        are always preferred for disassembly.
+
+        If <imms> is greater than or equal to <immr>, this copies a bitfield of
+        (<imms>-<immr>+1) bits starting from bit position <immr> in the source
+        register to the least significant bits of the destination register.
+
+        If <imms> is less than <immr>, this copies a bitfield of (<imms>+1) bits
+        from the least significant bits of the source register to bit position
+        (regsize-<immr>) of the destination register, where regsize is the
+        destination register size of 32 or 64 bits.
+
+        In both cases the destination bits below the bitfield are set to zero,
+        and the bits above the bitfield are set to a copy of the most
+        significant bit of the bitfield.
+
+        This instruction is used by the aliases ASR (immediate), SBFIZ, SBFX,
+        SXTB, SXTH, and SXTW.
+
+        :param res_op: destination register.
+        :param reg_op: source register.
+        :param immr_op: immediate.
+        :param imms_op: immediate.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+        assert immr_op.type is cs.arm64.ARM64_OP_IMM
+        assert imms_op.type is cs.arm64.ARM64_OP_IMM
+
+        insn_rx  = '[01]'     # sf
+        insn_rx += '00'       # opc
+        insn_rx += '100110'
+        insn_rx += '[01]'     # N
+        insn_rx += '[01]{6}'  # immr
+        insn_rx += '[01]{6}'  # imms
+        insn_rx += '[01]{5}'  # Rn
+        insn_rx += '[01]{5}'  # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        reg = reg_op.read()
+        immr = immr_op.op.imm
+        imms = imms_op.op.imm
+
+        assert immr in range(res_op.size)
+        assert imms in range(res_op.size)
+
+        if imms >= immr:
+            width = imms - immr + 1
+            copy_from = immr
+            copy_to = 0
+        else:
+            width = imms + 1
+            copy_from = 0
+            copy_to = res_op.size - immr
+
+        result = ((reg & (Mask(width) << copy_from)) >> copy_from) << copy_to
+        if Operators.EXTRACT(result, width + copy_to - 1, 1) == 1:
+            result = (Mask(res_op.size) & ~Mask(width + copy_to)) | result
+
+        res_op.write(result)
+
+    @instruction
+    def SBFX(cpu, res_op, reg_op, lsb_op, width_op):
+        """
+        SBFX.
+
+        Signed Bitfield Extract copies a bitfield of <width> bits starting from
+        bit position <lsb> in the source register to the least significant bits
+        of the destination register, and sets destination bits above the
+        bitfield to a copy of the most significant bit of the bitfield.
+
+        This instruction is an alias of the SBFM instruction.
+
+        :param res_op: destination register.
+        :param reg_op: source register.
+        :param lsb_op: immediate.
+        :param width_op: immediate.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+        assert lsb_op.type is cs.arm64.ARM64_OP_IMM
+        assert width_op.type is cs.arm64.ARM64_OP_IMM
+
+        insn_rx  = '[01]'     # sf
+        insn_rx += '00'       # opc
+        insn_rx += '100110'
+        insn_rx += '[01]'     # N
+        insn_rx += '[01]{6}'  # immr
+        insn_rx += '[01]{6}'  # imms
+        insn_rx += '[01]{5}'  # Rn
+        insn_rx += '[01]{5}'  # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        lsb = lsb_op.op.imm
+        width = width_op.op.imm
+        width_op.value.imm = lsb + width - 1
+
+        # The 'instruction' decorator advances PC, so call the original
+        # method.
+        cpu.SBFM.__wrapped__(cpu, res_op, reg_op, lsb_op, width_op)
+
     def _STR_immediate(cpu, reg_op, mem_op, mimm_op):
         """
         STR (immediate).
@@ -2461,6 +2668,112 @@ class Aarch64Cpu(Cpu):
         if imm != 0:
             raise InstructionNotImplementedError(f'SVC #{imm}')
         raise Interruption(imm)
+
+    @instruction
+    def SXTB(cpu, res_op, reg_op):
+        """
+        SXTB.
+
+        Signed Extend Byte extracts an 8-bit value from a register, sign-extends
+        it to the size of the register, and writes the result to the destination
+        register.
+
+        This instruction is an alias of the SBFM instruction.
+
+        :param res_op: destination register.
+        :param reg_op: source register.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+
+        insn_rx  = '[01]'     # sf
+        insn_rx += '00'       # opc
+        insn_rx += '100110'
+        insn_rx += '[01]'     # N
+        insn_rx += '0{6}'     # immr
+        insn_rx += '000111'   # imms
+        insn_rx += '[01]{5}'  # Rn
+        insn_rx += '[01]{5}'  # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        # Fake immediate operands.
+        immr_op = Aarch64Operand.make_imm(cpu, 0)
+        imms_op = Aarch64Operand.make_imm(cpu, 7)
+
+        # The 'instruction' decorator advances PC, so call the original
+        # method.
+        cpu.SBFM.__wrapped__(cpu, res_op, reg_op, immr_op, imms_op)
+
+    @instruction
+    def SXTH(cpu, res_op, reg_op):
+        """
+        SXTH.
+
+        Sign Extend Halfword extracts a 16-bit value, sign-extends it to the
+        size of the register, and writes the result to the destination register.
+
+        This instruction is an alias of the SBFM instruction.
+
+        :param res_op: destination register.
+        :param reg_op: source register.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+
+        insn_rx  = '[01]'     # sf
+        insn_rx += '00'       # opc
+        insn_rx += '100110'
+        insn_rx += '[01]'     # N
+        insn_rx += '0{6}'     # immr
+        insn_rx += '001111'   # imms
+        insn_rx += '[01]{5}'  # Rn
+        insn_rx += '[01]{5}'  # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        # Fake immediate operands.
+        immr_op = Aarch64Operand.make_imm(cpu, 0)
+        imms_op = Aarch64Operand.make_imm(cpu, 15)
+
+        # The 'instruction' decorator advances PC, so call the original
+        # method.
+        cpu.SBFM.__wrapped__(cpu, res_op, reg_op, immr_op, imms_op)
+
+    @instruction
+    def SXTW(cpu, res_op, reg_op):
+        """
+        SXTW.
+
+        Sign Extend Word sign-extends a word to the size of the register, and
+        writes the result to the destination register.
+
+        This instruction is an alias of the SBFM instruction.
+
+        :param res_op: destination register.
+        :param reg_op: source register.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+
+        insn_rx  = '1'        # sf
+        insn_rx += '00'       # opc
+        insn_rx += '100110'
+        insn_rx += '1'        # N
+        insn_rx += '000000'   # immr
+        insn_rx += '011111'   # imms
+        insn_rx += '[01]{5}'  # Rn
+        insn_rx += '[01]{5}'  # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        # Fake immediate operands.
+        immr_op = Aarch64Operand.make_imm(cpu, 0)
+        imms_op = Aarch64Operand.make_imm(cpu, 31)
+
+        # The 'instruction' decorator advances PC, so call the original
+        # method.
+        cpu.SBFM.__wrapped__(cpu, res_op, reg_op, immr_op, imms_op)
 
     @instruction
     def TBNZ(cpu, reg_op, imm_op, lab_op):
