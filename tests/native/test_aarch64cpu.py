@@ -2075,6 +2075,68 @@ class Aarch64Instructions:
                 csinc_false_of64(self)
 
 
+    # CSINV.
+
+    # XXX: Bundles everything into one testcase.
+    def test_csinv(self):
+        for cond in NZCV_COND_MAP:
+            cond_true, cond_false = NZCV_COND_MAP[cond]
+
+            # 32-bit.
+
+            @itest_setregs(f'NZCV={cond_true}', 'W1=0x41424344', 'W2=0x51525354')
+            @itest(f'csinv w0, w1, w2, {cond}')
+            def csinv_true32(self):
+                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                assertEqual(self.rf.read('X0'), 0x41424344)
+                assertEqual(self.rf.read('W0'), 0x41424344)
+
+            @itest_setregs(f'NZCV={cond_false}', 'W1=0x41424344', 'W2=0x51525354')
+            @itest(f'csinv w0, w1, w2, {cond}')
+            def csinv_false32(self):
+                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                assertEqual(self.rf.read('X0'), 0xaeadacab)
+                assertEqual(self.rf.read('W0'), 0xaeadacab)
+
+            # 64-bit.
+
+            @itest_setregs(
+                f'NZCV={cond_true}',
+                'X1=0x4142434445464748',
+                'X2=0x5152535455565758'
+            )
+            @itest(f'csinv x0, x1, x2, {cond}')
+            def csinv_true64(self):
+                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                assertEqual(self.rf.read('X0'), 0x4142434445464748)
+                assertEqual(self.rf.read('W0'), 0x45464748)
+
+            @itest_setregs(
+                f'NZCV={cond_false}',
+                'X1=0x4142434445464748',
+                'X2=0x5152535455565758'
+            )
+            @itest(f'csinv x0, x1, x2, {cond}')
+            def csinv_false64(self):
+                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                assertEqual(self.rf.read('X0'), 0xaeadacabaaa9a8a7)
+                assertEqual(self.rf.read('W0'), 0xaaa9a8a7)
+
+            if cond_true:
+                self.setUp()
+                csinv_true32(self)
+
+                self.setUp()
+                csinv_true64(self)
+
+            if cond_false:
+                self.setUp()
+                csinv_false32(self)
+
+                self.setUp()
+                csinv_false64(self)
+
+
     # LDR (immediate).
 
     # ldr w1, [x27]          base register (opt. offset omitted):  w1 = [x27]
