@@ -404,6 +404,81 @@ class Aarch64Cpu(Cpu):
         res_op.write(result)
         return result
 
+    def _ldp_stp(cpu, reg_op1, reg_op2, mem_op, mimm_op, ldp):
+        assert reg_op1.type is cs.arm64.ARM64_OP_REG
+        assert reg_op2.type is cs.arm64.ARM64_OP_REG
+        assert mem_op.type is cs.arm64.ARM64_OP_MEM
+        assert not mimm_op or mimm_op.type is cs.arm64.ARM64_OP_IMM
+
+        post_index_rx  = '[01]0'    # opc
+        post_index_rx += '101'
+        post_index_rx += '0'
+        post_index_rx += '001'
+        if ldp:
+            post_index_rx += '1'    # L
+        else:
+            post_index_rx += '0'    # L
+        post_index_rx += '[01]{7}'  # imm7
+        post_index_rx += '[01]{5}'  # Rt2
+        post_index_rx += '[01]{5}'  # Rn
+        post_index_rx += '[01]{5}'  # Rt
+
+        pre_index_rx  = '[01]0'    # opc
+        pre_index_rx += '101'
+        pre_index_rx += '0'
+        pre_index_rx += '011'
+        if ldp:
+            pre_index_rx += '1'    # L
+        else:
+            pre_index_rx += '0'    # L
+        pre_index_rx += '[01]{7}'  # imm7
+        pre_index_rx += '[01]{5}'  # Rt2
+        pre_index_rx += '[01]{5}'  # Rn
+        pre_index_rx += '[01]{5}'  # Rt
+
+        signed_offset_rx  = '[01]0'    # opc
+        signed_offset_rx += '101'
+        signed_offset_rx += '0'
+        signed_offset_rx += '010'
+        if ldp:
+            signed_offset_rx += '1'    # L
+        else:
+            signed_offset_rx += '0'    # L
+        signed_offset_rx += '[01]{7}'  # imm7
+        signed_offset_rx += '[01]{5}'  # Rt2
+        signed_offset_rx += '[01]{5}'  # Rn
+        signed_offset_rx += '[01]{5}'  # Rt
+
+        assert (
+            re.match(post_index_rx, cpu.insn_bit_str) or
+            re.match(pre_index_rx, cpu.insn_bit_str) or
+            re.match(signed_offset_rx, cpu.insn_bit_str)
+        )
+
+        base = cpu.regfile.read(mem_op.mem.base)
+        imm = mem_op.mem.disp
+
+        if mimm_op:  # post-indexed
+            wback = mimm_op.op.imm
+        else:
+            wback = imm  # use it for writeback if applicable
+
+        if ldp:
+            result1 = cpu.read_int(base + imm, reg_op1.size)
+            reg_op1.write(result1)
+
+            result2 = cpu.read_int(base + imm + reg_op1.size // 8, reg_op2.size)
+            reg_op2.write(result2)
+        else:
+            reg1 = reg_op1.read()
+            cpu.write_int(base + imm, reg1, reg_op1.size)
+
+            reg2 = reg_op2.read()
+            cpu.write_int(base + imm + reg_op1.size // 8, reg2, reg_op2.size)
+
+        if cpu.instruction.writeback:
+            cpu.regfile.write(mem_op.mem.base, base + wback)
+
     def _ldr_str_immediate(cpu, reg_op, mem_op, mimm_op, ldr):
         assert reg_op.type is cs.arm64.ARM64_OP_REG
         assert mem_op.type is cs.arm64.ARM64_OP_MEM
@@ -1674,63 +1749,7 @@ class Aarch64Cpu(Cpu):
         :param mem_op: memory.
         :param mimm_op: None or immediate.
         """
-        assert reg_op1.type is cs.arm64.ARM64_OP_REG
-        assert reg_op2.type is cs.arm64.ARM64_OP_REG
-        assert mem_op.type is cs.arm64.ARM64_OP_MEM
-        assert not mimm_op or mimm_op.type is cs.arm64.ARM64_OP_IMM
-
-        post_index_rx  = '[01]0'    # opc
-        post_index_rx += '101'
-        post_index_rx += '0'
-        post_index_rx += '001'
-        post_index_rx += '1'        # L
-        post_index_rx += '[01]{7}'  # imm7
-        post_index_rx += '[01]{5}'  # Rt2
-        post_index_rx += '[01]{5}'  # Rn
-        post_index_rx += '[01]{5}'  # Rt
-
-        pre_index_rx  = '[01]0'    # opc
-        pre_index_rx += '101'
-        pre_index_rx += '0'
-        pre_index_rx += '011'
-        pre_index_rx += '1'        # L
-        pre_index_rx += '[01]{7}'  # imm7
-        pre_index_rx += '[01]{5}'  # Rt2
-        pre_index_rx += '[01]{5}'  # Rn
-        pre_index_rx += '[01]{5}'  # Rt
-
-        signed_offset_rx  = '[01]0'    # opc
-        signed_offset_rx += '101'
-        signed_offset_rx += '0'
-        signed_offset_rx += '010'
-        signed_offset_rx += '1'        # L
-        signed_offset_rx += '[01]{7}'  # imm7
-        signed_offset_rx += '[01]{5}'  # Rt2
-        signed_offset_rx += '[01]{5}'  # Rn
-        signed_offset_rx += '[01]{5}'  # Rt
-
-        assert (
-            re.match(post_index_rx, cpu.insn_bit_str) or
-            re.match(pre_index_rx, cpu.insn_bit_str) or
-            re.match(signed_offset_rx, cpu.insn_bit_str)
-        )
-
-        base = cpu.regfile.read(mem_op.mem.base)
-        imm = mem_op.mem.disp
-
-        if mimm_op:  # post-indexed
-            wback = mimm_op.op.imm
-        else:
-            wback = imm  # use it for writeback if applicable
-
-        result1 = cpu.read_int(base + imm, reg_op1.size)
-        reg_op1.write(result1)
-
-        result2 = cpu.read_int(base + imm + reg_op1.size // 8, reg_op2.size)
-        reg_op2.write(result2)
-
-        if cpu.instruction.writeback:
-            cpu.regfile.write(mem_op.mem.base, base + wback)
+        cpu._ldp_stp(reg_op1, reg_op2, mem_op, mimm_op, ldp=True)
 
     def _LDR_immediate(cpu, reg_op, mem_op, mimm_op):
         """
@@ -2775,6 +2794,22 @@ class Aarch64Cpu(Cpu):
         # The 'instruction' decorator advances PC, so call the original
         # method.
         cpu.SBFM.__wrapped__(cpu, res_op, reg_op, lsb_op, width_op)
+
+    @instruction
+    def STP(cpu, reg_op1, reg_op2, mem_op, mimm_op=None):
+        """
+        STP.
+
+        Store Pair of Registers calculates an address from a base register value
+        and an immediate offset, and stores two 32-bit words or two 64-bit
+        doublewords to the calculated address, from two registers.
+
+        :param reg_op1: source register.
+        :param reg_op2: source register.
+        :param mem_op: memory.
+        :param mimm_op: None or immediate.
+        """
+        cpu._ldp_stp(reg_op1, reg_op2, mem_op, mimm_op, ldp=False)
 
     def _STR_immediate(cpu, reg_op, mem_op, mimm_op):
         """

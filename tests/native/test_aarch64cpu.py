@@ -4469,6 +4469,229 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W0'), 0xffffffff)
 
 
+    # STP.
+
+    # stp w1, w2, [x27]       base register:     [x27]     = w1, [x27 + 4]     = w2
+    # stp w3, w4, [x28, #8]   base plus offset:  [x28 + 8] = w3, [x28 + 8 + 4] = w4
+    # stp w5, w6, [x29], #8   post-indexed:      [x29]     = w5, [x29 + 4]     = w6, x29 += 8
+    # stp w7, w8, [x30, #8]!  pre-indexed:       [x30 + 8] = w7, [x30 + 8 + 4] = w8, x30 += 8
+
+    # 32-bit.
+
+    @itest_setregs('W1=0x45464748', 'W2=0x41424344')
+    @itest_custom('stp w1, w2, [sp]')
+    def test_stp_base32(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('W1=0x45464748', 'W2=0x41424344')
+    @itest_custom('stp w1, w2, [sp, #8]')
+    def test_stp_base_offset32(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.push_int(0x6162636465666768)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('W1=0x45464748', 'W2=0x41424344')
+    @itest_custom('stp w1, w2, [sp, #252]')
+    def test_stp_base_offset_max32(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.STACK -= 252
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack + 252), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('W1=0x45464748', 'W2=0x41424344')
+    @itest_custom('stp w1, w2, [sp, #-256]')
+    def test_stp_base_offset_min32(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.STACK += 256
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack - 256), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('W1=0x45464748', 'W2=0x41424344')
+    @itest_custom('stp w1, w2, [sp], #8')
+    def test_stp_post_indexed32(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack + 8)  # writeback
+
+    @itest_setregs('W1=0x45464748', 'W2=0x41424344')
+    @itest_custom('stp w1, w2, [sp], #252')
+    def test_stp_post_indexed_max32(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack + 252)  # writeback
+
+    @itest_setregs('W1=0x45464748', 'W2=0x41424344')
+    @itest_custom('stp w1, w2, [sp], #-256')
+    def test_stp_post_indexed_min32(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack - 256)  # writeback
+
+    @itest_setregs('W1=0x45464748', 'W2=0x41424344')
+    @itest_custom('stp w1, w2, [sp, #8]!')
+    def test_stp_pre_indexed32(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.push_int(0x6162636465666768)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack + 8)  # writeback
+
+    @itest_setregs('W1=0x45464748', 'W2=0x41424344')
+    @itest_custom('stp w1, w2, [sp, #252]!')
+    def test_stp_pre_indexed_max32(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.STACK -= 252
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack + 252), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack + 252)  # writeback
+
+    @itest_setregs('W1=0x45464748', 'W2=0x41424344')
+    @itest_custom('stp w1, w2, [sp, #-256]!')
+    def test_stp_pre_indexed_min32(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.STACK += 256
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack - 256), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack - 256)  # writeback
+
+    # 64-bit.
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x5152535455565758')
+    @itest_custom('stp x1, x2, [sp]')
+    def test_stp_base64(self):
+        self.cpu.push_int(0x6162636465666768)
+        self.cpu.push_int(0x7172737475767778)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack),     0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x5152535455565758)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x5152535455565758')
+    @itest_custom('stp x1, x2, [sp, #8]')
+    def test_stp_base_offset64(self):
+        self.cpu.push_int(0x6162636465666768)
+        self.cpu.push_int(0x7172737475767778)
+        self.cpu.push_int(0x8182838485868788)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack + 8),     0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 8 + 8), 0x5152535455565758)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x5152535455565758')
+    @itest_custom('stp x1, x2, [sp, #504]')
+    def test_stp_base_offset_max64(self):
+        self.cpu.push_int(0x6162636465666768)
+        self.cpu.push_int(0x7172737475767778)
+        self.cpu.STACK -= 504
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack + 504),     0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 504 + 8), 0x5152535455565758)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x5152535455565758')
+    @itest_custom('stp x1, x2, [sp, #-512]')
+    def test_stp_base_offset_min64(self):
+        self.cpu.push_int(0x6162636465666768)
+        self.cpu.push_int(0x7172737475767778)
+        self.cpu.STACK += 512
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack - 512),     0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack - 512 + 8), 0x5152535455565758)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x5152535455565758')
+    @itest_custom('stp x1, x2, [sp], #8')
+    def test_stp_post_indexed64(self):
+        self.cpu.push_int(0x6162636465666768)
+        self.cpu.push_int(0x7172737475767778)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack),     0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x5152535455565758)
+        self.assertEqual(self.rf.read('SP'), stack + 8)  # writeback
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x5152535455565758')
+    @itest_custom('stp x1, x2, [sp], #504')
+    def test_stp_post_indexed_max64(self):
+        self.cpu.push_int(0x6162636465666768)
+        self.cpu.push_int(0x7172737475767778)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack),     0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x5152535455565758)
+        self.assertEqual(self.rf.read('SP'), stack + 504)  # writeback
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x5152535455565758')
+    @itest_custom('stp x1, x2, [sp], #-512')
+    def test_stp_post_indexed_min64(self):
+        self.cpu.push_int(0x6162636465666768)
+        self.cpu.push_int(0x7172737475767778)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack),     0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x5152535455565758)
+        self.assertEqual(self.rf.read('SP'), stack - 512)  # writeback
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x5152535455565758')
+    @itest_custom('stp x1, x2, [sp, #8]!')
+    def test_stp_pre_indexed64(self):
+        self.cpu.push_int(0x6162636465666768)
+        self.cpu.push_int(0x7172737475767778)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack + 8),     0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 8 + 8), 0x5152535455565758)
+        self.assertEqual(self.rf.read('SP'), stack + 8)  # writeback
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x5152535455565758')
+    @itest_custom('stp x1, x2, [sp, #504]!')
+    def test_stp_pre_indexed_max64(self):
+        self.cpu.push_int(0x6162636465666768)
+        self.cpu.push_int(0x7172737475767778)
+        self.cpu.STACK -= 504
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack + 504),     0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 504 + 8), 0x5152535455565758)
+        self.assertEqual(self.rf.read('SP'), stack + 504)  # writeback
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x5152535455565758')
+    @itest_custom('stp x1, x2, [sp, #-512]!')
+    def test_stp_pre_indexed_min64(self):
+        self.cpu.push_int(0x6162636465666768)
+        self.cpu.push_int(0x7172737475767778)
+        self.cpu.STACK += 512
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack - 512),     0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack - 512 + 8), 0x5152535455565758)
+        self.assertEqual(self.rf.read('SP'), stack - 512)  # writeback
+
+
     # STR (immediate).
 
     # str w1, [x27]          base register (opt. offset omitted):  [x27]     = w1
