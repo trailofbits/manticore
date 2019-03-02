@@ -871,6 +871,49 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('NZCV'), 0x80000000)
 
 
+    # ASR (immediate).
+
+    # 32-bit.
+
+    @itest_setregs('W1=0x81424344')
+    @itest('asr w0, w1, #0')
+    def test_asr_imm_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0x81424344)
+        self.assertEqual(self.rf.read('W0'), 0x81424344)
+
+    @itest_setregs('W1=0x81424344')
+    @itest('asr w0, w1, #31')
+    def test_asr_imm_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    @itest_setregs('W1=0x81424344')
+    @itest('asr w0, w1, #4')
+    def test_asr_imm32(self):
+        self.assertEqual(self.rf.read('X0'), 0xf8142434)
+        self.assertEqual(self.rf.read('W0'), 0xf8142434)
+
+    # 64-bit.
+
+    @itest_setregs('X1=0x8142434445464748')
+    @itest('asr x0, x1, #0')
+    def test_asr_imm_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0x8142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @itest_setregs('X1=0x8142434445464748')
+    @itest('asr x0, x1, #63')
+    def test_asr_imm_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffffffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    @itest_setregs('X1=0x8142434445464748')
+    @itest('asr x0, x1, #4')
+    def test_asr_imm64(self):
+        self.assertEqual(self.rf.read('X0'), 0xf814243444546474)
+        self.assertEqual(self.rf.read('W0'), 0x44546474)
+
+
     # ASR (register).
 
     # 32-bit.
