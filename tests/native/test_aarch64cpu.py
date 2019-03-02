@@ -3695,6 +3695,77 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W0'), 0x44434241)
 
 
+    # SBFIZ.
+
+    # 32-bit.
+
+    # Copy 1 bit from the least significant bits of the source register to bit
+    # position 0 of the destination register.
+    @itest_setregs('W1=0x44434241')
+    @itest('sbfiz w0, w1, #0, #1')
+    def test_sbfiz_min_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    # Copy 32 bits from the least significant bits of the source register to bit
+    # position 0 of the destination register.
+    @itest_setregs('W1=0x41424344')
+    @itest('sbfiz w0, w1, #0, #32')
+    def test_sbfiz_min_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344)
+        self.assertEqual(self.rf.read('W0'), 0x41424344)
+
+    # Copy 1 bit from the least significant bits of the source register to bit
+    # position 31 of the destination register.
+    @itest_setregs('W1=0x44434241')
+    @itest('sbfiz w0, w1, #31, #1')
+    def test_sbfiz_max_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0x80000000)
+        self.assertEqual(self.rf.read('W0'), 0x80000000)
+
+    # Copy 15 bits from the least significant bits of the source register to bit
+    # position 17 of the destination register.
+    @itest_setregs('W1=0x41427fff')
+    @itest('sbfiz w0, w1, #17, #15')
+    def test_sbfiz32(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffe0000)
+        self.assertEqual(self.rf.read('W0'), 0xfffe0000)
+
+    # 64-bit.
+
+    # Copy 1 bit from the least significant bits of the source register to bit
+    # position 0 of the destination register.
+    @itest_setregs('X1=0x4847464544434241')
+    @itest('sbfiz x0, x1, #0, #1')
+    def test_sbfiz_min_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffffffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    # Copy 64 bits from the least significant bits of the source register to bit
+    # position 0 of the destination register.
+    @itest_setregs('X1=0x4142434445464748')
+    @itest('sbfiz x0, x1, #0, #64')
+    def test_sbfiz_min_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    # Copy 1 bit from the least significant bits of the source register to bit
+    # position 63 of the destination register.
+    @itest_setregs('X1=0x4847464544434241')
+    @itest('sbfiz x0, x1, #63, #1')
+    def test_sbfiz_max_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0x8000000000000000)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    # Copy 31 bit from the least significant bits of the source register to bit
+    # position 33 of the destination register.
+    @itest_setregs('X1=0x414243447fffffff')
+    @itest('sbfiz x0, x1, #33, #31')
+    def test_sbfiz64(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffe00000000)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+
     # SBFM.
 
     # 32-bit.
