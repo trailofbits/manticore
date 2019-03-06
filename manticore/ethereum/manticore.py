@@ -188,10 +188,17 @@ class ManticoreEVM(ManticoreBase):
             pos = 0
             while pos < len(hex_contract):
                 if hex_contract[pos] == '_':
-                    # __/tmp/tmp_9k7_l:Manticore______________
                     lib_placeholder = hex_contract[pos:pos + 40]
-                    lib_name = lib_placeholder.split(':')[1].split('_')[0]
-                    deps.setdefault(lib_name, []).append(pos)
+                    # This is all very weak...
+                    # Contract names starting/ending with _ ?
+                    # Contract names longer than 40 bytes ?
+                    if ':' in lib_placeholder:
+                        # __/tmp/tmp_9k7_l:Manticore______________
+                        lib_name = lib_placeholder.split(':')[1].strip('_')[0]
+                        deps.setdefault(lib_name, []).append(pos)
+                    else:
+                        lib_name = lib_placeholder.strip('_')
+                        deps.setdefault(lib_name, []).append(pos)
                     pos += 40
                 else:
                     pos += 2
@@ -574,7 +581,7 @@ class ManticoreEVM(ManticoreBase):
 
 
     def json_create_contract(self, jfile, owner=None, name=None, contract_name=None, balance=0,
-                                 address=None, args=(), gas=None): 
+                                 address=None, args=(), gas=None, network_id=None):
         """ Creates a solidity contract based on a truffle json artifact.
 
             :param str jfile: truffle json artifact
@@ -606,17 +613,35 @@ class ManticoreEVM(ManticoreBase):
                 signature = SolidityMetadata.function_signature_for_name_and_inputs(item['name'], item['inputs'])
                 hashes[signature] = sha3.keccak_256(signature.encode()).hexdigest()[:8]
                 if 'signature' in item:
-                    if item['signature'] !=  '0x'+hashes[signature]:
+                    if item['signature'] != '0x'+hashes[signature]:
                         raise Exception(f"Something wrong with the sha3 of the method {signature} signature (a.k.a. the hash)")
+
 
         if contract_name is None:
             contract_name = truffle["contractName"]
 
+        if network_id is None:
+            if len(truffle['networks']) > 1:
+                raise Exception("Network id not specified")
+            if len(truffle['networks']) == 1:
+                network_id = list(truffle['networks'].keys())[0]
+        if network_id in truffle['networks']:
+            temp_dict = truffle['networks'][network_id]['links']
+            links = dict( (k, int(v['address'],0)) for k,v in temp_dict.items())
+        else:
+            links = ()
+
         source_code = truffle["source"]
-        bytecode = binascii.unhexlify(truffle["bytecode"][2:])
-        runtime = binascii.unhexlify(truffle["deployedBytecode"][2:])
-        srcmap = truffle["sourceMap"].split(';')
-        srcmap_runtime = truffle["deployedSourceMap"].split(';')
+        bytecode = self._link(truffle["bytecode"][2:], links)
+        runtime = self._link(truffle["deployedBytecode"][2:], links)
+        if "sourceMap" in truffle:
+            srcmap = truffle["sourceMap"].split(';')
+        else:
+            srcmap_runtime = []
+        if "deployedSourceMap" in truffle:
+            srcmap_runtime = truffle["deployedSourceMap"].split(';')
+        else:
+            srcmap_runtime = []
         abi = truffle['abi']
         md = SolidityMetadata(contract_name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, b'')
         contract_account = self.create_contract(owner=owner, init=md._init_bytecode)

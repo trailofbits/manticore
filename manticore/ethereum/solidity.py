@@ -88,7 +88,7 @@ class SolidityMetadata:
         # https://solidity.readthedocs.io/en/develop/miscellaneous.html#source-mappings
         new_srcmap = {}
         bytecode = self._without_metadata(bytecode)
-        if self.source_code:
+        if self.source_code and srcmap:
 
             asm_offset = 0
             asm_pos = 0
@@ -271,7 +271,7 @@ class SolidityMetadata:
         """
         selectors = self._function_signatures_by_selector.keys()
         if self._fallback_function_abi_item is None:
-            return selectors
+            return tuple(selectors)
         return (*selectors, self.fallback_function_selector)
 
     @property
