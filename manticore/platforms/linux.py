@@ -2058,69 +2058,26 @@ class Linux(Platform):
         return size
 
     @unimplemented
-    def sys_getpriority(self, which, who):
+    def sys_futex(self, uaddr, op, val, utime, uaddr2, val3) -> int:
         '''
-        System call ignored.
-        :rtype: int
-
-        :return: C{0}
+        Fast user-space locking
+        success: Depends on the operation, but often 0
+        error: Returns -1
         '''
-        return 0
-
-    @unimplemented
-    def sys_setpriority(self, which, who, prio):
-        '''
-        System call ignored.
-        :rtype: int
-
-        :return: C{0}
-        '''
-        return 0
-
-    @unimplemented
-    def sys_tgkill(self, tgid, pid, sig):
-        return 0
-
-    @unimplemented
-    def sys_ptrace(self, request, pid, addr, data):
-        return 0
-
-    @unimplemented
-    def sys_nanosleep(self, req, rem):
-        return 0
-
-    @unimplemented
-    def sys_faccessat(self, dirfd, pathname, mode, flags):
-        filename = self.current.read_string(pathname)
-        return -1
-
-    @unimplemented
-    def sys_set_robust_list(self, head, length):
-        return -1
-
-    @unimplemented
-    def sys_sysinfo(self, infop):
-        return -1
-
-    @unimplemented
-    def sys_futex(self, uaddr, op, val, timeout, uaddr2, val3):
-        return 0
-
-    @unimplemented
-    def sys_setrlimit(self, resource, rlim):
-        return -1
-
-    @unimplemented
-    def sys_gettimeofday(self, tv, tz):
         return 0
 
     @unimplemented
     def sys_clone_ptregs(self, flags, child_stack, ptid, ctid, regs):
-        return 1000
-
-    @unimplemented
-    def sys_mkdir(self, pathname, mode):
-        return 0
+        '''
+        Create a child process
+        :param flags:
+        :param child_stack:
+        :param ptid:
+        :param ctid:
+        :param regs:
+        :return: The PID of the child process
+        '''
+        return self.sys_getpid(None)
 
     # Dispatchers...
     def syscall(self):
