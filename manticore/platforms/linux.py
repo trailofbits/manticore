@@ -7,7 +7,6 @@ import socket
 import struct
 import time
 import resource
-import wrapt
 from typing import Union, List, TypeVar, cast
 
 import io
@@ -19,6 +18,7 @@ from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 
 from . import linux_syscalls
+from . linux_syscall_stubs import SyscallStubs
 from ..core.executor import TerminateState
 from ..core.smtlib import ConstraintSet, solver, Operators
 from ..core.smtlib import Expression
@@ -26,7 +26,7 @@ from ..exceptions import SolverError
 from ..native.cpu.abstractcpu import Syscall, ConcretizeArgument, Interruption
 from ..native.cpu.cpufactory import CpuFactory
 from ..native.memory import SMemory32, SMemory64, Memory32, Memory64, LazySMemory32, LazySMemory64
-from ..platforms.platform import Platform, SyscallNotImplemented
+from ..platforms.platform import Platform, SyscallNotImplemented, unimplemented
 from ..utils.helpers import issymbolic
 
 logger = logging.getLogger(__name__)
@@ -51,12 +51,6 @@ class FdError(Exception):
     def __init__(self, message='', err=errno.EBADF):
         self.err = err
         super().__init__(message)
-
-
-@wrapt.decorator
-def unimplemented(wrapped, _instance, args, kwargs):
-    logger.warning("Unimplemented system call: %s", wrapped.__name__)
-    return wrapped(*args, **kwargs)
 
 
 def perms_from_elf(elf_flags):
@@ -422,7 +416,7 @@ class Linux(Platform):
         self.disasm = disasm
         self.envp = envp
         self.argv = argv
-        self.default_to_fail = True
+        self.stubs = SyscallStubs()
 
         # dict of [int -> (int, int)] where tuple is (soft, hard) limits
         self._rlimits = {
@@ -652,6 +646,7 @@ class Linux(Platform):
         self._function_abi = state['functionabi']
         self._syscall_abi = state['syscallabi']
         self._uname_machine = state['uname_machine']
+        self.stubs = SyscallStubs()
         if '_arm_tls_memory' in state:
             self._arm_tls_memory = state['_arm_tls_memory']
 
@@ -2138,7 +2133,10 @@ class Linux(Platform):
         try:
             table = getattr(linux_syscalls, self.current.machine)
             name = table.get(index, None)
-            implementation = getattr(self, name)
+            if hasattr(self, name):
+                implementation = getattr(self, name)
+            else:
+                implementation = getattr(self.stubs, name)
         except (AttributeError, KeyError):
             if name is not None:
                 raise SyscallNotImplemented(index, name)
@@ -2150,7 +2148,7 @@ class Linux(Platform):
     def sys_clock_gettime(self, clock_id, timespec):
         logger.warning("sys_clock_time not really implemented")
         if clock_id == 1:
-            t = int(time.monotonic() * 1000000000)
+            t = int(time.monotonic() * 1000000000)  # switch to monotonic_ns in py3.7
             self.current.write_bytes(timespec, struct.pack('l', t // 1000000000) + struct.pack('l', t))
         return 0
 

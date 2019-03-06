@@ -1,9 +1,17 @@
+import wrapt
+import logging
 from ..utils.event import Eventful
 
+logger = logging.getLogger(__name__)
 
 class OSException(Exception):
     pass
 
+
+@wrapt.decorator
+def unimplemented(wrapped, _instance, args, kwargs):
+    logger.warning("Unimplemented system call: %s", wrapped.__name__)
+    return wrapped(*args, **kwargs)
 
 class SyscallNotImplemented(OSException):
     """
