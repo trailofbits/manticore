@@ -579,9 +579,7 @@ class ManticoreEVM(ManticoreBase):
         # FIXME this is more naive than reasonable.
         return ABI.deserialize(types, self.make_symbolic_buffer(32, name='INITARGS', avoid_collisions=True))
 
-
-    def json_create_contract(self, jfile, owner=None, name=None, contract_name=None, balance=0,
-                                 address=None, args=(), gas=None, network_id=None):
+    def json_create_contract(self, jfile, owner=None, name=None, contract_name=None, balance=0, address=None, args=(), gas=None, network_id=None):
         """ Creates a solidity contract based on a truffle json artifact.
 
             :param str jfile: truffle json artifact
@@ -613,7 +611,7 @@ class ManticoreEVM(ManticoreBase):
                 signature = SolidityMetadata.function_signature_for_name_and_inputs(item['name'], item['inputs'])
                 hashes[signature] = sha3.keccak_256(signature.encode()).hexdigest()[:8]
                 if 'signature' in item:
-                    if item['signature'] != '0x'+hashes[signature]:
+                    if item['signature'] != f'0x{hashes[signature]}':
                         raise Exception(f"Something wrong with the sha3 of the method {signature} signature (a.k.a. the hash)")
 
 
