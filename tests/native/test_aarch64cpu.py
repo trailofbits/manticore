@@ -1071,6 +1071,362 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X2'), 0)
 
 
+    # BFC.
+
+    # 32-bit.
+
+    # This is actually bfxil.
+    # Set 1 bit at bit position 0 of the destination register to zero, leaving
+    # other bits unchanged.
+    @itest_setregs('W0=0xffffffff')
+    @itest('bfc w0, #0, #1')
+    def test_bfc_min_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffe)
+        self.assertEqual(self.rf.read('W0'), 0xfffffffe)
+
+    # This is actually bfxil.
+    # Set 32 bits at bit position 0 of the destination register to zero, leaving
+    # other bits unchanged.
+    @itest_setregs('W0=0xffffffff')
+    @itest('bfc w0, #0, #32')
+    def test_bfc_min_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    # Set 1 bit at bit position 31 of the destination register to zero, leaving
+    # other bits unchanged.
+    @itest_setregs('W0=0xffffffff')
+    @itest('bfc w0, #31, #1')
+    def test_bfc_max_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0x7fffffff)
+        self.assertEqual(self.rf.read('W0'), 0x7fffffff)
+
+    # Set 15 bits at bit position 17 of the destination register to zero, leaving
+    # other bits unchanged.
+    @itest_setregs('W0=0xffffffff')
+    @itest('bfc w0, #17, #15')
+    def test_bfc32(self):
+        self.assertEqual(self.rf.read('X0'), 0x1ffff)
+        self.assertEqual(self.rf.read('W0'), 0x1ffff)
+
+    # 64-bit.
+
+    # This is actually bfxil.
+    # Set 1 bit at bit position 0 of the destination register to zero, leaving
+    # other bits unchanged.
+    @itest_setregs('X0=0xffffffffffffffff')
+    @itest('bfc x0, #0, #1')
+    def test_bfc_min_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffffffffffe)
+        self.assertEqual(self.rf.read('W0'), 0xfffffffe)
+
+    # This is actually bfxil.
+    # Set 64 bits at bit position 0 of the destination register to zero, leaving
+    # other bits unchanged.
+    @itest_setregs('X0=0xffffffffffffffff')
+    @itest('bfc x0, #0, #64')
+    def test_bfc_min_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    # Set 1 bit at bit position 63 of the destination register to zero, leaving
+    # other bits unchanged.
+    @itest_setregs('X0=0xffffffffffffffff')
+    @itest('bfc x0, #63, #1')
+    def test_bfc_max_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0x7fffffffffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    # Set 31 bits at bit position 33 of the destination register to zero, leaving
+    # other bits unchanged.
+    @itest_setregs('X0=0xffffffffffffffff')
+    @itest('bfc x0, #33, #31')
+    def test_bfc64(self):
+        self.assertEqual(self.rf.read('X0'), 0x1ffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+
+    # BFI.
+
+    # 32-bit.
+
+    # This is actually bfxil.
+    # Copy 1 bit from the least significant bits of the source register to bit
+    # position 0 of the destination register, leaving the other bits unchanged.
+    @itest_setregs('W0=0xffffffff', 'W1=0x4142434e')
+    @itest('bfi w0, w1, #0, #1')
+    def test_bfi_min_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffe)
+        self.assertEqual(self.rf.read('W0'), 0xfffffffe)
+
+    # This is actually bfxil.
+    # Copy 32 bits from the least significant bits of the source register to bit
+    # position 0 of the destination register, leaving the other bits unchanged.
+    @itest_setregs('W0=0xffffffff', 'W1=0x41424344')
+    @itest('bfi w0, w1, #0, #32')
+    def test_bfi_min_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344)
+        self.assertEqual(self.rf.read('W0'), 0x41424344)
+
+    # Copy 1 bit from the least significant bits of the source register to bit
+    # position 31 of the destination register, leaving the other bits unchanged.
+    @itest_setregs('W0=0xffffffff', 'W1=0x4142434e')
+    @itest('bfi w0, w1, #31, #1')
+    def test_bfi_max_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0x7fffffff)
+        self.assertEqual(self.rf.read('W0'), 0x7fffffff)
+
+    # Copy 15 bits from the least significant bits of the source register to bit
+    # position 17 of the destination register, leaving the other bits unchanged.
+    @itest_setregs('W0=0xffffffff', 'W1=0x41428000')
+    @itest('bfi w0, w1, #17, #15')
+    def test_bfi32(self):
+        self.assertEqual(self.rf.read('X0'), 0x1ffff)
+        self.assertEqual(self.rf.read('W0'), 0x1ffff)
+
+    # 64-bit.
+
+    # This is actually bfxil.
+    # Copy 1 bit from the least significant bits of the source register to bit
+    # position 0 of the destination register, leaving the other bits unchanged.
+    @itest_setregs('X0=0xffffffffffffffff', 'X1=0x414243444546474e')
+    @itest('bfi x0, x1, #0, #1')
+    def test_bfi_min_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffffffffffe)
+        self.assertEqual(self.rf.read('W0'), 0xfffffffe)
+
+    # This is actually bfxil.
+    # Copy 64 bits from the least significant bits of the source register to bit
+    # position 0 of the destination register, leaving the other bits unchanged.
+    @itest_setregs('X0=0xffffffffffffffff', 'X1=0x4142434445464748')
+    @itest('bfi x0, x1, #0, #64')
+    def test_bfi_min_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    # Copy 1 bit from the least significant bits of the source register to bit
+    # position 63 of the destination register, leaving the other bits unchanged.
+    @itest_setregs('X0=0xffffffffffffffff', 'X1=0x414243444546474e')
+    @itest('bfi x0, x1, #63, #1')
+    def test_bfi_max_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0x7fffffffffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    # Copy 31 bits from the least significant bits of the source register to bit
+    # position 33 of the destination register, leaving the other bits unchanged.
+    @itest_setregs('X0=0xffffffffffffffff', 'X1=0x4142434480000000')
+    @itest('bfi x0, x1, #33, #31')
+    def test_bfi64(self):
+        self.assertEqual(self.rf.read('X0'), 0x1ffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+
+    # BFM.
+
+    # 32-bit.
+
+    # This is actually bfxil.
+    # Copy 5 - 3 + 1 bits from bit position 3 of the source register to the
+    # least significant bits of the destination register.  Keep bits below and
+    # above the bitfield the same.
+    @itest_setregs('W0=0xffffffff', 'W1=0x414243c7')
+    @itest('bfm w0, w1, #3, #5')
+    def test_bfm_ge32(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffff8)
+        self.assertEqual(self.rf.read('W0'), 0xfffffff8)
+
+    # This is actually bfi.
+    # Copy 3 + 1 bits from the least significant bits of the source register to
+    # bit position 32 - 5 of the destination register.  Keep bits below and
+    # above the bitfield the same.
+    @itest_setregs('W0=0xffffffff', 'W1=0x41424340')
+    @itest('bfm w0, w1, #5, #3')
+    def test_bfm_lt32(self):
+        self.assertEqual(self.rf.read('X0'), 0x87ffffff)
+        self.assertEqual(self.rf.read('W0'), 0x87ffffff)
+
+    # This is actually bfxil.
+    # Copy 31 - 0 + 1 bits from bit position 0 of the source register to the
+    # least significant bits of the destination register.  Keep bits below and
+    # above the bitfield the same.
+    @itest_setregs('W0=0xffffffff', 'W1=0x41424344')
+    @itest('bfm w0, w1, #0, #31')
+    def test_bfm_ge_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344)
+        self.assertEqual(self.rf.read('W0'), 0x41424344)
+
+    # This is actually bfi.
+    # Copy 0 + 1 bits from the least significant bits of the source register to
+    # bit position 32 - 31 of the destination register.  Keep bits below and
+    # above the bitfield the same.
+    @itest_setregs('W0=0xffffffff', 'W1=0x4142434e')
+    @itest('bfm w0, w1, #31, #0')
+    def test_bfm_lt_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffd)
+        self.assertEqual(self.rf.read('W0'), 0xfffffffd)
+
+    # This is actually bfxil.
+    # Copy 0 - 0 + 1 bits from bit position 0 of the source register to the
+    # least significant bits of the destination register.  Keep bits below and
+    # above the bitfield the same.
+    @itest_setregs('W0=0xffffffff', 'W1=0x41424346')
+    @itest('bfm w0, w1, #0, #0')
+    def test_bfm_ge_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffe)
+        self.assertEqual(self.rf.read('W0'), 0xfffffffe)
+
+    # This is actually bfi.
+    # Copy 0 + 1 bits from the least significant bits of the source register to
+    # bit position 32 - 1 of the destination register.  Keep bits below and
+    # above the bitfield the same.
+    @itest_setregs('W0=0xffffffff', 'W1=0x4142434e')
+    @itest('bfm w0, w1, #1, #0')
+    def test_bfm_lt_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0x7fffffff)
+        self.assertEqual(self.rf.read('W0'), 0x7fffffff)
+
+    # 64-bit.
+
+    # This is actually bfxil.
+    # Copy 5 - 3 + 1 bits from bit position 3 of the source register to the
+    # least significant bits of the destination register.  Keep bits below and
+    # above the bitfield the same.
+    @itest_setregs('X0=0xffffffffffffffff', 'X1=0x41424344454647c7')
+    @itest('bfm x0, x1, #3, #5')
+    def test_bfm_ge64(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffffffffff8)
+        self.assertEqual(self.rf.read('W0'), 0xfffffff8)
+
+    # This is actually bfi.
+    # Copy 3 + 1 bits from the least significant bits of the source register to
+    # bit position 64 - 5 of the destination register.  Keep bits below and
+    # above the bitfield the same.
+    @itest_setregs('X0=0xffffffffffffffff', 'X1=0x4142434445464740')
+    @itest('bfm x0, x1, #5, #3')
+    def test_bfm_lt64(self):
+        self.assertEqual(self.rf.read('X0'), 0x87ffffffffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    # This is actually bfxil.
+    # Copy 63 - 0 + 1 bits from bit position 0 of the source register to the
+    # least significant bits of the destination register.  Keep bits below and
+    # above the bitfield the same.
+    @itest_setregs('X0=0xffffffffffffffff', 'X1=0x4142434445464748')
+    @itest('bfm x0, x1, #0, #63')
+    def test_bfm_ge_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    # This is actually bfi.
+    # Copy 0 + 1 bits from the least significant bits of the source register to
+    # bit position 64 - 63 of the destination register.  Keep bits below and
+    # above the bitfield the same.
+    @itest_setregs('X0=0xffffffffffffffff', 'X1=0x414243444546474e')
+    @itest('bfm x0, x1, #63, #0')
+    def test_bfm_lt_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffffffffffd)
+        self.assertEqual(self.rf.read('W0'), 0xfffffffd)
+
+    # This is actually bfxil.
+    # Copy 0 - 0 + 1 bits from bit position 0 of the source register to the
+    # least significant bits of the destination register.  Keep bits below and
+    # above the bitfield the same.
+    @itest_setregs('X0=0xffffffffffffffff', 'X1=0x4142434445464746')
+    @itest('bfm x0, x1, #0, #0')
+    def test_bfm_ge_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffffffffffe)
+        self.assertEqual(self.rf.read('W0'), 0xfffffffe)
+
+    # This is actually bfi.
+    # Copy 0 + 1 bits from the least significant bits of the source register to
+    # bit position 64 - 1 of the destination register.  Keep bits below and
+    # above the bitfield the same.
+    @itest_setregs('X0=0xffffffffffffffff', 'X1=0x414243444546474e')
+    @itest('bfm x0, x1, #1, #0')
+    def test_bfm_lt_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0x7fffffffffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+
+    # BFXIL.
+
+    # 32-bit.
+
+    # Copy 1 bit from bit position 0 in the source register to the least
+    # significant bits of the destination register, leaving the other
+    # destination bits unchanged.
+    @itest_setregs('W0=0xffffffff', 'W1=0x4142434e')
+    @itest('bfxil w0, w1, #0, #1')
+    def test_bfxil_min_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffe)
+        self.assertEqual(self.rf.read('W0'), 0xfffffffe)
+
+    # Copy 32 bits from bit position 0 in the source register to the least
+    # significant bits of the destination register, leaving the other
+    # destination bits unchanged.
+    @itest_setregs('W0=0xffffffff', 'W1=0x41424344')
+    @itest('bfxil w0, w1, #0, #32')
+    def test_bfxil_min_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344)
+        self.assertEqual(self.rf.read('W0'), 0x41424344)
+
+    # Copy 1 bit from bit position 31 in the source register to the least
+    # significant bits of the destination register, leaving the other
+    # destination bits unchanged.
+    @itest_setregs('W0=0xffffffff', 'W1=0x71424344')
+    @itest('bfxil w0, w1, #31, #1')
+    def test_bfxil_max_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffe)
+        self.assertEqual(self.rf.read('W0'), 0xfffffffe)
+
+    # Copy 16 bits from bit position 16 in the source register to the least
+    # significant bits of the destination register, leaving the other
+    # destination bits unchanged.
+    @itest_setregs('W0=0xffffffff', 'W1=0x4344')
+    @itest('bfxil w0, w1, #16, #16')
+    def test_bfxil32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffff0000)
+        self.assertEqual(self.rf.read('W0'), 0xffff0000)
+
+    # 64-bit.
+
+    # Copy 1 bit from bit position 0 in the source register to the least
+    # significant bits of the destination register, leaving the other
+    # destination bits unchanged.
+    @itest_setregs('X0=0xffffffffffffffff', 'X1=0x414243444546474e')
+    @itest('bfxil x0, x1, #0, #1')
+    def test_bfxil_min_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffffffffffe)
+        self.assertEqual(self.rf.read('W0'), 0xfffffffe)
+
+    # Copy 64 bits from bit position 0 in the source register to the least
+    # significant bits of the destination register, leaving the other
+    # destination bits unchanged.
+    @itest_setregs('X0=0xffffffffffffffff', 'X1=0x4142434445464748')
+    @itest('bfxil x0, x1, #0, #64')
+    def test_bfxil_min_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    # Copy 1 bit from bit position 63 in the source register to the least
+    # significant bits of the destination register, leaving the other
+    # destination bits unchanged.
+    @itest_setregs('X0=0xffffffffffffffff', 'X1=0x7142434445464748')
+    @itest('bfxil x0, x1, #63, #1')
+    def test_bfxil_max_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffffffffffe)
+        self.assertEqual(self.rf.read('W0'), 0xfffffffe)
+
+    # Copy 32 bits from bit position 32 in the source register to the least
+    # significant bits of the destination register, leaving the other
+    # destination bits unchanged.
+    @itest_setregs('X0=0xffffffffffffffff', 'X1=0x45464748')
+    @itest('bfxil x0, x1, #32, #32')
+    def test_bfxil64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffff00000000)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+
     # BIC (shifted register).
 
     # 32-bit.

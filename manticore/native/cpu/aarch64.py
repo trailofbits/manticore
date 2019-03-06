@@ -346,6 +346,14 @@ class Aarch64Cpu(Cpu):
              ):
             name = 'B_cond'
 
+        # XXX: BFI is only valid when Rn != 11111.
+        elif (name == 'BFI' and len(ops) == 4 and
+              ops[1].type == cs.arm64.ARM64_OP_REG and
+              ops[1].reg in ['WZR', 'XZR']
+             ):
+             name = 'BFC'
+             del ops[1]
+
         return name
 
     @property
@@ -1243,6 +1251,197 @@ class Aarch64Cpu(Cpu):
 
         imm = imm_op.op.imm
         cpu.PC = imm
+
+    @instruction
+    def BFC(cpu, res_op, lsb_op, width_op):
+        """
+        BFC.
+
+        Bitfield Clear sets a bitfield of <width> bits at bit position <lsb> of
+        the destination register to zero, leaving the other destination bits
+        unchanged.
+
+        This instruction is an alias of the BFM instruction.
+
+        :param res_op: destination register.
+        :param lsb_op: immediate.
+        :param width_op: immediate.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert lsb_op.type is cs.arm64.ARM64_OP_IMM
+        assert width_op.type is cs.arm64.ARM64_OP_IMM
+
+        insn_rx  = '[01]'     # sf
+        insn_rx += '01'       # opc
+        insn_rx += '100110'
+        insn_rx += '[01]'     # N
+        insn_rx += '[01]{6}'  # immr
+        insn_rx += '[01]{6}'  # imms
+        insn_rx += '1{5}'     # Rn
+        insn_rx += '[01]{5}'  # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        lsb = lsb_op.op.imm
+        lsb_op.value.imm = -lsb % res_op.size
+        width_op.value.imm -= 1
+
+        # Fake a register operand.
+        if res_op.size == 32:
+            zr = Aarch64Operand.make_reg(cpu, cs.arm64.ARM64_REG_WZR)
+        elif res_op.size == 64:
+            zr = Aarch64Operand.make_reg(cpu, cs.arm64.ARM64_REG_XZR)
+        else:
+            raise Aarch64InvalidInstruction
+
+        # The 'instruction' decorator advances PC, so call the original
+        # method.
+        cpu.BFM.__wrapped__(cpu, res_op, zr, lsb_op, width_op)
+
+    @instruction
+    def BFI(cpu, res_op, reg_op, lsb_op, width_op):
+        """
+        BFI.
+
+        Bitfield Insert copies a bitfield of <width> bits from the least
+        significant bits of the source register to bit position <lsb> of the
+        destination register, leaving the other destination bits unchanged.
+
+        This instruction is an alias of the BFM instruction.
+
+        :param res_op: destination register.
+        :param reg_op: source register.
+        :param lsb_op: immediate.
+        :param width_op: immediate.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+        assert lsb_op.type is cs.arm64.ARM64_OP_IMM
+        assert width_op.type is cs.arm64.ARM64_OP_IMM
+
+        insn_rx  = '[01]'             # sf
+        insn_rx += '01'               # opc
+        insn_rx += '100110'
+        insn_rx += '[01]'             # N
+        insn_rx += '[01]{6}'          # immr
+        insn_rx += '[01]{6}'          # imms
+        insn_rx += '(?!1{5})[01]{5}'  # Rn != 11111
+        insn_rx += '[01]{5}'          # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        lsb = lsb_op.op.imm
+        lsb_op.value.imm = -lsb % res_op.size
+        width_op.value.imm -= 1
+
+        # The 'instruction' decorator advances PC, so call the original
+        # method.
+        cpu.BFM.__wrapped__(cpu, res_op, reg_op, lsb_op, width_op)
+
+    @instruction
+    def BFM(cpu, res_op, reg_op, immr_op, imms_op):
+        """
+        BFM.
+
+        Bitfield Move is usually accessed via one of its aliases, which are
+        always preferred for disassembly.
+
+        If <imms> is greater than or equal to <immr>, this copies a bitfield of
+        (<imms>-<immr>+1) bits starting from bit position <immr> in the source
+        register to the least significant bits of the destination register.
+
+        If <imms> is less than <immr>, this copies a bitfield of (<imms>+1) bits
+        from the least significant bits of the source register to bit position
+        (regsize-<immr>) of the destination register, where regsize is the
+        destination register size of 32 or 64 bits.
+
+        In both cases the other bits of the destination register remain
+        unchanged.
+
+        This instruction is used by the aliases BFC, BFI, and BFXIL.
+
+        :param res_op: destination register.
+        :param reg_op: source register.
+        :param immr_op: immediate.
+        :param imms_op: immediate.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+        assert immr_op.type is cs.arm64.ARM64_OP_IMM
+        assert imms_op.type is cs.arm64.ARM64_OP_IMM
+
+        insn_rx  = '[01]'     # sf
+        insn_rx += '01'       # opc
+        insn_rx += '100110'
+        insn_rx += '[01]'     # N
+        insn_rx += '[01]{6}'  # immr
+        insn_rx += '[01]{6}'  # imms
+        insn_rx += '[01]{5}'  # Rn
+        insn_rx += '[01]{5}'  # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        res = res_op.read()
+        reg = reg_op.read()
+        immr = immr_op.op.imm
+        imms = imms_op.op.imm
+
+        assert immr in range(res_op.size)
+        assert imms in range(res_op.size)
+
+        if imms >= immr:
+            width = imms - immr + 1
+            copy_from = immr
+            copy_to = 0
+        else:
+            width = imms + 1
+            copy_from = 0
+            copy_to = res_op.size - immr
+
+        result = ((reg & (Mask(width) << copy_from)) >> copy_from) << copy_to
+        result |= res & ~(Mask(width) << copy_to)
+        res_op.write(result)
+
+    @instruction
+    def BFXIL(cpu, res_op, reg_op, lsb_op, width_op):
+        """
+        BFXIL.
+
+        Bitfield Extract and Insert Low copies a bitfield of <width> bits
+        starting from bit position <lsb> in the source register to the least
+        significant bits of the destination register, leaving the other
+        destination bits unchanged.
+
+        This instruction is an alias of the BFM instruction.
+
+        :param res_op: destination register.
+        :param reg_op: source register.
+        :param lsb_op: immediate.
+        :param width_op: immediate.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+        assert lsb_op.type is cs.arm64.ARM64_OP_IMM
+        assert width_op.type is cs.arm64.ARM64_OP_IMM
+
+        insn_rx  = '[01]'     # sf
+        insn_rx += '01'       # opc
+        insn_rx += '100110'
+        insn_rx += '[01]'     # N
+        insn_rx += '[01]{6}'  # immr
+        insn_rx += '[01]{6}'  # imms
+        insn_rx += '[01]{5}'  # Rn
+        insn_rx += '[01]{5}'  # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        lsb = lsb_op.op.imm
+        width = width_op.op.imm
+        width_op.value.imm = lsb + width - 1
+
+        # The 'instruction' decorator advances PC, so call the original
+        # method.
+        cpu.BFM.__wrapped__(cpu, res_op, reg_op, lsb_op, width_op)
 
     @instruction
     def BIC(cpu, res_op, reg_op1, reg_op2):
