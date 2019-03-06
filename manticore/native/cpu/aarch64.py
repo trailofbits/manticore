@@ -368,6 +368,63 @@ class Aarch64Cpu(Cpu):
     # XXX: Use masking when writing to the destination register?  Avoiding this
     # for now, but the assert in the 'write' method should catch such cases.
 
+    def _add_with_carry(cpu, size, x, y, carry_in):
+        unsigned_sum = UInt(x, size) + UInt(y, size) + UInt(carry_in, 1)
+        signed_sum   = SInt(x, size) + SInt(y, size) + UInt(carry_in, 1)
+
+        result = unsigned_sum & Mask(size)
+
+        n = Operators.EXTRACT(result, size - 1, 1)
+        z = 1 if result == 0 else 0
+        c = 0 if UInt(result, size) == unsigned_sum else 1
+        v = 0 if SInt(result, size) == signed_sum   else 1
+
+        return (result, (n, z, c, v))
+
+    def _ccmp_imm_reg(cpu, reg_op, reg_imm_op, nzcv_op, imm):
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_imm_op.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
+        assert nzcv_op.type is cs.arm64.ARM64_OP_IMM
+
+        insn_rx  = '[01]'         # sf
+        insn_rx += '1'            # op
+        insn_rx += '1'
+        insn_rx += '11010010'
+        if imm:
+            insn_rx += '[01]{5}'  # imm5
+        else:
+            insn_rx += '[01]{5}'  # Rm
+        insn_rx += '[01]{4}'      # cond
+        if imm:
+            insn_rx += '1'
+        else:
+            insn_rx += '0'
+        insn_rx += '0'
+        insn_rx += '[01]{5}'      # Rn
+        insn_rx += '0'
+        insn_rx += '[01]{4}'      # nzcv
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        reg = reg_op.read()
+        if imm:
+            reg_imm = reg_imm_op.op.imm
+        else:
+            reg_imm = reg_imm_op.read()
+        nzcv = nzcv_op.op.imm
+
+        assert nzcv in range(16)
+
+        if cpu.cond_holds():
+            (_, nzcv) = cpu._add_with_carry(reg_op.size, reg, ~reg_imm, 1)
+            cpu.regfile.nzcv = nzcv
+        else:
+            n = Operators.EXTRACT(nzcv, 3, 1)
+            z = Operators.EXTRACT(nzcv, 2, 1)
+            c = Operators.EXTRACT(nzcv, 1, 1)
+            v = Operators.EXTRACT(nzcv, 0, 1)
+            cpu.regfile.nzcv = (n, z, c, v)
+
     def _shifted_register(cpu, res_op, reg_op1, reg_op2, action, shifts):
         reg1 = reg_op1.read()
         reg2 = reg_op2.read()
@@ -1416,6 +1473,56 @@ class Aarch64Cpu(Cpu):
 
         if reg == 0:
             cpu.PC = imm
+
+    def _CCMP_immediate(cpu, reg_op, imm_op, nzcv_op):
+        """
+        CCMP (immediate).
+
+        Conditional Compare (immediate) sets the value of the condition flags to
+        the result of the comparison of a register value and an immediate value
+        if the condition is TRUE, and an immediate value otherwise.
+
+        :param reg_op: register.
+        :param imm_op: immediate.
+        :param nzcv_op: immediate.
+        """
+        cpu._ccmp_imm_reg(reg_op, imm_op, nzcv_op, imm=True)
+
+    def _CCMP_register(cpu, reg_op1, reg_op2, nzcv_op):
+        """
+        CCMP (register).
+
+        Conditional Compare (register) sets the value of the condition flags to
+        the result of the comparison of two registers if the condition is TRUE,
+        and an immediate value otherwise.
+
+        :param reg_op1: register.
+        :param reg_op2: register.
+        :param nzcv_op: immediate.
+        """
+        cpu._ccmp_imm_reg(reg_op1, reg_op2, nzcv_op, imm=False)
+
+    @instruction
+    def CCMP(cpu, op1, op2, nzcv_op):
+        """
+        Combines CCMP (register) and CCMP (immediate).
+
+        :param op1: register.
+        :param op2: register or immediate.
+        :param nzcv_op: immediate.
+        """
+        assert op1.type is cs.arm64.ARM64_OP_REG
+        assert op2.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
+        assert nzcv_op.type is cs.arm64.ARM64_OP_IMM
+
+        if op2.type == cs.arm64.ARM64_OP_REG:
+            cpu._CCMP_register(op1, op2, nzcv_op)
+
+        elif op2.type == cs.arm64.ARM64_OP_IMM:
+            cpu._CCMP_immediate(op1, op2, nzcv_op)
+
+        else:
+            raise Aarch64InvalidInstruction
 
     @instruction
     def CINC(cpu, res_op, reg_op):

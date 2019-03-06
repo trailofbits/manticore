@@ -1750,6 +1750,154 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X2'), 43)
 
 
+    # CCMP (immediate).
+
+    # XXX: Bundles everything into one testcase.
+    def test_ccmp_imm(self):
+        for cond in NZCV_COND_MAP:
+            cond_true, cond_false = NZCV_COND_MAP[cond]
+
+            # 32-bit.
+
+            @itest_setregs(f'NZCV={cond_true}', 'W0=0')
+            @itest(f'ccmp w0, #0, #15, {cond}')
+            def ccmp_imm_true_zc32(self):
+                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                assertEqual(self.rf.read('NZCV'), 0x60000000)
+
+            @itest_setregs(f'NZCV={cond_true}', 'W0=0x8fffffff')
+            @itest(f'ccmp w0, #31, #15, {cond}')
+            def ccmp_imm_true_nc32(self):
+                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                assertEqual(self.rf.read('NZCV'), 0xa0000000)
+
+            @itest_setregs(f'NZCV={cond_false}', 'W0=0xffffffff')
+            @itest(f'ccmp w0, #0, #15, {cond}')
+            def ccmp_imm_false32(self):
+                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                assertEqual(self.rf.read('NZCV'), 0xf0000000)
+
+            # 64-bit.
+
+            @itest_setregs(f'NZCV={cond_true}', 'X0=0')
+            @itest(f'ccmp x0, #0, #15, {cond}')
+            def ccmp_imm_true_zc64(self):
+                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                assertEqual(self.rf.read('NZCV'), 0x60000000)
+
+            @itest_setregs(f'NZCV={cond_true}', 'X0=0x8fffffffffffffff')
+            @itest(f'ccmp x0, #31, #15, {cond}')
+            def ccmp_imm_true_nc64(self):
+                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                assertEqual(self.rf.read('NZCV'), 0xa0000000)
+
+            @itest_setregs(f'NZCV={cond_false}', 'X0=0xffffffffffffffff')
+            @itest(f'ccmp x0, #0, #15, {cond}')
+            def ccmp_imm_false64(self):
+                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                assertEqual(self.rf.read('NZCV'), 0xf0000000)
+
+            if cond_true:
+                self.setUp()
+                ccmp_imm_true_zc32(self)
+
+                self.setUp()
+                ccmp_imm_true_nc32(self)
+
+                self.setUp()
+                ccmp_imm_true_zc64(self)
+
+                self.setUp()
+                ccmp_imm_true_nc64(self)
+
+            if cond_false:
+                self.setUp()
+                ccmp_imm_false32(self)
+
+                self.setUp()
+                ccmp_imm_false64(self)
+
+
+    # CCMP (register).
+
+    # XXX: Bundles everything into one testcase.
+    def test_ccmp_reg(self):
+        for cond in NZCV_COND_MAP:
+            cond_true, cond_false = NZCV_COND_MAP[cond]
+
+            # 32-bit.
+
+            @itest_setregs(f'NZCV={cond_true}', 'W0=0xffffffff', 'W1=0xffffffff')
+            @itest(f'ccmp w0, w1, #15, {cond}')
+            def ccmp_reg_true_zc32(self):
+                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                assertEqual(self.rf.read('NZCV'), 0x60000000)
+
+            @itest_setregs(f'NZCV={cond_true}', 'W0=0x7fffffff', 'W1=0xffffffff')
+            @itest(f'ccmp w0, w1, #15, {cond}')
+            def ccmp_reg_true_nv32(self):
+                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                assertEqual(self.rf.read('NZCV'), 0x90000000)
+
+            @itest_setregs(f'NZCV={cond_false}', 'W0=0xffffffff', 'W1=0xffffffff')
+            @itest(f'ccmp w0, w1, #15, {cond}')
+            def ccmp_reg_false32(self):
+                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                assertEqual(self.rf.read('NZCV'), 0xf0000000)
+
+            # 64-bit.
+
+            @itest_setregs(
+                f'NZCV={cond_true}',
+                'X0=0xffffffffffffffff',
+                'X1=0xffffffffffffffff'
+            )
+            @itest(f'ccmp x0, x1, #15, {cond}')
+            def ccmp_reg_true_zc64(self):
+                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                assertEqual(self.rf.read('NZCV'), 0x60000000)
+
+            @itest_setregs(
+                f'NZCV={cond_true}',
+                 'X0=0x7fffffffffffffff',
+                 'X1=0xffffffffffffffff'
+            )
+            @itest(f'ccmp x0, x1, #15, {cond}')
+            def ccmp_reg_true_nv64(self):
+                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                assertEqual(self.rf.read('NZCV'), 0x90000000)
+
+            @itest_setregs(
+                f'NZCV={cond_false}',
+                'X0=0xffffffffffffffff',
+                'X1=0xffffffffffffffff'
+            )
+            @itest(f'ccmp x0, x1, #15, {cond}')
+            def ccmp_reg_false64(self):
+                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                assertEqual(self.rf.read('NZCV'), 0xf0000000)
+
+            if cond_true:
+                self.setUp()
+                ccmp_reg_true_zc32(self)
+
+                self.setUp()
+                ccmp_reg_true_nv32(self)
+
+                self.setUp()
+                ccmp_reg_true_zc64(self)
+
+                self.setUp()
+                ccmp_reg_true_nv64(self)
+
+            if cond_false:
+                self.setUp()
+                ccmp_reg_false32(self)
+
+                self.setUp()
+                ccmp_reg_false64(self)
+
+
     # CINC.
 
     # XXX: Bundles everything into one testcase.
