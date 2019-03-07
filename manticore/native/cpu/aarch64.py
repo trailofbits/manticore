@@ -710,6 +710,84 @@ class Aarch64Cpu(Cpu):
             reg = reg_op.read()
             cpu.write_int(base + imm, reg, reg_op.size)
 
+    def _ADD_extended_register(cpu, res_op, reg_op1, reg_op2):
+        """
+        ADD (extended register).
+
+        Add (extended register) adds a register value and a sign or
+        zero-extended register value, followed by an optional left shift amount,
+        and writes the result to the destination register.  The argument that is
+        extended from the <Rm> register can be a byte, halfword, word, or
+        doubleword.
+
+        :param res_op: destination register.
+        :param reg_op1: source register.
+        :param reg_op2: source register.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_op1.type is cs.arm64.ARM64_OP_REG
+        assert reg_op2.type is cs.arm64.ARM64_OP_REG
+
+        insn_rx  = '[01]'     # sf
+        insn_rx += '0'        # op
+        insn_rx += '0'        # S
+        insn_rx += '01011'
+        insn_rx += '00'
+        insn_rx += '1'
+        insn_rx += '[01]{5}'  # Rm
+        insn_rx += '[01]{3}'  # option
+        insn_rx += '[01]{3}'  # imm3
+        insn_rx += '[01]{5}'  # Rn
+        insn_rx += '[01]{5}'  # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        reg1 = reg_op1.read()
+        reg2 = reg_op2.read()
+
+        if reg_op2.is_extended():
+            ext = reg_op2.op.ext
+
+            if ext == cs.arm64.ARM64_EXT_UXTB:
+                reg2 = Operators.EXTRACT(reg2, 0, 8)
+
+            elif ext == cs.arm64.ARM64_EXT_UXTH:
+                reg2 = Operators.EXTRACT(reg2, 0, 16)
+
+            elif ext == cs.arm64.ARM64_EXT_UXTW:
+                reg2 = Operators.EXTRACT(reg2, 0, 32)
+
+            elif ext == cs.arm64.ARM64_EXT_UXTX:
+                reg2 = Operators.EXTRACT(reg2, 0, 64)
+
+            elif ext == cs.arm64.ARM64_EXT_SXTB:
+                reg2 = Operators.EXTRACT(reg2, 0, 8)
+                reg2 = Operators.SEXTEND(reg2, 8, res_op.size)
+
+            elif ext == cs.arm64.ARM64_EXT_SXTH:
+                reg2 = Operators.EXTRACT(reg2, 0, 16)
+                reg2 = Operators.SEXTEND(reg2, 16, res_op.size)
+
+            elif ext == cs.arm64.ARM64_EXT_SXTW:
+                reg2 = Operators.EXTRACT(reg2, 0, 32)
+                reg2 = Operators.SEXTEND(reg2, 32, res_op.size)
+
+            elif ext == cs.arm64.ARM64_EXT_SXTX:
+                reg2 = Operators.EXTRACT(reg2, 0, 64)
+                reg2 = Operators.SEXTEND(reg2, 64, res_op.size)
+
+            else:
+                raise Aarch64InvalidInstruction
+
+        if reg_op2.is_shifted():
+            shift = reg_op2.op.shift
+            assert shift.type == cs.arm64.ARM64_SFT_LSL
+            assert shift.value in range(5)
+            reg2 = LSL(reg2, shift.value, res_op.size)
+
+        result = UInt(reg1 + reg2, res_op.size)
+        res_op.write(result)
+
     def _ADD_immediate(cpu, res_op, reg_op, imm_op):
         """
         ADD (immediate).
@@ -793,7 +871,8 @@ class Aarch64Cpu(Cpu):
     @instruction
     def ADD(cpu, res_op, op1, op2):
         """
-        Combines ADD (immediate) and ADD (shifted register).
+        Combines ADD (extended register), ADD (immediate), and ADD (shifted
+        register).
 
         :param res_op: destination register.
         :param op1: source register.
@@ -811,8 +890,8 @@ class Aarch64Cpu(Cpu):
         elif op2.type == cs.arm64.ARM64_OP_REG and bit21 == '0':
             cpu._ADD_shifted_register(res_op, op1, op2)
 
-        # XXX: Support the extended register variant (update the docstring).
-        # elif op2.type == cs.arm64.ARM64_OP_REG and bit21 == '1':
+        elif op2.type == cs.arm64.ARM64_OP_REG and bit21 == '1':
+            cpu._ADD_extended_register(res_op, op1, op2)
 
         else:
             raise Aarch64InvalidInstruction

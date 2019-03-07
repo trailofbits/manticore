@@ -163,6 +163,325 @@ class Aarch64Instructions:
         self.cpu.mode = mode
 
 
+    # ADD (extended register).
+
+    # 32-bit.
+
+    @itest_setregs('W1=0x41424344', 'W2=0x51525384')
+    @itest('add w0, w1, w2, uxtb')
+    def test_add_ext_reg_uxtb32(self):
+        self.assertEqual(self.rf.read('X0'), 0x414243c8)
+        self.assertEqual(self.rf.read('W0'), 0x414243c8)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x51525384')
+    @itest('add w0, w1, w2, uxtb #0')
+    def test_add_ext_reg_uxtb0_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x414243c8)
+        self.assertEqual(self.rf.read('W0'), 0x414243c8)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x51525384')
+    @itest('add w0, w1, w2, uxtb #4')
+    def test_add_ext_reg_uxtb4_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424b84)
+        self.assertEqual(self.rf.read('W0'), 0x41424b84)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x51528354')
+    @itest('add w0, w1, w2, uxth')
+    def test_add_ext_reg_uxth32(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142c698)
+        self.assertEqual(self.rf.read('W0'), 0x4142c698)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x51528354')
+    @itest('add w0, w1, w2, uxth #0')
+    def test_add_ext_reg_uxth0_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142c698)
+        self.assertEqual(self.rf.read('W0'), 0x4142c698)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x51528354')
+    @itest('add w0, w1, w2, uxth #4')
+    def test_add_ext_reg_uxth4_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x414a7884)
+        self.assertEqual(self.rf.read('W0'), 0x414a7884)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x81525354')
+    @itest('add w0, w1, w2, uxtw')
+    def test_add_ext_reg_uxtw32(self):
+        self.assertEqual(self.rf.read('X0'), 0xc2949698)
+        self.assertEqual(self.rf.read('W0'), 0xc2949698)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x81525354')
+    @itest('add w0, w1, w2, uxtw #0')
+    def test_add_ext_reg_uxtw0_32(self):
+        self.assertEqual(self.rf.read('X0'), 0xc2949698)
+        self.assertEqual(self.rf.read('W0'), 0xc2949698)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x81525354')
+    @itest('add w0, w1, w2, uxtw #4')
+    def test_add_ext_reg_uxtw4_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x56677884)
+        self.assertEqual(self.rf.read('W0'), 0x56677884)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x81525354')
+    @itest('add w0, w1, w2, uxtx')
+    def test_add_ext_reg_uxtx32(self):
+        self.assertEqual(self.rf.read('X0'), 0xc2949698)
+        self.assertEqual(self.rf.read('W0'), 0xc2949698)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x81525354')
+    @itest('add w0, w1, w2, uxtx #0')
+    def test_add_ext_reg_uxtx0_32(self):
+        self.assertEqual(self.rf.read('X0'), 0xc2949698)
+        self.assertEqual(self.rf.read('W0'), 0xc2949698)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x81525354')
+    @itest('add w0, w1, w2, uxtx #4')
+    def test_add_ext_reg_uxtx4_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x56677884)
+        self.assertEqual(self.rf.read('W0'), 0x56677884)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x51525384')
+    @itest('add w0, w1, w2, sxtb')
+    def test_add_ext_reg_sxtb32(self):
+        self.assertEqual(self.rf.read('X0'), 0x414242c8)
+        self.assertEqual(self.rf.read('W0'), 0x414242c8)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x51525384')
+    @itest('add w0, w1, w2, sxtb #0')
+    def test_add_ext_reg_sxtb0_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x414242c8)
+        self.assertEqual(self.rf.read('W0'), 0x414242c8)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x51525384')
+    @itest('add w0, w1, w2, sxtb #4')
+    def test_add_ext_reg_sxtb4_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41423b84)
+        self.assertEqual(self.rf.read('W0'), 0x41423b84)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x51528354')
+    @itest('add w0, w1, w2, sxth')
+    def test_add_ext_reg_sxth32(self):
+        self.assertEqual(self.rf.read('X0'), 0x4141c698)
+        self.assertEqual(self.rf.read('W0'), 0x4141c698)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x51528354')
+    @itest('add w0, w1, w2, sxth #0')
+    def test_add_ext_reg_sxth0_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x4141c698)
+        self.assertEqual(self.rf.read('W0'), 0x4141c698)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x51528354')
+    @itest('add w0, w1, w2, sxth #4')
+    def test_add_ext_reg_sxth4_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x413a7884)
+        self.assertEqual(self.rf.read('W0'), 0x413a7884)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x81525354')
+    @itest('add w0, w1, w2, sxtw')
+    def test_add_ext_reg_sxtw32(self):
+        self.assertEqual(self.rf.read('X0'), 0xc2949698)
+        self.assertEqual(self.rf.read('W0'), 0xc2949698)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x81525354')
+    @itest('add w0, w1, w2, sxtw #0')
+    def test_add_ext_reg_sxtw0_32(self):
+        self.assertEqual(self.rf.read('X0'), 0xc2949698)
+        self.assertEqual(self.rf.read('W0'), 0xc2949698)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x81525354')
+    @itest('add w0, w1, w2, sxtw #4')
+    def test_add_ext_reg_sxtw4_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x56677884)
+        self.assertEqual(self.rf.read('W0'), 0x56677884)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x81525354')
+    @itest('add w0, w1, w2, sxtx')
+    def test_add_ext_reg_sxtx32(self):
+        self.assertEqual(self.rf.read('X0'), 0xc2949698)
+        self.assertEqual(self.rf.read('W0'), 0xc2949698)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x81525354')
+    @itest('add w0, w1, w2, sxtx #0')
+    def test_add_ext_reg_sxtx0_32(self):
+        self.assertEqual(self.rf.read('X0'), 0xc2949698)
+        self.assertEqual(self.rf.read('W0'), 0xc2949698)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x81525354')
+    @itest('add w0, w1, w2, sxtx #4')
+    def test_add_ext_reg_sxtx4_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x56677884)
+        self.assertEqual(self.rf.read('W0'), 0x56677884)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x81525354')
+    @itest('add w0, w1, w2, lsl #0')
+    def test_add_ext_reg_lsl0_32(self):
+        self.assertEqual(self.rf.read('X0'), 0xc2949698)
+        self.assertEqual(self.rf.read('W0'), 0xc2949698)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x81525354')
+    @itest('add w0, w1, w2, lsl #4')
+    def test_add_ext_reg_lsl4_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x56677884)
+        self.assertEqual(self.rf.read('W0'), 0x56677884)
+
+    # 64-bit.
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x51525384')
+    @itest('add x0, x1, w2, uxtb')
+    def test_add_ext_reg_uxtb64(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344454647cc)
+        self.assertEqual(self.rf.read('W0'), 0x454647cc)
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x51525384')
+    @itest('add x0, x1, w2, uxtb #0')
+    def test_add_ext_reg_uxtb0_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344454647cc)
+        self.assertEqual(self.rf.read('W0'), 0x454647cc)
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x51525384')
+    @itest('add x0, x1, w2, uxtb #4')
+    def test_add_ext_reg_uxtb4_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464f88)
+        self.assertEqual(self.rf.read('W0'), 0x45464f88)
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x51528354')
+    @itest('add x0, x1, w2, uxth')
+    def test_add_ext_reg_uxth64(self):
+        self.assertEqual(self.rf.read('X0'), 0x414243444546ca9c)
+        self.assertEqual(self.rf.read('W0'), 0x4546ca9c)
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x51528354')
+    @itest('add x0, x1, w2, uxth #0')
+    def test_add_ext_reg_uxth0_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x414243444546ca9c)
+        self.assertEqual(self.rf.read('W0'), 0x4546ca9c)
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x51528354')
+    @itest('add x0, x1, w2, uxth #4')
+    def test_add_ext_reg_uxth4_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344454e7c88)
+        self.assertEqual(self.rf.read('W0'), 0x454e7c88)
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x81525354')
+    @itest('add x0, x1, w2, uxtw')
+    def test_add_ext_reg_uxtw64(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344c6989a9c)
+        self.assertEqual(self.rf.read('W0'), 0xc6989a9c)
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x81525354')
+    @itest('add x0, x1, w2, uxtw #0')
+    def test_add_ext_reg_uxtw0_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344c6989a9c)
+        self.assertEqual(self.rf.read('W0'), 0xc6989a9c)
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x81525354')
+    @itest('add x0, x1, w2, uxtw #4')
+    def test_add_ext_reg_uxtw4_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434c5a6b7c88)
+        self.assertEqual(self.rf.read('W0'), 0x5a6b7c88)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x8152535455565758')
+    @itest('add x0, x1, x2, uxtx')
+    def test_add_ext_reg_uxtx64(self):
+        self.assertEqual(self.rf.read('X0'), 0xc29496989a9c9ea0)
+        self.assertEqual(self.rf.read('W0'), 0x9a9c9ea0)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x8152535455565758')
+    @itest('add x0, x1, x2, uxtx #0')
+    def test_add_ext_reg_uxtx0_64(self):
+        self.assertEqual(self.rf.read('X0'), 0xc29496989a9c9ea0)
+        self.assertEqual(self.rf.read('W0'), 0x9a9c9ea0)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x8152535455565758')
+    @itest('add x0, x1, x2, uxtx #4')
+    def test_add_ext_reg_uxtx4_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x566778899aabbcc8)
+        self.assertEqual(self.rf.read('W0'), 0x9aabbcc8)
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x51525384')
+    @itest('add x0, x1, w2, sxtb')
+    def test_add_ext_reg_sxtb64(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344454646cc)
+        self.assertEqual(self.rf.read('W0'), 0x454646cc)
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x51525384')
+    @itest('add x0, x1, w2, sxtb #0')
+    def test_add_ext_reg_sxtb0_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344454646cc)
+        self.assertEqual(self.rf.read('W0'), 0x454646cc)
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x51525384')
+    @itest('add x0, x1, w2, sxtb #4')
+    def test_add_ext_reg_sxtb4_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445463f88)
+        self.assertEqual(self.rf.read('W0'), 0x45463f88)
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x51528354')
+    @itest('add x0, x1, w2, sxth')
+    def test_add_ext_reg_sxth64(self):
+        self.assertEqual(self.rf.read('X0'), 0x414243444545ca9c)
+        self.assertEqual(self.rf.read('W0'), 0x4545ca9c)
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x51528354')
+    @itest('add x0, x1, w2, sxth #0')
+    def test_add_ext_reg_sxth0_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x414243444545ca9c)
+        self.assertEqual(self.rf.read('W0'), 0x4545ca9c)
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x51528354')
+    @itest('add x0, x1, w2, sxth #4')
+    def test_add_ext_reg_sxth4_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344453e7c88)
+        self.assertEqual(self.rf.read('W0'), 0x453e7c88)
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x81525354')
+    @itest('add x0, x1, w2, sxtw')
+    def test_add_ext_reg_sxtw64(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424343c6989a9c)
+        self.assertEqual(self.rf.read('W0'), 0xc6989a9c)
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x81525354')
+    @itest('add x0, x1, w2, sxtw #0')
+    def test_add_ext_reg_sxtw0_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424343c6989a9c)
+        self.assertEqual(self.rf.read('W0'), 0xc6989a9c)
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x81525354')
+    @itest('add x0, x1, w2, sxtw #4')
+    def test_add_ext_reg_sxtw4_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142433c5a6b7c88)
+        self.assertEqual(self.rf.read('W0'), 0x5a6b7c88)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x8152535455565758')
+    @itest('add x0, x1, x2, sxtx')
+    def test_add_ext_reg_sxtx64(self):
+        self.assertEqual(self.rf.read('X0'), 0xc29496989a9c9ea0)
+        self.assertEqual(self.rf.read('W0'), 0x9a9c9ea0)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x8152535455565758')
+    @itest('add x0, x1, x2, sxtx #0')
+    def test_add_ext_reg_sxtx0_64(self):
+        self.assertEqual(self.rf.read('X0'), 0xc29496989a9c9ea0)
+        self.assertEqual(self.rf.read('W0'), 0x9a9c9ea0)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x8152535455565758')
+    @itest('add x0, x1, x2, sxtx #4')
+    def test_add_ext_reg_sxtx4_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x566778899aabbcc8)
+        self.assertEqual(self.rf.read('W0'), 0x9aabbcc8)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x8152535455565758')
+    @itest('add x0, x1, x2, lsl #0')
+    def test_add_ext_reg_lsl0_64(self):
+        self.assertEqual(self.rf.read('X0'), 0xc29496989a9c9ea0)
+        self.assertEqual(self.rf.read('W0'), 0x9a9c9ea0)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x8152535455565758')
+    @itest('add x0, x1, x2, lsl #4')
+    def test_add_ext_reg_lsl4_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x566778899aabbcc8)
+        self.assertEqual(self.rf.read('W0'), 0x9aabbcc8)
+
+
     # ADD (immediate).
 
     # 32-bit.
