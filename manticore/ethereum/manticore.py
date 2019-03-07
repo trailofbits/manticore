@@ -598,6 +598,8 @@ class ManticoreEVM(ManticoreBase):
 
         if isinstance(jfile, io.IOBase):
             jfile = jfile.read()
+        elif isinstance(jfile, bytes):
+            jfile = str(jfile, 'utf-8')
         elif not isinstance(jfile, str):
             raise TypeError(f'source code bad type: {type(jfile).__name__}')
 
@@ -642,7 +644,7 @@ class ManticoreEVM(ManticoreBase):
         contract_account = self.create_contract(owner=owner, balance=balance, init=md._init_bytecode)
 
         if contract_account is None:
-            raise EthereumError("Failed to build contract %s" % contract_name_i)
+            raise EthereumError(f"Failed to build contract {contract_name}")
         self.metadata[int(contract_account)] = md
 
         if not self.count_running_states() or len(self.get_code(contract_account)) == 0:
