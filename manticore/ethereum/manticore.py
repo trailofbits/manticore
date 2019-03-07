@@ -604,7 +604,7 @@ class ManticoreEVM(ManticoreBase):
         truffle = json.loads(jfile)
         hashes = {}
         for item in truffle['abi']:
-            type = item['type']
+            item_type = item['type']
             if item_type in ('function'):
                 signature = SolidityMetadata.function_signature_for_name_and_inputs(item['name'], item['inputs'])
                 hashes[signature] = sha3.keccak_256(signature.encode()).hexdigest()[:8]
