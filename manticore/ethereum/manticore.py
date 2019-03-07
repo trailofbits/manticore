@@ -614,7 +614,6 @@ class ManticoreEVM(ManticoreBase):
                     if item['signature'] != f'0x{hashes[signature]}':
                         raise Exception(f"Something wrong with the sha3 of the method {signature} signature (a.k.a. the hash)")
 
-
         if contract_name is None:
             contract_name = truffle["contractName"]
 
@@ -625,7 +624,7 @@ class ManticoreEVM(ManticoreBase):
                 network_id = list(truffle['networks'].keys())[0]
         if network_id in truffle['networks']:
             temp_dict = truffle['networks'][network_id]['links']
-            links = dict( (k, int(v['address'],0)) for k,v in temp_dict.items())
+            links = dict((k, int(v['address'], 0)) for k, v in temp_dict.items())
         else:
             links = ()
 
