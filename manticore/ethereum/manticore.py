@@ -579,31 +579,29 @@ class ManticoreEVM(ManticoreBase):
         # FIXME this is more naive than reasonable.
         return ABI.deserialize(types, self.make_symbolic_buffer(32, name='INITARGS', avoid_collisions=True))
 
-    def json_create_contract(self, jfile, owner=None, name=None, contract_name=None, balance=0, address=None, args=(), gas=None, network_id=None):
+    def json_create_contract(self, jfile, owner=None, name=None, contract_name=None, balance=0, gas=None, network_id=None):
         """ Creates a solidity contract based on a truffle json artifact.
 
-            :param str jfile: truffle json artifact
+            :param jfile: truffle json artifact
+            :type jfile: str or IOBase
             :param owner: owner account (will be default caller in any transactions)
             :type owner: int or EVMAccount
             :param contract_name: Name of the contract to analyze (optional if there is a single one in the source code)
             :type contract_name: str
             :param balance: balance to be transferred on creation
             :type balance: int or BitVecVariable
-            :param address: the address for the new contract (optional)
-            :type address: int or EVMAccount
-            :param tuple args: constructor arguments
-            :param solc_bin: path to solc binary
-            :type solc_bin: str
-            :param solc_remaps: solc import remaps
-            :type solc_remaps: list of str
-            :param working_dir: working directory for solc compilation (defaults to current)
-            :type working_dir: str
             :param gas: gas budget for each contract creation needed (may be more than one if several related contracts defined in the solidity source)
             :type gas: int
+            :param network_id: Truffle network id to instantiate
             :rtype: EVMAccount
         """
+
+        if isinstance(jfile, io.IOBase):
+            jfile = jfile.read()
+        elif not isinstance(jfile, str):
+            raise TypeError(f'source code bad type: {type(jfile).__name__}')
+
         truffle = json.loads(jfile)
-        #(name, source_code, init_bytecode, runtime_bytecode, srcmap, srcmap_runtime, hashes, abi, warnings)
         hashes = {}
         for item in truffle['abi']:
             type = item['type']
@@ -641,17 +639,12 @@ class ManticoreEVM(ManticoreBase):
             srcmap_runtime = []
         abi = truffle['abi']
         md = SolidityMetadata(contract_name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, b'')
-        contract_account = self.create_contract(owner=owner, init=md._init_bytecode)
+        contract_account = self.create_contract(owner=owner, balance=balance, init=md._init_bytecode)
 
         if contract_account is None:
             raise EthereumError("Failed to build contract %s" % contract_name_i)
         self.metadata[int(contract_account)] = md
 
-        contract_account = self.create_contract(owner=owner, init=md._init_bytecode)
-
-        if contract_account is None:
-            raise EthereumError("Failed to build contract %s" % contract_name_i)
-        self.metadata[int(contract_account)] = md
         if not self.count_running_states() or len(self.get_code(contract_account)) == 0:
             return None
         return contract_account
