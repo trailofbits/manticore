@@ -29,4 +29,7 @@ def native_main(args, _logger):
         for file in args.files:
             initial_state.platform.add_symbolic_file(file)
 
-    m.run(procs=args.procs, should_profile=args.profile)
+    m.run()
+
+    for state in m.all_states:
+        m.generate_testcase(state)

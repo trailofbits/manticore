@@ -109,6 +109,9 @@ class StateBase(Eventful):
         # Events are lost in serialization and fork !!
         self.forward_events_from(self._platform)
 
+    def __repr__(self):
+        return f'<State object with id {self.id}>'
+
     # Fixme(felipe) change for with "state.cow_copy() as st_temp":.
     # This need to change. this is the center of ALL the problems. re. CoW
     def __enter__(self):
@@ -118,7 +121,7 @@ class StateBase(Eventful):
         self.platform.constraints = new_state.constraints
         new_state._input_symbols = list(self._input_symbols)
         new_state._context = copy.copy(self._context)
-
+        new_state.id = None
         self.copy_eventful_state(new_state)
 
         self._child = new_state
@@ -253,14 +256,14 @@ class StateBase(Eventful):
             vals = [self._solver.get_value(self._constraints, symbolic)]
         else:
             assert policy == 'ALL'
-            vals = solver.get_all_values(self._constraints, symbolic, maxcnt=maxcount, silent=True)
+            vals = self._solver.get_all_values(self._constraints, symbolic, maxcnt=maxcount, silent=True)
 
         return tuple(set(vals))
 
     @property
     def _solver(self):
-        from .smtlib import solver
-        return solver
+        from .smtlib import Z3Solver
+        return Z3Solver() #solver
 
     def migrate_expression(self, expression):
         if not issymbolic(expression):

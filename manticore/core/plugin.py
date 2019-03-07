@@ -185,7 +185,7 @@ class RecordSymbolicBranches(Plugin):
 
 class InstructionCounter(Plugin):
 
-    def will_terminate_state_callback(self, state, state_id, ex):
+    def will_terminate_state_callback(self, state, ex):
         if state is None:  # FIXME Can it be None?
             return
         state_instructions_count = state.context.get('instructions_count', 0)
@@ -211,7 +211,7 @@ class Visited(Plugin):
         super().__init__()
         self.coverage_file = coverage_file
 
-    def will_terminate_state_callback(self, state, state_id, ex):
+    def will_terminate_state_callback(self, state, ex):
         if state is None:
             return
         state_visited = state.context.get('visited_since_last_fork', set())
@@ -279,8 +279,8 @@ class ExamplePlugin(Plugin):
     def did_enqueue_state_callback(self, state, state_id):
         logger.info('did_enqueue_state %r %r', state, state_id)
 
-    def will_terminate_state_callback(self, state, state_id, exception):
-        logger.info('will_terminate_state %r %r %r', state, state_id, exception)
+    def will_terminate_state_callback(self, state, exception):
+        logger.info('will_terminate_state %r %r', state, exception)
 
     def will_generate_testcase_callback(self, state, testcase, message):
         logger.info('will_generate_testcase %r %r %r', state, testcase, message)

@@ -14,6 +14,7 @@
 # Once you Solver.check() it the status is changed to sat or unsat (or unknown+exception)
 # You can create new symbols operate on them. The declarations will be sent to the smtlib process when needed.
 # You can add new constraints. A new constraint may change the state from {None, sat} to {sat, unsat, unknown}
+import threading
 import collections
 import shlex
 import time
@@ -36,6 +37,7 @@ consts.add('timeout', default=240, description='Timeout, in seconds, for each Z3
 consts.add('memory', default=16384, description='Max memory for Z3 to use (in Megabytes)')
 consts.add('maxsolutions', default=10000, description='Maximum solutions to provide when solving for all values')
 consts.add('z3_bin', default='z3', description='Z3 binary to use')
+consts.add('defaultunsat', default=True, description='Consider solver timeouts as unsat core')
 
 
 # Regular expressions used by the solver
@@ -44,8 +46,7 @@ RE_OBJECTIVES_EXPR_VALUE = re.compile('\(objectives.*\((?P<expr>.*) (?P<value>\d
 RE_MIN_MAX_OBJECTIVE_EXPR_VALUE = re.compile('(?P<expr>.*?)\s+\|->\s+(?P<value>.*)', re.DOTALL)
 
 
-class Solver(metaclass=ABCMeta):
-    @abstractmethod
+class Solver():
     def __init__(self):
         pass
 
@@ -110,11 +111,6 @@ class Solver(metaclass=ABCMeta):
         else:
             return x, x
 
-
-# TODO/FIXME move this \/ This configuration should be registered as global config
-consider_unknown_as_unsat = True
-
-
 Version = collections.namedtuple('Version', 'major minor patch')
 
 
@@ -177,12 +173,13 @@ class Z3Solver(Solver):
             self._received_version = self._recv()
         key, version = shlex.split(self._received_version[1:-1])
         return Version(*map(int, version.split('.')))
-
+    _lock = threading.RLock()
     def _start_proc(self):
         """Spawns z3 solver process"""
         assert '_proc' not in dir(self) or self._proc is None
         try:
-            self._proc = Popen(shlex.split(self._command), stdin=PIPE, stdout=PIPE, bufsize=0, universal_newlines=True)
+            with Z3Solver._lock:
+                self._proc = Popen(shlex.split(self._command), stdin=PIPE, stdout=PIPE, bufsize=0, universal_newlines=True, close_fds=True)
         except OSError as e:
             print(e, "Probably too many cached expressions? visitors._cache...")
             # Z3 was removed from the system in the middle of operation
@@ -262,6 +259,7 @@ class Z3Solver(Solver):
         :param cmd: a SMTLIBv2 command (ex. (check-sat))
         """
         logger.debug('>%s', cmd)
+        #print (">",self._proc.stdin.name, threading.get_ident())
         try:
             self._proc.stdout.flush()
             self._proc.stdin.write(f'{cmd}\n')
@@ -304,7 +302,7 @@ class Z3Solver(Solver):
         logger.debug("Check took %s seconds (%s)", time.time() - start, status)
         if status not in ('sat', 'unsat', 'unknown'):
             raise SolverError(status)
-        if consider_unknown_as_unsat:
+        if consts.defaultunsat:
             if status == 'unknown':
                 logger.info('Found an unknown core, probably a solver timeout')
                 status = 'unsat'
@@ -542,5 +540,3 @@ class Z3Solver(Solver):
             return int(value, base)
         raise NotImplementedError("get_value only implemented for Bool and BitVec")
 
-
-solver = Z3Solver()

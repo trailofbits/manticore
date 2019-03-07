@@ -273,6 +273,32 @@ class MemoryStore(Store):
         return list(self._data)
 
 
+class SharedMemoryStore(Store):
+    """
+    An shared-memory (dict) Manticore workspace.
+
+    NOTE: This is mostly used for experimentation and testing functionality.
+    Can not be used with multiple workers!
+    """
+    store_type = 'shmem'
+
+    def __init__(self, uri=None):
+        self._data = {}
+        super().__init__(None)
+
+    def save_value(self, key, value):
+        self._data[key] = value
+
+    def load_value(self, key, binary=False):
+        return self._data.get(key)
+
+    def rm(self, key):
+        del self._data[key]
+
+    def ls(self, glob_str):
+        return list(self._data)
+
+
 class RedisStore(Store):
     """
     A redis-backed Manticore workspace

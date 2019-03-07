@@ -12,7 +12,7 @@ import tempfile
 
 from manticore.core.plugin import Plugin
 from manticore.core.smtlib import ConstraintSet, operators
-from manticore.core.smtlib import solver
+from manticore.core.smtlib import Z3Solver
 from manticore.core.smtlib.expression import BitVec
 from manticore.core.smtlib.visitors import to_constant
 from manticore.core.state import TerminateState
@@ -23,6 +23,8 @@ from manticore.ethereum.solidity import SolidityMetadata
 from manticore.platforms import evm
 from manticore.platforms.evm import EVMWorld, ConcretizeArgument, concretized_args, Return, Stop
 from manticore.utils.deprecated import ManticoreDeprecationWarning
+
+solver = Z3solver()
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 

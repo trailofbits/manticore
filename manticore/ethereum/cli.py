@@ -4,6 +4,7 @@ from .detectors import DetectInvalid, DetectIntegerOverflow, DetectUninitialized
     DetectExternalCallAndLeak, DetectEnvInstruction, DetectRaceCondition, DetectorClassification
 from .manticore import ManticoreEVM
 from .plugins import FilterFunctions, LoopDepthLimiter, VerboseTrace
+from ..utils.nointerrupt import WithKeyboardInterruptAs
 
 
 def get_detectors_classes():
@@ -41,37 +42,39 @@ def choose_detectors(args):
 
 
 def ethereum_main(args, logger):
-    m = ManticoreEVM(procs=args.procs, workspace_url=args.workspace)
+    m = ManticoreEVM(workspace_url=args.workspace)
+    with WithKeyboardInterruptAs(m.kill):
 
-    if args.verbose_trace:
-        m.register_plugin(VerboseTrace())
+        if args.verbose_trace:
+            m.register_plugin(VerboseTrace())
 
-    if args.limit_loops:
-        m.register_plugin(LoopDepthLimiter())
+        if args.limit_loops:
+            m.register_plugin(LoopDepthLimiter())
 
-    for detector in choose_detectors(args):
-        m.register_detector(detector())
+        for detector in choose_detectors(args):
+            m.register_detector(detector())
 
-    if args.avoid_constant:
-        # avoid all human level tx that has no effect on the storage
-        filter_nohuman_constants = FilterFunctions(regexp=r".*", depth='human', mutability='constant', include=False)
-        m.register_plugin(filter_nohuman_constants)
+        if args.avoid_constant:
+            # avoid all human level tx that has no effect on the storage
+            filter_nohuman_constants = FilterFunctions(regexp=r".*", depth='human', mutability='constant', include=False)
+            m.register_plugin(filter_nohuman_constants)
 
-    if m.plugins:
-        logger.info(f'Registered plugins: {", ".join(d.name for d in m.plugins)}')
+        if m.plugins:
+            logger.info(f'Registered plugins: {", ".join(d.name for d in m.plugins)}')
 
-    logger.info('Beginning analysis')
+        logger.info('Beginning analysis')
 
-    with m.shutdown_timeout():
-        m.multi_tx_analysis(args.argv[0], contract_name=args.contract, tx_limit=args.txlimit,
-                            tx_use_coverage=not args.txnocoverage, tx_send_ether=not args.txnoether,
-                            tx_account=args.txaccount, tx_preconstrain=args.txpreconstrain)
+        with m.kill_timeout():
+            m.multi_tx_analysis(args.argv[0], contract_name=args.contract, tx_limit=args.txlimit,
+                                tx_use_coverage=not args.txnocoverage, tx_send_ether=not args.txnoether,
+                                tx_account=args.txaccount, tx_preconstrain=args.txpreconstrain)
 
-    if not args.no_testcases:
-        m.finalize()
+        print (m._started, m._killed, m._ready_states, m._busy_states)
+        if not args.no_testcases:
+            m.finalize()
 
-    for detector in list(m.detectors):
-        m.unregister_detector(detector)
+        for detector in list(m.detectors):
+            m.unregister_detector(detector)
 
-    for plugin in list(m.plugins):
-        m.unregister_plugin(plugin)
+        for plugin in list(m.plugins):
+            m.unregister_plugin(plugin)

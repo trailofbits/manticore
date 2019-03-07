@@ -366,36 +366,33 @@ class ManticoreEVM(ManticoreBase):
         :param workspace_url: workspace folder name
         :param policy: scheduling priority
         """
-        self._accounts = dict()
-        self._serializer = PickleSerializer()
-
-        self._config_procs = procs
+        #self.subscribe('will_generate_testcase', self._generate_testcase_callback)
         # Make the constraint store
         constraints = ConstraintSet()
         # make the ethereum world state
         world = evm.EVMWorld(constraints)
         initial_state = State(constraints, world)
         super().__init__(initial_state, workspace_url=workspace_url, policy=policy)
+        self.subscribe('will_terminate_state', self._terminate_state_callback)
+        self.subscribe('did_evm_execute_instruction', self._did_evm_execute_instruction_callback)
+        self.subscribe('did_read_code', self._did_evm_read_code)
+        self.subscribe('on_symbolic_sha3', self._on_symbolic_sha3_callback)
+        self.subscribe('on_concrete_sha3', self._on_concrete_sha3_callback)
 
-        self.constraints = ConstraintSet()
+        self._accounts = dict()
+        self._serializer = PickleSerializer()
+
+        self._config_procs = procs
+        self.constraints = constraints
         self.detectors = {}
         self.metadata: Dict[int, SolidityMetadata] = {}
 
         # The following should go to manticore.context so we can use multiprocessing
-        self.context['ethereum'] = {}
-        self.context['ethereum']['_saved_states'] = set()
-        self.context['ethereum']['_final_states'] = set()
-        self.context['ethereum']['_completed_transactions'] = 0
-        self.context['ethereum']['_sha3_states'] = dict()
-        self.context['ethereum']['_known_sha3'] = set()
+        with self.locked_context('ethereum', dict) as context:
+            context['_completed_transactions'] = 0
+            context['_sha3_states'] = dict()
+            context['_known_sha3'] = set()
 
-        self._executor.subscribe('did_load_state', self._load_state_callback)
-        self._executor.subscribe('will_terminate_state', self._terminate_state_callback)
-        self._executor.subscribe('did_evm_execute_instruction', self._did_evm_execute_instruction_callback)
-        self._executor.subscribe('did_read_code', self._did_evm_read_code)
-        self._executor.subscribe('on_symbolic_sha3', self._on_symbolic_sha3_callback)
-        self._executor.subscribe('on_concrete_sha3', self._on_concrete_sha3_callback)
-        self.subscribe('will_generate_testcase', self._generate_testcase_callback)
 
     @property
     def world(self):
@@ -407,126 +404,14 @@ class ManticoreEVM(ManticoreBase):
         with self.locked_context('ethereum') as context:
             return context['_completed_transactions']
 
-    @property
-    def _running_state_ids(self):
-        """ IDs of the running states"""
-        with self.locked_context('ethereum') as context:
-            if self.initial_state is not None:
-                return (-1,) + tuple(context['_saved_states'])
-            else:
-                return tuple(context['_saved_states'])
-
-    @property
-    def _terminated_state_ids(self):
-        """ IDs of the terminated states """
-        with self.locked_context('ethereum') as context:
-            return tuple(context['_final_states'])
-
-    @property
-    def _all_state_ids(self):
-        """ IDs of the all states
-
-            Note: state with id -1 is already in memory and it is not backed on the storage
-        """
-        return self._running_state_ids + self._terminated_state_ids
-
-    @property
-    def running_states(self):
-        """
-        Iterates over running states giving the possibility to change state data.
-
-        The state data change must be done in a loop, e.g. `for state in running_states: ...`
-        as we re-save the state when the generator comes back to the function.
-
-        This means it is not possible to change the state used by Manticore with `states = list(m.running_states)`.
-        """
-        for state_id in self._running_state_ids:
-            state = self.load(state_id)
-            yield state
-            # Re-save the state in case the user changed its data
-            self.save(state, state_id=state_id)
-
-    @property
-    def terminated_states(self):
-        """
-        Iterates over the terminated states.
-
-        See also `running_states`.
-        """
-        for state_id in self._terminated_state_ids:
-            state = self.load(state_id)
-            yield state
-            # Re-save the state in case the user changed its data
-            self.save(state, state_id=state_id, final=True)
-
-    @property
-    def all_states(self):
-        """
-        Iterates over the all states (running and terminated)
-
-        See also `running_states`.
-        """
-        for state_id in self._all_state_ids:
-            state = self.load(state_id)
-            yield state
-            # Re-save the state in case the user changed its data
-            self.save(state, state_id=state_id, final=state_id in self._terminated_state_ids)
-
-    def count_states(self):
-        """ Total states count """
-        return len(self._all_state_ids)
-
-    def count_running_states(self):
-        """ Running states count """
-        return len(self._running_state_ids)
-
-    def count_terminated_states(self):
-        """ Terminated states count """
-        return len(self._terminated_state_ids)
-
-    def _terminate_state_id(self, state_id):
-        """ Manually terminates a states by state_id.
-            Moves the state from the running list into the terminated list
-        """
-
-        if state_id != -1:
-            # Move state from running to final
-            with self.locked_context('ethereum') as eth_context:
-                saved_states = eth_context['_saved_states']
-                final_states = eth_context['_final_states']
-                if state_id in saved_states:
-                    saved_states.remove(state_id)
-                    final_states.add(state_id)
-                    eth_context['_saved_states'] = saved_states  # TODO This two may be not needed in py3?
-                    eth_context['_final_states'] = final_states
-        else:
-            assert state_id == -1
-            state_id = self.save(self._initial_state, final=True)
-            self._initial_state = None
-        return state_id
-
-    def _revive_state_id(self, state_id):
-        """ Manually revive a state by state_id.
-            Moves the state from the final list into the running list
-        """
-
-        # Move state from final to running
-        if state_id != -1:
-            with self.locked_context('ethereum') as eth_context:
-                saved_states = eth_context['_saved_states']
-                final_states = eth_context['_final_states']
-                if state_id in final_states:
-                    final_states.remove(state_id)
-                    saved_states.add(state_id)
-                    eth_context['_saved_states'] = saved_states
-                    eth_context['_final_states'] = final_states
-        return state_id
-
     # deprecate this 5 in favor of for sta in m.all_states: do stuff?
 
     def get_world(self, state_id=None):
         """ Returns the evm world of `state_id` state. """
-        state = self.load(state_id)
+        if state_id is None:
+            state_id = self._ready_states[0]
+
+        state = self._load(state_id)
         if state is None:
             return None
         else:
@@ -640,8 +525,11 @@ class ManticoreEVM(ManticoreBase):
                 for lib_name in e.lib_names:
                     if lib_name not in deps:
                         contract_names.append(lib_name)
+            except Exception:
+                self.kill()
+                raise
 
-        if not self.count_running_states() or len(self.get_code(contract_account)) == 0:
+        if not self.count_ready_states() or len(self.get_code(contract_account)) == 0:
             return None
         return contract_account
 
@@ -649,7 +537,7 @@ class ManticoreEVM(ManticoreBase):
         # type forgiveness:
         address = int(address)
         # get all nonces for states containing this address:
-        nonces = set(state.platform.get_nonce(address) for state in self.running_states if address in state.platform)
+        nonces = set(state.platform.get_nonce(address) for state in self.ready_states if address in state.platform)
         if not nonces:
             raise NoAliveStates("There are no alive states containing address %x" % address)
         elif len(nonces) != 1:
@@ -671,7 +559,7 @@ class ManticoreEVM(ManticoreBase):
             :param gas: gas budget for the creation/initialization of the contract
             :rtype: EVMAccount
         """
-        if not self.count_running_states():
+        if not self.count_ready_states():
             raise NoAliveStates
 
         nonce = self.get_nonce(owner)
@@ -710,7 +598,7 @@ class ManticoreEVM(ManticoreBase):
     def _all_addresses(self):
         """ Returns all addresses in all running states """
         ret = set()
-        for state in self.running_states:
+        for state in self.ready_states:
             ret |= set(state.platform.accounts)
         return ret
 
@@ -749,7 +637,7 @@ class ManticoreEVM(ManticoreBase):
             :return: an EVMAccount
         """
         # Need at least one state where to apply this
-        if not self.count_running_states():
+        if not self.count_ready_states():
             raise NoAliveStates
 
         # Name check
@@ -785,7 +673,7 @@ class ManticoreEVM(ManticoreBase):
         # To avoid going full crazy we maintain a global list of addresses
         # Different states may CREATE a different set of accounts.
         # Accounts created by a human have the same address in all states.
-        for state in self.running_states:
+        for state in self.ready_states:
             world = state.platform
 
             if '_pending_transaction' in state.context:
@@ -887,15 +775,15 @@ class ManticoreEVM(ManticoreBase):
         assert caller is not None
 
         # Transactions (like everything else) need at least one running state
-        if not self.count_running_states():
+        if not self.count_ready_states():
             raise NoAliveStates
 
         # To avoid going full crazy, we maintain a global list of addresses
-        for state in self.running_states:
+        for state in self.ready_states:
             world = state.platform
 
-            if '_pending_transaction' in state.context:
-                raise EthereumError("This is bad. It should not be a pending transaction")
+            #if '_pending_transaction' in state.context:
+            #    raise EthereumError("This is bad. It should not be a pending transaction")
 
             # Choose an address here, because it will be dependent on the caller's nonce in this state
             if address is None:
@@ -918,11 +806,11 @@ class ManticoreEVM(ManticoreBase):
                     # Address already used
                     raise EthereumError("This is bad. Same address is used for different contracts in different states")
 
-            state.context['_pending_transaction'] = (sort, caller_migrated, address_migrated, value_migrated, data_migrated, gaslimit, price)
+            state.platform.start_transaction(sort=sort, address=address_migrated, price=price, data=data_migrated, caller=caller_migrated, value=value_migrated, gas=gaslimit)
 
         # run over potentially several states and
         # generating potentially several others
-        self.run(procs=self._config_procs)
+        self.run()
 
         return address
 
@@ -974,7 +862,6 @@ class ManticoreEVM(ManticoreBase):
                           tx_send_ether=True, tx_account="attacker", tx_preconstrain=False, args=None):
         owner_account = self.create_account(balance=1000, name='owner')
         attacker_account = self.create_account(balance=1000, name='attacker')
-
         # Pretty print
         logger.info("Starting symbolic create contract")
 
@@ -989,6 +876,7 @@ class ManticoreEVM(ManticoreBase):
         elif tx_account == "combo1":
             tx_account = [owner_account, attacker_account]
         else:
+            self.kill()
             raise EthereumError('The account to perform the symbolic exploration of the contract should be "attacker", "owner" or "combo1"')
 
         if contract_account is None:
@@ -998,7 +886,7 @@ class ManticoreEVM(ManticoreBase):
         prev_coverage = 0
         current_coverage = 0
         tx_no = 0
-        while (current_coverage < 100 or not tx_use_coverage) and not self.is_shutdown():
+        while (current_coverage < 100 or not tx_use_coverage) and not self.is_killed():
             try:
                 logger.info("Starting symbolic transaction: %d", tx_no)
 
@@ -1018,7 +906,7 @@ class ManticoreEVM(ManticoreBase):
                                  address=contract_account,
                                  data=symbolic_data,
                                  value=value)
-                logger.info("%d alive states, %d terminated states", self.count_running_states(), self.count_terminated_states())
+                logger.info("%d alive states, %d terminated states", self.count_ready_states(), self.count_terminated_states())
             except NoAliveStates:
                 break
 
@@ -1038,80 +926,44 @@ class ManticoreEVM(ManticoreBase):
             tx_no += 1
 
     def run(self, **kwargs):
-        """ Run any pending transaction on any running state """
-        # Check if there is a pending transaction
-        with self.locked_context('ethereum') as context:
-            # there are no states added to the executor queue
-            assert len(self._executor.list()) == 0
-            for state_id in context['_saved_states']:
-                self._executor.put(state_id)
-            context['_saved_states'] = set()
+        # Ethereum can have several sequential runs each for a different human 
+        # transaction. Each human transaction post a tx over all READY states.
+        # Some states will end in a REVERT or a failed TX ultimatelly changing
+        # very little state. Only the gas spent (and perhaps the nonce) will change
+        # in the state after the attempted and failed tx. These states are not 
+        # considered for exploration in the next human tx/run
 
-        # A callback will use _pending_transaction and issue the transaction
-        # in each state (see load_state_callback)
+        # To differentiate the terminated sucessful terminated states from the 
+        # reverted (or not very interesting) ManticoreEVM uses another list:
+        # saved_states
+
+        # At the begining of a human tx/run it should not be any saved state 
+        with self.locked_context('ethereum.saved_states', list) as saved_states:
+            if saved_states:
+                raise Exception("ethereum.saved_states should be empty")
+
+        # Every state.world has its pending_transaction filled. The run will 
+        # process it and potentially generate several READY and.or TERMINATED states.
         super().run(**kwargs)
 
-        with self.locked_context('ethereum') as context:
-            if len(context['_saved_states']) == 1:
-                self._initial_state = self._executor._workspace.load_state(context['_saved_states'].pop(), delete=True)
-                self._executor.forward_events_from(self._initial_state, True)
-                context['_saved_states'] = set()
-                assert self._running_state_ids == (-1,)
+        # The run may have finished be timeput/cancel or by state exaustation
+        # At this point we potentially have some READY states and some TERMINATED states
+        # No busy states though
 
-    def save(self, state, state_id=None, final=False):
-        """ Save a state in secondary storage and add it to running or final lists
 
-            :param state: A manticore State
-            :param state_id: if not None force state_id (overwrite)
-            :param final: True if state is final
-            :returns: a state id
-        """
-        # If overwriting then the state_id must be known
-        if state_id is not None:
-            if state_id not in self._all_state_ids:
-                raise EthereumError("Trying to overwrite unknown state_id")
-            with self.locked_context('ethereum') as context:
-                context['_final_states'].discard(state_id)
-                context['_saved_states'].discard(state_id)
+        #If there are ready states still then it was a paused execution
+        assert not self._ready_states or self.is_stopped()
+        # ManticoreEthereum decided at terminate_state_callback wich state is 
+        # ready for next run and saved them at the context item 
+        # 'ethereum.saved_states'
+        # Move successfully terminated states to ready states
+        with self.locked_context('ethereum.saved_states', list) as saved_states:
+            while saved_states:
+                state_id = saved_states.pop()
+                assert state_id in self._terminated_states
+                self._terminated_states.remove(state_id)
+                self._ready_states.append(state_id)
 
-        if state_id != -1:
-            # save the state to secondary storage
-            state_id = self._executor._workspace.save_state(state, state_id=state_id)
-
-            with self.locked_context('ethereum') as context:
-                if final:
-                    # Keep it on a private list
-                    context['_final_states'].add(state_id)
-                else:
-                    # Keep it on a private list
-                    context['_saved_states'].add(state_id)
-        return state_id
-
-    def load(self, state_id=None):
-        """ Load one of the running or final states.
-
-            :param state_id: If None it assumes there is a single running state
-            :type state_id: int or None
-        """
-        state = None
-        if state_id is None:
-            #a single state was assumed
-            state_count = self.count_running_states()
-            if state_count == 1:
-                #Get the ID of the single running state
-                state_id = self._running_state_ids[0]
-            elif state_count == 0:
-                raise NoAliveStates
-            else:
-                raise EthereumError("More than one state running; you must specify a state id.")
-
-        if state_id == -1:
-            state = self.initial_state
-        else:
-            state = self._executor._workspace.load_state(state_id, delete=False)
-            #froward events from newly loaded object
-            self._executor.forward_events_from(state, True)
-        return state
 
     # Callbacks
     def _on_symbolic_sha3_callback(self, state, data, known_hashes):
@@ -1176,7 +1028,7 @@ class ManticoreEVM(ManticoreBase):
             known_sha3.add((buf, value))
             ethereum_context['_known_sha3'] = known_sha3
 
-    def _terminate_state_callback(self, state, state_id, e):
+    def _terminate_state_callback(self, state, e):
         """ INTERNAL USE
             Every time a state finishes executing the last transaction, we save it in
             our private list
@@ -1185,12 +1037,12 @@ class ManticoreEVM(ManticoreBase):
             #do nothing
             return
         world = state.platform
+
         state.context['last_exception'] = e
-        e.testcase = False  # Do not generate a testcase file
+        e.testcase = False # Do not generate a testcase file
 
         if not world.all_transactions:
             logger.debug("Something went wrong: search terminated in the middle of an ongoing tx")
-            self.save(state, final=True)
             return
 
         tx = world.all_transactions[-1]
@@ -1209,43 +1061,26 @@ class ManticoreEVM(ManticoreBase):
         #Human tx that ends in this wont modify the storage so finalize and
         # generate a testcase. FIXME This should be configurable as REVERT and
         # THROW; it actually changes the balance and nonce? of some accounts
+
         if tx.result in {'SELFDESTRUCT', 'REVERT', 'THROW', 'TXERROR'}:
-            self.save(state, final=True)
+            pass
         elif tx.result in {'RETURN', 'STOP'}:
             # if not a revert, we save the state for further transactions
-            self.save(state)  # Add to running states
+            with self.locked_context('ethereum.saved_states', list) as saved_states:
+                saved_states.append(state.id)
+
         else:
             logger.debug("Exception in state. Discarding it")
 
     #Callbacks
-    def _load_state_callback(self, state, state_id):
-        """ INTERNAL USE
-            If a state was just loaded from storage, we do the pending transaction
-        """
-        if '_pending_transaction' not in state.context:
-            return
-        world = state.platform
-        ty, caller, address, value, data, gaslimit, price = state.context['_pending_transaction']
-        del state.context['_pending_transaction']
-
-        if ty == 'CALL':
-            world.transaction(address=address, caller=caller, data=data, value=value, price=price, gas=gaslimit)
-        else:
-            assert ty == 'CREATE'
-            world.create_contract(caller=caller, address=address, balance=value, init=data, price=price, gas=gaslimit)
-
     def _did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
         """ INTERNAL USE """
         #logger.debug("%s", state.platform.current_vm)
         #TODO move to a plugin
         at_init = state.platform.current_transaction.sort == 'CREATE'
-        if at_init:
-            coverage_context_name = 'init_coverage'
-        else:
-            coverage_context_name = 'runtime_coverage'
-
+        coverage_context_name = 'evm.coverage'
         with self.locked_context(coverage_context_name, set) as coverage:
-            coverage.add((state.platform.current_vm.address, instruction.pc))
+            coverage.add((state.platform.current_vm.address, instruction.pc, at_init))
 
         state.context.setdefault('evm.trace', []).append((state.platform.current_vm.address, instruction.pc, at_init))
 
@@ -1292,7 +1127,7 @@ class ManticoreEVM(ManticoreBase):
 
     @property
     def workspace(self):
-        return self._executor._workspace._store.uri
+        return self._workspace._store.uri
 
     def generate_testcase(self, state, message='', only_if=None, name='user'):
         """
@@ -1347,16 +1182,16 @@ class ManticoreEVM(ManticoreBase):
             output.write('\n')
         return output.getvalue()
 
-    def _generate_testcase_callback(self, state, testcase, message):
+    def generate_testcase(self, state, message):
         """
         Create a serialized description of a given state.
         :param state: The state to generate information about
         :param message: Accompanying message
         """
-        # workspace should not be responsible for formating the output
-        # each object knows its secrets, and each class should be able to report its
-        # final state
-        #super()._generate_testcase_callback(state, name, message)
+        # FIXME. workspace should not be responsible for formating the output
+        # each object knows its secrets, and each class should be able to report
+        # its final state
+        testcase = super().generate_testcase(state, message)
         # TODO(mark): Refactor ManticoreOutput to let the platform be more in control
         #  so this function can be fully ported to EVMWorld.generate_workspace_files.
         blockchain = state.platform
@@ -1430,8 +1265,8 @@ class ManticoreEVM(ManticoreBase):
         with testcase.open_stream('constraints') as smt_summary:
             smt_summary.write(str(state.constraints))
 
-        with testcase.open_stream('pkl', binary=True) as statef:
-            self._serializer.serialize(state, statef)
+        #with testcase.open_stream('pkl', binary=True) as statef:
+        #    self._serializer.serialize(state, statef)
 
         trace = state.context.get('evm.trace')
         if trace:
@@ -1461,22 +1296,25 @@ class ManticoreEVM(ManticoreBase):
                     global_findings.add((address, pc, finding, at_init))
         return global_findings
 
+
+    @ManticoreBase.at_not_running
     def finalize(self):
         """
         Terminate and generate testcases for all currently alive states (contract states that cleanly executed
         to a STOP or RETURN in the last symbolic transaction).
         """
-        logger.debug("Finalizing %d states.", self.count_states())
+        self.kill()
+        for w in self._workers:
+            w.join()
 
+        logger.debug("Finalizing %d states.", self.count_states())
         def finalizer(state_id):
-            state_id = self._terminate_state_id(state_id)
-            st = self.load(state_id)
+            st = self._load(state_id)
             logger.debug("Generating testcase for state_id %d", state_id)
 
             last_tx = st.platform.last_transaction
             message = last_tx.result if last_tx else 'NO STATE RESULT (?)'
-
-            self._publish_generate_testcase(st, message=message)
+            self.generate_testcase(st, message=message)
 
         def worker_finalize(q):
             try:
@@ -1486,12 +1324,9 @@ class ManticoreEVM(ManticoreBase):
                 pass
 
         q = Queue()
-        for state_id in self._all_state_ids:
+        for state_id in self._all_states:
             #we need to remove -1 state before forking because it may be in memory
-            if state_id == -1:
-                finalizer(-1)
-            else:
-                q.put(state_id)
+            q.put(state_id)
 
         report_workers = []
         for _ in range(self._config_procs):
@@ -1581,10 +1416,9 @@ class ManticoreEVM(ManticoreBase):
                         f.write('0x%x\n' % o)
 
         # delete actual streams from storage
-        for state_id in self._all_state_ids:
+        for state_id in self._all_states:
             # state_id -1 is always only on memory
-            if state_id != -1:
-                self._executor._workspace.rm_state(state_id)
+            self._remove(state_id)
 
         # clean up lists
         with self.locked_context('ethereum') as eth_context:
@@ -1620,7 +1454,4 @@ class ManticoreEVM(ManticoreBase):
         return self.__str__()
 
     def __str__(self):
-        return "<ManticoreEVM | Alive States: {}; Terminated States: {}>".format(
-            self.count_running_states(),
-            self.count_terminated_states()
-        )
+        return f"<ManticoreEVM | Alive States: {self.count_ready_states()}; Running States: {self.count_busy_states()} Terminated States: {self.count_terminated_states()}>"

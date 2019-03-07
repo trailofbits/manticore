@@ -67,10 +67,6 @@ def parse_arguments():
                         help=("Search policy. random|adhoc|uncovered|dicount"
                               "|icount|syscount|depth. (use + (max) or - (min)"
                               " to specify order. e.g. +random)"))
-    parser.add_argument('--profile', action='store_true',
-                        help='Enable profiling mode.')
-    parser.add_argument('--procs', type=int, default=1,
-                        help='Number of parallel processes to spawn')
     parser.add_argument('argv', type=str, nargs='*', default=[],
                         help="Path to program, and arguments ('+' in arguments indicates symbolic byte).")
     parser.add_argument('-v', action='count', default=1,
@@ -155,9 +151,6 @@ def parse_arguments():
     config.add_config_vars_to_argparse(config_flags)
 
     parsed = parser.parse_args(sys.argv[1:])
-    if parsed.procs <= 0:
-        parsed.procs = 1
-
     config.process_config_values(parser, parsed)
 
     if not parsed.argv:

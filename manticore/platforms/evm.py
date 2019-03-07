@@ -8,7 +8,7 @@ from functools import wraps
 from typing import List, Set, Tuple, Union
 from ..utils.helpers import issymbolic, get_taints, taint_with, istainted
 from ..platforms.platform import *
-from ..core.smtlib import solver, BitVec, Array, ArrayProxy, Operators, Constant, ArrayVariable, ArrayStore, BitVecConstant, translate_to_smtlib, to_constant, simplify
+from ..core.smtlib import Z3Solver, BitVec, Array, ArrayProxy, Operators, Constant, ArrayVariable, ArrayStore, BitVecConstant, translate_to_smtlib, to_constant, simplify
 from ..core.state import Concretize, TerminateState
 from ..utils.event import Eventful
 from ..utils import config
@@ -457,7 +457,7 @@ class EVM(Eventful):
                          'evm_read_memory',
                          'evm_write_memory',
                          'evm_read_code',
-                         'decode_instruction', 'execute_instruction', 'concrete_sha3', 'symbolic_sha3'}
+                         'decode_instruction', 'concrete_sha3', 'symbolic_sha3'}
 
     class transact:
         def __init__(self, pre=None, pos=None, doc=None):
@@ -499,6 +499,7 @@ class EVM(Eventful):
 
         def pos(self, pos):
             return type(self)(self._pre, pos)
+
 
     def __init__(self, constraints, address, data, caller, value, bytecode, world=None, gas=210000, **kwargs):
         """
@@ -587,7 +588,6 @@ class EVM(Eventful):
         self._used_calldata_size = 0
         self._calldata_size = len(self.data)
         self._valid_jmpdests = set()
-
 
     @property
     def bytecode(self):
@@ -793,7 +793,7 @@ class EVM(Eventful):
             if not issymbolic(self._gas) and not issymbolic(fee):
                 return (self._gas - fee >= 0,)
             else:
-                return solver.get_all_values(self.constraints, Operators.UGT(self._gas, fee))
+                return Z3Solver().get_all_values(self.constraints, Operators.UGT(self._gas, fee))
         
         # This configuration variable allows the user to control and perhaps relax the gas calculation
         # pedantic: gas is faithfully accounted and checked at instruction level. State may get forked in OOG/NoOOG
@@ -833,7 +833,7 @@ class EVM(Eventful):
             # Try not to OOG. If it may be enough gas we ignore the OOG case.
             # A constraint is added to assert the gas is enough and the OOG state is ignored.
             # explore only when there is enough gas if possible
-            if solver.can_be_true(self.constraints, Operators.UGT(self.gas, fee)):
+            if Z3Solver().can_be_true(self.constraints, Operators.UGT(self.gas, fee)):
                 self.constraints.add(Operators.UGT(self.gas, fee))
             else:
                 logger.debug(f"Not enough gas for instruction {self.instruction.name} at 0x{self.pc:x}")
@@ -842,7 +842,7 @@ class EVM(Eventful):
             # OOG soon. If it may NOT be enough gas we ignore the normal case.
             # A constraint is added to assert the gas is NOT enough and the other state is ignored.
             # explore only when there is enough gas if possible
-            if solver.can_be_true(self.constraints, Operators.ULE(self.gas, fee)):
+            if Z3Solver().can_be_true(self.constraints, Operators.ULE(self.gas, fee)):
                 self.constraints.add(Operators.ULE(self.gas, fee))
                 raise NotEnoughGas()
         else:
@@ -923,7 +923,6 @@ class EVM(Eventful):
             if not self._published_pre_instruction_events:
                 self._published_pre_instruction_events = True
                 self._publish('will_decode_instruction', self.pc)
-                self._publish('will_execute_instruction', self.pc, self.instruction)
                 self._publish('will_evm_execute_instruction', self.instruction, self._top_arguments())
 
             pc = self.pc
@@ -965,7 +964,7 @@ class EVM(Eventful):
         """
         should_check_jumpdest = self._check_jumpdest
         if issymbolic(should_check_jumpdest):
-            should_check_jumpdest_solutions = solver.get_all_values(self.constraints, should_check_jumpdest)
+            should_check_jumpdest_solutions = Z3Solver().get_all_values(self.constraints, should_check_jumpdest)
             if len(should_check_jumpdest_solutions) != 1:
                 raise EthereumError("Conditional not concretized at JMPDEST check")
             should_check_jumpdest = should_check_jumpdest_solutions[0]
@@ -988,7 +987,6 @@ class EVM(Eventful):
                 self.pc += last_instruction.size
             self._push_results(last_instruction, result)
         self._publish('did_evm_execute_instruction', last_instruction, last_arguments, result)
-        self._publish('did_execute_instruction', last_pc, self.pc, last_instruction)
         self._checkpoint_data = None
         self._published_pre_instruction_events = False
 
@@ -1285,7 +1283,7 @@ class EVM(Eventful):
                 concrete_data.append(simplified.value)
             else:
                 #simplify by solving. probably means that we need to improve simplification
-                solutions = solver.get_all_values(self.constraints, simplified, 2, silent=True)
+                solutions = Z3Solver().get_all_values(self.constraints, simplified, 2, silent=True)
                 if len(solutions) != 1:
                     break
                 concrete_data.append(solutions[0])
@@ -1354,7 +1352,7 @@ class EVM(Eventful):
         """Get input data of current environment"""
 
         if issymbolic(offset):
-            if solver.can_be_true(self._constraints, offset == self._used_calldata_size):
+            if Z3Solver().can_be_true(self._constraints, offset == self._used_calldata_size):
                 self.constraints.add(offset == self._used_calldata_size)
             raise ConcretizeArgument(1, policy='SAMPLED')
 
@@ -1393,12 +1391,12 @@ class EVM(Eventful):
         """Copy input data in current environment to memory"""
 
         if issymbolic(size):
-            if solver.can_be_true(self._constraints, size <= len(self.data) + 32):
+            if Z3Solver().can_be_true(self._constraints, size <= len(self.data) + 32):
                 self.constraints.add(size <= len(self.data) + 32)
             raise ConcretizeArgument(3, policy='SAMPLED')
 
         if issymbolic(data_offset):
-            if solver.can_be_true(self._constraints, data_offset == self._used_calldata_size):
+            if Z3Solver().can_be_true(self._constraints, data_offset == self._used_calldata_size):
                 self.constraints.add(data_offset == self._used_calldata_size)
             raise ConcretizeArgument(2, policy='SAMPLED')
 
@@ -1430,7 +1428,7 @@ class EVM(Eventful):
         self._consume(copyfee)
 
         if issymbolic(size):
-            max_size = solver.max(self.constraints, size)
+            max_size = Z3Solver().max(self.constraints, size)
         else:
             max_size = size
 
@@ -1818,7 +1816,7 @@ class EVM(Eventful):
         #FIXME for on the known addresses
         if issymbolic(recipient):
             logger.info("Symbolic recipient on self destruct")
-            recipient = solver.get_value(self.constraints, recipient)
+            recipient = Z3Solver().get_value(self.constraints, recipient)
 
         if recipient not in self.world:
             self.world.create_account(address=recipient)
@@ -2362,6 +2360,7 @@ class EVMWorld(Platform):
         return new_address
 
     def execute(self):
+
         self._process_pending_transaction()
         if self.current_vm is None:
             raise TerminateState("Trying to execute an empty transaction", testcase=False)
@@ -2459,7 +2458,7 @@ class EVMWorld(Platform):
         self.start_transaction('CALL', address, price=price, data=data, caller=caller, value=value, gas=gas)
         self._process_pending_transaction()
 
-    def start_transaction(self, sort, address, price=None, data=None, caller=None, value=0, gas=2300):
+    def start_transaction(self, sort, address, *,price=None, data=None, caller=None, value=0, gas=2300):
         """
         Initiate a transaction
         :param sort: the type of transaction. CREATE or CALL or DELEGATECALL
@@ -2557,7 +2556,7 @@ class EVMWorld(Platform):
         if not failed:
             src_balance = self.get_balance(caller)
             enough_balance = Operators.UGE(src_balance, value)
-            enough_balance_solutions = solver.get_all_values(self._constraints, enough_balance)
+            enough_balance_solutions = Z3Solver().get_all_values(self._constraints, enough_balance)
 
             if set(enough_balance_solutions) == {True, False}:
                 raise Concretize('Forking on available funds',
@@ -2592,7 +2591,7 @@ class EVMWorld(Platform):
         if last_tx:
             at_runtime = last_tx.sort != 'CREATE'
             address, offset, at_init = state.context['evm.trace'][-1]
-            assert at_runtime != at_init
+            assert not last_tx.result is None or at_runtime != at_init
 
             #Last instruction if last tx was valid
             if str(state.context['last_exception']) != 'TXERROR':
@@ -2630,7 +2629,7 @@ class EVMWorld(Platform):
 
                 try:
                     while True:
-                        a_index = solver.get_value(temp_cs, index)
+                        a_index = Z3Solver().get_value(temp_cs, index)
                         all_used_indexes.append(a_index)
 
                         temp_cs.add(storage.get(a_index) != 0)

@@ -32,11 +32,11 @@ class Detector(Plugin):
         return self.__class__.__name__.split('.')[-1]
 
     def get_findings(self, state):
-        return state.context.setdefault('{:s}.findings'.format(self.name), set())
+        return state.context.setdefault('{:s}.findings'.format(self.name), list())
 
     @contextmanager
     def locked_global_findings(self):
-        with self.manticore.locked_context('{:s}.global_findings'.format(self.name), set) as global_findings:
+        with self.manticore.locked_context('{:s}.global_findings'.format(self.name), list) as global_findings:
             yield global_findings
 
     @property
