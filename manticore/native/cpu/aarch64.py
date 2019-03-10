@@ -376,6 +376,143 @@ class Aarch64Cpu(Cpu):
     # XXX: Use masking when writing to the destination register?  Avoiding this
     # for now, but the assert in the 'write' method should catch such cases.
 
+    def _add_adds_extended_register(cpu, res_op, reg_op1, reg_op2, flags):
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_op1.type is cs.arm64.ARM64_OP_REG
+        assert reg_op2.type is cs.arm64.ARM64_OP_REG
+
+        insn_rx  = '[01]'     # sf
+        insn_rx += '0'        # op
+        if flags:
+            insn_rx += '1'    # S
+        else:
+            insn_rx += '0'    # S
+        insn_rx += '01011'
+        insn_rx += '00'
+        insn_rx += '1'
+        insn_rx += '[01]{5}'  # Rm
+        insn_rx += '[01]{3}'  # option
+        insn_rx += '[01]{3}'  # imm3
+        insn_rx += '[01]{5}'  # Rn
+        insn_rx += '[01]{5}'  # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        reg1 = reg_op1.read()
+        reg2 = reg_op2.read()
+
+        if reg_op2.is_extended():
+            ext = reg_op2.op.ext
+
+            if ext == cs.arm64.ARM64_EXT_UXTB:
+                reg2 = Operators.EXTRACT(reg2, 0, 8)
+
+            elif ext == cs.arm64.ARM64_EXT_UXTH:
+                reg2 = Operators.EXTRACT(reg2, 0, 16)
+
+            elif ext == cs.arm64.ARM64_EXT_UXTW:
+                reg2 = Operators.EXTRACT(reg2, 0, 32)
+
+            elif ext == cs.arm64.ARM64_EXT_UXTX:
+                reg2 = Operators.EXTRACT(reg2, 0, 64)
+
+            elif ext == cs.arm64.ARM64_EXT_SXTB:
+                reg2 = Operators.EXTRACT(reg2, 0, 8)
+                reg2 = Operators.SEXTEND(reg2, 8, res_op.size)
+
+            elif ext == cs.arm64.ARM64_EXT_SXTH:
+                reg2 = Operators.EXTRACT(reg2, 0, 16)
+                reg2 = Operators.SEXTEND(reg2, 16, res_op.size)
+
+            elif ext == cs.arm64.ARM64_EXT_SXTW:
+                reg2 = Operators.EXTRACT(reg2, 0, 32)
+                reg2 = Operators.SEXTEND(reg2, 32, res_op.size)
+
+            elif ext == cs.arm64.ARM64_EXT_SXTX:
+                reg2 = Operators.EXTRACT(reg2, 0, 64)
+                reg2 = Operators.SEXTEND(reg2, 64, res_op.size)
+
+            else:
+                raise Aarch64InvalidInstruction
+
+        if reg_op2.is_shifted():
+            shift = reg_op2.op.shift
+            assert shift.type == cs.arm64.ARM64_SFT_LSL
+            assert shift.value in range(5)
+            reg2 = LSL(reg2, shift.value, res_op.size)
+
+        result, nzcv = cpu._add_with_carry(res_op.size, reg1, reg2, 0)
+        res_op.write(UInt(result, res_op.size))
+        if flags:
+            cpu.regfile.nzcv = nzcv
+
+    def _add_adds_immediate(cpu, res_op, reg_op, imm_op, flags):
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+        assert imm_op.type is cs.arm64.ARM64_OP_IMM
+
+        insn_rx  = '[01]'              # sf
+        insn_rx += '0'                 # op
+        if flags:
+            insn_rx += '1'             # S
+        else:
+            insn_rx += '0'             # S
+        insn_rx += '10001'
+        insn_rx += '(?!1[01])[01]{2}'  # shift != 1x
+        insn_rx += '[01]{12}'          # imm12
+        insn_rx += '[01]{5}'           # Rn
+        insn_rx += '[01]{5}'           # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        reg = reg_op.read()
+        imm = imm_op.op.imm
+        assert imm in range(0, 4096)
+
+        if imm_op.is_shifted():
+            shift = imm_op.op.shift
+            assert shift.type == cs.arm64.ARM64_SFT_LSL
+            assert shift.value in [0, 12]
+            imm = LSL(imm, shift.value, res_op.size)
+
+        result, nzcv = cpu._add_with_carry(res_op.size, reg, imm, 0)
+        res_op.write(UInt(result, res_op.size))
+        if flags:
+            cpu.regfile.nzcv = nzcv
+
+    def _add_adds_shifted_register(cpu, res_op, reg_op1, reg_op2, flags):
+        assert res_op.type  is cs.arm64.ARM64_OP_REG
+        assert reg_op1.type is cs.arm64.ARM64_OP_REG
+        assert reg_op2.type is cs.arm64.ARM64_OP_REG
+
+        insn_rx  = '[01]'     # sf
+        insn_rx += '0'        # op
+        if flags:
+            insn_rx += '1'    # S
+        else:
+            insn_rx += '0'    # S
+        insn_rx += '01011'
+        insn_rx += '[01]{2}'  # shift
+        insn_rx += '0'
+        insn_rx += '[01]{5}'  # Rm
+        insn_rx += '[01]{6}'  # imm6
+        insn_rx += '[01]{5}'  # Rn
+        insn_rx += '[01]{5}'  # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        cpu._shifted_register(
+            res_op = res_op,
+            reg_op1 = reg_op1,
+            reg_op2 = reg_op2,
+            action = lambda x, y: cpu._add_with_carry(res_op.size, x, y, 0),
+            flags = flags,
+            shifts = [
+                cs.arm64.ARM64_SFT_LSL,
+                cs.arm64.ARM64_SFT_LSR,
+                cs.arm64.ARM64_SFT_ASR
+            ])
+
     def _add_with_carry(cpu, size, x, y, carry_in):
         unsigned_sum = UInt(x, size) + UInt(y, size) + UInt(carry_in, 1)
         signed_sum   = SInt(x, size) + SInt(y, size) + UInt(carry_in, 1)
@@ -433,7 +570,8 @@ class Aarch64Cpu(Cpu):
             v = Operators.EXTRACT(nzcv, 0, 1)
             cpu.regfile.nzcv = (n, z, c, v)
 
-    def _shifted_register(cpu, res_op, reg_op1, reg_op2, action, shifts):
+    def _shifted_register(cpu, res_op, reg_op1, reg_op2, action, shifts,
+            flags=False):
         reg1 = reg_op1.read()
         reg2 = reg_op2.read()
         reg2_size = cpu.regfile.size(reg_op2.reg)
@@ -465,9 +603,11 @@ class Aarch64Cpu(Cpu):
             else:
                 raise Aarch64InvalidInstruction
 
-        result = UInt(action(reg1, reg2), res_op.size)
+        result, nzcv = action(reg1, reg2)
+        if flags:
+            cpu.regfile.nzcv = nzcv
+        result = UInt(result, res_op.size)
         res_op.write(result)
-        return result
 
     def _ldp_stp(cpu, reg_op1, reg_op2, mem_op, mimm_op, ldp):
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
@@ -724,69 +864,7 @@ class Aarch64Cpu(Cpu):
         :param reg_op1: source register.
         :param reg_op2: source register.
         """
-        assert res_op.type is cs.arm64.ARM64_OP_REG
-        assert reg_op1.type is cs.arm64.ARM64_OP_REG
-        assert reg_op2.type is cs.arm64.ARM64_OP_REG
-
-        insn_rx  = '[01]'     # sf
-        insn_rx += '0'        # op
-        insn_rx += '0'        # S
-        insn_rx += '01011'
-        insn_rx += '00'
-        insn_rx += '1'
-        insn_rx += '[01]{5}'  # Rm
-        insn_rx += '[01]{3}'  # option
-        insn_rx += '[01]{3}'  # imm3
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '[01]{5}'  # Rd
-
-        assert re.match(insn_rx, cpu.insn_bit_str)
-
-        reg1 = reg_op1.read()
-        reg2 = reg_op2.read()
-
-        if reg_op2.is_extended():
-            ext = reg_op2.op.ext
-
-            if ext == cs.arm64.ARM64_EXT_UXTB:
-                reg2 = Operators.EXTRACT(reg2, 0, 8)
-
-            elif ext == cs.arm64.ARM64_EXT_UXTH:
-                reg2 = Operators.EXTRACT(reg2, 0, 16)
-
-            elif ext == cs.arm64.ARM64_EXT_UXTW:
-                reg2 = Operators.EXTRACT(reg2, 0, 32)
-
-            elif ext == cs.arm64.ARM64_EXT_UXTX:
-                reg2 = Operators.EXTRACT(reg2, 0, 64)
-
-            elif ext == cs.arm64.ARM64_EXT_SXTB:
-                reg2 = Operators.EXTRACT(reg2, 0, 8)
-                reg2 = Operators.SEXTEND(reg2, 8, res_op.size)
-
-            elif ext == cs.arm64.ARM64_EXT_SXTH:
-                reg2 = Operators.EXTRACT(reg2, 0, 16)
-                reg2 = Operators.SEXTEND(reg2, 16, res_op.size)
-
-            elif ext == cs.arm64.ARM64_EXT_SXTW:
-                reg2 = Operators.EXTRACT(reg2, 0, 32)
-                reg2 = Operators.SEXTEND(reg2, 32, res_op.size)
-
-            elif ext == cs.arm64.ARM64_EXT_SXTX:
-                reg2 = Operators.EXTRACT(reg2, 0, 64)
-                reg2 = Operators.SEXTEND(reg2, 64, res_op.size)
-
-            else:
-                raise Aarch64InvalidInstruction
-
-        if reg_op2.is_shifted():
-            shift = reg_op2.op.shift
-            assert shift.type == cs.arm64.ARM64_SFT_LSL
-            assert shift.value in range(5)
-            reg2 = LSL(reg2, shift.value, res_op.size)
-
-        result = UInt(reg1 + reg2, res_op.size)
-        res_op.write(result)
+        cpu._add_adds_extended_register(res_op, reg_op1, reg_op2, flags=False)
 
     def _ADD_immediate(cpu, res_op, reg_op, imm_op):
         """
@@ -801,33 +879,7 @@ class Aarch64Cpu(Cpu):
         :param reg_op: source register.
         :param imm_op: immediate.
         """
-        assert res_op.type is cs.arm64.ARM64_OP_REG
-        assert reg_op.type is cs.arm64.ARM64_OP_REG
-        assert imm_op.type is cs.arm64.ARM64_OP_IMM
-
-        insn_rx  = '[01]'              # sf
-        insn_rx += '0'                 # op
-        insn_rx += '0'                 # S
-        insn_rx += '10001'
-        insn_rx += '(?!1[01])[01]{2}'  # shift != 1x
-        insn_rx += '[01]{12}'          # imm12
-        insn_rx += '[01]{5}'           # Rn
-        insn_rx += '[01]{5}'           # Rd
-
-        assert re.match(insn_rx, cpu.insn_bit_str)
-
-        reg = reg_op.read()
-        imm = imm_op.op.imm
-        assert imm in range(0, 4096)
-
-        if imm_op.is_shifted():
-            shift = imm_op.op.shift
-            assert shift.type == cs.arm64.ARM64_SFT_LSL
-            assert shift.value in [0, 12]
-            imm = LSL(imm, shift.value, res_op.size)
-
-        result = UInt(reg + imm, res_op.size)
-        res_op.write(result)
+        cpu._add_adds_immediate(res_op, reg_op, imm_op, flags=False)
 
     def _ADD_shifted_register(cpu, res_op, reg_op1, reg_op2):
         """
@@ -840,33 +892,7 @@ class Aarch64Cpu(Cpu):
         :param reg_op1: source register.
         :param reg_op2: source register.
         """
-        assert res_op.type  is cs.arm64.ARM64_OP_REG
-        assert reg_op1.type is cs.arm64.ARM64_OP_REG
-        assert reg_op2.type is cs.arm64.ARM64_OP_REG
-
-        insn_rx  = '[01]'     # sf
-        insn_rx += '0'        # op
-        insn_rx += '0'        # S
-        insn_rx += '01011'
-        insn_rx += '[01]{2}'  # shift
-        insn_rx += '0'
-        insn_rx += '[01]{5}'  # Rm
-        insn_rx += '[01]{6}'  # imm6
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '[01]{5}'  # Rd
-
-        assert re.match(insn_rx, cpu.insn_bit_str)
-
-        cpu._shifted_register(
-            res_op = res_op,
-            reg_op1 = reg_op1,
-            reg_op2 = reg_op2,
-            action = lambda x, y: x + y,
-            shifts = [
-                cs.arm64.ARM64_SFT_LSL,
-                cs.arm64.ARM64_SFT_LSR,
-                cs.arm64.ARM64_SFT_ASR
-            ])
+        cpu._add_adds_shifted_register(res_op, reg_op1, reg_op2, flags=False)
 
     @instruction
     def ADD(cpu, res_op, op1, op2):
@@ -892,6 +918,86 @@ class Aarch64Cpu(Cpu):
 
         elif op2.type == cs.arm64.ARM64_OP_REG and bit21 == '1':
             cpu._ADD_extended_register(res_op, op1, op2)
+
+        else:
+            raise Aarch64InvalidInstruction
+
+    def _ADDS_extended_register(cpu, res_op, reg_op1, reg_op2):
+        """
+        ADDS (extended register).
+
+        Add (extended register), setting flags, adds a register value and a sign
+        or zero-extended register value, followed by an optional left shift
+        amount, and writes the result to the destination register.  The argument
+        that is extended from the <Rm> register can be a byte, halfword, word,
+        or doubleword.  It updates the condition flags based on the result.
+
+        This instruction is used by the alias CMN (extended register).
+
+        :param res_op: destination register.
+        :param reg_op1: source register.
+        :param reg_op2: source register.
+        """
+        cpu._add_adds_extended_register(res_op, reg_op1, reg_op2, flags=True)
+
+    def _ADDS_immediate(cpu, res_op, reg_op, imm_op):
+        """
+        ADDS (immediate).
+
+        Add (immediate), setting flags, adds a register value and an
+        optionally-shifted immediate value, and writes the result to the
+        destination register.  It updates the condition flags based on the
+        result.
+
+        This instruction is used by the alias CMN (immediate).
+
+        :param res_op: destination register.
+        :param reg_op: source register.
+        :param imm_op: immediate.
+        """
+        cpu._add_adds_immediate(res_op, reg_op, imm_op, flags=True)
+
+    def _ADDS_shifted_register(cpu, res_op, reg_op1, reg_op2):
+        """
+        ADDS (shifted register).
+
+        Add (shifted register), setting flags, adds a register value and an
+        optionally-shifted register value, and writes the result to the
+        destination register.  It updates the condition flags based on the
+        result.
+
+        This instruction is used by the alias CMN (shifted register).
+
+        :param res_op: destination register.
+        :param reg_op1: source register.
+        :param reg_op2: source register.
+        """
+        cpu._add_adds_shifted_register(res_op, reg_op1, reg_op2, flags=True)
+
+    @instruction
+    def ADDS(cpu, res_op, op1, op2):
+        """
+        Combines ADDS (extended register), ADDS (immediate), and ADDS (shifted
+        register).
+
+        :param res_op: destination register.
+        :param op1: source register.
+        :param op2: source register or immediate.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert op1.type    is cs.arm64.ARM64_OP_REG
+        assert op2.type    in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
+
+        bit21 = cpu.insn_bit_str[-22]
+
+        if op2.type == cs.arm64.ARM64_OP_IMM:
+            cpu._ADDS_immediate(res_op, op1, op2)
+
+        elif op2.type == cs.arm64.ARM64_OP_REG and bit21 == '0':
+            cpu._ADDS_shifted_register(res_op, op1, op2)
+
+        elif op2.type == cs.arm64.ARM64_OP_REG and bit21 == '1':
+            cpu._ADDS_extended_register(res_op, op1, op2)
 
         else:
             raise Aarch64InvalidInstruction
@@ -1012,7 +1118,7 @@ class Aarch64Cpu(Cpu):
             res_op = res_op,
             reg_op1 = reg_op1,
             reg_op2 = reg_op2,
-            action = lambda x, y: x & y,
+            action = lambda x, y: (x & y, None),
             shifts = [
                 cs.arm64.ARM64_SFT_LSL,
                 cs.arm64.ARM64_SFT_LSR,
@@ -1112,22 +1218,24 @@ class Aarch64Cpu(Cpu):
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
-        result = cpu._shifted_register(
+        def action(x, y):
+            result = x & y
+            n = Operators.EXTRACT(result, res_op.size - 1, 1)
+            z = 1 if result == 0 else 0
+            return (result, (n, z, 0, 0))
+
+        cpu._shifted_register(
             res_op = res_op,
             reg_op1 = reg_op1,
             reg_op2 = reg_op2,
-            action = lambda x, y: x & y,
+            action = lambda x, y: action(x, y),
+            flags = True,
             shifts = [
                 cs.arm64.ARM64_SFT_LSL,
                 cs.arm64.ARM64_SFT_LSR,
                 cs.arm64.ARM64_SFT_ASR,
                 cs.arm64.ARM64_SFT_ROR
             ])
-
-        # XXX: Maybe move this inside the method.
-        n = Operators.EXTRACT(result, res_op.size - 1, 1)
-        z = 1 if result == 0 else 0
-        cpu.regfile.nzcv = (n, z, 0, 0)
 
     @instruction
     def ANDS(cpu, res_op, op1, op2):
@@ -1555,7 +1663,7 @@ class Aarch64Cpu(Cpu):
             res_op = res_op,
             reg_op1 = reg_op1,
             reg_op2 = reg_op2,
-            action = lambda x, y: x & ~y,
+            action = lambda x, y: (x & ~y, None),
             shifts = [
                 cs.arm64.ARM64_SFT_LSL,
                 cs.arm64.ARM64_SFT_LSR,
@@ -1593,22 +1701,24 @@ class Aarch64Cpu(Cpu):
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
-        result = cpu._shifted_register(
+        def action(x, y):
+            result = x & ~y
+            n = Operators.EXTRACT(result, res_op.size - 1, 1)
+            z = 1 if result == 0 else 0
+            return (result, (n, z, 0, 0))
+
+        cpu._shifted_register(
             res_op = res_op,
             reg_op1 = reg_op1,
             reg_op2 = reg_op2,
-            action = lambda x, y: x & ~y,
+            action = lambda x, y: action(x, y),
+            flags = True,
             shifts = [
                 cs.arm64.ARM64_SFT_LSL,
                 cs.arm64.ARM64_SFT_LSR,
                 cs.arm64.ARM64_SFT_ASR,
                 cs.arm64.ARM64_SFT_ROR
             ])
-
-        # XXX: Maybe move this inside the method.
-        n = Operators.EXTRACT(result, res_op.size - 1, 1)
-        z = 1 if result == 0 else 0
-        cpu.regfile.nzcv = (n, z, 0, 0)
 
     @instruction
     def BL(cpu, imm_op):
@@ -2894,7 +3004,7 @@ class Aarch64Cpu(Cpu):
             res_op = res_op,
             reg_op1 = reg_op1,
             reg_op2 = reg_op2,
-            action = lambda x, y: x | y,
+            action = lambda x, y: (x | y, None),
             shifts = [
                 cs.arm64.ARM64_SFT_LSL,
                 cs.arm64.ARM64_SFT_LSR,
