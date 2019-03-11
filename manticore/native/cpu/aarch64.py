@@ -2022,6 +2022,157 @@ class Aarch64Cpu(Cpu):
 
         res_op.write(count)
 
+    def _CMN_extended_register(cpu, reg_op1, reg_op2):
+        """
+        CMN (extended register).
+
+        Compare Negative (extended register) adds a register value and a sign or
+        zero-extended register value, followed by an optional left shift amount.
+        The argument that is extended from the <Rm> register can be a byte,
+        halfword, word, or doubleword.  It updates the condition flags based on
+        the result, and discards the result.
+
+        This instruction is an alias of the ADDS (extended register)
+        instruction.
+
+        :param reg_op1: source register.
+        :param reg_op2: source register.
+        """
+        assert reg_op1.type is cs.arm64.ARM64_OP_REG
+        assert reg_op2.type is cs.arm64.ARM64_OP_REG
+
+        insn_rx  = '[01]'     # sf
+        insn_rx += '0'        # op
+        insn_rx += '1'        # S
+        insn_rx += '01011'
+        insn_rx += '00'
+        insn_rx += '1'
+        insn_rx += '[01]{5}'  # Rm
+        insn_rx += '[01]{3}'  # option
+        insn_rx += '[01]{3}'  # imm3
+        insn_rx += '[01]{5}'  # Rn
+        insn_rx += '1{5}'     # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        # Fake a register operand.
+        if reg_op1.size == 32:
+            zr = Aarch64Operand.make_reg(cpu, cs.arm64.ARM64_REG_WZR)
+        elif reg_op1.size == 64:
+            zr = Aarch64Operand.make_reg(cpu, cs.arm64.ARM64_REG_XZR)
+        else:
+            raise Aarch64InvalidInstruction
+
+        # The 'instruction' decorator advances PC, so call the original
+        # method.
+        cpu.ADDS.__wrapped__(cpu, zr, reg_op1, reg_op2)
+
+    def _CMN_immediate(cpu, reg_op, imm_op):
+        """
+        CMN (immediate).
+
+        Compare Negative (immediate) adds a register value and an
+        optionally-shifted immediate value.  It updates the condition flags
+        based on the result, and discards the result.
+
+        This instruction is an alias of the ADDS (immediate) instruction.
+
+        :param reg_op: source register.
+        :param imm_op: immediate.
+        """
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+        assert imm_op.type is cs.arm64.ARM64_OP_IMM
+
+        insn_rx  = '[01]'              # sf
+        insn_rx += '0'                 # op
+        insn_rx += '1'                 # S
+        insn_rx += '10001'
+        insn_rx += '(?!1[01])[01]{2}'  # shift != 1x
+        insn_rx += '[01]{12}'          # imm12
+        insn_rx += '[01]{5}'           # Rn
+        insn_rx += '1{5}'              # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        # Fake a register operand.
+        if reg_op.size == 32:
+            zr = Aarch64Operand.make_reg(cpu, cs.arm64.ARM64_REG_WZR)
+        elif reg_op.size == 64:
+            zr = Aarch64Operand.make_reg(cpu, cs.arm64.ARM64_REG_XZR)
+        else:
+            raise Aarch64InvalidInstruction
+
+        # The 'instruction' decorator advances PC, so call the original
+        # method.
+        cpu.ADDS.__wrapped__(cpu, zr, reg_op, imm_op)
+
+    def _CMN_shifted_register(cpu, reg_op1, reg_op2):
+        """
+        CMN (shifted register).
+
+        Compare Negative (shifted register) adds a register value and an
+        optionally-shifted register value.  It updates the condition flags based
+        on the result, and discards the result.
+
+        This instruction is an alias of the ADDS (shifted register) instruction.
+
+        :param reg_op1: source register.
+        :param reg_op2: source register.
+        """
+        assert reg_op1.type is cs.arm64.ARM64_OP_REG
+        assert reg_op2.type is cs.arm64.ARM64_OP_REG
+
+        insn_rx  = '[01]'     # sf
+        insn_rx += '0'        # op
+        insn_rx += '1'        # S
+        insn_rx += '01011'
+        insn_rx += '[01]{2}'  # shift
+        insn_rx += '0'
+        insn_rx += '[01]{5}'  # Rm
+        insn_rx += '[01]{6}'  # imm6
+        insn_rx += '[01]{5}'  # Rn
+        insn_rx += '1{5}'     # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        # Fake a register operand.
+        if reg_op1.size == 32:
+            zr = Aarch64Operand.make_reg(cpu, cs.arm64.ARM64_REG_WZR)
+        elif reg_op1.size == 64:
+            zr = Aarch64Operand.make_reg(cpu, cs.arm64.ARM64_REG_XZR)
+        else:
+            raise Aarch64InvalidInstruction
+
+        # The 'instruction' decorator advances PC, so call the original
+        # method.
+        cpu.ADDS.__wrapped__(cpu, zr, reg_op1, reg_op2)
+
+    @instruction
+    def CMN(cpu, op1, op2):
+        """
+        Combines CMN (extended register), CMN (immediate), and CMN (shifted
+        register).
+
+        :param op1: source register.
+        :param op2: source register or immediate.
+        """
+        assert op1.type is cs.arm64.ARM64_OP_REG
+        assert op2.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
+
+        bit21 = cpu.insn_bit_str[-22]
+
+        if op2.type == cs.arm64.ARM64_OP_IMM:
+            cpu._CMN_immediate(op1, op2)
+
+        elif op2.type == cs.arm64.ARM64_OP_REG and bit21 == '0':
+            cpu._CMN_shifted_register(op1, op2)
+
+        elif op2.type == cs.arm64.ARM64_OP_REG and bit21 == '1':
+            cpu._CMN_extended_register(op1, op2)
+
+        else:
+            raise Aarch64InvalidInstruction
+
     @instruction
     def CSEL(cpu, res_op, reg_op1, reg_op2):
         """
