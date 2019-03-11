@@ -328,7 +328,7 @@ class ManticoreEVM(ManticoreBase):
         name = name.split(':')[1]
 
         if contract['bin'] == '':
-            raise EthereumError('Solidity failed to generate bytecode for your contract. Check if all thr abstract functions are implemented')
+            raise EthereumError('Solidity failed to generate bytecode for your contract. Check if all the abstract functions are implemented')
 
         bytecode = ManticoreEVM._link(contract['bin'], libraries)
         srcmap = contract['srcmap'].split(';')
