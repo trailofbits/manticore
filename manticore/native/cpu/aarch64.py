@@ -3247,6 +3247,47 @@ class Aarch64Cpu(Cpu):
         cpu.MADD.__wrapped__(cpu, res_op, reg_op1, reg_op2, zr)
 
     @instruction
+    def NEG(cpu, res_op, reg_op):
+        """
+        NEG (shifted register).
+
+        Negate (shifted register) negates an optionally-shifted register value,
+        and writes the result to the destination register.
+
+        This instruction is an alias of the SUB (shifted register) instruction.
+
+        :param res_op: destination register.
+        :param reg_op: source register.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+
+        insn_rx  = '[01]'     # sf
+        insn_rx += '1'        # op
+        insn_rx += '0'        # S
+        insn_rx += '01011'
+        insn_rx += '[01]{2}'  # shift
+        insn_rx += '0'
+        insn_rx += '[01]{5}'  # Rm
+        insn_rx += '[01]{6}'  # imm6
+        insn_rx += '1{5}'     # Rn
+        insn_rx += '[01]{5}'  # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        # Fake a register operand.
+        if res_op.size == 32:
+            zr = Aarch64Operand.make_reg(cpu, cs.arm64.ARM64_REG_WZR)
+        elif res_op.size == 64:
+            zr = Aarch64Operand.make_reg(cpu, cs.arm64.ARM64_REG_XZR)
+        else:
+            raise Aarch64InvalidInstruction
+
+        # The 'instruction' decorator advances PC, so call the original
+        # method.
+        cpu.SUB.__wrapped__(cpu, res_op, zr, reg_op)
+
+    @instruction
     def NOP(cpu):
         """
         NOP.

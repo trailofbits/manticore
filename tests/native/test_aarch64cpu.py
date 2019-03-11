@@ -6521,6 +6521,153 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W0'), 0xfffffffa)
 
 
+    # NEG (shifted register).
+
+    # 32-bit.
+
+    @itest_setregs('W1=0x41424344')
+    @itest('neg w0, w1')
+    def test_neg_sft_reg32(self):
+        self.assertEqual(self.rf.read('X0'), 0xbebdbcbc)
+        self.assertEqual(self.rf.read('W0'), 0xbebdbcbc)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344')
+    @itest('neg w0, w1, lsl #0')
+    def test_neg_sft_reg_lsl_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0xbebdbcbc)
+        self.assertEqual(self.rf.read('W0'), 0xbebdbcbc)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=1')
+    @itest('neg w0, w1, lsl #31')
+    def test_neg_sft_reg_lsl_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0x80000000)
+        self.assertEqual(self.rf.read('W0'), 0x80000000)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344')
+    @itest('neg w0, w1, lsl #1')
+    def test_neg_sft_reg_lsl32(self):
+        self.assertEqual(self.rf.read('X0'), 0x7d7b7978)
+        self.assertEqual(self.rf.read('W0'), 0x7d7b7978)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344')
+    @itest('neg w0, w1, lsr #0')
+    def test_neg_sft_reg_lsr_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0xbebdbcbc)
+        self.assertEqual(self.rf.read('W0'), 0xbebdbcbc)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x80000000')
+    @itest('neg w0, w1, lsr #31')
+    def test_neg_sft_reg_lsr_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x80000000')
+    @itest('neg w0, w1, lsr #1')
+    def test_neg_sft_reg_lsr32(self):
+        self.assertEqual(self.rf.read('X0'), 0xc0000000)
+        self.assertEqual(self.rf.read('W0'), 0xc0000000)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344')
+    @itest('neg w0, w1, asr #0')
+    def test_neg_sft_reg_asr_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0xbebdbcbc)
+        self.assertEqual(self.rf.read('W0'), 0xbebdbcbc)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x80000000')
+    @itest('neg w0, w1, asr #31')
+    def test_neg_sft_reg_asr_max32(self):
+        self.assertEqual(self.rf.read('X0'), 1)
+        self.assertEqual(self.rf.read('W0'), 1)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x80000000')
+    @itest('neg w0, w1, asr #1')
+    def test_neg_sft_reg_asr32(self):
+        self.assertEqual(self.rf.read('X0'), 0x40000000)
+        self.assertEqual(self.rf.read('W0'), 0x40000000)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    # 64-bit.
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest('neg x0, x1')
+    def test_neg_sft_reg64(self):
+        self.assertEqual(self.rf.read('X0'), 0xbebdbcbbbab9b8b8)
+        self.assertEqual(self.rf.read('W0'), 0xbab9b8b8)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest('neg x0, x1, lsl #0')
+    def test_neg_sft_reg_lsl_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0xbebdbcbbbab9b8b8)
+        self.assertEqual(self.rf.read('W0'), 0xbab9b8b8)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=1')
+    @itest('neg x0, x1, lsl #63')
+    def test_neg_sft_reg_lsl_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0x8000000000000000)
+        self.assertEqual(self.rf.read('W0'), 0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest('neg x0, x1, lsl #1')
+    def test_neg_sft_reg_lsl64(self):
+        self.assertEqual(self.rf.read('X0'), 0x7d7b797775737170)
+        self.assertEqual(self.rf.read('W0'), 0x75737170)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest('neg x0, x1, lsr #0')
+    def test_neg_sft_reg_lsr_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0xbebdbcbbbab9b8b8)
+        self.assertEqual(self.rf.read('W0'), 0xbab9b8b8)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x8000000000000000')
+    @itest('neg x0, x1, lsr #63')
+    def test_neg_sft_reg_lsr_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffffffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x8000000000000000')
+    @itest('neg x0, x1, lsr #1')
+    def test_neg_sft_reg_lsr64(self):
+        self.assertEqual(self.rf.read('X0'), 0xc000000000000000)
+        self.assertEqual(self.rf.read('W0'), 0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest('neg x0, x1, asr #0')
+    def test_neg_sft_reg_asr_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0xbebdbcbbbab9b8b8)
+        self.assertEqual(self.rf.read('W0'), 0xbab9b8b8)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x8000000000000000')
+    @itest('neg x0, x1, asr #63')
+    def test_neg_sft_reg_asr_max64(self):
+        self.assertEqual(self.rf.read('X0'), 1)
+        self.assertEqual(self.rf.read('W0'), 1)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x8000000000000000')
+    @itest('neg x0, x1, asr #1')
+    def test_neg_sft_reg_asr64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4000000000000000)
+        self.assertEqual(self.rf.read('W0'), 0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+
     # NOP.
 
     @itest_custom('nop')
