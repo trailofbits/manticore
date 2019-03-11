@@ -376,17 +376,21 @@ class Aarch64Cpu(Cpu):
     # XXX: Use masking when writing to the destination register?  Avoiding this
     # for now, but the assert in the 'write' method should catch such cases.
 
-    def _add_adds_extended_register(cpu, res_op, reg_op1, reg_op2, flags):
+    def _adds_subs_extended_register(cpu, res_op, reg_op1, reg_op2, mnem):
         assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
+        assert mnem in ('add', 'adds', 'sub', 'subs')
 
         insn_rx  = '[01]'     # sf
-        insn_rx += '0'        # op
-        if flags:
-            insn_rx += '1'    # S
+        if mnem in ('add', 'adds'):
+            insn_rx += '0'    # op
         else:
+            insn_rx += '1'    # op
+        if mnem in ('add', 'sub'):
             insn_rx += '0'    # S
+        else:
+            insn_rx += '1'    # S
         insn_rx += '01011'
         insn_rx += '00'
         insn_rx += '1'
@@ -441,22 +445,29 @@ class Aarch64Cpu(Cpu):
             assert shift.value in range(5)
             reg2 = LSL(reg2, shift.value, res_op.size)
 
-        result, nzcv = cpu._add_with_carry(res_op.size, reg1, reg2, 0)
+        if mnem in ('add', 'adds'):
+            result, nzcv = cpu._add_with_carry(res_op.size, reg1, reg2, 0)
+        else:
+            result, nzcv = cpu._add_with_carry(res_op.size, reg1, ~reg2, 1)
         res_op.write(UInt(result, res_op.size))
-        if flags:
+        if mnem in ('adds', 'subs'):
             cpu.regfile.nzcv = nzcv
 
-    def _add_adds_immediate(cpu, res_op, reg_op, imm_op, flags):
+    def _adds_subs_immediate(cpu, res_op, reg_op, imm_op, mnem):
         assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op.type is cs.arm64.ARM64_OP_REG
         assert imm_op.type is cs.arm64.ARM64_OP_IMM
+        assert mnem in ('add', 'adds', 'sub', 'subs')
 
         insn_rx  = '[01]'              # sf
-        insn_rx += '0'                 # op
-        if flags:
-            insn_rx += '1'             # S
+        if mnem in ('add', 'adds'):
+            insn_rx += '0'             # op
         else:
+            insn_rx += '1'             # op
+        if mnem in ('add', 'sub'):
             insn_rx += '0'             # S
+        else:
+            insn_rx += '1'             # S
         insn_rx += '10001'
         insn_rx += '(?!1[01])[01]{2}'  # shift != 1x
         insn_rx += '[01]{12}'          # imm12
@@ -475,22 +486,29 @@ class Aarch64Cpu(Cpu):
             assert shift.value in [0, 12]
             imm = LSL(imm, shift.value, res_op.size)
 
-        result, nzcv = cpu._add_with_carry(res_op.size, reg, imm, 0)
+        if mnem in ('add', 'adds'):
+            result, nzcv = cpu._add_with_carry(res_op.size, reg, imm, 0)
+        else:
+            result, nzcv = cpu._add_with_carry(res_op.size, reg, ~imm, 1)
         res_op.write(UInt(result, res_op.size))
-        if flags:
+        if mnem in ('adds', 'subs'):
             cpu.regfile.nzcv = nzcv
 
-    def _add_adds_shifted_register(cpu, res_op, reg_op1, reg_op2, flags):
+    def _adds_subs_shifted_register(cpu, res_op, reg_op1, reg_op2, mnem):
         assert res_op.type  is cs.arm64.ARM64_OP_REG
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
+        assert mnem in ('add', 'adds', 'sub', 'subs')
 
         insn_rx  = '[01]'     # sf
-        insn_rx += '0'        # op
-        if flags:
-            insn_rx += '1'    # S
+        if mnem in ('add', 'adds'):
+            insn_rx += '0'    # op
         else:
+            insn_rx += '1'    # op
+        if mnem in ('add', 'sub'):
             insn_rx += '0'    # S
+        else:
+            insn_rx += '1'    # S
         insn_rx += '01011'
         insn_rx += '[01]{2}'  # shift
         insn_rx += '0'
@@ -501,11 +519,21 @@ class Aarch64Cpu(Cpu):
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
+        if mnem in ('add', 'adds'):
+            action = lambda x, y: cpu._add_with_carry(res_op.size, x, y, 0)
+        else:
+            action = lambda x, y: cpu._add_with_carry(res_op.size, x, ~y, 1)
+
+        if mnem in ('add', 'sub'):
+            flags = False
+        else:
+            flags = True
+
         cpu._shifted_register(
             res_op = res_op,
             reg_op1 = reg_op1,
             reg_op2 = reg_op2,
-            action = lambda x, y: cpu._add_with_carry(res_op.size, x, y, 0),
+            action = action,
             flags = flags,
             shifts = [
                 cs.arm64.ARM64_SFT_LSL,
@@ -864,7 +892,7 @@ class Aarch64Cpu(Cpu):
         :param reg_op1: source register.
         :param reg_op2: source register.
         """
-        cpu._add_adds_extended_register(res_op, reg_op1, reg_op2, flags=False)
+        cpu._adds_subs_extended_register(res_op, reg_op1, reg_op2, mnem='add')
 
     def _ADD_immediate(cpu, res_op, reg_op, imm_op):
         """
@@ -879,7 +907,7 @@ class Aarch64Cpu(Cpu):
         :param reg_op: source register.
         :param imm_op: immediate.
         """
-        cpu._add_adds_immediate(res_op, reg_op, imm_op, flags=False)
+        cpu._adds_subs_immediate(res_op, reg_op, imm_op, mnem='add')
 
     def _ADD_shifted_register(cpu, res_op, reg_op1, reg_op2):
         """
@@ -892,7 +920,7 @@ class Aarch64Cpu(Cpu):
         :param reg_op1: source register.
         :param reg_op2: source register.
         """
-        cpu._add_adds_shifted_register(res_op, reg_op1, reg_op2, flags=False)
+        cpu._adds_subs_shifted_register(res_op, reg_op1, reg_op2, mnem='add')
 
     @instruction
     def ADD(cpu, res_op, op1, op2):
@@ -938,7 +966,7 @@ class Aarch64Cpu(Cpu):
         :param reg_op1: source register.
         :param reg_op2: source register.
         """
-        cpu._add_adds_extended_register(res_op, reg_op1, reg_op2, flags=True)
+        cpu._adds_subs_extended_register(res_op, reg_op1, reg_op2, mnem='adds')
 
     def _ADDS_immediate(cpu, res_op, reg_op, imm_op):
         """
@@ -955,7 +983,7 @@ class Aarch64Cpu(Cpu):
         :param reg_op: source register.
         :param imm_op: immediate.
         """
-        cpu._add_adds_immediate(res_op, reg_op, imm_op, flags=True)
+        cpu._adds_subs_immediate(res_op, reg_op, imm_op, mnem='adds')
 
     def _ADDS_shifted_register(cpu, res_op, reg_op1, reg_op2):
         """
@@ -972,7 +1000,7 @@ class Aarch64Cpu(Cpu):
         :param reg_op1: source register.
         :param reg_op2: source register.
         """
-        cpu._add_adds_shifted_register(res_op, reg_op1, reg_op2, flags=True)
+        cpu._adds_subs_shifted_register(res_op, reg_op1, reg_op2, mnem='adds')
 
     @instruction
     def ADDS(cpu, res_op, op1, op2):
@@ -3520,6 +3548,161 @@ class Aarch64Cpu(Cpu):
         :param mem_op: memory.
         """
         cpu._ldur_stur(reg_op, mem_op, ldur=False)
+
+    def _SUB_extended_register(cpu, res_op, reg_op1, reg_op2):
+        """
+        SUB (extended register).
+
+        Subtract (extended register) subtracts a sign or zero-extended register
+        value, followed by an optional left shift amount, from a register value,
+        and writes the result to the destination register.  The argument that is
+        extended from the <Rm> register can be a byte, halfword, word, or
+        doubleword.
+
+        :param res_op: destination register.
+        :param reg_op1: source register.
+        :param reg_op2: source register.
+        """
+        cpu._adds_subs_extended_register(res_op, reg_op1, reg_op2, mnem='sub')
+
+    def _SUB_immediate(cpu, res_op, reg_op, imm_op):
+        """
+        SUB (immediate).
+
+        Subtract (immediate) subtracts an optionally-shifted immediate value
+        from a register value, and writes the result to the destination
+        register.
+
+        :param res_op: destination register.
+        :param reg_op: source register.
+        :param imm_op: immediate.
+        """
+        cpu._adds_subs_immediate(res_op, reg_op, imm_op, mnem='sub')
+
+    def _SUB_shifted_register(cpu, res_op, reg_op1, reg_op2):
+        """
+        SUB (shifted register).
+
+        Subtract (shifted register) subtracts an optionally-shifted register
+        value from a register value, and writes the result to the destination
+        register.
+
+        This instruction is used by the alias NEG (shifted register).
+
+        :param res_op: destination register.
+        :param reg_op1: source register.
+        :param reg_op2: source register.
+        """
+        cpu._adds_subs_shifted_register(res_op, reg_op1, reg_op2, mnem='sub')
+
+    @instruction
+    def SUB(cpu, res_op, op1, op2):
+        """
+        Combines SUB (extended register), SUB (immediate), and SUB (shifted
+        register).
+
+        :param res_op: destination register.
+        :param op1: source register.
+        :param op2: source register or immediate.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert op1.type    is cs.arm64.ARM64_OP_REG
+        assert op2.type    in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
+
+        bit21 = cpu.insn_bit_str[-22]
+
+        if op2.type == cs.arm64.ARM64_OP_IMM:
+            cpu._SUB_immediate(res_op, op1, op2)
+
+        elif op2.type == cs.arm64.ARM64_OP_REG and bit21 == '0':
+            cpu._SUB_shifted_register(res_op, op1, op2)
+
+        elif op2.type == cs.arm64.ARM64_OP_REG and bit21 == '1':
+            cpu._SUB_extended_register(res_op, op1, op2)
+
+        else:
+            raise Aarch64InvalidInstruction
+
+    def _SUBS_extended_register(cpu, res_op, reg_op1, reg_op2):
+        """
+        SUBS (extended register).
+
+        Subtract (extended register), setting flags, subtracts a sign or
+        zero-extended register value, followed by an optional left shift amount,
+        from a register value, and writes the result to the destination
+        register.  The argument that is extended from the <Rm> register can be a
+        byte, halfword, word, or doubleword.  It updates the condition flags
+        based on the result.
+
+        This instruction is used by the alias CMP (extended register).
+
+        :param res_op: destination register.
+        :param reg_op1: source register.
+        :param reg_op2: source register.
+        """
+        cpu._adds_subs_extended_register(res_op, reg_op1, reg_op2, mnem='subs')
+
+    def _SUBS_immediate(cpu, res_op, reg_op, imm_op):
+        """
+        SUBS (immediate).
+
+        Subtract (immediate), setting flags, subtracts an optionally-shifted
+        immediate value from a register value, and writes the result to the
+        destination register.  It updates the condition flags based on the
+        result.
+
+        This instruction is used by the alias CMP (immediate).
+
+        :param res_op: destination register.
+        :param reg_op: source register.
+        :param imm_op: immediate.
+        """
+        cpu._adds_subs_immediate(res_op, reg_op, imm_op, mnem='subs')
+
+    def _SUBS_shifted_register(cpu, res_op, reg_op1, reg_op2):
+        """
+        SUBS (shifted register).
+
+        Subtract (shifted register), setting flags, subtracts an
+        optionally-shifted register value from a register value, and writes the
+        result to the destination register.  It updates the condition flags
+        based on the result.
+
+        This instruction is used by the aliases CMP (shifted register) and NEGS.
+
+        :param res_op: destination register.
+        :param reg_op1: source register.
+        :param reg_op2: source register.
+        """
+        cpu._adds_subs_shifted_register(res_op, reg_op1, reg_op2, mnem='subs')
+
+    @instruction
+    def SUBS(cpu, res_op, op1, op2):
+        """
+        Combines SUBS (extended register), SUBS (immediate), and SUBS (shifted
+        register).
+
+        :param res_op: destination register.
+        :param op1: source register.
+        :param op2: source register or immediate.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert op1.type    is cs.arm64.ARM64_OP_REG
+        assert op2.type    in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
+
+        bit21 = cpu.insn_bit_str[-22]
+
+        if op2.type == cs.arm64.ARM64_OP_IMM:
+            cpu._SUBS_immediate(res_op, op1, op2)
+
+        elif op2.type == cs.arm64.ARM64_OP_REG and bit21 == '0':
+            cpu._SUBS_shifted_register(res_op, op1, op2)
+
+        elif op2.type == cs.arm64.ARM64_OP_REG and bit21 == '1':
+            cpu._SUBS_extended_register(res_op, op1, op2)
+
+        else:
+            raise Aarch64InvalidInstruction
 
     @instruction
     def SVC(cpu, imm_op):
