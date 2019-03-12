@@ -1,7 +1,7 @@
 import unittest
 
 from manticore.core.smtlib import *
-
+solver = Z3Solver()
 
 #logging.basicConfig(filename = "test.log",
 #                format = "%(asctime)s: %(name)s:%(levelname)s: %(message)s",

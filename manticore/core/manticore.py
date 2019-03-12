@@ -38,28 +38,6 @@ consts.add('profile', default=False, description='Enable worker profiling mode')
 consts.add('procs', default=10, description='Number of parallel processes to spawn')
 consts.add('mprocessing', default='single', description='single: No multiprocessing at all. Single process.\n')
 
-# Add on to Multiprocessing. Hack. ThinkMe
-SetBaseProxy = MakeProxyType('SetBaseProxy', (
-    '__contains__', 'add', 'clear', 'copy', 'difference',
-    'difference_update', 'discard', 'intersection', 'intersection_update',
-    'isdisjoint', 'issubset', 'issuperset', 'pop', 'remove',
-    'symmetric_difference', 'symmetric_difference_update', 'union', 'update'
-))
-class SetProxy(SetBaseProxy):
-    def __iadd__(self, value):
-        self._callmethod('extend', (value,))
-        return self
-    def __imul__(self, value):
-        self._callmethod('__imul__', (value,))
-        return self
-    def add(self, value):
-        self._callmethod('add', (value,))
-        return self
-
-
-SyncManager.register('set', set, SetProxy)
-
-
 # Workers
 # There are 4 types of Workers
 # WorkerSingle: run over main process and will not provide any concurrency
@@ -92,10 +70,72 @@ class Worker:
                                        #
     """
 
-    def __init__(self, *, id, manticore, single=False):
+    def __init__(self, *, id, manticore, single=False, profiling=False):
         self.manticore = manticore
         self.id = id
         self.single = single
+        if profiling:
+            self.run = self.profile_this(self.run)
+
+    def profile_this(self, func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            profile = cProfile.Profile()
+            profile.enable()
+            result = None
+            try:
+                result = func(*args, **kwargs)
+            finally:
+                profile.disable()
+                profile.create_stats()
+                with self.maticore.locked_context('profiling_stats', dict) as profiling_stats:
+                    profiling_stats[self.id] = profile.stats.items()
+            return result
+        return wrapper
+
+    def _produce_profiling_data(self):
+        class PstatsFormatted:
+            def __init__(self, d):
+                self.stats = dict(d)
+
+            def create_stats(self):
+                pass
+
+        with self.manticore.locked_context('profiling_stats') as profiling_stats:
+            ps = None
+            for item in profiling_stats.values():
+                try:
+                    stat = PstatsFormatted(item)
+                    if ps is None:
+                        ps = pstats.Stats(stat, stream=s)
+                    else:
+                        ps.add(stat)
+                except TypeError:
+                    logger.info("Incorrectly formatted profiling information in _stats, skipping")
+
+            if ps is None:
+                logger.info("Profiling failed")
+            return ps
+            '''
+                else:
+                    # XXX(yan): pstats does not support dumping to a file stream, only to a file
+                    # name. Below is essentially the implementation of pstats.dump_stats() without
+                    # the extra open().
+                    import marshal
+                    marshal.dump(ps.stats, s)'''
+
+    def get_profiling_stats(self):
+        """
+        Returns a pstat.Stats instance with profiling results if `run` was called with `should_profile=True`.
+        Otherwise, returns `None`.
+        """
+        profile_file_path = os.path.join(self.workspace, 'profiling.bin')
+        try:
+            return pstats.Stats(profile_file_path)
+        except Exception as e:
+            logger.debug(f'Failed to get profiling stats: {e}')
+            return None
+
 
     def start(self):
         raise NotImplementedError
@@ -104,8 +144,7 @@ class Worker:
         raise NotImplementedError
 
     def run(self, *args):
-        # This controls the main symbolic execution loop and it is one of the 
-        # most critical manticore code. Please 
+        # This controls the main symbolic execution loop of one of the workers
         logger.debug("Starting Manticore Symbolic Emulator Worker. Pid %d Tid %d).", os.getpid(), threading.get_ident())
         m = self.manticore
         current_state = None
@@ -115,60 +154,45 @@ class Worker:
         with WithKeyboardInterruptAs(m.kill):
 
             # The worker runs until the manticore is killed
-            while True:
+            while not m._killed.value:
 
                 # STARTED - Will try to consume states until a STOP event is received
-                # Outter loop, Keep getting states until someone request us to STOP
+                # Outer loop, Keep getting states until someone request us to STOP
                 try:  # handle fatal errors even exceptions in the exception handlers
-                    # Iff a kill or stop was received and we have a state in
-                    # the works lets dump it to storage and revive it
-                    # Not that kill is only one way though the stop/start can flicker
-                    if current_state is not None and (not m._started.value or m._killed.value):
-                        # On going execution was stopped or killed. Lets 
-                        # save any progress on the current state
-                        m._save(current_state)
-                        m._revive(current_state.id)
-                        current_state = None
-
                     # If at STANDBY wait for any change
                     with m._lock:
-                        i = 0
+                        # If not started and not killed it means we need to wait
                         while not m._started.value and not m._killed.value:
-                            i += 1
-                            logger.info("[%r] StandBy", self.id)
+                            logger.info("[%r] Standing by", self.id)
                             m._lock.wait()  # Wait until something changes
 
-                    # Check for user request cancellation
-                    if m._killed.value:
-                        logger.info("[%r] Cancelled", self.id)
-                        break
 
                     try:  # handle Concretize and TerminateState
 
                         # At RUNNING
                         # The START has been requested, we operate with under the assumption
                         # that manticore we will let us stay at this phase for a _while_
-                        # Requests to STOP will we honored ASAP (i.e. Not immediatelly)
+                        # Requests to STOP will we honored ASAP (i.e. Not immediately)
 
-                        # if no state then select a suitable state to analyze
+                        # Select a single state
+                        # wait for other worker to add states to the READY list
+                        # This momentarily get the main lock and then releases
+                        # it while waiting for changes
+                        # Raises an Exception if manticore gets cancelled
+                        # while waiting or if there are no more potential states
+                        logger.info("[%r] Waiting for states", self.id)
+                        current_state = m._get_state(wait=True)
+
+                        # there are no more states to process
+                        # states can come from the ready list of by forking
+                        # states currently being analyzed in the busy list
                         if current_state is None:
-                            # Select a single state
-                            # wait for other worker to add states to the READY list
-                            # This momentarilly get the main lock and then releases 
-                            # it while waiting for changes
-                            # Raises an Exception if manticore gets cancelled
-                            # while waiting or if there are no more potential states
-                            logger.info("[%r] Waiting for states", self.id)
-                            current_state = m._get_state(wait=True)
-
-                            # there are no more states to proccess lets STOP
-                            if current_state is None:
-                                logger.info("[%r] No more states", self.id)
-                                m.stop()
-                                if self.single:
-                                    break
-                                else:
-                                    continue
+                            logger.info("[%r] No more states", self.id)
+                            if self.single:
+                                # at single it will run in place. No need to wait.
+                                break
+                            else:
+                                continue
 
                         # assert current_state is not None
                         # Allows to terminate manticore worker on user request
@@ -178,6 +202,12 @@ class Worker:
                             current_state.execute()
                         else:
                             logger.info("[%r] Stopped or Cancelled", self.id)
+                            # On going execution was stopped or killed. Lets
+                            # save any progress on the current state
+                            m._save(current_state)
+                            m._revive(current_state.id)
+                            current_state = None
+
 
                     # Handling Forking and terminating exceptions
                     except Concretize as exc:
@@ -188,8 +218,9 @@ class Worker:
                         # Though, normally fork() saves the spawned childs,
                         # returns a None and let _get_state choose what to explore
                         # next
-                        current_state = m._fork(current_state, exc.expression, exc.policy, exc.setstate)
-                        # here: likely current_state is None
+                        m._fork(current_state, exc.expression, exc.policy, exc.setstate)
+
+                        current_state = None
 
                     except TerminateState as exc:
                         logger.info("[%r] Debug State %r %r", self.id, current_state, exc)
@@ -205,7 +236,7 @@ class Worker:
 
                 except (Exception, AssertionError) as exc:
                     logger.error("[%r] Exception %r. Current State %r", self.id, exc, current_state)
-                    #import traceback; traceback.print_exc()
+                    import traceback; traceback.print_exc()
                     # Internal Exception. 
                     # Add the state to the terminated state list
                     if current_state is not None:
@@ -455,7 +486,7 @@ class ManticoreBase(Eventful):
         else:
             if workspace_url is not None:
                 raise TypeError(f'Invalid workspace type: {type(workspace_url).__name__}')
-        self._workspace = Workspace(self._lock, workspace_url)
+        self._workspace = Workspace(workspace_url)
         self._output = ManticoreOutput(workspace_url)
 
         # The set of registered plugins
@@ -498,6 +529,9 @@ class ManticoreBase(Eventful):
         The optional setstate() function is supposed to set the concrete value
         in the child state.
 
+        Parent state is removed from the busy list and tht child states are added
+        to the ready list.
+
         '''
         assert isinstance(expression, Expression)
 
@@ -509,10 +543,6 @@ class ManticoreBase(Eventful):
 
         if not solutions:
             raise ManticoreError("Forking on unfeasible constraint set")
-
-        if len(solutions) == 1:
-            setstate(state, solutions[0])
-            return state
 
         logger.info("Forking. Policy: %s. Values: %s",
                     policy,
@@ -546,7 +576,6 @@ class ManticoreBase(Eventful):
             self._lock.notify_all()
 
         logger.info("Forking current state %r into states %r", state.id, children)
-        return None
 
     # State storage
     def _save(self, state):
@@ -899,48 +928,6 @@ class ManticoreBase(Eventful):
         yield ctx
 
 
-    def _produce_profiling_data(self):
-        class PstatsFormatted:
-            def __init__(self, d):
-                self.stats = dict(d)
-
-            def create_stats(self):
-                pass
-
-        with self.locked_context('profiling_stats') as profiling_stats:
-            with self._output.save_stream('profiling.bin', binary=True) as s:
-                ps = None
-                for item in profiling_stats:
-                    try:
-                        stat = PstatsFormatted(item)
-                        if ps is None:
-                            ps = pstats.Stats(stat, stream=s)
-                        else:
-                            ps.add(stat)
-                    except TypeError:
-                        logger.info("Incorrectly formatted profiling information in _stats, skipping")
-
-                if ps is None:
-                    logger.info("Profiling failed")
-                else:
-                    # XXX(yan): pstats does not support dumping to a file stream, only to a file
-                    # name. Below is essentially the implementation of pstats.dump_stats() without
-                    # the extra open().
-                    import marshal
-                    marshal.dump(ps.stats, s)
-
-    def get_profiling_stats(self):
-        """
-        Returns a pstat.Stats instance with profiling results if `run` was called with `should_profile=True`.
-        Otherwise, returns `None`.
-        """
-        profile_file_path = os.path.join(self.workspace, 'profiling.bin')
-        try:
-            return pstats.Stats(profile_file_path)
-        except Exception as e:
-            logger.debug(f'Failed to get profiling stats: {e}')
-            return None
-
     ############################################################################
     # Public API
 
@@ -1041,15 +1028,14 @@ class ManticoreBase(Eventful):
         self._publish('will_run')
 
         with WithKeyboardInterruptAs(self.kill):
-
             with self.kill_timeout(timeout):
                 assert not self._busy_states
                 self.start()
-                assert self._started.value
                 with self._lock:
-                    while self._started.value and not self._killed.value or self._busy_states:
+                    while (self._started.value and not self._killed.value) or self._busy_states:
                         self._lock.wait()
                     # It has been killed or stopped
+                self.stop()
 
         with self._lock:
             assert not self._busy_states
@@ -1129,7 +1115,6 @@ class ManticoreSingle(ManticoreBase):
         self._shared_context = {}
         self._context_value_types = {list: list,
                                      dict: dict,
-                                     set: set,
                                      }
         super().__init__(*args, **kwargs)
 
@@ -1155,7 +1140,6 @@ class ManticoreThreading(ManticoreBase):
         self._shared_context = {}
         self._context_value_types = {list: list,
                                      dict: dict,
-                                     set: set,
                                      }
         super().__init__(*args, **kwargs)
 
@@ -1182,7 +1166,6 @@ class ManticoreMultiprocessing(ManticoreBase):
         self._shared_context = self._manager.dict()
         self._context_value_types = {list: self._manager.list,
                                      dict: self._manager.dict,
-                                     set: self._manager.set,
                                      }
         super().__init__(*args, **kwargs)
 
@@ -1190,42 +1173,12 @@ class ManticoreMultiprocessing(ManticoreBase):
     def start(self):
         super().start()
 
-    ###########################################################################
-    # Workers                                                                 #
-    ###########################################################################
-    def _fork_workers(self, procs=1, profiling=False):
-        """ Spawns a new worker """
-        if profiling:
-            def profile_this(func):
-                @functools.wraps(func)
-                def wrapper(*args, **kwargs):
-                    profile = cProfile.Profile()
-                    profile.enable()
-                    result = func(*args, **kwargs)
-                    profile.disable()
-                    profile.create_stats()
-                    with self.locked_context('profiling_stats', list) as profiling_stats:
-                        profiling_stats.append(profile.stats.items())
-                    return result
-
-                return wrapper
-
-            target = profile_this(self._mainloop)
-        else:
-            target = self._mainloop
-
-        workers = self._workers
-        for _ in range(procs):
-            worker = Process(target=target)
-            worker.start()
-            workers.append(worker)
-
     def _join_workers(self):
         """ Join all workers process """
         workers = self._workers
         while len(workers) > 0:
             workers.pop().join()
 
-#ManticoreBase=ManticoreSingle
-#ManticoreBase=ManticoreThreading
-ManticoreBase=ManticoreMultiprocessing
+ManticoreBase=ManticoreSingle #real	   0m11,58
+#ManticoreBase=ManticoreThreading       #5 0m11,459s
+#ManticoreBase=ManticoreMultiprocessing #5 0m8,456s

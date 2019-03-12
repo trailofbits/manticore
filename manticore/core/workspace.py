@@ -1,14 +1,27 @@
 import os
 import sys
 import glob
-import signal
 import logging
 import tempfile
 import io
 
-from contextlib import contextmanager
-from multiprocessing.managers import SyncManager
 
+from contextlib import contextmanager
+
+try:
+    from contextlib import nullcontext
+except:
+    class nullcontext():
+        def __init__(self, enter_result=None):
+            self.enter_result = enter_result
+        def __enter__(self):
+            return self.enter_result
+        def __exit__(self, *excinfo):
+            pass
+import time
+import fcntl
+import os, errno
+import threading
 from ..utils import config
 from ..utils.helpers import PickleSerializer
 from .smtlib import solver
@@ -20,15 +33,6 @@ consts = config.get_group('workspace')
 consts.add('prefix', default='mcore_', description="The prefix to use for output and workspace directories")
 consts.add('dir', default='.', description="Location of where to create workspace directories")
 
-_manager = None
-
-
-def manager():
-    global _manager
-    if _manager is None:
-        _manager = SyncManager()
-        _manager.start(lambda: signal.signal(signal.SIGINT, signal.SIG_IGN))
-    return _manager
 
 
 class Testcase:
@@ -191,6 +195,7 @@ class FilesystemStore(Store):
         """
         :param uri: The path to on-disk workspace, or None.
         """
+        self._tlock = threading.Lock()
         if not uri:
             uri = os.path.abspath(tempfile.mkdtemp(prefix=consts.prefix, dir=consts.dir))
 
@@ -202,26 +207,64 @@ class FilesystemStore(Store):
         super().__init__(uri)
 
     @contextmanager
-    def save_stream(self, key, binary=False):
+    def lock(self):
+        lockfile = os.path.join(self.uri, '.lock')
+        with self._tlock:
+            while True:
+                try:
+                    fd = os.open(lockfile, os.O_CREAT | os.O_EXCL | os.O_RDWR)
+                except OSError as e:
+                    if e.errno != errno.EEXIST:
+                        raise
+                    time.sleep(0.05)
+                else:
+                    yield
+                    os.close(fd)
+                    os.unlink(lockfile)
+                    break
+
+    @contextmanager
+    def stream(self, key, mode='r', lock=False):
+        """
+        Yield a file object representing `key`
+
+        :param str key: The file to save to
+        :param mode: mode is an optional string that specifies the mode in which the file is opened
+        :param lock: exclusive access if True
+        :return:
+        """
+        if lock:
+            with self.lock():
+                with self.stream(key, mode, lock=False) as f:
+                    yield f
+        else:
+            with open(os.path.join(self.uri, key), mode) as f:
+                yield f
+
+    @contextmanager
+    def save_stream(self, key, binary=False, lock=False):
         """
         Yield a file object representing `key`
 
         :param str key: The file to save to
         :param bool binary: Whether we should treat it as binary
+        :param lock: exclusive access if True
         :return:
         """
         mode = 'wb' if binary else 'w'
-        with open(os.path.join(self.uri, key), mode) as f:
+        with self.stream(key, mode, lock) as f:
             yield f
 
     @contextmanager
-    def load_stream(self, key, binary=False):
+    def load_stream(self, key, binary=False, lock=False):
         """
         :param str key: name of stream to load
         :param bool binary: Whether we should treat it as binary
+        :param lock: exclusive access if True
         :return:
         """
-        with open(os.path.join(self.uri, key), 'rb' if binary else 'r') as f:
+        mode = 'rb' if binary else 'r'
+        with self.stream(key, mode, lock) as f:
             yield f
 
     def rm(self, key):
@@ -273,31 +316,6 @@ class MemoryStore(Store):
         return list(self._data)
 
 
-class SharedMemoryStore(Store):
-    """
-    An shared-memory (dict) Manticore workspace.
-
-    NOTE: This is mostly used for experimentation and testing functionality.
-    Can not be used with multiple workers!
-    """
-    store_type = 'shmem'
-
-    def __init__(self, uri=None):
-        self._data = {}
-        super().__init__(None)
-
-    def save_value(self, key, value):
-        self._data[key] = value
-
-    def load_value(self, key, binary=False):
-        return self._data.get(key)
-
-    def rm(self, key):
-        del self._data[key]
-
-    def ls(self, glob_str):
-        return list(self._data)
-
 
 class RedisStore(Store):
     """
@@ -317,6 +335,11 @@ class RedisStore(Store):
         self._client = redis.StrictRedis(host=hostname, port=int(port), db=0)
 
         super().__init__(uri)
+
+    @contextmanager
+    def lock(self):
+        with self._client.lock(".lock"):
+            yield
 
     def save_value(self, key, value):
         """
@@ -344,32 +367,17 @@ class RedisStore(Store):
         return self._client.keys(glob_str)
 
 
-# This is copied from Executor to not create a dependency on the naming of the lock field
-def sync(f):
-    """ Synchronization decorator. """
-
-    def new_function(self, *args, **kw):
-        self._lock.acquire()
-        try:
-            return f(self, *args, **kw)
-        finally:
-            self._lock.release()
-    return new_function
-
-
 class Workspace:
     """
     A workspace maintains a list of states to run and assigns them IDs.
     """
 
-    def __init__(self, lock, store_or_desc=None):
+    def __init__(self, store_or_desc=None):
         if isinstance(store_or_desc, Store):
             self._store = store_or_desc
         else:
             self._store = Store.fromdescriptor(store_or_desc)
         self._serializer = PickleSerializer()
-        self._last_id = manager().Value('i', 0)
-        self._lock = lock
         self._prefix = 'state_'
         self._suffix = '.pkl'
 
@@ -388,16 +396,23 @@ class Workspace:
 
         return state_ids
 
-    @sync
     def _get_id(self):
         """
         Get a unique state id.
 
         :rtype: int
         """
-        id_ = self._last_id.value
-        self._last_id.value += 1
-        return id_
+        with self._store.lock():
+            try:
+                with self._store.stream('.state_id', "r") as f:
+                    last_id = int(f.read())
+            except Exception as e:
+                last_id = 0
+            last_id += 1
+            with self._store.stream('.state_id', "w") as f:
+                f.write(f'{last_id}')
+                f.flush()
+        return last_id
 
     def load_state(self, state_id, delete=True):
         """
@@ -454,9 +469,6 @@ class ManticoreOutput:
         self._named_key_prefix = 'test'
         self._descriptor = desc
         self._store = Store.fromdescriptor(desc)
-        self._last_id = 0
-        self._id_gen = manager().Value('i', self._last_id)
-        self._lock = manager().Condition(manager().RLock())
 
     def testcase(self, prefix='test'):
         return Testcase(self, prefix)
@@ -480,11 +492,31 @@ class ManticoreOutput:
 
         return self._descriptor
 
-    @sync
     def _increment_id(self):
-        self._last_id = self._id_gen.value
-        self._id_gen.value += 1
-        return self._last_id
+        """
+        Get a unique testcase id.
+
+        :rtype: int
+        """
+        filename = '.testcase_id'
+        with self._store.lock():
+            try:
+                with self._store.stream(filename, "r") as f:
+                    last_id = int(f.read())
+            except Exception as e:
+                last_id = 0
+            last_id += 1
+            with self._store.stream(filename, "w") as f:
+                f.write(f'{last_id}')
+                f.flush()
+        return last_id
+
+    @property
+    def _last_id(self):
+        with self.lock():
+            with self._named_stream('.status') as st:
+                last_id, x = struct.unpack("<LL", st.read(8))
+        return last_id
 
     def _named_key(self, suffix):
         return f'{self._named_key_prefix}_{self._last_id:08x}.{suffix}'

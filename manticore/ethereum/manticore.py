@@ -1079,8 +1079,9 @@ class ManticoreEVM(ManticoreBase):
         #TODO move to a plugin
         at_init = state.platform.current_transaction.sort == 'CREATE'
         coverage_context_name = 'evm.coverage'
-        with self.locked_context(coverage_context_name, set) as coverage:
-            coverage.add((state.platform.current_vm.address, instruction.pc, at_init))
+        with self.locked_context(coverage_context_name, list) as coverage:
+            if (state.platform.current_vm.address, instruction.pc, at_init) not in coverage:
+                coverage.append((state.platform.current_vm.address, instruction.pc, at_init))
 
         state.context.setdefault('evm.trace', []).append((state.platform.current_vm.address, instruction.pc, at_init))
 
