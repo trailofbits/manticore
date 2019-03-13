@@ -5573,6 +5573,166 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X0'), 0x5152535455565758)
 
 
+    # LDRB (immediate).
+
+    # ldrb w1, [x27]          base register (opt. offset omitted):  w1 = [x27]
+    # ldrb w2, [x28, #8]      base plus offset:                     w2 = [x28 + 8]
+    # ldrb w3, [x29], #8      post-indexed:                         w3 = [x29],     x29 += 8
+    # ldrb w4, [x30, #8]!     pre-indexed:                          w4 = [x30 + 8], x30 += 8
+
+    @itest_custom('ldrb w1, [sp]')
+    def test_ldrb_imm_base32(self):
+        self.cpu.push_int(0x4142434445464748)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0x48)
+        self.assertEqual(self.rf.read('W1'), 0x48)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_custom('ldrb w1, [sp, #8]')
+    def test_ldrb_imm_base_offset32(self):
+        self.cpu.push_int(0x4142434445464748)
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0x48)
+        self.assertEqual(self.rf.read('W1'), 0x48)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_custom('ldrb w1, [sp, #4095]')
+    def test_ldrb_imm_base_offset_max32(self):
+        self.cpu.push_int(0x4142434445464748)
+        self.cpu.STACK -= 4095
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0x48)
+        self.assertEqual(self.rf.read('W1'), 0x48)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_custom('ldrb w1, [sp], #8')
+    def test_ldrb_imm_post_indexed32(self):
+        self.cpu.push_int(0x4142434445464748)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0x48)
+        self.assertEqual(self.rf.read('W1'), 0x48)
+        self.assertEqual(self.rf.read('SP'), stack + 8)  # writeback
+
+    @itest_custom('ldrb w1, [sp], #-256')
+    def test_ldrb_imm_post_indexed_neg32(self):
+        self.cpu.push_int(0x4142434445464748)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0x48)
+        self.assertEqual(self.rf.read('W1'), 0x48)
+        self.assertEqual(self.rf.read('SP'), stack - 256)  # writeback
+
+    @itest_custom('ldrb w1, [sp, #8]!')
+    def test_ldrb_imm_pre_indexed32(self):
+        self.cpu.push_int(0x4142434445464748)
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0x48)
+        self.assertEqual(self.rf.read('W1'), 0x48)
+        self.assertEqual(self.rf.read('SP'), stack + 8)  # writeback
+
+    @itest_custom('ldrb w1, [sp, #-256]!')
+    def test_ldrb_imm_pre_indexed_neg32(self):
+        self.cpu.push_int(0x4142434445464748)
+        self.cpu.STACK += 256
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0x48)
+        self.assertEqual(self.rf.read('W1'), 0x48)
+        self.assertEqual(self.rf.read('SP'), stack - 256)  # writeback
+
+
+    # LDRB (register).
+
+    @itest_setregs('W1=-8')
+    @itest_custom('ldrb w0, [sp, w1, uxtw]')
+    def test_ldrb_reg_uxtw32(self):
+        self.cpu.push_int(0x4142434445464748)
+        self.cpu.push_int(0x5152535455565758)
+        # Account for -8 (0xfffffff8) being treated like a large positive value
+        # after zero extension to 64 bits.
+        self.cpu.STACK -= 0xfffffff8
+        self._execute()
+        self.assertEqual(self.rf.read('X0'), 0x58)
+        self.assertEqual(self.rf.read('W0'), 0x58)
+
+    @itest_setregs('W1=-8')
+    @itest_custom('ldrb w0, [sp, w1, uxtw #0]')
+    def test_ldrb_reg_uxtw0_32(self):
+        self.cpu.push_int(0x4142434445464748)
+        self.cpu.push_int(0x5152535455565758)
+        # Account for -8 (0xfffffff8) being treated like a large positive value
+        # after zero extension to 64 bits.
+        self.cpu.STACK -= 0xfffffff8
+        self._execute()
+        self.assertEqual(self.rf.read('X0'), 0x58)
+        self.assertEqual(self.rf.read('W0'), 0x58)
+
+    @itest_setregs('X1=8')
+    @itest_custom('ldrb w0, [sp, x1]')
+    def test_ldrb_reg32(self):
+        self.cpu.push_int(0x4142434445464748)
+        self.cpu.push_int(0x5152535455565758)
+        self._execute()
+        self.assertEqual(self.rf.read('X0'), 0x48)
+        self.assertEqual(self.rf.read('W0'), 0x48)
+
+    @itest_setregs('X1=8')
+    @itest_custom('ldrb w0, [sp, x1, lsl #0]')
+    def test_ldrb_reg_lsl32(self):
+        self.cpu.push_int(0x4142434445464748)
+        self.cpu.push_int(0x5152535455565758)
+        self._execute()
+        self.assertEqual(self.rf.read('X0'), 0x48)
+        self.assertEqual(self.rf.read('W0'), 0x48)
+
+    @itest_setregs('W1=-8')
+    @itest_custom('ldrb w0, [sp, w1, sxtw]')
+    def test_ldrb_reg_sxtw32(self):
+        self.cpu.push_int(0x4142434445464748)
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.STACK += 8
+        self._execute()
+        self.assertEqual(self.rf.read('X0'), 0x58)
+        self.assertEqual(self.rf.read('W0'), 0x58)
+
+    @itest_setregs('W1=-8')
+    @itest_custom('ldrb w0, [sp, w1, sxtw #0]')
+    def test_ldrb_reg_sxtw0_32(self):
+        self.cpu.push_int(0x4142434445464748)
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.STACK += 8
+        self._execute()
+        self.assertEqual(self.rf.read('X0'), 0x58)
+        self.assertEqual(self.rf.read('W0'), 0x58)
+
+    @itest_setregs('X1=-8')
+    @itest_custom('ldrb w0, [sp, x1, sxtx]')
+    def test_ldrb_reg_sxtx32(self):
+        self.cpu.push_int(0x4142434445464748)
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.STACK += 8
+        self._execute()
+        self.assertEqual(self.rf.read('X0'), 0x58)
+        self.assertEqual(self.rf.read('W0'), 0x58)
+
+    @itest_setregs('X1=-8')
+    @itest_custom('ldrb w0, [sp, x1, sxtx #0]')
+    def test_ldrb_reg_sxtx0_32(self):
+        self.cpu.push_int(0x4142434445464748)
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.STACK += 8
+        self._execute()
+        self.assertEqual(self.rf.read('X0'), 0x58)
+        self.assertEqual(self.rf.read('W0'), 0x58)
+
+
     # LDUR.
 
     # 32-bit.

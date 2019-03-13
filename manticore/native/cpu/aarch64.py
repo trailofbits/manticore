@@ -712,40 +712,49 @@ class Aarch64Cpu(Cpu):
         if cpu.instruction.writeback:
             cpu.regfile.write(mem_op.mem.base, base + wback)
 
-    def _ldr_str_immediate(cpu, reg_op, mem_op, mimm_op, ldr):
+    def _ldr_str_immediate(cpu, reg_op, mem_op, mimm_op, ldr, size=None):
         assert reg_op.type is cs.arm64.ARM64_OP_REG
         assert mem_op.type is cs.arm64.ARM64_OP_MEM
         assert not mimm_op or mimm_op.type is cs.arm64.ARM64_OP_IMM
 
-        post_index_rx  = '1[01]'    # size
+        if size == 8:
+            post_index_rx = '00'     # size
+        else:
+            post_index_rx = '1[01]'  # size
         post_index_rx += '111'
         post_index_rx += '0'
         post_index_rx += '00'
         if ldr:
-            post_index_rx += '01'   # opc
+            post_index_rx += '01'    # opc
         else:
-            post_index_rx += '00'   # opc
+            post_index_rx += '00'    # opc
         post_index_rx += '0'
-        post_index_rx += '[01]{9}'  # imm9
+        post_index_rx += '[01]{9}'   # imm9
         post_index_rx += '01'
-        post_index_rx += '[01]{5}'  # Rn
-        post_index_rx += '[01]{5}'  # Rt
+        post_index_rx += '[01]{5}'   # Rn
+        post_index_rx += '[01]{5}'   # Rt
 
-        pre_index_rx  = '1[01]'     # size
+        if size == 8:
+            pre_index_rx = '00'      # size
+        else:
+            pre_index_rx = '1[01]'   # size
         pre_index_rx += '111'
         pre_index_rx += '0'
         pre_index_rx += '00'
         if ldr:
-            pre_index_rx += '01'    # opc
+            pre_index_rx += '01'     # opc
         else:
-            pre_index_rx += '00'    # opc
+            pre_index_rx += '00'     # opc
         pre_index_rx += '0'
-        pre_index_rx += '[01]{9}'   # imm9
+        pre_index_rx += '[01]{9}'    # imm9
         pre_index_rx += '11'
-        pre_index_rx += '[01]{5}'   # Rn
-        pre_index_rx += '[01]{5}'   # Rt
+        pre_index_rx += '[01]{5}'    # Rn
+        pre_index_rx += '[01]{5}'    # Rt
 
-        unsigned_offset_rx  = '1[01]'     # size
+        if size == 8:
+            unsigned_offset_rx = '00'     # size
+        else:
+            unsigned_offset_rx = '1[01]'  # size
         unsigned_offset_rx += '111'
         unsigned_offset_rx += '0'
         unsigned_offset_rx += '01'
@@ -765,6 +774,7 @@ class Aarch64Cpu(Cpu):
 
         base = cpu.regfile.read(mem_op.mem.base)
         imm = mem_op.mem.disp
+        size = size if size else reg_op.size
 
         if mimm_op:  # post-indexed
             wback = mimm_op.op.imm
@@ -772,40 +782,44 @@ class Aarch64Cpu(Cpu):
             wback = imm  # use it for writeback if applicable
 
         if ldr:
-            result = cpu.read_int(base + imm, reg_op.size)
+            result = cpu.read_int(base + imm, size)
             reg_op.write(result)
         else:
             reg = reg_op.read()
-            cpu.write_int(base + imm, reg, reg_op.size)
+            cpu.write_int(base + imm, reg, size)
 
         if cpu.instruction.writeback:
             cpu.regfile.write(mem_op.mem.base, base + wback)
 
-    def _ldr_str_register(cpu, reg_op, mem_op, ldr):
+    def _ldr_str_register(cpu, reg_op, mem_op, ldr, size=None):
         assert reg_op.type is cs.arm64.ARM64_OP_REG
         assert mem_op.type is cs.arm64.ARM64_OP_MEM
 
-        insn_rx  = '1[01]'    # size
+        if size == 8:
+            insn_rx = '00'     # size
+        else:
+            insn_rx = '1[01]'  # size
         insn_rx += '111'
         insn_rx += '0'
         insn_rx += '00'
         if ldr:
-            insn_rx += '01'   # opc
+            insn_rx += '01'    # opc
         else:
-            insn_rx += '00'   # opc
+            insn_rx += '00'    # opc
         insn_rx += '1'
-        insn_rx += '[01]{5}'  # Rm
-        insn_rx += '[01]{3}'  # option
-        insn_rx += '[01]'     # S
+        insn_rx += '[01]{5}'   # Rm
+        insn_rx += '[01]{3}'   # option
+        insn_rx += '[01]'      # S
         insn_rx += '10'
-        insn_rx += '[01]{5}'  # Rn
-        insn_rx += '[01]{5}'  # Rt
+        insn_rx += '[01]{5}'   # Rn
+        insn_rx += '[01]{5}'   # Rt
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
         base = cpu.regfile.read(mem_op.mem.base)
         index = cpu.regfile.read(mem_op.mem.index)
         index_size = cpu.regfile.size(mem_op.mem.index)
+        size = size if size else reg_op.size
 
         if mem_op.is_extended():
             ext = mem_op.op.ext
@@ -840,11 +854,11 @@ class Aarch64Cpu(Cpu):
         index = SInt(index, cpu.address_bit_size)
 
         if ldr:
-            result = cpu.read_int(base + index, reg_op.size)
+            result = cpu.read_int(base + index, size)
             reg_op.write(result)
         else:
             reg = reg_op.read()
-            cpu.write_int(base + index, reg, reg_op.size)
+            cpu.write_int(base + index, reg, size)
 
     def _ldur_stur(cpu, reg_op, mem_op, ldur):
         assert reg_op.type is cs.arm64.ARM64_OP_REG
@@ -2654,6 +2668,51 @@ class Aarch64Cpu(Cpu):
 
         else:
             raise Aarch64InvalidInstruction
+
+    def _LDRB_immediate(cpu, reg_op, mem_op, mimm_op):
+        """
+        LDRB (immediate).
+
+        Load Register Byte (immediate) loads a byte from memory, zero-extends
+        it, and writes the result to a register.  The address that is used for
+        the load is calculated from a base register and an immediate offset.
+
+        :param reg_op: destination register.
+        :param mem_op: memory.
+        :param mimm_op: None or immediate.
+        """
+        cpu._ldr_str_immediate(reg_op, mem_op, mimm_op, ldr=True, size=8)
+
+    def _LDRB_register(cpu, reg_op, mem_op):
+        """
+        LDRB (register).
+
+        Load Register Byte (register) calculates an address from a base register
+        value and an offset register value, loads a byte from memory,
+        zero-extends it, and writes it to a register.
+
+        :param reg_op: destination register.
+        :param mem_op: memory.
+        """
+        cpu._ldr_str_register(reg_op, mem_op, ldr=True, size=8)
+
+    @instruction
+    def LDRB(cpu, reg_op, mem_op, mimm_op=None):
+        """
+        Combines LDRB (immediate) and LDRB (register).
+
+        :param reg_op: destination register.
+        :param mem_op: memory.
+        :param mimm_op: None or immediate.
+        """
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+        assert mem_op.type is cs.arm64.ARM64_OP_MEM
+        assert not mimm_op or mimm_op.type is cs.arm64.ARM64_OP_IMM
+
+        if mem_op.mem.index:
+            cpu._LDRB_register(reg_op, mem_op)
+        else:
+            cpu._LDRB_immediate(reg_op, mem_op, mimm_op)
 
     @instruction
     def LDUR(cpu, reg_op, mem_op):
