@@ -712,7 +712,7 @@ class Aarch64Cpu(Cpu):
         if cpu.instruction.writeback:
             cpu.regfile.write(mem_op.mem.base, base + wback)
 
-    def _ldr_str_immediate(cpu, reg_op, mem_op, mimm_op, ldr, size=None):
+    def _ldr_str_immediate(cpu, reg_op, mem_op, mimm_op, ldr, size=None, sextend=False):
         assert reg_op.type is cs.arm64.ARM64_OP_REG
         assert mem_op.type is cs.arm64.ARM64_OP_MEM
         assert not mimm_op or mimm_op.type is cs.arm64.ARM64_OP_IMM
@@ -726,7 +726,9 @@ class Aarch64Cpu(Cpu):
         post_index_rx += '111'
         post_index_rx += '0'
         post_index_rx += '00'
-        if ldr:
+        if ldr and sextend:
+            post_index_rx += '10'    # opc
+        elif ldr:
             post_index_rx += '01'    # opc
         else:
             post_index_rx += '00'    # opc
@@ -745,7 +747,9 @@ class Aarch64Cpu(Cpu):
         pre_index_rx += '111'
         pre_index_rx += '0'
         pre_index_rx += '00'
-        if ldr:
+        if ldr and sextend:
+            pre_index_rx += '10'     # opc
+        elif ldr:
             pre_index_rx += '01'     # opc
         else:
             pre_index_rx += '00'     # opc
@@ -764,7 +768,9 @@ class Aarch64Cpu(Cpu):
         unsigned_offset_rx += '111'
         unsigned_offset_rx += '0'
         unsigned_offset_rx += '01'
-        if ldr:
+        if ldr and sextend:
+            unsigned_offset_rx += '10'    # opc
+        elif ldr:
             unsigned_offset_rx += '01'    # opc
         else:
             unsigned_offset_rx += '00'    # opc
@@ -789,6 +795,8 @@ class Aarch64Cpu(Cpu):
 
         if ldr:
             result = cpu.read_int(base + imm, size)
+            if sextend:
+                result = Operators.SEXTEND(result, size, cpu.address_bit_size)
             reg_op.write(result)
         else:
             reg = reg_op.read()
@@ -797,7 +805,7 @@ class Aarch64Cpu(Cpu):
         if cpu.instruction.writeback:
             cpu.regfile.write(mem_op.mem.base, base + wback)
 
-    def _ldr_str_register(cpu, reg_op, mem_op, ldr, size=None):
+    def _ldr_str_register(cpu, reg_op, mem_op, ldr, size=None, sextend=False):
         assert reg_op.type is cs.arm64.ARM64_OP_REG
         assert mem_op.type is cs.arm64.ARM64_OP_MEM
 
@@ -810,7 +818,9 @@ class Aarch64Cpu(Cpu):
         insn_rx += '111'
         insn_rx += '0'
         insn_rx += '00'
-        if ldr:
+        if ldr and sextend:
+            insn_rx += '10'    # opc
+        elif ldr:
             insn_rx += '01'    # opc
         else:
             insn_rx += '00'    # opc
@@ -863,10 +873,36 @@ class Aarch64Cpu(Cpu):
 
         if ldr:
             result = cpu.read_int(base + index, size)
+            if sextend:
+                result = Operators.SEXTEND(result, size, cpu.address_bit_size)
             reg_op.write(result)
         else:
             reg = reg_op.read()
             cpu.write_int(base + index, reg, size)
+
+    def _ldr_literal(cpu, reg_op, imm_op, size=None, sextend=False):
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+        assert imm_op.type is cs.arm64.ARM64_OP_IMM
+
+        if sextend:
+            insn_rx = '10'     # opc
+        else:
+            insn_rx = '0[01]'  # opc
+        insn_rx += '011'
+        insn_rx += '0'
+        insn_rx += '00'
+        insn_rx += '[01]{19}'  # imm19
+        insn_rx += '[01]{5}'   # Rt
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        size = size if size else reg_op.size
+        imm = imm_op.op.imm
+
+        result = cpu.read_int(imm, size)
+        if sextend:
+            result = Operators.SEXTEND(result, size, cpu.address_bit_size)
+        reg_op.write(result)
 
     def _ldur_stur(cpu, reg_op, mem_op, ldur):
         assert reg_op.type is cs.arm64.ARM64_OP_REG
@@ -2612,31 +2648,17 @@ class Aarch64Cpu(Cpu):
         """
         cpu._ldr_str_immediate(reg_op, mem_op, mimm_op, ldr=True)
 
-    def _LDR_literal(cpu, dst, src):
+    def _LDR_literal(cpu, reg_op, imm_op):
         """
         LDR (literal).
 
         Load Register (literal) calculates an address from the PC value and an
         immediate offset, loads a word from memory, and writes it to a register.
 
-        :param dst: destination register.
-        :param src: immediate.
+        :param reg_op: destination register.
+        :param imm_op: immediate.
         """
-        assert dst.type is cs.arm64.ARM64_OP_REG
-        assert src.type is cs.arm64.ARM64_OP_IMM
-
-        insn_rx  = '0[01]'     # opc
-        insn_rx += '011'
-        insn_rx += '0'
-        insn_rx += '00'
-        insn_rx += '[01]{19}'  # imm19
-        insn_rx += '[01]{5}'   # Rt
-
-        assert re.match(insn_rx, cpu.insn_bit_str)
-
-        imm = src.op.imm
-        result = cpu.read_int(imm, dst.size)
-        dst.write(result)
+        cpu._ldr_literal(reg_op, imm_op)
 
     def _LDR_register(cpu, reg_op, mem_op):
         """
@@ -2767,6 +2789,73 @@ class Aarch64Cpu(Cpu):
             cpu._LDRH_register(reg_op, mem_op)
         else:
             cpu._LDRH_immediate(reg_op, mem_op, mimm_op)
+
+    def _LDRSW_immediate(cpu, reg_op, mem_op, mimm_op):
+        """
+        LDRSW (immediate).
+
+        Load Register Signed Word (immediate) loads a word from memory,
+        sign-extends it to 64 bits, and writes the result to a register.  The
+        address that is used for the load is calculated from a base register and
+        an immediate offset.
+
+        :param reg_op: destination register.
+        :param mem_op: memory.
+        :param mimm_op: None or immediate.
+        """
+        cpu._ldr_str_immediate(reg_op, mem_op, mimm_op, ldr=True, size=32, sextend=True)
+
+    def _LDRSW_literal(cpu, reg_op, imm_op):
+        """
+        LDRSW (literal).
+
+        Load Register Signed Word (literal) calculates an address from the PC
+        value and an immediate offset, loads a word from memory, and writes it
+        to a register.
+
+        :param reg_op: destination register.
+        :param imm_op: immediate.
+        """
+        cpu._ldr_literal(reg_op, imm_op, size=32, sextend=True)
+
+    def _LDRSW_register(cpu, reg_op, mem_op):
+        """
+        LDRSW (register).
+
+        Load Register Signed Word (register) calculates an address from a base
+        register value and an offset register value, loads a word from memory,
+        sign-extends it to form a 64-bit value, and writes it to a register.
+        The offset register value can be shifted left by 0 or 2 bits.
+
+        :param reg_op: destination register.
+        :param mem_op: memory.
+        """
+        cpu._ldr_str_register(reg_op, mem_op, ldr=True, size=32, sextend=True)
+
+    @instruction
+    def LDRSW(cpu, dst, src, rest=None):
+        """
+        Combines LDRSW (immediate), LDRSW (literal), and LDRSW (register).
+
+        :param dst: destination register.
+        :param src: memory or immediate.
+        :param rest: None or immediate.
+        """
+        assert dst.type is cs.arm64.ARM64_OP_REG
+        assert src.type in [cs.arm64.ARM64_OP_MEM, cs.arm64.ARM64_OP_IMM]
+        assert not rest or rest.type is cs.arm64.ARM64_OP_IMM
+
+        if src.type == cs.arm64.ARM64_OP_MEM:
+            if src.mem.index:
+                cpu._LDRSW_register(dst, src)
+            else:
+                cpu._LDRSW_immediate(dst, src, rest)
+
+        elif src.type == cs.arm64.ARM64_OP_IMM:
+            cpu._LDRSW_literal(dst, src)
+
+        else:
+            raise Aarch64InvalidInstruction
 
     @instruction
     def LDUR(cpu, reg_op, mem_op):
