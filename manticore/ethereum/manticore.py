@@ -194,7 +194,7 @@ class ManticoreEVM(ManticoreBase):
                     # Contract names longer than 40 bytes ?
                     if ':' in lib_placeholder:
                         # __/tmp/tmp_9k7_l:Manticore______________
-                        lib_name = lib_placeholder.split(':')[1].strip('_')[0]
+                        lib_name = lib_placeholder.split(':')[1].strip('_')
                         deps.setdefault(lib_name, []).append(pos)
                     else:
                         lib_name = lib_placeholder.strip('_')
@@ -330,7 +330,7 @@ class ManticoreEVM(ManticoreBase):
                     break
 
         if name is None:
-            raise ValueError('Specified contract not found')
+            raise ValueError('Specified contract not found', contract_name)
 
         name = name.split(':')[1]
 
