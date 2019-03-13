@@ -719,6 +719,8 @@ class Aarch64Cpu(Cpu):
 
         if size == 8:
             post_index_rx = '00'     # size
+        elif size == 16:
+            post_index_rx = '01'     # size
         else:
             post_index_rx = '1[01]'  # size
         post_index_rx += '111'
@@ -736,6 +738,8 @@ class Aarch64Cpu(Cpu):
 
         if size == 8:
             pre_index_rx = '00'      # size
+        elif size == 16:
+            pre_index_rx = '01'      # size
         else:
             pre_index_rx = '1[01]'   # size
         pre_index_rx += '111'
@@ -753,6 +757,8 @@ class Aarch64Cpu(Cpu):
 
         if size == 8:
             unsigned_offset_rx = '00'     # size
+        elif size == 16:
+            unsigned_offset_rx = '01'     # size
         else:
             unsigned_offset_rx = '1[01]'  # size
         unsigned_offset_rx += '111'
@@ -797,6 +803,8 @@ class Aarch64Cpu(Cpu):
 
         if size == 8:
             insn_rx = '00'     # size
+        elif size == 16:
+            insn_rx = '01'     # size
         else:
             insn_rx = '1[01]'  # size
         insn_rx += '111'
@@ -2713,6 +2721,52 @@ class Aarch64Cpu(Cpu):
             cpu._LDRB_register(reg_op, mem_op)
         else:
             cpu._LDRB_immediate(reg_op, mem_op, mimm_op)
+
+    def _LDRH_immediate(cpu, reg_op, mem_op, mimm_op):
+        """
+        LDRH (immediate).
+
+        Load Register Halfword (immediate) loads a halfword from memory,
+        zero-extends it, and writes the result to a register.  The address that
+        is used for the load is calculated from a base register and an immediate
+        offset.
+
+        :param reg_op: destination register.
+        :param mem_op: memory.
+        :param mimm_op: None or immediate.
+        """
+        cpu._ldr_str_immediate(reg_op, mem_op, mimm_op, ldr=True, size=16)
+
+    def _LDRH_register(cpu, reg_op, mem_op):
+        """
+        LDRH (register).
+
+        Load Register Halfword (register) calculates an address from a base
+        register value and an offset register value, loads a halfword from
+        memory, zero-extends it, and writes it to a register.
+
+        :param reg_op: destination register.
+        :param mem_op: memory.
+        """
+        cpu._ldr_str_register(reg_op, mem_op, ldr=True, size=16)
+
+    @instruction
+    def LDRH(cpu, reg_op, mem_op, mimm_op=None):
+        """
+        Combines LDRH (immediate) and LDRH (register).
+
+        :param reg_op: destination register.
+        :param mem_op: memory.
+        :param mimm_op: None or immediate.
+        """
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+        assert mem_op.type is cs.arm64.ARM64_OP_MEM
+        assert not mimm_op or mimm_op.type is cs.arm64.ARM64_OP_IMM
+
+        if mem_op.mem.index:
+            cpu._LDRH_register(reg_op, mem_op)
+        else:
+            cpu._LDRH_immediate(reg_op, mem_op, mimm_op)
 
     @instruction
     def LDUR(cpu, reg_op, mem_op):
