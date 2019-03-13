@@ -5499,7 +5499,7 @@ class Aarch64Instructions:
     def test_ldr_reg_sxtw2_32(self):
         self.cpu.push_int(0x4142434445464748)
         self.cpu.push_int(0x5152535455565758)
-        self.cpu.STACK += LSL(8, 2, 32)
+        self.cpu.STACK += LSL(8, 2, 64)
         self._execute()
         self.assertEqual(self.rf.read('X0'), 0x55565758)
         self.assertEqual(self.rf.read('W0'), 0x55565758)
@@ -5584,7 +5584,7 @@ class Aarch64Instructions:
     def test_ldr_reg_sxtw3_64(self):
         self.cpu.push_int(0x4142434445464748)
         self.cpu.push_int(0x5152535455565758)
-        self.cpu.STACK += LSL(8, 3, 32)
+        self.cpu.STACK += LSL(8, 3, 64)
         self._execute()
         self.assertEqual(self.rf.read('X0'), 0x5152535455565758)
         self.assertEqual(self.rf.read('W0'), 0x55565758)
@@ -5904,7 +5904,7 @@ class Aarch64Instructions:
     def test_ldrh_reg_sxtw1_32(self):
         self.cpu.push_int(0x4142434445464748)
         self.cpu.push_int(0x5152535455565758)
-        self.cpu.STACK += LSL(4, 1, 32)
+        self.cpu.STACK += LSL(4, 1, 64)
         self._execute()
         self.assertEqual(self.rf.read('X0'), 0x5758)
         self.assertEqual(self.rf.read('W0'), 0x5758)
@@ -6086,7 +6086,7 @@ class Aarch64Instructions:
     def test_ldrsw_reg_sxtw2_64(self):
         self.cpu.push_int(0x4142434445464748)
         self.cpu.push_int(0x5152535485565758)
-        self.cpu.STACK += LSL(8, 2, 32)
+        self.cpu.STACK += LSL(8, 2, 64)
         self._execute()
         self.assertEqual(self.rf.read('X0'), 0xffffffff85565758)
         self.assertEqual(self.rf.read('W0'), 0x85565758)
@@ -8328,7 +8328,7 @@ class Aarch64Instructions:
     def test_str_reg_sxtw2_32(self):
         self.cpu.push_int(0x5152535455565758)
         stack = self.cpu.STACK
-        self.cpu.STACK += LSL(8, 2, 32)
+        self.cpu.STACK += LSL(8, 2, 64)
         self._execute()
         self.assertEqual(self.cpu.read_int(stack), 0x5152535441424344)
 
@@ -8405,7 +8405,7 @@ class Aarch64Instructions:
     def test_str_reg_sxtw3_64(self):
         self.cpu.push_int(0x5152535455565758)
         stack = self.cpu.STACK
-        self.cpu.STACK += LSL(8, 3, 32)
+        self.cpu.STACK += LSL(8, 3, 64)
         self._execute()
         self.assertEqual(self.cpu.read_int(stack), 0x4142434445464748)
 
@@ -8709,7 +8709,7 @@ class Aarch64Instructions:
     def test_strh_reg_sxtw1_32(self):
         self.cpu.push_int(0x5152535455565758)
         stack = self.cpu.STACK
-        self.cpu.STACK += LSL(4, 1, 32)
+        self.cpu.STACK += LSL(4, 1, 64)
         self._execute()
         self.assertEqual(self.cpu.read_int(stack), 0x5152535455564344)
 
