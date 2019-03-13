@@ -5315,6 +5315,7 @@ class Aarch64Instructions:
         stack = self.cpu.STACK
         self._execute()
         self.assertEqual(self.rf.read('X1'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W1'), 0x45464748)
         self.assertEqual(self.rf.read('SP'), stack)  # no writeback
 
     @itest_custom('ldr x1, [sp, #8]')
@@ -5324,6 +5325,7 @@ class Aarch64Instructions:
         stack = self.cpu.STACK
         self._execute()
         self.assertEqual(self.rf.read('X1'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W1'), 0x45464748)
         self.assertEqual(self.rf.read('SP'), stack)  # no writeback
 
     @itest_custom('ldr x1, [sp, #32760]')
@@ -5333,6 +5335,7 @@ class Aarch64Instructions:
         stack = self.cpu.STACK
         self._execute()
         self.assertEqual(self.rf.read('X1'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W1'), 0x45464748)
         self.assertEqual(self.rf.read('SP'), stack)  # no writeback
 
     @itest_custom('ldr x1, [sp], #8')
@@ -5341,6 +5344,7 @@ class Aarch64Instructions:
         stack = self.cpu.STACK
         self._execute()
         self.assertEqual(self.rf.read('X1'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W1'), 0x45464748)
         self.assertEqual(self.rf.read('SP'), stack + 8)  # writeback
 
     @itest_custom('ldr x1, [sp], #-256')
@@ -5349,6 +5353,7 @@ class Aarch64Instructions:
         stack = self.cpu.STACK
         self._execute()
         self.assertEqual(self.rf.read('X1'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W1'), 0x45464748)
         self.assertEqual(self.rf.read('SP'), stack - 256)  # writeback
 
     @itest_custom('ldr x1, [sp, #8]!')
@@ -5358,6 +5363,7 @@ class Aarch64Instructions:
         stack = self.cpu.STACK
         self._execute()
         self.assertEqual(self.rf.read('X1'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W1'), 0x45464748)
         self.assertEqual(self.rf.read('SP'), stack + 8)  # writeback
 
     @itest_custom('ldr x1, [sp, #-256]!')
@@ -5367,6 +5373,7 @@ class Aarch64Instructions:
         stack = self.cpu.STACK
         self._execute()
         self.assertEqual(self.rf.read('X1'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W1'), 0x45464748)
         self.assertEqual(self.rf.read('SP'), stack - 256)  # writeback
 
 
@@ -5386,6 +5393,7 @@ class Aarch64Instructions:
         self.cpu.push_int(0x4142434445464748)
         self._execute()
         self.assertEqual(self.rf.read('X0'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
 
     @itest_custom('ldr w0, .-8')
     def test_ldr_lit_neg32(self):
@@ -5407,6 +5415,7 @@ class Aarch64Instructions:
         self.cpu.push_int(0x4142434445464748)
         self._execute()
         self.assertEqual(self.rf.read('X0'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
 
 
     # LDR (register).
@@ -5507,6 +5516,7 @@ class Aarch64Instructions:
         self.cpu.STACK -= 0xfffffff8
         self._execute()
         self.assertEqual(self.rf.read('X0'), 0x5152535455565758)
+        self.assertEqual(self.rf.read('W0'), 0x55565758)
 
     @itest_setregs('W1=-8')
     @itest_custom('ldr x0, [sp, w1, uxtw #3]')
@@ -5518,6 +5528,7 @@ class Aarch64Instructions:
         self.cpu.STACK -= LSL(0xfffffff8, 3, 64)
         self._execute()
         self.assertEqual(self.rf.read('X0'), 0x5152535455565758)
+        self.assertEqual(self.rf.read('W0'), 0x55565758)
 
     @itest_setregs('X1=8')
     @itest_custom('ldr x0, [sp, x1]')
@@ -5526,6 +5537,7 @@ class Aarch64Instructions:
         self.cpu.push_int(0x5152535455565758)
         self._execute()
         self.assertEqual(self.rf.read('X0'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
 
     @itest_setregs('X1=2')
     @itest_custom('ldr x0, [sp, x1, lsl #3]')
@@ -5535,6 +5547,7 @@ class Aarch64Instructions:
         self.cpu.push_int(0x5152535455565758)
         self._execute()
         self.assertEqual(self.rf.read('X0'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
 
     @itest_setregs('W1=-8')
     @itest_custom('ldr x0, [sp, w1, sxtw]')
@@ -5544,6 +5557,7 @@ class Aarch64Instructions:
         self.cpu.STACK += 8
         self._execute()
         self.assertEqual(self.rf.read('X0'), 0x5152535455565758)
+        self.assertEqual(self.rf.read('W0'), 0x55565758)
 
     @itest_setregs('W1=-8')
     @itest_custom('ldr x0, [sp, w1, sxtw #3]')
@@ -5553,6 +5567,7 @@ class Aarch64Instructions:
         self.cpu.STACK += LSL(8, 3, 32)
         self._execute()
         self.assertEqual(self.rf.read('X0'), 0x5152535455565758)
+        self.assertEqual(self.rf.read('W0'), 0x55565758)
 
     @itest_setregs('X1=-8')
     @itest_custom('ldr x0, [sp, x1, sxtx]')
@@ -5562,6 +5577,7 @@ class Aarch64Instructions:
         self.cpu.STACK += 8
         self._execute()
         self.assertEqual(self.rf.read('X0'), 0x5152535455565758)
+        self.assertEqual(self.rf.read('W0'), 0x55565758)
 
     @itest_setregs('X1=-2')
     @itest_custom('ldr x0, [sp, x1, sxtx #3]')
@@ -5571,6 +5587,7 @@ class Aarch64Instructions:
         self.cpu.STACK += 16
         self._execute()
         self.assertEqual(self.rf.read('X0'), 0x5152535455565758)
+        self.assertEqual(self.rf.read('W0'), 0x55565758)
 
 
     # LDRB (immediate).
