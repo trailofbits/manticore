@@ -52,6 +52,9 @@ class Eventful(object, metaclass=EventsGatherMetaclass):
     # Maps an Eventful subclass with a set of all the events it publishes.
     __all_events__ = dict()
 
+    # Set of subscribed events
+    __sub_events__ = set()
+
     # Set in subclass to advertise the events it plans to publish
     _published_events = set()
 
@@ -118,8 +121,10 @@ class Eventful(object, metaclass=EventsGatherMetaclass):
     # a class that supports it.
     # The underscore _name is to avoid naming collisions with callback params
     def _publish(self, _name, *args, **kwargs):
-        self._check_event(_name)
-        self._publish_impl(_name, *args, **kwargs)
+        # only publish if there is at least one subscriber
+        if _name in self.__sub_events__:
+            self._check_event(_name)
+            self._publish_impl(_name, *args, **kwargs)
 
     # Separate from _publish since the recursive method call to forward an event
     # shouldn't check the event.
@@ -144,6 +149,7 @@ class Eventful(object, metaclass=EventsGatherMetaclass):
         bucket = self._get_signal_bucket(name)
         robj = ref(obj, self._unref)  # see unref() for explanation
         bucket.setdefault(robj, set()).add(callback)
+        self.__sub_events__.add(name)
 
     def forward_events_from(self, source, include_source=False):
         assert isinstance(source, Eventful), f'{source.__class__.__name__} is not Eventful'
