@@ -3890,6 +3890,56 @@ class Aarch64Cpu(Cpu):
         else:
             cpu._STRB_immediate(reg_op, mem_op, mimm_op)
 
+    def _STRH_immediate(cpu, reg_op, mem_op, mimm_op):
+        """
+        STRH (immediate).
+
+        Store Register Halfword (immediate) stores the least significant
+        halfword of a 32-bit register to memory.  The address that is used for
+        the store is calculated from a base register and an immediate offset.
+
+        :param reg_op: source register.
+        :param mem_op: memory.
+        :param mimm_op: None or immediate.
+        """
+        cpu._ldr_str_immediate(reg_op, mem_op, mimm_op, ldr=False, size=16)
+
+    def _STRH_register(cpu, reg_op, mem_op):
+        """
+        STRH (register).
+
+        Store Register Halfword (register) calculates an address from a base
+        register value and an offset register value, and stores a halfword from
+        a 32-bit register to the calculated address.
+
+        The instruction uses an offset addressing mode, that calculates the
+        address used for the memory access from a base register value and an
+        offset register value.  The offset can be optionally shifted and
+        extended.
+
+        :param reg_op: source register.
+        :param mem_op: memory.
+        """
+        cpu._ldr_str_register(reg_op, mem_op, ldr=False, size=16)
+
+    @instruction
+    def STRH(cpu, reg_op, mem_op, mimm_op=None):
+        """
+        Combines STRH (immediate) and STRH (register).
+
+        :param reg_op: source register.
+        :param mem_op: memory.
+        :param mimm_op: None or immediate.
+        """
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+        assert mem_op.type is cs.arm64.ARM64_OP_MEM
+        assert not mimm_op or mimm_op.type is cs.arm64.ARM64_OP_IMM
+
+        if mem_op.mem.index:
+            cpu._STRH_register(reg_op, mem_op)
+        else:
+            cpu._STRH_immediate(reg_op, mem_op, mimm_op)
+
     @instruction
     def STUR(cpu, reg_op, mem_op):
         """

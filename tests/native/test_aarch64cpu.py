@@ -8361,6 +8361,158 @@ class Aarch64Instructions:
         self.assertEqual(self.cpu.read_int(stack), 0x5152535455565744)
 
 
+    # STRH (immediate).
+
+    # strh w1, [x27]          base register (opt. offset omitted):  [x27]     = w1
+    # strh w2, [x28, #8]      base plus offset:                     [x28 + 8] = w2
+    # strh w3, [x29], #8      post-indexed:                         [x29]     = w3, x29 += 8
+    # strh w4, [x30, #8]!     pre-indexed:                          [x30 + 8] = w4, x30 += 8
+
+    @itest_setregs('W1=0x41424344')
+    @itest_custom('strh w1, [sp]')
+    def test_strh_imm_base32(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x5152535455564344)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('W1=0x41424344')
+    @itest_custom('strh w1, [sp, #8]')
+    def test_strh_imm_base_offset32(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.push_int(0x6162636465666768)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x5152535455564344)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('W1=0x41424344')
+    @itest_custom('strh w1, [sp, #8190]')
+    def test_strh_imm_base_offset_max32(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.STACK -= 8190
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack + 8190), 0x5152535455564344)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('W1=0x41424344')
+    @itest_custom('strh w1, [sp], #8')
+    def test_strh_imm_post_indexed32(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x5152535455564344)
+        self.assertEqual(self.rf.read('SP'), stack + 8)  # writeback
+
+    @itest_setregs('W1=0x41424344')
+    @itest_custom('strh w1, [sp], #-256')
+    def test_strh_imm_post_indexed_neg32(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x5152535455564344)
+        self.assertEqual(self.rf.read('SP'), stack - 256)  # writeback
+
+    @itest_setregs('W1=0x41424344')
+    @itest_custom('strh w1, [sp, #8]!')
+    def test_strh_imm_pre_indexed32(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.push_int(0x6162636465666768)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x5152535455564344)
+        self.assertEqual(self.rf.read('SP'), stack + 8)  # writeback
+
+    @itest_setregs('W1=0x41424344')
+    @itest_custom('strh w1, [sp, #-256]!')
+    def test_strh_imm_pre_indexed_neg32(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.STACK += 256
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack - 256), 0x5152535455564344)
+        self.assertEqual(self.rf.read('SP'), stack - 256)  # writeback
+
+
+    # STRH (register).
+
+    @itest_setregs('W0=0x41424344', 'W1=-8')
+    @itest_custom('strh w0, [sp, w1, uxtw]')
+    def test_strh_reg_uxtw32(self):
+        self.cpu.push_int(0x5152535455565758)
+        # Account for -8 (0xfffffff8) being treated like a large positive value
+        # after zero extension to 64 bits.
+        stack = self.cpu.STACK
+        self.cpu.STACK -= 0xfffffff8
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x5152535455564344)
+
+    @itest_setregs('W0=0x41424344', 'W1=-4')
+    @itest_custom('strh w0, [sp, w1, uxtw #1]')
+    def test_strh_reg_uxtw1_32(self):
+        self.cpu.push_int(0x5152535455565758)
+        # Account for -4 (0xfffffffc) being treated like a large positive value
+        # after zero extension to 64 bits.
+        stack = self.cpu.STACK
+        self.cpu.STACK -= LSL(0xfffffffc, 1, 64)
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x5152535455564344)
+
+    @itest_setregs('W0=0x41424344', 'X1=8')
+    @itest_custom('strh w0, [sp, x1]')
+    def test_strh_reg32(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.push_int(0x6162636465666768)
+        self._execute()
+        self.assertEqual(self.cpu.read_int(self.cpu.STACK + 8), 0x5152535455564344)
+
+    @itest_setregs('W0=0x41424344', 'X1=4')
+    @itest_custom('strh w0, [sp, x1, lsl #1]')
+    def test_strh_reg_lsl32(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.push_int(0x6162636465666768)
+        self._execute()
+        self.assertEqual(self.cpu.read_int(self.cpu.STACK + 8), 0x5152535455564344)
+
+    @itest_setregs('W0=0x41424344', 'W1=-8')
+    @itest_custom('strh w0, [sp, w1, sxtw]')
+    def test_strh_reg_sxtw32(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self.cpu.STACK += 8
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x5152535455564344)
+
+    @itest_setregs('W0=0x41424344', 'W1=-4')
+    @itest_custom('strh w0, [sp, w1, sxtw #1]')
+    def test_strh_reg_sxtw1_32(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self.cpu.STACK += LSL(4, 1, 32)
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x5152535455564344)
+
+    @itest_setregs('W0=0x41424344', 'X1=-8')
+    @itest_custom('strh w0, [sp, x1, sxtx]')
+    def test_strh_reg_sxtx32(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self.cpu.STACK += 8
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x5152535455564344)
+
+    @itest_setregs('W0=0x41424344', 'X1=-4')
+    @itest_custom('strh w0, [sp, x1, sxtx #1]')
+    def test_strh_reg_sxtx1_32(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self.cpu.STACK += 8
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x5152535455564344)
+
+
     # STUR.
 
     # 32-bit.
