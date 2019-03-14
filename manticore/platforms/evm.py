@@ -2532,7 +2532,11 @@ class EVMWorld(Platform):
         sort, address, price, data, caller, value, gas = self._pending_transaction
 
         if sort not in {'CALL', 'CREATE', 'DELEGATECALL', 'CALLCODE'}:
-            raise EVMException('Type of transaction not supported')
+            if sort == 'STATICCALL':
+                # TODO: Remove this once Issue #1168 is resolved
+                raise EVMException(f"The STATICCALL opcode is not yet supported; see https://github.com/trailofbits/manticore/issues/1168")
+            else:
+                raise EVMException(f"Transaction type '{sort}' not supported")
 
         if self.depth > 0:
             assert price is None, "Price should not be used in internal transactions"
