@@ -257,7 +257,7 @@ class ManticoreEVM(ManticoreBase):
             '--allow-paths', '.',
             relative_filepath
         ]
-
+        logger.debug(f"Running: {' '.join(solc_invocation)}")
         p = Popen(solc_invocation, stdout=PIPE, stderr=PIPE, **additional_kwargs)
         stdout, stderr = p.communicate()
 
@@ -311,14 +311,14 @@ class ManticoreEVM(ManticoreBase):
 
         contracts = output.get('contracts', [])
         if len(contracts) != 1 and contract_name is None:
-            raise EthereumError('Solidity file must contain exactly one contract or you must use a contract parameter to specify one.')
+            raise EthereumError(f'Solidity file must contain exactly one contract or you must use a `--contract` parameter to specify one. Contracts found: {", ".join(contracts)}')
 
         name, contract = None, None
         if contract_name is None:
             name, contract = list(contracts.items())[0]
         else:
             for n, c in contracts.items():
-                if n.split(":")[1] == contract_name:
+                if n == contract_name or n.split(":")[1] == contract_name:
                     name, contract = n, c
                     break
 
@@ -328,7 +328,7 @@ class ManticoreEVM(ManticoreBase):
         name = name.split(':')[1]
 
         if contract['bin'] == '':
-            raise EthereumError('Solidity failed to compile your contract.')
+            raise EthereumError('Solidity failed to generate bytecode for your contract. Check if all the abstract functions are implemented')
 
         bytecode = ManticoreEVM._link(contract['bin'], libraries)
         srcmap = contract['srcmap'].split(';')
