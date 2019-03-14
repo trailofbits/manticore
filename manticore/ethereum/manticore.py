@@ -525,7 +525,7 @@ class ManticoreEVM(ManticoreBase):
                 for lib_name in e.lib_names:
                     if lib_name not in deps:
                         contract_names.append(lib_name)
-            except Exception:
+            except Exception as e:
                 self.kill()
                 raise
 
@@ -946,10 +946,9 @@ class ManticoreEVM(ManticoreBase):
         # process it and potentially generate several READY and.or TERMINATED states.
         super().run(**kwargs)
 
-        # The run may have finished be timeput/cancel or by state exaustation
+        # The run may have finished be timeout/cancel or by state exhaustion
         # At this point we potentially have some READY states and some TERMINATED states
         # No busy states though
-
 
         #If there are ready states still then it was a paused execution
         assert not self._ready_states or self.is_stopped()

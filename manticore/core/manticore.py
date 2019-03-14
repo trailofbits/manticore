@@ -23,9 +23,9 @@ from ..utils.nointerrupt import WithKeyboardInterruptAs
 from .workspace import Workspace
 from .state import Concretize, TerminateState
 
-from multiprocessing.managers import SyncManager, threading, MakeProxyType, BaseListProxy, ListProxy, ArrayProxy, DictProxy
-from multiprocessing import Process
-from threading import Timer, Thread
+import multiprocessing
+from multiprocessing.managers import SyncManager
+import threading
 import ctypes
 import signal
 
@@ -148,8 +148,9 @@ class Worker:
         logger.debug("Starting Manticore Symbolic Emulator Worker. Pid %d Tid %d).", os.getpid(), threading.get_ident())
         m = self.manticore
         current_state = None
+
         # If CTRL+C is received at any worker lets abort exploration via m.kill()
-        # kill will set m._killed flag to true and the each worker needs to slowly
+        # kill will set m._killed flag to true and then each worker will slowly
         # get out of its mainloop and quit.
         with WithKeyboardInterruptAs(m.kill):
 
@@ -184,7 +185,7 @@ class Worker:
                         current_state = m._get_state(wait=True)
 
                         # there are no more states to process
-                        # states can come from the ready list of by forking
+                        # states can come from the ready list or by forking
                         # states currently being analyzed in the busy list
                         if current_state is None:
                             logger.info("[%r] No more states", self.id)
@@ -198,17 +199,21 @@ class Worker:
                         # Allows to terminate manticore worker on user request
                         # even in the middle of an execution
                         logger.info("[%r] Running", self.id)
+                        assert current_state.id in m._busy_states and current_state.id not in m._ready_states
+
+                        # This does not hold the lock so we may loss some event
+                        # flickering
                         while m._started.value and not m._killed.value:
                             current_state.execute()
                         else:
-                            logger.info("[%r] Stopped or Cancelled", self.id)
+                            logger.info("[%r] Stopped and/or Killed", self.id)
                             # On going execution was stopped or killed. Lets
                             # save any progress on the current state
                             m._save(current_state)
                             m._revive(current_state.id)
                             current_state = None
 
-
+                        assert current_state is None
                     # Handling Forking and terminating exceptions
                     except Concretize as exc:
                         logger.info("[%r] Debug %r", self.id, exc)
@@ -219,7 +224,6 @@ class Worker:
                         # returns a None and let _get_state choose what to explore
                         # next
                         m._fork(current_state, exc.expression, exc.policy, exc.setstate)
-
                         current_state = None
 
                     except TerminateState as exc:
@@ -231,7 +235,6 @@ class Worker:
                         # Add the state to the terminated state list
                         m._terminate(current_state.id)
                         m._publish('did_terminate_state', current_state, exc)
-
                         current_state = None
 
                 except (Exception, AssertionError) as exc:
@@ -269,7 +272,7 @@ class WorkerThread(Worker):
     """ A worker thread """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._t = Thread(target=self.run)
+        self._t = threading.Thread(target=self.run)
 
     def start(self):
         self._t.start()
@@ -281,7 +284,7 @@ class WorkerProcess(Worker):
     """ A worker process """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._p = Process(target=self.run)
+        self._p = multiprocessing.Process(target=self.run)
 
     def start(self):
         self._p.start()
@@ -289,11 +292,34 @@ class WorkerProcess(Worker):
     def join(self):
         self._p.join()
 
+def verbosity(level):
+    """Convenience interface for setting logging verbosity to one of
+    several predefined logging presets. Valid values: 0-5.
+
+    FIXME refator. This will affect all manticre instances.
+    """
+    log.set_verbosity(level)
+    logger.info(f'Verbosity set to {level}.')
 
 class ManticoreBase(Eventful):
     '''
     Base class for the central analysis object.
     '''
+
+    def __new__(cls, *args, **kwargs):
+        if consts.mprocessing.title() not in ('Single', 'Multiprocessing', 'Threading'):
+            raise Exception("Single, multiprocessing or threading expected")
+        if cls in (ManticoreBase, ManticoreSingle, ManticoreThreading, ManticoreMultiprocessing):
+            raise Exception("Should not instantiate this")
+        cl = globals()[f'Manticore{consts.mprocessing.title()}']
+        if cl not in cls.__bases__:
+            #change ManticoreBase for the more specific class
+            idx = cls.__bases__.index(ManticoreBase)
+            bases = list(cls.__bases__)
+            bases[idx] = cl
+            cls.__bases__= tuple(bases)
+
+        return super().__new__(cls)
 
     # Decorators added first for convenience.
     def sync(func):
@@ -473,7 +499,7 @@ class ManticoreBase(Eventful):
 
         # FIXME better Metaprogramming?
         if any(not hasattr(self, x) for x in ( '_worker_type', '_lock', '_started', '_killed', '_ready_states', '_terminated_states', '_killed_states',
-        '_busy_states', '_shared_context', '_context_value_types')):
+        '_busy_states', '_shared_context')):
             raise Exception('Need to instantiate one of: ManticoreNative, ManticoreThreads..')
 
         # The workspace
@@ -490,7 +516,7 @@ class ManticoreBase(Eventful):
         self._output = ManticoreOutput(workspace_url)
 
         # The set of registered plugins
-        # The callback methos defined in the plugin object will be called when 
+        # The callback methods defined in the plugin object will be called when
         # the different type of events occur over an exploration.
         # Note that each callback will run in a worker process and that some
         # careful use of the shared context is needed.
@@ -501,9 +527,9 @@ class ManticoreBase(Eventful):
             raise TypeError(f'Invalid initial_state type: {type(initial_state).__name__}')
         self._put_state(initial_state)
 
-
         # Workers will use manticore __dict__ So lets spawn them last
         self._workers = [self._worker_type(id=i, manticore=self) for i in range(consts.procs)]
+
         '''
         # FIXME move the following to a plugin
         self.subscribe('did_finish_run', self._did_finish_run_callback)
@@ -918,14 +944,14 @@ class ManticoreBase(Eventful):
             ctx = self._shared_context
         else:
             # if a key is provided we yield the specific value or a fresh one
-            value_type = self._context_value_types[value_type]
+            if value_type not in (list, dict):
+                raise TypeError("Type must be list or dict")
+            if hasattr(self, '_context_value_types'):
+                value_type = self._context_value_types[value_type]
             context = self._shared_context
-            if key in context:
-                ctx = context[key]
-            else:
-                ctx = value_type()
-                context[key] = ctx
-        yield ctx
+            if key not in context:
+                context[key] = value_type()
+        yield context[key]
 
 
     ############################################################################
@@ -1002,7 +1028,7 @@ class ManticoreBase(Eventful):
             return
 
         # THINKME kill grabs the lock. Is npt this a deadlock hazard?
-        timer = Timer(timeout, self.kill)
+        timer = threading.Timer(timeout, self.kill)
         timer.start()
 
         try:
@@ -1073,15 +1099,6 @@ class ManticoreBase(Eventful):
         # self._last_run_stats['time_ended'] = time_ended
         # self._last_run_stats['time_elapsed'] = time_elapsed
 
-    @staticmethod
-    def verbosity(level):
-        """Convenience interface for setting logging verbosity to one of
-        several predefined logging presets. Valid values: 0-5.
-
-        FIXME refator. This will affect all manticre instances.
-        """
-        log.set_verbosity(level)
-        logger.info(f'Verbosity set to {level}.')
 
 
 class ManticoreSingle(ManticoreBase):
@@ -1113,14 +1130,11 @@ class ManticoreSingle(ManticoreBase):
         self._killed_states = []
 
         self._shared_context = {}
-        self._context_value_types = {list: list,
-                                     dict: dict,
-                                     }
         super().__init__(*args, **kwargs)
 
     def start(self, wait=True):
         # Fake start action will run the single worker in place
-        # The wait value is ignored as there is no async/councurrency here
+        # The wait value is ignored as there is no async/concurrency here
         super().start()
         self._workers[0].run()
 
@@ -1138,9 +1152,7 @@ class ManticoreThreading(ManticoreBase):
         self._killed_states = []
 
         self._shared_context = {}
-        self._context_value_types = {list: list,
-                                     dict: dict,
-                                     }
+
         super().__init__(*args, **kwargs)
 
 
@@ -1165,20 +1177,7 @@ class ManticoreMultiprocessing(ManticoreBase):
         self._killed_states = self._manager.list()
         self._shared_context = self._manager.dict()
         self._context_value_types = {list: self._manager.list,
-                                     dict: self._manager.dict,
-                                     }
+                                     dict: self._manager.dict}
+
         super().__init__(*args, **kwargs)
 
-
-    def start(self):
-        super().start()
-
-    def _join_workers(self):
-        """ Join all workers process """
-        workers = self._workers
-        while len(workers) > 0:
-            workers.pop().join()
-
-ManticoreBase=ManticoreSingle #real	   0m11,58
-#ManticoreBase=ManticoreThreading       #5 0m11,459s
-#ManticoreBase=ManticoreMultiprocessing #5 0m8,456s

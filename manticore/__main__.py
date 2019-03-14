@@ -7,7 +7,7 @@ import sys
 
 import pkg_resources
 
-from .core.manticore import ManticoreBase
+from .core.manticore import ManticoreBase, verbosity
 from .ethereum.cli import ethereum_main
 from .utils import config, log, install_helper
 
@@ -35,7 +35,7 @@ def main():
 
     sys.setrecursionlimit(consts.recursionlimit)
 
-    ManticoreBase.verbosity(args.v)
+    verbosity(args.v)
 
     if args.argv[0].endswith('.sol'):
         ethereum_main(args, logger)
