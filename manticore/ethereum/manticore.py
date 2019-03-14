@@ -579,7 +579,7 @@ class ManticoreEVM(ManticoreBase):
         # FIXME this is more naive than reasonable.
         return ABI.deserialize(types, self.make_symbolic_buffer(32, name='INITARGS', avoid_collisions=True))
 
-    def json_create_contract(self, jfile, owner=None, name=None, contract_name=None, balance=0, gas=None, network_id=None):
+    def json_create_contract(self, jfile, owner=None, name=None, contract_name=None, balance=0, gas=None, network_id=None, args=()):
         """ Creates a solidity contract based on a truffle json artifact.
 
             :param jfile: truffle json artifact
@@ -593,6 +593,7 @@ class ManticoreEVM(ManticoreBase):
             :param gas: gas budget for each contract creation needed (may be more than one if several related contracts defined in the solidity source)
             :type gas: int
             :param network_id: Truffle network id to instantiate
+            :param tuple args: constructor arguments
             :rtype: EVMAccount
         """
 
@@ -641,7 +642,19 @@ class ManticoreEVM(ManticoreBase):
             srcmap_runtime = []
         abi = truffle['abi']
         md = SolidityMetadata(contract_name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, b'')
-        contract_account = self.create_contract(owner=owner, balance=balance, init=md._init_bytecode)
+        constructor_types = md.get_constructor_arguments()
+        if constructor_types != '()':
+            if args is None:
+                args = self.make_symbolic_arguments(constructor_types)
+
+            constructor_data = ABI.serialize(constructor_types, *args)
+        else:
+            constructor_data = b''
+
+        contract_account = self.create_contract(owner=owner,
+                                                balance=balance,
+                                                init=md._init_bytecode + constructor_data,
+                                                gas=gas)
 
         if contract_account is None:
             raise EthereumError(f"Failed to build contract {contract_name}")
