@@ -311,7 +311,7 @@ class ManticoreEVM(ManticoreBase):
 
         contracts = output.get('contracts', [])
         if len(contracts) != 1 and contract_name is None:
-            raise EthereumError(f'Solidity file must contain exactly one contract or you must use a contract parameter to specify one. {", ".join(contracts)}')
+            raise EthereumError(f'Solidity file must contain exactly one contract or you must use a `--contract` parameter to specify one. Contracts found: {", ".join(contracts)}')
 
         name, contract = None, None
         if contract_name is None:
