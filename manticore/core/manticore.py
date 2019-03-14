@@ -353,7 +353,7 @@ class ManticoreBase(Eventful):
         @functools.wraps(func)
         def newFunction(self, *args, **kw):
             if self.is_running():
-                raise Exception(f"{func.__name__} only allowed while not exploring states")
+                raise Exception(f"{func.__name__} only allowed while NOT exploring states")
             return func(self, *args, **kw)
 
         return newFunction
@@ -1000,7 +1000,7 @@ class ManticoreBase(Eventful):
         # If there are still states in the BUSY list then the STOP/KILL event 
         # was not yet answered
         # We know that BUSY states can only decrease after a stop is request
-        return (self._started.value and not self._killed.value) or self._busy_states
+        return (self._started.value and not self._killed.value) or len(self._busy_states)>0
 
     @sync
     def is_killed(self):
@@ -1053,26 +1053,30 @@ class ManticoreBase(Eventful):
 
         self._publish('will_run')
 
-        with WithKeyboardInterruptAs(self.kill):
-            with self.kill_timeout(timeout):
-                assert not self._busy_states
-                self.start()
-                with self._lock:
-                    while (self._started.value and not self._killed.value) or self._busy_states:
-                        self._lock.wait()
-                    # It has been killed or stopped
-                self.stop()
+        with WithKeyboardInterruptAs(self.kill), self.kill_timeout(timeout):
+            assert not self._busy_states
+            self.start()
+            with self._lock:
+                while (self._started.value and not self._killed.value) or self._busy_states:
+                    self._lock.wait()
+                # It has been killed or stopped
+
+        #Lets make any worker stop so we can add new ready states without them
+        #being sucked in
+        self.stop()
 
         with self._lock:
             assert not self._busy_states
             assert not self._started.value or self._killed.value
 
             if self.is_killed():
+                logger.debug("Killed. Moving all remaining ready states to killed list")
                 # move all READY to KILLED:
                 while self._ready_states:
                     self._killed_states.append(self._ready_states.pop())
 
             self._publish('did_run')
+        assert not self.is_running()
 
     ############################################################################
     ############################################################################

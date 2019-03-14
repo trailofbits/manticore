@@ -936,8 +936,7 @@ class ManticoreEVM(ManticoreBase):
         # To differentiate the terminated sucessful terminated states from the 
         # reverted (or not very interesting) ManticoreEVM uses another list:
         # saved_states
-
-        # At the begining of a human tx/run it should not be any saved state 
+        # At the begining of a human tx/run it should not be any saved state
         with self.locked_context('ethereum.saved_states', list) as saved_states:
             if saved_states:
                 raise Exception("ethereum.saved_states should be empty")
@@ -951,7 +950,7 @@ class ManticoreEVM(ManticoreBase):
         # No busy states though
 
         #If there are ready states still then it was a paused execution
-        assert not self._ready_states or self.is_stopped()
+        assert not self._ready_states
         # ManticoreEthereum decided at terminate_state_callback wich state is 
         # ready for next run and saved them at the context item 
         # 'ethereum.saved_states'
@@ -962,7 +961,6 @@ class ManticoreEVM(ManticoreBase):
                 assert state_id in self._terminated_states
                 self._terminated_states.remove(state_id)
                 self._ready_states.append(state_id)
-
 
     # Callbacks
     def _on_symbolic_sha3_callback(self, state, data, known_hashes):
