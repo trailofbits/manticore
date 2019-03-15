@@ -1742,6 +1742,7 @@ class EVM(Eventful):
     def RETURN_gas(self, offset, size):
         return self._get_memfee(offset, size)
 
+    @concretized_args(size='SAMPLED')
     def RETURN(self, offset, size):
         """Halt execution returning output data"""
         data = self.read_buffer(offset, size)
