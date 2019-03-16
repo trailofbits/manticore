@@ -5131,7 +5131,9 @@ class Aarch64Instructions:
         stack = self.cpu.STACK
         self._execute()
         self.assertEqual(self.rf.read('X1'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W1'), 0x45464748)
         self.assertEqual(self.rf.read('X2'), 0x5152535455565758)
+        self.assertEqual(self.rf.read('W2'), 0x55565758)
         self.assertEqual(self.rf.read('SP'), stack)  # no writeback
 
     @itest_custom('ldp x1, x2, [sp, #8]')
@@ -5142,7 +5144,9 @@ class Aarch64Instructions:
         stack = self.cpu.STACK
         self._execute()
         self.assertEqual(self.rf.read('X1'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W1'), 0x45464748)
         self.assertEqual(self.rf.read('X2'), 0x5152535455565758)
+        self.assertEqual(self.rf.read('W2'), 0x55565758)
         self.assertEqual(self.rf.read('SP'), stack)  # no writeback
 
     @itest_custom('ldp x1, x2, [sp, #504]')
@@ -5153,7 +5157,9 @@ class Aarch64Instructions:
         stack = self.cpu.STACK
         self._execute()
         self.assertEqual(self.rf.read('X1'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W1'), 0x45464748)
         self.assertEqual(self.rf.read('X2'), 0x5152535455565758)
+        self.assertEqual(self.rf.read('W2'), 0x55565758)
         self.assertEqual(self.rf.read('SP'), stack)  # no writeback
 
     @itest_custom('ldp x1, x2, [sp, #-512]')
@@ -5164,7 +5170,9 @@ class Aarch64Instructions:
         stack = self.cpu.STACK
         self._execute()
         self.assertEqual(self.rf.read('X1'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W1'), 0x45464748)
         self.assertEqual(self.rf.read('X2'), 0x5152535455565758)
+        self.assertEqual(self.rf.read('W2'), 0x55565758)
         self.assertEqual(self.rf.read('SP'), stack)  # no writeback
 
     @itest_custom('ldp x1, x2, [sp], #8')
@@ -5174,7 +5182,9 @@ class Aarch64Instructions:
         stack = self.cpu.STACK
         self._execute()
         self.assertEqual(self.rf.read('X1'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W1'), 0x45464748)
         self.assertEqual(self.rf.read('X2'), 0x5152535455565758)
+        self.assertEqual(self.rf.read('W2'), 0x55565758)
         self.assertEqual(self.rf.read('SP'), stack + 8)  # writeback
 
     @itest_custom('ldp x1, x2, [sp], #504')
@@ -5184,7 +5194,9 @@ class Aarch64Instructions:
         stack = self.cpu.STACK
         self._execute()
         self.assertEqual(self.rf.read('X1'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W1'), 0x45464748)
         self.assertEqual(self.rf.read('X2'), 0x5152535455565758)
+        self.assertEqual(self.rf.read('W2'), 0x55565758)
         self.assertEqual(self.rf.read('SP'), stack + 504)  # writeback
 
     @itest_custom('ldp x1, x2, [sp], #-512')
@@ -5194,7 +5206,9 @@ class Aarch64Instructions:
         stack = self.cpu.STACK
         self._execute()
         self.assertEqual(self.rf.read('X1'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W1'), 0x45464748)
         self.assertEqual(self.rf.read('X2'), 0x5152535455565758)
+        self.assertEqual(self.rf.read('W2'), 0x55565758)
         self.assertEqual(self.rf.read('SP'), stack - 512)  # writeback
 
     @itest_custom('ldp x1, x2, [sp, #8]!')
@@ -5205,7 +5219,9 @@ class Aarch64Instructions:
         stack = self.cpu.STACK
         self._execute()
         self.assertEqual(self.rf.read('X1'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W1'), 0x45464748)
         self.assertEqual(self.rf.read('X2'), 0x5152535455565758)
+        self.assertEqual(self.rf.read('W2'), 0x55565758)
         self.assertEqual(self.rf.read('SP'), stack + 8)  # writeback
 
     @itest_custom('ldp x1, x2, [sp, #504]!')
@@ -5216,7 +5232,9 @@ class Aarch64Instructions:
         stack = self.cpu.STACK
         self._execute()
         self.assertEqual(self.rf.read('X1'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W1'), 0x45464748)
         self.assertEqual(self.rf.read('X2'), 0x5152535455565758)
+        self.assertEqual(self.rf.read('W2'), 0x55565758)
         self.assertEqual(self.rf.read('SP'), stack + 504)  # writeback
 
     @itest_custom('ldp x1, x2, [sp, #-512]!')
@@ -5227,7 +5245,9 @@ class Aarch64Instructions:
         stack = self.cpu.STACK
         self._execute()
         self.assertEqual(self.rf.read('X1'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W1'), 0x45464748)
         self.assertEqual(self.rf.read('X2'), 0x5152535455565758)
+        self.assertEqual(self.rf.read('W2'), 0x55565758)
         self.assertEqual(self.rf.read('SP'), stack - 512)  # writeback
 
 
