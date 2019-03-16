@@ -52,6 +52,9 @@ class Eventful(object, metaclass=EventsGatherMetaclass):
     # Maps an Eventful subclass with a set of all the events it publishes.
     __all_events__ = dict()
 
+    # Set of subscribed events
+    __sub_events__ = set()
+
     # Set in subclass to advertise the events it plans to publish
     _published_events = set()
 
@@ -72,8 +75,6 @@ class Eventful(object, metaclass=EventsGatherMetaclass):
         # A dictionary from "event name" -> callback methods
         # Note that several methods can be associated with the same object
         self._signals = dict()
-        # Set of subscribed events
-        self.__sub_events__ = set()
         # a set of sink eventful objects (see forward_events_from())
         self._forwards = WeakKeyDictionary()
         super().__init__()
