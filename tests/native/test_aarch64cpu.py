@@ -6934,6 +6934,41 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W0'), 0)
 
 
+    # MSR (register) and MRS.
+
+    # XXX: Unicorn doesn't allow to write to and read from system
+    # registers directly (see 'arm64_reg_write' and 'arm64_reg_read').
+    # The only way to propagate this information is via the MSR
+    # (register) and MRS instructions, without resetting the emulator
+    # state in between.
+    # Note: in HEAD, this is fixed for some system registers, so revise
+    # this after upgrading from 1.0.1.
+
+    # TPIDR_EL0.
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest_custom(
+        ['msr tpidr_el0, x1', 'mrs x0, tpidr_el0'],
+        multiple_insts=True
+    )
+    def test_msr_mrs_tpidr_el0(self):
+        self._execute()
+        self._execute(reset=False)
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest_custom(
+        ['msr s3_3_c13_c0_2, x1', 'mrs x0, s3_3_c13_c0_2'],
+        multiple_insts=True
+    )
+    def test_msr_mrs_tpidr_el0_s(self):
+        self._execute()
+        self._execute(reset=False)
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+
     # MSUB.
 
     # 32-bit.
@@ -11100,7 +11135,7 @@ class Aarch64CpuInstructions(unittest.TestCase, Aarch64Instructions):
         self.mem = self.cpu.memory
         self.rf = self.cpu.regfile
 
-    def _execute(self, check_pc=True):
+    def _execute(self, check_pc=True, **kwargs):
         pc = self.cpu.PC
         self.cpu.execute()
         if check_pc:
@@ -11123,10 +11158,10 @@ class Aarch64UnicornInstructions(unittest.TestCase, Aarch64Instructions):
         # Map the stack.
         self.emu._create_emulated_mapping(self.emu._emu, self.cpu.STACK)
 
-    def _execute(self, check_pc=True):
+    def _execute(self, check_pc=True, reset=True):
         # XXX: Based on the Armv7 test code.
         pc = self.cpu.PC
-        self.cpu.decode_instruction(pc)
-        self.emu.emulate(self.cpu.instruction)
+        insn = self.cpu.decode_instruction(pc)
+        self.emu.emulate(insn, reset=reset)
         if check_pc:
             self.assertEqual(self.cpu.PC, pc + 4)

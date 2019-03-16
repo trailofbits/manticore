@@ -161,7 +161,7 @@ class UnicornEmulator:
             # TODO(yan): raise a more appropriate exception
             raise TypeError(f"Cannot convert {reg_name} to unicorn register id")
 
-    def emulate(self, instruction):
+    def emulate(self, instruction, reset=True):
         '''
         Emulate a single instruction.
         '''
@@ -169,23 +169,30 @@ class UnicornEmulator:
         # The emulation might restart if Unicorn needs to bring in a memory map
         # or bring a value from Manticore state.
         while True:
+            # XXX: Unicorn doesn't allow to write to and read from system
+            # registers directly (see 'arm64_reg_write' and 'arm64_reg_read').
+            # The only way to propagate this information is via the MSR
+            # (register) and MRS instructions, without resetting the emulator
+            # state in between.
+            # Note: in HEAD, this is fixed for some system registers, so revise
+            # this after upgrading from 1.0.1.
+            if reset:
+                self.reset()
 
-            self.reset()
+                # Establish Manticore state, potentially from past emulation
+                # attempts
+                for base in self._should_be_mapped:
+                    size, perms = self._should_be_mapped[base]
+                    self._emu.mem_map(base, size, perms)
 
-            # Establish Manticore state, potentially from past emulation
-            # attempts
-            for base in self._should_be_mapped:
-                size, perms = self._should_be_mapped[base]
-                self._emu.mem_map(base, size, perms)
+                for address, values in self._should_be_written.items():
+                    for offset, byte in enumerate(values, start=address):
+                        if issymbolic(byte):
+                            from ..native.cpu.abstractcpu import ConcretizeMemory
+                            raise ConcretizeMemory(self._cpu.memory, offset, 8,
+                                                   "Concretizing for emulation")
 
-            for address, values in self._should_be_written.items():
-                for offset, byte in enumerate(values, start=address):
-                    if issymbolic(byte):
-                        from ..native.cpu.abstractcpu import ConcretizeMemory
-                        raise ConcretizeMemory(self._cpu.memory, offset, 8,
-                                               "Concretizing for emulation")
-
-                self._emu.mem_write(address, b''.join(values))
+                    self._emu.mem_write(address, b''.join(values))
 
             # Try emulation
             self._should_try_again = False

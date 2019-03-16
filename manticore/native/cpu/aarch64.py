@@ -58,6 +58,13 @@ COND_MAP = {
 }
 
 
+# XXX: Support other system registers.
+# System registers map.
+SYS_REG_MAP = {
+    0xde82: 'TPIDR_EL0'
+}
+
+
 class Aarch64RegisterFile(RegisterFile):
     Regspec = collections.namedtuple('RegSpec', 'parent size')
 
@@ -159,6 +166,13 @@ class Aarch64RegisterFile(RegisterFile):
     _table['XZR'] = Regspec('XZR', 64)
     _table['WZR'] = Regspec('XZR', 32)
 
+
+    # System registers.
+
+    # TPIDR_EL0, EL0 Read/Write Software Thread ID Register.
+    _table['TPIDR_EL0'] = Regspec('TPIDR_EL0', 64)
+
+
     def __init__(self):
         # Register aliases.
         _aliases = {
@@ -242,7 +256,17 @@ class Aarch64RegisterFile(RegisterFile):
         not_supported = set()
         not_supported.add('FPSR')
         not_supported.add('FPCR')
-        return self._parent_registers - not_supported
+
+        # XXX: Unicorn doesn't allow to write to and read from system
+        # registers directly (see 'arm64_reg_write' and 'arm64_reg_read').
+        # The only way to propagate this information is via the MSR
+        # (register) and MRS instructions, without resetting the emulator
+        # state in between.
+        # Note: in HEAD, this is fixed for some system registers, so revise
+        # this after upgrading from 1.0.1.
+        system = set(SYS_REG_MAP.values())
+
+        return self._parent_registers - not_supported - system
 
     @property
     def all_registers(self):
@@ -3368,6 +3392,65 @@ class Aarch64Cpu(Cpu):
         dst.write(result)
 
     @instruction
+    def MRS(cpu, res_op, reg_op):
+        """
+        MRS.
+
+        Move System Register allows the PE to read an AArch64 System register
+        into a general-purpose register.
+
+        :param res_op: destination register.
+        :param reg_op: source system register.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_op.type is cs.arm64.ARM64_OP_REG_MRS
+
+        insn_rx  = '1101010100'
+        insn_rx += '1'           # L
+        insn_rx += '1'
+        insn_rx += '[01]'        # o0
+        insn_rx += '[01]{3}'     # op1
+        insn_rx += '[01]{4}'     # CRn
+        insn_rx += '[01]{4}'     # CRm
+        insn_rx += '[01]{3}'     # op2
+        insn_rx += '[01]{5}'     # Rt
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        reg = reg_op.read()
+        res_op.write(reg)
+
+    # XXX: Support MSR (immediate).
+    @instruction
+    def MSR(cpu, res_op, reg_op):
+        """
+        MSR (register).
+
+        Move general-purpose register to System Register allows the PE to write
+        an AArch64 System register from a general-purpose register.
+
+        :param res_op: destination system register.
+        :param reg_op: source register.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG_MSR
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+
+        insn_rx  = '1101010100'
+        insn_rx += '0'           # L
+        insn_rx += '1'
+        insn_rx += '[01]'        # o0
+        insn_rx += '[01]{3}'     # op1
+        insn_rx += '[01]{4}'     # CRn
+        insn_rx += '[01]{4}'     # CRm
+        insn_rx += '[01]{3}'     # op2
+        insn_rx += '[01]{5}'     # Rt
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        reg = reg_op.read()
+        res_op.write(reg)
+
+    @instruction
     def MSUB(cpu, res_op, reg_op1, reg_op2, reg_op3):
         """
         MSUB.
@@ -4840,6 +4923,8 @@ class Aarch64Operand(Operand):
 
         assert self.op.type in (
             cs.arm64.ARM64_OP_REG,  # Register operand
+            cs.arm64.ARM64_OP_REG_MRS,
+            cs.arm64.ARM64_OP_REG_MSR,
             cs.arm64.ARM64_OP_MEM,  # Memory operand
             cs.arm64.ARM64_OP_IMM,  # Immediate operand
             cs.arm64.ARM64_OP_CIMM,  # C-Immediate
@@ -4893,6 +4978,13 @@ class Aarch64Operand(Operand):
 
         if self.type == cs.arm64.ARM64_OP_REG:
             return self.cpu.regfile.read(self.reg)
+        elif self.type == cs.arm64.ARM64_OP_REG_MRS:
+            name = SYS_REG_MAP.get(self.op.sys)
+            if not name:
+                raise NotImplementedError(
+                    f"Unsupported system register: '0x{self.op.sys:x}'"
+                )
+            return self.cpu.regfile.read(name)
         elif self.type == cs.arm64.ARM64_OP_IMM:
             return self.op.imm
         else:
@@ -4933,6 +5025,13 @@ class Aarch64Operand(Operand):
 
         if self.type == cs.arm64.ARM64_OP_REG:
             self.cpu.regfile.write(self.reg, value)
+        elif self.type == cs.arm64.ARM64_OP_REG_MSR:
+            name = SYS_REG_MAP.get(self.op.sys)
+            if not name:
+                raise NotImplementedError(
+                    f"Unsupported system register: '0x{self.op.sys:x}'"
+                )
+            self.cpu.regfile.write(name, value)
         else:
             raise NotImplementedError(f"Unsupported operand type: '{self.type}'")
 
