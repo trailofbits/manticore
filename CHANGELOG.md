@@ -16,7 +16,7 @@ Thanks to our external contributors!
 * **[changed API]** Moved default gas value to config module ([#1346](https://github.com/trailofbits/manticore/pull/1346))
 * **[fixed API]** Fixed account creation with a code field ([#1371](https://github.com/trailofbits/manticore/pull/1371))
 * **[fixed API]** Fixed an incorrect attribute in `last_return` ([#1341](https://github.com/trailofbits/manticore/pull/1341))
-* **[removed API]** Inlined get_possible solutions function as it's only meant to be used once internally ([#1372](https://github.com/trailofbits/manticore/pull/1372))
+* **[refactor]** Inlined get_possible solutions function as it's only used once ([#1372](https://github.com/trailofbits/manticore/pull/1372))
 * Fixed `_check_jumpdest` when run with detectors ([#1347](https://github.com/trailofbits/manticore/pull/1347))
 * Made findings print addresses in hex ([#1339](https://github.com/trailofbits/manticore/pull/1339))
 
