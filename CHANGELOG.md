@@ -2,7 +2,7 @@
 
 ## [Unreleased](https://github.com/trailofbits/manticore/compare/0.2.5...HEAD)
 
-## 0.2.5 - 2019-03-07
+## 0.2.5 - 2019-03-18
 
 Thanks to our external contributors!
 
