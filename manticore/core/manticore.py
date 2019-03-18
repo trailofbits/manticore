@@ -229,7 +229,7 @@ class Worker:
                         logger.info("[%r] Debug State %r %r", self.id, current_state, exc)
                         # Notify this state is done
                         m._publish('will_terminate_state', current_state, exc)
-                        # Update the stored version of the current state 
+                        # Update the stored version of the current state
                         m._save(current_state)
                         # Add the state to the terminated state list
                         m._terminate(current_state.id)
@@ -414,7 +414,6 @@ class ManticoreBase(Eventful):
         termination via CTRL+C. At KILLED the workers are stoped and killed
         and the outstanding states are moved to a specific "KILLED" list.
         Actions: none
-        
 
 
         States and state lists
@@ -499,12 +498,11 @@ class ManticoreBase(Eventful):
         super().__init__()
 
         # FIXME better Metaprogramming?
-        if any(not hasattr(self, x) for x in ( '_worker_type', '_lock', '_started', '_killed', '_ready_states', '_terminated_states', '_killed_states',
-        '_busy_states', '_shared_context')):
+        if any(not hasattr(self, x) for x in ('_worker_type', '_lock', '_started', '_killed', '_ready_states', '_terminated_states', '_killed_states', '_busy_states', '_shared_context')):
             raise Exception('Need to instantiate one of: ManticoreNative, ManticoreThreads..')
 
         # The workspace
-        # Manticore will use the workspace to save and share temporary states 
+        # Manticore will use the workspace to save and share temporary states
         # and it will save the final reports there (if any)
         # Check type, default to fs:
         if isinstance(workspace_url, str):
@@ -556,7 +554,9 @@ class ManticoreBase(Eventful):
         assert isinstance(expression, Expression)
 
         if setstate is None:
-            setstate = lambda x, y: None
+            del setstate
+            def setstate(x,y):
+                pass
 
         # Find a set of solutions for expression
         solutions = state.concretize(expression, policy)
@@ -949,7 +949,6 @@ class ManticoreBase(Eventful):
                 context[key] = value_type()
         yield context[key]
 
-
     ############################################################################
     # Public API
 
@@ -996,7 +995,7 @@ class ManticoreBase(Eventful):
         # If there are still states in the BUSY list then the STOP/KILL event
         # was not yet answered
         # We know that BUSY states can only decrease after a stop is request
-        return (self._started.value and not self._killed.value) or len(self._busy_states)>0
+        return (self._started.value and not self._killed.value) or len(self._busy_states) > 0
 
     @sync
     def is_killed(self):
@@ -1096,7 +1095,6 @@ class ManticoreBase(Eventful):
 
         # self._last_run_stats['time_ended'] = time_ended
         # self._last_run_stats['time_elapsed'] = time_elapsed
-
 
 
 class ManticoreSingle(ManticoreBase):

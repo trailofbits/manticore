@@ -174,13 +174,12 @@ class Z3Solver(Solver):
             self._received_version = self._recv()
         key, version = shlex.split(self._received_version[1:-1])
         return Version(*map(int, version.split('.')))
-    _lock = threading.RLock()
+
     def _start_proc(self):
         """Spawns z3 solver process"""
         assert '_proc' not in dir(self) or self._proc is None
         try:
-            with Z3Solver._lock:
-                self._proc = Popen(shlex.split(self._command), stdin=PIPE, stdout=PIPE, bufsize=0, universal_newlines=True, close_fds=True)
+            self._proc = Popen(shlex.split(self._command), stdin=PIPE, stdout=PIPE, bufsize=0, universal_newlines=True, close_fds=True)
         except OSError as e:
             print(e, "Probably too many cached expressions? visitors._cache...")
             # Z3 was removed from the system in the middle of operation

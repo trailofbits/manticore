@@ -10,13 +10,14 @@ from functools import wraps
 from .disasm import init_disassembler
 from ..memory import ConcretizeMemory, InvalidMemoryAccess, LazySMemory
 from ...core.smtlib import BitVec, Operators, Constant, visitors
-from ...core.smtlib.solver import solver
+from ...core.smtlib.solver import Z3Solver
 from ...utils.emulate import UnicornEmulator
 from ...utils.event import Eventful
 from ...utils.helpers import issymbolic
 
 logger = logging.getLogger(__name__)
 register_logger = logging.getLogger(f'{__name__}.registers')
+solver = Z3Solver()
 
 ###################################################################################
 # Exceptions
