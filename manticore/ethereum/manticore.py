@@ -393,7 +393,6 @@ class ManticoreEVM(ManticoreBase):
             context['_sha3_states'] = dict()
             context['_known_sha3'] = set()
 
-
     @property
     def world(self):
         """ The world instance or None if there is more than one state """
@@ -926,14 +925,14 @@ class ManticoreEVM(ManticoreBase):
             tx_no += 1
 
     def run(self, **kwargs):
-        # Ethereum can have several sequential runs each for a different human 
+        # Ethereum can have several sequential runs each for a different human
         # transaction. Each human transaction post a tx over all READY states.
         # Some states will end in a REVERT or a failed TX ultimatelly changing
         # very little state. Only the gas spent (and perhaps the nonce) will change
-        # in the state after the attempted and failed tx. These states are not 
+        # in the state after the attempted and failed tx. These states are not
         # considered for exploration in the next human tx/run
 
-        # To differentiate the terminated sucessful terminated states from the 
+        # To differentiate the terminated sucessful terminated states from the
         # reverted (or not very interesting) ManticoreEVM uses another list:
         # saved_states
         # At the begining of a human tx/run it should not be any saved state
@@ -941,7 +940,7 @@ class ManticoreEVM(ManticoreBase):
             if saved_states:
                 raise Exception("ethereum.saved_states should be empty")
 
-        # Every state.world has its pending_transaction filled. The run will 
+        # Every state.world has its pending_transaction filled. The run will
         # process it and potentially generate several READY and.or TERMINATED states.
         super().run(**kwargs)
 
@@ -951,8 +950,8 @@ class ManticoreEVM(ManticoreBase):
 
         #If there are ready states still then it was a paused execution
         assert not self._ready_states
-        # ManticoreEthereum decided at terminate_state_callback wich state is 
-        # ready for next run and saved them at the context item 
+        # ManticoreEthereum decided at terminate_state_callback wich state is
+        # ready for next run and saved them at the context item
         # 'ethereum.saved_states'
         # Move successfully terminated states to ready states
         with self.locked_context('ethereum.saved_states', list) as saved_states:
@@ -1036,7 +1035,7 @@ class ManticoreEVM(ManticoreBase):
         world = state.platform
 
         state.context['last_exception'] = e
-        e.testcase = False # Do not generate a testcase file
+        e.testcase = False  # Do not generate a testcase file
 
         if not world.all_transactions:
             logger.debug("Something went wrong: search terminated in the middle of an ongoing tx")
@@ -1294,18 +1293,19 @@ class ManticoreEVM(ManticoreBase):
                     global_findings.add((address, pc, finding, at_init))
         return global_findings
 
-
     @ManticoreBase.at_not_running
     def finalize(self):
         """
-        Terminate and generate testcases for all currently alive states (contract states that cleanly executed
-        to a STOP or RETURN in the last symbolic transaction).
+        Terminate and generate testcases for all currently alive states (contract
+        states that cleanly executed to a STOP or RETURN in the last symbolic
+        transaction).
         """
         self.kill()
         for w in self._workers:
             w.join()
 
         logger.debug("Finalizing %d states.", self.count_states())
+
         def finalizer(state_id):
             st = self._load(state_id)
             logger.debug("Generating testcase for state_id %d", state_id)

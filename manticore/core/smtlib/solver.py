@@ -111,6 +111,7 @@ class Solver():
         else:
             return x, x
 
+
 Version = collections.namedtuple('Version', 'major minor patch')
 
 
@@ -539,4 +540,3 @@ class Z3Solver(Solver):
             expr, value = m.group('expr'), m.group('value')
             return int(value, base)
         raise NotImplementedError("get_value only implemented for Bool and BitVec")
-

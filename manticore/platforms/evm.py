@@ -500,7 +500,6 @@ class EVM(Eventful):
         def pos(self, pos):
             return type(self)(self._pre, pos)
 
-
     def __init__(self, constraints, address, data, caller, value, bytecode, world=None, gas=210000, **kwargs):
         """
         Builds a Ethereum Virtual Machine instance
@@ -2458,7 +2457,7 @@ class EVMWorld(Platform):
         self.start_transaction('CALL', address, price=price, data=data, caller=caller, value=value, gas=gas)
         self._process_pending_transaction()
 
-    def start_transaction(self, sort, address, *,price=None, data=None, caller=None, value=0, gas=2300):
+    def start_transaction(self, sort, address, *, price=None, data=None, caller=None, value=0, gas=2300):
         """
         Initiate a transaction
         :param sort: the type of transaction. CREATE or CALL or DELEGATECALL
@@ -2591,7 +2590,7 @@ class EVMWorld(Platform):
         if last_tx:
             at_runtime = last_tx.sort != 'CREATE'
             address, offset, at_init = state.context['evm.trace'][-1]
-            assert not last_tx.result is None or at_runtime != at_init
+            assert last_tx.result is not None or at_runtime != at_init
 
             #Last instruction if last tx was valid
             if str(state.context['last_exception']) != 'TXERROR':

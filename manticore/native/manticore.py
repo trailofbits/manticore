@@ -147,7 +147,6 @@ class Manticore(ManticoreBase):
         """
         return self._initial_state.platform.program
 
-
     ############################################################################
     # Assertion hooks + callback
     ############################################################################

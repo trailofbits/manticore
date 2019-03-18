@@ -10,17 +10,21 @@ from contextlib import contextmanager
 
 try:
     from contextlib import nullcontext
-except:
+except ImportError:
     class nullcontext():
+
         def __init__(self, enter_result=None):
             self.enter_result = enter_result
+
         def __enter__(self):
             return self.enter_result
+
         def __exit__(self, *excinfo):
             pass
+
 import time
-import fcntl
-import os, errno
+import os
+import errno
 import threading
 from ..utils import config
 from ..utils.helpers import PickleSerializer
@@ -32,7 +36,6 @@ logger = logging.getLogger(__name__)
 consts = config.get_group('workspace')
 consts.add('prefix', default='mcore_', description="The prefix to use for output and workspace directories")
 consts.add('dir', default='.', description="Location of where to create workspace directories")
-
 
 
 class Testcase:
@@ -314,7 +317,6 @@ class MemoryStore(Store):
 
     def ls(self, glob_str):
         return list(self._data)
-
 
 
 class RedisStore(Store):

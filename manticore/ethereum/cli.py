@@ -69,7 +69,6 @@ def ethereum_main(args, logger):
                                 tx_use_coverage=not args.txnocoverage, tx_send_ether=not args.txnoether,
                                 tx_account=args.txaccount, tx_preconstrain=args.txpreconstrain)
 
-        print (m._started, m._killed, m._ready_states, m._busy_states)
         if not args.no_testcases:
             m.finalize()
 

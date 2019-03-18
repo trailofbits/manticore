@@ -44,6 +44,7 @@ consts.add('mprocessing', default='single', description='single: No multiprocess
 # WorkerThread: runs on a different thread
 # WorkerProcess: runs on a different process - Full multiprocessing
 
+
 class Worker:
     """
         A Manticore Worker.
@@ -136,7 +137,6 @@ class Worker:
             logger.debug(f'Failed to get profiling stats: {e}')
             return None
 
-
     def start(self):
         raise NotImplementedError
 
@@ -166,7 +166,6 @@ class Worker:
                         while not m._started.value and not m._killed.value:
                             logger.info("[%r] Standing by", self.id)
                             m._lock.wait()  # Wait until something changes
-
 
                     try:  # handle Concretize and TerminateState
 
@@ -218,8 +217,8 @@ class Worker:
                     except Concretize as exc:
                         logger.info("[%r] Debug %r", self.id, exc)
                         # The fork() method can decides which state to keep
-                        # exploring. For example when the fork results in a 
-                        # single state it is better to just keep going. 
+                        # exploring. For example when the fork results in a
+                        # single state it is better to just keep going.
                         # Though, normally fork() saves the spawned childs,
                         # returns a None and let _get_state choose what to explore
                         # next
@@ -239,8 +238,7 @@ class Worker:
 
                 except (Exception, AssertionError) as exc:
                     logger.error("[%r] Exception %r. Current State %r", self.id, exc, current_state)
-                    import traceback; traceback.print_exc()
-                    # Internal Exception. 
+                    # Internal Exception
                     # Add the state to the terminated state list
                     if current_state is not None:
                         # Drop any work on this state in case it is inconsistent
@@ -268,6 +266,7 @@ class WorkerSingle(Worker):
     def join(self):
         pass
 
+
 class WorkerThread(Worker):
     """ A worker thread """
     def __init__(self, *args, **kwargs):
@@ -279,6 +278,7 @@ class WorkerThread(Worker):
 
     def join(self):
         self._t.join()
+
 
 class WorkerProcess(Worker):
     """ A worker process """
@@ -292,6 +292,7 @@ class WorkerProcess(Worker):
     def join(self):
         self._p.join()
 
+
 def set_verbosity(level):
     """Convenience interface for setting logging verbosity to one of
     several predefined logging presets. Valid values: 0-5.
@@ -299,6 +300,7 @@ def set_verbosity(level):
     """
     log.set_verbosity(level)
     logger.info(f'Verbosity set to {level}.')
+
 
 class ManticoreBase(Eventful):
     '''
@@ -319,7 +321,7 @@ class ManticoreBase(Eventful):
             idx = cls.__bases__.index(ManticoreBase)
             bases = list(cls.__bases__)
             bases[idx] = cl
-            cls.__bases__= tuple(bases)
+            cls.__bases__ = tuple(bases)
 
         return super().__new__(cls)
 
@@ -346,7 +348,7 @@ class ManticoreBase(Eventful):
         return newFunction
 
     def at_not_running(func):
-        """Allows the decorated method to run only when manticore is NOT 
+        """Allows the decorated method to run only when manticore is NOT
            exploring states
         """
 
@@ -381,7 +383,7 @@ class ManticoreBase(Eventful):
         Manticore phases
         ****************
 
-        Manticore has multiprocessing capabilities. Several worker processes 
+        Manticore has multiprocessing capabilities. Several worker processes
         could be registered to do concurrent exploration of the READY states.
         Manticore can be itself at different phases: STANDBY, RUNNING, KILLED.
 
@@ -390,27 +392,27 @@ class ManticoreBase(Eventful):
                       +---------+               +----+----+
                                                      |
                                                      V
-                                               +-----------+
-                                               | KILLED |
-                                               +-----------+
+                                                +--------+
+                                                | KILLED |
+                                                +--------+
 
         = Phase STANDBY =
-        Manticore starts at STANDBY with a single initial state. Here the user 
+        Manticore starts at STANDBY with a single initial state. Here the user
         can inspect, modify and generate testcases for the different states. The
         workers are paused and not doing any work. Actions: start(), cancel()
 
 
         = Phase RUNNING =
-        At RUNNING the workers consume states from the READY state list and 
+        At RUNNING the workers consume states from the READY state list and
         potentially fork new states or terminate states. A RUNNING manticore can
-        be stopped back to STANDBY or cancelled to KILLED. Actions: stop(), 
+        be stopped back to STANDBY or cancelled to KILLED. Actions: stop(),
         cancel()
 
 
         = Phase KILLED =
-        Manticore moves to KILLED on a timeout or when the user requests 
+        Manticore moves to KILLED on a timeout or when the user requests
         termination via CTRL+C. At KILLED the workers are stoped and killed
-        and the outstanding states are moved to a specific "KILLED" list. 
+        and the outstanding states are moved to a specific "KILLED" list.
         Actions: none
         
 
@@ -418,10 +420,10 @@ class ManticoreBase(Eventful):
         States and state lists
         **********************
 
-        A state contains all the information of the running program at a given 
-        moment. State snapshots are saved to the workspace often. Internally 
-        Manticore associates a fresh id with each saved state. The memory copy 
-        of the state is then changed by the emulation of the specific arch. 
+        A state contains all the information of the running program at a given
+        moment. State snapshots are saved to the workspace often. Internally
+        Manticore associates a fresh id with each saved state. The memory copy
+        of the state is then changed by the emulation of the specific arch.
         Stored snapshots are periodically updated using: _save() and _load().
 
                       _save     +-------------+  _load
@@ -440,16 +442,16 @@ class ManticoreBase(Eventful):
                 |  READY  +------->|  BUSY  +----->| TERMINATED |
                 +---------+        +---+----+      +------------+
                      |
-                     |                             +----------+
+                     |                             +--------+
                      +---------------------------->| KILLED |
-                                                   +----------+
+                                                   +--------+
 
-        At any given time a state must be at the READY, BUSY, TERMINATED or 
+        At any given time a state must be at the READY, BUSY, TERMINATED or
         KILLED list.
 
         State list: READY
         =================
-        The READY list holds all the runnable states. Internally a state is 
+        The READY list holds all the runnable states. Internally a state is
         added to the READY list via method `_put_state(state)`. Workers take
         states from the READY list via the `_get_state(wait=True|False)` method.
         A worker mainloop will consume states from the READY list and mark them
@@ -459,34 +461,33 @@ class ManticoreBase(Eventful):
 
         State list: BUSY
         =================
-        When a state is selected for exploration from the READY list it is 
-        marked as busy and put in the BUSY list. States being explored will be 
-        constantly modified  and only saved back to storage when moved out of 
-        the BUSY list. Hence, when at BUSY the stored copy of the state will be 
-        potentially outdated. States in the BUSY list can go to TERMINATED, 
-        KILLED or they can be {forked} back to READY. The forking process 
-        could involve generating new child states and removing the parent 
+        When a state is selected for exploration from the READY list it is
+        marked as busy and put in the BUSY list. States being explored will be
+        constantly modified  and only saved back to storage when moved out of
+        the BUSY list. Hence, when at BUSY the stored copy of the state will be
+        potentially outdated. States in the BUSY list can go to TERMINATED,
+        KILLED or they can be {forked} back to READY. The forking process
+        could involve generating new child states and removing the parent
         from all the lists.
 
 
         State list: TERMINATED
         ======================
         TERMINATED contains states that have reached a final condition and raised
-        TerminateState. Workers mainloop simpliy move the states that requested 
+        TerminateState. Workers mainloop simpliy move the states that requested
         termination to the TERMINATED list. This is a final list.
 
-        ```An inherited Manticore class like ManticoreEVM could internally revive 
-        the states in TERMINATED that pass some condition and move them back to 
-        READY so the user can apply a following transaction. ```
+        ```An inherited Manticore class like ManticoreEVM could internally revive
+        the states in TERMINATED that pass some condition and move them back to
+        READY so the user can apply a following transaction.```
 
         State list: KILLED
-        ======================
+        ==================
         KILLED contains all the READY and BUSY states found at a cancel event.
         Manticore supports interactive analysis and has a prominetnt event system
         A useror ui can stop or cancel the exploration at any time. The unfinnished
         states cought at this situation are simply moved to its own list for
         further user action. This is a final list.
-
 
 
         :param initial_state: the initial root `State` object
@@ -613,7 +614,7 @@ class ManticoreBase(Eventful):
     def _load(self, state_id):
         """ Load the state from the secondary storage
 
-            :param state_id: a estate id 
+            :param state_id: a estate id
             :type state_id: int
             :returns: the state id used
         """
@@ -627,7 +628,7 @@ class ManticoreBase(Eventful):
     def _remove(self, state_id):
         """ Remove a state from secondary storage
 
-            :param state_id: a estate id 
+            :param state_id: a estate id
             :type state_id: int
         """
         self._workspace.rm_state(state_id)
@@ -646,7 +647,7 @@ class ManticoreBase(Eventful):
         """
         state_id = self._save(state)
         with self._lock:
-            # Enqueue it in the ready state list for processing 
+            # Enqueue it in the ready state list for processing
             self._ready_states.append(state_id)
             self._lock.notify_all()
         return state_id
@@ -688,7 +689,7 @@ class ManticoreBase(Eventful):
 
     @sync
     def _revive(self, state_id):
-        ''' Send a BUSY state back to READY list 
+        ''' Send a BUSY state back to READY list
 
             +--------+        +------+
             | READY  +<-------+ BUSY |
@@ -702,7 +703,7 @@ class ManticoreBase(Eventful):
 
     @sync
     def _terminate(self, state_id, delete=False):
-        ''' Send a BUSY state to the TERMINATED list or trash it if delete is True 
+        ''' Send a BUSY state to the TERMINATED list or trash it if delete is True
 
             +------+        +------------+
             | BUSY +------->+ TERMINATED |
@@ -731,7 +732,7 @@ class ManticoreBase(Eventful):
     @sync
     def ready_states(self):
         """
-        Iterator over ready states. 
+        Iterator over ready states.
         It supports state changes. State changes will be saved back at each iteration.
 
         The state data change must be done in a loop, e.g. `for state in ready_states: ...`
@@ -777,7 +778,7 @@ class ManticoreBase(Eventful):
     @sync
     @at_not_running
     def _all_states(self):
-        ''' Only allowed at not running. 
+        ''' Only allowed at not running.
             (At running we can have states at busy)
         '''
         return tuple(self._ready_states) + tuple(self._terminated_states) + tuple(self._killed_states)
@@ -896,7 +897,7 @@ class ManticoreBase(Eventful):
     @at_standby
     def context(self):
         ''' Convenient access to shared context. We maintain a local copy of the
-            share context during the time manticore is not running. 
+            share context during the time manticore is not running.
             This local context is copied to the shared context when a run starts
             and copied back when a run finishes
         '''
@@ -906,8 +907,8 @@ class ManticoreBase(Eventful):
     @sync
     def locked_context(self, key=None, value_type=list):
         """
-        A context manager that provides safe parallel access to the global 
-        Manticore context. This should be used to access the global Manticore 
+        A context manager that provides safe parallel access to the global
+        Manticore context. This should be used to access the global Manticore
         context when parallel analysis is activated. Code within the `with` block
         is executed atomically, so access of shared variables should occur within.
 
@@ -921,10 +922,10 @@ class ManticoreBase(Eventful):
             with m.locked_context('feature_list', list) as feature_list:
                 feature_list.append(1)
 
-        Note: If standard (non-proxy) list or dict objects are contained in a 
-        referent, modifications to those mutable values will not be propagated 
-        through the manager because the proxy has no way of knowing when the 
-        values contained within are modified. However, storing a value in a 
+        Note: If standard (non-proxy) list or dict objects are contained in a
+        referent, modifications to those mutable values will not be propagated
+        through the manager because the proxy has no way of knowing when the
+        values contained within are modified. However, storing a value in a
         container proxy (which triggers a __setitem__ on the proxy object) does
         propagate through the manager and so to effectively modify such an item,
         one could re-assign the modified value to the container proxy:
@@ -992,7 +993,7 @@ class ManticoreBase(Eventful):
     @sync
     def is_running(self):
         ''' True if workers are exploring BUSY states or waiting for READY states '''
-        # If there are still states in the BUSY list then the STOP/KILL event 
+        # If there are still states in the BUSY list then the STOP/KILL event
         # was not yet answered
         # We know that BUSY states can only decrease after a stop is request
         return (self._started.value and not self._killed.value) or len(self._busy_states)>0
@@ -1000,7 +1001,7 @@ class ManticoreBase(Eventful):
     @sync
     def is_killed(self):
         ''' True if workers are killed. It is safe to join them '''
-        # If there are still states in the BUSY list then the STOP/KILL event 
+        # If there are still states in the BUSY list then the STOP/KILL event
         # was not yet answered
         # We know that BUSY states can only decrease after a kill is requested
         return self._killed.value and not self._busy_states
@@ -1011,7 +1012,7 @@ class ManticoreBase(Eventful):
 
     @contextmanager
     def kill_timeout(self, timeout=None):
-        ''' A convenient context manager that will kill a manticore run after 
+        ''' A convenient context manager that will kill a manticore run after
             timeout seconds
         '''
         if timeout is None:
@@ -1138,6 +1139,7 @@ class ManticoreSingle(ManticoreBase):
 
 class ManticoreThreading(ManticoreBase):
     _worker_type = WorkerThread
+
     def __init__(self, *args, **kwargs):
         self._lock = threading.Condition()
         self._started = ctypes.c_bool(False)
@@ -1155,6 +1157,7 @@ class ManticoreThreading(ManticoreBase):
 
 class ManticoreMultiprocessing(ManticoreBase):
     _worker_type = WorkerProcess
+
     def __init__(self, *args, **kwargs):
         # This is the global manager that will handle all shared memory access
         # See. https://docs.python.org/3/library/multiprocessing.html#multiprocessing.managers.SyncManager
@@ -1177,4 +1180,3 @@ class ManticoreMultiprocessing(ManticoreBase):
                                      dict: self._manager.dict}
 
         super().__init__(*args, **kwargs)
-
