@@ -17,7 +17,7 @@ Thanks to our external contributors!
 * **[fixed API]** Fixed account creation with a code field ([#1371](https://github.com/trailofbits/manticore/pull/1371))
 * **[fixed API]** Fixed an incorrect attribute in `last_return` ([#1341](https://github.com/trailofbits/manticore/pull/1341))
 * **[refactor]** Inlined get_possible solutions function as it's only used once ([#1372](https://github.com/trailofbits/manticore/pull/1372))
-* Fixed `_check_jumpdest` when run with detectors ([#1347](https://github.com/trailofbits/manticore/pull/1347))
+* Fixed `_check_jumpdest` when run with detectors - this bug could lead to not detecting an int overflow due to tainting made by another detector ([#1347](https://github.com/trailofbits/manticore/pull/1347))
 * Made findings print addresses in hex ([#1339](https://github.com/trailofbits/manticore/pull/1339))
 
 ### Native
