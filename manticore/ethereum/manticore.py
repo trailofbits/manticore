@@ -581,7 +581,7 @@ class ManticoreEVM(ManticoreBase):
 
     def json_create_contract(self, jfile, owner=None, name=None, contract_name=None, balance=0, gas=None, network_id=None, args=()):
         """ Creates a solidity contract based on a truffle json artifact.
-
+            https://github.com/trufflesuite/truffle/tree/develop/packages/truffle-contract-schema
             :param jfile: truffle json artifact
             :type jfile: str or IOBase
             :param owner: owner account (will be default caller in any transactions)
