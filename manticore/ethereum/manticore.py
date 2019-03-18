@@ -330,7 +330,7 @@ class ManticoreEVM(ManticoreBase):
                     break
 
         if name is None:
-            raise ValueError('Specified contract not found', contract_name)
+            raise ValueError(f'Specified contract not found: {contract_name}')
 
         name = name.split(':')[1]
 
