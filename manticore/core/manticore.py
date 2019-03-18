@@ -13,7 +13,7 @@ import shlex
 
 from ..core.plugin import Plugin
 from ..core.smtlib import Expression
-from ..core.state import TerminateState, StateBase
+from ..core.state import StateBase
 from ..core.workspace import ManticoreOutput
 from ..utils import config
 from ..utils import log
@@ -292,11 +292,10 @@ class WorkerProcess(Worker):
     def join(self):
         self._p.join()
 
-def verbosity(level):
+def set_verbosity(level):
     """Convenience interface for setting logging verbosity to one of
     several predefined logging presets. Valid values: 0-5.
-
-    FIXME refator. This will affect all manticre instances.
+    This will affect all manticore instances.
     """
     log.set_verbosity(level)
     logger.info(f'Verbosity set to {level}.')
@@ -311,6 +310,9 @@ class ManticoreBase(Eventful):
             raise Exception("Single, multiprocessing or threading expected")
         if cls in (ManticoreBase, ManticoreSingle, ManticoreThreading, ManticoreMultiprocessing):
             raise Exception("Should not instantiate this")
+        if any(x in cls.__bases for x in (ManticoreSingle __, ManticoreThreading, ManticoreMultiprocessing)):
+            raise Exception("Manticore already specialized")
+
         cl = globals()[f'Manticore{consts.mprocessing.title()}']
         if cl not in cls.__bases__:
             #change ManticoreBase for the more specific class
@@ -324,7 +326,6 @@ class ManticoreBase(Eventful):
     # Decorators added first for convenience.
     def sync(func):
         """Synchronization decorator"""
-
         @functools.wraps(func)
         def newFunction(self, *args, **kw):
             with self._lock:
@@ -336,7 +337,6 @@ class ManticoreBase(Eventful):
         """Allows the decorated method to run only when manticore is actively
            exploring states
         """
-
         @functools.wraps(func)
         def newFunction(self, *args, **kw):
             if not self.is_running():
@@ -370,7 +370,7 @@ class ManticoreBase(Eventful):
         return newFunction
 
     _published_events = {'start_run', 'finish_run', 'generate_testcase', 'enqueue_state', 'fork_state', 'load_state',
-                         'terminate_state', 'internal_generate_testcase', 'execute_instruction'}
+                         'terminate_state', 'execute_instruction'}
 
     def __init__(self, initial_state, workspace_url=None, policy='random', **kwargs):
         """
@@ -529,13 +529,6 @@ class ManticoreBase(Eventful):
 
         # Workers will use manticore __dict__ So lets spawn them last
         self._workers = [self._worker_type(id=i, manticore=self) for i in range(consts.procs)]
-
-        '''
-        # FIXME move the following to a plugin
-        self.subscribe('did_finish_run', self._did_finish_run_callback)
-        self.subscribe('internal_generate_testcase', self._publish_generate_testcase)
-        last_run_stats = {}
-        '''
 
     def _fork(self, state, expression, policy='ALL', setstate=None):
         '''
@@ -723,13 +716,15 @@ class ManticoreBase(Eventful):
         # wait for a state id to be added to the ready list and remove it
         if state_id not in self._busy_states:
             raise Exception("Can not terminate. State is not being analyzed")
-        del self._busy_states[self._busy_states.index(state_id)]
+        self._busy_states.remove(state_id)
 
         if delete:
             self._remove(state_id)
         else:
             # add the state_id to the terminated list
             self._terminated_states.append(state_id)
+
+        # wake up everyone waiting for a change in the state lists
         self._lock.notify_all()
 
     @property
@@ -1084,8 +1079,6 @@ class ManticoreBase(Eventful):
     ############################################################################
     ############################################################################
     ############################################################################
-    def _did_finish_run_callback(self):
-        self._save_run_data()
 
     def _save_run_data(self):
         with self._output.save_stream('command.sh') as f:
