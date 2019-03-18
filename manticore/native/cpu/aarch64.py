@@ -4916,19 +4916,16 @@ class Aarch64LinuxSyscallAbi(SyscallAbi):
         self._cpu.X0 = result
 
 
-# XXX: Update/rewrite this.
 class Aarch64Operand(Operand):
     def __init__(self, cpu, op, **kwargs):
         super(Aarch64Operand, self).__init__(cpu, op)
 
         assert self.op.type in (
-            cs.arm64.ARM64_OP_REG,  # Register operand
+            cs.arm64.ARM64_OP_REG,
             cs.arm64.ARM64_OP_REG_MRS,
             cs.arm64.ARM64_OP_REG_MSR,
-            cs.arm64.ARM64_OP_MEM,  # Memory operand
-            cs.arm64.ARM64_OP_IMM,  # Immediate operand
-            cs.arm64.ARM64_OP_CIMM,  # C-Immediate
-            cs.arm64.ARM64_OP_FP  # Floating-Point operand
+            cs.arm64.ARM64_OP_MEM,
+            cs.arm64.ARM64_OP_IMM
         )
 
         self._type = self.op.type
@@ -4971,11 +4968,7 @@ class Aarch64Operand(Operand):
         """
         return self.op.ext != cs.arm64.ARM64_EXT_INVALID
 
-    def read(self, nbits=None, with_carry=False):
-        # XXX: Finish this.
-        assert nbits is None
-        assert not with_carry
-
+    def read(self):
         if self.type == cs.arm64.ARM64_OP_REG:
             return self.cpu.regfile.read(self.reg)
         elif self.type == cs.arm64.ARM64_OP_REG_MRS:
@@ -4990,39 +4983,7 @@ class Aarch64Operand(Operand):
         else:
             raise NotImplementedError(f"Unsupported operand type: '{self.type}'")
 
-        # carry = self.cpu.regfile.read('APSR_C')
-        # if self.type == cs.arm64.ARM64_OP_REG:
-        #     value = self.cpu.regfile.read(self.reg)
-        #     # PC in this case has to be set to the instruction after next. PC at this point
-        #     # is already pointing to next instruction; we bump it one more.
-        #     if self.reg in ('PC', 'R15'):
-        #         value += self.cpu.instruction.size
-        #     if self.is_shifted():
-        #         shift = self.op.shift
-        #         value, carry = self.cpu._shift(value, shift.type, shift.value, carry)
-        #     if with_carry:
-        #         return value, carry
-        #     return value
-        # elif self.type == cs.arm64.ARM64_OP_IMM:
-        #     imm = self.op.imm
-        #     if with_carry:
-        #         return imm, self._get_expand_imm_carry(carry)
-        #     return imm
-        # elif self.type == 'coprocessor':
-        #     imm = self.op.imm
-        #     return imm
-        # elif self.type == 'memory':
-        #     val = self.cpu.read_int(self.address(), nbits)
-        #     if with_carry:
-        #         return val, carry
-        #     return val
-        # else:
-        #     raise NotImplementedError("readOperand unknown type", self.op.type)
-
-    def write(self, value, nbits=None):
-        # XXX: Finish this.
-        assert nbits is None
-
+    def write(self, value):
         if self.type == cs.arm64.ARM64_OP_REG:
             self.cpu.regfile.write(self.reg, value)
         elif self.type == cs.arm64.ARM64_OP_REG_MSR:
@@ -5034,21 +4995,3 @@ class Aarch64Operand(Operand):
             self.cpu.regfile.write(name, value)
         else:
             raise NotImplementedError(f"Unsupported operand type: '{self.type}'")
-
-        # if self.type == cs.arm64.ARM64_OP_REG:
-        #     self.cpu.regfile.write(self.reg, value)
-        # elif self.type == 'memory':
-        #     raise NotImplementedError('need to impl arm store mem')
-        # else:
-        #     raise NotImplementedError("writeOperand unknown type", self.op.type)
-
-    # def writeback(self, value):
-    #     if self.type == cs.arm64.ARM64_OP_REG:
-    #         self.write(value)
-    #     elif self.type == 'memory':
-    #         self.cpu.regfile.write(self.mem.base, value)
-    #     else:
-    #         raise NotImplementedError("writeback Operand unknown type", self.op.type)
-
-    # def is_shifted(self):
-    #     return self.op.shift.type != cs.arm.ARM_SFT_INVALID
