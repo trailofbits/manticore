@@ -188,10 +188,17 @@ class ManticoreEVM(ManticoreBase):
             pos = 0
             while pos < len(hex_contract):
                 if hex_contract[pos] == '_':
-                    # __/tmp/tmp_9k7_l:Manticore______________
                     lib_placeholder = hex_contract[pos:pos + 40]
-                    lib_name = lib_placeholder.split(':')[1].split('_')[0]
-                    deps.setdefault(lib_name, []).append(pos)
+                    # This is all very weak...
+                    # Contract names starting/ending with _ ?
+                    # Contract names longer than 40 bytes ?
+                    if ':' in lib_placeholder:
+                        # __/tmp/tmp_9k7_l:Manticore______________
+                        lib_name = lib_placeholder.split(':')[1].strip('_')
+                        deps.setdefault(lib_name, []).append(pos)
+                    else:
+                        lib_name = lib_placeholder.strip('_')
+                        deps.setdefault(lib_name, []).append(pos)
                     pos += 40
                 else:
                     pos += 2
@@ -323,7 +330,7 @@ class ManticoreEVM(ManticoreBase):
                     break
 
         if name is None:
-            raise ValueError('Specified contract not found')
+            raise ValueError(f'Specified contract not found: {contract_name}')
 
         name = name.split(':')[1]
 
@@ -571,6 +578,91 @@ class ManticoreEVM(ManticoreBase):
         """
         # FIXME this is more naive than reasonable.
         return ABI.deserialize(types, self.make_symbolic_buffer(32, name='INITARGS', avoid_collisions=True))
+
+    def json_create_contract(self, jfile, owner=None, name=None, contract_name=None, balance=0, gas=None, network_id=None, args=()):
+        """ Creates a solidity contract based on a truffle json artifact.
+            https://github.com/trufflesuite/truffle/tree/develop/packages/truffle-contract-schema
+            :param jfile: truffle json artifact
+            :type jfile: str or IOBase
+            :param owner: owner account (will be default caller in any transactions)
+            :type owner: int or EVMAccount
+            :param contract_name: Name of the contract to analyze (optional if there is a single one in the source code)
+            :type contract_name: str
+            :param balance: balance to be transferred on creation
+            :type balance: int or BitVecVariable
+            :param gas: gas budget for each contract creation needed (may be more than one if several related contracts defined in the solidity source)
+            :type gas: int
+            :param network_id: Truffle network id to instantiate
+            :param tuple args: constructor arguments
+            :rtype: EVMAccount
+        """
+
+        if isinstance(jfile, io.IOBase):
+            jfile = jfile.read()
+        elif isinstance(jfile, bytes):
+            jfile = str(jfile, 'utf-8')
+        elif not isinstance(jfile, str):
+            raise TypeError(f'source code bad type: {type(jfile).__name__}')
+
+        truffle = json.loads(jfile)
+        hashes = {}
+        for item in truffle['abi']:
+            item_type = item['type']
+            if item_type in ('function'):
+                signature = SolidityMetadata.function_signature_for_name_and_inputs(item['name'], item['inputs'])
+                hashes[signature] = sha3.keccak_256(signature.encode()).hexdigest()[:8]
+                if 'signature' in item:
+                    if item['signature'] != f'0x{hashes[signature]}':
+                        raise Exception(f"Something wrong with the sha3 of the method {signature} signature (a.k.a. the hash)")
+
+        if contract_name is None:
+            contract_name = truffle["contractName"]
+
+        if network_id is None:
+            if len(truffle['networks']) > 1:
+                raise Exception("Network id not specified")
+            if len(truffle['networks']) == 1:
+                network_id = list(truffle['networks'].keys())[0]
+        if network_id in truffle['networks']:
+            temp_dict = truffle['networks'][network_id]['links']
+            links = dict((k, int(v['address'], 0)) for k, v in temp_dict.items())
+        else:
+            links = ()
+
+        source_code = truffle["source"]
+        bytecode = self._link(truffle["bytecode"][2:], links)
+        runtime = self._link(truffle["deployedBytecode"][2:], links)
+        if "sourceMap" in truffle:
+            srcmap = truffle["sourceMap"].split(';')
+        else:
+            srcmap_runtime = []
+        if "deployedSourceMap" in truffle:
+            srcmap_runtime = truffle["deployedSourceMap"].split(';')
+        else:
+            srcmap_runtime = []
+        abi = truffle['abi']
+        md = SolidityMetadata(contract_name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, b'')
+        constructor_types = md.get_constructor_arguments()
+        if constructor_types != '()':
+            if args is None:
+                args = self.make_symbolic_arguments(constructor_types)
+
+            constructor_data = ABI.serialize(constructor_types, *args)
+        else:
+            constructor_data = b''
+
+        contract_account = self.create_contract(owner=owner,
+                                                balance=balance,
+                                                init=md._init_bytecode + constructor_data,
+                                                gas=gas)
+
+        if contract_account is None:
+            raise EthereumError(f"Failed to build contract {contract_name}")
+        self.metadata[int(contract_account)] = md
+
+        if not self.count_running_states() or len(self.get_code(contract_account)) == 0:
+            return None
+        return contract_account
 
     def solidity_create_contract(self, source_code, owner, name=None, contract_name=None, libraries=None,
                                  balance=0, address=None, args=(), solc_bin=None, solc_remaps=[],
