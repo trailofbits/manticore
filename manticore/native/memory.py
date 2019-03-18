@@ -1,6 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from weakref import WeakValueDictionary
-from ..core.smtlib import Operators, ConstraintSet, arithmetic_simplify, solver, TooManySolutions, BitVec, BitVecConstant, expression
+from ..core.smtlib import Operators, ConstraintSet, arithmetic_simplify, Z3Solver, TooManySolutions, BitVec, BitVecConstant, expression
 from ..native.mappings import mmap, munmap
 from ..utils.helpers import issymbolic, interval_intersection
 
@@ -8,7 +8,7 @@ import functools
 import logging
 
 logger = logging.getLogger(__name__)
-
+solver = Z3Solver()
 
 class MemoryException(Exception):
     '''

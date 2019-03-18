@@ -554,8 +554,7 @@ class ManticoreBase(Eventful):
         assert isinstance(expression, Expression)
 
         if setstate is None:
-            del setstate
-            def setstate(x,y):
+            def setstate(x, y):
                 pass
 
         # Find a set of solutions for expression
