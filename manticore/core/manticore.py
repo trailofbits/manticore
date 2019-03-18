@@ -312,7 +312,7 @@ class ManticoreBase(Eventful):
             raise Exception("Single, multiprocessing or threading expected")
         if cls in (ManticoreBase, ManticoreSingle, ManticoreThreading, ManticoreMultiprocessing):
             raise Exception("Should not instantiate this")
-        if any(x in cls.__bases for x in (ManticoreSingle __, ManticoreThreading, ManticoreMultiprocessing)):
+        if any(x in cls.__bases__ for x in (ManticoreSingle, ManticoreThreading, ManticoreMultiprocessing)):
             raise Exception("Manticore already specialized")
 
         cl = globals()[f'Manticore{consts.mprocessing.title()}']
