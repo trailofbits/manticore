@@ -758,6 +758,51 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('NZCV'), 0)
 
 
+    # ADDP (scalar).
+
+    # XXX: Uses 'reset'.
+
+    @itest_setregs('V1=0x41424344454647485152535455565758')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'addp d0, v1.2d'
+        ],
+        multiple_insts=True
+    )
+    def test_addp_scalar(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0x929496989a9c9ea0)
+        self.assertEqual(self.rf.read('Q0'), 0x929496989a9c9ea0)
+        self.assertEqual(self.rf.read('D0'), 0x929496989a9c9ea0)
+        self.assertEqual(self.rf.read('S0'), 0x9a9c9ea0)
+        self.assertEqual(self.rf.read('H0'), 0x9ea0)
+        self.assertEqual(self.rf.read('B0'), 0xa0)
+
+    @itest_setregs('V1=0xffffffffffffffffffffffffffffffff')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'addp d0, v1.2d'
+        ],
+        multiple_insts=True
+    )
+    def test_addp_scalar_max(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0xfffffffffffffffe)
+        self.assertEqual(self.rf.read('Q0'), 0xfffffffffffffffe)
+        self.assertEqual(self.rf.read('D0'), 0xfffffffffffffffe)
+        self.assertEqual(self.rf.read('S0'), 0xfffffffe)
+        self.assertEqual(self.rf.read('H0'), 0xfffe)
+        self.assertEqual(self.rf.read('B0'), 0xfe)
+
+
     # ADDS (extended register).
 
     # 32-bit.
@@ -6844,13 +6889,7 @@ class Aarch64Instructions:
 
     # MSR (register) and MRS.
 
-    # XXX: Unicorn doesn't allow to write to and read from system
-    # registers directly (see 'arm64_reg_write' and 'arm64_reg_read').
-    # The only way to propagate this information is via the MSR
-    # (register) and MRS instructions, without resetting the emulator
-    # state in between.
-    # Note: in HEAD, this is fixed for some system registers, so revise
-    # this after upgrading from 1.0.1.
+    # XXX: Uses 'reset'.
 
     # TPIDR_EL0.
 
@@ -10892,6 +10931,13 @@ class Aarch64UnicornInstructions(unittest.TestCase, Aarch64Instructions):
         # Map the stack.
         self.emu._create_emulated_mapping(self.emu._emu, self.cpu.STACK)
 
+    # XXX: Unicorn doesn't allow to write to and read from system
+    # registers directly (see 'arm64_reg_write' and 'arm64_reg_read').
+    # The only way to propagate this information is via the MSR
+    # (register) and MRS instructions, without resetting the emulator
+    # state in between.
+    # Note: in HEAD, this is fixed for some system registers, so revise
+    # this after upgrading from 1.0.1.
     def _execute(self, check_pc=True, reset=True):
         pc = self.cpu.PC
         insn = self.cpu.decode_instruction(pc)

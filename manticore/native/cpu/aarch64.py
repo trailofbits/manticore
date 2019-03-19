@@ -65,6 +65,7 @@ COND_MAP = {
 # XXX: Support other system registers.
 # System registers map.
 SYS_REG_MAP = {
+    0xc082: 'CPACR_EL1',
     0xde82: 'TPIDR_EL0'
 }
 
@@ -94,12 +95,12 @@ class Aarch64RegisterFile(RegisterFile):
     # SIMD and FP registers.
     # See "A1.4 Supported data types".
     for i in range(32):
-        _table[f'Q{i}'] = Regspec(f'Q{i}', 128)
-        _table[f'D{i}'] = Regspec(f'Q{i}', 64)
-        _table[f'S{i}'] = Regspec(f'Q{i}', 32)
-        _table[f'H{i}'] = Regspec(f'Q{i}', 16)
-        _table[f'B{i}'] = Regspec(f'Q{i}', 8)
-        # XXX: Support vectors.
+        _table[f'V{i}'] = Regspec(f'V{i}', 128)
+        _table[f'Q{i}'] = Regspec(f'V{i}', 128)
+        _table[f'D{i}'] = Regspec(f'V{i}', 64)
+        _table[f'S{i}'] = Regspec(f'V{i}', 32)
+        _table[f'H{i}'] = Regspec(f'V{i}', 16)
+        _table[f'B{i}'] = Regspec(f'V{i}', 8)
 
     # SIMD and FP control and status registers.
     _table['FPCR'] = Regspec('FPCR', 64)
@@ -114,9 +115,13 @@ class Aarch64RegisterFile(RegisterFile):
     _table['XZR'] = Regspec('XZR', 64)
     _table['WZR'] = Regspec('XZR', 32)
 
+    # XXX: Check the current exception level before reading from or writing to a
+    # system register.
     # System registers.
     # See "D12.2 General system control registers".
 
+    # See "D12.2.29 CPACR_EL1, Architectural Feature Access Control Register".
+    _table['CPACR_EL1'] = Regspec('CPACR_EL1', 64)
     # See "D12.2.106 TPIDR_EL0, EL0 Read/Write Software Thread ID Register".
     _table['TPIDR_EL0'] = Regspec('TPIDR_EL0', 64)
 
@@ -939,6 +944,41 @@ class Aarch64Cpu(Cpu):
 
         else:
             raise Aarch64InvalidInstruction
+
+    # XXX: Support ADDP (vector).
+    @instruction
+    def ADDP(cpu, res_op, reg_op):
+        """
+        ADDP (scalar).
+
+        :param res_op: destination register.
+        :param reg_op: source register.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+
+        insn_rx  = '01'
+        insn_rx += '0'
+        insn_rx += '11110'
+        insn_rx += '[01]{2}'  # size
+        insn_rx += '11000'
+        insn_rx += '11011'
+        insn_rx += '10'
+        insn_rx += '[01]{5}'  # Rn
+        insn_rx += '[01]{5}'  # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        # XXX: Check if trapped.
+
+        reg = reg_op.read()
+
+        assert reg_op.op.vas == cs.arm64.ARM64_VAS_2D
+        hi = Operators.EXTRACT(reg, 64, 64)
+        lo = Operators.EXTRACT(reg, 0,  64)
+
+        result = UInt(hi + lo, res_op.size)
+        res_op.write(result)
 
     def _ADDS_extended_register(cpu, res_op, reg_op1, reg_op2):
         """
