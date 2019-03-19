@@ -52,7 +52,7 @@ class Eventful(object, metaclass=EventsGatherMetaclass):
     # Maps an Eventful subclass with a set of all the events it publishes.
     __all_events__ = dict()
 
-    # Set of subscribed events
+    # Set of subscribed events - used as an optimization to only publish events that someone subscribes to
     __sub_events__ = set()
 
     # Set in subclass to advertise the events it plans to publish
