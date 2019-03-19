@@ -16,6 +16,11 @@ from .register import Register
 from ...core.smtlib import Operators
 
 
+# Unless stated otherwise, all references assume the ARM Architecture Reference
+# Manual: ARMv8, for ARMv8-A architecture profile, 31 October 2018.
+# ARM DDI 0487D.a, ID 103018.
+
+
 class Aarch64InvalidInstruction(CpuException):
     pass
 
@@ -28,8 +33,7 @@ OP_NAME_MAP = {
 }
 
 
-# See "C1.2.4 Condition code" in ARM Architecture Reference Manual
-# ARMv8, for ARMv8-A architecture profile.
+# See "C1.2.4 Condition code".
 Condspec = collections.namedtuple('CondSpec', 'inverse func')
 COND_MAP = {
     cs.arm64.ARM64_CC_EQ: Condspec(cs.arm64.ARM64_CC_NE, lambda n, z, c, v: z == 1),
@@ -71,45 +75,24 @@ class Aarch64RegisterFile(RegisterFile):
     # Register table.
     _table = {}
 
-    # From "B1.2 Registers in AArch64 Execution state" in the ARM Architecture
-    # Reference Manual: ARMv8, for ARMv8-A architecture profile:
-    #
-    # 31 general-purpose registers, R0 to R30.
-    # Each register can be accessed as:
-    # * A 64-bit general-purpose register named X0 to X30.
-    # * A 32-bit general-purpose register named W0 to W30.
+    # See "B1.2 Registers in AArch64 Execution state".
+
+    # General-purpose registers.
     for i in range(31):
         _table[f'X{i}'] = Regspec(f'X{i}', 64)
         _table[f'W{i}'] = Regspec(f'X{i}', 32)
 
-    # A 64-bit dedicated Stack Pointer register.  The least significant 32 bits
-    # of the stack-pointer can be accessed via the register name WSP.
-    #
-    # The use of SP as an operand in an instruction, indicates the use of the
-    # current stack pointer.
+    # Stack pointer.
+    # See "D1.8.2 SP alignment checking".
     _table['SP']  = Regspec('SP', 64)
     _table['WSP'] = Regspec('SP', 32)
 
-    # A 64-bit Program Counter holding the address of the current instruction.
-    # Software cannot write directly to the PC.  It can only be updated on a
-    # branch, exception entry or exception return.
-    #
-    # Attempting to execute an A64 instruction that is not word-aligned
-    # generates a PC alignment fault, see "PC alignment checking".
+    # Program counter.
+    # See "D1.8.1 PC alignment checking".
     _table['PC'] = Regspec('PC', 64)
 
-    # 32 SIMD&FP registers, V0 to V31.
-    # Each register can be accessed as:
-    # * A 128-bit register named Q0 to Q31.
-    # * A 64-bit register named D0 to D31.
-    # * A 32-bit register named S0 to S31.
-    # * A 16-bit register named H0 to H31.
-    # * An 8-bit register named B0 to B31.
-    # * A 128-bit vector of elements.
-    # * A 64-bit vector of elements.
-    #
-    # Where the number of bits described by a register name does not occupy an entire
-    # SIMD&FP register, it refers to the least significant bits.
+    # SIMD and FP registers.
+    # See "A1.4 Supported data types".
     for i in range(32):
         _table[f'Q{i}'] = Regspec(f'Q{i}', 128)
         _table[f'D{i}'] = Regspec(f'Q{i}', 64)
@@ -117,79 +100,39 @@ class Aarch64RegisterFile(RegisterFile):
         _table[f'H{i}'] = Regspec(f'Q{i}', 16)
         _table[f'B{i}'] = Regspec(f'Q{i}', 8)
         # XXX: Support vectors.
-        # For more information about data types and vector formats, see "Supported
-        # data types".
 
-    # Two SIMD and floating-point control and status registers, FPCR and FPSR.
+    # SIMD and FP control and status registers.
     _table['FPCR'] = Regspec('FPCR', 64)
     _table['FPSR'] = Regspec('FPSR', 64)
 
     # Condition flags.
-    # Flag-setting instructions set these.
-    #
-    # N Negative Condition flag.  If the result of the instruction is regarded
-    # as a two's complement signed integer, the PE sets this to:
-    # * 1 if the result is negative.
-    # * 0 if the result is positive or zero.
-    #
-    # Z Zero Condition flag.  Set to:
-    # * 1 if the result of the instruction is zero.
-    # * 0 otherwise.
-    # A result of zero often indicates an equal result from a comparison.
-    #
-    # C Carry Condition flag.  Set to:
-    # * 1 if the instruction results in a carry condition, for example an unsigned overflow
-    #   that is the result of an addition.
-    # * 0 otherwise.
-    #
-    # V Overflow Condition flag.  Set to:
-    # * 1 if the instruction results in an overflow condition, for example a signed
-    #   overflow that is the result of an addition.
-    # * 0 otherwise.
-    #
-    # Conditional instructions test the N, Z, C and V Condition flags, combining them
-    # with the Condition code for the instruction to determine whether the instruction
-    # must be executed.  In this way, execution of the instruction is conditional on
-    # the result of a previous operation.  For more information about conditional
-    # execution, see "Condition flags and related instructions".
-    #
-    # Also see "C5.2.9 NZCV, Condition Flags".
-    # Counting from the right:
-    # N, bit [31]
-    # Z, bit [30]
-    # C, bit [29]
-    # V, bit [28]
+    # See "C5.2.9 NZCV, Condition Flags".
     _table['NZCV'] = Regspec('NZCV', 64)
 
-    # From "C1.2.5 Register names":
     # Zero register.
+    # See "C1.2.5 Register names".
     _table['XZR'] = Regspec('XZR', 64)
     _table['WZR'] = Regspec('XZR', 32)
 
-
     # System registers.
+    # See "D12.2 General system control registers".
 
-    # TPIDR_EL0, EL0 Read/Write Software Thread ID Register.
+    # See "D12.2.106 TPIDR_EL0, EL0 Read/Write Software Thread ID Register".
     _table['TPIDR_EL0'] = Regspec('TPIDR_EL0', 64)
-
 
     def __init__(self):
         # Register aliases.
         _aliases = {
             # This one is required by the 'Cpu' class.
             'STACK': 'SP',
-            # From "5.1 Machine Registers" in Procedure Call Standard for the ARM 64-bit
-            # Architecture (AArch64):
+            # See "5.1 Machine Registers" in the Procedure Call Standard for the ARM
+            # 64-bit Architecture (AArch64), 22 May 2013.  ARM IHI 0055B.
             # Frame pointer.
             'FP': 'X29',
-            # Intra-procedure-call temporary registers (can be used by call veneers
-            # and PLT code); at other times may be used as temporary registers.
+            # Intra-procedure-call temporary registers.
             'IP1': 'X17',
             'IP0': 'X16',
-            # From "B1.2 Registers in AArch64 Execution state" in the ARM Architecture
-            # Reference Manual: ARMv8, for ARMv8-A architecture profile:
-            # The X30 general-purpose register is used as the procedure call
-            # link register.
+            # Link register.
             'LR': 'X30'
         }
         super().__init__(_aliases)
@@ -213,7 +156,6 @@ class Aarch64RegisterFile(RegisterFile):
                 continue
             self._registers[name] = Register(size)
             self._parent_registers.add(name)
-
 
     def read(self, register):
         assert register in self
@@ -273,11 +215,6 @@ class Aarch64RegisterFile(RegisterFile):
         return self._all_registers
 
     # See "C5.2.9 NZCV, Condition Flags".
-    # Counting from the right:
-    # N, bit [31]
-    # Z, bit [30]
-    # C, bit [29]
-    # V, bit [28]
     @property
     def nzcv(self):
         nzcv = self.read('NZCV')
@@ -319,23 +256,8 @@ class Aarch64Cpu(Cpu):
     # https://stackoverflow.com/a/45125525
     machine = 'aarch64'
     arch = cs.CS_ARCH_ARM64
-    # From "A1.3.2 The ARMv8 instruction sets" in ARM Architecture Reference
-    # Manual ARMv8, for ARMv8-A architecture profile:
-    # AArch64 state supports only a single instruction set, called A64.  This is
-    # a fixed-length instruction set that uses 32-bit instruction encodings.
+    # See "A1.3.2 The ARMv8 instruction sets".
     mode = cs.CS_ARCH_ARM
-
-    # The A64 instruction set does not support conditional execution for every
-    # instruction.  There is a small set of conditional data processing
-    # instructions that are unconditionally executed but use the condition flags
-    # as an extra input to the instruction.
-    #
-    # The A64 instruction set enables conditional execution of only program flow
-    # control branch instructions.  This is in contrast to A32 and T32 where
-    # most instructions can be predicated with a condition code.
-    #
-    # See "6.2.5 Conditional instructions" in ARM Cortex-A Series
-    # Programmer's Guide for ARMv8-A.
 
     def __init__(self, memory):
         warnings.warn('Aarch64 support is experimental')
@@ -964,12 +886,6 @@ class Aarch64Cpu(Cpu):
         """
         ADD (extended register).
 
-        Add (extended register) adds a register value and a sign or
-        zero-extended register value, followed by an optional left shift amount,
-        and writes the result to the destination register.  The argument that is
-        extended from the <Rm> register can be a byte, halfword, word, or
-        doubleword.
-
         :param res_op: destination register.
         :param reg_op1: source register.
         :param reg_op2: source register.
@@ -980,11 +896,6 @@ class Aarch64Cpu(Cpu):
         """
         ADD (immediate).
 
-        Add (immediate) adds a register value and an optionally-shifted
-        immediate value, and writes the result to the destination register.
-
-        This instruction is used by the alias MOV (to/from SP).
-
         :param res_op: destination register.
         :param reg_op: source register.
         :param imm_op: immediate.
@@ -994,9 +905,6 @@ class Aarch64Cpu(Cpu):
     def _ADD_shifted_register(cpu, res_op, reg_op1, reg_op2):
         """
         ADD (shifted register).
-
-        Add (shifted register) adds a register value and an optionally-shifted
-        register value, and writes the result to the destination register.
 
         :param res_op: destination register.
         :param reg_op1: source register.
@@ -1036,14 +944,6 @@ class Aarch64Cpu(Cpu):
         """
         ADDS (extended register).
 
-        Add (extended register), setting flags, adds a register value and a sign
-        or zero-extended register value, followed by an optional left shift
-        amount, and writes the result to the destination register.  The argument
-        that is extended from the <Rm> register can be a byte, halfword, word,
-        or doubleword.  It updates the condition flags based on the result.
-
-        This instruction is used by the alias CMN (extended register).
-
         :param res_op: destination register.
         :param reg_op1: source register.
         :param reg_op2: source register.
@@ -1054,13 +954,6 @@ class Aarch64Cpu(Cpu):
         """
         ADDS (immediate).
 
-        Add (immediate), setting flags, adds a register value and an
-        optionally-shifted immediate value, and writes the result to the
-        destination register.  It updates the condition flags based on the
-        result.
-
-        This instruction is used by the alias CMN (immediate).
-
         :param res_op: destination register.
         :param reg_op: source register.
         :param imm_op: immediate.
@@ -1070,13 +963,6 @@ class Aarch64Cpu(Cpu):
     def _ADDS_shifted_register(cpu, res_op, reg_op1, reg_op2):
         """
         ADDS (shifted register).
-
-        Add (shifted register), setting flags, adds a register value and an
-        optionally-shifted register value, and writes the result to the
-        destination register.  It updates the condition flags based on the
-        result.
-
-        This instruction is used by the alias CMN (shifted register).
 
         :param res_op: destination register.
         :param reg_op1: source register.
@@ -1117,10 +1003,6 @@ class Aarch64Cpu(Cpu):
         """
         ADR.
 
-        Form PC-relative address adds an immediate value to the PC value to form
-        a PC-relative address, and writes the result to the destination
-        register.
-
         :param res_op: destination register.
         :param imm_op: immediate.
         """
@@ -1143,11 +1025,6 @@ class Aarch64Cpu(Cpu):
         """
         ADRP.
 
-        Form PC-relative address to 4KB page adds an immediate value that is
-        shifted left by 12 bits, to the PC value to form a PC-relative address,
-        with the bottom 12 bits masked out, and writes the result to the
-        destination register.
-
         :param res_op: destination register.
         :param imm_op: immediate.
         """
@@ -1168,9 +1045,6 @@ class Aarch64Cpu(Cpu):
     def _AND_immediate(cpu, res_op, reg_op, imm_op):
         """
         AND (immediate).
-
-        Bitwise AND (immediate) performs a bitwise AND of a register value and
-        an immediate value, and writes the result to the destination register.
 
         :param res_op: destination register.
         :param reg_op: source register.
@@ -1199,10 +1073,6 @@ class Aarch64Cpu(Cpu):
     def _AND_shifted_register(cpu, res_op, reg_op1, reg_op2):
         """
         AND (shifted register).
-
-        Bitwise AND (shifted register) performs a bitwise AND of a register
-        value and an optionally-shifted register value, and writes the result to
-        the destination register.
 
         :param res_op: destination register.
         :param reg_op1: source register.
@@ -1262,13 +1132,6 @@ class Aarch64Cpu(Cpu):
         """
         ANDS (immediate).
 
-        Bitwise AND (immediate), setting flags, performs a bitwise AND of a
-        register value and an immediate value, and writes the result to the
-        destination register.  It updates the condition flags based on the
-        result.
-
-        This instruction is used by the alias TST (immediate).
-
         :param res_op: destination register.
         :param reg_op: source register.
         :param imm_op: immediate.
@@ -1300,13 +1163,6 @@ class Aarch64Cpu(Cpu):
     def _ANDS_shifted_register(cpu, res_op, reg_op1, reg_op2):
         """
         ANDS (shifted register).
-
-        Bitwise AND (shifted register), setting flags, performs a bitwise AND of
-        a register value and an optionally-shifted register value, and writes
-        the result to the destination register.  It updates the condition flags
-        based on the result.
-
-        This instruction is used by the alias TST (shifted register).
 
         :param res_op: destination register.
         :param reg_op1: source register.
@@ -1373,13 +1229,6 @@ class Aarch64Cpu(Cpu):
         """
         ASR (immediate).
 
-        Arithmetic Shift Right (immediate) shifts a register value right by an
-        immediate number of bits, shifting in copies of the sign bit in the
-        upper bits and zeros in the lower bits, and writes the result to the
-        destination register.
-
-        This instruction is an alias of the SBFM instruction.
-
         :param res_op: destination register.
         :param reg_op: source register.
         :param immr_op: immediate.
@@ -1409,14 +1258,6 @@ class Aarch64Cpu(Cpu):
     def _ASR_register(cpu, res_op, reg_op1, reg_op2):
         """
         ASR (register).
-
-        Arithmetic Shift Right (register) shifts a register value right by a
-        variable number of bits, shifting in copies of its sign bit, and writes
-        the result to the destination register.  The remainder obtained by
-        dividing the second source register by the data size defines the number
-        of bits by which the first source register is right-shifted.
-
-        This instruction is an alias of the ASRV instruction.
 
         :param res_op: destination register.
         :param reg_op1: source register.
@@ -1469,14 +1310,6 @@ class Aarch64Cpu(Cpu):
         """
         ASRV.
 
-        Arithmetic Shift Right Variable shifts a register value right by a
-        variable number of bits, shifting in copies of its sign bit, and writes
-        the result to the destination register.  The remainder obtained by
-        dividing the second source register by the data size defines the number
-        of bits by which the first source register is right-shifted.
-
-        This instruction is used by the alias ASR (register).
-
         :param res_op: destination register.
         :param reg_op1: source register.
         :param reg_op2: source register.
@@ -1508,9 +1341,6 @@ class Aarch64Cpu(Cpu):
         """
         B.cond.
 
-        Branch conditionally to a label at a PC-relative offset, with a hint
-        that this is not a subroutine call or return.
-
         :param imm_op: immediate.
         """
         assert imm_op.type is cs.arm64.ARM64_OP_IMM
@@ -1533,9 +1363,6 @@ class Aarch64Cpu(Cpu):
         """
         B.
 
-        Branch causes an unconditional branch to a label at a PC-relative
-        offset, with a hint that this is not a subroutine call or return.
-
         :param imm_op: immediate.
         """
         assert imm_op.type is cs.arm64.ARM64_OP_IMM
@@ -1553,12 +1380,6 @@ class Aarch64Cpu(Cpu):
     def BFC(cpu, res_op, lsb_op, width_op):
         """
         BFC.
-
-        Bitfield Clear sets a bitfield of <width> bits at bit position <lsb> of
-        the destination register to zero, leaving the other destination bits
-        unchanged.
-
-        This instruction is an alias of the BFM instruction.
 
         :param res_op: destination register.
         :param lsb_op: immediate.
@@ -1600,12 +1421,6 @@ class Aarch64Cpu(Cpu):
         """
         BFI.
 
-        Bitfield Insert copies a bitfield of <width> bits from the least
-        significant bits of the source register to bit position <lsb> of the
-        destination register, leaving the other destination bits unchanged.
-
-        This instruction is an alias of the BFM instruction.
-
         :param res_op: destination register.
         :param reg_op: source register.
         :param lsb_op: immediate.
@@ -1639,23 +1454,6 @@ class Aarch64Cpu(Cpu):
     def BFM(cpu, res_op, reg_op, immr_op, imms_op):
         """
         BFM.
-
-        Bitfield Move is usually accessed via one of its aliases, which are
-        always preferred for disassembly.
-
-        If <imms> is greater than or equal to <immr>, this copies a bitfield of
-        (<imms>-<immr>+1) bits starting from bit position <immr> in the source
-        register to the least significant bits of the destination register.
-
-        If <imms> is less than <immr>, this copies a bitfield of (<imms>+1) bits
-        from the least significant bits of the source register to bit position
-        (regsize-<immr>) of the destination register, where regsize is the
-        destination register size of 32 or 64 bits.
-
-        In both cases the other bits of the destination register remain
-        unchanged.
-
-        This instruction is used by the aliases BFC, BFI, and BFXIL.
 
         :param res_op: destination register.
         :param reg_op: source register.
@@ -1704,13 +1502,6 @@ class Aarch64Cpu(Cpu):
         """
         BFXIL.
 
-        Bitfield Extract and Insert Low copies a bitfield of <width> bits
-        starting from bit position <lsb> in the source register to the least
-        significant bits of the destination register, leaving the other
-        destination bits unchanged.
-
-        This instruction is an alias of the BFM instruction.
-
         :param res_op: destination register.
         :param reg_op: source register.
         :param lsb_op: immediate.
@@ -1744,10 +1535,6 @@ class Aarch64Cpu(Cpu):
     def BIC(cpu, res_op, reg_op1, reg_op2):
         """
         BIC (shifted register).
-
-        Bitwise Bit Clear (shifted register) performs a bitwise AND of a
-        register value and the complement of an optionally-shifted register
-        value, and writes the result to the destination register.
 
         :param res_op: destination register.
         :param reg_op1: source register.
@@ -1785,11 +1572,6 @@ class Aarch64Cpu(Cpu):
     def BICS(cpu, res_op, reg_op1, reg_op2):
         """
         BICS (shifted register).
-
-        Bitwise Bit Clear (shifted register), setting flags, performs a bitwise
-        AND of a register value and the complement of an optionally-shifted
-        register value, and writes the result to the destination register.  It
-        updates the condition flags based on the result.
 
         :param res_op: destination register.
         :param reg_op1: source register.
@@ -1835,9 +1617,6 @@ class Aarch64Cpu(Cpu):
         """
         BL.
 
-        Branch with Link branches to a PC-relative offset, setting the register
-        X30 to PC+4.  It provides a hint that this is a subroutine call.
-
         :param imm_op: immediate.
         """
         assert imm_op.type is cs.arm64.ARM64_OP_IMM
@@ -1857,9 +1636,6 @@ class Aarch64Cpu(Cpu):
     def BLR(cpu, reg_op):
         """
         BLR.
-
-        Branch with Link to Register calls a subroutine at an address in a
-        register, setting register X30 to PC+4.
 
         :param reg_op: register.
         """
@@ -1888,9 +1664,6 @@ class Aarch64Cpu(Cpu):
         """
         BR.
 
-        Branch to Register branches unconditionally to an address in a register,
-        with a hint that this is not a subroutine return.
-
         :param reg_op: register.
         """
         assert reg_op.type is cs.arm64.ARM64_OP_REG
@@ -1915,12 +1688,6 @@ class Aarch64Cpu(Cpu):
     def CBNZ(cpu, reg_op, imm_op):
         """
         CBNZ.
-
-        Compare and Branch on Nonzero compares the value in a register with
-        zero, and conditionally branches to a label at a PC-relative offset if
-        the comparison is not equal.  It provides a hint that this is not a
-        subroutine call or return.  This instruction does not affect the
-        condition flags.
 
         :param reg_op: register.
         :param imm_op: immediate.
@@ -1947,11 +1714,6 @@ class Aarch64Cpu(Cpu):
         """
         CBZ.
 
-        Compare and Branch on Zero compares the value in a register with zero,
-        and conditionally branches to a label at a PC-relative offset if the
-        comparison is equal.  It provides a hint that this is not a subroutine
-        call or return.  This instruction does not affect condition flags.
-
         :param reg_op: register.
         :param imm_op: immediate.
         """
@@ -1976,10 +1738,6 @@ class Aarch64Cpu(Cpu):
         """
         CCMP (immediate).
 
-        Conditional Compare (immediate) sets the value of the condition flags to
-        the result of the comparison of a register value and an immediate value
-        if the condition is TRUE, and an immediate value otherwise.
-
         :param reg_op: register.
         :param imm_op: immediate.
         :param nzcv_op: immediate.
@@ -1989,10 +1747,6 @@ class Aarch64Cpu(Cpu):
     def _CCMP_register(cpu, reg_op1, reg_op2, nzcv_op):
         """
         CCMP (register).
-
-        Conditional Compare (register) sets the value of the condition flags to
-        the result of the comparison of two registers if the condition is TRUE,
-        and an immediate value otherwise.
 
         :param reg_op1: register.
         :param reg_op2: register.
@@ -2027,12 +1781,6 @@ class Aarch64Cpu(Cpu):
         """
         CINC.
 
-        Conditional Increment returns, in the destination register, the value of
-        the source register incremented by 1 if the condition is TRUE, and
-        otherwise returns the value of the source register.
-
-        This instruction is an alias of the CSINC instruction.
-
         :param res_op: destination register.
         :param reg_op: source register.
         """
@@ -2063,12 +1811,6 @@ class Aarch64Cpu(Cpu):
         """
         CINV.
 
-        Conditional Invert returns, in the destination register, the bitwise
-        inversion of the value of the source register if the condition is TRUE,
-        and otherwise returns the value of the source register.
-
-        This instruction is an alias of the CSINV instruction.
-
         :param res_op: destination register.
         :param reg_op: source register.
         """
@@ -2098,10 +1840,6 @@ class Aarch64Cpu(Cpu):
     def CLZ(cpu, res_op, reg_op):
         """
         CLZ.
-
-        Count Leading Zeros counts the number of binary zero bits before the
-        first binary one bit in the value of the source register, and writes the
-        result to the destination register.
 
         :param res_op: destination register.
         :param reg_op: source register.
@@ -2135,15 +1873,6 @@ class Aarch64Cpu(Cpu):
     def _CMN_extended_register(cpu, reg_op1, reg_op2):
         """
         CMN (extended register).
-
-        Compare Negative (extended register) adds a register value and a sign or
-        zero-extended register value, followed by an optional left shift amount.
-        The argument that is extended from the <Rm> register can be a byte,
-        halfword, word, or doubleword.  It updates the condition flags based on
-        the result, and discards the result.
-
-        This instruction is an alias of the ADDS (extended register)
-        instruction.
 
         :param reg_op1: source register.
         :param reg_op2: source register.
@@ -2181,12 +1910,6 @@ class Aarch64Cpu(Cpu):
         """
         CMN (immediate).
 
-        Compare Negative (immediate) adds a register value and an
-        optionally-shifted immediate value.  It updates the condition flags
-        based on the result, and discards the result.
-
-        This instruction is an alias of the ADDS (immediate) instruction.
-
         :param reg_op: source register.
         :param imm_op: immediate.
         """
@@ -2219,12 +1942,6 @@ class Aarch64Cpu(Cpu):
     def _CMN_shifted_register(cpu, reg_op1, reg_op2):
         """
         CMN (shifted register).
-
-        Compare Negative (shifted register) adds a register value and an
-        optionally-shifted register value.  It updates the condition flags based
-        on the result, and discards the result.
-
-        This instruction is an alias of the ADDS (shifted register) instruction.
 
         :param reg_op1: source register.
         :param reg_op2: source register.
@@ -2287,15 +2004,6 @@ class Aarch64Cpu(Cpu):
         """
         CMP (extended register).
 
-        Compare (extended register) subtracts a sign or zero-extended register
-        value, followed by an optional left shift amount, from a register value.
-        The argument that is extended from the <Rm> register can be a byte,
-        halfword, word, or doubleword.  It updates the condition flags based on
-        the result, and discards the result.
-
-        This instruction is an alias of the SUBS (extended register)
-        instruction.
-
         :param reg_op1: source register.
         :param reg_op2: source register.
         """
@@ -2332,12 +2040,6 @@ class Aarch64Cpu(Cpu):
         """
         CMP (immediate).
 
-        Compare (immediate) subtracts an optionally-shifted immediate value from
-        a register value.  It updates the condition flags based on the result,
-        and discards the result.
-
-        This instruction is an alias of the SUBS (immediate) instruction.
-
         :param reg_op: source register.
         :param imm_op: immediate.
         """
@@ -2370,12 +2072,6 @@ class Aarch64Cpu(Cpu):
     def _CMP_shifted_register(cpu, reg_op1, reg_op2):
         """
         CMP (shifted register).
-
-        Compare (shifted register) subtracts an optionally-shifted register
-        value from a register value.  It updates the condition flags based on the
-        result, and discards the result.
-
-        This instruction is an alias of the SUBS (shifted register) instruction.
 
         :param reg_op1: source register.
         :param reg_op2: source register.
@@ -2439,10 +2135,6 @@ class Aarch64Cpu(Cpu):
         """
         CSEL.
 
-        Conditional Select returns, in the destination register, the value of
-        the first source register if the condition is TRUE, and otherwise
-        returns the value of the second source register.
-
         :param res_op: destination register.
         :param reg_op1: source register.
         :param reg_op2: source register.
@@ -2478,11 +2170,6 @@ class Aarch64Cpu(Cpu):
     def CSET(cpu, res_op):
         """
         CSET.
-
-        Conditional Set sets the destination register to 1 if the condition is
-        TRUE, and otherwise sets it to 0.
-
-        This instruction is an alias of the CSINC instruction.
 
         :param res_op: destination register.
         """
@@ -2520,11 +2207,6 @@ class Aarch64Cpu(Cpu):
         """
         CSETM.
 
-        Conditional Set Mask sets all bits of the destination register to 1 if
-        the condition is TRUE, and otherwise sets all bits to 0.
-
-        This instruction is an alias of the CSINV instruction.
-
         :param res_op: destination register.
         """
         assert res_op.type is cs.arm64.ARM64_OP_REG
@@ -2560,13 +2242,6 @@ class Aarch64Cpu(Cpu):
     def CSINC(cpu, res_op, reg_op1, reg_op2):
         """
         CSINC.
-
-        Conditional Select Increment returns, in the destination register, the
-        value of the first source register if the condition is TRUE, and
-        otherwise returns the value of the second source register incremented by
-        1.
-
-        This instruction is used by the aliases CINC and CSET.
 
         :param res_op: destination register.
         :param reg_op1: source register.
@@ -2604,13 +2279,6 @@ class Aarch64Cpu(Cpu):
         """
         CSINV.
 
-        Conditional Select Invert returns, in the destination register, the
-        value of the first source register if the condition is TRUE, and
-        otherwise returns the bitwise inversion value of the second source
-        register.
-
-        This instruction is used by the aliases CINV and CSETM.
-
         :param res_op: destination register.
         :param reg_op1: source register.
         :param reg_op2: source register.
@@ -2647,10 +2315,6 @@ class Aarch64Cpu(Cpu):
         """
         LDP.
 
-        Load Pair of Registers calculates an address from a base register value
-        and an immediate offset, loads two 32-bit words or two 64-bit
-        doublewords from memory, and writes them to two registers.
-
         :param reg_op1: destination register.
         :param reg_op2: destination register.
         :param mem_op: memory.
@@ -2662,10 +2326,6 @@ class Aarch64Cpu(Cpu):
         """
         LDR (immediate).
 
-        Load Register (immediate) loads a word or doubleword from memory and
-        writes it to a register.  The address that is used for the load is
-        calculated from a base register and an immediate offset.
-
         :param reg_op: destination register.
         :param mem_op: memory.
         :param mimm_op: None or immediate.
@@ -2676,9 +2336,6 @@ class Aarch64Cpu(Cpu):
         """
         LDR (literal).
 
-        Load Register (literal) calculates an address from the PC value and an
-        immediate offset, loads a word from memory, and writes it to a register.
-
         :param reg_op: destination register.
         :param imm_op: immediate.
         """
@@ -2687,11 +2344,6 @@ class Aarch64Cpu(Cpu):
     def _LDR_register(cpu, reg_op, mem_op):
         """
         LDR (register).
-
-        Load Register (register) calculates an address from a base register
-        value and an offset register value, loads a word from memory, and writes
-        it to a register.  The offset register value can optionally be shifted
-        and extended.
 
         :param reg_op: destination register.
         :param mem_op: memory.
@@ -2727,10 +2379,6 @@ class Aarch64Cpu(Cpu):
         """
         LDRB (immediate).
 
-        Load Register Byte (immediate) loads a byte from memory, zero-extends
-        it, and writes the result to a register.  The address that is used for
-        the load is calculated from a base register and an immediate offset.
-
         :param reg_op: destination register.
         :param mem_op: memory.
         :param mimm_op: None or immediate.
@@ -2740,10 +2388,6 @@ class Aarch64Cpu(Cpu):
     def _LDRB_register(cpu, reg_op, mem_op):
         """
         LDRB (register).
-
-        Load Register Byte (register) calculates an address from a base register
-        value and an offset register value, loads a byte from memory,
-        zero-extends it, and writes it to a register.
 
         :param reg_op: destination register.
         :param mem_op: memory.
@@ -2772,11 +2416,6 @@ class Aarch64Cpu(Cpu):
         """
         LDRH (immediate).
 
-        Load Register Halfword (immediate) loads a halfword from memory,
-        zero-extends it, and writes the result to a register.  The address that
-        is used for the load is calculated from a base register and an immediate
-        offset.
-
         :param reg_op: destination register.
         :param mem_op: memory.
         :param mimm_op: None or immediate.
@@ -2786,10 +2425,6 @@ class Aarch64Cpu(Cpu):
     def _LDRH_register(cpu, reg_op, mem_op):
         """
         LDRH (register).
-
-        Load Register Halfword (register) calculates an address from a base
-        register value and an offset register value, loads a halfword from
-        memory, zero-extends it, and writes it to a register.
 
         :param reg_op: destination register.
         :param mem_op: memory.
@@ -2818,11 +2453,6 @@ class Aarch64Cpu(Cpu):
         """
         LDRSW (immediate).
 
-        Load Register Signed Word (immediate) loads a word from memory,
-        sign-extends it to 64 bits, and writes the result to a register.  The
-        address that is used for the load is calculated from a base register and
-        an immediate offset.
-
         :param reg_op: destination register.
         :param mem_op: memory.
         :param mimm_op: None or immediate.
@@ -2833,10 +2463,6 @@ class Aarch64Cpu(Cpu):
         """
         LDRSW (literal).
 
-        Load Register Signed Word (literal) calculates an address from the PC
-        value and an immediate offset, loads a word from memory, and writes it
-        to a register.
-
         :param reg_op: destination register.
         :param imm_op: immediate.
         """
@@ -2845,11 +2471,6 @@ class Aarch64Cpu(Cpu):
     def _LDRSW_register(cpu, reg_op, mem_op):
         """
         LDRSW (register).
-
-        Load Register Signed Word (register) calculates an address from a base
-        register value and an offset register value, loads a word from memory,
-        sign-extends it to form a 64-bit value, and writes it to a register.
-        The offset register value can be shifted left by 0 or 2 bits.
 
         :param reg_op: destination register.
         :param mem_op: memory.
@@ -2886,10 +2507,6 @@ class Aarch64Cpu(Cpu):
         """
         LDUR.
 
-        Load Register (unscaled) calculates an address from a base register and
-        an immediate offset, loads a 32-bit word or 64-bit doubleword from
-        memory, zero-extends it, and writes it to a register.
-
         :param reg_op: destination register.
         :param mem_op: memory.
         """
@@ -2898,12 +2515,6 @@ class Aarch64Cpu(Cpu):
     def _LSL_immediate(cpu, res_op, reg_op, imm_op):
         """
         LSL (immediate).
-
-        Logical Shift Left (immediate) shifts a register value left by an
-        immediate number of bits, shifting in zeros, and writes the result to
-        the destination register.
-
-        This instruction is an alias of the UBFM instruction.
 
         :param res_op: destination register.
         :param reg_op: source register.
@@ -2937,14 +2548,6 @@ class Aarch64Cpu(Cpu):
     def _LSL_register(cpu, res_op, reg_op1, reg_op2):
         """
         LSL (register).
-
-        Logical Shift Left (register) shifts a register value left by a variable
-        number of bits, shifting in zeros, and writes the result to the
-        destination register.  The remainder obtained by dividing the second
-        source register by the data size defines the number of bits by which the
-        first source register is left-shifted.
-
-        This instruction is an alias of the LSLV instruction.
 
         :param res_op: destination register.
         :param reg_op1: source register.
@@ -2997,14 +2600,6 @@ class Aarch64Cpu(Cpu):
         """
         LSLV.
 
-        Logical Shift Left Variable shifts a register value left by a variable
-        number of bits, shifting in zeros, and writes the result to the
-        destination register.  The remainder obtained by dividing the second
-        source register by the data size defines the number of bits by which the
-        first source register is left-shifted.
-
-        This instruction is used by the alias LSL (register).
-
         :param res_op: destination register.
         :param reg_op1: source register.
         :param reg_op2: source register.
@@ -3035,12 +2630,6 @@ class Aarch64Cpu(Cpu):
         """
         LSR (immediate).
 
-        Logical Shift Right (immediate) shifts a register value right by an
-        immediate number of bits, shifting in zeros, and writes the result to
-        the destination register.
-
-        This instruction is an alias of the UBFM instruction.
-
         :param res_op: destination register.
         :param reg_op: source register.
         :param immr_op: immediate.
@@ -3070,14 +2659,6 @@ class Aarch64Cpu(Cpu):
     def _LSR_register(cpu, res_op, reg_op1, reg_op2):
         """
         LSR (register).
-
-        Logical Shift Right (register) shifts a register value right by a
-        variable number of bits, shifting in zeros, and writes the result to the
-        destination register.  The remainder obtained by dividing the second
-        source register by the data size defines the number of bits by which the
-        first source register is right-shifted.
-
-        This instruction is an alias of the LSRV instruction.
 
         :param res_op: destination register.
         :param reg_op1: source register.
@@ -3130,14 +2711,6 @@ class Aarch64Cpu(Cpu):
         """
         LSRV.
 
-        Logical Shift Right Variable shifts a register value right by a variable
-        number of bits, shifting in zeros, and writes the result to the
-        destination register.  The remainder obtained by dividing the second
-        source register by the data size defines the number of bits by which the
-        first source register is right-shifted.
-
-        This instruction is used by the alias LSR (register).
-
         :param res_op: destination register.
         :param reg_op1: source register.
         :param reg_op2: source register.
@@ -3168,11 +2741,6 @@ class Aarch64Cpu(Cpu):
     def MADD(cpu, res_op, reg_op1, reg_op2, reg_op3):
         """
         MADD.
-
-        Multiply-Add multiplies two register values, adds a third register
-        value, and writes the result to the destination register.
-
-        This instruction is used by the alias MUL.
 
         :param res_op: destination register.
         :param reg_op1: source register.
@@ -3275,9 +2843,6 @@ class Aarch64Cpu(Cpu):
         """
         MOVK.
 
-        Move wide with keep moves an optionally-shifted 16-bit immediate value
-        into a register, keeping other bits unchanged.
-
         :param res_op: destination register.
         :param imm_op: immediate.
         """
@@ -3316,11 +2881,6 @@ class Aarch64Cpu(Cpu):
         """
         MOVN.
 
-        Move wide with NOT moves the inverse of an optionally-shifted 16-bit
-        immediate value to a register.
-
-        This instruction is used by the alias MOV (inverted wide immediate).
-
         :param dst: destination register.
         :param src: immediate.
         """
@@ -3355,11 +2915,6 @@ class Aarch64Cpu(Cpu):
     def MOVZ(cpu, dst, src):
         """
         MOVZ.
-
-        Move wide with zero moves an optionally-shifted 16-bit immediate value
-        to a register.
-
-        This instruction is used by the alias MOV (wide immediate).
 
         :param dst: destination register.
         :param src: immediate.
@@ -3396,9 +2951,6 @@ class Aarch64Cpu(Cpu):
         """
         MRS.
 
-        Move System Register allows the PE to read an AArch64 System register
-        into a general-purpose register.
-
         :param res_op: destination register.
         :param reg_op: source system register.
         """
@@ -3426,9 +2978,6 @@ class Aarch64Cpu(Cpu):
         """
         MSR (register).
 
-        Move general-purpose register to System Register allows the PE to write
-        an AArch64 System register from a general-purpose register.
-
         :param res_op: destination system register.
         :param reg_op: source register.
         """
@@ -3454,12 +3003,6 @@ class Aarch64Cpu(Cpu):
     def MSUB(cpu, res_op, reg_op1, reg_op2, reg_op3):
         """
         MSUB.
-
-        Multiply-Subtract multiplies two register values, subtracts the product
-        from a third register value, and writes the result to the destination
-        register.
-
-        This instruction is used by the alias MNEG.
 
         :param res_op: destination register.
         :param reg_op1: source register.
@@ -3494,10 +3037,6 @@ class Aarch64Cpu(Cpu):
     def MUL(cpu, res_op, reg_op1, reg_op2):
         """
         MUL.
-
-        Multiply: Rd = Rn * Rm.
-
-        This instruction is an alias of the MADD instruction.
 
         :param res_op: destination register.
         :param reg_op1: source register.
@@ -3536,11 +3075,6 @@ class Aarch64Cpu(Cpu):
         """
         NEG (shifted register).
 
-        Negate (shifted register) negates an optionally-shifted register value,
-        and writes the result to the destination register.
-
-        This instruction is an alias of the SUB (shifted register) instruction.
-
         :param res_op: destination register.
         :param reg_op: source register.
         """
@@ -3576,10 +3110,6 @@ class Aarch64Cpu(Cpu):
     def NOP(cpu):
         """
         NOP.
-
-        No Operation does nothing, other than advance the value of the program
-        counter by 4.  This instruction can be used for instruction alignment
-        purposes.
         """
         insn_rx  = '1101010100'
         insn_rx += '0'
@@ -3595,12 +3125,6 @@ class Aarch64Cpu(Cpu):
     def _ORR_immediate(cpu, res_op, reg_op, imm_op):
         """
         ORR (immediate).
-
-        Bitwise OR (immediate) performs a bitwise (inclusive) OR of a register
-        value and an immediate value, and writes the result to the
-        destination register.
-
-        This instruction is used by the alias MOV (bitmask immediate).
 
         :param res_op: destination register.
         :param reg_op: source register.
@@ -3629,12 +3153,6 @@ class Aarch64Cpu(Cpu):
     def _ORR_shifted_register(cpu, res_op, reg_op1, reg_op2):
         """
         ORR (shifted register).
-
-        Bitwise OR (shifted register) performs a bitwise (inclusive) OR of a
-        register value and an optionally-shifted register value, and writes the
-        result to the destination register.
-
-        This instruction is used by the alias MOV (register).
 
         :param res_op: destination register.
         :param reg_op1: source register.
@@ -3695,8 +3213,6 @@ class Aarch64Cpu(Cpu):
         """
         RBIT.
 
-        Reverse Bits reverses the bit order in a register.
-
         :param res_op: destination register.
         :param reg_op: source register.
         """
@@ -3731,9 +3247,6 @@ class Aarch64Cpu(Cpu):
         """
         RET.
 
-        Return from subroutine branches unconditionally to an address in a
-        register, with a hint that this is a subroutine return.
-
         :param reg_op: None or register.
         """
         assert not reg_op or reg_op.type is cs.arm64.ARM64_OP_REG
@@ -3761,10 +3274,6 @@ class Aarch64Cpu(Cpu):
     def REV(cpu, res_op, reg_op):
         """
         REV.
-
-        Reverse Bytes reverses the byte order in a register.
-
-        This instruction is used by the pseudo-instruction REV64.
 
         :param res_op: destination register.
         :param reg_op: source register.
@@ -3801,14 +3310,6 @@ class Aarch64Cpu(Cpu):
         """
         SBFIZ.
 
-        Signed Bitfield Insert in Zeros copies a bitfield of <width> bits from
-        the least significant bits of the source register to bit position <lsb>
-        of the destination register, setting the destination bits below the
-        bitfield to zero, and the bits above the bitfield to a copy of the most
-        significant bit of the bitfield.
-
-        This instruction is an alias of the SBFM instruction.
-
         :param res_op: destination register.
         :param reg_op: source register.
         :param lsb_op: immediate.
@@ -3842,25 +3343,6 @@ class Aarch64Cpu(Cpu):
     def SBFM(cpu, res_op, reg_op, immr_op, imms_op):
         """
         SBFM.
-
-        Signed Bitfield Move is usually accessed via one of its aliases, which
-        are always preferred for disassembly.
-
-        If <imms> is greater than or equal to <immr>, this copies a bitfield of
-        (<imms>-<immr>+1) bits starting from bit position <immr> in the source
-        register to the least significant bits of the destination register.
-
-        If <imms> is less than <immr>, this copies a bitfield of (<imms>+1) bits
-        from the least significant bits of the source register to bit position
-        (regsize-<immr>) of the destination register, where regsize is the
-        destination register size of 32 or 64 bits.
-
-        In both cases the destination bits below the bitfield are set to zero,
-        and the bits above the bitfield are set to a copy of the most
-        significant bit of the bitfield.
-
-        This instruction is used by the aliases ASR (immediate), SBFIZ, SBFX,
-        SXTB, SXTH, and SXTW.
 
         :param res_op: destination register.
         :param reg_op: source register.
@@ -3910,13 +3392,6 @@ class Aarch64Cpu(Cpu):
         """
         SBFX.
 
-        Signed Bitfield Extract copies a bitfield of <width> bits starting from
-        bit position <lsb> in the source register to the least significant bits
-        of the destination register, and sets destination bits above the
-        bitfield to a copy of the most significant bit of the bitfield.
-
-        This instruction is an alias of the SBFM instruction.
-
         :param res_op: destination register.
         :param reg_op: source register.
         :param lsb_op: immediate.
@@ -3951,10 +3426,6 @@ class Aarch64Cpu(Cpu):
         """
         STP.
 
-        Store Pair of Registers calculates an address from a base register value
-        and an immediate offset, and stores two 32-bit words or two 64-bit
-        doublewords to the calculated address, from two registers.
-
         :param reg_op1: source register.
         :param reg_op2: source register.
         :param mem_op: memory.
@@ -3966,10 +3437,6 @@ class Aarch64Cpu(Cpu):
         """
         STR (immediate).
 
-        Store Register (immediate) stores a word or a doubleword from a register
-        to memory.  The address that is used for the store is calculated from a
-        base register and an immediate offset.
-
         :param reg_op: source register.
         :param mem_op: memory.
         :param mimm_op: None or immediate.
@@ -3979,15 +3446,6 @@ class Aarch64Cpu(Cpu):
     def _STR_register(cpu, reg_op, mem_op):
         """
         STR (register).
-
-        Store Register (register) calculates an address from a base register
-        value and an offset register value, and stores a 32-bit word or a 64-bit
-        doubleword to the calculated address, from a register.
-
-        The instruction uses an offset addressing mode, that calculates the
-        address used for the memory access from a base register value and an
-        offset register value.  The offset can be optionally shifted and
-        extended.
 
         :param reg_op: source register.
         :param mem_op: memory.
@@ -4016,10 +3474,6 @@ class Aarch64Cpu(Cpu):
         """
         STRB (immediate).
 
-        Store Register Byte (immediate) stores the least significant byte of a
-        32-bit register to memory.  The address that is used for the store is
-        calculated from a base register and an immediate offset.
-
         :param reg_op: source register.
         :param mem_op: memory.
         :param mimm_op: None or immediate.
@@ -4029,15 +3483,6 @@ class Aarch64Cpu(Cpu):
     def _STRB_register(cpu, reg_op, mem_op):
         """
         STRB (register).
-
-        Store Register Byte (register) calculates an address from a base
-        register value and an offset register value, and stores a byte from a
-        32-bit register to the calculated address.
-
-        The instruction uses an offset addressing mode, that calculates the
-        address used for the memory access from a base register value and an
-        offset register value.  The offset can be optionally shifted and
-        extended.
 
         :param reg_op: source register.
         :param mem_op: memory.
@@ -4066,10 +3511,6 @@ class Aarch64Cpu(Cpu):
         """
         STRH (immediate).
 
-        Store Register Halfword (immediate) stores the least significant
-        halfword of a 32-bit register to memory.  The address that is used for
-        the store is calculated from a base register and an immediate offset.
-
         :param reg_op: source register.
         :param mem_op: memory.
         :param mimm_op: None or immediate.
@@ -4079,15 +3520,6 @@ class Aarch64Cpu(Cpu):
     def _STRH_register(cpu, reg_op, mem_op):
         """
         STRH (register).
-
-        Store Register Halfword (register) calculates an address from a base
-        register value and an offset register value, and stores a halfword from
-        a 32-bit register to the calculated address.
-
-        The instruction uses an offset addressing mode, that calculates the
-        address used for the memory access from a base register value and an
-        offset register value.  The offset can be optionally shifted and
-        extended.
 
         :param reg_op: source register.
         :param mem_op: memory.
@@ -4117,10 +3549,6 @@ class Aarch64Cpu(Cpu):
         """
         STUR.
 
-        Store Register (unscaled) calculates an address from a base register
-        value and an immediate offset, and stores a 32-bit word or a 64-bit
-        doubleword to the calculated address, from a register.
-
         :param reg_op: source register.
         :param mem_op: memory.
         """
@@ -4129,12 +3557,6 @@ class Aarch64Cpu(Cpu):
     def _SUB_extended_register(cpu, res_op, reg_op1, reg_op2):
         """
         SUB (extended register).
-
-        Subtract (extended register) subtracts a sign or zero-extended register
-        value, followed by an optional left shift amount, from a register value,
-        and writes the result to the destination register.  The argument that is
-        extended from the <Rm> register can be a byte, halfword, word, or
-        doubleword.
 
         :param res_op: destination register.
         :param reg_op1: source register.
@@ -4146,10 +3568,6 @@ class Aarch64Cpu(Cpu):
         """
         SUB (immediate).
 
-        Subtract (immediate) subtracts an optionally-shifted immediate value
-        from a register value, and writes the result to the destination
-        register.
-
         :param res_op: destination register.
         :param reg_op: source register.
         :param imm_op: immediate.
@@ -4159,12 +3577,6 @@ class Aarch64Cpu(Cpu):
     def _SUB_shifted_register(cpu, res_op, reg_op1, reg_op2):
         """
         SUB (shifted register).
-
-        Subtract (shifted register) subtracts an optionally-shifted register
-        value from a register value, and writes the result to the destination
-        register.
-
-        This instruction is used by the alias NEG (shifted register).
 
         :param res_op: destination register.
         :param reg_op1: source register.
@@ -4204,15 +3616,6 @@ class Aarch64Cpu(Cpu):
         """
         SUBS (extended register).
 
-        Subtract (extended register), setting flags, subtracts a sign or
-        zero-extended register value, followed by an optional left shift amount,
-        from a register value, and writes the result to the destination
-        register.  The argument that is extended from the <Rm> register can be a
-        byte, halfword, word, or doubleword.  It updates the condition flags
-        based on the result.
-
-        This instruction is used by the alias CMP (extended register).
-
         :param res_op: destination register.
         :param reg_op1: source register.
         :param reg_op2: source register.
@@ -4223,13 +3626,6 @@ class Aarch64Cpu(Cpu):
         """
         SUBS (immediate).
 
-        Subtract (immediate), setting flags, subtracts an optionally-shifted
-        immediate value from a register value, and writes the result to the
-        destination register.  It updates the condition flags based on the
-        result.
-
-        This instruction is used by the alias CMP (immediate).
-
         :param res_op: destination register.
         :param reg_op: source register.
         :param imm_op: immediate.
@@ -4239,13 +3635,6 @@ class Aarch64Cpu(Cpu):
     def _SUBS_shifted_register(cpu, res_op, reg_op1, reg_op2):
         """
         SUBS (shifted register).
-
-        Subtract (shifted register), setting flags, subtracts an
-        optionally-shifted register value from a register value, and writes the
-        result to the destination register.  It updates the condition flags
-        based on the result.
-
-        This instruction is used by the aliases CMP (shifted register) and NEGS.
 
         :param res_op: destination register.
         :param reg_op1: source register.
@@ -4286,11 +3675,6 @@ class Aarch64Cpu(Cpu):
         """
         SVC.
 
-        Supervisor Call causes an exception to be taken to EL1.  On executing an
-        SVC instruction, the PE records the exception as a Supervisor Call
-        exception in ESR_ELx, using the EC value 0x15, and the value of the
-        immediate argument.
-
         :param imm_op: immediate.
         """
         assert imm_op.type is cs.arm64.ARM64_OP_IMM
@@ -4306,12 +3690,6 @@ class Aarch64Cpu(Cpu):
     def SXTB(cpu, res_op, reg_op):
         """
         SXTB.
-
-        Signed Extend Byte extracts an 8-bit value from a register, sign-extends
-        it to the size of the register, and writes the result to the destination
-        register.
-
-        This instruction is an alias of the SBFM instruction.
 
         :param res_op: destination register.
         :param reg_op: source register.
@@ -4343,11 +3721,6 @@ class Aarch64Cpu(Cpu):
         """
         SXTH.
 
-        Sign Extend Halfword extracts a 16-bit value, sign-extends it to the
-        size of the register, and writes the result to the destination register.
-
-        This instruction is an alias of the SBFM instruction.
-
         :param res_op: destination register.
         :param reg_op: source register.
         """
@@ -4378,11 +3751,6 @@ class Aarch64Cpu(Cpu):
         """
         SXTW.
 
-        Sign Extend Word sign-extends a word to the size of the register, and
-        writes the result to the destination register.
-
-        This instruction is an alias of the SBFM instruction.
-
         :param res_op: destination register.
         :param reg_op: source register.
         """
@@ -4412,12 +3780,6 @@ class Aarch64Cpu(Cpu):
     def TBNZ(cpu, reg_op, imm_op, lab_op):
         """
         TBNZ.
-
-        Test bit and Branch if Nonzero compares the value of a bit in a
-        general-purpose register with zero, and conditionally branches to a
-        label at a PC-relative offset if the comparison is not equal.  It
-        provides a hint that this is not a subroutine call or return.  This
-        instruction does not affect condition flags.
 
         :param reg_op: register.
         :param imm_op: immediate.
@@ -4450,11 +3812,6 @@ class Aarch64Cpu(Cpu):
         """
         TBZ.
 
-        Test bit and Branch if Zero compares the value of a test bit with zero,
-        and conditionally branches to a label at a PC-relative offset if the
-        comparison is equal.  It provides a hint that this is not a subroutine
-        call or return.  This instruction does not affect condition flags.
-
         :param reg_op: register.
         :param imm_op: immediate.
         :param lab_op: immediate.
@@ -4484,11 +3841,6 @@ class Aarch64Cpu(Cpu):
     def _TST_immediate(cpu, reg_op, imm_op):
         """
         TST (immediate).
-
-        Test bits (immediate), setting the condition flags and discarding the
-        result: Rn AND imm.
-
-        This instruction is an alias of the ANDS (immediate) instruction.
 
         :param reg_op: source register.
         :param imm_op: immediate.
@@ -4522,12 +3874,6 @@ class Aarch64Cpu(Cpu):
     def _TST_shifted_register(cpu, reg_op1, reg_op2):
         """
         TST (shifted register).
-
-        Test (shifted register) performs a bitwise AND operation on a register
-        value and an optionally-shifted register value.  It updates the
-        condition flags based on the result, and discards the result.
-
-        This instruction is an alias of the ANDS (shifted register) instruction.
 
         :param reg_op1: source register.
         :param reg_op2: source register.
@@ -4584,13 +3930,6 @@ class Aarch64Cpu(Cpu):
         """
         UBFIZ.
 
-        Unsigned Bitfield Insert in Zeros copies a bitfield of <width> bits from
-        the least significant bits of the source register to bit position <lsb>
-        of the destination register, setting the destination bits above and
-        below the bitfield to zero.
-
-        This instruction is an alias of the UBFM instruction.
-
         :param res_op: destination register.
         :param reg_op: source register.
         :param lsb_op: immediate.
@@ -4624,24 +3963,6 @@ class Aarch64Cpu(Cpu):
     def UBFM(cpu, res_op, reg_op, immr_op, imms_op):
         """
         UBFM.
-
-        Unigned Bitfield Move is usually accessed via one of its aliases, which
-        are always preferred for disassembly.
-
-        If <imms> is greater than or equal to <immr>, this copies a bitfield of
-        (<imms>-<immr>+1) bits starting from bit position <immr> in the source
-        register to the least significant bits of the destination register.
-
-        If <imms> is less than <immr>, this copies a bitfield of (<imms>+1) bits
-        from the least significant bits of the source register to bit position
-        (regsize-<immr>) of the destination register, where regsize is the
-        destination register size of 32 or 64 bits.
-
-        In both cases the destination bits below and above the bitfield are set
-        to zero.
-
-        This instruction is used by the aliases LSL (immediate), LSR
-        (immediate), UBFIZ, UBFX, UXTB, and UXTH.
 
         :param res_op: destination register.
         :param reg_op: source register.
@@ -4689,13 +4010,6 @@ class Aarch64Cpu(Cpu):
         """
         UBFX.
 
-        Unsigned Bitfield Extract copies a bitfield of <width> bits starting
-        from bit position <lsb> in the source register to the least significant
-        bits of the destination register, and sets destination bits above the
-        bitfield to zero.
-
-        This instruction is an alias of the UBFM instruction.
-
         :param res_op: destination register.
         :param reg_op: source register.
         :param lsb_op: immediate.
@@ -4729,10 +4043,6 @@ class Aarch64Cpu(Cpu):
     def UDIV(cpu, res_op, reg_op1, reg_op2):
         """
         UDIV.
-
-        Unsigned Divide divides an unsigned integer register value by another
-        unsigned integer register value, and writes the result to the
-        destination register.  The condition flags are not affected.
 
         :param res_op: destination register.
         :param reg_op1: source register.
@@ -4769,9 +4079,6 @@ class Aarch64Cpu(Cpu):
         """
         UMULH.
 
-        Unsigned Multiply High multiplies two 64-bit register values, and writes
-        bits[127:64] of the 128-bit result to the 64-bit destination register.
-
         :param res_op: destination register.
         :param reg_op1: source register.
         :param reg_op2: source register.
@@ -4804,12 +4111,6 @@ class Aarch64Cpu(Cpu):
         """
         UXTB.
 
-        Unsigned Extend Byte extracts an 8-bit value from a register,
-        zero-extends it to the size of the register, and writes the result to
-        the destination register.
-
-        This instruction is an alias of the UBFM instruction.
-
         :param res_op: destination register.
         :param reg_op: source register.
         """
@@ -4839,12 +4140,6 @@ class Aarch64Cpu(Cpu):
     def UXTH(cpu, res_op, reg_op):
         """
         UXTH.
-
-        Unsigned Extend Halfword extracts a 16-bit value from a register,
-        zero-extends it to the size of the register, and writes the result to
-        the destination register.
-
-        This instruction is an alias of the UBFM instruction.
 
         :param res_op: destination register.
         :param reg_op: source register.
