@@ -945,9 +945,7 @@ class Aarch64Cpu(Cpu):
         else:
             raise Aarch64InvalidInstruction
 
-    # XXX: Support ADDP (vector).
-    @instruction
-    def ADDP(cpu, res_op, reg_op):
+    def _ADDP_scalar(cpu, res_op, reg_op):
         """
         ADDP (scalar).
 
@@ -979,6 +977,102 @@ class Aarch64Cpu(Cpu):
 
         result = UInt(hi + lo, res_op.size)
         res_op.write(result)
+
+    def _ADDP_vector(cpu, res_op, reg_op1, reg_op2):
+        """
+        ADDP (vector).
+
+        :param res_op: destination register.
+        :param reg_op1: source register.
+        :param reg_op2: source register.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_op1.type is cs.arm64.ARM64_OP_REG
+        assert reg_op2.type is cs.arm64.ARM64_OP_REG
+
+        insn_rx  = '0'
+        insn_rx += '[01]'     # Q
+        insn_rx += '0'
+        insn_rx += '01110'
+        insn_rx += '[01]{2}'  # size
+        insn_rx += '1'
+        insn_rx += '[01]{5}'  # Rm
+        insn_rx += '10111'
+        insn_rx += '1'
+        insn_rx += '[01]{5}'  # Rn
+        insn_rx += '[01]{5}'  # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        # XXX: Check if trapped.
+
+        reg1 = reg_op1.read()
+        reg2 = reg_op2.read()
+        vas = res_op.op.vas
+
+        if vas == cs.arm64.ARM64_VAS_8B:
+            elem_size = 8
+            elem_count = 8
+
+        elif vas == cs.arm64.ARM64_VAS_16B:
+            elem_size = 8
+            elem_count = 16
+
+        elif vas == cs.arm64.ARM64_VAS_4H:
+            elem_size = 16
+            elem_count = 4
+
+        elif vas == cs.arm64.ARM64_VAS_8H:
+            elem_size = 16
+            elem_count = 8
+
+        elif vas == cs.arm64.ARM64_VAS_2S:
+            elem_size = 32
+            elem_count = 2
+
+        elif vas == cs.arm64.ARM64_VAS_4S:
+            elem_size = 32
+            elem_count = 4
+
+        elif vas == cs.arm64.ARM64_VAS_2D:
+            elem_size = 64
+            elem_count = 2
+
+        else:
+            raise Aarch64InvalidInstruction
+
+        size = elem_size * elem_count
+        reg1 = Operators.EXTRACT(reg1, 0, size)
+        reg2 = Operators.EXTRACT(reg2, 0, size)
+        concat = UInt((reg2 << size) | reg1, size * 2)
+
+        result = 0
+        for i in range(elem_count):
+            elem1 = Operators.EXTRACT(concat, (2 * i)     * elem_size, elem_size)
+            elem2 = Operators.EXTRACT(concat, (2 * i + 1) * elem_size, elem_size)
+            elem = UInt(elem1 + elem2, elem_size)
+            result |= elem << (i * elem_size)
+
+        result = UInt(result, res_op.size)
+        res_op.write(result)
+
+    @instruction
+    def ADDP(cpu, res_op, reg_op1, mreg_op2=None):
+        """
+        Combines ADDP (scalar) and ADDP (vector).
+
+        :param res_op: destination register.
+        :param reg_op1: source register.
+        :param mreg_op2: None or source register.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_op1.type is cs.arm64.ARM64_OP_REG
+        assert not mreg_op2 or mreg_op2.type is cs.arm64.ARM64_OP_REG
+
+        if mreg_op2:
+            cpu._ADDP_vector(res_op, reg_op1, mreg_op2)
+        else:
+            cpu._ADDP_scalar(res_op, reg_op1)
 
     def _ADDS_extended_register(cpu, res_op, reg_op1, reg_op2):
         """

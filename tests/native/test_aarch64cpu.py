@@ -803,6 +803,345 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('B0'), 0xfe)
 
 
+    # ADDP (vector).
+
+    # 8b.
+
+    @itest_setregs(
+        'V1=0x41424344454647485152535455565758',
+        'V2=0x61626364656667687172737475767778'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'addp v0.8b, v1.8b, v2.8b'
+        ],
+        multiple_insts=True
+    )
+    def test_addp_vector_8b(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0xe3e7ebefa3a7abaf)
+        self.assertEqual(self.rf.read('Q0'), 0xe3e7ebefa3a7abaf)
+        self.assertEqual(self.rf.read('D0'), 0xe3e7ebefa3a7abaf)
+        self.assertEqual(self.rf.read('S0'), 0xa3a7abaf)
+        self.assertEqual(self.rf.read('H0'), 0xabaf)
+        self.assertEqual(self.rf.read('B0'), 0xaf)
+
+    @itest_setregs(
+        'V1=0xffffffffffffffffffffffffffffffff',
+        'V2=0xffffffffffffffffffffffffffffffff'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'addp v0.8b, v1.8b, v2.8b'
+        ],
+        multiple_insts=True
+    )
+    def test_addp_vector_8b_max(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0xfefefefefefefefe)
+        self.assertEqual(self.rf.read('Q0'), 0xfefefefefefefefe)
+        self.assertEqual(self.rf.read('D0'), 0xfefefefefefefefe)
+        self.assertEqual(self.rf.read('S0'), 0xfefefefe)
+        self.assertEqual(self.rf.read('H0'), 0xfefe)
+        self.assertEqual(self.rf.read('B0'), 0xfe)
+
+    # 16b.
+
+    @itest_setregs(
+        'V1=0x41424344454647485152535455565758',
+        'V2=0x61626364656667687172737475767778'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'addp v0.16b, v1.16b, v2.16b'
+        ],
+        multiple_insts=True
+    )
+    def test_addp_vector_16b(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0xc3c7cbcfe3e7ebef83878b8fa3a7abaf)
+        self.assertEqual(self.rf.read('Q0'), 0xc3c7cbcfe3e7ebef83878b8fa3a7abaf)
+        self.assertEqual(self.rf.read('D0'), 0x83878b8fa3a7abaf)
+        self.assertEqual(self.rf.read('S0'), 0xa3a7abaf)
+        self.assertEqual(self.rf.read('H0'), 0xabaf)
+        self.assertEqual(self.rf.read('B0'), 0xaf)
+
+    @itest_setregs(
+        'V1=0xffffffffffffffffffffffffffffffff',
+        'V2=0xffffffffffffffffffffffffffffffff'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'addp v0.16b, v1.16b, v2.16b'
+        ],
+        multiple_insts=True
+    )
+    def test_addp_vector_16b_max(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0xfefefefefefefefefefefefefefefefe)
+        self.assertEqual(self.rf.read('Q0'), 0xfefefefefefefefefefefefefefefefe)
+        self.assertEqual(self.rf.read('D0'), 0xfefefefefefefefe)
+        self.assertEqual(self.rf.read('S0'), 0xfefefefe)
+        self.assertEqual(self.rf.read('H0'), 0xfefe)
+        self.assertEqual(self.rf.read('B0'), 0xfe)
+
+    # 4h.
+
+    @itest_setregs(
+        'V1=0x41424344454647485152535455565758',
+        'V2=0x61626364656667687172737475767778'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'addp v0.4h, v1.4h, v2.4h'
+        ],
+        multiple_insts=True
+    )
+    def test_addp_vector_4h(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0xe4e6eceea4a6acae)
+        self.assertEqual(self.rf.read('Q0'), 0xe4e6eceea4a6acae)
+        self.assertEqual(self.rf.read('D0'), 0xe4e6eceea4a6acae)
+        self.assertEqual(self.rf.read('S0'), 0xa4a6acae)
+        self.assertEqual(self.rf.read('H0'), 0xacae)
+        self.assertEqual(self.rf.read('B0'), 0xae)
+
+    @itest_setregs(
+        'V1=0xffffffffffffffffffffffffffffffff',
+        'V2=0xffffffffffffffffffffffffffffffff'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'addp v0.4h, v1.4h, v2.4h'
+        ],
+        multiple_insts=True
+    )
+    def test_addp_vector_4h_max(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0xfffefffefffefffe)
+        self.assertEqual(self.rf.read('Q0'), 0xfffefffefffefffe)
+        self.assertEqual(self.rf.read('D0'), 0xfffefffefffefffe)
+        self.assertEqual(self.rf.read('S0'), 0xfffefffe)
+        self.assertEqual(self.rf.read('H0'), 0xfffe)
+        self.assertEqual(self.rf.read('B0'), 0xfe)
+
+    # 8h.
+
+    @itest_setregs(
+        'V1=0x41424344454647485152535455565758',
+        'V2=0x61626364656667687172737475767778'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'addp v0.8h, v1.8h, v2.8h'
+        ],
+        multiple_insts=True
+    )
+    def test_addp_vector_8h(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0xc4c6cccee4e6ecee84868c8ea4a6acae)
+        self.assertEqual(self.rf.read('Q0'), 0xc4c6cccee4e6ecee84868c8ea4a6acae)
+        self.assertEqual(self.rf.read('D0'), 0x84868c8ea4a6acae)
+        self.assertEqual(self.rf.read('S0'), 0xa4a6acae)
+        self.assertEqual(self.rf.read('H0'), 0xacae)
+        self.assertEqual(self.rf.read('B0'), 0xae)
+
+    @itest_setregs(
+        'V1=0xffffffffffffffffffffffffffffffff',
+        'V2=0xffffffffffffffffffffffffffffffff'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'addp v0.8h, v1.8h, v2.8h'
+        ],
+        multiple_insts=True
+    )
+    def test_addp_vector_8h_max(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0xfffefffefffefffefffefffefffefffe)
+        self.assertEqual(self.rf.read('Q0'), 0xfffefffefffefffefffefffefffefffe)
+        self.assertEqual(self.rf.read('D0'), 0xfffefffefffefffe)
+        self.assertEqual(self.rf.read('S0'), 0xfffefffe)
+        self.assertEqual(self.rf.read('H0'), 0xfffe)
+        self.assertEqual(self.rf.read('B0'), 0xfe)
+
+    # 2s.
+
+    @itest_setregs(
+        'V1=0x41424344454647485152535455565758',
+        'V2=0x61626364656667687172737475767778'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'addp v0.2s, v1.2s, v2.2s'
+        ],
+        multiple_insts=True
+    )
+    def test_addp_vector_2s(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0xe6e8eaeca6a8aaac)
+        self.assertEqual(self.rf.read('Q0'), 0xe6e8eaeca6a8aaac)
+        self.assertEqual(self.rf.read('D0'), 0xe6e8eaeca6a8aaac)
+        self.assertEqual(self.rf.read('S0'), 0xa6a8aaac)
+        self.assertEqual(self.rf.read('H0'), 0xaaac)
+        self.assertEqual(self.rf.read('B0'), 0xac)
+
+    @itest_setregs(
+        'V1=0xffffffffffffffffffffffffffffffff',
+        'V2=0xffffffffffffffffffffffffffffffff'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'addp v0.2s, v1.2s, v2.2s'
+        ],
+        multiple_insts=True
+    )
+    def test_addp_vector_2s_max(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0xfffffffefffffffe)
+        self.assertEqual(self.rf.read('Q0'), 0xfffffffefffffffe)
+        self.assertEqual(self.rf.read('D0'), 0xfffffffefffffffe)
+        self.assertEqual(self.rf.read('S0'), 0xfffffffe)
+        self.assertEqual(self.rf.read('H0'), 0xfffe)
+        self.assertEqual(self.rf.read('B0'), 0xfe)
+
+    # 4s.
+
+    @itest_setregs(
+        'V1=0x41424344454647485152535455565758',
+        'V2=0x61626364656667687172737475767778'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'addp v0.4s, v1.4s, v2.4s'
+        ],
+        multiple_insts=True
+    )
+    def test_addp_vector_4s(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0xc6c8cacce6e8eaec86888a8ca6a8aaac)
+        self.assertEqual(self.rf.read('Q0'), 0xc6c8cacce6e8eaec86888a8ca6a8aaac)
+        self.assertEqual(self.rf.read('D0'), 0x86888a8ca6a8aaac)
+        self.assertEqual(self.rf.read('S0'), 0xa6a8aaac)
+        self.assertEqual(self.rf.read('H0'), 0xaaac)
+        self.assertEqual(self.rf.read('B0'), 0xac)
+
+    @itest_setregs(
+        'V1=0xffffffffffffffffffffffffffffffff',
+        'V2=0xffffffffffffffffffffffffffffffff'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'addp v0.4s, v1.4s, v2.4s'
+        ],
+        multiple_insts=True
+    )
+    def test_addp_vector_4s_max(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0xfffffffefffffffefffffffefffffffe)
+        self.assertEqual(self.rf.read('Q0'), 0xfffffffefffffffefffffffefffffffe)
+        self.assertEqual(self.rf.read('D0'), 0xfffffffefffffffe)
+        self.assertEqual(self.rf.read('S0'), 0xfffffffe)
+        self.assertEqual(self.rf.read('H0'), 0xfffe)
+        self.assertEqual(self.rf.read('B0'), 0xfe)
+
+    # 2d.
+
+    @itest_setregs(
+        'V1=0x41424344454647485152535455565758',
+        'V2=0x61626364656667687172737475767778'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'addp v0.2d, v1.2d, v2.2d'
+        ],
+        multiple_insts=True
+    )
+    def test_addp_vector_2d(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0xd2d4d6d8dadcdee0929496989a9c9ea0)
+        self.assertEqual(self.rf.read('Q0'), 0xd2d4d6d8dadcdee0929496989a9c9ea0)
+        self.assertEqual(self.rf.read('D0'), 0x929496989a9c9ea0)
+        self.assertEqual(self.rf.read('S0'), 0x9a9c9ea0)
+        self.assertEqual(self.rf.read('H0'), 0x9ea0)
+        self.assertEqual(self.rf.read('B0'), 0xa0)
+
+    @itest_setregs(
+        'V1=0xffffffffffffffffffffffffffffffff',
+        'V2=0xffffffffffffffffffffffffffffffff'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'addp v0.2d, v1.2d, v2.2d'
+        ],
+        multiple_insts=True
+    )
+    def test_addp_vector_2d_max(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0xfffffffffffffffefffffffffffffffe)
+        self.assertEqual(self.rf.read('Q0'), 0xfffffffffffffffefffffffffffffffe)
+        self.assertEqual(self.rf.read('D0'), 0xfffffffffffffffe)
+        self.assertEqual(self.rf.read('S0'), 0xfffffffe)
+        self.assertEqual(self.rf.read('H0'), 0xfffe)
+        self.assertEqual(self.rf.read('B0'), 0xfe)
+
+
     # ADDS (extended register).
 
     # 32-bit.
