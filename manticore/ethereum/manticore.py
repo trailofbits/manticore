@@ -381,7 +381,6 @@ class ManticoreEVM(ManticoreBase):
         self._accounts = dict()
         self._serializer = PickleSerializer()
 
-        self._config_procs = procs
         self.constraints = constraints
         self.detectors = {}
         self.metadata: Dict[int, SolidityMetadata] = {}

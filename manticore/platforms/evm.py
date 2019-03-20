@@ -1022,6 +1022,7 @@ class EVM(Eventful):
                              expression=expression,
                              setstate=setstate,
                              policy='ALL')
+        print (self)
         try:
             self._check_jmpdest()
             last_pc, last_gas, instruction, arguments, fee, allocated = self._checkpoint()
@@ -2015,7 +2016,6 @@ class EVMWorld(Platform):
         assert self.constraints == vm.constraints
         # Keep constraints gathered in the last vm
         self.constraints = vm.constraints
-
         if rollback:
             self._set_storage(vm.address, account_storage)
             self._logs = logs
@@ -2023,7 +2023,7 @@ class EVMWorld(Platform):
         else:
             self._deleted_accounts = deleted_accounts
 
-            #FIXME: BUG: a CREATE can be succesfull and still return an empty contract :shrug:
+            #FIXME: BUG: a CREATE can be successful and still return an empty contract :shrug:
             if not issymbolic(tx.caller) and (tx.sort == 'CREATE' or not self._world_state[tx.caller]['code']):
                 # Increment the nonce if this transaction created a contract, or if it was called by a non-contract account
                 self.increase_nonce(tx.caller)
@@ -2576,7 +2576,7 @@ class EVMWorld(Platform):
             self._close_transaction('TXERROR', rollback=True)
 
         #Transaction to normal account
-        if sort in ('CALL', 'DELEGATECALL', 'CALLCODE') and not self.get_code(address):
+        elif sort in ('CALL', 'DELEGATECALL', 'CALLCODE') and not self.get_code(address):
             self._close_transaction('STOP')
             
     def dump(self, stream, state, mevm, message):
