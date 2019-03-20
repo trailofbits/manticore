@@ -492,6 +492,96 @@ class Aarch64Cpu(Cpu):
                 cs.arm64.ARM64_SFT_ASR
             ])
 
+    def _add_sub_vector(cpu, res_op, reg_op1, reg_op2, add):
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_op1.type is cs.arm64.ARM64_OP_REG
+        assert reg_op2.type is cs.arm64.ARM64_OP_REG
+
+        scalar_rx  = '01'
+        if add:
+            scalar_rx += '0'    # U
+        else:
+            scalar_rx += '1'    # U
+        scalar_rx += '11110'
+        scalar_rx += '[01]{2}'  # size
+        scalar_rx += '1'
+        scalar_rx += '[01]{5}'  # Rm
+        scalar_rx += '10000'
+        scalar_rx += '1'
+        scalar_rx += '[01]{5}'  # Rn
+        scalar_rx += '[01]{5}'  # Rd
+
+        vector_rx  = '0'
+        vector_rx += '[01]'     # Q
+        if add:
+            vector_rx += '0'    # U
+        else:
+            vector_rx += '1'    # U
+        vector_rx += '01110'
+        vector_rx += '[01]{2}'  # size
+        vector_rx += '1'
+        vector_rx += '[01]{5}'  # Rm
+        vector_rx += '10000'
+        vector_rx += '1'
+        vector_rx += '[01]{5}'  # Rn
+        vector_rx += '[01]{5}'  # Rd
+
+        assert (
+            re.match(scalar_rx, cpu.insn_bit_str) or
+            re.match(vector_rx, cpu.insn_bit_str)
+        )
+
+        # XXX: Check if trapped.
+
+        reg1 = reg_op1.read()
+        reg2 = reg_op2.read()
+        vas = res_op.op.vas
+
+        if vas == cs.arm64.ARM64_VAS_8B:
+            elem_size = 8
+            elem_count = 8
+
+        elif vas == cs.arm64.ARM64_VAS_16B:
+            elem_size = 8
+            elem_count = 16
+
+        elif vas == cs.arm64.ARM64_VAS_4H:
+            elem_size = 16
+            elem_count = 4
+
+        elif vas == cs.arm64.ARM64_VAS_8H:
+            elem_size = 16
+            elem_count = 8
+
+        elif vas == cs.arm64.ARM64_VAS_2S:
+            elem_size = 32
+            elem_count = 2
+
+        elif vas == cs.arm64.ARM64_VAS_4S:
+            elem_size = 32
+            elem_count = 4
+
+        elif (vas == cs.arm64.ARM64_VAS_2D or
+              vas == cs.arm64.ARM64_VAS_INVALID):  # scalar
+            elem_size = 64
+            elem_count = 2
+
+        else:
+            raise Aarch64InvalidInstruction
+
+        result = 0
+        for i in range(elem_count):
+            elem1 = Operators.EXTRACT(reg1, i * elem_size, elem_size)
+            elem2 = Operators.EXTRACT(reg2, i * elem_size, elem_size)
+            if add:
+                elem = UInt(elem1 + elem2, elem_size)
+            else:
+                elem = UInt(elem1 - elem2, elem_size)
+            result |= elem << (i * elem_size)
+
+        result = UInt(result, res_op.size)
+        res_op.write(result)
+
     def _add_with_carry(cpu, size, x, y, carry_in):
         unsigned_sum = UInt(x, size) + UInt(y, size) + UInt(carry_in, 1)
         signed_sum   = SInt(x, size) + SInt(y, size) + UInt(carry_in, 1)
@@ -925,85 +1015,7 @@ class Aarch64Cpu(Cpu):
         :param reg_op1: source register.
         :param reg_op2: source register.
         """
-        assert res_op.type is cs.arm64.ARM64_OP_REG
-        assert reg_op1.type is cs.arm64.ARM64_OP_REG
-        assert reg_op2.type is cs.arm64.ARM64_OP_REG
-
-        scalar_rx  = '01'
-        scalar_rx += '0'        # U
-        scalar_rx += '11110'
-        scalar_rx += '[01]{2}'  # size
-        scalar_rx += '1'
-        scalar_rx += '[01]{5}'  # Rm
-        scalar_rx += '10000'
-        scalar_rx += '1'
-        scalar_rx += '[01]{5}'  # Rn
-        scalar_rx += '[01]{5}'  # Rd
-
-        vector_rx  = '0'
-        vector_rx += '[01]'     # Q
-        vector_rx += '0'        # U
-        vector_rx += '01110'
-        vector_rx += '[01]{2}'  # size
-        vector_rx += '1'
-        vector_rx += '[01]{5}'  # Rm
-        vector_rx += '10000'
-        vector_rx += '1'
-        vector_rx += '[01]{5}'  # Rn
-        vector_rx += '[01]{5}'  # Rd
-
-        assert (
-            re.match(scalar_rx, cpu.insn_bit_str) or
-            re.match(vector_rx, cpu.insn_bit_str)
-        )
-
-        # XXX: Check if trapped.
-
-        reg1 = reg_op1.read()
-        reg2 = reg_op2.read()
-        vas = res_op.op.vas
-
-        if vas == cs.arm64.ARM64_VAS_8B:
-            elem_size = 8
-            elem_count = 8
-
-        elif vas == cs.arm64.ARM64_VAS_16B:
-            elem_size = 8
-            elem_count = 16
-
-        elif vas == cs.arm64.ARM64_VAS_4H:
-            elem_size = 16
-            elem_count = 4
-
-        elif vas == cs.arm64.ARM64_VAS_8H:
-            elem_size = 16
-            elem_count = 8
-
-        elif vas == cs.arm64.ARM64_VAS_2S:
-            elem_size = 32
-            elem_count = 2
-
-        elif vas == cs.arm64.ARM64_VAS_4S:
-            elem_size = 32
-            elem_count = 4
-
-        elif vas == cs.arm64.ARM64_VAS_2D:
-            elem_size = 64
-            elem_count = 2
-
-        else:
-            elem_size = 64
-            elem_count = 2
-
-        result = 0
-        for i in range(elem_count):
-            elem1 = Operators.EXTRACT(reg1, i * elem_size, elem_size)
-            elem2 = Operators.EXTRACT(reg2, i * elem_size, elem_size)
-            elem = UInt(elem1 + elem2, elem_size)
-            result |= elem << (i * elem_size)
-
-        result = UInt(result, res_op.size)
-        res_op.write(result)
+        cpu._add_sub_vector(res_op, reg_op1, reg_op2, add=True)
 
     @instruction
     def ADD(cpu, res_op, op1, op2):
@@ -3810,11 +3822,21 @@ class Aarch64Cpu(Cpu):
         """
         cpu._adds_subs_shifted_register(res_op, reg_op1, reg_op2, mnem='sub')
 
+    def _SUB_vector(cpu, res_op, reg_op1, reg_op2):
+        """
+        SUB (vector).
+
+        :param res_op: destination register.
+        :param reg_op1: source register.
+        :param reg_op2: source register.
+        """
+        cpu._add_sub_vector(res_op, reg_op1, reg_op2, add=False)
+
     @instruction
     def SUB(cpu, res_op, op1, op2):
         """
-        Combines SUB (extended register), SUB (immediate), and SUB (shifted
-        register).
+        Combines SUB (extended register), SUB (immediate), SUB (shifted
+        register), and SUB (vector).
 
         :param res_op: destination register.
         :param op1: source register.
@@ -3825,14 +3847,18 @@ class Aarch64Cpu(Cpu):
         assert op2.type    in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
 
         bit21 = cpu.insn_bit_str[-22]
+        bit24 = cpu.insn_bit_str[-25]
 
         if op2.type == cs.arm64.ARM64_OP_IMM:
             cpu._SUB_immediate(res_op, op1, op2)
 
-        elif op2.type == cs.arm64.ARM64_OP_REG and bit21 == '0':
+        elif op2.type == cs.arm64.ARM64_OP_REG and bit24 == '0':
+            cpu._SUB_vector(res_op, op1, op2)
+
+        elif op2.type == cs.arm64.ARM64_OP_REG and bit24 == '1' and bit21 == '0':
             cpu._SUB_shifted_register(res_op, op1, op2)
 
-        elif op2.type == cs.arm64.ARM64_OP_REG and bit21 == '1':
+        elif op2.type == cs.arm64.ARM64_OP_REG and bit24 == '1' and bit21 == '1':
             cpu._SUB_extended_register(res_op, op1, op2)
 
         else:
