@@ -1819,6 +1819,7 @@ class Aarch64Cpu(Cpu):
         # method.
         cpu.BFM.__wrapped__(cpu, res_op, reg_op, lsb_op, width_op)
 
+    # XXX: Support BIC (vector, immediate) and BIC (vector, register).
     @instruction
     def BIC(cpu, res_op, reg_op1, reg_op2):
         """
@@ -2124,6 +2125,7 @@ class Aarch64Cpu(Cpu):
         # method.
         cpu.CSINV.__wrapped__(cpu, res_op, reg_op, reg_op)
 
+    # XXX: Support CLZ (vector).
     @instruction
     def CLZ(cpu, res_op, reg_op):
         """
@@ -2598,6 +2600,7 @@ class Aarch64Cpu(Cpu):
 
         res_op.write(UInt(result, res_op.size))
 
+    # XXX: Support LDP (SIMD&FP).
     @instruction
     def LDP(cpu, reg_op1, reg_op2, mem_op, mimm_op=None):
         """
@@ -2638,6 +2641,8 @@ class Aarch64Cpu(Cpu):
         """
         cpu._ldr_str_register(reg_op, mem_op, ldr=True)
 
+    # XXX: Support LDR (immediate, SIMD&FP), LDR (literal, SIMD&FP), and LDR
+    # (register, SIMD&FP).
     @instruction
     def LDR(cpu, dst, src, rest=None):
         """
@@ -2790,6 +2795,7 @@ class Aarch64Cpu(Cpu):
         else:
             raise Aarch64InvalidInstruction
 
+    # XXX: Support LDUR (SIMD&FP).
     @instruction
     def LDUR(cpu, reg_op, mem_op):
         """
@@ -3059,6 +3065,8 @@ class Aarch64Cpu(Cpu):
         result = reg3 + (reg1 * reg2)
         res_op.write(UInt(result, res_op.size))
 
+    # XXX: Support MOV (scalar), MOV (element), MOV (from general), MOV
+    # (vector), and MOV (to general).
     @instruction
     def MOV(cpu, dst, src):
         """
@@ -3321,6 +3329,7 @@ class Aarch64Cpu(Cpu):
         result = reg3 - (reg1 * reg2)
         res_op.write(UInt(result, res_op.size))
 
+    # XXX: Support MUL (by element) and MUL (vector).
     @instruction
     def MUL(cpu, res_op, reg_op1, reg_op2):
         """
@@ -3358,6 +3367,7 @@ class Aarch64Cpu(Cpu):
         # method.
         cpu.MADD.__wrapped__(cpu, res_op, reg_op1, reg_op2, zr)
 
+    # XXX: Support NEG (vector).
     @instruction
     def NEG(cpu, res_op, reg_op):
         """
@@ -3474,6 +3484,7 @@ class Aarch64Cpu(Cpu):
                 cs.arm64.ARM64_SFT_ROR
             ])
 
+    # XXX: Support ORR (vector, immediate) and ORR (vector, register).
     @instruction
     def ORR(cpu, res_op, op1, op2):
         """
@@ -3496,6 +3507,7 @@ class Aarch64Cpu(Cpu):
         else:
             raise Aarch64InvalidInstruction
 
+    # XXX: Support RBIT (vector).
     @instruction
     def RBIT(cpu, res_op, reg_op):
         """
@@ -3709,6 +3721,7 @@ class Aarch64Cpu(Cpu):
         # method.
         cpu.SBFM.__wrapped__(cpu, res_op, reg_op, lsb_op, width_op)
 
+    # XXX: Support STP (SIMD&FP).
     @instruction
     def STP(cpu, reg_op1, reg_op2, mem_op, mimm_op=None):
         """
@@ -3740,6 +3753,7 @@ class Aarch64Cpu(Cpu):
         """
         cpu._ldr_str_register(reg_op, mem_op, ldr=False)
 
+    # XXX: Support STR (immediate, SIMD&FP) and STR (register, SIMD&FP).
     @instruction
     def STR(cpu, reg_op, mem_op, mimm_op=None):
         """
@@ -3832,6 +3846,7 @@ class Aarch64Cpu(Cpu):
         else:
             cpu._STRH_immediate(reg_op, mem_op, mimm_op)
 
+    # XXX: Support STUR (SIMD&FP).
     @instruction
     def STUR(cpu, reg_op, mem_op):
         """
