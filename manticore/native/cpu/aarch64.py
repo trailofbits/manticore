@@ -1344,10 +1344,55 @@ class Aarch64Cpu(Cpu):
                 cs.arm64.ARM64_SFT_ROR
             ])
 
+    def _AND_vector(cpu, res_op, reg_op1, reg_op2):
+        """
+        AND (vector).
+
+        :param res_op: destination register.
+        :param reg_op1: source register.
+        :param reg_op2: source register.
+        """
+        assert res_op.type  is cs.arm64.ARM64_OP_REG
+        assert reg_op1.type is cs.arm64.ARM64_OP_REG
+        assert reg_op2.type is cs.arm64.ARM64_OP_REG
+
+        insn_rx  = '0'
+        insn_rx += '[01]'     # Q
+        insn_rx += '0'
+        insn_rx += '01110'
+        insn_rx += '00'       # size
+        insn_rx += '1'
+        insn_rx += '[01]{5}'  # Rm
+        insn_rx += '00011'
+        insn_rx += '1'
+        insn_rx += '[01]{5}'  # Rn
+        insn_rx += '[01]{5}'  # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        # XXX: Check if trapped.
+
+        reg1 = reg_op1.read()
+        reg2 = reg_op2.read()
+        vas = res_op.op.vas
+
+        if vas == cs.arm64.ARM64_VAS_8B:
+            reg1 = Operators.EXTRACT(reg1, 0, 64)
+            reg2 = Operators.EXTRACT(reg2, 0, 64)
+
+        elif vas == cs.arm64.ARM64_VAS_16B:
+            pass
+
+        else:
+            raise Aarch64InvalidInstruction
+
+        result = UInt(reg1 & reg2, res_op.size)
+        res_op.write(result)
+
     @instruction
     def AND(cpu, res_op, op1, op2):
         """
-        Combines AND (immediate) and AND (shifted register).
+        Combines AND (immediate), AND (shifted register), and AND (vector).
 
         :param res_op: destination register.
         :param op1: source register.
@@ -1357,8 +1402,13 @@ class Aarch64Cpu(Cpu):
         assert op1.type is cs.arm64.ARM64_OP_REG
         assert op2.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
 
-        if op2.type == cs.arm64.ARM64_OP_REG:
+        bit21 = cpu.insn_bit_str[-22]
+
+        if op2.type == cs.arm64.ARM64_OP_REG and bit21 == '0':
             cpu._AND_shifted_register(res_op, op1, op2)
+
+        elif op2.type == cs.arm64.ARM64_OP_REG and bit21 == '1':
+            cpu._AND_vector(res_op, op1, op2)
 
         elif op2.type == cs.arm64.ARM64_OP_IMM:
             cpu._AND_immediate(res_op, op1, op2)
