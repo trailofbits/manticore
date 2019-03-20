@@ -9,6 +9,7 @@ from elftools.elf.sections import SymbolTableSection
 from .state import State
 from ..core.manticore import ManticoreBase
 from ..core.smtlib import ConstraintSet
+from ..core.smtlib.solver import Z3Solver
 from ..utils import log, config
 from ..utils.helpers import issymbolic
 
@@ -16,7 +17,6 @@ logger = logging.getLogger(__name__)
 
 consts = config.get_group('native')
 consts.add('stdin_size', default=256, description='Maximum symbolic stdin size')
-
 
 class Manticore(ManticoreBase):
 
@@ -164,14 +164,14 @@ class Manticore(ManticoreBase):
         if pc not in self._assertions:
             return
 
-        from .parser.parser import parse
+        from ..core.parser.parser import parse
 
         program = self._assertions[pc]
 
         # This will interpret the buffer specification written in INTEL ASM.
         # (It may dereference pointers)
         assertion = parse(program, state.cpu.read_int, state.cpu.read_register)
-        if not solver.can_be_true(state.constraints, assertion):
+        if not Z3Solver().can_be_true(state.constraints, assertion):
             logger.info(str(state.cpu))
             logger.info("Assertion %x -> {%s} does not hold. Aborting state.",
                         state.cpu.pc, program)
@@ -222,7 +222,7 @@ class Manticore(ManticoreBase):
         else:
             self._hooks.setdefault(pc, set()).add(callback)
             if self._hooks:
-                self._executor.subscribe('will_execute_instruction', self._hook_callback)
+                self.subscribe('will_execute_instruction', self._hook_callback)
 
     def _hook_callback(self, state, pc, instruction):
         'Invoke all registered generic hooks'

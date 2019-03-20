@@ -45,8 +45,21 @@ RE_GET_EXPR_VALUE_FMT = re.compile('\(\((?P<expr>(.*))\ #x(?P<value>([0-9a-fA-F]
 RE_OBJECTIVES_EXPR_VALUE = re.compile('\(objectives.*\((?P<expr>.*) (?P<value>\d*)\).*\).*', re.MULTILINE | re.DOTALL)
 RE_MIN_MAX_OBJECTIVE_EXPR_VALUE = re.compile('(?P<expr>.*?)\s+\|->\s+(?P<value>.*)', re.DOTALL)
 
+import threading, os
 
-class Solver():
+class SingletonMixin(object):
+    __singleton_instances = {}
+
+    @classmethod
+    def instance(cls):
+        tid = threading.get_ident()
+        pid = os.getpid()
+        if not (pid,tid) in cls.__singleton_instances:
+            cls.__singleton_instances[(pid,tid)] = cls()
+        return cls.__singleton_instances[(pid,tid)]
+
+
+class Solver(SingletonMixin):
     def __init__(self):
         pass
 

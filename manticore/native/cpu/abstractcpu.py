@@ -17,7 +17,6 @@ from ...utils.helpers import issymbolic
 
 logger = logging.getLogger(__name__)
 register_logger = logging.getLogger(f'{__name__}.registers')
-solver = Z3Solver()
 
 ###################################################################################
 # Exceptions
@@ -768,7 +767,7 @@ class Cpu(Eventful):
                         vals = visitors.simplify_array_select(c)
                         c = bytes([vals[0]])
                     except visitors.ArraySelectSimplifier.ExpressionNotSimple:
-                        c = struct.pack('B', solver.get_value(self.memory.constraints, c))
+                        c = struct.pack('B', Z3Solver().get_value(self.memory.constraints, c))
                 elif isinstance(c, Constant):
                     c = bytes([c.value])
                 else:
@@ -818,7 +817,6 @@ class Cpu(Eventful):
         '''
         if issymbolic(self.PC):
             raise ConcretizeRegister(self, 'PC', policy='ALL')
-
         if not self.memory.access_ok(self.PC, 'x'):
             raise InvalidMemoryAccess(self.PC, 'x')
 

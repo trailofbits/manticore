@@ -62,7 +62,7 @@ class NativeIntegrationTest(unittest.TestCase):
             subprocess.check_call([PYTHON_BIN, '-m', 'manticore',
                                 '--workspace', workspace,
                                 '--core.timeout', '1',
-                                '--procs', '4',
+                                '--core.procs', '4',
                                 filename,
                                 '+++++++++'], stdout=output)
 
@@ -97,7 +97,7 @@ class NativeIntegrationTest(unittest.TestCase):
         cmd = [
             PYTHON_BIN, '-m', 'manticore',
             '--workspace', workspace,
-            '--proc', '4',
+            '--core.procs', '4',
             '--no-color',
         ]
 
@@ -114,7 +114,7 @@ class NativeIntegrationTest(unittest.TestCase):
             filename,
             '+++++++++',
         ]
-
+        print (" ".join(cmd))
         output = subprocess.check_output(cmd).splitlines()
 
         self.assertIn(b'm.c.manticore:INFO: Verbosity set to 1.', output[0])
@@ -125,7 +125,7 @@ class NativeIntegrationTest(unittest.TestCase):
         for i in range(testcases_number):
             line = output[2+i]
 
-            # After `expected1` there's the testcase id; because we fork use `--proc 4`
+            # After `expected1` there's the testcase id; because we fork use `--core.procs 4`
             # it might not be in the increasing order
             expected1 = b'm.c.manticore:INFO: Generated testcase No. '
             expected2 = b'- Program finished with exit status: '
@@ -205,7 +205,7 @@ class NativeIntegrationTest(unittest.TestCase):
         self._run_with_timeout([PYTHON_BIN, '-m', 'manticore',
                               '--workspace', workspace,
                               '--core.timeout', '20',
-                              '--proc', '4',
+                              '--core.procs', '4',
                               '--no-color',
                               '--policy', 'uncovered',
                                 filename], os.path.join(self.test_dir, 'output.log'))

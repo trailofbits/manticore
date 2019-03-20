@@ -208,7 +208,7 @@ class Worker:
                             logger.info("[%r] Stopped and/or Killed", self.id)
                             # On going execution was stopped or killed. Lets
                             # save any progress on the current state
-                            m._save(current_state)
+                            m._save(current_state, state_id=current_state.id)
                             m._revive(current_state.id)
                             current_state = None
 
@@ -230,7 +230,7 @@ class Worker:
                         # Notify this state is done
                         m._publish('will_terminate_state', current_state, exc)
                         # Update the stored version of the current state
-                        m._save(current_state)
+                        m._save(current_state, state_id=current_state.id)
                         # Add the state to the terminated state list
                         m._terminate(current_state.id)
                         m._publish('did_terminate_state', current_state, exc)
@@ -238,6 +238,7 @@ class Worker:
 
                 except (Exception, AssertionError) as exc:
                     logger.error("[%r] Exception %r. Current State %r", self.id, exc, current_state)
+                    import traceback; traceback.print_exc()
                     # Internal Exception
                     # Add the state to the terminated state list
                     if current_state is not None:
@@ -312,8 +313,6 @@ class ManticoreBase(Eventful):
             raise Exception("Single, multiprocessing or threading expected")
         if cls in (ManticoreBase, ManticoreSingle, ManticoreThreading, ManticoreMultiprocessing):
             raise Exception("Should not instantiate this")
-        if any(x in cls.__bases__ for x in (ManticoreSingle, ManticoreThreading, ManticoreMultiprocessing)):
-            raise Exception("Manticore already specialized")
 
         cl = globals()[f'Manticore{consts.mprocessing.title()}']
         if cl not in cls.__bases__:
@@ -371,7 +370,7 @@ class ManticoreBase(Eventful):
 
         return newFunction
 
-    _published_events = {'start_run', 'finish_run', 'generate_testcase', 'enqueue_state', 'fork_state', 'load_state',
+    _published_events = {'run', 'generate_testcase', 'enqueue_state', 'fork_state', 'load_state',
                          'terminate_state', 'execute_instruction'}
 
     def __init__(self, initial_state, workspace_url=None, policy='random', **kwargs):
@@ -512,6 +511,9 @@ class ManticoreBase(Eventful):
             if workspace_url is not None:
                 raise TypeError(f'Invalid workspace type: {type(workspace_url).__name__}')
         self._workspace = Workspace(workspace_url)
+        #reuse the same workspace if not specified
+        if workspace_url is None:
+            workspace_url = f'fs:{self._workspace.uri}'
         self._output = ManticoreOutput(workspace_url)
 
         # The set of registered plugins
@@ -528,6 +530,9 @@ class ManticoreBase(Eventful):
 
         # Workers will use manticore __dict__ So lets spawn them last
         self._workers = [self._worker_type(id=i, manticore=self) for i in range(consts.procs)]
+
+    def __str__(self):
+        return f"<{str(type(self))[8:-2]}| Alive States: {self.count_ready_states()}; Running States: {self.count_busy_states()} Terminated States: {self.count_terminated_states()} Killed States: {self.count_killed_states()}>"
 
     def _fork(self, state, expression, policy='ALL', setstate=None):
         '''
@@ -579,8 +584,8 @@ class ManticoreBase(Eventful):
                 # (or other register or memory address to concrete)
                 setstate(new_state, new_value)
 
-                # enqueue new_state
-                new_state_id = self._save(new_state)
+                # enqueue new_state, assign new state id
+                new_state_id = self._save(new_state, state_id=None)
                 with self._lock:
                     self._ready_states.append(new_state_id)
                     self._lock.notify_all()  # Must notify one!
@@ -597,18 +602,18 @@ class ManticoreBase(Eventful):
         logger.info("Forking current state %r into states %r", state.id, children)
 
     # State storage
-    def _save(self, state):
-        """ Store or update a state in secondary storage under state.id.
-            Use a fresh state.id is None is provided.
+    def _save(self, state, state_id=None):
+        """ Store or update a state in secondary storage under state_id.
+            Use a fresh id is None is provided.
 
             :param state: A manticore State
             :param state_id: if not None force state_id (overwrite)
             :type state_id: int or None
             :returns: the state id used
         """
-        state_id = self._workspace.save_state(state, state_id=getattr(state, 'id', None))
-        state.id = state_id
-        return state_id
+        assert state.id is None or state.id == state_id
+        state._id = self._workspace.save_state(state, state_id=state_id)
+        return state.id
 
     def _load(self, state_id):
         """ Load the state from the secondary storage
@@ -619,7 +624,7 @@ class ManticoreBase(Eventful):
         """
         self._publish('will_load_state', state_id)
         state = self._workspace.load_state(state_id, delete=False)
-        state.id = state_id
+        state._id = state_id
         self.forward_events_from(state, True)
         self._publish('did_load_state', state, state_id)
         return state
@@ -644,7 +649,7 @@ class ManticoreBase(Eventful):
                           +-------+
 
         """
-        state_id = self._save(state)
+        state_id = self._save(state, state_id=state.id)
         with self._lock:
             # Enqueue it in the ready state list for processing
             self._ready_states.append(state_id)
@@ -680,7 +685,7 @@ class ManticoreBase(Eventful):
             state_id = random.choice(list(self._ready_states))
 
             # Move from READY to BUSY
-            del self._ready_states[self._ready_states.index(state_id)]
+            self._ready_states.remove(state_id)
             self._busy_states.append(state_id)
             self._lock.notify_all()
 
@@ -743,7 +748,7 @@ class ManticoreBase(Eventful):
             state = self._load(state_id)
             yield state
             # Re-save the state in case the user changed its data
-            self._save(state)
+            self._save(state, state_id=state_id)
 
     @property
     @sync
@@ -936,7 +941,7 @@ class ManticoreBase(Eventful):
 
         if key is None:
             # If no key is provided we yield the raw shared context under a lock
-            ctx = self._shared_context
+            yield self._shared_context
         else:
             # if a key is provided we yield the specific value or a fresh one
             if value_type not in (list, dict):
@@ -946,7 +951,7 @@ class ManticoreBase(Eventful):
             context = self._shared_context
             if key not in context:
                 context[key] = value_type()
-        yield context[key]
+            yield context[key]
 
     ############################################################################
     # Public API
@@ -1069,8 +1074,26 @@ class ManticoreBase(Eventful):
                 while self._ready_states:
                     self._killed_states.append(self._ready_states.pop())
 
-            self._publish('did_run')
+        self._publish('did_run')
         assert not self.is_running()
+
+    @sync
+    @at_not_running
+    def remove_all(self):
+        '''
+            Deletes all streams from storage and clean state lists
+        '''
+        for state_id in self._all_states:
+            # state_id -1 is always only on memory
+            self._remove(state_id)
+
+        self._ready_states.clear()
+        self._busy_states.clear()
+        self._terminated_states.clear()
+        self._killed_states.clear()
+
+    def __del__(self):
+        self.remove_all()
 
     ############################################################################
     ############################################################################

@@ -5,7 +5,7 @@ from ..native.cpu.x86 import I386Cpu
 from ..native.cpu.abstractcpu import Interruption, ConcretizeRegister, ConcretizeArgument
 from ..native.memory import SMemory32, Memory32
 from ..core.smtlib import *
-from ..core.executor import TerminateState
+from ..core.state import TerminateState
 from ..utils.helpers import issymbolic
 from ..binary import CGCElf
 from ..platforms.platform import Platform

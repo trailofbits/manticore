@@ -359,10 +359,9 @@ class ManticoreEVM(ManticoreBase):
     def get_account(self, name):
         return self._accounts[name]
 
-    def __init__(self, procs=10, workspace_url: str=None, policy: str='random'):
+    def __init__(self, workspace_url: str=None, policy: str='random'):
         """
         A Manticore EVM manager
-        :param procs:, number of workers to use in the exploration
         :param workspace_url: workspace folder name
         :param policy: scheduling priority
         """
@@ -389,7 +388,6 @@ class ManticoreEVM(ManticoreBase):
 
         # The following should go to manticore.context so we can use multiprocessing
         with self.locked_context('ethereum', dict) as context:
-            context['_completed_transactions'] = 0
             context['_sha3_states'] = dict()
             context['_known_sha3'] = set()
 
@@ -398,15 +396,17 @@ class ManticoreEVM(ManticoreBase):
         """ The world instance or None if there is more than one state """
         return self.get_world()
 
+
+    # deprecate this 5 in favor of for sta in m.all_states: do stuff?
     @property
     def completed_transactions(self):
+        print ("deprecated!")
         with self.locked_context('ethereum') as context:
             return context['_completed_transactions']
 
-    # deprecate this 5 in favor of for sta in m.all_states: do stuff?
-
     def get_world(self, state_id=None):
         """ Returns the evm world of `state_id` state. """
+        print ("deprecated!")
         if state_id is None:
             state_id = self._ready_states[0]
 
@@ -418,34 +418,40 @@ class ManticoreEVM(ManticoreBase):
 
     def get_balance(self, address, state_id=None):
         """ Balance for account `address` on state `state_id` """
+        print ("deprecated!")
         if isinstance(address, EVMAccount):
             address = int(address)
         return self.get_world(state_id).get_balance(address)
 
     def get_storage_data(self, address, offset, state_id=None):
         """ Storage data for `offset` on account `address` on state `state_id` """
+        print ("deprecated!")
         if isinstance(address, EVMAccount):
             address = int(address)
         return self.get_world(state_id).get_storage_data(address, offset)
 
     def get_code(self, address, state_id=None):
         """ Storage data for `offset` on account `address` on state `state_id` """
+        print ("deprecated!")
         if isinstance(address, EVMAccount):
             address = int(address)
         return self.get_world(state_id).get_code(address)
 
     def last_return(self, state_id=None):
         """ Last returned buffer for state `state_id` """
+        print ("deprecated!")
         state = self.load(state_id)
         return state.platform.last_transaction.return_data
 
     def transactions(self, state_id=None):
         """ Transactions list for state `state_id` """
+        print ("deprecated!")
         state = self.load(state_id)
         return state.platform.transactions
 
     def human_transactions(self, state_id=None):
         """ Transactions list for state `state_id` """
+        print ("deprecated!")
         state = self.load(state_id)
         return state.platform.human_transactions
 
@@ -1294,11 +1300,13 @@ class ManticoreEVM(ManticoreBase):
         return global_findings
 
     @ManticoreBase.at_not_running
-    def finalize(self):
+    def finalize(self, procs=10):
         """
         Terminate and generate testcases for all currently alive states (contract
         states that cleanly executed to a STOP or RETURN in the last symbolic
         transaction).
+
+        :param procs: nomber of local processes to use in the reporting generation
         """
         self.kill()
         for w in self._workers:
@@ -1327,7 +1335,7 @@ class ManticoreEVM(ManticoreBase):
             q.put(state_id)
 
         report_workers = []
-        for _ in range(self._config_procs):
+        for _ in range(procs):
             proc = Process(target=worker_finalize, args=(q,))
             proc.start()
             report_workers.append(proc)
@@ -1413,15 +1421,9 @@ class ManticoreEVM(ManticoreBase):
                     for o in sorted(visited):
                         f.write('0x%x\n' % o)
 
-        # delete actual streams from storage
-        for state_id in self._all_states:
-            # state_id -1 is always only on memory
-            self._remove(state_id)
+        self.remove_all()
 
-        # clean up lists
-        with self.locked_context('ethereum') as eth_context:
-            eth_context['_saved_states'] = set()
-            eth_context['_final_states'] = set()
+
 
     def global_coverage(self, account):
         """ Returns code coverage for the contract on `account_address`.
@@ -1447,9 +1449,3 @@ class ManticoreEVM(ManticoreBase):
     # We suppress because otherwise we log it many times and it looks weird.
     def _did_finish_run_callback(self):
         pass
-
-    def __repr__(self):
-        return self.__str__()
-
-    def __str__(self):
-        return f"<ManticoreEVM | Alive States: {self.count_ready_states()}; Running States: {self.count_busy_states()} Terminated States: {self.count_terminated_states()}>"

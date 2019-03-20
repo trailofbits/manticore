@@ -109,6 +109,10 @@ class StateBase(Eventful):
         # Events are lost in serialization and fork !!
         self.forward_events_from(self._platform)
 
+    @property
+    def id(self):
+        return getattr(self, '_id', None)
+
     def __repr__(self):
         return f'<State object with id {self.id}>'
 
@@ -121,7 +125,7 @@ class StateBase(Eventful):
         self.platform.constraints = new_state.constraints
         new_state._input_symbols = list(self._input_symbols)
         new_state._context = copy.copy(self._context)
-        new_state.id = None
+        new_state._id = None
         self.copy_eventful_state(new_state)
 
         self._child = new_state

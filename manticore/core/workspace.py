@@ -28,7 +28,7 @@ import errno
 import threading
 from ..utils import config
 from ..utils.helpers import PickleSerializer
-from .smtlib import solver
+from .smtlib.solver import Z3Solver
 from .state import StateBase
 
 logger = logging.getLogger(__name__)
@@ -383,6 +383,10 @@ class Workspace:
         self._prefix = 'state_'
         self._suffix = '.pkl'
 
+    @property
+    def uri(self):
+        return self._store.uri
+
     def try_loading_workspace(self):
         state_names = self._store.ls(f'{self._prefix}*')
 
@@ -515,9 +519,11 @@ class ManticoreOutput:
 
     @property
     def _last_id(self):
-        with self.lock():
-            with self._named_stream('.status') as st:
-                last_id, x = struct.unpack("<LL", st.read(8))
+        try:
+            with self._store.stream(filename, "r") as f:
+                last_id = int(f.read())
+        except Exception as e:
+            last_id = 0
         return last_id
 
     def _named_key(self, suffix):
@@ -527,14 +533,15 @@ class ManticoreOutput:
         return self._store.save_stream(key, *rest, **kwargs)
 
     @contextmanager
-    def _named_stream(self, name, binary=False):
+    def _named_stream(self, name, binary=False, lock=False):
         """
         Create an indexed output stream i.e. 'test_00000001.name'
 
         :param name: Identifier for the stream
+        :param lock: exclusive access if True
         :return: A context-managed stream-like object
         """
-        with self._store.save_stream(self._named_key(name), binary=binary) as s:
+        with self._store.save_stream(self._named_key(name), binary=binary, lock=lock) as s:
             yield s
 
     #Remove/move ...
@@ -606,5 +613,5 @@ class ManticoreOutput:
     def save_input_symbols(self, state):
         with self._named_stream('input') as f:
             for symbol in state.input_symbols:
-                buf = solver.get_value(state.constraints, symbol)
+                buf = Z3Solver().get_value(state.constraints, symbol)
                 f.write(f'{symbol.name}: {buf!r}\n')

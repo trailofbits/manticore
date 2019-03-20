@@ -200,7 +200,7 @@ class InstructionCounter(Plugin):
             count = state.context.get('instructions_count', 0)
             state.context['instructions_count'] = count + 1
 
-    def did_finish_run_callback(self):
+    def did_run_callback(self):
         _shared_context = self.manticore.context
         instructions_count = _shared_context.get('instructions_count', 0)
         logger.info('Instructions executed: %d', instructions_count)
@@ -230,7 +230,7 @@ class Visited(Plugin):
         state.context.setdefault('visited_since_last_fork', set()).add(prev_pc)
         state.context.setdefault('visited', set()).add(prev_pc)
 
-    def did_finish_run_callback(self):
+    def did_run_callback(self):
         _shared_context = self.manticore.context
         executor_visited = _shared_context.get('visited', set())
         # Fixme this is duplicated?
@@ -264,8 +264,8 @@ class ExamplePlugin(Plugin):
         '''
         logger.info('will_start_run')
 
-    def did_finish_run_callback(self):
-        logger.info('did_finish_run')
+    def did_run_callback(self):
+        logger.info('did_run')
 
     def will_fork_state_callback(self, parent_state, expression, solutions, policy):
         logger.info('will_fork_state %r %r %r %r', parent_state, expression, solutions, policy)
