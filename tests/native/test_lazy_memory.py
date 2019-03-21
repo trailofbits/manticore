@@ -11,11 +11,11 @@ import sys
 
 from manticore.native.memory import *
 from manticore.utils.helpers import issymbolic
-from manticore.core.smtlib import Solver, Operators
+from manticore.core.smtlib import Z3Solver, Operators
 from manticore.core.smtlib.expression import *
 from manticore.core.smtlib.visitors import *
 
-
+solver = Z3Solver.instance()
 class LazyMemoryTest(unittest.TestCase):
     _multiprocess_can_split_ = True
 

@@ -79,6 +79,7 @@ class ManticoreTest(unittest.TestCase):
         dirname = os.path.dirname(__file__)
         self.m = Manticore(os.path.join(dirname, 'binaries', 'basic_linux_amd64'))
         self.m.run()
+        self.m.finalize()
         workspace = self.m._output.store.uri
         with open(os.path.join(workspace, 'test_00000000.stdin'), 'rb') as f:
             a = struct.unpack('<I', f.read())[0]

@@ -9,10 +9,11 @@ import shutil
 import tempfile
 
 from manticore.native.cpu.abstractcpu import ConcretizeRegister
-from manticore.core.smtlib import *
+from manticore.core.smtlib.solver import Z3Solver
+from manticore.core.smtlib import BitVecVariable, issymbolic
 from manticore.native import Manticore
 from manticore.platforms import linux, linux_syscalls
-
+solver = Z3Solver.instance()
 
 class LinuxTest(unittest.TestCase):
     _multiprocess_can_split_ = True
@@ -92,7 +93,8 @@ class LinuxTest(unittest.TestCase):
 
         platform.syscall()
 
-        print(hexlify(b''.join(platform.current.read_bytes(stat, 100))))
+        self.assertEqual(b'0203010000000000ac00ce0200000000ed81000001000000000000000000000000000000000000000000000000000000b88800000000000000100000000000004800000000000000238c935cdd10f32135a7b65b00000000f6c5765c3d884d1700000000',
+hexlify(b''.join(platform.current.read_bytes(stat, 100))))
 
     def test_linux_symbolic_files_workspace_files(self):
         fname = 'symfile'
@@ -254,18 +256,17 @@ class LinuxTest(unittest.TestCase):
         dirname = os.path.dirname(__file__)
         self.m = Manticore.linux(os.path.join(dirname, 'binaries', 'arguments_linux_amd64'), argv=['+'],
                                  envp={'TEST': '+'})
-        state = self.m.initial_state
+        for state in self.m.all_states:
+            ptr = state.cpu.read_int(state.cpu.RSP + (8*2))  # get argv[1]
+            mem = state.cpu.read_bytes(ptr, 2)
+            self.assertTrue(issymbolic(mem[0]))
+            self.assertEqual(mem[1], b'\0')
 
-        ptr = state.cpu.read_int(state.cpu.RSP + (8*2))  # get argv[1]
-        mem = state.cpu.read_bytes(ptr, 2)
-        self.assertTrue(issymbolic(mem[0]))
-        self.assertEqual(mem[1], b'\0')
-
-        ptr = state.cpu.read_int(state.cpu.RSP + (8*4))  # get envp[0]
-        mem = state.cpu.read_bytes(ptr, 7)
-        self.assertEqual(b''.join(mem[:5]), b'TEST=')
-        self.assertEqual(mem[6], b'\0')
-        self.assertTrue(issymbolic(mem[5]))
+            ptr = state.cpu.read_int(state.cpu.RSP + (8*4))  # get envp[0]
+            mem = state.cpu.read_bytes(ptr, 7)
+            self.assertEqual(b''.join(mem[:5]), b'TEST=')
+            self.assertEqual(mem[6], b'\0')
+            self.assertTrue(issymbolic(mem[5]))
 
     def test_serialize_state_with_closed_files(self):
         # regression test: issue 954
@@ -284,10 +285,11 @@ class LinuxTest(unittest.TestCase):
         m.success = False
 
         @m.init
-        def init(state):
-            state.cpu.regfile.write('R0', 0)
-            state.cpu.regfile.write('R1', 0x1234)
-            state.cpu.regfile.write('R2', 0x5678)
+        def init(m):
+            for state in m.all_states:
+                state.platform.current.regfile.write('R0', 0)
+                state.platform.current.regfile.write('R1', 0x1234)
+                state.platform.current.regfile.write('R2', 0x5678)
 
         @m.hook(0x1001)
         def pre(state):

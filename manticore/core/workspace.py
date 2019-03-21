@@ -407,7 +407,6 @@ class Workspace:
         if not state_ids:
             return []
 
-        self._last_id.value = max(state_ids) + 1
 
         return state_ids
 
@@ -423,7 +422,8 @@ class Workspace:
                     last_id = int(f.read())
             except Exception as e:
                 last_id = 0
-            last_id += 1
+            else:
+                last_id += 1
             with self._store.save_stream('.state_id') as f:
                 f.write(f'{last_id}')
                 f.flush()
@@ -518,9 +518,10 @@ class ManticoreOutput:
             try:
                 with self._store.stream(filename, "r") as f:
                     last_id = int(f.read())
-            except Exception as e:
+            except FileNotFoundError as e:
                 last_id = 0
-            last_id += 1
+            else:
+                last_id += 1
             with self._store.stream(filename, "w") as f:
                 f.write(f'{last_id}')
                 f.flush()
@@ -554,7 +555,7 @@ class ManticoreOutput:
             yield s
 
     #Remove/move ...
-    def save_testcase(self, state, prefix, message=''):
+    def save_testcase(self, state, testcase, message=''):
         """
         Save the environment from `state` to storage. Return a state id
         describing it, which should be an int or a string.
@@ -563,28 +564,28 @@ class ManticoreOutput:
         :param str message: The message to add to output
         :return: A state id representing the saved state
         """
-        self._named_key_prefix = prefix
 
         # TODO / FIXME: We should move workspace to core/workspace and create a workspace for evm and native binaries
         # The workspaces should override `save_testcase` method
         #
         # Below is native-only
-        self.save_summary(state, message)
-        self.save_trace(state)
-        self.save_constraints(state)
-        self.save_input_symbols(state)
+        self.save_summary(testcase, state, message)
+        self.save_trace(testcase, state)
+        self.save_constraints(testcase, state)
+        self.save_input_symbols(testcase, state)
 
         for stream_name, data in state.platform.generate_workspace_files().items():
-            with self._named_stream(stream_name, binary=True) as stream:
+            with testcase.open_stream(stream_name, binary=True) as stream:
                 if isinstance(data, str):
                     data = data.encode()
                 stream.write(data)
 
-        self._store.save_state(state, self._named_key('pkl'))
-        return self._last_id
+        #self._store.save_state(state, self._named_key('pkl'))
+        return testcase
 
-    def save_summary(self, state, message):
-        with self._named_stream('messages') as summary:
+    @staticmethod
+    def save_summary(testcase, state, message):
+        with testcase.open_stream('messages') as summary:
             summary.write(f"Command line:\n  '{' '.join(sys.argv)}'\n")
             summary.write(f'Status:\n  {message}\n\n')
 
@@ -604,23 +605,25 @@ class ManticoreOutput:
                     summary.write(f"  Instruction: 0x{i.address:x}\t{i.mnemonic:s} {i.op_str:s})\n")
                 else:
                     summary.write("  Instruction: {symbolic}\n")
-
-    def save_trace(self, state):
-        with self._named_stream('trace') as f:
+    @staticmethod
+    def save_trace(testcase, state):
+        with testcase.open_stream('trace') as f:
             if 'trace' not in state.context:
                 return
             for entry in state.context['trace']:
                 f.write(f'0x{entry:x}\n')
 
-    def save_constraints(self, state):
+    @staticmethod
+    def save_constraints(testcase, state):
         # XXX(yan): We want to conditionally enable this check
         # assert solver.check(state.constraints)
 
-        with self._named_stream('smt') as f:
+        with testcase.open_stream('smt') as f:
             f.write(str(state.constraints))
 
-    def save_input_symbols(self, state):
-        with self._named_stream('input') as f:
+    @staticmethod
+    def save_input_symbols(testcase, state):
+        with testcase.open_stream('input') as f:
             for symbol in state.input_symbols:
                 buf = Z3Solver().get_value(state.constraints, symbol)
                 f.write(f'{symbol.name}: {buf!r}\n')

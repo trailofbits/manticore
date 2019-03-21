@@ -23,7 +23,7 @@ class Manticore(ManticoreBase):
 
     def generate_testcase(self, state, message='test'):
         testcase = super().generate_testcase(state, message)
-        self._output.save_testcase(state, testcase.prefix, message)
+        self._output.save_testcase(state, testcase, message)
 
     def __init__(self, path_or_state, argv=None, workspace_url=None, policy='random', **kwargs):
         """
@@ -93,7 +93,7 @@ class Manticore(ManticoreBase):
         self._coverage_file = path
 
     def _generate_testcase_callback(self, state, testcase, message):
-        self._output.save_testcase(state, testcase.prefix, message)
+        self._output.save_testcase(state, testcase, message)
 
     @classmethod
     def linux(cls, path, argv=None, envp=None, entry_symbol=None, symbolic_files=None, concrete_start='', pure_symbolic=False, stdin_size=None, **kwargs):
@@ -142,11 +142,11 @@ class Manticore(ManticoreBase):
     @property
     def binary_path(self):
         """
-        Assumes that self._initial_state.platform.program always
-        refers to current program. Might not be true in case program
-        calls execve().
+        Assumes that all states refers to a single common program. Might not be
+        true in case program calls execve().
         """
-        return self._initial_state.platform.program
+        for st in self.all_states:
+            return st.platform.program
 
     ############################################################################
     # Assertion hooks + callback

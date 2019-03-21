@@ -2735,7 +2735,6 @@ class SLinux(Linux):
             'stderr': err.getvalue(),
             'net': net.getvalue()
         }
-
         for f in self.files + self._closed_files:
             if not isinstance(f, SymbolicFile):
                 continue

@@ -1100,6 +1100,12 @@ class ManticoreBase(Eventful):
     def __del__(self):
         self.remove_all()
 
+    def finalize(self):
+        self.kill()
+        for state in self.all_states:
+            self.generate_testcase(state)
+        self.remove_all()
+
     ############################################################################
     ############################################################################
     ############################################################################
