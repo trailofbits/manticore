@@ -9,6 +9,7 @@ from manticore.native.cpu.abstractcpu import ConcretizeRegister
 from manticore.native.cpu.arm import Armv7Cpu as Cpu, Mask, Interruption
 from manticore.core.smtlib import *
 from manticore.core.state import Concretize
+from manticore.core.smtlib.solver import Z3Solver
 from manticore.native.memory import SMemory32
 
 ks = Ks(KS_ARCH_ARM, KS_MODE_ARM)
@@ -17,7 +18,7 @@ ks_thumb = Ks(KS_ARCH_ARM, KS_MODE_THUMB)
 import logging
 
 logger = logging.getLogger("ARM_TESTS")
-
+solver = Z3Solver.instance()
 
 def assemble(asm, mode=CS_MODE_ARM):
     if CS_MODE_ARM == mode:

@@ -1429,6 +1429,7 @@ class ManticoreEVM(ManticoreBase):
             This sums up all the visited code lines from any of the explored
             states.
         """
+        print("AAA")
         account_address = int(account)
         runtime_bytecode = None
         #Search one state in which the account_address exists
@@ -1440,8 +1441,8 @@ class ManticoreEVM(ManticoreBase):
                 break
         else:
             return 0.0
-        with self.locked_context('runtime_coverage') as coverage:
-            seen = {off for addr, off in coverage if addr == account_address}
+        with self.locked_context('evm.coverage') as coverage:
+            seen = {off for addr, off, init in coverage if addr == account_address and not init}
         return calculate_coverage(runtime_bytecode, seen)
 
     # TODO: Find a better way to suppress execution of Manticore._did_finish_run_callback
