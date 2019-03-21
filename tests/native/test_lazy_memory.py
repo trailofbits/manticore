@@ -102,8 +102,8 @@ class LazyMemoryTest(unittest.TestCase):
         self.assertEqual(len(head), 0x800)
         self.assertEqual(len(tail), 0x800)
 
-        self.assertEquals(head.perms, m.perms)
-        self.assertEquals(tail.perms, m.perms)
+        self.assertEqual(head.perms, m.perms)
+        self.assertEqual(tail.perms, m.perms)
 
         reduced = m.__reduce__()
         self.assertIs(reduced[0], ArrayMap)

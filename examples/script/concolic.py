@@ -150,7 +150,7 @@ def concrete_run_get_trace(inp):
     m1.verbosity(VERBOSITY)
     m1.register_plugin(t)
     m1.register_plugin(r)
-    m1.run(procs=1)
+    m1.run()
     return r.trace
 
 

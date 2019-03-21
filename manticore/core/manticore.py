@@ -364,8 +364,8 @@ class ManticoreBase(Eventful):
 
         @functools.wraps(func)
         def newFunction(self, *args, **kw):
-            if not self.is_standby():
-                raise Exception(f"{func.__name__} only allowed at standby")
+            if self.is_running():
+                raise Exception(f"{func.__name__} only allowed at standby/killed")
             return func(self, *args, **kw)
 
         return newFunction
@@ -600,6 +600,11 @@ class ManticoreBase(Eventful):
             self._lock.notify_all()
 
         logger.info("Forking current state %r into states %r", state.id, children)
+
+    @staticmethod
+    def verbosity(level):
+        print ("decprecated")
+        set_verbosity(level)
 
     # State storage
     def _save(self, state, state_id=None):

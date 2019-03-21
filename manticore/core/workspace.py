@@ -187,6 +187,8 @@ class Store:
         """
         raise NotImplementedError
 
+    def lock(self):
+        raise NotImplementedError
 
 class FilesystemStore(Store):
     """
@@ -303,6 +305,7 @@ class MemoryStore(Store):
     # we're executing in a single-worker or test environment.
 
     def __init__(self, uri=None):
+        self._lock = threading.RLock()
         self._data = {}
         super().__init__(None)
 
@@ -318,6 +321,10 @@ class MemoryStore(Store):
     def ls(self, glob_str):
         return list(self._data)
 
+    @contextmanager
+    def lock(self):
+        with self._lock:
+            yield
 
 class RedisStore(Store):
     """
@@ -410,12 +417,12 @@ class Workspace:
         """
         with self._store.lock():
             try:
-                with self._store.stream('.state_id', "r") as f:
+                with self._store.load_stream('.state_id') as f:
                     last_id = int(f.read())
             except Exception as e:
                 last_id = 0
             last_id += 1
-            with self._store.stream('.state_id', "w") as f:
+            with self._store.save_stream('.state_id') as f:
                 f.write(f'{last_id}')
                 f.flush()
         return last_id
