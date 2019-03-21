@@ -5,16 +5,21 @@ import logging
 from manticore.native import Manticore
 from manticore.utils.log import get_verbosity, set_verbosity
 
+from manticore.core.plugin import Profiler
 
 class ManticoreTest(unittest.TestCase):
     _multiprocess_can_split_ = True
 
     def setUp(self):
+
         dirname = os.path.dirname(__file__)
         self.m = Manticore(os.path.join(dirname, 'binaries', 'arguments_linux_amd64'))
 
     def test_profiling_data(self):
-        self.m.run(should_profile=True)
+        p = Profiler()
+        self.m.verbosity(0)
+        self.m.register_plugin(p)
+        self.m.run()
         profile_path = os.path.join(self.m.workspace, 'profiling.bin')
         self.assertTrue(os.path.exists(profile_path))
         self.assertTrue(os.path.getsize(profile_path) > 0)

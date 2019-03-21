@@ -71,71 +71,10 @@ class Worker:
                                        #
     """
 
-    def __init__(self, *, id, manticore, single=False, profiling=False):
+    def __init__(self, *, id, manticore, single=False):
         self.manticore = manticore
         self.id = id
         self.single = single
-        if profiling:
-            self.run = self.profile_this(self.run)
-
-    def profile_this(self, func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            profile = cProfile.Profile()
-            profile.enable()
-            result = None
-            try:
-                result = func(*args, **kwargs)
-            finally:
-                profile.disable()
-                profile.create_stats()
-                with self.maticore.locked_context('profiling_stats', dict) as profiling_stats:
-                    profiling_stats[self.id] = profile.stats.items()
-            return result
-        return wrapper
-
-    def _produce_profiling_data(self):
-        class PstatsFormatted:
-            def __init__(self, d):
-                self.stats = dict(d)
-
-            def create_stats(self):
-                pass
-
-        with self.manticore.locked_context('profiling_stats') as profiling_stats:
-            ps = None
-            for item in profiling_stats.values():
-                try:
-                    stat = PstatsFormatted(item)
-                    if ps is None:
-                        ps = pstats.Stats(stat, stream=s)
-                    else:
-                        ps.add(stat)
-                except TypeError:
-                    logger.info("Incorrectly formatted profiling information in _stats, skipping")
-
-            if ps is None:
-                logger.info("Profiling failed")
-            return ps
-            '''
-                else:
-                    # XXX(yan): pstats does not support dumping to a file stream, only to a file
-                    # name. Below is essentially the implementation of pstats.dump_stats() without
-                    # the extra open().
-                    import marshal
-                    marshal.dump(ps.stats, s)'''
-
-    def get_profiling_stats(self):
-        """
-        Returns a pstat.Stats instance with profiling results if `run` was called with `should_profile=True`.
-        Otherwise, returns `None`.
-        """
-        profile_file_path = os.path.join(self.workspace, 'profiling.bin')
-        try:
-            return pstats.Stats(profile_file_path)
-        except Exception as e:
-            logger.debug(f'Failed to get profiling stats: {e}')
-            return None
 
     def start(self):
         raise NotImplementedError
@@ -145,9 +84,11 @@ class Worker:
 
     def run(self, *args):
         # This controls the main symbolic execution loop of one of the workers
-        logger.debug("Starting Manticore Symbolic Emulator Worker. Pid %d Tid %d).", os.getpid(), threading.get_ident())
+        logger.debug("Starting Manticore Symbolic Emulator Worker %d. Pid %d Tid %d).", self.id, os.getpid(), threading.get_ident())
+
         m = self.manticore
         current_state = None
+        m._publish("will_start_worker", self.id)
 
         # If CTRL+C is received at any worker lets abort exploration via m.kill()
         # kill will set m._killed flag to true and then each worker will slowly
@@ -252,7 +193,7 @@ class Worker:
             # Getting out.
             # At KILLED
             logger.info("[%r] Getting out of the mainloop %r %r", self.id, m._started.value, m._killed.value)
-
+            m._publish("did_terminate_worker", self.id)
 
 class WorkerSingle(Worker):
     """ A single worker that will run in the current process and current thread.
@@ -370,7 +311,7 @@ class ManticoreBase(Eventful):
 
         return newFunction
 
-    _published_events = {'run', 'generate_testcase', 'enqueue_state', 'fork_state', 'load_state',
+    _published_events = {'run', 'start_worker','terminate_worker', 'generate_testcase', 'enqueue_state', 'fork_state', 'load_state',
                          'terminate_state', 'execute_instruction'}
 
     def __init__(self, initial_state, workspace_url=None, policy='random', **kwargs):

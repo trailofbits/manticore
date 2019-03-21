@@ -240,6 +240,50 @@ class Visited(Plugin):
                     f.write(f"0x{m:016x}\n")
         logger.info('Coverage: %d different instructions executed', len(executor_visited))
 
+import cProfile,pstats,threading
+class Profiler(Plugin):
+    data = threading.local()
+    def will_start_worker_callback(self, id):
+        self.data.profile = cProfile.Profile()
+        self.data.profile.enable()
+
+    def did_terminate_worker_callback(self, id):
+        self.data.profile.disable()
+        self.data.profile.create_stats()
+        with self.manticore.locked_context('_profiling_stats', dict) as profiling_stats:
+            profiling_stats[id] = self.data.profile.stats.items()
+
+    def save_profiling_data(self, stream=None):
+        ''':param stream: an output stream to write the profiling data '''
+        class PstatsFormatted:
+            def __init__(self, d):
+                self.stats = dict(d)
+
+            def create_stats(self):
+                pass
+
+        with self.manticore.locked_context('_profiling_stats') as profiling_stats:
+            ps = None
+            for item in profiling_stats.values():
+                try:
+                    stat = PstatsFormatted(item)
+                    if ps is None:
+                        ps = pstats.Stats(stat, stream=stream)
+                    else:
+                        ps.add(stat)
+                except TypeError:
+                    logger.info("Incorrectly formatted profiling information in _stats, skipping")
+
+            if ps is None:
+                logger.info("Profiling failed")
+            else:
+                # XXX(yan): pstats does not support dumping to a file stream, only to a file
+                # name. Below is essentially the implementation of pstats.dump_stats() without
+                # the extra open().
+                if stream is not None:
+                    import marshal
+                    marshal.dump(ps.stats, stream)
+            return ps
 
 # TODO document all callbacks
 class ExamplePlugin(Plugin):
