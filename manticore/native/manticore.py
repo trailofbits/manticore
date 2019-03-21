@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 consts = config.get_group('native')
 consts.add('stdin_size', default=256, description='Maximum symbolic stdin size')
 
+
 class Manticore(ManticoreBase):
 
     def generate_testcase(self, state, message='test'):

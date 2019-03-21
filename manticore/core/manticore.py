@@ -603,8 +603,8 @@ class ManticoreBase(Eventful):
 
     @staticmethod
     def verbosity(level):
-        print ("decprecated")
         set_verbosity(level)
+        logger.info("Deprecated!")
 
     # State storage
     def _save(self, state, state_id=None):

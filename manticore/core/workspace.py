@@ -190,6 +190,7 @@ class Store:
     def lock(self):
         raise NotImplementedError
 
+
 class FilesystemStore(Store):
     """
     A directory-backed Manticore workspace
@@ -325,6 +326,7 @@ class MemoryStore(Store):
     def lock(self):
         with self._lock:
             yield
+
 
 class RedisStore(Store):
     """

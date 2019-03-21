@@ -14,14 +14,13 @@
 # Once you Solver.check() it the status is changed to sat or unsat (or unknown+exception)
 # You can create new symbols operate on them. The declarations will be sent to the smtlib process when needed.
 # You can add new constraints. A new constraint may change the state from {None, sat} to {sat, unsat, unknown}
+import os
 import threading
 import collections
 import shlex
 import time
 from subprocess import PIPE, Popen
-
 import re
-from abc import ABCMeta, abstractmethod
 
 from . import operators as Operators
 from .constraints import *
@@ -45,7 +44,6 @@ RE_GET_EXPR_VALUE_FMT = re.compile('\(\((?P<expr>(.*))\ #x(?P<value>([0-9a-fA-F]
 RE_OBJECTIVES_EXPR_VALUE = re.compile('\(objectives.*\((?P<expr>.*) (?P<value>\d*)\).*\).*', re.MULTILINE | re.DOTALL)
 RE_MIN_MAX_OBJECTIVE_EXPR_VALUE = re.compile('(?P<expr>.*?)\s+\|->\s+(?P<value>.*)', re.DOTALL)
 
-import threading, os
 
 class SingletonMixin(object):
     __singleton_instances = {}
@@ -54,9 +52,9 @@ class SingletonMixin(object):
     def instance(cls):
         tid = threading.get_ident()
         pid = os.getpid()
-        if not (pid,tid) in cls.__singleton_instances:
-            cls.__singleton_instances[(pid,tid)] = cls()
-        return cls.__singleton_instances[(pid,tid)]
+        if not (pid, tid) in cls.__singleton_instances:
+            cls.__singleton_instances[(pid, tid)] = cls()
+        return cls.__singleton_instances[(pid, tid)]
 
 
 class Solver(SingletonMixin):

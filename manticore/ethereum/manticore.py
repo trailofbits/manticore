@@ -395,17 +395,16 @@ class ManticoreEVM(ManticoreBase):
         """ The world instance or None if there is more than one state """
         return self.get_world()
 
-
-    # deprecate this 5 in favor of for sta in m.all_states: do stuff?
+    # deprecate this 5 in favor of for state in m.all_states: do stuff?
     @property
     def completed_transactions(self):
-        print ("deprecated!")
+        logger.info("Deprecated!")
         with self.locked_context('ethereum') as context:
             return context['_completed_transactions']
 
     def get_world(self, state_id=None):
         """ Returns the evm world of `state_id` state. """
-        print ("deprecated!")
+        logger.info("Deprecated!")
         if state_id is None:
             state_id = self._ready_states[0]
 
@@ -417,40 +416,40 @@ class ManticoreEVM(ManticoreBase):
 
     def get_balance(self, address, state_id=None):
         """ Balance for account `address` on state `state_id` """
-        print ("deprecated!")
+        logger.info("Deprecated!")
         if isinstance(address, EVMAccount):
             address = int(address)
         return self.get_world(state_id).get_balance(address)
 
     def get_storage_data(self, address, offset, state_id=None):
         """ Storage data for `offset` on account `address` on state `state_id` """
-        print ("deprecated!")
+        logger.info("Deprecated!")
         if isinstance(address, EVMAccount):
             address = int(address)
         return self.get_world(state_id).get_storage_data(address, offset)
 
     def get_code(self, address, state_id=None):
         """ Storage data for `offset` on account `address` on state `state_id` """
-        print ("deprecated!")
+        logger.info("Deprecated!")
         if isinstance(address, EVMAccount):
             address = int(address)
         return self.get_world(state_id).get_code(address)
 
     def last_return(self, state_id=None):
         """ Last returned buffer for state `state_id` """
-        print ("deprecated!")
+        logger.info("Deprecated!")
         state = self.load(state_id)
         return state.platform.last_transaction.return_data
 
     def transactions(self, state_id=None):
         """ Transactions list for state `state_id` """
-        print ("deprecated!")
+        logger.info("Deprecated!")
         state = self.load(state_id)
         return state.platform.transactions
 
     def human_transactions(self, state_id=None):
         """ Transactions list for state `state_id` """
-        print ("deprecated!")
+        logger.info("Deprecated!")
         state = self.load(state_id)
         return state.platform.human_transactions
 
@@ -1421,8 +1420,6 @@ class ManticoreEVM(ManticoreBase):
                         f.write('0x%x\n' % o)
 
         self.remove_all()
-
-
 
     def global_coverage(self, account):
         """ Returns code coverage for the contract on `account_address`.
