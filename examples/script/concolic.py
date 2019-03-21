@@ -20,7 +20,7 @@ import itertools
 from manticore.native import Manticore
 from manticore.core.plugin import ExtendedTracer, Follower, Plugin
 from manticore.core.smtlib.constraints import ConstraintSet
-from manticore.core.smtlib import solver
+from manticore.core.smtlib.solver import Z3Solver
 
 import copy
 from manticore.core.smtlib.expression import *
@@ -45,7 +45,7 @@ class TraceReceiver(Plugin):
     def trace(self):
         return self._trace
 
-    def will_generate_testcase_callback(self, state, testcase, msg):
+    def will_terminate_state_callback(self, state, reason):
         self._trace = state.context.get(self._tracer.context_key, [])
 
         instructions, writes = _partition(lambda x: x['type'] == 'regs', self._trace)
@@ -139,7 +139,7 @@ def input_from_cons(constupl, datas):
     ret = ''
     for data in datas:
         for c in data:
-            ret += make_chr(solver.get_value(newset, c))
+            ret += make_chr(Z3Solver.instance().get_value(newset, c))
     return ret
 
 # Run a concrete run with |inp| as stdin
@@ -165,7 +165,7 @@ def symbolic_run_get_cons(trace):
     m2.verbosity(VERBOSITY)
     m2.register_plugin(f)
 
-    def on_term_testcase(mcore, state, stateid, err):
+    def on_term_testcase(mm, state, err):
         with m2.locked_context() as ctx:
             readdata = []
             for name, fd, data in state.platform.syscall_trace:
@@ -193,7 +193,7 @@ def getnew(oldcons, newcons):
 
 def constraints_are_sat(cons):
     'Whether constraints are sat'
-    return solver.check(constraints_to_constraintset(cons))
+    return Z3Solver.instance().check(constraints_to_constraintset(cons))
 
 def get_new_constrs_for_queue(oldcons, newcons):
     ret = []

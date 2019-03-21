@@ -40,8 +40,9 @@ class ManticoreTest(unittest.TestCase):
 
         @self.m.hook(None)
         def tmp(state):
-            self.m.context['x'] = 1
-            self.m.terminate()
+            with self.m.locked_context() as ctx:
+                ctx['x'] = 1
+            self.m.kill()
         self.m.run()
 
         self.assertEqual(self.m.context['x'], 1)
@@ -50,9 +51,9 @@ class ManticoreTest(unittest.TestCase):
         self.m.context['x'] = 0
 
         @self.m.init
-        def tmp(state):
-            self.m.context['x'] = 1
-            self.m.terminate()
+        def tmp(m):
+            m.context['x'] = 1
+            m.kill()
 
         self.m.run()
 
