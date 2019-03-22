@@ -305,6 +305,13 @@ class Aarch64Cpu(Cpu):
              name = 'BFC'
              del ops[1]
 
+        # XXX: CMEQ incorrectly sets the type to 'ARM64_OP_FP' for
+        # 'cmeq v0.16b, v1.16b, #0':
+        # https://github.com/aquynh/capstone/issues/1443
+        elif (name == 'CMEQ' and len(ops) == 3 and
+              ops[2].type == cs.arm64.ARM64_OP_FP):
+            ops[2]._type = cs.arm64.ARM64_OP_IMM
+
         return name
 
     @property
@@ -644,6 +651,118 @@ class Aarch64Cpu(Cpu):
             c = Operators.EXTRACT(nzcv, 1, 1)
             v = Operators.EXTRACT(nzcv, 0, 1)
             cpu.regfile.nzcv = (n, z, c, v)
+
+    def _cmeq(cpu, res_op, reg_op, reg_imm_op, register):
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_imm_op.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
+
+        scalar_rx = '01'
+        if register:
+            scalar_rx += '1'        # U
+        else:
+            scalar_rx += '0'        # U
+        scalar_rx += '11110'
+        scalar_rx += '[01]{2}'      # size
+        if register:
+            scalar_rx += '1'
+            scalar_rx += '[01]{5}'  # Rm
+            scalar_rx += '10001'
+            scalar_rx += '1'
+        else:
+            scalar_rx += '10000'
+            scalar_rx += '0100'
+            scalar_rx += '1'        # op
+            scalar_rx += '10'
+        scalar_rx += '[01]{5}'      # Rn
+        scalar_rx += '[01]{5}'      # Rd
+
+        vector_rx = '0'
+        vector_rx += '[01]'         # Q
+        if register:
+            vector_rx += '1'        # U
+        else:
+            vector_rx += '0'        # U
+        vector_rx += '01110'
+        vector_rx += '[01]{2}'      # size
+        if register:
+            vector_rx += '1'
+            vector_rx += '[01]{5}'  # Rm
+            vector_rx += '10001'
+            vector_rx += '1'
+        else:
+            vector_rx += '10000'
+            vector_rx += '0100'
+            vector_rx += '1'        # op
+            vector_rx += '10'
+        vector_rx += '[01]{5}'      # Rn
+        vector_rx += '[01]{5}'      # Rd
+
+        assert (
+            re.match(scalar_rx, cpu.insn_bit_str) or
+            re.match(vector_rx, cpu.insn_bit_str)
+        )
+
+        # XXX: Check if trapped.
+
+        op1 = reg_op.read()
+        op2 = reg_imm_op.read()
+
+        if not register:
+            assert op2 == 0
+
+        vas = res_op.op.vas
+
+        if vas == cs.arm64.ARM64_VAS_8B:
+            elem_size = 8
+            elem_count = 8
+
+        elif vas == cs.arm64.ARM64_VAS_16B:
+            elem_size = 8
+            elem_count = 16
+
+        elif vas == cs.arm64.ARM64_VAS_4H:
+            elem_size = 16
+            elem_count = 4
+
+        elif vas == cs.arm64.ARM64_VAS_8H:
+            elem_size = 16
+            elem_count = 8
+
+        elif vas == cs.arm64.ARM64_VAS_2S:
+            elem_size = 32
+            elem_count = 2
+
+        elif vas == cs.arm64.ARM64_VAS_4S:
+            elem_size = 32
+            elem_count = 4
+
+        elif vas == cs.arm64.ARM64_VAS_2D:
+            elem_size = 64
+            elem_count = 2
+
+        elif vas == cs.arm64.ARM64_VAS_INVALID:  # scalar
+            assert res_op.size == 64
+            assert reg_op.size == 64
+            assert not register or reg_imm_op.size == 64
+            elem_size = 64
+            elem_count = 1
+
+        else:
+            raise Aarch64InvalidInstruction
+
+        result = 0
+        for i in range(elem_count):
+            elem1 = Operators.EXTRACT(op1, i * elem_size, elem_size)
+            elem2 = Operators.EXTRACT(op2, i * elem_size, elem_size)
+            if elem1 == elem2:
+                elem = Mask(elem_size)
+            else:
+                elem = 0
+            result |= elem << (i * elem_size)
+
+        result = UInt(result, res_op.size)
+        res_op.write(result)
 
     def _shifted_register(cpu, res_op, reg_op1, reg_op2, action, shifts,
             flags=False):
@@ -2165,6 +2284,45 @@ class Aarch64Cpu(Cpu):
             count += 1
 
         res_op.write(count)
+
+    def _CMEQ_register(cpu, res_op, reg_op1, reg_op2):
+        """
+        CMEQ (register).
+
+        :param res_op: destination register.
+        :param reg_op1: source register.
+        :param reg_op2: source register.
+        """
+        cpu._cmeq(res_op, reg_op1, reg_op2, register=True)
+
+    def _CMEQ_zero(cpu, res_op, reg_op, imm_op):
+        """
+        CMEQ (zero).
+
+        :param res_op: destination register.
+        :param reg_op: source register.
+        :param imm_op: immediate (zero).
+        """
+        cpu._cmeq(res_op, reg_op, imm_op, register=False)
+
+    @instruction
+    def CMEQ(cpu, res_op, reg_op, reg_imm_op):
+        """
+        Combines CMEQ (register) and CMEQ (zero).
+
+        :param res_op: destination register.
+        :param reg_op: source register.
+        :param reg_imm_op: source register or immediate (zero).
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_imm_op.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
+
+        if reg_imm_op.type == cs.arm64.ARM64_OP_REG:
+            cpu._CMEQ_register(res_op, reg_op, reg_imm_op)
+
+        else:
+            cpu._CMEQ_zero(res_op, reg_op, reg_imm_op)
 
     def _CMN_extended_register(cpu, reg_op1, reg_op2):
         """
@@ -4543,7 +4701,8 @@ class Aarch64Operand(Operand):
             cs.arm64.ARM64_OP_REG_MRS,
             cs.arm64.ARM64_OP_REG_MSR,
             cs.arm64.ARM64_OP_MEM,
-            cs.arm64.ARM64_OP_IMM
+            cs.arm64.ARM64_OP_IMM,
+            cs.arm64.ARM64_OP_FP
         )
 
         self._type = self.op.type

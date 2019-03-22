@@ -4270,6 +4270,441 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W0'), 25)
 
 
+    # CMEQ (register, scalar).
+
+    # XXX: Uses 'reset'.
+
+    @itest_setregs(
+        'V1=0x81828384858687889192939495969798',
+        'V2=0x81828384858687889192939495969798'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'cmeq d0, d1, d2'
+        ],
+        multiple_insts=True
+    )
+    def test_cmeq_reg_scalar_eq(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0xffffffffffffffff)
+        self.assertEqual(self.rf.read('Q0'), 0xffffffffffffffff)
+        self.assertEqual(self.rf.read('D0'), 0xffffffffffffffff)
+        self.assertEqual(self.rf.read('S0'), 0xffffffff)
+        self.assertEqual(self.rf.read('H0'), 0xffff)
+        self.assertEqual(self.rf.read('B0'), 0xff)
+
+    @itest_setregs(
+        'V1=0x41424344454647485152535455565758',
+        'V2=0x61626364656667687172737475767778'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'cmeq d0, d1, d2'
+        ],
+        multiple_insts=True
+    )
+    def test_cmeq_reg_scalar_neq(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0)
+        self.assertEqual(self.rf.read('Q0'), 0)
+        self.assertEqual(self.rf.read('D0'), 0)
+        self.assertEqual(self.rf.read('S0'), 0)
+        self.assertEqual(self.rf.read('H0'), 0)
+        self.assertEqual(self.rf.read('B0'), 0)
+
+
+    # CMEQ (register, vector).
+
+    # XXX: Uses 'reset'.
+
+    # 8b.
+
+    @itest_setregs(
+        'V1=0x81428344854687489152935495569758',
+        'V2=0x81628364856687689172937495769778'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'cmeq v0.8b, v1.8b, v2.8b'
+        ],
+        multiple_insts=True
+    )
+    def test_cmeq_reg_vector_8b(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0xff00ff00ff00ff00)
+        self.assertEqual(self.rf.read('Q0'), 0xff00ff00ff00ff00)
+        self.assertEqual(self.rf.read('D0'), 0xff00ff00ff00ff00)
+        self.assertEqual(self.rf.read('S0'), 0xff00ff00)
+        self.assertEqual(self.rf.read('H0'), 0xff00)
+        self.assertEqual(self.rf.read('B0'), 0)
+
+    # 16b.
+
+    @itest_setregs(
+        'V1=0x81428344854687489152935495569758',
+        'V2=0x81628364856687689172937495769778'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'cmeq v0.16b, v1.16b, v2.16b'
+        ],
+        multiple_insts=True
+    )
+    def test_cmeq_reg_vector_16b(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0xff00ff00ff00ff00ff00ff00ff00ff00)
+        self.assertEqual(self.rf.read('Q0'), 0xff00ff00ff00ff00ff00ff00ff00ff00)
+        self.assertEqual(self.rf.read('D0'), 0xff00ff00ff00ff00)
+        self.assertEqual(self.rf.read('S0'), 0xff00ff00)
+        self.assertEqual(self.rf.read('H0'), 0xff00)
+        self.assertEqual(self.rf.read('B0'), 0)
+
+    # 4h.
+
+    @itest_setregs(
+        'V1=0x81828344858687489192935495969758',
+        'V2=0x81828364858687689192937495969778'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'cmeq v0.4h, v1.4h, v2.4h'
+        ],
+        multiple_insts=True
+    )
+    def test_cmeq_reg_vector_4h(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0xffff0000ffff0000)
+        self.assertEqual(self.rf.read('Q0'), 0xffff0000ffff0000)
+        self.assertEqual(self.rf.read('D0'), 0xffff0000ffff0000)
+        self.assertEqual(self.rf.read('S0'), 0xffff0000)
+        self.assertEqual(self.rf.read('H0'), 0)
+        self.assertEqual(self.rf.read('B0'), 0)
+
+    # 8h.
+
+    @itest_setregs(
+        'V1=0x81828344858687489192935495969758',
+        'V2=0x81828364858687689192937495969778'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'cmeq v0.8h, v1.8h, v2.8h'
+        ],
+        multiple_insts=True
+    )
+    def test_cmeq_reg_vector_8h(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0xffff0000ffff0000ffff0000ffff0000)
+        self.assertEqual(self.rf.read('Q0'), 0xffff0000ffff0000ffff0000ffff0000)
+        self.assertEqual(self.rf.read('D0'), 0xffff0000ffff0000)
+        self.assertEqual(self.rf.read('S0'), 0xffff0000)
+        self.assertEqual(self.rf.read('H0'), 0)
+        self.assertEqual(self.rf.read('B0'), 0)
+
+    # 2s.
+
+    @itest_setregs(
+        'V1=0x81828384854687489192939495569758',
+        'V2=0x81828384856687689192939495769778'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'cmeq v0.2s, v1.2s, v2.2s'
+        ],
+        multiple_insts=True
+    )
+    def test_cmeq_reg_vector_2s(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0xffffffff00000000)
+        self.assertEqual(self.rf.read('Q0'), 0xffffffff00000000)
+        self.assertEqual(self.rf.read('D0'), 0xffffffff00000000)
+        self.assertEqual(self.rf.read('S0'), 0)
+        self.assertEqual(self.rf.read('H0'), 0)
+        self.assertEqual(self.rf.read('B0'), 0)
+
+    # 4s.
+
+    @itest_setregs(
+        'V1=0x81828384854687489192939495569758',
+        'V2=0x81828384856687689192939495769778'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'cmeq v0.4s, v1.4s, v2.4s'
+        ],
+        multiple_insts=True
+    )
+    def test_cmeq_reg_vector_4s(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0xffffffff00000000ffffffff00000000)
+        self.assertEqual(self.rf.read('Q0'), 0xffffffff00000000ffffffff00000000)
+        self.assertEqual(self.rf.read('D0'), 0xffffffff00000000)
+        self.assertEqual(self.rf.read('S0'), 0)
+        self.assertEqual(self.rf.read('H0'), 0)
+        self.assertEqual(self.rf.read('B0'), 0)
+
+    # 2d.
+
+    @itest_setregs(
+        'V1=0x81828384858687889152935495569758',
+        'V2=0x81828384858687889172937495769778'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'cmeq v0.2d, v1.2d, v2.2d'
+        ],
+        multiple_insts=True
+    )
+    def test_cmeq_reg_vector_2d(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0xffffffffffffffff0000000000000000)
+        self.assertEqual(self.rf.read('Q0'), 0xffffffffffffffff0000000000000000)
+        self.assertEqual(self.rf.read('D0'), 0)
+        self.assertEqual(self.rf.read('S0'), 0)
+        self.assertEqual(self.rf.read('H0'), 0)
+        self.assertEqual(self.rf.read('B0'), 0)
+
+
+    # CMEQ (zero, scalar).
+
+    # XXX: Uses 'reset'.
+
+    @itest_setregs('V1=0x81828384858687880000000000000000')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'cmeq d0, d1, #0'
+        ],
+        multiple_insts=True
+    )
+    def test_cmeq_zero_scalar_eq(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0xffffffffffffffff)
+        self.assertEqual(self.rf.read('Q0'), 0xffffffffffffffff)
+        self.assertEqual(self.rf.read('D0'), 0xffffffffffffffff)
+        self.assertEqual(self.rf.read('S0'), 0xffffffff)
+        self.assertEqual(self.rf.read('H0'), 0xffff)
+        self.assertEqual(self.rf.read('B0'), 0xff)
+
+    @itest_setregs('V1=0x41424344454647485152535455565758')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'cmeq d0, d1, #0'
+        ],
+        multiple_insts=True
+    )
+    def test_cmeq_zero_scalar_neq(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0)
+        self.assertEqual(self.rf.read('Q0'), 0)
+        self.assertEqual(self.rf.read('D0'), 0)
+        self.assertEqual(self.rf.read('S0'), 0)
+        self.assertEqual(self.rf.read('H0'), 0)
+        self.assertEqual(self.rf.read('B0'), 0)
+
+
+    # CMEQ (zero, vector).
+
+    # XXX: Uses 'reset'.
+
+    # 8b.
+
+    @itest_setregs('V1=0x00420044004600480052005400560058')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'cmeq v0.8b, v1.8b, #0'
+        ],
+        multiple_insts=True
+    )
+    def test_cmeq_zero_vector_8b(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0xff00ff00ff00ff00)
+        self.assertEqual(self.rf.read('Q0'), 0xff00ff00ff00ff00)
+        self.assertEqual(self.rf.read('D0'), 0xff00ff00ff00ff00)
+        self.assertEqual(self.rf.read('S0'), 0xff00ff00)
+        self.assertEqual(self.rf.read('H0'), 0xff00)
+        self.assertEqual(self.rf.read('B0'), 0)
+
+    # 16b.
+
+    @itest_setregs('V1=0x00420044004600480052005400560058')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'cmeq v0.16b, v1.16b, #0'
+        ],
+        multiple_insts=True
+    )
+    def test_cmeq_zero_vector_16b(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0xff00ff00ff00ff00ff00ff00ff00ff00)
+        self.assertEqual(self.rf.read('Q0'), 0xff00ff00ff00ff00ff00ff00ff00ff00)
+        self.assertEqual(self.rf.read('D0'), 0xff00ff00ff00ff00)
+        self.assertEqual(self.rf.read('S0'), 0xff00ff00)
+        self.assertEqual(self.rf.read('H0'), 0xff00)
+        self.assertEqual(self.rf.read('B0'), 0)
+
+    # 4h.
+
+    @itest_setregs('V1=0x00008344000087480000935400009758')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'cmeq v0.4h, v1.4h, #0'
+        ],
+        multiple_insts=True
+    )
+    def test_cmeq_zero_vector_4h(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0xffff0000ffff0000)
+        self.assertEqual(self.rf.read('Q0'), 0xffff0000ffff0000)
+        self.assertEqual(self.rf.read('D0'), 0xffff0000ffff0000)
+        self.assertEqual(self.rf.read('S0'), 0xffff0000)
+        self.assertEqual(self.rf.read('H0'), 0)
+        self.assertEqual(self.rf.read('B0'), 0)
+
+    # 8h.
+
+    @itest_setregs('V1=0x00008344000087480000935400009758')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'cmeq v0.8h, v1.8h, #0'
+        ],
+        multiple_insts=True
+    )
+    def test_cmeq_zero_vector_8h(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0xffff0000ffff0000ffff0000ffff0000)
+        self.assertEqual(self.rf.read('Q0'), 0xffff0000ffff0000ffff0000ffff0000)
+        self.assertEqual(self.rf.read('D0'), 0xffff0000ffff0000)
+        self.assertEqual(self.rf.read('S0'), 0xffff0000)
+        self.assertEqual(self.rf.read('H0'), 0)
+        self.assertEqual(self.rf.read('B0'), 0)
+
+    # 2s.
+
+    @itest_setregs('V1=0x00000000854687480000000095569758')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'cmeq v0.2s, v1.2s, #0'
+        ],
+        multiple_insts=True
+    )
+    def test_cmeq_zero_vector_2s(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0xffffffff00000000)
+        self.assertEqual(self.rf.read('Q0'), 0xffffffff00000000)
+        self.assertEqual(self.rf.read('D0'), 0xffffffff00000000)
+        self.assertEqual(self.rf.read('S0'), 0)
+        self.assertEqual(self.rf.read('H0'), 0)
+        self.assertEqual(self.rf.read('B0'), 0)
+
+    # 4s.
+
+    @itest_setregs('V1=0x00000000854687480000000095569758')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'cmeq v0.4s, v1.4s, #0'
+        ],
+        multiple_insts=True
+    )
+    def test_cmeq_zero_vector_4s(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0xffffffff00000000ffffffff00000000)
+        self.assertEqual(self.rf.read('Q0'), 0xffffffff00000000ffffffff00000000)
+        self.assertEqual(self.rf.read('D0'), 0xffffffff00000000)
+        self.assertEqual(self.rf.read('S0'), 0)
+        self.assertEqual(self.rf.read('H0'), 0)
+        self.assertEqual(self.rf.read('B0'), 0)
+
+    # 2d.
+
+    @itest_setregs('V1=0x00000000000000009152935495569758')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'cmeq v0.2d, v1.2d, #0'
+        ],
+        multiple_insts=True
+    )
+    def test_cmeq_zero_vector_2d(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0xffffffffffffffff0000000000000000)
+        self.assertEqual(self.rf.read('Q0'), 0xffffffffffffffff0000000000000000)
+        self.assertEqual(self.rf.read('D0'), 0)
+        self.assertEqual(self.rf.read('S0'), 0)
+        self.assertEqual(self.rf.read('H0'), 0)
+        self.assertEqual(self.rf.read('B0'), 0)
+
+
     # CMN (extended register).
 
     # 32-bit.
