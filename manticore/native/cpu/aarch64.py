@@ -2765,6 +2765,44 @@ class Aarch64Cpu(Cpu):
 
         res_op.write(UInt(result, res_op.size))
 
+    # XXX: Support EOR (immediate) and EOR (vector).
+    @instruction
+    def EOR(cpu, res_op, reg_op1, reg_op2):
+        """
+        EOR (shifted register).
+
+        :param res_op: destination register.
+        :param reg_op1: source register.
+        :param reg_op2: source register.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_op1.type is cs.arm64.ARM64_OP_REG
+        assert reg_op2.type is cs.arm64.ARM64_OP_REG
+
+        insn_rx  = '[01]'     # sf
+        insn_rx += '10'       # opc
+        insn_rx += '01010'
+        insn_rx += '[01]{2}'  # shift
+        insn_rx += '0'        # N
+        insn_rx += '[01]{5}'  # Rm
+        insn_rx += '[01]{6}'  # imm6
+        insn_rx += '[01]{5}'  # Rn
+        insn_rx += '[01]{5}'  # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        cpu._shifted_register(
+            res_op = res_op,
+            reg_op1 = reg_op1,
+            reg_op2 = reg_op2,
+            action = lambda x, y: (x ^ y, None),
+            shifts = [
+                cs.arm64.ARM64_SFT_LSL,
+                cs.arm64.ARM64_SFT_LSR,
+                cs.arm64.ARM64_SFT_ASR,
+                cs.arm64.ARM64_SFT_ROR
+            ])
+
     # XXX: Support LDP (SIMD&FP).
     @instruction
     def LDP(cpu, reg_op1, reg_op2, mem_op, mimm_op=None):
