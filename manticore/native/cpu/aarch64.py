@@ -297,7 +297,8 @@ class Aarch64Cpu(Cpu):
              ):
             name = 'B_cond'
 
-        # XXX: BFI is only valid when Rn != 11111.
+        # XXX: BFI is only valid when Rn != 11111:
+        # https://github.com/aquynh/capstone/issues/1441
         elif (name == 'BFI' and len(ops) == 4 and
               ops[1].type == cs.arm64.ARM64_OP_REG and
               ops[1].reg in ['WZR', 'XZR']
