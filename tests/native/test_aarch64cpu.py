@@ -8861,6 +8861,61 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W0'), 0x41424344)
 
 
+    # ORR (vector, register).
+
+    # XXX: Uses 'reset'.
+
+    # 8b.
+
+    @itest_setregs(
+        'V1=0x81008300850087009100930095009700',
+        'V2=0x00820084008600880092009400960098'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'orr v0.8b, v1.8b, v2.8b'
+        ],
+        multiple_insts=True
+    )
+    def test_orr_vector_8b(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0x9192939495969798)
+        self.assertEqual(self.rf.read('Q0'), 0x9192939495969798)
+        self.assertEqual(self.rf.read('D0'), 0x9192939495969798)
+        self.assertEqual(self.rf.read('S0'), 0x95969798)
+        self.assertEqual(self.rf.read('H0'), 0x9798)
+        self.assertEqual(self.rf.read('B0'), 0x98)
+
+    # 16b.
+
+    @itest_setregs(
+        'V1=0x81008300850087009100930095009700',
+        'V2=0x00820084008600880092009400960098'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'orr v0.16b, v1.16b, v2.16b'
+        ],
+        multiple_insts=True
+    )
+    def test_orr_vector_16b(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0x81828384858687889192939495969798)
+        self.assertEqual(self.rf.read('Q0'), 0x81828384858687889192939495969798)
+        self.assertEqual(self.rf.read('D0'), 0x9192939495969798)
+        self.assertEqual(self.rf.read('S0'), 0x95969798)
+        self.assertEqual(self.rf.read('H0'), 0x9798)
+        self.assertEqual(self.rf.read('B0'), 0x98)
+
+
     # RBIT.
 
     # 32-bit.

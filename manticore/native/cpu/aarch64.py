@@ -3687,11 +3687,65 @@ class Aarch64Cpu(Cpu):
                 cs.arm64.ARM64_SFT_ROR
             ])
 
-    # XXX: Support ORR (vector, immediate) and ORR (vector, register).
+    def _ORR_vector_register(cpu, res_op, reg_op1, reg_op2):
+        """
+        ORR (vector, register).
+
+        :param res_op: destination register.
+        :param reg_op1: source register.
+        :param reg_op2: source register.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_op1.type is cs.arm64.ARM64_OP_REG
+        assert reg_op2.type is cs.arm64.ARM64_OP_REG
+
+        insn_rx  = '0'
+        insn_rx += '[01]'     # Q
+        insn_rx += '0'
+        insn_rx += '01110'
+        insn_rx += '10'       # size
+        insn_rx += '1'
+        insn_rx += '[01]{5}'  # Rm
+        insn_rx += '00011'
+        insn_rx += '1'
+        insn_rx += '[01]{5}'  # Rn
+        insn_rx += '[01]{5}'  # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        # XXX: Check if trapped.
+
+        reg1 = reg_op1.read()
+        reg2 = reg_op2.read()
+        vas = res_op.op.vas
+
+        if vas == cs.arm64.ARM64_VAS_8B:
+            elem_size = 8
+            elem_count = 8
+
+        elif vas == cs.arm64.ARM64_VAS_16B:
+            elem_size = 8
+            elem_count = 16
+
+        else:
+            raise Aarch64InvalidInstruction
+
+        result = 0
+        for i in range(elem_count):
+            elem1 = Operators.EXTRACT(reg1, i * elem_size, elem_size)
+            elem2 = Operators.EXTRACT(reg2, i * elem_size, elem_size)
+            elem = UInt(elem1 | elem2, elem_size)
+            result |= elem << (i * elem_size)
+
+        result = UInt(result, res_op.size)
+        res_op.write(result)
+
+    # XXX: Support ORR (vector, immediate).
     @instruction
     def ORR(cpu, res_op, op1, op2):
         """
-        Combines ORR (immediate) and ORR (shifted register).
+        Combines ORR (immediate), ORR (shifted register), and ORR (vector,
+        register).
 
         :param res_op: destination register.
         :param op1: source register.
@@ -3701,11 +3755,16 @@ class Aarch64Cpu(Cpu):
         assert op1.type    is cs.arm64.ARM64_OP_REG
         assert op2.type    in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
 
+        bit21 = cpu.insn_bit_str[-22]
+
         if op2.type == cs.arm64.ARM64_OP_IMM:
             cpu._ORR_immediate(res_op, op1, op2)
 
-        elif op2.type == cs.arm64.ARM64_OP_REG:
+        elif op2.type == cs.arm64.ARM64_OP_REG and bit21 == '0':
             cpu._ORR_shifted_register(res_op, op1, op2)
+
+        elif op2.type == cs.arm64.ARM64_OP_REG and bit21 == '1':
+            cpu._ORR_vector_register(res_op, op1, op2)
 
         else:
             raise Aarch64InvalidInstruction
