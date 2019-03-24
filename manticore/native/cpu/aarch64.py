@@ -3339,13 +3339,56 @@ class Aarch64Cpu(Cpu):
         result = reg3 + (reg1 * reg2)
         res_op.write(UInt(result, res_op.size))
 
-    # XXX: Support MOV (scalar), MOV (element), MOV (from general), MOV
-    # (vector), and MOV (to general).
+    def _MOV_to_general(cpu, res_op, reg_op):
+        """
+        MOV (to general).
+
+        :param res_op: destination register.
+        :param reg_op: source register.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+
+        insn_rx  = '0'
+        insn_rx += '[01]'       # Q
+        insn_rx += '0'
+        insn_rx += '01110000'
+        insn_rx += '[01]{3}00'  # imm5
+        insn_rx += '0'
+        insn_rx += '01'
+        insn_rx += '1'
+        insn_rx += '1'
+        insn_rx += '1'
+        insn_rx += '[01]{5}'    # Rn
+        insn_rx += '[01]{5}'    # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        # XXX: Check if trapped.
+
+        # XXX: Capstone doesn't set 'vess' for this alias:
+        # https://github.com/aquynh/capstone/issues/1452
+        if res_op.size == 32:
+            reg_op.op.vess = cs.arm64.ARM64_VESS_S
+
+        elif res_op.size == 64:
+            reg_op.op.vess = cs.arm64.ARM64_VESS_D
+
+        else:
+            raise Aarch64InvalidInstruction
+
+        # The 'instruction' decorator advances PC, so call the original
+        # method.
+        cpu.UMOV.__wrapped__(cpu, res_op, reg_op)
+
+    # XXX: Support MOV (scalar), MOV (element), MOV (from general), and MOV
+    # (vector).
     @instruction
     def MOV(cpu, dst, src):
         """
         Combines MOV (to/from SP), MOV (inverted wide immediate), MOV (wide
-        immediate), MOV (bitmask immediate), and MOV (register).
+        immediate), MOV (bitmask immediate), MOV (register), and MOV (to
+        general).
 
         :param dst: destination register.
         :param src: source register or immediate.
@@ -3362,10 +3405,15 @@ class Aarch64Cpu(Cpu):
             raise Aarch64InvalidInstruction
 
         opc = cpu.insn_bit_str[1:3]  # 'op S' for MOV (to/from SP)
+        bit26 = cpu.insn_bit_str[-27]
 
         if src.type is cs.arm64.ARM64_OP_REG:
+            # MOV (to general).
+            if bit26 == '1':
+                cpu._MOV_to_general(dst, src)
+
             # MOV (to/from SP).
-            if opc == '00':
+            elif bit26 == '0' and opc == '00':
                 # Fake an immediate operand.
                 zero = Aarch64Operand.make_imm(cpu, 0)
 
@@ -3375,7 +3423,7 @@ class Aarch64Cpu(Cpu):
 
 
             # MOV (register).
-            elif opc == '01':
+            elif bit26 == '0' and opc == '01':
                 # The 'instruction' decorator advances PC, so call the original
                 # method.
                 cpu.ORR.__wrapped__(cpu, dst, zr, src)
@@ -4721,6 +4769,56 @@ class Aarch64Cpu(Cpu):
         else:
             result = int(Decimal(reg1) / Decimal(reg2))  # round toward zero
 
+        res_op.write(result)
+
+    @instruction
+    def UMOV(cpu, res_op, reg_op):
+        """
+        UMOV.
+
+        :param res_op: destination register.
+        :param reg_op: source register.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+
+        insn_rx  = '0'
+        insn_rx += '[01]'      # Q
+        insn_rx += '0'
+        insn_rx += '01110000'
+        insn_rx += '[01]{5}'   # imm5
+        insn_rx += '0'
+        insn_rx += '01'
+        insn_rx += '1'
+        insn_rx += '1'
+        insn_rx += '1'
+        insn_rx += '[01]{5}'   # Rn
+        insn_rx += '[01]{5}'   # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        # XXX: Check if trapped.
+
+        reg = reg_op.read()
+        index = reg_op.op.vector_index
+        vess = reg_op.op.vess
+
+        if vess == cs.arm64.ARM64_VESS_B:
+            elem_size = 8
+
+        elif vess == cs.arm64.ARM64_VESS_H:
+            elem_size = 16
+
+        elif vess == cs.arm64.ARM64_VESS_S:
+            elem_size = 32
+
+        elif vess == cs.arm64.ARM64_VESS_D:
+            elem_size = 64
+
+        else:
+            raise Aarch64InvalidInstruction
+
+        result = Operators.EXTRACT(reg, index * elem_size, elem_size)
         res_op.write(result)
 
     @instruction

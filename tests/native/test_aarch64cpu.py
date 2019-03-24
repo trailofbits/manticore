@@ -3,6 +3,7 @@ import unittest
 from capstone import CS_MODE_ARM
 from functools import wraps
 from keystone import Ks, KS_ARCH_ARM64, KS_MODE_LITTLE_ENDIAN
+from nose.tools import nottest
 
 from manticore.core.smtlib import *
 from manticore.native.memory import SMemory64, Memory64
@@ -8250,6 +8251,13 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W0'), 42)
 
 
+    # MOV (to general).
+
+    def test_mov_to_general(self):
+        self._umov(mnem='mov', dst='w', vess='s', elem_size=32, elem_count=4)
+        self._umov(mnem='mov', dst='x', vess='d', elem_size=64, elem_count=2)
+
+
     # MOV misc.
 
     @itest_multiple(["movn x0, #0", "mov w0, #1"])
@@ -13630,6 +13638,49 @@ class Aarch64Instructions:
     def test_udiv_pos64(self):
         self.assertEqual(self.rf.read('X0'), 0)
         self.assertEqual(self.rf.read('W0'), 0)
+
+
+    # UMOV.
+
+    # XXX: Uses 'reset'.
+
+    @nottest
+    def _umov(self, mnem, dst, vess, elem_size, elem_count):
+        def mask(width):
+            return 2 ** width - 1
+
+        for i in range(elem_count):
+            val = 0x81828384858687889192939495969798
+            sft = i * elem_size
+            res = (val >> sft) & mask(elem_size)
+            insn = f'{mnem} {dst}0, v1.{vess}[{i}]'
+
+            @itest_setregs(f'V1={val}')
+            @itest_custom(
+                # Disable traps first.
+                ['mrs x30, cpacr_el1',
+                 'orr x30, x30, #0x300000',
+                 'msr cpacr_el1, x30',
+                 insn
+                ],
+                multiple_insts=True
+            )
+            def f(self):
+                for i in range(4):
+                    self._execute(reset=i == 0)
+                assertEqual = lambda x, y: self.assertEqual(x, y, msg=insn)
+                assertEqual(self.rf.read('X0'), res & mask(64))
+                assertEqual(self.rf.read('W0'), res & mask(32))
+
+            self.setUp()
+            f(self)
+
+
+    def test_umov(self):
+        self._umov(mnem='umov', dst='w', vess='b', elem_size=8,  elem_count=16)
+        self._umov(mnem='umov', dst='w', vess='h', elem_size=16, elem_count=8)
+        self._umov(mnem='umov', dst='w', vess='s', elem_size=32, elem_count=4)
+        self._umov(mnem='umov', dst='x', vess='d', elem_size=64, elem_count=2)
 
 
     # UMULH.
