@@ -9679,6 +9679,714 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('SP'), stack - 512)  # writeback
 
 
+    # STP (SIMD&FP).
+
+    # 32-bit.
+
+    @itest_setregs('S1=0x45464748', 'S2=0x41424344')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp s1, s2, [sp]'
+        ],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_base32(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('S1=0x45464748', 'S2=0x41424344')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp s1, s2, [sp, #8]'
+        ],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_base_offset32(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('S1=0x45464748', 'S2=0x41424344')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp s1, s2, [sp, #252]'
+        ],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_base_offset_max32(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.STACK -= 252
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack + 252), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('S1=0x45464748', 'S2=0x41424344')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp s1, s2, [sp, #-256]'
+        ],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_base_offset_min32(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.STACK += 256
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack - 256), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('S1=0x45464748', 'S2=0x41424344')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp s1, s2, [sp], #8'
+        ],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_post_indexed32(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack + 8)  # writeback
+
+    @itest_setregs('S1=0x45464748', 'S2=0x41424344')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp s1, s2, [sp], #252'
+        ],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_post_indexed_max32(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack + 252)  # writeback
+
+    @itest_setregs('S1=0x45464748', 'S2=0x41424344')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp s1, s2, [sp], #-256'
+        ],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_post_indexed_min32(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack - 256)  # writeback
+
+    @itest_setregs('S1=0x45464748', 'S2=0x41424344')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp s1, s2, [sp, #8]!'
+        ],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_pre_indexed32(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack + 8)  # writeback
+
+    @itest_setregs('S1=0x45464748', 'S2=0x41424344')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp s1, s2, [sp, #252]!'
+        ],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_pre_indexed_max32(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.STACK -= 252
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack + 252), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack + 252)  # writeback
+
+    @itest_setregs('S1=0x45464748', 'S2=0x41424344')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp s1, s2, [sp, #-256]!'
+        ],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_pre_indexed_min32(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.STACK += 256
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack - 256), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack - 256)  # writeback
+
+    # 64-bit.
+
+    @itest_setregs('D1=0x4142434445464748', 'D2=0x5152535455565758')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp d1, d2, [sp]'
+        ],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_base64(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack),     0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x5152535455565758)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('D1=0x4142434445464748', 'D2=0x5152535455565758')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp d1, d2, [sp, #8]'
+        ],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_base_offset64(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack + 8),     0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 8 + 8), 0x5152535455565758)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('D1=0x4142434445464748', 'D2=0x5152535455565758')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp d1, d2, [sp, #504]'
+        ],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_base_offset_max64(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.STACK -= 504
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack + 504),     0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 504 + 8), 0x5152535455565758)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('D1=0x4142434445464748', 'D2=0x5152535455565758')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp d1, d2, [sp, #-512]'
+        ],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_base_offset_min64(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.STACK += 512
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack - 512),     0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack - 512 + 8), 0x5152535455565758)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('D1=0x4142434445464748', 'D2=0x5152535455565758')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp d1, d2, [sp], #8'
+        ],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_post_indexed64(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack),     0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x5152535455565758)
+        self.assertEqual(self.rf.read('SP'), stack + 8)  # writeback
+
+    @itest_setregs('D1=0x4142434445464748', 'D2=0x5152535455565758')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp d1, d2, [sp], #504'
+        ],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_post_indexed_max64(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack),     0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x5152535455565758)
+        self.assertEqual(self.rf.read('SP'), stack + 504)  # writeback
+
+    @itest_setregs('D1=0x4142434445464748', 'D2=0x5152535455565758')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp d1, d2, [sp], #-512'
+        ],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_post_indexed_min64(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack),     0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x5152535455565758)
+        self.assertEqual(self.rf.read('SP'), stack - 512)  # writeback
+
+    @itest_setregs('D1=0x4142434445464748', 'D2=0x5152535455565758')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp d1, d2, [sp, #8]!'
+        ],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_pre_indexed64(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack + 8),     0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 8 + 8), 0x5152535455565758)
+        self.assertEqual(self.rf.read('SP'), stack + 8)  # writeback
+
+    @itest_setregs('D1=0x4142434445464748', 'D2=0x5152535455565758')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp d1, d2, [sp, #504]!'
+        ],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_pre_indexed_max64(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.STACK -= 504
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack + 504),     0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 504 + 8), 0x5152535455565758)
+        self.assertEqual(self.rf.read('SP'), stack + 504)  # writeback
+
+    @itest_setregs('D1=0x4142434445464748', 'D2=0x5152535455565758')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp d1, d2, [sp, #-512]!'
+        ],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_pre_indexed_min64(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.STACK += 512
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack - 512),     0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack - 512 + 8), 0x5152535455565758)
+        self.assertEqual(self.rf.read('SP'), stack - 512)  # writeback
+
+    # 128-bit.
+
+    @itest_setregs(
+        'Q1=0x41424344454647485152535455565758',
+        'Q2=0x61626364656667687172737475767778'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp q1, q2, [sp]'
+        ],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_base128(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack),      0x5152535455565758)
+        self.assertEqual(self.cpu.read_int(stack + 8),  0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 16), 0x7172737475767778)
+        self.assertEqual(self.cpu.read_int(stack + 24), 0x6162636465666768)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs(
+        'Q1=0x41424344454647485152535455565758',
+        'Q2=0x61626364656667687172737475767778'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp q1, q2, [sp, #16]'
+        ],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_base_offset128(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack + 16),      0x5152535455565758)
+        self.assertEqual(self.cpu.read_int(stack + 16 + 8),  0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 16 + 16), 0x7172737475767778)
+        self.assertEqual(self.cpu.read_int(stack + 16 + 24), 0x6162636465666768)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs(
+        'Q1=0x41424344454647485152535455565758',
+        'Q2=0x61626364656667687172737475767778'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp q1, q2, [sp, #1008]'
+        ],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_base_offset_max128(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.STACK -= 1008
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack + 1008),      0x5152535455565758)
+        self.assertEqual(self.cpu.read_int(stack + 1008 + 8),  0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 1008 + 16), 0x7172737475767778)
+        self.assertEqual(self.cpu.read_int(stack + 1008 + 24), 0x6162636465666768)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs(
+        'Q1=0x41424344454647485152535455565758',
+        'Q2=0x61626364656667687172737475767778'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp q1, q2, [sp, #-1024]'
+        ],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_base_offset_min128(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.STACK += 1024
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack - 1024),      0x5152535455565758)
+        self.assertEqual(self.cpu.read_int(stack - 1024 + 8),  0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack - 1024 + 16), 0x7172737475767778)
+        self.assertEqual(self.cpu.read_int(stack - 1024 + 24), 0x6162636465666768)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs(
+        'Q1=0x41424344454647485152535455565758',
+        'Q2=0x61626364656667687172737475767778'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp q1, q2, [sp], #16'
+        ],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_post_indexed128(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack),      0x5152535455565758)
+        self.assertEqual(self.cpu.read_int(stack + 8),  0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 16), 0x7172737475767778)
+        self.assertEqual(self.cpu.read_int(stack + 24), 0x6162636465666768)
+        self.assertEqual(self.rf.read('SP'), stack + 16)  # writeback
+
+    @itest_setregs(
+        'Q1=0x41424344454647485152535455565758',
+        'Q2=0x61626364656667687172737475767778'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp q1, q2, [sp], #1008'
+        ],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_post_indexed_max128(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack),      0x5152535455565758)
+        self.assertEqual(self.cpu.read_int(stack + 8),  0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 16), 0x7172737475767778)
+        self.assertEqual(self.cpu.read_int(stack + 24), 0x6162636465666768)
+        self.assertEqual(self.rf.read('SP'), stack + 1008)  # writeback
+
+    @itest_setregs(
+        'Q1=0x41424344454647485152535455565758',
+        'Q2=0x61626364656667687172737475767778'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp q1, q2, [sp], #-1024'
+        ],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_post_indexed_min128(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack),      0x5152535455565758)
+        self.assertEqual(self.cpu.read_int(stack + 8),  0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 16), 0x7172737475767778)
+        self.assertEqual(self.cpu.read_int(stack + 24), 0x6162636465666768)
+        self.assertEqual(self.rf.read('SP'), stack - 1024)  # writeback
+
+    @itest_setregs(
+        'Q1=0x41424344454647485152535455565758',
+        'Q2=0x61626364656667687172737475767778'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp q1, q2, [sp, #16]!'
+        ],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_pre_indexed128(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack + 16),      0x5152535455565758)
+        self.assertEqual(self.cpu.read_int(stack + 16 + 8),  0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 16 + 16), 0x7172737475767778)
+        self.assertEqual(self.cpu.read_int(stack + 16 + 24), 0x6162636465666768)
+        self.assertEqual(self.rf.read('SP'), stack + 16)  # writeback
+
+    @itest_setregs(
+        'Q1=0x41424344454647485152535455565758',
+        'Q2=0x61626364656667687172737475767778'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp q1, q2, [sp, #1008]!'
+        ],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_pre_indexed_max128(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.STACK -= 1008
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack + 1008),      0x5152535455565758)
+        self.assertEqual(self.cpu.read_int(stack + 1008 + 8),  0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 1008 + 16), 0x7172737475767778)
+        self.assertEqual(self.cpu.read_int(stack + 1008 + 24), 0x6162636465666768)
+        self.assertEqual(self.rf.read('SP'), stack + 1008)  # writeback
+
+    @itest_setregs(
+        'Q1=0x41424344454647485152535455565758',
+        'Q2=0x61626364656667687172737475767778'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp q1, q2, [sp, #-1024]!'
+        ],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_pre_indexed_min128(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.STACK += 1024
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack - 1024),      0x5152535455565758)
+        self.assertEqual(self.cpu.read_int(stack - 1024 + 8),  0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack - 1024 + 16), 0x7172737475767778)
+        self.assertEqual(self.cpu.read_int(stack - 1024 + 24), 0x6162636465666768)
+        self.assertEqual(self.rf.read('SP'), stack - 1024)  # writeback
+
+
     # STR (immediate).
 
     # str w1, [x27]          base register (opt. offset omitted):  [x27]     = w1

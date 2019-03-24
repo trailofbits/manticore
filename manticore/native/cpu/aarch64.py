@@ -810,9 +810,9 @@ class Aarch64Cpu(Cpu):
         assert mem_op.type is cs.arm64.ARM64_OP_MEM
         assert not mimm_op or mimm_op.type is cs.arm64.ARM64_OP_IMM
 
-        post_index_rx  = '[01]0'    # opc
+        post_index_rx  = '[01]{2}'  # opc
         post_index_rx += '101'
-        post_index_rx += '0'
+        post_index_rx += '[01]'
         post_index_rx += '001'
         if ldp:
             post_index_rx += '1'    # L
@@ -823,9 +823,9 @@ class Aarch64Cpu(Cpu):
         post_index_rx += '[01]{5}'  # Rn
         post_index_rx += '[01]{5}'  # Rt
 
-        pre_index_rx  = '[01]0'    # opc
+        pre_index_rx  = '[01]{2}'  # opc
         pre_index_rx += '101'
-        pre_index_rx += '0'
+        pre_index_rx += '[01]'
         pre_index_rx += '011'
         if ldp:
             pre_index_rx += '1'    # L
@@ -836,9 +836,9 @@ class Aarch64Cpu(Cpu):
         pre_index_rx += '[01]{5}'  # Rn
         pre_index_rx += '[01]{5}'  # Rt
 
-        signed_offset_rx  = '[01]0'    # opc
+        signed_offset_rx  = '[01]{2}'  # opc
         signed_offset_rx += '101'
-        signed_offset_rx += '0'
+        signed_offset_rx += '[01]'
         signed_offset_rx += '010'
         if ldp:
             signed_offset_rx += '1'    # L
@@ -854,6 +854,8 @@ class Aarch64Cpu(Cpu):
             re.match(pre_index_rx, cpu.insn_bit_str) or
             re.match(signed_offset_rx, cpu.insn_bit_str)
         )
+
+        # XXX: SIMD&FP: check if trapped.
 
         base = cpu.regfile.read(mem_op.mem.base)
         imm = mem_op.mem.disp
@@ -4052,7 +4054,6 @@ class Aarch64Cpu(Cpu):
         # method.
         cpu.SBFM.__wrapped__(cpu, res_op, reg_op, lsb_op, width_op)
 
-    # XXX: Support STP (SIMD&FP).
     @instruction
     def STP(cpu, reg_op1, reg_op2, mem_op, mimm_op=None):
         """
