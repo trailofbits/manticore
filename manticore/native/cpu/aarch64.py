@@ -2765,6 +2765,75 @@ class Aarch64Cpu(Cpu):
 
         res_op.write(UInt(result, res_op.size))
 
+    # XXX: Support DUP (element).
+    @instruction
+    def DUP(cpu, res_op, reg_op):
+        """
+        DUP (general).
+
+        :param res_op: destination register.
+        :param reg_op: source register.
+        """
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+
+        insn_rx  = '0'
+        insn_rx += '[01]'      # Q
+        insn_rx += '0'
+        insn_rx += '01110000'
+        insn_rx += '[01]{5}'   # imm5
+        insn_rx += '0'
+        insn_rx += '0001'
+        insn_rx += '1'
+        insn_rx += '[01]{5}'   # Rn
+        insn_rx += '[01]{5}'   # Rd
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        # XXX: Check if trapped.
+
+        reg = reg_op.read()
+        vas = res_op.op.vas
+
+        if vas == cs.arm64.ARM64_VAS_8B:
+            elem_size = 8
+            elem_count = 8
+
+        elif vas == cs.arm64.ARM64_VAS_16B:
+            elem_size = 8
+            elem_count = 16
+
+        elif vas == cs.arm64.ARM64_VAS_4H:
+            elem_size = 16
+            elem_count = 4
+
+        elif vas == cs.arm64.ARM64_VAS_8H:
+            elem_size = 16
+            elem_count = 8
+
+        elif vas == cs.arm64.ARM64_VAS_2S:
+            elem_size = 32
+            elem_count = 2
+
+        elif vas == cs.arm64.ARM64_VAS_4S:
+            elem_size = 32
+            elem_count = 4
+
+        elif vas == cs.arm64.ARM64_VAS_2D:
+            elem_size = 64
+            elem_count = 2
+
+        else:
+            raise Aarch64InvalidInstruction
+
+        reg = Operators.EXTRACT(reg, 0, elem_size)
+        result = 0
+        for i in range(elem_count):
+            result |= reg << (i * elem_size)
+
+        result = UInt(result, res_op.size)
+        res_op.write(result)
+
     # XXX: Support EOR (immediate) and EOR (vector).
     @instruction
     def EOR(cpu, res_op, reg_op1, reg_op2):

@@ -6218,6 +6218,165 @@ class Aarch64Instructions:
                 csinv_false64(self)
 
 
+    # DUP (general).
+
+    # XXX: Uses 'reset'.
+
+    # 8b.
+
+    @itest_setregs('X1=0x9192939495969798')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'dup v0.8b, w1'
+        ],
+        multiple_insts=True
+    )
+    def test_dup_gen_8b(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0x9898989898989898)
+        self.assertEqual(self.rf.read('Q0'), 0x9898989898989898)
+        self.assertEqual(self.rf.read('D0'), 0x9898989898989898)
+        self.assertEqual(self.rf.read('S0'), 0x98989898)
+        self.assertEqual(self.rf.read('H0'), 0x9898)
+        self.assertEqual(self.rf.read('B0'), 0x98)
+
+    # 16b.
+
+    @itest_setregs('X1=0x9192939495969798')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'dup v0.16b, w1'
+        ],
+        multiple_insts=True
+    )
+    def test_dup_gen_16b(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0x98989898989898989898989898989898)
+        self.assertEqual(self.rf.read('Q0'), 0x98989898989898989898989898989898)
+        self.assertEqual(self.rf.read('D0'), 0x9898989898989898)
+        self.assertEqual(self.rf.read('S0'), 0x98989898)
+        self.assertEqual(self.rf.read('H0'), 0x9898)
+        self.assertEqual(self.rf.read('B0'), 0x98)
+
+    # 4h.
+
+    @itest_setregs('X1=0x9192939495969798')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'dup v0.4h, w1'
+        ],
+        multiple_insts=True
+    )
+    def test_dup_gen_4h(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0x9798979897989798)
+        self.assertEqual(self.rf.read('Q0'), 0x9798979897989798)
+        self.assertEqual(self.rf.read('D0'), 0x9798979897989798)
+        self.assertEqual(self.rf.read('S0'), 0x97989798)
+        self.assertEqual(self.rf.read('H0'), 0x9798)
+        self.assertEqual(self.rf.read('B0'), 0x98)
+
+    # 8h.
+
+    @itest_setregs('X1=0x9192939495969798')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'dup v0.8h, w1'
+        ],
+        multiple_insts=True
+    )
+    def test_dup_gen_8h(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0x97989798979897989798979897989798)
+        self.assertEqual(self.rf.read('Q0'), 0x97989798979897989798979897989798)
+        self.assertEqual(self.rf.read('D0'), 0x9798979897989798)
+        self.assertEqual(self.rf.read('S0'), 0x97989798)
+        self.assertEqual(self.rf.read('H0'), 0x9798)
+        self.assertEqual(self.rf.read('B0'), 0x98)
+
+    # 2s.
+
+    @itest_setregs('X1=0x9192939495969798')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'dup v0.2s, w1'
+        ],
+        multiple_insts=True
+    )
+    def test_dup_gen_2s(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0x9596979895969798)
+        self.assertEqual(self.rf.read('Q0'), 0x9596979895969798)
+        self.assertEqual(self.rf.read('D0'), 0x9596979895969798)
+        self.assertEqual(self.rf.read('S0'), 0x95969798)
+        self.assertEqual(self.rf.read('H0'), 0x9798)
+        self.assertEqual(self.rf.read('B0'), 0x98)
+
+    # 4s.
+
+    @itest_setregs('X1=0x9192939495969798')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'dup v0.4s, w1'
+        ],
+        multiple_insts=True
+    )
+    def test_dup_gen_4s(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0x95969798959697989596979895969798)
+        self.assertEqual(self.rf.read('Q0'), 0x95969798959697989596979895969798)
+        self.assertEqual(self.rf.read('D0'), 0x9596979895969798)
+        self.assertEqual(self.rf.read('S0'), 0x95969798)
+        self.assertEqual(self.rf.read('H0'), 0x9798)
+        self.assertEqual(self.rf.read('B0'), 0x98)
+
+    # 2d.
+
+    @itest_setregs('X1=0x9192939495969798')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'dup v0.2d, x1'
+        ],
+        multiple_insts=True
+    )
+    def test_dup_gen_2d(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0x91929394959697989192939495969798)
+        self.assertEqual(self.rf.read('Q0'), 0x91929394959697989192939495969798)
+        self.assertEqual(self.rf.read('D0'), 0x9192939495969798)
+        self.assertEqual(self.rf.read('S0'), 0x95969798)
+        self.assertEqual(self.rf.read('H0'), 0x9798)
+        self.assertEqual(self.rf.read('B0'), 0x98)
+
+
     # EOR (shifted register).
 
     # 32-bit.
