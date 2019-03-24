@@ -561,10 +561,16 @@ class Aarch64Cpu(Cpu):
             elem_size = 32
             elem_count = 4
 
-        elif (vas == cs.arm64.ARM64_VAS_2D or
-              vas == cs.arm64.ARM64_VAS_INVALID):  # scalar
+        elif vas == cs.arm64.ARM64_VAS_2D:
             elem_size = 64
             elem_count = 2
+
+        elif vas == cs.arm64.ARM64_VAS_INVALID:  # scalar
+            assert res_op.size == 64
+            assert reg_op1.size == 64
+            assert reg_op2.size == 64
+            elem_size = 64
+            elem_count = 1
 
         else:
             raise Aarch64InvalidInstruction

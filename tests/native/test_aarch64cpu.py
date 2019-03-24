@@ -763,8 +763,8 @@ class Aarch64Instructions:
     # XXX: Uses 'reset'.
 
     @itest_setregs(
-        'D1=0x4142434445464748',
-        'D2=0x5152535455565758'
+        'V1=0x41424344454647485152535455565758',
+        'V2=0x61626364656667687172737475767778'
     )
     @itest_custom(
         # Disable traps first.
@@ -778,16 +778,17 @@ class Aarch64Instructions:
     def test_add_scalar(self):
         for i in range(4):
             self._execute(reset=i == 0)
-        self.assertEqual(self.rf.read('V0'), 0x929496989a9c9ea0)
-        self.assertEqual(self.rf.read('Q0'), 0x929496989a9c9ea0)
-        self.assertEqual(self.rf.read('D0'), 0x929496989a9c9ea0)
-        self.assertEqual(self.rf.read('S0'), 0x9a9c9ea0)
-        self.assertEqual(self.rf.read('H0'), 0x9ea0)
-        self.assertEqual(self.rf.read('B0'), 0xa0)
+        self.assertEqual(self.rf.read('V0'), 0xc2c4c6c8caccced0)
+        self.assertEqual(self.rf.read('Q0'), 0xc2c4c6c8caccced0)
+        self.assertEqual(self.rf.read('D0'), 0xc2c4c6c8caccced0)
+        self.assertEqual(self.rf.read('S0'), 0xcaccced0)
+        self.assertEqual(self.rf.read('H0'), 0xced0)
+        self.assertEqual(self.rf.read('B0'), 0xd0)
+
 
     @itest_setregs(
-        'D1=0xffffffffffffffff',
-        'D2=0xffffffffffffffff'
+        'V1=0xffffffffffffffffffffffffffffffff',
+        'V2=0xffffffffffffffffffffffffffffffff'
     )
     @itest_custom(
         # Disable traps first.
@@ -10131,8 +10132,8 @@ class Aarch64Instructions:
     # XXX: Uses 'reset'.
 
     @itest_setregs(
-        'D1=0x4142434445464748',
-        'D2=0x5152535455565758'
+        'V1=0x41424344454647485152535455565758',
+        'V2=0x61626364656667687172737475767778'
     )
     @itest_custom(
         # Disable traps first.
@@ -10146,16 +10147,16 @@ class Aarch64Instructions:
     def test_sub_scalar(self):
         for i in range(4):
             self._execute(reset=i == 0)
-        self.assertEqual(self.rf.read('V0'), 0xefefefefefefeff0)
-        self.assertEqual(self.rf.read('Q0'), 0xefefefefefefeff0)
-        self.assertEqual(self.rf.read('D0'), 0xefefefefefefeff0)
-        self.assertEqual(self.rf.read('S0'), 0xefefeff0)
-        self.assertEqual(self.rf.read('H0'), 0xeff0)
-        self.assertEqual(self.rf.read('B0'), 0xf0)
+        self.assertEqual(self.rf.read('V0'), 0xdfdfdfdfdfdfdfe0)
+        self.assertEqual(self.rf.read('Q0'), 0xdfdfdfdfdfdfdfe0)
+        self.assertEqual(self.rf.read('D0'), 0xdfdfdfdfdfdfdfe0)
+        self.assertEqual(self.rf.read('S0'), 0xdfdfdfe0)
+        self.assertEqual(self.rf.read('H0'), 0xdfe0)
+        self.assertEqual(self.rf.read('B0'), 0xe0)
 
     @itest_setregs(
-        'D1=0xffffffffffffffff',
-        'D2=0xffffffffffffffff'
+        'V1=0xffffffffffffffffffffffffffffffff',
+        'V2=0xffffffffffffffffffffffffffffffff'
     )
     @itest_custom(
         # Disable traps first.
