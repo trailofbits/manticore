@@ -2580,9 +2580,8 @@ class EVMWorld(Platform):
 
         if failed:
             self._close_transaction('TXERROR', rollback=True)
-
         #Transaction to normal account
-        if sort in ('CALL', 'DELEGATECALL', 'CALLCODE') and not self.get_code(address):
+        elif sort in ('CALL', 'DELEGATECALL', 'CALLCODE') and not self.get_code(address):
             self._close_transaction('STOP')
             
     def dump(self, stream, state, mevm, message):
