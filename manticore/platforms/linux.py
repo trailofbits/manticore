@@ -321,6 +321,13 @@ class SocketDesc:
         self.socket_type = socket_type
         self.protocol = protocol
 
+    def close(self):
+        '''
+        Doesn't need to do anything for internal SocketDesc type;
+        fixes 'SocketDesc' has no attribute 'close' error.
+        '''
+        pass
+
 
 class Socket:
     def stat(self):
@@ -1539,11 +1546,11 @@ class Linux(Platform):
 
         return ret
 
-    def sys_getpid(self, v):
+    def sys_getpid(self):
         logger.debug("GETPID, warning pid modeled as concrete 1000")
         return 1000
 
-    def sys_gettid(self, v):
+    def sys_gettid(self):
         logger.debug("GETTID, warning tid modeled as concrete 1000")
         return 1000
 
@@ -1558,7 +1565,7 @@ class Linux(Platform):
         logger.warning(f"KILL, Ignoring Sending signal {sig} to pid {pid}")
         return 0
 
-    def sys_rt_sigaction(self, signum, act, oldact):
+    def sys_rt_sigaction(self, signum, act, oldact, _sigsetsize):
         """Wrapper for sys_sigaction"""
         return self.sys_sigaction(signum, act, oldact)
 
@@ -1970,7 +1977,14 @@ class Linux(Platform):
     def sys_listen(self, sockfd, backlog):
         return self._is_sockfd(sockfd)
 
-    def sys_accept(self, sockfd, addr, addrlen, flags):
+    def sys_accept(self, sockfd, addr, addrlen):
+        '''
+        https://github.com/torvalds/linux/blob/63bdf4284c38a48af21745ceb148a087b190cd21/net/socket.c#L1649-L1653
+        '''
+        return self.sys_accept4(sockfd, addr, addrlen, 0)
+
+    def sys_accept4(self, sockfd, addr, addrlen, flags):
+        # TODO: ehennenfent - Only handles the flags=0 (sys_accept) case
         ret = self._is_sockfd(sockfd)
         if ret != 0:
             return ret
@@ -2609,16 +2623,16 @@ class SLinux(Linux):
 
         return super().sys_recv(sockfd, buf, count, flags)
 
-    def sys_accept(self, sockfd, addr, addrlen, flags):
+    def sys_accept(self, sockfd, addr, addrlen):
         # TODO(yan): Transmit some symbolic bytes as soon as we start.
         # Remove this hack once no longer needed.
 
-        fd = super().sys_accept(sockfd, addr, addrlen, flags)
+        fd = super().sys_accept(sockfd, addr, addrlen)
         if fd < 0:
             return fd
         sock = self._get_fd(fd)
         nbytes = 32
-        symb = self.constraints.new_array(name='socket', index_max=nbytes)
+        symb = self.constraints.new_array(name=f'socket{fd}', index_max=nbytes)
         for i in range(nbytes):
             sock.buffer.append(symb[i])
         return fd
