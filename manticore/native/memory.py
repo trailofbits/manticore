@@ -1019,7 +1019,7 @@ class SMemory(Memory):
                 solutions = self._try_get_solutions(address, size, 'r', force=force)
                 assert len(solutions) > 0
             except TooManySolutions as e:
-                solver = Z3solver.instance()
+                solver = Z3Solver.instance()
                 m, M = solver.minmax(self.constraints, address)
                 logger.debug(f'Got TooManySolutions on a symbolic read. Range [{m:x}, {M:x}]. Not crashing!')
 
