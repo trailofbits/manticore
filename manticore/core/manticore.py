@@ -105,7 +105,7 @@ class Worker:
                     with m._lock:
                         # If not started and not killed it means we need to wait
                         while not m._started.value and not m._killed.value:
-                            logger.info("[%r] Standing by", self.id)
+                            logger.debug("[%r] Standing by", self.id)
                             m._lock.wait()  # Wait until something changes
 
                     try:  # handle Concretize and TerminateState
@@ -121,14 +121,14 @@ class Worker:
                         # it while waiting for changes
                         # Raises an Exception if manticore gets cancelled
                         # while waiting or if there are no more potential states
-                        logger.info("[%r] Waiting for states", self.id)
+                        logger.debug("[%r] Waiting for states", self.id)
                         current_state = m._get_state(wait=True)
 
                         # there are no more states to process
                         # states can come from the ready list or by forking
                         # states currently being analyzed in the busy list
                         if current_state is None:
-                            logger.info("[%r] No more states", self.id)
+                            logger.debug("[%r] No more states", self.id)
                             if self.single:
                                 # at single it will run in place. No need to wait.
                                 break
@@ -138,7 +138,7 @@ class Worker:
                         # assert current_state is not None
                         # Allows to terminate manticore worker on user request
                         # even in the middle of an execution
-                        logger.info("[%r] Running", self.id)
+                        logger.debug("[%r] Running", self.id)
                         assert current_state.id in m._busy_states and current_state.id not in m._ready_states
 
                         # This does not hold the lock so we may loss some event
@@ -146,7 +146,7 @@ class Worker:
                         while m._started.value and not m._killed.value:
                             current_state.execute()
                         else:
-                            logger.info("[%r] Stopped and/or Killed", self.id)
+                            logger.debug("[%r] Stopped and/or Killed", self.id)
                             # On going execution was stopped or killed. Lets
                             # save any progress on the current state
                             m._save(current_state, state_id=current_state.id)
@@ -156,7 +156,7 @@ class Worker:
                         assert current_state is None
                     # Handling Forking and terminating exceptions
                     except Concretize as exc:
-                        logger.info("[%r] Debug %r", self.id, exc)
+                        logger.debug("[%r] Debug %r", self.id, exc)
                         # The fork() method can decides which state to keep
                         # exploring. For example when the fork results in a
                         # single state it is better to just keep going.
@@ -167,7 +167,7 @@ class Worker:
                         current_state = None
 
                     except TerminateState as exc:
-                        logger.info("[%r] Debug State %r %r", self.id, current_state, exc)
+                        logger.debug("[%r] Debug State %r %r", self.id, current_state, exc)
                         # Notify this state is done
                         m._publish('will_terminate_state', current_state, exc)
                         # Update the stored version of the current state
@@ -192,7 +192,7 @@ class Worker:
 
             # Getting out.
             # At KILLED
-            logger.info("[%r] Getting out of the mainloop %r %r", self.id, m._started.value, m._killed.value)
+            logger.debug("[%r] Getting out of the mainloop %r %r", self.id, m._started.value, m._killed.value)
             m._publish("did_terminate_worker", self.id)
 
 class WorkerSingle(Worker):
@@ -509,7 +509,7 @@ class ManticoreBase(Eventful):
         if not solutions:
             raise ManticoreError("Forking on unfeasible constraint set")
 
-        logger.info("Forking. Policy: %s. Values: %s",
+        logger.debug("Forking. Policy: %s. Values: %s",
                     policy,
                     ', '.join(f'0x{sol:x}' for sol in solutions))
 
@@ -540,7 +540,7 @@ class ManticoreBase(Eventful):
             self._remove(state.id)
             self._lock.notify_all()
 
-        logger.info("Forking current state %r into states %r", state.id, children)
+        logger.debug("Forking current state %r into states %r", state.id, children)
 
     @staticmethod
     def verbosity(level):
