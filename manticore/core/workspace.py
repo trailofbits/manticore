@@ -327,6 +327,17 @@ class MemoryStore(Store):
         with self._lock:
             yield
 
+    @contextmanager
+    def stream(self, key, mode='r', lock=False):
+        if lock:
+            raise Exception("mem: does not support concurrency")
+        if 'b' in mode:
+            s = io.BytesIO(self._data.get(key, b''))
+        else:
+            s = io.StringIO(self._data.get(key,''))
+        yield s
+        self._data[key] = s.getvalue()
+
 
 class RedisStore(Store):
     """
@@ -518,7 +529,7 @@ class ManticoreOutput:
             try:
                 with self._store.stream(filename, "r") as f:
                     last_id = int(f.read())
-            except FileNotFoundError as e:
+            except Exception as e:
                 last_id = 0
             else:
                 last_id += 1
