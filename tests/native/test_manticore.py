@@ -21,6 +21,8 @@ class ManticoreTest(unittest.TestCase):
         self.m.register_plugin(p)
         self.m.run()
         profile_path = os.path.join(self.m.workspace, 'profiling.bin')
+        with open(profile_path, 'wb') as f:
+            p.save_profiling_data(f)
         self.assertTrue(os.path.exists(profile_path))
         self.assertTrue(os.path.getsize(profile_path) > 0)
 

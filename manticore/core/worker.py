@@ -140,6 +140,8 @@ class Worker:
                         current_state = None
 
                     except TerminateState as exc:
+                        import traceback
+                        traceback.print_exc()
                         logger.debug("[%r] Debug State %r %r", self.id, current_state, exc)
                         # Notify this state is done
                         m._publish('will_terminate_state', current_state, exc)
