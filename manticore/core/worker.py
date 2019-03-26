@@ -152,7 +152,6 @@ class Worker:
 
                 except (Exception, AssertionError) as exc:
                     logger.error("[%r] Exception %r. Current State %r", self.id, exc, current_state)
-                    import traceback; traceback.print_exc()
                     # Internal Exception
                     # Add the state to the terminated state list
                     if current_state is not None:
@@ -167,6 +166,7 @@ class Worker:
             # At KILLED
             logger.debug("[%r] Getting out of the mainloop %r %r", self.id, m._started.value, m._killed.value)
             m._publish("did_terminate_worker", self.id)
+
 
 class WorkerSingle(Worker):
     """ A single worker that will run in the current process and current thread.

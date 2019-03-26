@@ -334,7 +334,7 @@ class MemoryStore(Store):
         if 'b' in mode:
             s = io.BytesIO(self._data.get(key, b''))
         else:
-            s = io.StringIO(self._data.get(key,''))
+            s = io.StringIO(self._data.get(key, ''))
         yield s
         self._data[key] = s.getvalue()
 
@@ -417,7 +417,6 @@ class Workspace:
 
         if not state_ids:
             return []
-
 
         return state_ids
 
@@ -616,6 +615,7 @@ class ManticoreOutput:
                     summary.write(f"  Instruction: 0x{i.address:x}\t{i.mnemonic:s} {i.op_str:s})\n")
                 else:
                     summary.write("  Instruction: {symbolic}\n")
+
     @staticmethod
     def save_trace(testcase, state):
         with testcase.open_stream('trace') as f:

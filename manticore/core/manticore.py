@@ -21,7 +21,7 @@ from ..utils.event import Eventful
 from ..utils.helpers import PickleSerializer
 from ..utils.nointerrupt import WithKeyboardInterruptAs
 from .workspace import Workspace
-from .worker import  WorkerSingle, WorkerThread, WorkerProcess
+from .worker import WorkerSingle, WorkerThread, WorkerProcess
 
 from multiprocessing.managers import SyncManager
 import threading
@@ -36,6 +36,7 @@ consts.add('cluster', default=False, description='If True enables to run workers
 consts.add('profile', default=False, description='Enable worker profiling mode')
 consts.add('procs', default=10, description='Number of parallel processes to spawn')
 consts.add('mprocessing', default='single', description='single: No multiprocessing at all. Single process.\n')
+
 
 def set_verbosity(level):
     """Convenience interface for setting logging verbosity to one of
@@ -113,7 +114,7 @@ class ManticoreBase(Eventful):
 
         return newFunction
 
-    _published_events = {'run', 'start_worker','terminate_worker', 'generate_testcase', 'enqueue_state', 'fork_state', 'load_state',
+    _published_events = {'run', 'start_worker', 'terminate_worker', 'generate_testcase', 'enqueue_state', 'fork_state', 'load_state',
                          'terminate_state', 'execute_instruction'}
 
     def __init__(self, initial_state, workspace_url=None, policy='random', **kwargs):
@@ -311,9 +312,8 @@ class ManticoreBase(Eventful):
         if not solutions:
             raise ManticoreError("Forking on unfeasible constraint set")
 
-        logger.debug("Forking. Policy: %s. Values: %s",
-                    policy,
-                    ', '.join(f'0x{sol:x}' for sol in solutions))
+        logger.debug("Forking. Policy: %s. Values: %s", policy,
+                     ', '.join(f'0x{sol:x}' for sol in solutions))
 
         self._publish('will_fork_state', state, expression, solutions, policy)
 
@@ -845,7 +845,8 @@ class ManticoreBase(Eventful):
     def __del__(self):
         try:
             self.remove_all()
-        except:
+        except Exception as e:
+            # ignoring exceptions at __del__
             pass
 
     def finalize(self):

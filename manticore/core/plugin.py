@@ -1,5 +1,8 @@
 import logging
 from contextlib import contextmanager
+import cProfile
+import pstats
+import threading
 
 from ..utils.helpers import issymbolic
 
@@ -240,9 +243,10 @@ class Visited(Plugin):
                     f.write(f"0x{m:016x}\n")
         logger.info('Coverage: %d different instructions executed', len(executor_visited))
 
-import cProfile,pstats,threading
+
 class Profiler(Plugin):
     data = threading.local()
+
     def will_start_worker_callback(self, id):
         self.data.profile = cProfile.Profile()
         self.data.profile.enable()
