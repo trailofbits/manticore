@@ -21,9 +21,8 @@ from ..utils.event import Eventful
 from ..utils.helpers import PickleSerializer
 from ..utils.nointerrupt import WithKeyboardInterruptAs
 from .workspace import Workspace
-from .state import Concretize, TerminateState
+from .worker import  WorkerSingle, WorkerThread, WorkerProcess
 
-import multiprocessing
 from multiprocessing.managers import SyncManager
 import threading
 import ctypes
@@ -37,203 +36,6 @@ consts.add('cluster', default=False, description='If True enables to run workers
 consts.add('profile', default=False, description='Enable worker profiling mode')
 consts.add('procs', default=10, description='Number of parallel processes to spawn')
 consts.add('mprocessing', default='single', description='single: No multiprocessing at all. Single process.\n')
-
-# Workers
-# There are 4 types of Workers
-# WorkerSingle: run over main process and will not provide any concurrency
-# WorkerThread: runs on a different thread
-# WorkerProcess: runs on a different process - Full multiprocessing
-
-
-class Worker:
-    """
-        A Manticore Worker.
-        This will run forever potentially in a different process. Normally it
-        will be spawned at Manticore constructor and will stay alive until killed.
-        A Worker can be in 3 phases: STANDBY, RUNNING, KILLED. And will react to
-        different events: start, stop, kill.
-        The events are transmitted via 2 conditional variable: m._killed and
-        m._started.
-
-            STANDBY:   Waiting for the start event
-            RUNNING:   Exploring and spawning states until no more READY states or
-                       the cancel event is received
-            KIlLED:    This is the end. No more manticoring in this worker process
-
-                         +---------+     +---------+
-                    +--->+ STANDBY +<--->+ RUNNING |
-                         +-+-------+     +-------+-+
-                           |                     |
-                           |      +--------+     |
-                           +----->+ KILLED <-----+
-                                  +----+---+
-                                       |
-                                       #
-    """
-
-    def __init__(self, *, id, manticore, single=False):
-        self.manticore = manticore
-        self.id = id
-        self.single = single
-
-    def start(self):
-        raise NotImplementedError
-
-    def join(self):
-        raise NotImplementedError
-
-    def run(self, *args):
-        # This controls the main symbolic execution loop of one of the workers
-        logger.debug("Starting Manticore Symbolic Emulator Worker %d. Pid %d Tid %d).", self.id, os.getpid(), threading.get_ident())
-
-        m = self.manticore
-        current_state = None
-        m._publish("will_start_worker", self.id)
-
-        # If CTRL+C is received at any worker lets abort exploration via m.kill()
-        # kill will set m._killed flag to true and then each worker will slowly
-        # get out of its mainloop and quit.
-        with WithKeyboardInterruptAs(m.kill):
-
-            # The worker runs until the manticore is killed
-            while not m._killed.value:
-
-                # STARTED - Will try to consume states until a STOP event is received
-                # Outer loop, Keep getting states until someone request us to STOP
-                try:  # handle fatal errors even exceptions in the exception handlers
-                    # If at STANDBY wait for any change
-                    with m._lock:
-                        # If not started and not killed it means we need to wait
-                        while not m._started.value and not m._killed.value:
-                            logger.debug("[%r] Standing by", self.id)
-                            m._lock.wait()  # Wait until something changes
-
-                    try:  # handle Concretize and TerminateState
-
-                        # At RUNNING
-                        # The START has been requested, we operate with under the assumption
-                        # that manticore we will let us stay at this phase for a _while_
-                        # Requests to STOP will we honored ASAP (i.e. Not immediately)
-
-                        # Select a single state
-                        # wait for other worker to add states to the READY list
-                        # This momentarily get the main lock and then releases
-                        # it while waiting for changes
-                        # Raises an Exception if manticore gets cancelled
-                        # while waiting or if there are no more potential states
-                        logger.debug("[%r] Waiting for states", self.id)
-                        current_state = m._get_state(wait=True)
-
-                        # there are no more states to process
-                        # states can come from the ready list or by forking
-                        # states currently being analyzed in the busy list
-                        if current_state is None:
-                            logger.debug("[%r] No more states", self.id)
-                            if self.single:
-                                # at single it will run in place. No need to wait.
-                                break
-                            else:
-                                continue
-
-                        # assert current_state is not None
-                        # Allows to terminate manticore worker on user request
-                        # even in the middle of an execution
-                        logger.debug("[%r] Running", self.id)
-                        assert current_state.id in m._busy_states and current_state.id not in m._ready_states
-
-                        # This does not hold the lock so we may loss some event
-                        # flickering
-                        while m._started.value and not m._killed.value:
-                            current_state.execute()
-                        else:
-                            logger.debug("[%r] Stopped and/or Killed", self.id)
-                            # On going execution was stopped or killed. Lets
-                            # save any progress on the current state
-                            m._save(current_state, state_id=current_state.id)
-                            m._revive(current_state.id)
-                            current_state = None
-
-                        assert current_state is None
-                    # Handling Forking and terminating exceptions
-                    except Concretize as exc:
-                        logger.debug("[%r] Debug %r", self.id, exc)
-                        # The fork() method can decides which state to keep
-                        # exploring. For example when the fork results in a
-                        # single state it is better to just keep going.
-                        # Though, normally fork() saves the spawned childs,
-                        # returns a None and let _get_state choose what to explore
-                        # next
-                        m._fork(current_state, exc.expression, exc.policy, exc.setstate)
-                        current_state = None
-
-                    except TerminateState as exc:
-                        logger.debug("[%r] Debug State %r %r", self.id, current_state, exc)
-                        # Notify this state is done
-                        m._publish('will_terminate_state', current_state, exc)
-                        # Update the stored version of the current state
-                        m._save(current_state, state_id=current_state.id)
-                        # Add the state to the terminated state list
-                        m._terminate(current_state.id)
-                        m._publish('did_terminate_state', current_state, exc)
-                        current_state = None
-
-                except (Exception, AssertionError) as exc:
-                    logger.error("[%r] Exception %r. Current State %r", self.id, exc, current_state)
-                    import traceback; traceback.print_exc()
-                    # Internal Exception
-                    # Add the state to the terminated state list
-                    if current_state is not None:
-                        # Drop any work on this state in case it is inconsistent
-                        with m._lock:
-                            m._busy_states.remove(current_state.id)
-                            m._killed_states.append(current_state.id)
-                        current_state = None
-                    break
-
-            # Getting out.
-            # At KILLED
-            logger.debug("[%r] Getting out of the mainloop %r %r", self.id, m._started.value, m._killed.value)
-            m._publish("did_terminate_worker", self.id)
-
-class WorkerSingle(Worker):
-    """ A single worker that will run in the current process and current thread.
-        As this will not provide any concurrency is normally only used for
-        profiling underlying arch emulation and debugging."""
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, single=True, **kwargs)
-
-    def start(self):
-        pass
-
-    def join(self):
-        pass
-
-
-class WorkerThread(Worker):
-    """ A worker thread """
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._t = threading.Thread(target=self.run)
-
-    def start(self):
-        self._t.start()
-
-    def join(self):
-        self._t.join()
-
-
-class WorkerProcess(Worker):
-    """ A worker process """
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._p = multiprocessing.Process(target=self.run)
-
-    def start(self):
-        self._p.start()
-
-    def join(self):
-        self._p.join()
-
 
 def set_verbosity(level):
     """Convenience interface for setting logging verbosity to one of
@@ -437,13 +239,13 @@ class ManticoreBase(Eventful):
         """
         super().__init__()
 
-        # FIXME better Metaprogramming?
         if any(not hasattr(self, x) for x in ('_worker_type', '_lock', '_started', '_killed', '_ready_states', '_terminated_states', '_killed_states', '_busy_states', '_shared_context')):
             raise Exception('Need to instantiate one of: ManticoreNative, ManticoreThreads..')
 
-        # The workspace
-        # Manticore will use the workspace to save and share temporary states
-        # and it will save the final reports there (if any)
+        # The workspace and the output
+        # Manticore will use the workspace to save and share temporary states.
+        # Manticore will use the output to save the final reports.
+        # By default the output folder and the workspace folder are the same.
         # Check type, default to fs:
         if isinstance(workspace_url, str):
             if ':' not in workspace_url:
@@ -473,7 +275,7 @@ class ManticoreBase(Eventful):
         self._workers = [self._worker_type(id=i, manticore=self) for i in range(consts.procs)]
 
     def __str__(self):
-        return f"<{str(type(self))[8:-2]}| Alive States: {self.count_ready_states()}; Running States: {self.count_busy_states()} Terminated States: {self.count_terminated_states()} Killed States: {self.count_killed_states()}>"
+        return f"<{str(type(self))[8:-2]}| Alive States: {self.count_ready_states()}; Running States: {self.count_busy_states()} Terminated States: {self.count_terminated_states()} Killed States: {self.count_killed_states()} Started: {self._started.value} Killed: {self._killed.value}>"
 
     def _fork(self, state, expression, policy='ALL', setstate=None):
         '''
@@ -605,22 +407,24 @@ class ManticoreBase(Eventful):
     def _get_state(self, wait=False):
         """ Dequeue a state form the READY list and add it to the BUSY list """
         with self._lock:
+            assert self._started.value and not self._killed.value
             # If wait is true do the conditional wait for states
             if wait:
                 # if not more states in the queue, let's wait for some forks
-                while not self._ready_states:
+                while not self._ready_states and (self._started.value and not self._killed.value):
                     # if a shutdown has been requested then bail
-                    if self.is_killed():
+                    if self.is_killed() or self.is_standby():
                         return None  # Cancelled operation
                     # If there are no more READY states and no more BUSY states
                     # there is no chance we will get any new state so raise
                     if not self._busy_states:
-                        self.stop()  # A stopping point
                         return None  # There are not states
 
                     # if there ares actually some workers ready, wait for state forks
                     logger.debug("Waiting for available states")
                     self._lock.wait()
+                if not self._started.value or self._killed.value:
+                    return None
 
             # at this point we know there is at least one element
             # and we have exclusive access
@@ -630,6 +434,7 @@ class ManticoreBase(Eventful):
             # state_id = self._policy.choice(list(self._ready_states)[0])
             state_id = random.choice(list(self._ready_states))
 
+            assert self._started.value and not self._killed.value
             # Move from READY to BUSY
             self._ready_states.remove(state_id)
             self._busy_states.append(state_id)
@@ -982,7 +787,7 @@ class ManticoreBase(Eventful):
             timer.cancel()
 
     @at_standby
-    def run(self, timeout=None, should_profile=False):
+    def run(self, timeout=None):
         '''
         Runs analysis.
         :param timeout: Analysis timeout, in seconds
@@ -1002,7 +807,7 @@ class ManticoreBase(Eventful):
             assert not self._busy_states
             self.start()
             with self._lock:
-                while (self._started.value and not self._killed.value) or self._busy_states:
+                while (self._started.value and not self._killed.value and self._ready_states) or self._busy_states:
                     self._lock.wait()
                 # It has been killed or stopped
 
@@ -1030,16 +835,18 @@ class ManticoreBase(Eventful):
             Deletes all streams from storage and clean state lists
         '''
         for state_id in self._all_states:
-            # state_id -1 is always only on memory
             self._remove(state_id)
 
-        self._ready_states.clear()
-        self._busy_states.clear()
-        self._terminated_states.clear()
-        self._killed_states.clear()
+        del self._ready_states[:]
+        del self._busy_states[:]
+        del self._terminated_states[:]
+        del self._killed_states[:]
 
     def __del__(self):
-        self.remove_all()
+        try:
+            self.remove_all()
+        except:
+            pass
 
     def finalize(self):
         self.kill()

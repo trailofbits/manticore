@@ -532,6 +532,9 @@ class ManticoreEVM(ManticoreBase):
                 self.kill()
                 raise
 
+        for i in range(100):
+            assert not self.is_running()
+
         if not self.count_ready_states() or len(self.get_code(contract_account)) == 0:
             return None
         return contract_account
@@ -954,6 +957,9 @@ class ManticoreEVM(ManticoreBase):
 
         #If there are ready states still then it was a paused execution
         assert not self._ready_states
+        assert not self._busy_states
+        assert not self.is_running()
+
         # ManticoreEthereum decided at terminate_state_callback wich state is
         # ready for next run and saved them at the context item
         # 'ethereum.saved_states'
@@ -1008,7 +1014,7 @@ class ManticoreEVM(ManticoreBase):
             with state as temp_state:
                 if temp_state.can_be_true(not_known_hashes_cond):
                     temp_state.constrain(not_known_hashes_cond)
-                    state_id = self._executor._workspace.save_state(temp_state)
+                    state_id = self._workspace.save_state(temp_state)
                     sha3_states[state_id] = [hsh for buf, hsh in known_sha3]
             context['_sha3_states'] = sha3_states
 
@@ -1426,7 +1432,6 @@ class ManticoreEVM(ManticoreBase):
             This sums up all the visited code lines from any of the explored
             states.
         """
-        print("AAA")
         account_address = int(account)
         runtime_bytecode = None
         #Search one state in which the account_address exists
