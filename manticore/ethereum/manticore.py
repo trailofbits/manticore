@@ -253,7 +253,8 @@ class ManticoreEVM(ManticoreBase):
 
         if not working_dir:
             working_dir = os.getcwd()
-        elif relative_filepath.startswith(working_dir):
+
+        if relative_filepath.startswith(working_dir):
             relative_filepath = relative_filepath[len(working_dir) + 1:]
 
         # If someone pass an absolute path to the file, we don't have to put cwd
