@@ -64,4 +64,5 @@ exclude_patterns:
   - "tests/"
   - "mcore_*/"
   - ".tox/"
+  - "manticore/ethereum/parsetab.py"
 

@@ -88,31 +88,32 @@ class SolidityMetadata:
         # https://solidity.readthedocs.io/en/develop/miscellaneous.html#source-mappings
         new_srcmap = {}
         bytecode = self._without_metadata(bytecode)
+        if self.source_code and srcmap:
 
-        asm_offset = 0
-        asm_pos = 0
-        md = dict(enumerate(srcmap[asm_pos].split(':')))
-        byte_offset = int(md.get(0, 0))  # is the byte-offset to the start of the range in the source file
-        source_len = int(md.get(1, 0))  # is the length of the source range in bytes
-        file_index = int(md.get(2, 0))  # is the source index over sourceList
-        jump_type = md.get(3, None)  # this can be either i, o or - signifying whether a jump instruction goes into a function, returns from a function or is a regular jump as part of e.g. a loop
+            asm_offset = 0
+            asm_pos = 0
+            md = dict(enumerate(srcmap[asm_pos].split(':')))
+            byte_offset = int(md.get(0, 0))  # is the byte-offset to the start of the range in the source file
+            source_len = int(md.get(1, 0))  # is the length of the source range in bytes
+            file_index = int(md.get(2, 0))  # is the source index over sourceList
+            jump_type = md.get(3, None)  # this can be either i, o or - signifying whether a jump instruction goes into a function, returns from a function or is a regular jump as part of e.g. a loop
 
-        pos_to_offset = {}
-        for i in EVMAsm.disassemble_all(bytecode):
-            pos_to_offset[asm_pos] = asm_offset
-            asm_pos += 1
-            asm_offset += i.size
+            pos_to_offset = {}
+            for i in EVMAsm.disassemble_all(bytecode):
+                pos_to_offset[asm_pos] = asm_offset
+                asm_pos += 1
+                asm_offset += i.size
 
-        for asm_pos, md in enumerate(srcmap):
-            if len(md):
-                d = {p: k for p, k in enumerate(md.split(':')) if k}
+            for asm_pos, md in enumerate(srcmap):
+                if len(md):
+                    d = {p: k for p, k in enumerate(md.split(':')) if k}
 
-                byte_offset = int(d.get(0, byte_offset))
-                source_len = int(d.get(1, source_len))
-                file_index = int(d.get(2, file_index))
-                jump_type = d.get(3, jump_type)
+                    byte_offset = int(d.get(0, byte_offset))
+                    source_len = int(d.get(1, source_len))
+                    file_index = int(d.get(2, file_index))
+                    jump_type = d.get(3, jump_type)
 
-            new_srcmap[pos_to_offset[asm_pos]] = (byte_offset, source_len, file_index, jump_type)
+                new_srcmap[pos_to_offset[asm_pos]] = (byte_offset, source_len, file_index, jump_type)
 
         return new_srcmap
 
@@ -270,7 +271,7 @@ class SolidityMetadata:
         """
         selectors = self._function_signatures_by_selector.keys()
         if self._fallback_function_abi_item is None:
-            return selectors
+            return tuple(selectors)
         return (*selectors, self.fallback_function_selector)
 
     @property

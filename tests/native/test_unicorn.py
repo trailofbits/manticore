@@ -13,7 +13,7 @@ from manticore.core.smtlib import ConstraintSet
 from manticore.native.state import State
 from manticore.native.memory import ConcretizeMemory, Memory32
 from manticore.platforms import linux
-from manticore.utils.emulate import UnicornEmulator
+from manticore.utils.fallback_emulator import UnicornEmulator
 
 ks = Ks(KS_ARCH_ARM, KS_MODE_ARM)
 ks_thumb = Ks(KS_ARCH_ARM, KS_MODE_THUMB)

@@ -17,7 +17,7 @@ from manticore.core.smtlib.expression import BitVec
 from manticore.core.smtlib.visitors import to_constant
 from manticore.core.state import TerminateState
 from manticore.ethereum import ManticoreEVM, State, DetectExternalCallAndLeak, DetectIntegerOverflow, Detector, \
-    NoAliveStates, ABI, EthereumError
+    NoAliveStates, ABI, EthereumError, EVMContract
 from manticore.ethereum.plugins import FilterFunctions
 from manticore.ethereum.solidity import SolidityMetadata
 from manticore.platforms import evm
@@ -416,7 +416,7 @@ class EthTests(unittest.TestCase):
         shutil.rmtree(self.mevm.workspace)
         del self.mevm
 
-    def test_create_contract_no_args(self):
+    def test_solidity_create_contract_no_args(self):
         source_code = 'contract A { constructor() {} }'
         owner = self.mevm.create_account()
 
@@ -426,7 +426,37 @@ class EthTests(unittest.TestCase):
 
         self.assertNotEqual(contract1, contract2)
 
-    def test_create_contract_with_missing_args(self):
+    def test_solidity_create_contract_with_not_payable_constructor_and_balance(self):
+        source_code = 'contract A { constructor() {} }'
+        owner = self.mevm.create_account()
+
+        with self.assertRaises(EthereumError) as e:
+            self.mevm.solidity_create_contract(source_code, owner=owner, balance=1)
+
+        expected_exception = "Can't create solidity contract with balance (1) different " \
+                             "than 0 because the contract's constructor is not payable."
+        self.assertEqual(str(e.exception), expected_exception)
+
+    def test_solidity_create_contract_with_payable_constructor_and_balance_owner_insufficient_founds(self):
+        source_code = 'contract A { constructor() public payable {} }'
+        owner = self.mevm.create_account(balance=1)
+
+        with self.assertRaises(EthereumError) as e:
+            self.mevm.solidity_create_contract(source_code, owner=owner, balance=2)
+
+        expected_exception = f"Can't create solidity contract with balance (2) because " \
+                             f"the owner account ({owner}) has insufficient balance (1)."
+        self.assertEqual(str(e.exception), expected_exception)
+
+    def test_solidity_create_contract_with_payable_constructor(self):
+        source_code = 'contract A { constructor() public payable {} }'
+        owner = self.mevm.create_account(balance=1000)
+
+        contract = self.mevm.solidity_create_contract(source_code, owner=owner, balance=100)
+
+        self.assertIsInstance(contract, EVMContract)
+
+    def test_solidity_create_contract_with_missing_args(self):
         source_code = 'contract A { constructor(uint arg) {} }'
         owner = self.mevm.create_account()
 
@@ -531,6 +561,16 @@ class EthTests(unittest.TestCase):
         # That is that calling a selfdestructed contract works as the account
         # is actually deleted at the end of the human tx
         self.assertEqual(ABI.deserialize('uint', to_constant(self.mevm.world.transactions[-1].return_data)), 42)
+
+    def test_create_bytecode_contract(self):
+        account = self.mevm.create_account(code="0x00AAFF")
+        self.assertIsNotNone(account)
+
+        account = self.mevm.create_account(code=bytes("0x00AAFF","utf-8"))
+        self.assertIsNotNone(account)
+
+        with self.assertRaises(EthereumError) as ctx:
+            self.mevm.create_account(code=bytearray("0x00AAFF", "utf-8"))
 
     def test_states_querying_1325(self):
         """
@@ -1331,6 +1371,20 @@ class EthSolidityMetadataTests(unittest.TestCase):
                                  {'inputs': [], 'payable': False, 'stateMutability': 'nonpayable', 'type': 'constructor'})
 
 
+class TruffleTests(unittest.TestCase):
+
+    def test_truffle_contract_schema(self):
+        filename = os.path.join(THIS_DIR, 'data/MetaCoin.json')
+        with open(filename, 'rb') as f:
+            truffle_json = f.read()
+        m = ManticoreEVM()
+        user_account = m.create_account(balance=1000, name='user_account')
+        contract_account = m.json_create_contract(truffle_json, owner=user_account, name='contract_account')
+        md: SolidityMetadata = m.get_metadata(contract_account)
+        self.assertEqual(md.runtime_bytecode, b'```@Rc\xff\xff\xff\xff`\xe0`\x02\n`\x005\x04\x16c{\xd7\x03\xe8\x81\x14a\x007W\x80c\x90\xb9\x8a\x11\x14a\x00eW\x80c\xf8\xb2\xcbO\x14a\x00\x98W[\xfe[4\x15a\x00?W\xfe[a\x00S`\x01`\xa0`\x02\n\x03`\x045\x16a\x00\xc6V[`@\x80Q\x91\x82RQ\x90\x81\x90\x03` \x01\x90\xf3[4\x15a\x00mW\xfe[a\x00\x84`\x01`\xa0`\x02\n\x03`\x045\x16`$5a\x01MV[`@\x80Q\x91\x15\x15\x82RQ\x90\x81\x90\x03` \x01\x90\xf3[4\x15a\x00\xa0W\xfe[a\x00S`\x01`\xa0`\x02\n\x03`\x045\x16a\x01\xe5V[`@\x80Q\x91\x82RQ\x90\x81\x90\x03` \x01\x90\xf3[`\x00s{\xccc\xd4W\x90\xe2?n\x9b\xc3QN\x1a\xb5\xafd\x93\x02\xd0c\x96\xe4\xee=a\x00\xeb\x84a\x01\xe5V[`\x02`\x00`@Q` \x01R`@Q\x83c\xff\xff\xff\xff\x16`\xe0`\x02\n\x02\x81R`\x04\x01\x80\x83\x81R` \x01\x82\x81R` \x01\x92PPP` `@Q\x80\x83\x03\x81\x86\x80;\x15\x15a\x010W\xfe[a\x02\xc6Z\x03\xf4\x15\x15a\x01>W\xfe[PP`@QQ\x91PP[\x91\x90PV[`\x01`\xa0`\x02\n\x033\x16`\x00\x90\x81R` \x81\x90R`@\x81 T\x82\x90\x10\x15a\x01vWP`\x00a\x01\xdfV[`\x01`\xa0`\x02\n\x033\x81\x16`\x00\x81\x81R` \x81\x81R`@\x80\x83 \x80T\x88\x90\x03\x90U\x93\x87\x16\x80\x83R\x91\x84\x90 \x80T\x87\x01\x90U\x83Q\x86\x81R\x93Q\x91\x93\x7f\xdd\xf2R\xad\x1b\xe2\xc8\x9bi\xc2\xb0h\xfc7\x8d\xaa\x95+\xa7\xf1c\xc4\xa1\x16(\xf5ZM\xf5#\xb3\xef\x92\x90\x81\x90\x03\x90\x91\x01\x90\xa3P`\x01[\x92\x91PPV[`\x01`\xa0`\x02\n\x03\x81\x16`\x00\x90\x81R` \x81\x90R`@\x90 T[\x91\x90PV\x00')
+        self.assertEqual(md.init_bytecode, b"```@R4\x15a\x00\x0cW\xfe[[`\x01`\xa0`\x02\n\x032\x16`\x00\x90\x81R` \x81\x90R`@\x90 a\'\x10\x90U[[a\x020\x80a\x00;`\x009`\x00\xf3\x00```@Rc\xff\xff\xff\xff`\xe0`\x02\n`\x005\x04\x16c{\xd7\x03\xe8\x81\x14a\x007W\x80c\x90\xb9\x8a\x11\x14a\x00eW\x80c\xf8\xb2\xcbO\x14a\x00\x98W[\xfe[4\x15a\x00?W\xfe[a\x00S`\x01`\xa0`\x02\n\x03`\x045\x16a\x00\xc6V[`@\x80Q\x91\x82RQ\x90\x81\x90\x03` \x01\x90\xf3[4\x15a\x00mW\xfe[a\x00\x84`\x01`\xa0`\x02\n\x03`\x045\x16`$5a\x01MV[`@\x80Q\x91\x15\x15\x82RQ\x90\x81\x90\x03` \x01\x90\xf3[4\x15a\x00\xa0W\xfe[a\x00S`\x01`\xa0`\x02\n\x03`\x045\x16a\x01\xe5V[`@\x80Q\x91\x82RQ\x90\x81\x90\x03` \x01\x90\xf3[`\x00s{\xccc\xd4W\x90\xe2?n\x9b\xc3QN\x1a\xb5\xafd\x93\x02\xd0c\x96\xe4\xee=a\x00\xeb\x84a\x01\xe5V[`\x02`\x00`@Q` \x01R`@Q\x83c\xff\xff\xff\xff\x16`\xe0`\x02\n\x02\x81R`\x04\x01\x80\x83\x81R` \x01\x82\x81R` \x01\x92PPP` `@Q\x80\x83\x03\x81\x86\x80;\x15\x15a\x010W\xfe[a\x02\xc6Z\x03\xf4\x15\x15a\x01>W\xfe[PP`@QQ\x91PP[\x91\x90PV[`\x01`\xa0`\x02\n\x033\x16`\x00\x90\x81R` \x81\x90R`@\x81 T\x82\x90\x10\x15a\x01vWP`\x00a\x01\xdfV[`\x01`\xa0`\x02\n\x033\x81\x16`\x00\x81\x81R` \x81\x81R`@\x80\x83 \x80T\x88\x90\x03\x90U\x93\x87\x16\x80\x83R\x91\x84\x90 \x80T\x87\x01\x90U\x83Q\x86\x81R\x93Q\x91\x93\x7f\xdd\xf2R\xad\x1b\xe2\xc8\x9bi\xc2\xb0h\xfc7\x8d\xaa\x95+\xa7\xf1c\xc4\xa1\x16(\xf5ZM\xf5#\xb3\xef\x92\x90\x81\x90\x03\x90\x91\x01\x90\xa3P`\x01[\x92\x91PPV[`\x01`\xa0`\x02\n\x03\x81\x16`\x00\x90\x81R` \x81\x90R`@\x90 T[\x91\x90PV\x00")
+        self.assertSequenceEqual(md.function_selectors, (b'{\xd7\x03\xe8', b'\x90\xb9\x8a\x11', b'\xf8\xb2\xcbO'))
+
 class EthSpecificTxIntructionTests(unittest.TestCase):
 
     def test_jmpdest_check(self):
@@ -1442,7 +1496,6 @@ class EthSpecificTxIntructionTests(unittest.TestCase):
         self.assertEqual( world.get_storage_data(0x111111111111111111111111111111111111111, 1), 0)
         self.assertEqual( world.get_storage_data(0x111111111111111111111111111111111111111, 2), 0)
         self.assertFalse(world.has_storage(0x333333333333333333333333333333333333333))
-
 
 class EthPluginTests(unittest.TestCase):
 

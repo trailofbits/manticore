@@ -1026,6 +1026,9 @@ class ArraySelect(BitVec, Operation):
     def index(self):
         return self.operands[1]
 
+    def __repr__(self):
+        return f"<ArraySelect obj with index={self.index}:\n{self.array}>"
+
 
 class BitVecSignExtend(BitVecOperation):
     def __init__(self, operand, size_dest, *args, **kwargs):

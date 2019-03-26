@@ -188,10 +188,17 @@ class ManticoreEVM(ManticoreBase):
             pos = 0
             while pos < len(hex_contract):
                 if hex_contract[pos] == '_':
-                    # __/tmp/tmp_9k7_l:Manticore______________
                     lib_placeholder = hex_contract[pos:pos + 40]
-                    lib_name = lib_placeholder.split(':')[1].split('_')[0]
-                    deps.setdefault(lib_name, []).append(pos)
+                    # This is all very weak...
+                    # Contract names starting/ending with _ ?
+                    # Contract names longer than 40 bytes ?
+                    if ':' in lib_placeholder:
+                        # __/tmp/tmp_9k7_l:Manticore______________
+                        lib_name = lib_placeholder.split(':')[1].strip('_')
+                        deps.setdefault(lib_name, []).append(pos)
+                    else:
+                        lib_name = lib_placeholder.strip('_')
+                        deps.setdefault(lib_name, []).append(pos)
                     pos += 40
                 else:
                     pos += 2
@@ -246,7 +253,8 @@ class ManticoreEVM(ManticoreBase):
 
         if not working_dir:
             working_dir = os.getcwd()
-        elif relative_filepath.startswith(working_dir):
+
+        if relative_filepath.startswith(working_dir):
             relative_filepath = relative_filepath[len(working_dir) + 1:]
 
         # If someone pass an absolute path to the file, we don't have to put cwd
@@ -257,7 +265,7 @@ class ManticoreEVM(ManticoreBase):
             '--allow-paths', '.',
             relative_filepath
         ]
-
+        logger.debug(f"Running: {' '.join(solc_invocation)}")
         p = Popen(solc_invocation, stdout=PIPE, stderr=PIPE, **additional_kwargs)
         stdout, stderr = p.communicate()
 
@@ -311,24 +319,24 @@ class ManticoreEVM(ManticoreBase):
 
         contracts = output.get('contracts', [])
         if len(contracts) != 1 and contract_name is None:
-            raise EthereumError('Solidity file must contain exactly one contract or you must use a contract parameter to specify one.')
+            raise EthereumError(f'Solidity file must contain exactly one contract or you must use a `--contract` parameter to specify one. Contracts found: {", ".join(contracts)}')
 
         name, contract = None, None
         if contract_name is None:
             name, contract = list(contracts.items())[0]
         else:
             for n, c in contracts.items():
-                if n.split(":")[1] == contract_name:
+                if n == contract_name or n.split(":")[1] == contract_name:
                     name, contract = n, c
                     break
 
         if name is None:
-            raise ValueError('Specified contract not found')
+            raise ValueError(f'Specified contract not found: {contract_name}')
 
         name = name.split(':')[1]
 
         if contract['bin'] == '':
-            raise EthereumError('Solidity failed to compile your contract.')
+            raise EthereumError('Solidity failed to generate bytecode for your contract. Check if all the abstract functions are implemented')
 
         bytecode = ManticoreEVM._link(contract['bin'], libraries)
         srcmap = contract['srcmap'].split(';')
@@ -460,6 +468,91 @@ class ManticoreEVM(ManticoreBase):
         # FIXME this is more naive than reasonable.
         return ABI.deserialize(types, self.make_symbolic_buffer(32, name='INITARGS', avoid_collisions=True))
 
+    def json_create_contract(self, jfile, owner=None, name=None, contract_name=None, balance=0, gas=None, network_id=None, args=()):
+        """ Creates a solidity contract based on a truffle json artifact.
+            https://github.com/trufflesuite/truffle/tree/develop/packages/truffle-contract-schema
+            :param jfile: truffle json artifact
+            :type jfile: str or IOBase
+            :param owner: owner account (will be default caller in any transactions)
+            :type owner: int or EVMAccount
+            :param contract_name: Name of the contract to analyze (optional if there is a single one in the source code)
+            :type contract_name: str
+            :param balance: balance to be transferred on creation
+            :type balance: int or BitVecVariable
+            :param gas: gas budget for each contract creation needed (may be more than one if several related contracts defined in the solidity source)
+            :type gas: int
+            :param network_id: Truffle network id to instantiate
+            :param tuple args: constructor arguments
+            :rtype: EVMAccount
+        """
+
+        if isinstance(jfile, io.IOBase):
+            jfile = jfile.read()
+        elif isinstance(jfile, bytes):
+            jfile = str(jfile, 'utf-8')
+        elif not isinstance(jfile, str):
+            raise TypeError(f'source code bad type: {type(jfile).__name__}')
+
+        truffle = json.loads(jfile)
+        hashes = {}
+        for item in truffle['abi']:
+            item_type = item['type']
+            if item_type in ('function'):
+                signature = SolidityMetadata.function_signature_for_name_and_inputs(item['name'], item['inputs'])
+                hashes[signature] = sha3.keccak_256(signature.encode()).hexdigest()[:8]
+                if 'signature' in item:
+                    if item['signature'] != f'0x{hashes[signature]}':
+                        raise Exception(f"Something wrong with the sha3 of the method {signature} signature (a.k.a. the hash)")
+
+        if contract_name is None:
+            contract_name = truffle["contractName"]
+
+        if network_id is None:
+            if len(truffle['networks']) > 1:
+                raise Exception("Network id not specified")
+            if len(truffle['networks']) == 1:
+                network_id = list(truffle['networks'].keys())[0]
+        if network_id in truffle['networks']:
+            temp_dict = truffle['networks'][network_id]['links']
+            links = dict((k, int(v['address'], 0)) for k, v in temp_dict.items())
+        else:
+            links = ()
+
+        source_code = truffle["source"]
+        bytecode = self._link(truffle["bytecode"][2:], links)
+        runtime = self._link(truffle["deployedBytecode"][2:], links)
+        if "sourceMap" in truffle:
+            srcmap = truffle["sourceMap"].split(';')
+        else:
+            srcmap_runtime = []
+        if "deployedSourceMap" in truffle:
+            srcmap_runtime = truffle["deployedSourceMap"].split(';')
+        else:
+            srcmap_runtime = []
+        abi = truffle['abi']
+        md = SolidityMetadata(contract_name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, b'')
+        constructor_types = md.get_constructor_arguments()
+        if constructor_types != '()':
+            if args is None:
+                args = self.make_symbolic_arguments(constructor_types)
+
+            constructor_data = ABI.serialize(constructor_types, *args)
+        else:
+            constructor_data = b''
+
+        contract_account = self.create_contract(owner=owner,
+                                                balance=balance,
+                                                init=md._init_bytecode + constructor_data,
+                                                gas=gas)
+
+        if contract_account is None:
+            raise EthereumError(f"Failed to build contract {contract_name}")
+        self.metadata[int(contract_account)] = md
+
+        if not self.count_running_states() or len(self.get_code(contract_account)) == 0:
+            return None
+        return contract_account
+
     def solidity_create_contract(self, source_code, owner, name=None, contract_name=None, libraries=None,
                                  balance=0, address=None, args=(), solc_bin=None, solc_remaps=[],
                                  working_dir=None, gas=None):
@@ -508,6 +601,15 @@ class ManticoreEVM(ManticoreBase):
                         constructor_data = ABI.serialize(constructor_types, *args)
                     else:
                         constructor_data = b''
+
+                    if balance != 0:
+                        if not md.constructor_abi['payable']:
+                            raise EthereumError(f"Can't create solidity contract with balance ({balance}) "
+                                                f"different than 0 because the contract's constructor is not payable.")
+                        elif self.world.get_balance(owner.address) < balance:
+                            raise EthereumError(f"Can't create solidity contract with balance ({balance}) "
+                                                f"because the owner account ({owner}) has insufficient balance "
+                                                f"({self.world.get_balance(owner.address)}).")
 
                     contract_account = self.create_contract(owner=owner,
                                                             balance=balance,
@@ -638,7 +740,7 @@ class ManticoreEVM(ManticoreBase):
             :type balance: int or BitVecVariable
             :param address: the address for the new account (optional)
             :type address: int
-            :param code: the runtime code for the new account (None means normal account) (optional)
+            :param code: the runtime code for the new account (None means normal account), str or bytes (optional)
             :param name: a global account name eg. for use as reference in the reports (optional)
             :return: an EVMAccount
         """
@@ -661,8 +763,8 @@ class ManticoreEVM(ManticoreBase):
             raise EthereumError("Balance invalid type")
 
         if isinstance(code, str):
-            code = bytearray(code)
-        if code is not None and not isinstance(code, (bytearray, Array)):
+            code = bytes(code, "utf-8")
+        if code is not None and not isinstance(code, (bytes, Array)):
             raise EthereumError("code bad type")
 
         # Address check

@@ -11,7 +11,9 @@ class CpuFactory:
 
     @staticmethod
     def get_cpu(mem, machine):
-        return CpuFactory._cpus[machine](mem)
+        cpu = CpuFactory._cpus[machine](mem)
+        mem.cpu = cpu
+        return cpu
 
     @staticmethod
     def get_function_abi(cpu, os, machine):
