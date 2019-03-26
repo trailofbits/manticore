@@ -77,12 +77,12 @@ class NativeIntegrationTest(unittest.TestCase):
 
         output_lines = output.splitlines()
 
-        self.assertEqual(len(output_lines), 6)
+        self.assertEqual(len(output_lines), 4)
 
         self.assertIn(b'Verbosity set to 1.', output_lines[0])
         self.assertIn(b'Loading program', output_lines[1])
-        self.assertIn(b'Generated testcase No. 0 - Program finished with exit status: 0', output_lines[2])
-        self.assertIn(b'Generated testcase No. 1 - Program finished with exit status: 0', output_lines[3])
+        self.assertIn(b'Generated testcase No. 0 -', output_lines[2])
+        self.assertIn(b'Generated testcase No. 1 -', output_lines[3])
         self.assertIn(b'Results in ', output_lines[4])
         self.assertIn(b'Total time: ', output_lines[5])
 
@@ -219,12 +219,12 @@ class NativeIntegrationTest(unittest.TestCase):
 
         output = subprocess.check_output(cmd).splitlines()
 
-        self.assertEqual(len(output), 6)
+        self.assertEqual(len(output), 4)
 
         self.assertIn(b'm.c.manticore:INFO: Verbosity set to 1.', output[0])
         self.assertIn(b'm.n.manticore:INFO: Loading program ', output[1])
-        self.assertIn(b'm.c.manticore:INFO: Generated testcase No. 0 - Program finished with exit status: 0', output[2])
-        self.assertIn(b'm.c.manticore:INFO: Generated testcase No. 1 - Program finished with exit status: 0', output[3])
+        self.assertIn(b'm.c.manticore:INFO: Generated testcase No. 0 - ', output[2])
+        self.assertIn(b'm.c.manticore:INFO: Generated testcase No. 1 - ', output[3])
         self.assertIn(b'm.c.manticore:INFO: Results in ', output[4])
         self.assertIn(b'm.c.manticore:INFO: Total time: ', output[5])
 
@@ -263,11 +263,11 @@ class NativeIntegrationTest(unittest.TestCase):
 
         output = subprocess.check_output(cmd).splitlines()
 
-        self.assertEqual(len(output), 5)
+        self.assertEqual(len(output), 3)
 
         self.assertIn(b'm.c.manticore:INFO: Verbosity set to 1.', output[0])
         self.assertIn(b'm.n.manticore:INFO: Loading program ', output[1])
-        self.assertIn(b'm.c.manticore:INFO: Generated testcase No. 0 - Program finished with exit status: 0', output[2])
+        self.assertIn(b'm.c.manticore:INFO: Generated testcase No. 0 - ', output[2])
         self.assertIn(b'm.c.manticore:INFO: Results in ', output[3])
         self.assertIn(b'm.c.manticore:INFO: Total time: ', output[4])
 
