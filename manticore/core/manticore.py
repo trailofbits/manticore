@@ -848,6 +848,17 @@ class ManticoreBase(Eventful):
         except Exception as e:
             # ignoring exceptions at __del__
             pass
+        try:
+            self.kill()
+        except Exception as e:
+            # ignoring exceptions at __del__
+            pass
+        try:
+            for w in self._workers:
+                w.join()
+        except Exception as e:
+            # ignoring exceptions at __del__
+            pass
 
     def finalize(self):
         self.kill()
