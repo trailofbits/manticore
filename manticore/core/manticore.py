@@ -1,8 +1,5 @@
-import cProfile
 import itertools
 import logging
-import os
-import pstats
 import sys
 import time
 import random
@@ -58,6 +55,7 @@ class ManticoreBase(Eventful):
         if cls in (ManticoreBase, ManticoreSingle, ManticoreThreading, ManticoreMultiprocessing):
             raise Exception("Should not instantiate this")
 
+        logger.info("Using concurrency type: %r", consts.mprocessing.title())
         cl = globals()[f'Manticore{consts.mprocessing.title()}']
         if cl not in cls.__bases__:
             #change ManticoreBase for the more specific class
@@ -128,35 +126,22 @@ class ManticoreBase(Eventful):
 
         Manticore has multiprocessing capabilities. Several worker processes
         could be registered to do concurrent exploration of the READY states.
-        Manticore can be itself at different phases: STANDBY, RUNNING, KILLED.
+        Manticore can be itself at different phases: STANDBY, RUNNING.
 
                       +---------+               +---------+
                 ----->| STANDBY +<------------->+ RUNNING |
                       +---------+               +----+----+
-                                                     |
-                                                     V
-                                                +--------+
-                                                | KILLED |
-                                                +--------+
 
         = Phase STANDBY =
         Manticore starts at STANDBY with a single initial state. Here the user
         can inspect, modify and generate testcases for the different states. The
-        workers are paused and not doing any work. Actions: start(), cancel()
+        workers are paused and not doing any work. Actions: run()
 
 
         = Phase RUNNING =
         At RUNNING the workers consume states from the READY state list and
         potentially fork new states or terminate states. A RUNNING manticore can
-        be stopped back to STANDBY or cancelled to KILLED. Actions: stop(),
-        cancel()
-
-
-        = Phase KILLED =
-        Manticore moves to KILLED on a timeout or when the user requests
-        termination via CTRL+C. At KILLED the workers are stoped and killed
-        and the outstanding states are moved to a specific "KILLED" list.
-        Actions: none
+        be stopped back to STANDBY. Actions: stop()
 
 
         States and state lists
@@ -240,7 +225,7 @@ class ManticoreBase(Eventful):
         """
         super().__init__()
 
-        if any(not hasattr(self, x) for x in ('_worker_type', '_lock', '_started', '_killed', '_ready_states', '_terminated_states', '_killed_states', '_busy_states', '_shared_context')):
+        if any(not hasattr(self, x) for x in ('_worker_type', '_lock', '_running', '_killed', '_ready_states', '_terminated_states', '_killed_states', '_busy_states', '_shared_context')):
             raise Exception('Need to instantiate one of: ManticoreNative, ManticoreThreads..')
 
         # The workspace and the output
@@ -276,7 +261,7 @@ class ManticoreBase(Eventful):
         self._workers = [self._worker_type(id=i, manticore=self) for i in range(consts.procs)]
 
     def __str__(self):
-        return f"<{str(type(self))[8:-2]}| Alive States: {self.count_ready_states()}; Running States: {self.count_busy_states()} Terminated States: {self.count_terminated_states()} Killed States: {self.count_killed_states()} Started: {self._started.value} Killed: {self._killed.value}>"
+        return f"<{str(type(self))[8:-2]}| Alive States: {self.count_ready_states()}; Running States: {self.count_busy_states()} Terminated States: {self.count_terminated_states()} Killed States: {self.count_killed_states()} Started: {self._running.value} Killed: {self._killed.value}>"
 
     def _fork(self, state, expression, policy='ALL', setstate=None):
         '''
@@ -407,13 +392,12 @@ class ManticoreBase(Eventful):
     def _get_state(self, wait=False):
         """ Dequeue a state form the READY list and add it to the BUSY list """
         with self._lock:
-            assert self._started.value and not self._killed.value
             # If wait is true do the conditional wait for states
             if wait:
                 # if not more states in the queue, let's wait for some forks
-                while not self._ready_states and (self._started.value and not self._killed.value):
+                while not self._ready_states and not self._killed.value:
                     # if a shutdown has been requested then bail
-                    if self.is_killed() or self.is_standby():
+                    if self.is_killed():
                         return None  # Cancelled operation
                     # If there are no more READY states and no more BUSY states
                     # there is no chance we will get any new state so raise
@@ -423,8 +407,9 @@ class ManticoreBase(Eventful):
                     # if there ares actually some workers ready, wait for state forks
                     logger.debug("Waiting for available states")
                     self._lock.wait()
-                if not self._started.value or self._killed.value:
-                    return None
+
+            if self._killed.value:
+                return None
 
             # at this point we know there is at least one element
             # and we have exclusive access
@@ -434,7 +419,6 @@ class ManticoreBase(Eventful):
             # state_id = self._policy.choice(list(self._ready_states)[0])
             state_id = random.choice(list(self._ready_states))
 
-            assert self._started.value and not self._killed.value
             # Move from READY to BUSY
             self._ready_states.remove(state_id)
             self._busy_states.append(state_id)
@@ -713,24 +697,6 @@ class ManticoreBase(Eventful):
         self._lock.wait_for(condition)
 
     @sync
-    def start(self):
-        ''' This will send a start event to all registered workers.
-            STANDBY -> RUNNING
-        '''
-        self._started.value = True
-        self._lock.notify_all()
-
-    @sync
-    def stop(self):
-        ''' This will send a stop event to all workers.
-            Workers must go to STANDBY state.
-            Manticore.run() will return
-            RUNNING -> STANDBY
-        '''
-        self._started.value = False
-        self._lock.notify_all()
-
-    @sync
     def kill(self):
         """ Attempt to cancel and kill all the workers.
             Workers must terminate
@@ -740,17 +706,12 @@ class ManticoreBase(Eventful):
         self._lock.notify_all()
 
     @sync
-    def is_standby(self):
-        ''' True if workers are standing by.'''
-        return not self._started.value and not self._killed.value and not self._busy_states
-
-    @sync
     def is_running(self):
         ''' True if workers are exploring BUSY states or waiting for READY states '''
         # If there are still states in the BUSY list then the STOP/KILL event
         # was not yet answered
-        # We know that BUSY states can only decrease after a stop is request
-        return (self._started.value and not self._killed.value) or len(self._busy_states) > 0
+        # We know that BUSY states can only decrease after a stop is requested
+        return self._running.value
 
     @sync
     def is_killed(self):
@@ -758,7 +719,7 @@ class ManticoreBase(Eventful):
         # If there are still states in the BUSY list then the STOP/KILL event
         # was not yet answered
         # We know that BUSY states can only decrease after a kill is requested
-        return self._killed.value and not self._busy_states
+        return self._killed.value
 
     @property
     def workspace(self):
@@ -796,28 +757,27 @@ class ManticoreBase(Eventful):
         # Lazy process start. At the first run() the workers are not forked.
         # This actually starts the worker procs/threads
         if self.subscribe:
-            for w in self._workers:
-                w.start()
             # User subscription to events is disabled from now on
             self.subscribe = None
 
         self._publish('will_run')
+        self._running.value = True
+        # start all the workers!
+        for w in self._workers:
+            w.start()
 
-        with WithKeyboardInterruptAs(self.kill), self.kill_timeout(timeout):
-            assert not self._busy_states
-            self.start()
+        # Main process. Lets just wait and capture CTRL+C at main
+        with WithKeyboardInterruptAs(self.kill):
             with self._lock:
-                while (self._started.value and not self._killed.value and self._ready_states) or self._busy_states:
+                while (self._busy_states or self._ready_states ) and not self._killed.value:
                     self._lock.wait()
-                # It has been killed or stopped
 
-        #Lets make any worker stop so we can add new ready states without them
-        #being sucked in
-        self.stop()
+        # Join all the workers!
+        for w in self._workers:
+            w.join()
 
         with self._lock:
-            assert not self._busy_states
-            assert not self._started.value or self._killed.value
+            assert not self._busy_states and not self._ready_states or self._killed.value
 
             if self.is_killed():
                 logger.debug("Killed. Moving all remaining ready states to killed list")
@@ -826,6 +786,7 @@ class ManticoreBase(Eventful):
                     self._killed_states.append(self._ready_states.pop())
 
         self._publish('did_run')
+        self._running.value = False
         assert not self.is_running()
 
     @sync
@@ -910,8 +871,8 @@ class ManticoreSingle(ManticoreBase):
                     raise Exception("Deadlock: Waiting for CTRL+C")
 
         self._lock = FakeLock()
-        self._started = ctypes.c_bool(False)
         self._killed = ctypes.c_bool(False)
+        self._running = ctypes.c_bool(False)
 
         self._ready_states = []
         self._terminated_states = []
@@ -933,8 +894,8 @@ class ManticoreThreading(ManticoreBase):
 
     def __init__(self, *args, **kwargs):
         self._lock = threading.Condition()
-        self._started = ctypes.c_bool(False)
         self._killed = ctypes.c_bool(False)
+        self._running = ctypes.c_bool(False)
 
         self._ready_states = []
         self._terminated_states = []
@@ -958,8 +919,8 @@ class ManticoreMultiprocessing(ManticoreBase):
         # The main manticore lock. Acquire this for accessing shared objects
         # THINKME: we use the same lock to access states lists and shared contexts
         self._lock = self._manager.Condition()
-        self._started = self._manager.Value(bool, False)
         self._killed = self._manager.Value(bool, False)
+        self._running = self._manager.Value(bool, False)
 
         # List of state ids of States on storage
         self._ready_states = self._manager.list()

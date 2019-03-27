@@ -1,3 +1,4 @@
+from manticore.core.smtlib.visitors import simplify
 import hashlib
 import logging
 from contextlib import contextmanager
@@ -55,6 +56,9 @@ class Detector(Plugin):
         :param constraint: finding is considered reproducible only when constraint is True
         """
 
+
+        if issymbolic(pc):
+            pc = simplify(pc)
         if isinstance(pc, Constant):
             pc = pc.value
         if not isinstance(pc, int):
@@ -74,10 +78,6 @@ class Detector(Plugin):
         """
         address = state.platform.current_vm.address
         pc = state.platform.current_vm.pc
-        if isinstance(pc, Constant):
-            pc = pc.value
-        if not isinstance(pc, int):
-            raise ValueError("PC must be a number")
         at_init = state.platform.current_transaction.sort == 'CREATE'
         self.add_finding(state, address, pc, finding, at_init, constraint)
 

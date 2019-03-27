@@ -7,6 +7,7 @@ import os
 
 
 logger = logging.getLogger(__name__)
+# logger.setLevel(9)
 
 
 # Workers
@@ -87,26 +88,14 @@ class Worker:
                         # while waiting or if there are no more potential states
                         logger.debug("[%r] Waiting for states", self.id)
                         # If at STANDBY wait for any change
-                        with m._lock:
-                            # If not started and not killed it means we need to wait
-                            while not m._started.value and not m._killed.value:
-                                logger.debug("[%r] Standing by", self.id)
-                                m._lock.wait()  # Wait until something changes
-                            if not m._started.value or m._killed.value:
-                                current_state = None
-                            else:
-                                current_state = m._get_state(wait=True)
+                        current_state = m._get_state(wait=True)
 
                         # there are no more states to process
                         # states can come from the ready list or by forking
                         # states currently being analyzed in the busy list
                         if current_state is None:
                             logger.debug("[%r] No more states", self.id)
-                            if self.single:
-                                # at single it will run in place. No need to wait.
-                                break
-                            else:
-                                continue
+                            break
 
                         # assert current_state is not None
                         # Allows to terminate manticore worker on user request
@@ -116,7 +105,7 @@ class Worker:
 
                         # This does not hold the lock so we may loss some event
                         # flickering
-                        while m._started.value and not m._killed.value:
+                        while not m._killed.value:
                             current_state.execute()
                         else:
                             logger.debug("[%r] Stopped and/or Killed", self.id)
@@ -166,7 +155,7 @@ class Worker:
 
             # Getting out.
             # At KILLED
-            logger.debug("[%r] Getting out of the mainloop %r %r", self.id, m._started.value, m._killed.value)
+            logger.debug("[%r] Getting out of the mainloop", self.id)
             m._publish("did_terminate_worker", self.id)
 
 
@@ -188,23 +177,27 @@ class WorkerThread(Worker):
     """ A worker thread """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._t = threading.Thread(target=self.run)
+        self._t = None
 
     def start(self):
+        self._t = threading.Thread(target=self.run)
         self._t.start()
 
     def join(self):
         self._t.join()
+        self._t = None
 
 
 class WorkerProcess(Worker):
     """ A worker process """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._p = multiprocessing.Process(target=self.run)
+        self._p = None
 
     def start(self):
+        self._p = multiprocessing.Process(target=self.run)
         self._p.start()
 
     def join(self):
         self._p.join()
+        self._p = None

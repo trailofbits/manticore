@@ -1414,9 +1414,6 @@ class ManticoreEVM(ManticoreBase):
 
         :param procs: nomber of local processes to use in the reporting generation
         """
-        self.kill()
-        for w in self._workers:
-            w.join()
 
         logger.debug("Finalizing %d states.", self.count_states())
 
