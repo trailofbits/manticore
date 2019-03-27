@@ -35,7 +35,7 @@ consts.add('timeout', default=0, description='Timeout, in seconds, for Manticore
 consts.add('cluster', default=False, description='If True enables to run workers over the network UNIMPLEMENTED')
 consts.add('profile', default=False, description='Enable worker profiling mode')
 consts.add('procs', default=10, description='Number of parallel processes to spawn')
-consts.add('mprocessing', default='single', description='single: No multiprocessing at all. Single process.\n')
+consts.add('mprocessing', default='multiprocessing', description='single: No multiprocessing at all. Single process.\n threading: use threads\m multiprocessing: use forked processes')
 
 
 def set_verbosity(level):

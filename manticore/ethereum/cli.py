@@ -71,6 +71,8 @@ def ethereum_main(args, logger):
 
         if not args.no_testcases:
             m.finalize()
+        else:
+            m.kill()
 
         for detector in list(m.detectors):
             m.unregister_detector(detector)

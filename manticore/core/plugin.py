@@ -13,6 +13,10 @@ class Plugin:
     def __init__(self):
         self.manticore = None
 
+    @property
+    def name(self):
+        return str(self.__class__)
+
     @contextmanager
     def locked_context(self, key=None, value_type=list):
         """
