@@ -278,7 +278,6 @@ class Profiler(Plugin):
                     logger.info("Incorrectly formatted profiling information in _stats, skipping")
         return ps
 
-
     def save_profiling_data(self, stream=None):
         ''':param stream: an output stream to write the profiling data '''
         ps = self.get_profiling_data()
@@ -288,6 +287,7 @@ class Profiler(Plugin):
         if stream is not None:
             import marshal
             marshal.dump(ps.stats, stream)
+
 
 # TODO document all callbacks
 class ExamplePlugin(Plugin):

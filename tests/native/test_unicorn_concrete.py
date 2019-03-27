@@ -7,20 +7,23 @@ from manticore.core.plugin import Plugin
 
 class ConcretePlugin(Plugin):
 
-    def will_start_run_callback(self, state, *_args):
-        state.cpu.emulate_until(0)
+    def will_run_callback(self, *_args):
+        for state in self.manticore.all_states:
+            state.cpu.emulate_until(0)
 
-
+'''
 class RegisterCapturePlugin(Plugin):
 
-    def will_start_run_callback(self, state, *_args):
-        self._cpu = state.cpu
+    def will_run_callback(self, *_args):
+        for state in self.manticore.all_states:
+            self._cpu = state.cpu
+            break
 
-    def did_finish_run_callback(self):
+    def did_run_callback(self):
         with self.manticore.locked_context() as context:
             for reg in self._cpu.all_registers:
                 context[reg] = getattr(self._cpu, reg)
-
+'''
 
 class ManticornTest(unittest.TestCase):
     _multiprocess_can_split_ = True
@@ -33,8 +36,8 @@ class ManticornTest(unittest.TestCase):
                                            argv=['argv', 'mc', 'argface'])
 
         self.concrete_instance.register_plugin(ConcretePlugin())
-        self.concrete_instance.register_plugin(RegisterCapturePlugin())
-        self.m.register_plugin(RegisterCapturePlugin())
+        #self.concrete_instance.register_plugin(RegisterCapturePlugin())
+        #self.m.register_plugin(RegisterCapturePlugin())
 
     def test_register_comparison(self):
         self.m.run()
@@ -47,6 +50,9 @@ class ManticornTest(unittest.TestCase):
     def test_integration_basic_stdin(self):
         self.m.run()
         self.concrete_instance.run()
+
+        self.m.finalize()
+        self.concrete_instance.finalize()
 
         with open(os.path.join(self.m.workspace, 'test_00000000.stdout'), 'r') as f:
             left = f.read().strip()
