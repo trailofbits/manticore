@@ -66,6 +66,7 @@ COND_MAP = {
 # System registers map.
 SYS_REG_MAP = {
     0xc082: 'CPACR_EL1',
+    0xd807: 'DCZID_EL0',
     0xde82: 'TPIDR_EL0'
 }
 
@@ -122,6 +123,10 @@ class Aarch64RegisterFile(RegisterFile):
 
     # See "D12.2.29 CPACR_EL1, Architectural Feature Access Control Register".
     _table['CPACR_EL1'] = Regspec('CPACR_EL1', 64)
+
+    # See "D12.2.35 DCZID_EL0, Data Cache Zero ID register".
+    _table['DCZID_EL0'] = Regspec('DCZID_EL0', 64)
+
     # See "D12.2.106 TPIDR_EL0, EL0 Read/Write Software Thread ID Register".
     _table['TPIDR_EL0'] = Regspec('TPIDR_EL0', 64)
 
@@ -168,6 +173,11 @@ class Aarch64RegisterFile(RegisterFile):
         parent, size = self._table[name]
         value = self._registers[parent].read()
 
+        # XXX: Prohibit the DC ZVA instruction until it's implemented.
+        # XXX: Allow to set this when a register is declared.
+        if parent == 'DCZID_EL0':
+            return 0b10000
+
         if name != parent:
             _, parent_size = self._table[parent]
             if size < parent_size:
@@ -180,7 +190,14 @@ class Aarch64RegisterFile(RegisterFile):
         name = self._alias(register)
         parent, size = self._table[name]
         assert value <= 2 ** size - 1
+
+        # DCZID_EL0 is read-only.
+        # XXX: Allow to set this when a register is declared.
+        if parent == 'DCZID_EL0':
+            raise Aarch64InvalidInstruction
+
         # Ignore writes to the zero register.
+        # XXX: Allow to set this when a register is declared.
         if parent != 'XZR':
             self._registers[parent].write(value)
 

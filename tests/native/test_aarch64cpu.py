@@ -6219,6 +6219,19 @@ class Aarch64Instructions:
                 csinv_false64(self)
 
 
+    # DC.
+
+    # XXX: Check that Manticore prohibits DC ZVA until it's implemented.
+    @itest('mrs x0, dczid_el0')
+    def test_dczid_el0(self):
+        if self.__class__.__name__ == 'Aarch64CpuInstructions':
+            self.assertEqual(self.rf.read('X0'), 16)
+        elif self.__class__.__name__ == 'Aarch64UnicornInstructions':
+            self.assertEqual(self.rf.read('X0'), 4)
+        else:
+            self.fail()
+
+
     # DUP (general).
 
     # XXX: Uses 'reset'.
