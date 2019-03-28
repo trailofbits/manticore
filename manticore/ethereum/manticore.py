@@ -1106,7 +1106,6 @@ class ManticoreEVM(ManticoreBase):
                 known_hashes_cond = Operators.OR(data_concrete == data, known_hashes_cond)
                 known_sha3.add((data_concrete, data_hash))
 
-
             not_known_hashes_cond = Operators.NOT(known_hashes_cond)
 
             # We need to fork/save the state

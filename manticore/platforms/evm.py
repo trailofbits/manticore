@@ -632,7 +632,6 @@ class EVM(Eventful):
         return state
 
     def __setstate__(self, state):
-        self.F = state.get('F',0.0)
         self._checkpoint_data = state['_checkpoint_data']
         self._published_pre_instruction_events = state['_published_pre_instruction_events']
         self._on_transaction = state['_on_transaction']

@@ -11,6 +11,7 @@ from ..utils import config
 consts = config.get_group('cli')
 consts.add('profile', default=False, description='Enable worker profiling mode')
 
+
 def get_detectors_classes():
     return [
         DetectInvalid, DetectIntegerOverflow, DetectUninitializedStorage, DetectUninitializedMemory,

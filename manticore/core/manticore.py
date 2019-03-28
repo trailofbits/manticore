@@ -768,7 +768,7 @@ class ManticoreBase(Eventful):
         # Main process. Lets just wait and capture CTRL+C at main
         with WithKeyboardInterruptAs(self.kill):
             with self._lock:
-                while (self._busy_states or self._ready_states ) and not self._killed.value:
+                while (self._busy_states or self._ready_states) and not self._killed.value:
                     self._lock.wait()
 
         # Join all the workers!

@@ -56,7 +56,6 @@ class Detector(Plugin):
         :param constraint: finding is considered reproducible only when constraint is True
         """
 
-
         if issymbolic(pc):
             pc = simplify(pc)
         if isinstance(pc, Constant):
