@@ -185,14 +185,14 @@ class UnicornEmulator:
                     size, perms = self._should_be_mapped[base]
                     self._emu.mem_map(base, size, perms)
 
-                for address, values in self._should_be_written.items():
-                    for offset, byte in enumerate(values, start=address):
-                        if issymbolic(byte):
-                            from ..native.cpu.abstractcpu import ConcretizeMemory
-                            raise ConcretizeMemory(self._cpu.memory, offset, 8,
-                                                   "Concretizing for emulation")
+            for address, values in self._should_be_written.items():
+                for offset, byte in enumerate(values, start=address):
+                    if issymbolic(byte):
+                        from ..native.cpu.abstractcpu import ConcretizeMemory
+                        raise ConcretizeMemory(self._cpu.memory, offset, 8,
+                                               "Concretizing for emulation")
 
-                    self._emu.mem_write(address, b''.join(values))
+                self._emu.mem_write(address, b''.join(values))
 
             # Try emulation
             self._should_try_again = False
