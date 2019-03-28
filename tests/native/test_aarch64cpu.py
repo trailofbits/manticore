@@ -11,7 +11,7 @@ from manticore.native.cpu.aarch64 import Aarch64Cpu as Cpu
 from manticore.native.cpu.abstractcpu import (
     Interruption, InstructionNotImplementedError
 )
-from manticore.native.cpu.bitwise import LSL
+from manticore.native.cpu.bitwise import LSL, Mask
 from manticore.utils.emulate import UnicornEmulator
 from .test_armv7cpu import itest_setregs
 from .test_aarch64rf import MAGIC_64, MAGIC_32
@@ -13659,13 +13659,10 @@ class Aarch64Instructions:
 
     @nottest
     def _umov(self, mnem, dst, vess, elem_size, elem_count):
-        def mask(width):
-            return 2 ** width - 1
-
         for i in range(elem_count):
             val = 0x81828384858687889192939495969798
             sft = i * elem_size
-            res = (val >> sft) & mask(elem_size)
+            res = (val >> sft) & Mask(elem_size)
             insn = f'{mnem} {dst}0, v1.{vess}[{i}]'
 
             @itest_setregs(f'V1={val}')
@@ -13682,8 +13679,8 @@ class Aarch64Instructions:
                 for i in range(4):
                     self._execute(reset=i == 0)
                 assertEqual = lambda x, y: self.assertEqual(x, y, msg=insn)
-                assertEqual(self.rf.read('X0'), res & mask(64))
-                assertEqual(self.rf.read('W0'), res & mask(32))
+                assertEqual(self.rf.read('X0'), res & Mask(64))
+                assertEqual(self.rf.read('W0'), res & Mask(32))
 
             self.setUp()
             f(self)
