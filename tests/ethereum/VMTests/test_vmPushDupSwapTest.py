@@ -13,8 +13,10 @@ from rlp.sedes import (
 from manticore.core.smtlib import ConstraintSet
 from manticore.core.smtlib.visitors import to_constant
 from manticore.platforms import evm
+from manticore.utils import config
 
-
+consts = config.get_group('evm')
+consts.oog='pedantic' # instruction by instruction
 class Log(rlp.Serializable):
     fields = [
         ('address', Binary.fixed_length(20, allow_empty=True)),

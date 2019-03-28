@@ -82,6 +82,9 @@ class ExtendedTracer(Plugin):
         self.current_pc = None
         self.context_key = 'e_trace'
 
+    def get_trace(self, state):
+        return state.context.get(self.context_key)
+
     def register_state_to_dict(self, cpu):
         d = {}
         for reg in cpu.canonical_registers:

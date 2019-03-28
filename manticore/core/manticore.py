@@ -30,7 +30,6 @@ logger = logging.getLogger(__name__)
 consts = config.get_group('core')
 consts.add('timeout', default=0, description='Timeout, in seconds, for Manticore invocation')
 consts.add('cluster', default=False, description='If True enables to run workers over the network UNIMPLEMENTED')
-consts.add('profile', default=False, description='Enable worker profiling mode')
 consts.add('procs', default=10, description='Number of parallel processes to spawn')
 consts.add('mprocessing', default='multiprocessing', description='single: No multiprocessing at all. Single process.\n threading: use threads\m multiprocessing: use forked processes')
 
@@ -881,12 +880,6 @@ class ManticoreSingle(ManticoreBase):
 
         self._shared_context = {}
         super().__init__(*args, **kwargs)
-
-    def start(self, wait=True):
-        # Fake start action will run the single worker in place
-        # The wait value is ignored as there is no async/concurrency here
-        super().start()
-        self._workers[0].run()
 
 
 class ManticoreThreading(ManticoreBase):

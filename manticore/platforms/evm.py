@@ -19,6 +19,7 @@ import logging
 from collections import namedtuple
 import sha3
 import rlp
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +37,7 @@ logger = logging.getLogger(__name__)
 # ignore: Ignore gas. Do not account for it. Do not OOG.
 consts = config.get_group('evm')
 
-consts.add('oog', default='pedantic', description=(
+consts.add('oog', default='concrete', description=(
     'Default behavior for symbolic gas.'
     'pedantic: Fully faithful. Test at every instruction. Forks.'
     'complete: Mostly faithful. Test at BB limit. Forks.'
@@ -416,9 +417,9 @@ def concretized_args(**policies):
     :return: A function decorator
     """
     def concretizer(func):
+        spec = inspect.getfullargspec(func)
         @wraps(func)
         def wrapper(*args, **kwargs):
-            spec = inspect.getfullargspec(func)
             for arg, policy in policies.items():
                 assert arg in spec.args, "Concretizer argument not found in wrapped function."
                 # index is 0-indexed, but ConcretizeArgument is 1-indexed. However, this is correct
@@ -631,6 +632,7 @@ class EVM(Eventful):
         return state
 
     def __setstate__(self, state):
+        self.F = state.get('F',0.0)
         self._checkpoint_data = state['_checkpoint_data']
         self._published_pre_instruction_events = state['_published_pre_instruction_events']
         self._on_transaction = state['_on_transaction']
@@ -801,11 +803,13 @@ class EVM(Eventful):
             if consts.oog == 'pedantic' or self.instruction.is_terminator:
                 # explore both options / fork
 
-                # FIXME this will reenter here and generate redundant queries
+                # FIXME if gas can be both enough and insufficient this will
+                #  reenter here and generate redundant queries
                 if not issymbolic(self._gas) and not issymbolic(fee):
                     enough_gas_solutions = (self._gas - fee >= 0,)
                 else:
-                    enough_gas_solutions = Z3Solver.instance().get_all_values(self.constraints, Operators.UGT(self._gas, fee))
+                    constraint = simplify(Operators.UGT(self._gas, fee))
+                    enough_gas_solutions = Z3Solver.instance().get_all_values(self.constraints, constraint)
 
                 if len(enough_gas_solutions) == 2:
                     # if gas can be both enough and insufficient, fork
@@ -916,7 +920,7 @@ class EVM(Eventful):
 
     def _checkpoint(self):
         """Save and/or get a state checkpoint previous to current instruction"""
-        #Fixme[felipe] add a with self.disabled_events context mangr to Eventful
+        #Fixme[felipe] add a with self.disabled_events context manager to Eventful
         if self._checkpoint_data is None:
             if not self._published_pre_instruction_events:
                 self._published_pre_instruction_events = True
@@ -927,8 +931,8 @@ class EVM(Eventful):
             instruction = self.instruction
             old_gas = self.gas
             allocated = self._allocated
-            #FIXME Not clear which exception should trigger first. OOG or insuficient stack
-            # this could raise an insuficient stack exception
+            #FIXME Not clear which exception should trigger first. OOG or insufficient stack
+            # this could raise an insufficient stack exception
             arguments = self._pop_arguments()
             fee = self._calculate_gas(*arguments)
             self._checkpoint_data = (pc, old_gas, instruction, arguments, fee, allocated)
@@ -967,11 +971,12 @@ class EVM(Eventful):
                 raise EthereumError("Conditional not concretized at JMPDEST check")
             should_check_jumpdest = should_check_jumpdest_solutions[0]
 
+        # If it can be solved only to False just set it False. If it can be solved
+        # only to True, process it and also se it to False
+        self._check_jumpdest = False
+
         if should_check_jumpdest:
-            self._check_jumpdest = False
-
             pc = self.pc.value if isinstance(self.pc, Constant) else self.pc
-
             if pc not in self._valid_jumpdests:
                 raise InvalidOpcode()
 
@@ -1021,12 +1026,24 @@ class EVM(Eventful):
                              expression=expression,
                              setstate=setstate,
                              policy='ALL')
+        #print (self)
         try:
+            #limbo = 0.0
+            #a = time.time()
             self._check_jmpdest()
+            #b = time.time()
             last_pc, last_gas, instruction, arguments, fee, allocated = self._checkpoint()
+            #c = time.time()
             self._consume(fee)
+            #d = time.time()
             result = self._handler(*arguments)
+            #e = time.time()
             self._advance(result)
+            #f = time.time()
+            #if hasattr(self, 'F'):
+            #    limbo = (a-self.F)*100
+            #print("%02.2f %02.2f %02.2f %02.2f %02.2f %02.2f"%((b-a)*100, (c-b)*100, (d-c)*100, (e-d)*100, (f-e)*100, limbo))
+            #self.F = time.time()
 
         except ConcretizeGas as ex:
             def setstate(state, value):
@@ -1305,7 +1322,6 @@ class EVM(Eventful):
             known_sha3 = {}
             # Broadcast the signal
             self._publish('on_symbolic_sha3', data, known_sha3)  # This updates the local copy of sha3 with the pairs we need to explore
-
             value = 0  # never used
             known_hashes_cond = False
             for key, hsh in known_sha3.items():

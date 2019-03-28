@@ -7,7 +7,7 @@ import os
 
 
 logger = logging.getLogger(__name__)
-# logger.setLevel(9)
+#logger.setLevel(9)
 
 
 # Workers
@@ -147,6 +147,9 @@ class Worker:
                     # Add the state to the terminated state list
                     if current_state is not None:
                         # Drop any work on this state in case it is inconsistent
+
+                        # Update the stored version of the current state
+                        m._save(current_state, state_id=current_state.id)
                         with m._lock:
                             m._busy_states.remove(current_state.id)
                             m._killed_states.append(current_state.id)
@@ -167,7 +170,7 @@ class WorkerSingle(Worker):
         super().__init__(*args, single=True, **kwargs)
 
     def start(self):
-        pass
+        self.run()
 
     def join(self):
         pass

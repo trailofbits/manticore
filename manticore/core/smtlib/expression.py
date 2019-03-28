@@ -67,8 +67,8 @@ class Operation(Expression):
     def __init__(self, *operands, **kwargs):
         if self.__class__ is Operation:
             raise TypeError
-        assert len(operands) > 0
-        assert all(isinstance(x, Expression) for x in operands)
+        #assert len(operands) > 0
+        #assert all(isinstance(x, Expression) for x in operands)
         self._operands = operands
 
         # If taint was not forced by a keyword argument, calculate default

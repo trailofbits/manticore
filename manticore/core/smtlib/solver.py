@@ -30,7 +30,6 @@ from ...utils import config
 from ...utils.helpers import issymbolic
 
 logger = logging.getLogger(__name__)
-
 consts = config.get_group('smt')
 consts.add('timeout', default=240, description='Timeout, in seconds, for each Z3 invocation')
 consts.add('memory', default=16384, description='Max memory for Z3 to use (in Megabytes)')
@@ -269,7 +268,7 @@ class Z3Solver(Solver):
 
         :param cmd: a SMTLIBv2 command (ex. (check-sat))
         """
-        logger.debug('>%s', cmd)
+        #logger.debug('>%s', cmd)
         #print (">",self._proc.stdin.name, threading.get_ident())
         try:
             self._proc.stdout.flush()
@@ -290,7 +289,7 @@ class Z3Solver(Solver):
 
         buf = ''.join(bufl).strip()
 
-        logger.debug('<%s', buf)
+        #logger.debug('<%s', buf)
         if '(error' in bufl[0]:
             raise Exception(f"Error in smtlib: {bufl[0]}")
         return buf

@@ -1077,7 +1077,6 @@ class ManticoreEVM(ManticoreBase):
     def _on_symbolic_sha3_callback(self, state, data, known_hashes):
         """ INTERNAL USE """
         assert issymbolic(data), 'Data should be symbolic here!'
-
         with self.locked_context('ethereum') as context:
             known_sha3 = context.get('_known_sha3', None)
             if known_sha3 is None:
@@ -1090,23 +1089,24 @@ class ManticoreEVM(ManticoreBase):
             for key, value in known_sha3:
                 assert not issymbolic(key), "Saved sha3 data,hash pairs should be concrete"
                 cond = key == data
-
                 #TODO consider disabling this solver query.
                 if not state.can_be_true(cond):
                     continue
-
                 results.append((key, value))
                 known_hashes_cond = Operators.OR(cond, known_hashes_cond)
 
-            # adding a single random example so we can explore further in case
-            # there are not known sha3 pairs that match yet
-            if not results:
-                data_concrete = state.solve_one(data)
-                s = sha3.keccak_256(data_concrete)
-                data_hash = int(s.hexdigest(), 16)
+            # adding a single random example so we can explore further
+            if not results or state.can_be_true(known_hashes_cond == False):
+                with state as temp:
+                    temp.constrain(known_hashes_cond == False)
+                    data_concrete = temp.solve_one(data)
+                #data_concrete = state.solve_one(data)
+                data_hash = int(sha3.keccak_256(data_concrete).hexdigest(), 16)
                 results.append((data_concrete, data_hash))
-                known_hashes_cond = data_concrete == data
+                known_hashes_cond = Operators.OR(data_concrete == data, known_hashes_cond)
                 known_sha3.add((data_concrete, data_hash))
+
+
             not_known_hashes_cond = Operators.NOT(known_hashes_cond)
 
             # We need to fork/save the state
@@ -1119,6 +1119,7 @@ class ManticoreEVM(ManticoreBase):
                     state_id = self._workspace.save_state(temp_state)
                     sha3_states[state_id] = [hsh for buf, hsh in known_sha3]
             context['_sha3_states'] = sha3_states
+            context['_known_sha3'] = known_sha3
 
             if not state.can_be_true(known_hashes_cond):
                 raise TerminateState("There is no matching sha3 pair, bailing out")

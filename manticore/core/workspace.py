@@ -165,10 +165,12 @@ class Store:
         :param key: key that identifies state
         :rtype: manticore.core.StateBase
         """
+
         with self.load_stream(key, binary=True) as f:
             state = self._serializer.deserialize(f)
             if delete:
                 self.rm(key)
+
             return state
 
     def rm(self, key):

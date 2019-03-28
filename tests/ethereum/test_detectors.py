@@ -13,6 +13,9 @@ from manticore.core.smtlib import operators, ConstraintSet
 from manticore.ethereum import ManticoreEVM, DetectIntegerOverflow, DetectUnusedRetVal, DetectSuicidal, \
     DetectDelegatecall, DetectExternalCallAndLeak, DetectEnvInstruction, DetectRaceCondition, State
 from manticore.ethereum.plugins import LoopDepthLimiter
+from manticore.utils import config
+consts = config.get_group('core')
+consts.mprocessing = 'single'
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 

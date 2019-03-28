@@ -2,10 +2,14 @@ from .detectors import DetectInvalid, DetectIntegerOverflow, DetectUninitialized
     DetectUninitializedMemory, DetectReentrancySimple, DetectReentrancyAdvanced, \
     DetectUnusedRetVal, DetectSuicidal, DetectDelegatecall, \
     DetectExternalCallAndLeak, DetectEnvInstruction, DetectRaceCondition, DetectorClassification
+from ..core.plugin import Profiler
 from .manticore import ManticoreEVM
 from .plugins import FilterFunctions, LoopDepthLimiter, VerboseTrace
 from ..utils.nointerrupt import WithKeyboardInterruptAs
+from ..utils import config
 
+consts = config.get_group('cli')
+consts.add('profile', default=False, description='Enable worker profiling mode')
 
 def get_detectors_classes():
     return [
@@ -54,6 +58,10 @@ def ethereum_main(args, logger):
         for detector in choose_detectors(args):
             m.register_detector(detector())
 
+        if consts.profile:
+            profiler = Profiler()
+            m.register_plugin(profiler)
+
         if args.avoid_constant:
             # avoid all human level tx that has no effect on the storage
             filter_nohuman_constants = FilterFunctions(regexp=r".*", depth='human', mutability='constant', include=False)
@@ -73,6 +81,10 @@ def ethereum_main(args, logger):
             m.finalize()
         else:
             m.kill()
+
+        if consts.profile:
+            with open("profiling.bin", 'wb') as f:
+                profiler.save_profiling_data(f)
 
         for detector in list(m.detectors):
             m.unregister_detector(detector)
