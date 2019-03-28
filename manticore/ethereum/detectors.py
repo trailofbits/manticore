@@ -2,7 +2,7 @@ import hashlib
 import logging
 from contextlib import contextmanager
 
-from ..core.smtlib import Operators, Constant
+from ..core.smtlib import Operators, Constant, simplify
 from ..utils.helpers import istainted, issymbolic, taint_with, get_taints
 from ..core.plugin import Plugin
 
@@ -55,6 +55,8 @@ class Detector(Plugin):
         :param constraint: finding is considered reproducible only when constraint is True
         """
 
+        if issymbolic(pc):
+            pc = simplify(pc)
         if isinstance(pc, Constant):
             pc = pc.value
         if not isinstance(pc, int):
