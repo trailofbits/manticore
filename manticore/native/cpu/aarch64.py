@@ -4979,14 +4979,17 @@ class Aarch64Operand(Operand):
     def __init__(self, cpu, op, **kwargs):
         super(Aarch64Operand, self).__init__(cpu, op)
 
-        assert self.op.type in (
+        if not self.op.type in (
             cs.arm64.ARM64_OP_REG,
             cs.arm64.ARM64_OP_REG_MRS,
             cs.arm64.ARM64_OP_REG_MSR,
             cs.arm64.ARM64_OP_MEM,
             cs.arm64.ARM64_OP_IMM,
             cs.arm64.ARM64_OP_FP
-        )
+        ):
+            raise NotImplementedError(
+                f"Unsupported operand type: '{self.op.type}'"
+            )
 
         self._type = self.op.type
 
