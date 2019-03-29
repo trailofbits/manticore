@@ -579,18 +579,18 @@ class EthTests(unittest.TestCase):
         owner = self.mevm.create_account(balance=1000)
         A = self.mevm.solidity_create_contract('contract A { function foo() { revert(); } }', owner=owner)
 
-        self.assertEqual(self.mevm.count_running_states(), 1)
+        self.assertEqual(self.mevm.count_ready_states(), 1)
         self.assertEqual(self.mevm.count_terminated_states(), 0)
         self.assertEqual(self.mevm.count_states(), 1)
 
         A.foo()
 
         def assert_all():
-            self.assertEqual(self.mevm.count_running_states(), 0)
+            self.assertEqual(self.mevm.count_ready_states(), 0)
             self.assertEqual(self.mevm.count_terminated_states(), 1)
             self.assertEqual(self.mevm.count_states(), 1)
 
-        list(self.mevm.running_states)
+        list(self.mevm.ready_states)
         assert_all()
 
         list(self.mevm.terminated_states)
@@ -639,7 +639,7 @@ class EthTests(unittest.TestCase):
 
         c.mul(1, 2)
 
-        self.assertEqual(self.mevm.count_running_states(), 1)
+        self.assertEqual(self.mevm.count_ready_states(), 1)
         self.assertEqual(self.mevm.count_terminated_states(), 0)
 
     def test_gen_testcase_only_if(self):
@@ -654,9 +654,9 @@ class EthTests(unittest.TestCase):
         contract_account = self.mevm.solidity_create_contract(source_code, owner=user_account)
         input_sym = self.mevm.make_symbolic_value()
         contract_account.f(input_sym)
-        self.assertEqual(len(list(self.mevm.running_states)), 1)
+        self.assertEqual(self.mevm.count_ready_states(), 1)
 
-        state = next(self.mevm.running_states)
+        state = next(self.mevm.ready_states)
         retval_array = state.platform.human_transactions[-1].return_data
         retval = operators.CONCAT(256, *retval_array)
 
@@ -707,7 +707,9 @@ class EthTests(unittest.TestCase):
         contract_account = self.mevm.solidity_create_contract(source_code, owner=user_account)
         contract_account.ret(self.mevm.make_symbolic_value(), self.mevm.make_symbolic_value(),
                              signature='(uint256,uint256)')
-        z = list(self.mevm.all_states)[0].solve_one(self.mevm.transactions()[1].return_data)
+        for st in self.mevm.all_states:
+            z = st.solve_one(state.platform.transactions[1].return_data)
+            break
         self.assertEqual(ABI.deserialize('(uint256)', z)[0], 2)
 
     def test_migrate_integration(self):
@@ -854,16 +856,16 @@ class EthTests(unittest.TestCase):
         receiver = m.create_account(0)
         symbolic_address = m.make_symbolic_address()
         m.constrain(symbolic_address == receiver.address)
-        self.assertTrue(m.count_running_states() > 0 )
+        self.assertTrue(m.count_ready_states() > 0 )
         contract.transferHalfTo(symbolic_address, caller=owner, value=m.make_symbolic_value())
-        self.assertTrue(m.count_running_states() > 0 )
+        self.assertTrue(m.count_ready_states() > 0 )
         self.assertTrue(any(state.can_be_true(state.platform.get_balance(receiver.address) > 0)
-                                for state in m.running_states))
+                                for state in m.ready_states))
 
     def test_make_symbolic_address(self):
         def get_state():
             """Returns one state and asserts that there is ONLY ONE."""
-            states = list(self.mevm.running_states)
+            states = list(self.mevm.ready_states)
             self.assertEqual(len(states), 1)
             return states[0]
 

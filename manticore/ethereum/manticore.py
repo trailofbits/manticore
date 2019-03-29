@@ -451,7 +451,7 @@ class ManticoreEVM(ManticoreBase):
     def transactions(self, state_id=None):
         """ Transactions list for state `state_id` """
         logger.info("Deprecated!")
-        state = self.load(state_id)
+        state = self._load(state_id)
         return state.platform.transactions
 
     def human_transactions(self, state_id=None):
