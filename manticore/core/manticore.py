@@ -810,6 +810,10 @@ class ManticoreBase(Eventful):
             pass
 
     def finalize(self):
+        """
+        Generate a report testcase for every state in the system and remove
+        all temporary files/streams from the workspace
+        """
         self.kill()
         for state in self.all_states:
             self.generate_testcase(state)
