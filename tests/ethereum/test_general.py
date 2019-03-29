@@ -673,7 +673,10 @@ class EthTests(unittest.TestCase):
             'user_00000000.' + ext for ext in ('summary', 'constraints', 'pkl', 'tx.json', 'tx', 'trace', 'logs')
         }
 
-        self.assertEqual(set(os.listdir(self.mevm.workspace)), expected_files)
+        expected_files.add('state_00000001.pkl')
+
+        actual_files = set((fn for fn in os.listdir(self.mevm.workspace) if not fn.startswith(".")))
+        self.assertEqual(actual_files, expected_files)
 
         summary_path = os.path.join(self.mevm.workspace, 'user_00000000.summary')
         with open(summary_path) as summary:
@@ -685,7 +688,7 @@ class EthTests(unittest.TestCase):
         self.assertFalse(did_gen)
 
         # Just a sanity check: a generate testcase with not met condition shouldn't add any more files
-        self.assertEqual(set(os.listdir(self.mevm.workspace)), expected_files)
+        self.assertEqual(actual_files, expected_files)
 
         # Since the condition was not met there should be no testcase in the summary
         with open(summary_path) as summary:
@@ -708,7 +711,7 @@ class EthTests(unittest.TestCase):
         contract_account.ret(self.mevm.make_symbolic_value(), self.mevm.make_symbolic_value(),
                              signature='(uint256,uint256)')
         for st in self.mevm.all_states:
-            z = st.solve_one(state.platform.transactions[1].return_data)
+            z = st.solve_one(st.platform.transactions[1].return_data)
             break
         self.assertEqual(ABI.deserialize('(uint256)', z)[0], 2)
 

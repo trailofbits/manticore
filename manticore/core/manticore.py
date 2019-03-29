@@ -541,8 +541,8 @@ class ManticoreBase(Eventful):
         """ Terminated states count """
         return len(self._terminated_states)
 
-    def generate_testcase(self, state, message='test'):
-        testcase = self._output.testcase(prefix='test')
+    def generate_testcase(self, state, message='test', name='test'):
+        testcase = self._output.testcase(prefix=name)
         with testcase.open_stream('pkl', binary=True) as statef:
             PickleSerializer().serialize(state, statef)
 

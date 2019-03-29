@@ -548,7 +548,7 @@ class ManticoreEVM(ManticoreBase):
             raise EthereumError(f"Failed to build contract {contract_name}")
         self.metadata[int(contract_account)] = md
 
-        if not self.count_running_states() or len(self.get_code(contract_account)) == 0:
+        if not self.count_ready_states() or len(self.get_code(contract_account)) == 0:
             return None
         return contract_account
 
@@ -1294,7 +1294,7 @@ class ManticoreEVM(ManticoreBase):
         # FIXME. workspace should not be responsible for formating the output
         # each object knows its secrets, and each class should be able to report
         # its final state
-        testcase = super().generate_testcase(state, message)
+        testcase = super().generate_testcase(state, message, name=name)
         # TODO(mark): Refactor ManticoreOutput to let the platform be more in control
         #  so this function can be fully ported to EVMWorld.generate_workspace_files.
         blockchain = state.platform
