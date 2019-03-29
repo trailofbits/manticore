@@ -54,7 +54,7 @@ class ManticoreBase(Eventful):
         if cls in (ManticoreBase, ManticoreSingle, ManticoreThreading, ManticoreMultiprocessing):
             raise Exception("Should not instantiate this")
 
-        logger.info("Using concurrency type: %r", consts.mprocessing.title())
+        #logger.info("Using concurrency type: %r", consts.mprocessing.title())
         cl = globals()[f'Manticore{consts.mprocessing.title()}']
         if cl not in cls.__bases__:
             #change ManticoreBase for the more specific class
@@ -96,17 +96,6 @@ class ManticoreBase(Eventful):
         def newFunction(self, *args, **kw):
             if self.is_running():
                 raise Exception(f"{func.__name__} only allowed while NOT exploring states")
-            return func(self, *args, **kw)
-
-        return newFunction
-
-    def at_standby(func):
-        """Allows the decorated method to run only when manticore is at STANDBY """
-
-        @functools.wraps(func)
-        def newFunction(self, *args, **kw):
-            if self.is_running():
-                raise Exception(f"{func.__name__} only allowed at standby/killed")
             return func(self, *args, **kw)
 
         return newFunction
@@ -569,7 +558,7 @@ class ManticoreBase(Eventful):
         logger.info(f'Generated testcase No. %d - %s', testcase.num, message)
         return testcase
 
-    @at_standby
+    @at_not_running
     def register_plugin(self, plugin):
         # Global enumeration of valid events
         assert isinstance(plugin, Plugin)
@@ -632,7 +621,7 @@ class ManticoreBase(Eventful):
         super().subscribe(name, callback)
 
     @property
-    @at_standby
+    @at_not_running
     def context(self):
         ''' Convenient access to shared context. We maintain a local copy of the
             share context during the time manticore is not running.
@@ -746,7 +735,7 @@ class ManticoreBase(Eventful):
         finally:
             timer.cancel()
 
-    @at_standby
+    @at_not_running
     def run(self, timeout=None):
         '''
         Runs analysis.
@@ -784,8 +773,8 @@ class ManticoreBase(Eventful):
                 while self._ready_states:
                     self._killed_states.append(self._ready_states.pop())
 
-        self._publish('did_run')
         self._running.value = False
+        self._publish('did_run')
         assert not self.is_running()
 
     @sync
