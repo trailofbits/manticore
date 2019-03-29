@@ -6580,6 +6580,113 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('NZCV'), 0)
 
 
+    # LD1 (multiple structures).
+
+    # XXX: Uses 'reset'.
+
+    @nottest
+    def _ld1_mlt_structs(self, vess, elem_size, elem_count):
+        for reg_count in range(1, 5):
+            for mode in ('no_offset', 'post_indexed_reg', 'post_indexed_imm'):
+                val = 0x4142434445464748
+                step = 0x1010101010101010
+
+                size = elem_size * elem_count
+                dword_size = 64
+
+                # Writeback.
+                if mode == 'post_indexed_imm':
+                    wback = (size // 8) * reg_count
+                elif mode == 'post_indexed_reg':
+                    wback = Mask(64)  # write the maximum value
+                else:
+                    wback = 0
+                wback_reg = 'x29'
+
+                # Create the instruction.
+                insn = 'ld1 {'
+
+                # Target registers.
+                for i in range(reg_count):
+                    if i != 0:
+                        insn += ', '
+                    insn += f'v{i}.{elem_count}{vess}'
+
+                insn += '}, [sp]'
+
+                # Writeback, if applicable.
+                if mode == 'post_indexed_reg':
+                    insn += f', {wback_reg}'
+                elif mode == 'post_indexed_imm':
+                    insn += f', #{wback}'
+
+                # Create the test function.
+                @itest_custom(
+                    ['mrs x30, cpacr_el1',
+                     'orr x30, x30, #0x300000',
+                     'msr cpacr_el1, x30',
+                     insn,
+                    ],
+                    multiple_insts=True
+                )
+                def f(self):
+                    # Disable traps first.
+                    for i in range(3):
+                        self._execute(reset=i == 0)
+
+                    # Push in reverse order.
+                    for i in range(reg_count * (size // dword_size) -1, -1, -1):
+                        self.cpu.push_int(val + i * step)
+
+                    # Save the stack pointer.
+                    stack = self.cpu.STACK
+
+                    # Write to the writeback register, if applicable.
+                    if mode == 'post_indexed_reg':
+                        self.rf.write(wback_reg.upper(), wback)
+
+                    # Execute the target instruction.
+                    self._execute(reset=False)
+
+                    assertEqual = lambda x, y: self.assertEqual(x, y, msg=insn)
+                    for i in range(reg_count):
+                        # Calculate the result.
+                        j = i * (size // dword_size)
+                        res = val + j * step
+                        res |= (val + (j + 1) * step) << dword_size
+                        res = res & Mask(size)
+
+                        # Test the target registers.
+                        assertEqual(self.rf.read(f'V{i}'), res & Mask(128))
+                        assertEqual(self.rf.read(f'Q{i}'), res & Mask(128))
+                        assertEqual(self.rf.read(f'D{i}'), res & Mask(64))
+                        assertEqual(self.rf.read(f'S{i}'), res & Mask(32))
+                        assertEqual(self.rf.read(f'H{i}'), res & Mask(16))
+                        assertEqual(self.rf.read(f'B{i}'), res & Mask(8))
+
+                    # Test writeback.
+                    if mode in ('post_indexed_reg', 'post_indexed_imm'):
+                        assertEqual(self.rf.read('SP'), (stack + wback) & Mask(64))  # writeback
+                    else:
+                        assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+                self.setUp()
+                f(self)
+
+    def test_ld1_mlt_structs(self):
+        self._ld1_mlt_structs(vess='b', elem_size=8, elem_count=8)
+        self._ld1_mlt_structs(vess='b', elem_size=8, elem_count=16)
+
+        self._ld1_mlt_structs(vess='h', elem_size=16, elem_count=4)
+        self._ld1_mlt_structs(vess='h', elem_size=16, elem_count=8)
+
+        self._ld1_mlt_structs(vess='s', elem_size=32, elem_count=2)
+        self._ld1_mlt_structs(vess='s', elem_size=32, elem_count=4)
+
+        self._ld1_mlt_structs(vess='d', elem_size=64, elem_count=1)
+        self._ld1_mlt_structs(vess='d', elem_size=64, elem_count=2)
+
+
     # LDP.
 
     # ldp w1, w2, [x27]       base register:     w1 = [x27],     w2 = [x27 + 4]

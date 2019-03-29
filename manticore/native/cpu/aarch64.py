@@ -2891,6 +2891,136 @@ class Aarch64Cpu(Cpu):
                 cs.arm64.ARM64_SFT_ROR
             ])
 
+    # XXX: Support LD1 (single structure).
+    @instruction
+    def LD1(cpu, op1, op2, op3=None, op4=None, op5=None, op6=None):
+        """
+        LD1 (multiple structures).
+
+        :param op1: register.
+        :param op2: memory or register.
+        :param op3: None, memory, register, or immediate.
+        :param op4: None, memory, register, or immediate.
+        :param op5: None, memory, register, or immediate.
+        :param op6: None, register, or immediate.
+        """
+        assert op1.type is cs.arm64.ARM64_OP_REG
+        assert op2.type in [cs.arm64.ARM64_OP_MEM, cs.arm64.ARM64_OP_REG]
+        assert not op3 or op3.type in [cs.arm64.ARM64_OP_MEM, cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
+        assert not op4 or op4.type in [cs.arm64.ARM64_OP_MEM, cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
+        assert not op5 or op5.type in [cs.arm64.ARM64_OP_MEM, cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
+        assert not op6 or op6.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
+
+        no_offset_rx  = '0'
+        no_offset_rx += '[01]'          # Q
+        no_offset_rx += '0011000'
+        no_offset_rx += '1'             # L
+        no_offset_rx += '000000'
+        no_offset_rx += '[01]{2}1[01]'  # opcode
+        no_offset_rx += '[01]{2}'       # size
+        no_offset_rx += '[01]{5}'       # Rn
+        no_offset_rx += '[01]{5}'       # Rt
+
+        post_index_rx  = '0'
+        post_index_rx += '[01]'          # Q
+        post_index_rx += '0011001'
+        post_index_rx += '1'             # L
+        post_index_rx += '0'
+        post_index_rx += '[01]{5}'       # Rm
+        post_index_rx += '[01]{2}1[01]'  # opcode
+        post_index_rx += '[01]{2}'       # size
+        post_index_rx += '[01]{5}'       # Rn
+        post_index_rx += '[01]{5}'       # Rt
+
+        assert (
+            re.match(no_offset_rx, cpu.insn_bit_str) or
+            re.match(post_index_rx, cpu.insn_bit_str)
+        )
+
+        # XXX: Check if trapped.
+
+        # Four registers.
+        if (op1.type == cs.arm64.ARM64_OP_REG and
+            op2.type == cs.arm64.ARM64_OP_REG and
+            op3.type == cs.arm64.ARM64_OP_REG and
+            op4.type == cs.arm64.ARM64_OP_REG):
+            res_ops = [op1, op2, op3, op4]
+            mem_op = op5
+            wback_op = op6
+
+        # Three registers.
+        elif (op1.type == cs.arm64.ARM64_OP_REG and
+              op2.type == cs.arm64.ARM64_OP_REG and
+              op3.type == cs.arm64.ARM64_OP_REG):
+            res_ops = [op1, op2, op3]
+            mem_op = op4
+            wback_op = op5
+
+        # Two registers.
+        elif (op1.type == cs.arm64.ARM64_OP_REG and
+              op2.type == cs.arm64.ARM64_OP_REG):
+            res_ops = [op1, op2]
+            mem_op = op3
+            wback_op = op4
+
+        # One register.
+        else:
+            res_ops = [op1]
+            mem_op = op2
+            wback_op = op3
+
+        i = 0
+        for res_op in res_ops:
+            base = cpu.regfile.read(mem_op.mem.base)
+            vas = res_op.op.vas
+
+            if vas == cs.arm64.ARM64_VAS_8B:
+                elem_size = 8
+                elem_count = 8
+
+            elif vas == cs.arm64.ARM64_VAS_16B:
+                elem_size = 8
+                elem_count = 16
+
+            elif vas == cs.arm64.ARM64_VAS_4H:
+                elem_size = 16
+                elem_count = 4
+
+            elif vas == cs.arm64.ARM64_VAS_8H:
+                elem_size = 16
+                elem_count = 8
+
+            elif vas == cs.arm64.ARM64_VAS_2S:
+                elem_size = 32
+                elem_count = 2
+
+            elif vas == cs.arm64.ARM64_VAS_4S:
+                elem_size = 32
+                elem_count = 4
+
+            elif vas == cs.arm64.ARM64_VAS_1D:
+                elem_size = 64
+                elem_count = 1
+
+            elif vas == cs.arm64.ARM64_VAS_2D:
+                elem_size = 64
+                elem_count = 2
+
+            else:
+                raise Aarch64InvalidInstruction
+
+            size = elem_size * elem_count
+            assert size <= res_op.size
+            result = cpu.read_int(base + i * (size // 8), size)
+            res_op.write(result)
+
+            i += 1
+
+        if cpu.instruction.writeback:
+            wback = wback_op.read()
+            wback = UInt(base + wback, cpu.address_bit_size)
+            cpu.regfile.write(mem_op.mem.base, wback)
+
     # XXX: Support LDP (SIMD&FP).
     @instruction
     def LDP(cpu, reg_op1, reg_op2, mem_op, mimm_op=None):
