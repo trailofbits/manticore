@@ -391,6 +391,12 @@ class Socket:
     def seek(self, *args):
         raise FdError("Invalid lseek() operation on Socket", errno.EINVAL)
 
+    def close(self):
+        '''
+        Doesn't need to do anything; fixes "no attribute 'close'" error.
+        '''
+        pass
+
 
 class Linux(Platform):
     '''
@@ -2091,7 +2097,7 @@ class Linux(Platform):
         :param regs:
         :return: The PID of the child process
         '''
-        return self.sys_getpid(None)
+        return self.sys_getpid()
 
     # Dispatchers...
     def syscall(self):
@@ -2120,7 +2126,7 @@ class Linux(Platform):
         logger.warning("sys_clock_time not really implemented")
         if clock_id == 1:
             t = int(time.monotonic() * 1000000000)  # switch to monotonic_ns in py3.7
-            self.current.write_bytes(timespec, struct.pack('l', t // 1000000000) + struct.pack('l', t))
+            self.current.write_bytes(timespec, struct.pack('I', t // 1000000000) + struct.pack('I', t))
         return 0
 
     def sys_time(self, tloc):
@@ -2129,6 +2135,19 @@ class Linux(Platform):
         if tloc != 0:
             self.current.write_int(tloc, int(t), self.current.address_bit_size)
         return int(t)
+
+    def sys_gettimeofday(self, tv, tz) -> int:
+        '''
+        Get time
+        success: Returns 0
+        error: Returns -1
+        '''
+        if tv != 0:
+            microseconds = int(time.time() * 10 ** -6)
+            self.current.write_bytes(tv, struct.pack('I', microseconds // (10 ** 6)) + struct.pack('I', microseconds))
+        if tz != 0:
+            logger.warning("No support for time zones in sys_gettimeofday")
+        return 0
 
     def sched(self):
         ''' Yield CPU.
@@ -2433,6 +2452,43 @@ class Linux(Platform):
             ret = self.sys_fstat(fd, buf)
         self.sys_close(fd)
         return ret
+
+    # @unimplemented
+    def sys_mkdir(self, pathname, mode) -> int:
+        '''
+        Create a directory
+        success: Returns 0
+        error: Returns -1
+        '''
+        name = self.current.read_string(pathname)
+        os.mkdir(name, mode=mode)
+
+        return -1
+
+    # @unimplemented
+    def sys_mkdirat(self, dfd, pathname, mode) -> int:
+        '''
+        Create a directory
+        success: Returns 0
+        error: Returns -1
+        '''
+        name = self.current.read_string(pathname)
+        os.mkdirat(name, mode=mode, dir_fd=dfd)
+
+        return -1
+
+    # @unimplemented
+    def sys_rmdir(self, pathname) -> int:
+        '''
+        Delete a directory
+        success: Returns 0
+        error: Returns -1
+        '''
+        name = self.current.read_string(pathname)
+        os.rmdir(name)
+
+        return -1
+
 
     def _arch_specific_init(self):
         assert self.arch in {'i386', 'amd64', 'armv7'}
