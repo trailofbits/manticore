@@ -13,7 +13,7 @@ from ..core.smtlib import Expression
 from ..core.state import StateBase
 from ..core.workspace import ManticoreOutput
 from ..utils import config
-from ..utils import log
+from ..utils.log import set_verbosity
 from ..utils.event import Eventful
 from ..utils.helpers import PickleSerializer
 from ..utils.nointerrupt import WithKeyboardInterruptAs
@@ -32,15 +32,6 @@ consts.add('timeout', default=0, description='Timeout, in seconds, for Manticore
 consts.add('cluster', default=False, description='If True enables to run workers over the network UNIMPLEMENTED')
 consts.add('procs', default=10, description='Number of parallel processes to spawn')
 consts.add('mprocessing', default='multiprocessing', description='single: No multiprocessing at all. Single process.\n threading: use threads\m multiprocessing: use forked processes')
-
-
-def set_verbosity(level):
-    """Convenience interface for setting logging verbosity to one of
-    several predefined logging presets. Valid values: 0-5.
-    This will affect all manticore instances.
-    """
-    log.set_verbosity(level)
-    logger.info(f'Verbosity set to {level}.')
 
 
 class ManticoreBase(Eventful):
@@ -319,8 +310,8 @@ class ManticoreBase(Eventful):
 
     @staticmethod
     def verbosity(level):
-        set_verbosity(level)
         logger.info("Deprecated!")
+        set_verbosity(level)
 
     # State storage
     def _save(self, state, state_id=None):
@@ -552,10 +543,14 @@ class ManticoreBase(Eventful):
 
     def generate_testcase(self, state, message='test'):
         testcase = self._output.testcase(prefix='test')
-        # self._publish('will_generate_testcase', state, testcase, message)
         with testcase.open_stream('pkl', binary=True) as statef:
             PickleSerializer().serialize(state, statef)
-        logger.info(f'Generated testcase No. %d - %s', testcase.num, message)
+
+        #Let the plugins generate a state based report
+        for p in self.plugins:
+            p.generate_testcase(state, testcase, message)
+
+        logger.info('Generated testcase No. %d - %s', testcase.num, message)
         return testcase
 
     @at_not_running

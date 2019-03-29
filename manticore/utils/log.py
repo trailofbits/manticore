@@ -1,6 +1,5 @@
 import logging
 import sys
-import types
 
 manticore_verbosity = 0
 DEFAULT_LOG_LEVEL = logging.WARNING

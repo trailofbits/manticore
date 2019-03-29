@@ -373,7 +373,6 @@ class ManticoreEVM(ManticoreBase):
         :param workspace_url: workspace folder name
         :param policy: scheduling priority
         """
-        #self.subscribe('will_generate_testcase', self._generate_testcase_callback)
         # Make the constraint store
         constraints = ConstraintSet()
         # make the ethereum world state
@@ -1238,6 +1237,21 @@ class ManticoreEVM(ManticoreBase):
     def workspace(self):
         return self._workspace._store.uri
 
+    def current_location(self, state):
+        world = state.platform
+        address = world.current_vm.address
+        pc = world.current_vm.pc
+        at_init = world.current_transaction.sort == 'CREATE'
+        output = io.StringIO()
+        write_findings(output, '', address, pc, at_init)
+        md = self.get_metadata(address)
+        if md is not None:
+            src = md.get_source_for(pc, runtime=not at_init)
+            output.write('Snippet:\n')
+            output.write(src.replace('\n', '\n  ').strip())
+            output.write('\n')
+        return output.getvalue()
+
     def generate_testcase(self, state, message='', only_if=None, name='user'):
         """
         Generate a testcase to the workspace for the given program state. The details of what
@@ -1264,39 +1278,19 @@ class ManticoreEVM(ManticoreBase):
         :return: If a testcase was generated
         :rtype: bool
         """
-        if only_if is None:
-            self._publish_generate_testcase(state, name, message)
-            return True
-        else:
-            with state as temp_state:
-                temp_state.constrain(only_if)
-                if temp_state.is_feasible():
-                    self._publish_generate_testcase(temp_state, name, message)
-                    return True
-
-        return False
-
-    def current_location(self, state):
-        world = state.platform
-        address = world.current_vm.address
-        pc = world.current_vm.pc
-        at_init = world.current_transaction.sort == 'CREATE'
-        output = io.StringIO()
-        write_findings(output, '', address, pc, at_init)
-        md = self.get_metadata(address)
-        if md is not None:
-            src = md.get_source_for(pc, runtime=not at_init)
-            output.write('Snippet:\n')
-            output.write(src.replace('\n', '\n  ').strip())
-            output.write('\n')
-        return output.getvalue()
-
-    def generate_testcase(self, state, message):
         """
         Create a serialized description of a given state.
         :param state: The state to generate information about
         :param message: Accompanying message
         """
+        if only_if is not None:
+            with state as temp_state:
+                temp_state.constrain(only_if)
+                if temp_state.is_feasible():
+                    return self.generate_testcase(temp_state, message, only_if=None, name=name)
+                else:
+                    return False
+
         # FIXME. workspace should not be responsible for formating the output
         # each object knows its secrets, and each class should be able to report
         # its final state
@@ -1420,7 +1414,6 @@ class ManticoreEVM(ManticoreBase):
         def finalizer(state_id):
             st = self._load(state_id)
             logger.debug("Generating testcase for state_id %d", state_id)
-
             last_tx = st.platform.last_transaction
             message = last_tx.result if last_tx else 'NO STATE RESULT (?)'
             self.generate_testcase(st, message=message)
@@ -1545,8 +1538,3 @@ class ManticoreEVM(ManticoreBase):
         with self.locked_context('evm.coverage') as coverage:
             seen = {off for addr, off, init in coverage if addr == account_address and not init}
         return calculate_coverage(runtime_bytecode, seen)
-
-    # TODO: Find a better way to suppress execution of Manticore._did_finish_run_callback
-    # We suppress because otherwise we log it many times and it looks weird.
-    def _did_finish_run_callback(self):
-        pass

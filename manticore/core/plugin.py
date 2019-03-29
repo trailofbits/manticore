@@ -48,6 +48,10 @@ class Plugin:
         ''' Called be parent manticore on un-registration '''
         pass
 
+    def generate_testcase(self, state, testcase, message):
+        ''' Called so the plugin can attach some results to the testcase if the
+            state needs it'''
+        pass
 
 def _dict_diff(d1, d2):
     '''

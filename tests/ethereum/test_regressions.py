@@ -88,8 +88,8 @@ class IntegrationTest(unittest.TestCase):
         self.assertIn(b'm.main:INFO: Beginning analysis', output[2])
         self.assertIn(b'm.e.manticore:INFO: Starting symbolic create contract', output[3])
 
-        self.assertIn(b'm.c.manticore:INFO: Results in ', output[-2])
-        self.assertIn(b'm.c.manticore:INFO: Total time: ', output[-1])
+        #self.assertIn(b'm.c.manticore:INFO: Results in ', output[-2])
+        #self.assertIn(b'm.c.manticore:INFO: Total time: ', output[-1])
 
         # Since we count the total time of Python process that runs Manticore, it takes a bit more time
         # e.g. for some finalization like generation of testcases

@@ -24,7 +24,7 @@ from manticore.platforms import evm
 from manticore.platforms.evm import EVMWorld, ConcretizeArgument, concretized_args, Return, Stop
 from manticore.utils.deprecated import ManticoreDeprecationWarning
 
-solver = Z3solver()
+solver = Z3Solver.instance()
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -1503,7 +1503,7 @@ class EthPluginTests(unittest.TestCase):
         """
         Tests that the FilterFunctions plugin matches the fallback function hash correctly. issue #1196
         """
-        with disposable_mevm(procs=1) as m:
+        with disposable_mevm() as m:
             source_code = '''
             contract FallbackCounter {
                 uint public fallbackCounter = 123;
@@ -1527,7 +1527,7 @@ class EthPluginTests(unittest.TestCase):
             m.transaction(caller=creator_account, address=contract_account, data=symbolic_data, value=0)
 
             self.assertEqual(m.count_states(), 1)
-            self.assertEqual(m.count_running_states(), 1)
+            self.assertEqual(m.count_ready_states(), 1)
 
             self.assertEqual(len(m.world.all_transactions), 2)
 
