@@ -169,6 +169,7 @@ class ManticoreEVM(ManticoreBase):
             self.constraints.add(constraint)
         else:
             for state in self.all_states:
+                print ("BLAH")
                 state.constrain(constraint)
 
     @staticmethod

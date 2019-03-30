@@ -866,46 +866,38 @@ class EthTests(unittest.TestCase):
                                 for state in m.ready_states))
 
     def test_make_symbolic_address(self):
-        def get_state():
-            """Returns one state and asserts that there is ONLY ONE."""
-            states = list(self.mevm.ready_states)
-            self.assertEqual(len(states), 1)
-            return states[0]
+        for init_state in self.mevm.ready_states:
+            symbolic_address1 = self.mevm.make_symbolic_address()
+            self.assertEqual(symbolic_address1.name, 'TXADDR')
 
-        init_state = get_state()
-
-        symbolic_address1 = self.mevm.make_symbolic_address()
-        self.assertEqual(symbolic_address1.name, 'TXADDR')
-
-        # sanity check: creating a symbolic address should not create a new state
-        self.assertIs(get_state(), init_state)
-
-        # TEST 1: the 1st symbolic address should be constrained only to 0 (as there are no other accounts yet!)
-        possible_addresses1 = init_state.solve_n(symbolic_address1, 10)
-        self.assertEqual(possible_addresses1, [0])
+            # TEST 1: the 1st symbolic address should be constrained only to 0 (as there are no other accounts yet!)
+            possible_addresses1 = init_state.solve_n(symbolic_address1, 10)
+            self.assertEqual(possible_addresses1, [0])
 
         owner = self.mevm.create_account(balance=1)
+        print (owner)
 
-        # TEST 2: the 2nd symbolic address should be constrained to OR(owner_address, 0)
-        symbolic_address2 = self.mevm.make_symbolic_address()
-        self.assertEqual(symbolic_address2.name, 'TXADDR_1')
+        for state in self.mevm.ready_states:
+            # TEST 2: the 2nd symbolic address should be constrained to OR(owner_address, 0)
+            symbolic_address2 = self.mevm.make_symbolic_address()
+            self.assertEqual(symbolic_address2.name, 'TXADDR_1')
 
-        self.assertEqual(get_state().solve_n(symbolic_address2, 10), [int(owner), 0])
+            self.assertEqual(state.solve_n(symbolic_address2, 10), [0, int(owner)])
 
         contract = self.mevm.solidity_create_contract('contract C {}', owner=owner)
-
+        print (contract)
         # TEST 3: the 3rd symbolic address should be constrained to OR(contract_address, 0, owner_address)
         symbolic_address3 = self.mevm.make_symbolic_address()
         self.assertEqual(symbolic_address3.name, 'TXADDR_2')
 
-        state = get_state()
+        for state in self.mevm.ready_states:
 
-        self.assertEqual(state.solve_n(symbolic_address3, 10), [int(contract), 0, int(owner)])
+            self.assertEqual(state.solve_n(symbolic_address3, 10), [int(contract), 0, int(owner)])
 
-        # NOTE: The 1st and 2nd symbolic addresses are still constrained to 0 and OR(owner_address, 0)
-        # as the constrains are not reevaluated. They are created/assigned only once: when we create symbolic address.
-        self.assertEqual(state.solve_n(symbolic_address1, 10), [0])
-        self.assertEqual(state.solve_n(symbolic_address2, 10), [int(owner), 0])
+            # NOTE: The 1st and 2nd symbolic addresses are still constrained to 0 and OR(owner_address, 0)
+            # as the constrains are not reevaluated. They are created/assigned only once: when we create symbolic address.
+            self.assertEqual(state.solve_n(symbolic_address1, 10), [0])
+            self.assertEqual(state.solve_n(symbolic_address2, 10), [int(owner), 0])
 
     def test_end_instruction_trace(self):
         """

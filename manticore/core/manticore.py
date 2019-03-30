@@ -3,6 +3,8 @@ import logging
 import sys
 import time
 import random
+import weakref
+
 from contextlib import contextmanager
 
 import functools
@@ -327,6 +329,7 @@ class ManticoreBase(Eventful):
         state._id = self._workspace.save_state(state, state_id=state_id)
         return state.id
 
+
     def _load(self, state_id):
         """ Load the state from the secondary storage
 
@@ -334,11 +337,16 @@ class ManticoreBase(Eventful):
             :type state_id: int
             :returns: the state id used
         """
+        if not hasattr(self, "stcache"):
+            self.stcache = weakref.WeakValueDictionary()
+        if state_id in self.stcache:
+            return self.stcache[state_id]
         self._publish('will_load_state', state_id)
         state = self._workspace.load_state(state_id, delete=False)
         state._id = state_id
         self.forward_events_from(state, True)
         self._publish('did_load_state', state, state_id)
+        self.stcache[state_id] = state
         return state
 
     def _remove(self, state_id):
