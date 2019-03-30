@@ -64,7 +64,7 @@ launch_examples() {
 run_tests_from_dir() {
     DIR=$1
     coverage erase
-    coverage run -m unittest discover -c -v  "tests/$DIR" 2>&1 >/dev/null | tee travis_tests.log
+    coverage run -m unittest discover "tests/$DIR" 2>&1 >/dev/null | tee travis_tests.log
     DID_OK=$(tail -n1 travis_tests.log)
     if [[ "${DID_OK}" != OK* ]]; then
         echo "Some tests failed :("
