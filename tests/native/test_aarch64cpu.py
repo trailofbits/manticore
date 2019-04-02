@@ -6232,6 +6232,29 @@ class Aarch64Instructions:
             self.fail()
 
 
+    # DMB.
+
+    def test_dmb(self):
+        def dmb(x):
+            @itest(f'dmb {x}')
+            def f(self):
+                pass
+
+            self.setUp()
+            f(self)
+
+        for imm in range(16):
+            dmb(f'#{imm}')
+
+        for bar in (
+            'sy',  'st',    'ld',
+            'ish', 'ishst', 'ishld',
+            'nsh', 'nshst', 'nshld',
+            'osh', 'oshst', 'oshld'
+        ):
+            dmb(f'{bar}')
+
+
     # DUP (general).
 
     # XXX: Uses 'reset'.

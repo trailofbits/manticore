@@ -2784,6 +2784,30 @@ class Aarch64Cpu(Cpu):
 
         res_op.write(UInt(result, res_op.size))
 
+    @instruction
+    def DMB(cpu, op):
+        """
+        DMB.
+
+        :param op: barrier or immediate.
+        """
+        assert op.type in [cs.arm64.ARM64_OP_BARRIER, cs.arm64.ARM64_OP_IMM]
+
+        insn_rx  = '1101010100'
+        insn_rx += '0'
+        insn_rx += '00'
+        insn_rx += '011'
+        insn_rx += '0011'
+        insn_rx += '[01]{4}'  # CRm
+        insn_rx += '1'
+        insn_rx += '01'       # opc
+        insn_rx += '1{5}'
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        # XXX: Assumes sequential execution.
+        pass
+
     # XXX: Support DUP (element).
     @instruction
     def DUP(cpu, res_op, reg_op):
@@ -5115,7 +5139,8 @@ class Aarch64Operand(Operand):
             cs.arm64.ARM64_OP_REG_MSR,
             cs.arm64.ARM64_OP_MEM,
             cs.arm64.ARM64_OP_IMM,
-            cs.arm64.ARM64_OP_FP
+            cs.arm64.ARM64_OP_FP,
+            cs.arm64.ARM64_OP_BARRIER
         ):
             raise NotImplementedError(
                 f"Unsupported operand type: '{self.op.type}'"
