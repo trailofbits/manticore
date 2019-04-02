@@ -6710,6 +6710,49 @@ class Aarch64Instructions:
         self._ld1_mlt_structs(vess='d', elem_size=64, elem_count=2)
 
 
+    # LDAXR.
+
+    # 32-bit.
+
+    @itest_custom('ldaxr w1, [sp]')
+    def test_ldaxr32(self):
+        self.cpu.push_int(0x4142434445464748)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0x45464748)
+        self.assertEqual(self.rf.read('W1'), 0x45464748)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_custom('ldaxr w1, [sp, #0]')
+    def test_ldaxr_0_32(self):
+        self.cpu.push_int(0x4142434445464748)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0x45464748)
+        self.assertEqual(self.rf.read('W1'), 0x45464748)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    # 64-bit.
+
+    @itest_custom('ldaxr x1, [sp]')
+    def test_ldaxr64(self):
+        self.cpu.push_int(0x4142434445464748)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W1'), 0x45464748)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_custom('ldaxr x1, [sp, #0]')
+    def test_ldaxr_0_64(self):
+        self.cpu.push_int(0x4142434445464748)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W1'), 0x45464748)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+
     # LDP.
 
     # ldp w1, w2, [x27]       base register:     w1 = [x27],     w2 = [x27 + 4]

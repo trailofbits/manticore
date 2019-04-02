@@ -3045,6 +3045,39 @@ class Aarch64Cpu(Cpu):
             wback = UInt(base + wback, cpu.address_bit_size)
             cpu.regfile.write(mem_op.mem.base, wback)
 
+    @instruction
+    def LDAXR(cpu, reg_op, mem_op):
+        """
+        LDAXR.
+
+        :param reg_op: destination register.
+        :param mem_op: memory.
+        """
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+        assert mem_op.type is cs.arm64.ARM64_OP_MEM
+
+        insn_rx  = '1[01]'    # size
+        insn_rx += '001000'
+        insn_rx += '0'
+        insn_rx += '1'        # L
+        insn_rx += '0'
+        insn_rx += '1{5}'     # Rs
+        insn_rx += '1'        # o0
+        insn_rx += '1{5}'     # Rt2
+        insn_rx += '[01]{5}'  # Rn
+        insn_rx += '[01]{5}'  # Rt
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        # XXX: Support exclusive access.
+
+        base = cpu.regfile.read(mem_op.mem.base)
+        imm = mem_op.mem.disp
+        assert imm == 0
+
+        result = cpu.read_int(base, reg_op.size)
+        reg_op.write(result)
+
     # XXX: Support LDP (SIMD&FP).
     @instruction
     def LDP(cpu, reg_op1, reg_op2, mem_op, mimm_op=None):
