@@ -305,6 +305,7 @@ class Aarch64Cpu(Cpu):
             not ops[2].is_shifted()
            ):
             name = 'MOV'
+            insn._raw.mnemonic = name.lower().encode('ascii')
             del ops[1]
 
         # Map all B.cond variants to a single implementation.
@@ -320,8 +321,9 @@ class Aarch64Cpu(Cpu):
               ops[1].type == cs.arm64.ARM64_OP_REG and
               ops[1].reg in ['WZR', 'XZR']
              ):
-             name = 'BFC'
-             del ops[1]
+            name = 'BFC'
+            insn._raw.mnemonic = name.lower().encode('ascii')
+            del ops[1]
 
         # XXX: CMEQ incorrectly sets the type to 'ARM64_OP_FP' for
         # 'cmeq v0.16b, v1.16b, #0':
