@@ -340,16 +340,14 @@ class Aarch64Cpu(Cpu):
         insn = struct.unpack("<I", self.instruction.bytes)[0]
         return f'{insn:032b}'
 
-    def cond_holds(cpu):
-        cond = cpu.instruction.cc
+    def cond_holds(cpu, cond):
         return COND_MAP[cond].func(*cpu.regfile.nzcv)
 
     # XXX: If it becomes an issue, also invert the 'cond' field in the
     # instruction encoding.
-    def invert_cond(cpu):
-        cond = cpu.instruction.cc
+    def invert_cond(cpu, cond):
         assert cond not in [cs.arm64.ARM64_CC_AL, cs.arm64.ARM64_CC_NV]
-        cpu.instruction.cc = COND_MAP[cond].inverse
+        return COND_MAP[cond].inverse
 
     # XXX: Use masking when writing to the destination register?  Avoiding this
     # for now, but the assert in the 'write' method should catch such cases.
@@ -662,7 +660,7 @@ class Aarch64Cpu(Cpu):
 
         assert nzcv in range(16)
 
-        if cpu.cond_holds():
+        if cpu.cond_holds(cpu.instruction.cc):
             (_, nzcv) = cpu._add_with_carry(reg_op.size, reg, ~reg_imm, 1)
             cpu.regfile.nzcv = nzcv
         else:
@@ -1790,7 +1788,7 @@ class Aarch64Cpu(Cpu):
 
         imm = imm_op.op.imm
 
-        if cpu.cond_holds():
+        if cpu.cond_holds(cpu.instruction.cc):
             cpu.PC = imm
 
     @instruction
@@ -2236,11 +2234,11 @@ class Aarch64Cpu(Cpu):
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
-        cpu.invert_cond()
+        cond = cpu.invert_cond(cpu.instruction.cc)
 
         # The 'instruction' decorator advances PC, so call the original
         # method.
-        cpu.CSINC.__wrapped__(cpu, res_op, reg_op, reg_op)
+        cpu.CSINC.__wrapped__(cpu, res_op, reg_op, reg_op, cond)
 
     @instruction
     def CINV(cpu, res_op, reg_op):
@@ -2266,11 +2264,11 @@ class Aarch64Cpu(Cpu):
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
-        cpu.invert_cond()
+        cond = cpu.invert_cond(cpu.instruction.cc)
 
         # The 'instruction' decorator advances PC, so call the original
         # method.
-        cpu.CSINV.__wrapped__(cpu, res_op, reg_op, reg_op)
+        cpu.CSINV.__wrapped__(cpu, res_op, reg_op, reg_op, cond)
 
     # XXX: Support CLZ (vector).
     @instruction
@@ -2635,7 +2633,7 @@ class Aarch64Cpu(Cpu):
         reg1 = reg_op1.read()
         reg2 = reg_op2.read()
 
-        if cpu.cond_holds():
+        if cpu.cond_holds(cpu.instruction.cc):
             result = reg1
         else:
             result = reg2
@@ -2664,7 +2662,7 @@ class Aarch64Cpu(Cpu):
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
-        cpu.invert_cond()
+        cond = cpu.invert_cond(cpu.instruction.cc)
 
         # Fake a register operand.
         if res_op.size == 32:
@@ -2676,7 +2674,7 @@ class Aarch64Cpu(Cpu):
 
         # The 'instruction' decorator advances PC, so call the original
         # method.
-        cpu.CSINC.__wrapped__(cpu, res_op, zr, zr)
+        cpu.CSINC.__wrapped__(cpu, res_op, zr, zr, cond)
 
     @instruction
     def CSETM(cpu, res_op):
@@ -2700,7 +2698,7 @@ class Aarch64Cpu(Cpu):
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
-        cpu.invert_cond()
+        cond = cpu.invert_cond(cpu.instruction.cc)
 
         # Fake a register operand.
         if res_op.size == 32:
@@ -2712,10 +2710,10 @@ class Aarch64Cpu(Cpu):
 
         # The 'instruction' decorator advances PC, so call the original
         # method.
-        cpu.CSINV.__wrapped__(cpu, res_op, zr, zr)
+        cpu.CSINV.__wrapped__(cpu, res_op, zr, zr, cond)
 
     @instruction
-    def CSINC(cpu, res_op, reg_op1, reg_op2):
+    def CSINC(cpu, res_op, reg_op1, reg_op2, cond=None):
         """
         CSINC.
 
@@ -2742,8 +2740,9 @@ class Aarch64Cpu(Cpu):
 
         reg1 = reg_op1.read()
         reg2 = reg_op2.read()
+        cond = cond if cond else cpu.instruction.cc
 
-        if cpu.cond_holds():
+        if cpu.cond_holds(cond):
             result = reg1
         else:
             result = reg2 + 1
@@ -2751,7 +2750,7 @@ class Aarch64Cpu(Cpu):
         res_op.write(UInt(result, res_op.size))
 
     @instruction
-    def CSINV(cpu, res_op, reg_op1, reg_op2):
+    def CSINV(cpu, res_op, reg_op1, reg_op2, cond=None):
         """
         CSINV.
 
@@ -2778,8 +2777,9 @@ class Aarch64Cpu(Cpu):
 
         reg1 = reg_op1.read()
         reg2 = reg_op2.read()
+        cond = cond if cond else cpu.instruction.cc
 
-        if cpu.cond_holds():
+        if cpu.cond_holds(cond):
             result = reg1
         else:
             result = ~reg2
