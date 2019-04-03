@@ -217,7 +217,7 @@ UNICORN_QEMU_FLAGS="--python=`whereis python`" pip install unicorn
 
 ## Getting Help
 
-Feel free to stop by our [Slack channel](https://empirehacking.slack.com/messages/C3PTWK7UM) for help on using or extending Manticore.
+Feel free to stop by our #manticore slack channel in [Empire Hacking](https://empireslacking.herokuapp.com/) for help using or extending Manticore.
 
 
 Documentation is available in several places:
