@@ -13,6 +13,9 @@ import random
 import logging
 import argparse
 
+from elftools.elf.elffile import ELFFile
+from elftools.elf.sections import SymbolTableSection
+
 from manticore import issymbolic
 from manticore.core.smtlib import operators
 from manticore.native import Manticore
@@ -90,8 +93,6 @@ def main():
                         help="If set, turns on debugging output for sandshrew")
     parser.add_argument("--trace", dest="trace", action="store_true", required=False,
                         help="If set, trace instruction recording will be outputted to logger")
-    parser.add_argument("--no-concolic", dest="no_concolic", action="store_true", required=False,
-                        help="If set, no concretization will be performed")
 
     # other configuration settings
     parser.add_argument("--cmpsym", dest="cmp_sym", default="__strcmp_ssse3", required=False,
