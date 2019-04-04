@@ -106,6 +106,11 @@ class ConcreteUnicornEmulator:
 
         for reg in self.registers:
             val = self._cpu.read_register(reg)
+
+            if reg in {'FS', 'GS'}:
+                self.msr_write(reg, val)
+                continue
+
             if issymbolic(val):
                 from ..native.cpu.abstractcpu import ConcretizeRegister
                 raise ConcretizeRegister(self._cpu, reg, "Concretizing for emulation.",
@@ -346,14 +351,15 @@ class ConcreteUnicornEmulator:
         """ Only useful for setting FS right now. """
         logger.info("Updating selector %s to 0x%02x (%s bytes) (%s)", selector, base, size, perms)
         if selector == 99:
-            self.set_fs(base)
+            self.msr_write('FS', base)
         else:
             logger.error("No way to write segment: %d", selector)
 
-    def set_fs(self, addr):
+    def msr_write(self, reg, data):
         """
-        set the FS.base hidden descriptor-register field to the given address.
-        this enables referencing the fs segment on x86-64.
+        set the hidden descriptor-register fields to the given address.
+        This enables referencing the fs segment on x86-64.
         """
-        FSMSR = 0xC0000100
-        return self._emu.msr_write(FSMSR, addr)
+        magic = {'FS': 0xC0000100,
+                 'GS': 0xC0000101}
+        return self._emu.msr_write(magic[reg], data)
