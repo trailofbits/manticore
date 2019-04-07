@@ -4341,6 +4341,43 @@ class Aarch64Cpu(Cpu):
         # method.
         cpu.SBFM.__wrapped__(cpu, res_op, reg_op, lsb_op, width_op)
 
+    # XXX: Add tests.
+    @instruction
+    def STLXR(cpu, stat_op, reg_op, mem_op):
+        """
+        STLXR.
+
+        :param stat_op: status register.
+        :param reg_op: source register.
+        :param mem_op: memory.
+        """
+        assert stat_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+        assert mem_op.type is cs.arm64.ARM64_OP_MEM
+
+        insn_rx  = '1[01]'    # size
+        insn_rx += '001000'
+        insn_rx += '0'
+        insn_rx += '0'        # L
+        insn_rx += '0'
+        insn_rx += '[01]{5}'  # Rs
+        insn_rx += '1'        # o0
+        insn_rx += '1{5}'     # Rt2
+        insn_rx += '[01]{5}'  # Rn
+        insn_rx += '[01]{5}'  # Rt
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        # XXX: Support exclusive access and check alignment.
+
+        base = cpu.regfile.read(mem_op.mem.base)
+        imm = mem_op.mem.disp
+        assert imm == 0
+        reg = reg_op.read()
+
+        cpu.write_int(base, reg, reg_op.size)
+        stat_op.write(0)  # XXX: always succeeds
+
     @instruction
     def STP(cpu, reg_op1, reg_op2, mem_op, mimm_op=None):
         """
@@ -4475,6 +4512,43 @@ class Aarch64Cpu(Cpu):
         :param mem_op: memory.
         """
         cpu._ldur_stur(reg_op, mem_op, ldur=False)
+
+    # XXX: Add tests.
+    @instruction
+    def STXR(cpu, stat_op, reg_op, mem_op):
+        """
+        STXR.
+
+        :param stat_op: status register.
+        :param reg_op: source register.
+        :param mem_op: memory.
+        """
+        assert stat_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+        assert mem_op.type is cs.arm64.ARM64_OP_MEM
+
+        insn_rx  = '1[01]'    # size
+        insn_rx += '001000'
+        insn_rx += '0'
+        insn_rx += '0'        # L
+        insn_rx += '0'
+        insn_rx += '[01]{5}'  # Rs
+        insn_rx += '0'        # o0
+        insn_rx += '1{5}'     # Rt2
+        insn_rx += '[01]{5}'  # Rn
+        insn_rx += '[01]{5}'  # Rt
+
+        assert re.match(insn_rx, cpu.insn_bit_str)
+
+        # XXX: Support exclusive access and check alignment.
+
+        base = cpu.regfile.read(mem_op.mem.base)
+        imm = mem_op.mem.disp
+        assert imm == 0
+        reg = reg_op.read()
+
+        cpu.write_int(base, reg, reg_op.size)
+        stat_op.write(0)  # XXX: always succeeds
 
     def _SUB_extended_register(cpu, res_op, reg_op1, reg_op2):
         """
