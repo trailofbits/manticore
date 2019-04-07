@@ -1665,6 +1665,31 @@ class Linux(Platform):
         # XXX: Return an appropriate value on error.
         return len(data)
 
+    def sys_readlinkat(self, dir_fd, path, buf, bufsize):
+        '''
+        Read the value of a symbolic link relative to a directory file descriptor.
+        :rtype: int
+
+        :param dir_fd: directory file descriptor.
+        :param path: symbolic link.
+        :param buf: destination buffer.
+        :param bufsize: size to read.
+        :return: number of bytes placed in buffer on success, -errno on error.
+
+        :todo: return -errno on error, full 'dir_fd' support.
+        '''
+        _path = self.current.read_string(path)
+        _dir_fd = ctypes.c_int32(dir_fd).value
+
+        if not (os.path.isabs(_path) or _dir_fd == self.FCNTL_FDCWD):
+            raise NotImplementedError(
+                "Only absolute paths or paths relative to CWD are supported"
+            )
+
+        # XXX: Use 'dir_fd'.
+        # XXX: Return an appropriate value on error.
+        return self.sys_readlink(path, buf, bufsize)
+
     def sys_mmap_pgoff(self, address, size, prot, flags, fd, offset):
         '''Wrapper for mmap2'''
         return self.sys_mmap2(address, size, prot, flags, fd, offset)
