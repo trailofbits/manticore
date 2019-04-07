@@ -1644,13 +1644,15 @@ class Linux(Platform):
 
     def sys_readlink(self, path, buf, bufsize):
         '''
-        Read
+        Read the value of a symbolic link.
         :rtype: int
 
-        :param path: the "link path id"
-        :param buf: the buffer where the bytes will be putted.
-        :param bufsize: the max size for read the link.
-        :todo: Out eax number of bytes actually sent | EAGAIN | EBADF | EFAULT | EINTR | errno.EINVAL | EIO | ENOSPC | EPIPE
+        :param path: symbolic link.
+        :param buf: destination buffer.
+        :param bufsize: size to read.
+        :return: number of bytes placed in buffer on success, -errno on error.
+
+        :todo: return -errno on error.
         '''
         if bufsize <= 0:
             return -errno.EINVAL
@@ -1660,6 +1662,7 @@ class Linux(Platform):
         else:
             data = os.readlink(filename)[:bufsize]
         self.current.write_bytes(buf, data)
+        # XXX: Return an appropriate value on error.
         return len(data)
 
     def sys_mmap_pgoff(self, address, size, prot, flags, fd, offset):
