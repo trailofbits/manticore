@@ -26,6 +26,21 @@ from multiprocessing.managers import SyncManager
 import threading
 import ctypes
 import signal
+from enum import Enum
+
+class MprocessingType(Enum):
+    """Used as configuration constant for choosing multiprocessing flavor"""
+    multiprocessing = 'multiprocessing'
+    single = 'single'
+    threading = 'threading'
+
+    def title(self):
+        return self._name_.title()
+
+    @classmethod
+    def from_string(cls, name):
+        return cls.__members__[name]
+
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +48,7 @@ consts = config.get_group('core')
 consts.add('timeout', default=0, description='Timeout, in seconds, for Manticore invocation')
 consts.add('cluster', default=False, description='If True enables to run workers over the network UNIMPLEMENTED')
 consts.add('procs', default=10, description='Number of parallel processes to spawn')
-consts.add('mprocessing', default='multiprocessing', description='single: No multiprocessing at all. Single process.\n threading: use threads\m multiprocessing: use forked processes')
+consts.add('mprocessing', default=MprocessingType.multiprocessing, description='single: No multiprocessing at all. Single process.\n threading: use threads\m multiprocessing: use forked processes')
 
 
 class ManticoreBase(Eventful):
