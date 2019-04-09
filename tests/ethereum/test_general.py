@@ -896,8 +896,8 @@ class EthTests(unittest.TestCase):
 
             # NOTE: The 1st and 2nd symbolic addresses are still constrained to 0 and OR(owner_address, 0)
             # as the constrains are not reevaluated. They are created/assigned only once: when we create symbolic address.
-            self.assertEqual(state.solve_n(symbolic_address1, 10), [0])
-            self.assertEqual(state.solve_n(symbolic_address2, 10), [int(owner), 0])
+            self.assertCountEqual(state.solve_n(symbolic_address1, 10), [0])
+            self.assertCountEqual(state.solve_n(symbolic_address2, 10), [int(owner), 0])
 
     def test_end_instruction_trace(self):
         """

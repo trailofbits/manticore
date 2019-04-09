@@ -75,8 +75,6 @@ class StateBase(Eventful):
     :ivar dict context: Local context for arbitrary data storage
     """
 
-    _published_events = {'generate_testcase'}
-
     def __init__(self, constraints, platform, **kwargs):
         super().__init__(**kwargs)
         self._platform = platform
