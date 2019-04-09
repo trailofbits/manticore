@@ -53,6 +53,7 @@ class Plugin:
             state needs it'''
         pass
 
+
 def _dict_diff(d1, d2):
     '''
     Produce a dict that includes all the keys in d2 that represent different values in d1, as well as values that

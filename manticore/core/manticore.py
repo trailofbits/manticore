@@ -28,7 +28,8 @@ import ctypes
 import signal
 from enum import Enum
 
-class MprocessingType(Enum):
+
+class MProcessingType(Enum):
     """Used as configuration constant for choosing multiprocessing flavor"""
     multiprocessing = 'multiprocessing'
     single = 'single'
@@ -48,7 +49,7 @@ consts = config.get_group('core')
 consts.add('timeout', default=0, description='Timeout, in seconds, for Manticore invocation')
 consts.add('cluster', default=False, description='If True enables to run workers over the network UNIMPLEMENTED')
 consts.add('procs', default=10, description='Number of parallel processes to spawn')
-consts.add('mprocessing', default=MprocessingType.multiprocessing, description='single: No multiprocessing at all. Single process.\n threading: use threads\m multiprocessing: use forked processes')
+consts.add('mprocessing', default=MProcessingType.multiprocessing, description='single: No multiprocessing at all. Single process.\n threading: use threads\m multiprocessing: use forked processes')
 
 
 class ManticoreBase(Eventful):
@@ -343,7 +344,6 @@ class ManticoreBase(Eventful):
         assert state.id is None or state.id == state_id
         state._id = self._workspace.save_state(state, state_id=state_id)
         return state.id
-
 
     def _load(self, state_id):
         """ Load the state from the secondary storage
