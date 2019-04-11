@@ -77,7 +77,7 @@ class ManticoreEVM(ManticoreBase):
             from manticore.ethereum import ManticoreEVM, ABI
             m = ManticoreEVM()
             #And now make the contract account to analyze
-            source_code = """
+            source_code = '''
                 pragma solidity ^0.4.15;
                 contract AnInt {
                     uint private i=0;
@@ -85,7 +85,7 @@ class ManticoreEVM(ManticoreBase):
                         i=value
                     }
                 }
-            """
+            '''
             #Initialize user and contracts
             user_account = m.create_account(balance=1000)
             contract_account = m.solidity_create_contract(source_code, owner=user_account, balance=0)
