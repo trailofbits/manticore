@@ -12,7 +12,7 @@ import gdb
 logger = logging.getLogger('TRACE')
 
 ## We need to keep some complex objects in between hook invocations so we keep them
-## as globals. Tracing is inherently a single-threaded process, so using a 
+## as globals. Tracing is inherently a single-threaded process, so using a
 ## manticore context would be heavier than needed.
 stack_top = 0xc0000000
 stack_size = 0x20000
@@ -34,14 +34,14 @@ def dump_gdb(cpu, addr, count):
         print(f'{offset:x}: g{val:08x} m{val2:08x}')
 
 def cmp_regs(cpu, should_print=False):
-    '''
+    """
     Compare registers from a remote gdb session to current mcore.
 
     :param manticore.core.cpu Cpu: Current cpu
     :param bool should_print: Whether to print values to stdout
     :return: Whether or not any differences were detected
     :rtype: bool
-    '''
+    """
     differing = False
     gdb_regs = gdb.getCanonicalRegisters()
     for name in sorted(gdb_regs):
@@ -65,9 +65,9 @@ def pre_mcore(state):
         state.cpu.memory.push_record_writes()
 
 def post_mcore(state, last_instruction):
-    '''
+    """
     Handle syscalls (import memory) and bail if we diverge
-    '''
+    """
     global in_helper
 
     # Synchronize qemu state to manticore's after a system call
@@ -120,10 +120,10 @@ def post_qemu(state, last_mnemonic):
         sync_svc(state)
 
 def sync_svc(state):
-    '''
+    """
     Mirror some service calls in manticore. Happens after qemu executed a SVC
     instruction, but before manticore did.
-    '''
+    """
     syscall = state.cpu.R7 # Grab idx from manticore since qemu could have exited
     name = linux_syscalls.armv7[syscall]
 
@@ -143,9 +143,9 @@ def sync_svc(state):
         raise
 
 def initialize(state):
-    '''
+    """
     Synchronize the stack and register state (manticore->qemu)
-    '''
+    """
     logger.debug(f"Copying {stack_top - state.cpu.SP} bytes in the stack..")
     stack_bottom = min(state.cpu.SP, gdb.getR('SP'))
     for address in range(stack_bottom, stack_top):
@@ -184,7 +184,7 @@ def verify(argv):
 
     @m.hook(None)
     def on_instruction(state):
-        '''
+        """
         Handle all the hooks for each instruction executed. Ordered as:
 
         pre_qemu
@@ -198,7 +198,7 @@ def verify(argv):
         post_mcore
 
         // all memory written in a mcore syscall gets moved to qemu here
-        '''
+        """
         global initialized, last_instruction
 
         # Initialize our state to QEMU's

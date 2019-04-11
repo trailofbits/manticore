@@ -41,7 +41,7 @@ def sync(f):
 
 
 class Policy:
-    ''' Base class for prioritization of state search '''
+    """ Base class for prioritization of state search """
 
     def __init__(self, executor, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -50,7 +50,7 @@ class Policy:
 
     @contextmanager
     def locked_context(self, key=None, default=dict):
-        ''' Policy shared context dictionary '''
+        """ Policy shared context dictionary """
         keys = ['policy']
         if key is not None:
             keys.append(key)
@@ -58,9 +58,9 @@ class Policy:
             yield policy_context
 
     def _add_state_callback(self, state_id, state):
-        ''' Save summarize(state) on policy shared context before
+        """ Save summarize(state) on policy shared context before
             the state is stored
-        '''
+        """
         summary = self.summarize(state)
         if summary is None:
             return
@@ -68,15 +68,15 @@ class Policy:
             ctx[state_id] = summary
 
     def summarize(self, state):
-        '''
+        """
             Extract the relevant information from a state for later
             prioritization
-        '''
+        """
         return None
 
     def choice(self, state_ids):
-        ''' Select a state id from state_ids.
-            self.context has a dict mapping state_ids -> summarize(state)'''
+        """ Select a state id from state_ids.
+            self.context has a dict mapping state_ids -> summarize(state)"""
         raise NotImplementedError
 
 
@@ -102,13 +102,13 @@ class Uncovered(Policy):
         self._executor.subscribe('will_execute_instruction', self._visited_callback)
 
     def _visited_callback(self, state, pc, instr):
-        ''' Maintain our own copy of the visited set
-        '''
+        """ Maintain our own copy of the visited set
+        """
         with self.locked_context('visited', set) as ctx:
             ctx.add(pc)
 
     def summarize(self, state):
-        ''' Save the last pc before storing the state '''
+        """ Save the last pc before storing the state """
         return state.platform.PC
 
     def choice(self, state_ids):
@@ -134,8 +134,8 @@ class BranchLimited(Policy):
         self._executor.subscribe('will_execute_instruction', self._visited_callback)
 
     def _visited_callback(self, state, pc, instr):
-        ''' Maintain our own copy of the visited set
-        '''
+        """ Maintain our own copy of the visited set
+        """
         pc = state.platform.current.PC
         with self.locked_context('visited', dict) as ctx:
             ctx[pc] = ctx.get(pc, 0) + 1
@@ -164,11 +164,11 @@ class BranchLimited(Policy):
 
 
 class Executor(Eventful):
-    '''
+    """
     The executor guides the execution of a single state, handles state forking
     and selection, maintains run statistics and handles all exceptional
     conditions (system calls, memory faults, concretization, etc.)
-    '''
+    """
 
     _published_events = {'enqueue_state', 'fork_state', 'load_state', 'terminate_state', 'internal_generate_testcase'}
 
@@ -224,14 +224,14 @@ class Executor(Eventful):
 
     @contextmanager
     def locked_context(self, key=None, default=dict):
-        ''' Executor context is a shared memory object. All workers share this.
+        """ Executor context is a shared memory object. All workers share this.
             It needs a lock. Its used like this:
 
             with executor.context() as context:
                 visited = context['visited']
                 visited.append(state.cpu.PC)
                 context['visited'] = visited
-        '''
+        """
         assert default in (list, dict, set)
         with self._lock:
             if key is None:
@@ -244,19 +244,19 @@ class Executor(Eventful):
                 self._shared_context[key] = sub_context
 
     def _register_state_callbacks(self, state, state_id):
-        '''
+        """
             Install forwarding callbacks in state so the events can go up.
             Going up, we prepend state in the arguments.
-        '''
+        """
         # Forward all state signals
         self.forward_events_from(state, True)
 
     def enqueue(self, state):
-        '''
+        """
             Enqueue state.
             Save state on storage, assigns an id to it, then add it to the
             priority queue
-        '''
+        """
         # save the state to secondary storage
         state_id = self._workspace.save_state(state)
         self.put(state_id)
@@ -294,29 +294,29 @@ class Executor(Eventful):
     # Public API
     @property
     def running(self):
-        ''' Report an estimate  of how many workers are currently running '''
+        """ Report an estimate  of how many workers are currently running """
         return self._running.value
 
     def shutdown(self):
-        ''' This will stop all workers '''
+        """ This will stop all workers """
         self._shutdown.set()
 
     def is_shutdown(self):
-        ''' Returns True if shutdown was requested '''
+        """ Returns True if shutdown was requested """
         return self._shutdown.is_set()
 
     ###############################################
     # Priority queue
     @sync
     def put(self, state_id):
-        ''' Enqueue it for processing '''
+        """ Enqueue it for processing """
         self._states.append(state_id)
         self._lock.notify_all()
         return state_id
 
     @sync
     def get(self):
-        ''' Dequeue a state with the max priority '''
+        """ Dequeue a state with the max priority """
 
         # A shutdown has been requested
         if self.is_shutdown():
@@ -341,11 +341,11 @@ class Executor(Eventful):
         return state_id
 
     def list(self):
-        ''' Returns the list of states ids currently queued '''
+        """ Returns the list of states ids currently queued """
         return list(self._states)
 
     def fork(self, state, expression, policy='ALL', setstate=None):
-        '''
+        """
         Fork state on expression concretizations.
         Using policy build a list of solutions for expression.
         For the state on each solution setting the new state with setstate
@@ -362,7 +362,7 @@ class Executor(Eventful):
         The optional setstate() function is supposed to set the concrete value
         in the child state.
 
-        '''
+        """
         assert isinstance(expression, Expression)
 
         if setstate is None:
@@ -405,9 +405,9 @@ class Executor(Eventful):
         return None
 
     def run(self):
-        '''
+        """
         Entry point of the Executor; called by workers to start analysis.
-        '''
+        """
         # policy_order=self.policy_order
         # policy=self.policy
         current_state = None

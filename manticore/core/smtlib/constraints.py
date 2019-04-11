@@ -10,11 +10,11 @@ logger = logging.getLogger(__name__)
 
 
 class ConstraintSet:
-    ''' Constraint Sets
+    """ Constraint Sets
 
         An object containing a set of constraints. Serves also as a factory for
         new variables.
-    '''
+    """
 
     def __init__(self):
         self._constraints = list()
@@ -44,13 +44,13 @@ class ConstraintSet:
         return len(self._constraints)
 
     def add(self, constraint, check=False):
-        '''
+        """
         Add a constraint to the set
 
         :param constraint: The constraint to add to the set.
         :param check: Currently unused.
         :return:
-        '''
+        """
         if isinstance(constraint, bool):
             constraint = BoolConstant(constraint)
         assert isinstance(constraint, Bool)
@@ -77,7 +77,7 @@ class ConstraintSet:
                 raise ValueError("Added an impossible constraint")
 
     def _get_sid(self):
-        ''' Returns a unique id. '''
+        """ Returns a unique id. """
         assert self._child is None
         self._sid += 1
         return self._sid
@@ -169,23 +169,23 @@ class ConstraintSet:
         return result
 
     def _declare(self, var):
-        ''' Declare the variable `var` '''
+        """ Declare the variable `var` """
         if var.name in self._declarations:
             raise ValueError('Variable already declared')
         self._declarations[var.name] = var
         return var
 
     def get_declared_variables(self):
-        ''' Returns the variable expressions of this constraint set '''
+        """ Returns the variable expressions of this constraint set """
         return self._declarations.values()
 
     def get_variable(self, name):
-        ''' Returns the variable declared under name or None if it does not exists '''
+        """ Returns the variable declared under name or None if it does not exists """
         return self._declarations.get(name)
 
     @property
     def declarations(self):
-        ''' Returns the variable expressions of this constraint set '''
+        """ Returns the variable expressions of this constraint set """
         declarations = GetDeclarations()
         for a in self.constraints:
             try:
@@ -202,10 +202,10 @@ class ConstraintSet:
 
     @property
     def constraints(self):
-        '''
+        """
         :rtype tuple
         :return: All constraints represented by this and parent sets.
-        '''
+        """
         if self._parent is not None:
             return tuple(self._constraints) + self._parent.constraints
         return tuple(self._constraints)
@@ -214,11 +214,11 @@ class ConstraintSet:
         return iter(self.constraints)
 
     def __str__(self):
-        ''' Returns a smtlib representation of the current state '''
+        """ Returns a smtlib representation of the current state """
         return self.to_string()
 
     def _make_unique_name(self, name='VAR'):
-        ''' Makes a unique variable name'''
+        """ Makes a unique variable name"""
         # the while loop is necessary because appending the result of _get_sid()
         # is not guaranteed to make a unique name on the first try; a colliding
         # name could have been added previously
@@ -227,13 +227,13 @@ class ConstraintSet:
         return name
 
     def is_declared(self, expression_var):
-        ''' True if expression_var is declared in this constraint set '''
+        """ True if expression_var is declared in this constraint set """
         if not isinstance(expression_var, Variable):
             raise ValueError(f'Expression must be a Variable (not a {type(expression_var)})')
         return any(expression_var is x for x in self.get_declared_variables())
 
     def migrate(self, expression, name_migration_map=None):
-        ''' Migrate an expression created for a different constraint set to self.
+        """ Migrate an expression created for a different constraint set to self.
             Returns an expression that can be used with this constraintSet
 
             All the foreign variables used in the expression are replaced by
@@ -246,7 +246,7 @@ class ConstraintSet:
             :param name_migration_map: mapping of already migrated variables. maps from string name of foreign variable to its currently existing migrated string name. this is updated during this migration.
             :return: a migrated expression where all the variables are local. name_migration_map is updated
 
-        '''
+        """
         if name_migration_map is None:
             name_migration_map = {}
 
@@ -293,12 +293,12 @@ class ConstraintSet:
         return migrated_expression
 
     def new_bool(self, name=None, taint=frozenset(), avoid_collisions=False):
-        ''' Declares a free symbolic boolean in the constraint store
+        """ Declares a free symbolic boolean in the constraint store
             :param name: try to assign name to internal variable representation,
                          if not unique, a numeric nonce will be appended
             :param avoid_collisions: potentially avoid_collisions the variable to avoid name collisions if True
             :return: a fresh BoolVariable
-        '''
+        """
         if name is None:
             name = 'B'
             avoid_collisions = True
@@ -310,13 +310,13 @@ class ConstraintSet:
         return self._declare(var)
 
     def new_bitvec(self, size, name=None, taint=frozenset(), avoid_collisions=False):
-        ''' Declares a free symbolic bitvector in the constraint store
+        """ Declares a free symbolic bitvector in the constraint store
             :param size: size in bits for the bitvector
             :param name: try to assign name to internal variable representation,
                          if not unique, a numeric nonce will be appended
             :param avoid_collisions: potentially avoid_collisions the variable to avoid name collisions if True
             :return: a fresh BitVecVariable
-        '''
+        """
         if not (size == 1 or size % 8 == 0):
             raise Exception(f'Invalid bitvec size {size}')
         if name is None:
@@ -330,7 +330,7 @@ class ConstraintSet:
         return self._declare(var)
 
     def new_array(self, index_bits=32, name=None, index_max=None, value_bits=8, taint=frozenset(), avoid_collisions=False, default=None):
-        ''' Declares a free symbolic array of value_bits long bitvectors in the constraint store.
+        """ Declares a free symbolic array of value_bits long bitvectors in the constraint store.
             :param index_bits: size in bits for the array indexes one of [32, 64]
             :param value_bits: size in bits for the array values
             :param name: try to assign name to internal variable representation,
@@ -339,7 +339,7 @@ class ConstraintSet:
             :param avoid_collisions: potentially avoid_collisions the variable to avoid name collisions if True
             :param default: default for not initialized values
             :return: a fresh ArrayProxy
-        '''
+        """
         if name is None:
             name = 'A'
             avoid_collisions = True

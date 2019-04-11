@@ -30,12 +30,12 @@ register_logger = logging.getLogger(f'{__name__}.registers')
 
 
 class CpuException(Exception):
-    ''' Base cpu exception '''
+    """ Base cpu exception """
 
 
 class DecodeException(CpuException):
-    '''
-    Raised when trying to decode an unknown or invalid instruction '''
+    """
+    Raised when trying to decode an unknown or invalid instruction """
 
     def __init__(self, pc, bytes):
         super().__init__("Error decoding instruction @ 0x{:x}".format(pc))
@@ -44,24 +44,24 @@ class DecodeException(CpuException):
 
 
 class InstructionNotImplementedError(CpuException):
-    '''
+    """
     Exception raised when you try to execute an instruction that is not yet
     implemented in the emulator. Add it to the Cpu-specific implementation.
-    '''
+    """
 
 
 class InstructionEmulationError(CpuException):
-    '''
+    """
     Exception raised when failing to emulate an instruction outside of Manticore.
-    '''
+    """
 
 
 class DivideByZeroError(CpuException):
-    ''' A division by zero '''
+    """ A division by zero """
 
 
 class Interruption(CpuException):
-    ''' A software interrupt. '''
+    """ A software interrupt. """
 
     def __init__(self, N):
         super().__init__("CPU Software Interruption %08x" % N)
@@ -69,16 +69,16 @@ class Interruption(CpuException):
 
 
 class Syscall(CpuException):
-    ''' '''
+    """ """
 
     def __init__(self):
         super().__init__("CPU Syscall")
 
 
 class ConcretizeRegister(CpuException):
-    '''
+    """
     Raised when a symbolic register needs to be concretized.
-    '''
+    """
 
     def __init__(self, cpu, reg_name, message=None, policy='MINMAX'):
         self.message = message if message else f"Concretizing {reg_name}"
@@ -89,9 +89,9 @@ class ConcretizeRegister(CpuException):
 
 
 class ConcretizeArgument(CpuException):
-    '''
+    """
     Raised when a symbolic argument needs to be concretized.
-    '''
+    """
 
     def __init__(self, cpu, argnum, policy='MINMAX'):
         self.message = f"Concretizing argument #{argnum}."
@@ -108,10 +108,10 @@ class Operand:
     different CPUs
     """
     class MemSpec:
-        '''
+        """
         Auxiliary class wraps capstone operand 'mem' attribute. This will
         return register names instead of Ids
-        '''
+        """
 
         def __init__(self, parent):
             self.parent = parent
@@ -122,7 +122,7 @@ class Operand:
         disp = property(lambda self: self.parent.op.mem.disp)
 
     def __init__(self, cpu, op):
-        '''
+        """
         This encapsulates the arch-independent way to access instruction
         operands and immediates based on the disassembler operand descriptor in
         use. This class knows how to browse an operand and get its details.
@@ -133,19 +133,19 @@ class Operand:
         :param Cpu cpu: A Cpu instance
         :param Operand op: An wrapped Instruction Operand
         :type op: X86Op or ArmOp
-        '''
+        """
         assert isinstance(cpu, Cpu)
         self.cpu = cpu
         self.op = op
         self.mem = Operand.MemSpec(self)
 
     def _reg_name(self, reg_id):
-        '''
+        """
         Translates a register ID from the disassembler object into the
         register name based on manticore's alias in the register file
 
         :param int reg_id: Register ID
-        '''
+        """
         if reg_id >= X86_REG_ENDING:
             logger.warning("Trying to get register name for a non-register")
             return None
@@ -159,17 +159,17 @@ class Operand:
 
     @property
     def type(self):
-        ''' This property encapsulates the operand type.
+        """ This property encapsulates the operand type.
             It may be one of the following:
                 register
                 memory
                 immediate
-        '''
+        """
         raise NotImplementedError
 
     @property
     def size(self):
-        ''' Return bit size of operand '''
+        """ Return bit size of operand """
         raise NotImplementedError
 
     @property
@@ -177,15 +177,15 @@ class Operand:
         return self._reg_name(self.op.reg)
 
     def address(self):
-        ''' On a memory operand it returns the effective address '''
+        """ On a memory operand it returns the effective address """
         raise NotImplementedError
 
     def read(self):
-        ''' It reads the operand value from the registers or memory '''
+        """ It reads the operand value from the registers or memory """
         raise NotImplementedError
 
     def write(self, value):
-        ''' It writes the value of specific type to the registers or memory '''
+        """ It writes the value of specific type to the registers or memory """
         raise NotImplementedError
 
 #  Basic register file structure not actually need to abstract as it's used
@@ -199,68 +199,68 @@ class RegisterFile:
         self._aliases = aliases if aliases is not None else {}
 
     def _alias(self, register):
-        '''
+        """
         Get register canonical alias. ex. PC->RIP or PC->R15
 
         :param str register: The register name
-        '''
+        """
         return self._aliases.get(register, register)
 
     def write(self, register, value):
-        '''
+        """
         Write value to the specified register
 
         :param str register: a register id. Must be listed on all_registers
         :param value: a value of the expected type
         :type value: int or long or Expression
         :return: the value actually written to the register
-        '''
+        """
         raise NotImplementedError
 
     def read(self, register):
-        '''
+        """
         Read value from specified register
 
         :param str register: a register name. Must be listed on all_registers
         :return: the register value
-        '''
+        """
         raise NotImplementedError
 
     @property
     def all_registers(self):
-        ''' Lists all possible register names (Including aliases) '''
+        """ Lists all possible register names (Including aliases) """
         return tuple(self._aliases)
 
     @property
     def canonical_registers(self):
-        ''' List the minimal most beautiful set of registers needed '''
+        """ List the minimal most beautiful set of registers needed """
         raise NotImplementedError
 
     def __contains__(self, register):
-        '''
+        """
         Check for register validity
 
         :param register: a register name
-        '''
+        """
         return self._alias(register) in self.all_registers
 
 
 class Abi:
-    '''
+    """
     Represents the ability to extract arguments from the environment and write
     back a result.
 
     Used for function call and system call models.
-    '''
+    """
 
     def __init__(self, cpu):
-        '''
+        """
         :param manticore.core.cpu.Cpu cpu: CPU to initialize with
-        '''
+        """
         self._cpu = cpu
 
     def get_arguments(self):
-        '''
+        """
         Extract model arguments conforming to `convention`. Produces an iterable
         of argument descriptors following the calling convention. A descriptor
         is either a string describing a register, or an address (concrete or
@@ -268,38 +268,38 @@ class Abi:
 
         :return: iterable returning syscall arguments.
         :rtype: iterable
-        '''
+        """
         raise NotImplementedError
 
     def write_result(self, result):
-        '''
+        """
         Write the result of a model back to the environment.
 
         :param result: result of the model implementation
-        '''
+        """
         raise NotImplementedError
 
     def ret(self):
-        '''
+        """
         Handle the "ret" semantics of the ABI, i.e. reclaiming stack space,
         popping PC, etc.
 
         A null operation by default.
-        '''
+        """
         return
 
     def values_from(self, base):
-        '''
+        """
         A reusable generator for increasing pointer-sized values from an address
         (usually the stack).
-        '''
+        """
         word_bytes = self._cpu.address_bit_size // 8
         while True:
             yield base
             base += word_bytes
 
     def get_argument_values(self, model, prefix_args):
-        '''
+        """
         Extract arguments for model from the environment and return as a tuple that
         is ready to be passed to the model.
 
@@ -307,7 +307,7 @@ class Abi:
         :param tuple prefix_args: Parameters to pass to model before actual ones
         :return: Arguments to be passed to the model
         :rtype: tuple
-        '''
+        """
         spec = inspect.getfullargspec(model)
 
         if spec.varargs:
@@ -339,7 +339,7 @@ class Abi:
         return arguments
 
     def invoke(self, model, prefix_args=None):
-        '''
+        """
         Invoke a callable `model` as if it was a native function. If
         :func:`~manticore.models.isvariadic` returns true for `model`, `model` receives a single
         argument that is a generator for function arguments. Pass a tuple of
@@ -349,7 +349,7 @@ class Abi:
         :param callable model: Python model of the function
         :param tuple prefix_args: Parameters to pass to model before actual ones
         :return: The result of calling `model`
-        '''
+        """
         prefix_args = prefix_args or ()
 
         arguments = self.get_argument_values(model, prefix_args)
@@ -382,18 +382,18 @@ platform_logger = logging.getLogger('manticore.platforms.platform')
 
 
 class SyscallAbi(Abi):
-    '''
+    """
     A system-call specific ABI.
 
     Captures model arguments and return values for centralized logging.
-    '''
+    """
 
     def syscall_number(self):
-        '''
+        """
         Extract the index of the invoked syscall.
 
         :return: int
-        '''
+        """
         raise NotImplementedError
 
     def get_argument_values(self, model, prefix_args):
@@ -436,7 +436,7 @@ class SyscallAbi(Abi):
 
 
 class Cpu(Eventful):
-    '''
+    """
     Base class for all Cpu architectures. Functionality common to all
     architectures (and expected from users of a Cpu) should be here. Commonly
     used by platforms and py:class:manticore.core.Executor
@@ -449,7 +449,7 @@ class Cpu(Eventful):
     - address_bit_size
     - pc_alias
     - stack_alias
-    '''
+    """
 
     _published_events = {'write_register', 'read_register', 'write_memory', 'read_memory', 'decode_instruction',
                          'execute_instruction', 'set_descriptor', 'map_memory', 'protect_memory', 'unmap_memory'}
@@ -502,52 +502,52 @@ class Cpu(Eventful):
     # Register access
     @property
     def regfile(self):
-        ''' The RegisterFile of this cpu '''
+        """ The RegisterFile of this cpu """
         return self._regfile
 
     @property
     def all_registers(self):
-        '''
+        """
         Returns all register names for this CPU. Any register returned can be
         accessed via a `cpu.REG` convenience interface (e.g. `cpu.EAX`) for both
         reading and writing.
 
         :return: valid register names
         :rtype: tuple[str]
-        '''
+        """
         return self._regfile.all_registers
 
     @property
     def canonical_registers(self):
-        '''
+        """
         Returns the list of all register names  for this CPU.
 
         :rtype: tuple
         :return: the list of register names for this CPU.
-        '''
+        """
         return self._regfile.canonical_registers
 
     def write_register(self, register, value):
-        '''
+        """
         Dynamic interface for writing cpu registers
 
         :param str register: register name (as listed in `self.all_registers`)
         :param value: register value
         :type value: int or long or Expression
-        '''
+        """
         self._publish('will_write_register', register, value)
         value = self._regfile.write(register, value)
         self._publish('did_write_register', register, value)
         return value
 
     def read_register(self, register):
-        '''
+        """
         Dynamic interface for reading cpu registers
 
         :param str register: register name (as listed in `self.all_registers`)
         :return: register value
         :rtype: int or long or Expression
-        '''
+        """
         self._publish('will_read_register', register)
         value = self._regfile.read(register)
         self._publish('did_read_register', register, value)
@@ -555,24 +555,24 @@ class Cpu(Eventful):
 
     # Pythonic access to registers and aliases
     def __getattr__(self, name):
-        '''
+        """
         A Pythonic version of read_register
 
         :param str name: Name of the register
-        '''
+        """
         if name != '_regfile':
             if name in self._regfile:
                 return self.read_register(name)
         raise AttributeError(name)
 
     def __setattr__(self, name, value):
-        '''
+        """
         A Pythonic version of write_register
 
         :param str name: Name of the register to set
         :param value: The value to set the register to
         :type param: int or long or Expression
-        '''
+        """
         try:
             if name in self._regfile:
                 return self.write_register(name, value)
@@ -599,7 +599,7 @@ class Cpu(Eventful):
         return self._memory
 
     def write_int(self, where, expression, size=None, force=False):
-        '''
+        """
         Writes int to memory
 
         :param int where: address to write to
@@ -607,7 +607,7 @@ class Cpu(Eventful):
         :type expr: int or BitVec
         :param size: bit size of `expr`
         :param force: whether to ignore memory permissions
-        '''
+        """
         if size is None:
             size = self.address_bit_size
         assert size in SANE_SIZES
@@ -653,7 +653,7 @@ class Cpu(Eventful):
         return data
 
     def read_int(self, where, size=None, force=False):
-        '''
+        """
         Reads int from memory
 
         :param int where: address to read from
@@ -661,7 +661,7 @@ class Cpu(Eventful):
         :return: the value read
         :rtype: int or BitVec
         :param force: whether to ignore memory permissions
-        '''
+        """
         if size is None:
             size = self.address_bit_size
         assert size in SANE_SIZES
@@ -675,14 +675,14 @@ class Cpu(Eventful):
         return value
 
     def write_bytes(self, where, data, force=False):
-        '''
+        """
         Write a concrete or symbolic (or mixed) buffer to memory
 
         :param int where: address to write to
         :param data: data to write
         :type data: str or list
         :param force: whether to ignore memory permissions
-        '''
+        """
 
         mp = self.memory.map_containing(where)
         # TODO (ehennenfent) - fast write can have some yet-unstudied unintended side effects.
@@ -707,7 +707,7 @@ class Cpu(Eventful):
                 self.write_int(where + i, Operators.ORD(data[i]), 8, force)
 
     def read_bytes(self, where, size, force=False):
-        '''
+        """
         Read from memory.
 
         :param int where: address to read data from
@@ -715,14 +715,14 @@ class Cpu(Eventful):
         :param force: whether to ignore memory permissions
         :return: data
         :rtype: list[int or Expression]
-        '''
+        """
         result = []
         for i in range(size):
             result.append(Operators.CHR(self.read_int(where + i, 8, force)))
         return result
 
     def write_string(self, where, string, max_length=None, force=False):
-        '''
+        """
         Writes a string to memory, appending a NULL-terminator at the end.
         :param int where: Address to write the string to
         :param str string: The string to write to memory
@@ -730,7 +730,7 @@ class Cpu(Eventful):
             The size in bytes to cap the string at, or None [default] for no
             limit. This includes the NULL terminator.
         :param force: whether to ignore memory permissions
-        '''
+        """
 
         if max_length is not None:
             string = string[:max_length - 1]
@@ -738,7 +738,7 @@ class Cpu(Eventful):
         self.write_bytes(where, string + '\x00', force)
 
     def read_string(self, where, max_length=None, force=False):
-        '''
+        """
         Read a NUL-terminated concrete buffer from memory. Stops reading at first symbolic byte.
 
         :param int where: Address to read string from
@@ -748,7 +748,7 @@ class Cpu(Eventful):
         :param force: whether to ignore memory permissions
         :return: string read
         :rtype: str
-        '''
+        """
         s = io.BytesIO()
         while True:
             c = self.read_int(where, 8, force)
@@ -765,48 +765,48 @@ class Cpu(Eventful):
         return s.getvalue().decode()
 
     def push_bytes(self, data, force=False):
-        '''
+        """
         Write `data` to the stack and decrement the stack pointer accordingly.
 
         :param str data: Data to write
         :param force: whether to ignore memory permissions
-        '''
+        """
         self.STACK -= len(data)
         self.write_bytes(self.STACK, data, force)
         return self.STACK
 
     def pop_bytes(self, nbytes, force=False):
-        '''
+        """
         Read `nbytes` from the stack, increment the stack pointer, and return
         data.
 
         :param int nbytes: How many bytes to read
         :param force: whether to ignore memory permissions
         :return: Data read from the stack
-        '''
+        """
         data = self.read_bytes(self.STACK, nbytes, force=force)
         self.STACK += nbytes
         return data
 
     def push_int(self, value, force=False):
-        '''
+        """
         Decrement the stack pointer and write `value` to the stack.
 
         :param int value: The value to write
         :param force: whether to ignore memory permissions
         :return: New stack pointer
-        '''
+        """
         self.STACK -= self.address_bit_size // 8
         self.write_int(self.STACK, value, force=force)
         return self.STACK
 
     def pop_int(self, force=False):
-        '''
+        """
         Read a value from the stack and increment the stack pointer.
 
         :param force: whether to ignore memory permissions
         :return: Value read
-        '''
+        """
         value = self.read_int(self.STACK, force=force)
         self.STACK += self.address_bit_size // 8
         return value
@@ -814,19 +814,19 @@ class Cpu(Eventful):
     #######################################
     # Decoder
     def _wrap_operands(self, operands):
-        '''
+        """
         Private method to decorate an Operand to our needs based on the
         underlying architecture.
         See :class:`~manticore.core.cpu.abstractcpu.Operand` class
-        '''
+        """
         raise NotImplementedError
 
     def decode_instruction(self, pc):
-        '''
+        """
         This will decode an instruction from memory pointed by `pc`
 
         :param int pc: address of the instruction
-        '''
+        """
         # No dynamic code!!! #TODO!
         # Check if instruction was already decoded
         if pc in self._instruction_cache:
@@ -889,15 +889,15 @@ class Cpu(Eventful):
     #######################################
     # Execute
     def canonicalize_instruction_name(self, instruction):
-        '''
+        """
         Get the semantic name of an instruction.
-        '''
+        """
         raise NotImplemented
 
     def execute(self):
-        '''
+        """
         Decode, and execute one instruction pointed by register PC
-        '''
+        """
         if issymbolic(self.PC):
             raise ConcretizeRegister(self, 'PC', policy='ALL')
 
@@ -952,9 +952,9 @@ class Cpu(Eventful):
     # publish the did_execute_instruction event from here, so we capture and attach it to the syscall
     # exception for the platform to emit it for us once the syscall has successfully been executed.
     def _publish_instruction_as_executed(self, insn):
-        '''
+        """
         Notify listeners that an instruction has been executed.
-        '''
+        """
         self._icount += 1
         self._publish('did_execute_instruction', self._last_pc, self.PC, insn)
 
@@ -990,12 +990,12 @@ class Cpu(Eventful):
             raise InstructionEmulationError(str(e))
 
     def backup_emulate(self, insn):
-        '''
+        """
         If we could not handle emulating an instruction, use Unicorn to emulate
         it.
 
         :param capstone.CsInsn instruction: The instruction object to emulate
-        '''
+        """
 
         if not hasattr(self, 'backup_emu'):
             self.backup_emu = UnicornEmulator(self)
@@ -1044,12 +1044,12 @@ class Cpu(Eventful):
 
     # Generic string representation
     def __str__(self):
-        '''
+        """
         Returns a string representation of cpu state
 
         :rtype: str
         :return: name and current value for all the registers.
-        '''
+        """
         result = f'{self.render_instruction()}\n'
         result += '\n'.join(self.render_registers())
         return result
