@@ -251,21 +251,20 @@ class Aarch64RegisterFile(RegisterFile):
 
     @nzcv.setter
     def nzcv(self, value):
+        for b in value:
+            if isinstance(b, int):
+                assert b in [0, 1]
+            else:
+                assert b.size == 1
+
         n, z, c, v = value
-        assert n in [0, 1]
-        assert z in [0, 1]
-        assert c in [0, 1]
-        assert v in [0, 1]
 
-        nzcv = self.read('NZCV')
-        mask = 0xf0000000
+        n = LSL(n, 31, 64)
+        z = LSL(z, 30, 64)
+        c = LSL(c, 29, 64)
+        v = LSL(v, 28, 64)
 
-        n = LSL(n, 31, 32)
-        z = LSL(z, 30, 32)
-        c = LSL(c, 29, 32)
-        v = LSL(v, 28, 32)
-
-        result = (nzcv & ~mask) | n | z | c | v
+        result = n | z | c | v
         self.write('NZCV', result)
 
 
