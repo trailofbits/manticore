@@ -810,10 +810,13 @@ class Aarch64Cpu(Cpu):
         for i in range(elem_count):
             elem1 = Operators.EXTRACT(op1, i * elem_size, elem_size)
             elem2 = Operators.EXTRACT(op2, i * elem_size, elem_size)
-            if elem1 == elem2:
-                elem = Mask(elem_size)
-            else:
-                elem = 0
+            elem = Operators.ITEBV(
+                elem_size,
+                elem1 == elem2,
+                Mask(elem_size),
+                0
+            )
+            elem = Operators.ZEXTEND(elem, res_op.size)
             result |= elem << (i * elem_size)
 
         result = UInt(result, res_op.size)
