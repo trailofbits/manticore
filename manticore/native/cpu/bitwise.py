@@ -86,7 +86,8 @@ def LSL_C(value, amount, width):
     :return: Resultant value and the carry result
     :rtype tuple
     '''
-    assert amount > 0
+    if isinstance(amount, int):
+        assert amount > 0
     value = Operators.ZEXTEND(value, width * 2)
     shifted = value << amount
     result = GetNBits(shifted, width)
@@ -105,7 +106,7 @@ def LSL(value, amount, width):
     :return: Resultant value
     :rtype int or BitVec
     '''
-    if amount == 0:
+    if isinstance(amount, int) and amount == 0:
         return value
 
     result, _ = LSL_C(value, amount, width)
@@ -123,7 +124,8 @@ def LSR_C(value, amount, width):
     :return: Resultant value and carry result
     :rtype tuple
     '''
-    assert amount > 0
+    if isinstance(amount, int):
+        assert amount > 0
     result = GetNBits(value >> amount, width)
     carry = Bit(value >> (amount - 1), 0)
     return (result, carry)
@@ -140,7 +142,7 @@ def LSR(value, amount, width):
     :return: Resultant value
     :rtype int or BitVec
     '''
-    if amount == 0:
+    if isinstance(amount, int) and amount == 0:
         return value
     result, _ = LSR_C(value, amount, width)
     return result
@@ -157,9 +159,12 @@ def ASR_C(value, amount, width):
     :return: Resultant value and carry result
     :rtype tuple
     '''
-    assert amount <= width
-    assert amount > 0
-    assert amount + width <= width * 2
+    if isinstance(amount, int) and isinstance(width, int):
+        assert amount <= width
+    if isinstance(amount, int):
+        assert amount > 0
+    if isinstance(amount, int) and isinstance(width, int):
+        assert amount + width <= width * 2
     value = Operators.SEXTEND(value, width, width * 2)
     result = GetNBits(value >> amount, width)
     carry = Bit(value, amount - 1)
@@ -177,7 +182,7 @@ def ASR(value, amount, width):
     :return: Resultant value
     :rtype int or BitVec
     '''
-    if amount == 0:
+    if isinstance(amount, int) and amount == 0:
         return value
 
     result, _ = ASR_C(value, amount, width)
@@ -195,8 +200,10 @@ def ROR_C(value, amount, width):
     :return: Resultant value and carry result
     :rtype tuple
     '''
-    assert amount <= width
-    assert amount > 0
+    if isinstance(amount, int) and isinstance(width, int):
+        assert amount <= width
+    if isinstance(amount, int):
+        assert amount > 0
     m = amount % width
     right, _ = LSR_C(value, m, width)
     left, _ = LSL_C(value, width - m, width)
@@ -216,7 +223,7 @@ def ROR(value, amount, width):
     :return: Resultant value
     :rtype int or BitVec
     '''
-    if amount == 0:
+    if isinstance(amount, int) and amount == 0:
         return value
     result, _ = ROR_C(value, amount, width)
     return result
