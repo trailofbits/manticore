@@ -284,7 +284,6 @@ class Aarch64Cpu(Cpu):
     mode = cs.CS_ARCH_ARM
 
     def __init__(self, memory):
-        warnings.warn('Aarch64 support is experimental')
         super().__init__(Aarch64RegisterFile(), memory)
 
     def _wrap_operands(self, ops):
