@@ -89,6 +89,7 @@ def LSL_C(value, amount, width):
     if isinstance(amount, int):
         assert amount > 0
     value = Operators.ZEXTEND(value, width * 2)
+    amount = Operators.ZEXTEND(amount, width * 2)
     shifted = value << amount
     result = GetNBits(shifted, width)
     carry = Bit(shifted, width)
@@ -166,6 +167,7 @@ def ASR_C(value, amount, width):
     if isinstance(amount, int) and isinstance(width, int):
         assert amount + width <= width * 2
     value = Operators.SEXTEND(value, width, width * 2)
+    amount = Operators.ZEXTEND(amount, width * 2)
     result = GetNBits(value >> amount, width)
     carry = Bit(value, amount - 1)
     return (result, carry)
