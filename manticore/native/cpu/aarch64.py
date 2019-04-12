@@ -4362,8 +4362,13 @@ class Aarch64Cpu(Cpu):
             copy_to = res_op.size - immr
 
         result = ((reg & (Mask(width) << copy_from)) >> copy_from) << copy_to
-        if Operators.EXTRACT(result, width + copy_to - 1, 1) == 1:
-            result = (Mask(res_op.size) & ~Mask(width + copy_to)) | result
+        result = Operators.ZEXTEND(result, res_op.size)
+        result = Operators.ITEBV(
+            res_op.size,
+            Operators.EXTRACT(result, width + copy_to - 1, 1) == 1,
+            (Mask(res_op.size) & ~Mask(width + copy_to)) | result,
+            result
+        )
 
         res_op.write(result)
 
