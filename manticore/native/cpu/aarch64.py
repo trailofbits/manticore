@@ -4215,6 +4215,7 @@ class Aarch64Cpu(Cpu):
         result = 0
         for pos in range(size):
             bit = Operators.EXTRACT(reg, pos, 1)
+            bit = Operators.ZEXTEND(bit, res_op.size)
             result <<= 1
             result |= bit
 
