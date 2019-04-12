@@ -9,11 +9,10 @@ from manticore.core.smtlib import *
 from manticore.native.memory import SMemory64, Memory64
 from manticore.native.cpu.aarch64 import Aarch64Cpu as Cpu
 from manticore.native.cpu.abstractcpu import (
-    Interruption, InstructionNotImplementedError
+    Interruption, InstructionNotImplementedError, ConcretizeRegister
 )
 from manticore.native.cpu.bitwise import LSL, Mask
 from manticore.utils.emulate import UnicornEmulator
-from .test_armv7cpu import itest_setregs
 from .test_aarch64rf import MAGIC_64, MAGIC_32
 
 ks = Ks(KS_ARCH_ARM64, KS_MODE_LITTLE_ENDIAN)
@@ -28,6 +27,37 @@ def assemble(asm):
 # XXX: These functions are taken from 'test_armv7cpu' and modified to be more
 # generic, to support running under Unicorn and Manticore from the same test
 # definitions.  It would be nice to do the same for Armv7 code as well.
+
+
+def itest_setregs(*preds):
+    def instr_dec(custom_func):
+        @wraps(custom_func)
+        def wrapper(self):
+            for p in preds:
+                dest, src = p.split('=')
+
+                try:
+                    src = int(src, 0)
+                except:
+                    self.fail()
+
+                reg = dest.upper()
+
+                if self.mem.__class__.__name__ == 'Memory64':
+                    self.rf.write(reg, src)
+                elif self.mem.__class__.__name__ == 'SMemory64':
+                    size = self.rf.size(reg)
+                    self.rf.write(reg, self.cs.new_bitvec(size, name=reg))
+                    self.cs.add(self.rf.read(reg) == src)
+                else:
+                    self.fail()
+
+            custom_func(self)
+
+        return wrapper
+
+    return instr_dec
+
 
 def itest(asm):
     def instr_dec(assertions_func):
@@ -6224,7 +6254,7 @@ class Aarch64Instructions:
     # XXX: Check that Manticore prohibits DC ZVA until it's implemented.
     @itest('mrs x0, dczid_el0')
     def test_dczid_el0(self):
-        if self.__class__.__name__ == 'Aarch64CpuInstructions':
+        if self.__class__.__name__ in ['Aarch64CpuInstructions', 'Aarch64SymInstructions']:
             self.assertEqual(self.rf.read('X0'), 16)
         elif self.__class__.__name__ == 'Aarch64UnicornInstructions':
             self.assertEqual(self.rf.read('X0'), 4)
@@ -12906,7 +12936,7 @@ class Aarch64Instructions:
 
     def test_svc1(self):
         # XXX: Maybe change the behavior to be consistent with Unicorn?
-        if self.__class__.__name__ == 'Aarch64CpuInstructions':
+        if self.__class__.__name__ in ['Aarch64CpuInstructions', 'Aarch64SymInstructions']:
             e = InstructionNotImplementedError
         elif self.__class__.__name__ == 'Aarch64UnicornInstructions':
             e = Interruption
@@ -13951,8 +13981,7 @@ class Aarch64Instructions:
 class Aarch64CpuInstructions(unittest.TestCase, Aarch64Instructions):
     def setUp(self):
         # XXX: Adapted from the Armv7 test code.
-        cs = ConstraintSet()
-        self.cpu = Cpu(SMemory64(cs))
+        self.cpu = Cpu(Memory64())
         self.mem = self.cpu.memory
         self.rf = self.cpu.regfile
 
@@ -13992,3 +14021,47 @@ class Aarch64UnicornInstructions(unittest.TestCase, Aarch64Instructions):
         self.emu.emulate(insn, reset=reset)
         if check_pc:
             self.assertEqual(self.cpu.PC, pc + 4)
+
+
+class Aarch64SymInstructions(unittest.TestCase, Aarch64Instructions):
+    def setUp(self):
+        # XXX: Adapted from the Armv7 test code.
+        self.cs = ConstraintSet()
+        self.cpu = Cpu(SMemory64(self.cs))
+        self.mem = self.cpu.memory
+        self.rf = self.cpu.regfile
+
+    def _get_all_values1(self, expr):
+        values = solver.get_all_values(self.cs, expr)
+        self.assertEqual(len(values), 1)
+        return values[0]
+
+    def _execute(self, check_pc=True, **kwargs):
+        pc = self.cpu.PC
+
+        # XXX: Copied from 'test_x86.py'.
+        done = False
+        while not done:
+            try:
+                self.cpu.execute()
+                done = True
+            except ConcretizeRegister as e:
+                expr = getattr(self.cpu, e.reg_name)
+                value = self._get_all_values1(expr)
+                setattr(self.cpu, e.reg_name, value)
+
+        if check_pc:
+            self.assertEqual(self.cpu.PC, pc + 4)
+
+    def assertEqual(self, actual, expected, *args, **kwargs):
+        if isinstance(actual, int):
+            pass
+        else:
+            actual = self._get_all_values1(actual)
+
+        if isinstance(expected, int):
+            pass
+        else:
+            expected = self._get_all_values1(expected)
+
+        super().assertEqual(actual, expected, *args, **kwargs)
