@@ -48,14 +48,14 @@ COND_MAP = {
     cs.arm64.ARM64_CC_VS: Condspec(cs.arm64.ARM64_CC_VC, lambda n, z, c, v: v == 1),
     cs.arm64.ARM64_CC_VC: Condspec(cs.arm64.ARM64_CC_VS, lambda n, z, c, v: v == 0),
 
-    cs.arm64.ARM64_CC_HI: Condspec(cs.arm64.ARM64_CC_LS, lambda n, z, c, v: c == 1 and z == 0),
-    cs.arm64.ARM64_CC_LS: Condspec(cs.arm64.ARM64_CC_HI, lambda n, z, c, v: not (c == 1 and z == 0)),
+    cs.arm64.ARM64_CC_HI: Condspec(cs.arm64.ARM64_CC_LS, lambda n, z, c, v: Operators.AND(c == 1, z == 0)),
+    cs.arm64.ARM64_CC_LS: Condspec(cs.arm64.ARM64_CC_HI, lambda n, z, c, v: Operators.NOT(Operators.AND(c == 1, z == 0))),
 
     cs.arm64.ARM64_CC_GE: Condspec(cs.arm64.ARM64_CC_LT, lambda n, z, c, v: n == v),
     cs.arm64.ARM64_CC_LT: Condspec(cs.arm64.ARM64_CC_GE, lambda n, z, c, v: n != v),
 
-    cs.arm64.ARM64_CC_GT: Condspec(cs.arm64.ARM64_CC_LE, lambda n, z, c, v: z == 0 and n == v),
-    cs.arm64.ARM64_CC_LE: Condspec(cs.arm64.ARM64_CC_GT, lambda n, z, c, v: not (z == 0 and n == v)),
+    cs.arm64.ARM64_CC_GT: Condspec(cs.arm64.ARM64_CC_LE, lambda n, z, c, v: Operators.AND(z == 0, n == v)),
+    cs.arm64.ARM64_CC_LE: Condspec(cs.arm64.ARM64_CC_GT, lambda n, z, c, v: Operators.NOT(Operators.AND(z == 0, n == v))),
 
     cs.arm64.ARM64_CC_AL: Condspec(None,                 lambda n, z, c, v: True),
     cs.arm64.ARM64_CC_NV: Condspec(None,                 lambda n, z, c, v: True)
