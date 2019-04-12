@@ -5236,7 +5236,10 @@ class Aarch64Cpu(Cpu):
         reg1 = UInt(reg_op1.read(), reg_op1.size)
         reg2 = UInt(reg_op2.read(), reg_op2.size)
 
-        result = Operators.EXTRACT(reg1 * reg2, 64, 128)
+        reg1 = Operators.ZEXTEND(reg1, 128)
+        reg2 = Operators.ZEXTEND(reg2, 128)
+
+        result = Operators.EXTRACT(reg1 * reg2, 64, 64)
         res_op.write(result)
 
     @instruction
