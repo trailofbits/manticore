@@ -615,6 +615,7 @@ class Aarch64Cpu(Cpu):
                 elem = UInt(elem1 + elem2, elem_size)
             else:
                 elem = UInt(elem1 - elem2, elem_size)
+            elem = Operators.ZEXTEND(elem, res_op.size)
             result |= elem << (i * elem_size)
 
         result = UInt(result, res_op.size)
