@@ -5205,7 +5205,7 @@ class Aarch64Cpu(Cpu):
             raise Aarch64InvalidInstruction
 
         result = Operators.EXTRACT(reg, index * elem_size, elem_size)
-        res_op.write(result)
+        res_op.write(UInt(result, res_op.size))
 
     @instruction
     def UMULH(cpu, res_op, reg_op1, reg_op2):
