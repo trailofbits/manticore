@@ -2344,16 +2344,16 @@ class Aarch64Cpu(Cpu):
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
+        # XXX: Copied from 'CLZ' in 'arm.py'.
         reg = reg_op.read()
-        size = reg_op.size
+        msb = res_op.size - 1
+        result = res_op.size
 
-        count = 0
-        for pos in range(size - 1, -1, -1):
-            if Operators.EXTRACT(reg, pos, 1) == 1:
-                break
-            count += 1
+        for pos in range(res_op.size):
+            cond = Operators.EXTRACT(reg, pos, 1) == 1
+            result = Operators.ITEBV(res_op.size, cond, msb - pos, result)
 
-        res_op.write(count)
+        res_op.write(result)
 
     def _CMEQ_register(cpu, res_op, reg_op1, reg_op2):
         """
