@@ -633,12 +633,11 @@ class ManticoreEVM(ManticoreBase):
                 self.kill()
                 raise
 
-        for i in range(100):
-            assert not self.is_running()
-
-        if not self.count_ready_states() or len(self.get_code(contract_account)) == 0:
-            return None
-        return contract_account
+        #If the contract was created successfully in at least 1 state return account
+        for state in self.ready_states:
+            if state.platform.get_code(int(contract_account)):
+                return contract_account
+        return None
 
     def get_nonce(self, address):
         # type forgiveness:
@@ -1008,11 +1007,11 @@ class ManticoreEVM(ManticoreBase):
                     self.constrain(self.preconstraint_for_call_transaction(address=contract_account,
                                                                            data=symbolic_data,
                                                                            value=value))
-
                 self.transaction(caller=tx_account[min(tx_no, len(tx_account) - 1)],
                                  address=contract_account,
                                  data=symbolic_data,
                                  value=value)
+
                 logger.info("%d alive states, %d terminated states", self.count_ready_states(), self.count_terminated_states())
             except NoAliveStates:
                 break
@@ -1068,7 +1067,6 @@ class ManticoreEVM(ManticoreBase):
         with self.locked_context('ethereum.saved_states', list) as saved_states:
             while saved_states:
                 state_id = saved_states.pop()
-                assert state_id in self._terminated_states
                 self._terminated_states.remove(state_id)
                 self._ready_states.append(state_id)
 
@@ -1367,9 +1365,6 @@ class ManticoreEVM(ManticoreBase):
 
         with testcase.open_stream('constraints') as smt_summary:
             smt_summary.write(str(state.constraints))
-
-        #with testcase.open_stream('pkl', binary=True) as statef:
-        #    self._serializer.serialize(state, statef)
 
         trace = state.context.get('evm.trace')
         if trace:

@@ -413,8 +413,9 @@ class EthTests(unittest.TestCase):
         self.mevm = ManticoreEVM()
 
     def tearDown(self):
-        shutil.rmtree(self.mevm.workspace)
+        workspace = self.mevm.workspace
         del self.mevm
+        shutil.rmtree(workspace)
 
     def test_solidity_create_contract_no_args(self):
         source_code = 'contract A { constructor() {} }'
@@ -875,24 +876,22 @@ class EthTests(unittest.TestCase):
             self.assertEqual(possible_addresses1, [0])
 
         owner = self.mevm.create_account(balance=1)
-        print (owner)
 
         for state in self.mevm.ready_states:
             # TEST 2: the 2nd symbolic address should be constrained to OR(owner_address, 0)
             symbolic_address2 = self.mevm.make_symbolic_address()
             self.assertEqual(symbolic_address2.name, 'TXADDR_1')
 
-            self.assertEqual(state.solve_n(symbolic_address2, 10), [0, int(owner)])
+            self.assertCountEqual(state.solve_n(symbolic_address2, 10), [0, int(owner)])
 
         contract = self.mevm.solidity_create_contract('contract C {}', owner=owner)
-        print (contract)
         # TEST 3: the 3rd symbolic address should be constrained to OR(contract_address, 0, owner_address)
         symbolic_address3 = self.mevm.make_symbolic_address()
         self.assertEqual(symbolic_address3.name, 'TXADDR_2')
 
         for state in self.mevm.ready_states:
 
-            self.assertEqual(state.solve_n(symbolic_address3, 10), [int(contract), 0, int(owner)])
+            self.assertCountEqual(state.solve_n(symbolic_address3, 10), [int(contract), 0, int(owner)])
 
             # NOTE: The 1st and 2nd symbolic addresses are still constrained to 0 and OR(owner_address, 0)
             # as the constrains are not reevaluated. They are created/assigned only once: when we create symbolic address.
@@ -922,7 +921,6 @@ class EthTests(unittest.TestCase):
                             d.append(instruction.pc)
                 except Exception as e:
                     raise
-
         mevm = self.mevm
         p = TestPlugin()
         mevm.register_plugin(p)

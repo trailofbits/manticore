@@ -4,6 +4,7 @@ import sys
 import time
 import random
 import weakref
+import os
 
 from contextlib import contextmanager
 
@@ -256,6 +257,7 @@ class ManticoreBase(Eventful):
 
         # Workers will use manticore __dict__ So lets spawn them last
         self._workers = [self._worker_type(id=i, manticore=self) for i in range(consts.procs)]
+        self._is_main = True
 
     def __str__(self):
         return f"<{str(type(self))[8:-2]}| Alive States: {self.count_ready_states()}; Running States: {self.count_busy_states()} Terminated States: {self.count_terminated_states()} Killed States: {self.count_killed_states()} Started: {self._running.value} Killed: {self._killed.value}>"
@@ -322,6 +324,7 @@ class ManticoreBase(Eventful):
         with self._lock:
             self._busy_states.remove(state.id)
             self._remove(state.id)
+            state._id=None
             self._lock.notify_all()
 
         logger.debug("Forking current state %r into states %r", state.id, children)
@@ -341,7 +344,6 @@ class ManticoreBase(Eventful):
             :type state_id: int or None
             :returns: the state id used
         """
-        assert state.id is None or state.id == state_id
         state._id = self._workspace.save_state(state, state_id=state_id)
         return state.id
 
@@ -352,6 +354,7 @@ class ManticoreBase(Eventful):
             :type state_id: int
             :returns: the state id used
         """
+
         if not hasattr(self, "stcache"):
             self.stcache = weakref.WeakValueDictionary()
         if state_id in self.stcache:
@@ -370,6 +373,11 @@ class ManticoreBase(Eventful):
             :param state_id: a estate id
             :type state_id: int
         """
+        if not hasattr(self, "stcache"):
+            self.stcache = weakref.WeakValueDictionary()
+        if state_id in self.stcache:
+            del self.stcache[state_id]
+
         self._workspace.rm_state(state_id)
 
     # Internal support for state lists
@@ -429,7 +437,7 @@ class ManticoreBase(Eventful):
         return self._load(state_id)
 
     @sync
-    def _revive(self, state_id):
+    def _revive_state(self, state_id):
         ''' Send a BUSY state back to READY list
 
             +--------+        +------+
@@ -443,7 +451,7 @@ class ManticoreBase(Eventful):
         self._lock.notify_all()
 
     @sync
-    def _terminate(self, state_id, delete=False):
+    def _terminate_state(self, state_id, delete=False):
         ''' Send a BUSY state to the TERMINATED list or trash it if delete is True
 
             +------+        +------------+
@@ -465,6 +473,33 @@ class ManticoreBase(Eventful):
         else:
             # add the state_id to the terminated list
             self._terminated_states.append(state_id)
+
+        # wake up everyone waiting for a change in the state lists
+        self._lock.notify_all()
+
+    @sync
+    def _kill_state(self, state_id, delete=False):
+        ''' Send a BUSY state to the KILLED list or trash it if delete is True
+
+            +------+        +--------+
+            | BUSY +------->+ KILLED |
+            +---+--+        +--------+
+                |
+                v
+               ###
+               ###
+
+        '''
+        # wait for a state id to be added to the ready list and remove it
+        if state_id not in self._busy_states:
+            raise Exception("Can not even kill it. State is not being analyzed")
+        self._busy_states.remove(state_id)
+
+        if delete:
+            self._remove(state_id)
+        else:
+            # add the state_id to the terminated list
+            self._killed_states.append(state_id)
 
         # wake up everyone waiting for a change in the state lists
         self._lock.notify_all()
@@ -759,6 +794,11 @@ class ManticoreBase(Eventful):
         Runs analysis.
         :param timeout: Analysis timeout, in seconds
         '''
+        # Delete state cache
+        # The cached version of a state may get out of sync if a worker in a
+        # different process modifies the state
+        self.stcache = weakref.WeakValueDictionary()
+
 
         # Lazy process start. At the first run() the workers are not forked.
         # This actually starts the worker procs/threads
@@ -795,6 +835,7 @@ class ManticoreBase(Eventful):
         self._publish('did_run')
         assert not self.is_running()
 
+
     @sync
     @at_not_running
     def remove_all(self):
@@ -810,22 +851,32 @@ class ManticoreBase(Eventful):
         del self._killed_states[:]
 
     def __del__(self):
-        try:
-            self.remove_all()
-        except Exception as e:
-            # ignoring exceptions at __del__
-            pass
-        try:
-            self.kill()
-        except Exception as e:
-            # ignoring exceptions at __del__
-            pass
-        try:
-            for w in self._workers:
-                w.join()
-        except Exception as e:
-            # ignoring exceptions at __del__
-            pass
+        ''' This will be called at every worker '''
+        return
+        if self._is_main:
+            try:
+                self.kill()
+            except Exception as e:
+                # ignoring exceptions at __del__
+                print (e)
+                pass
+            try:
+                for w in self._workers:
+                    try:
+                        w.join()
+                    except:
+                        pass
+            except Exception as e:
+                # ignoring exceptions at __del__
+                print (e)
+                pass
+            try:
+                self.remove_all()
+            except Exception as e:
+                # ignoring exceptions at __del__
+                print (e)
+                pass
+        print ("end del")
 
     def finalize(self):
         """

@@ -59,6 +59,7 @@ class Worker:
         logger.debug("Starting Manticore Symbolic Emulator Worker %d. Pid %d Tid %d).", self.id, os.getpid(), threading.get_ident())
 
         m = self.manticore
+        m._is_main = False  # This will mark our copy of manticore
         current_state = None
         m._publish("will_start_worker", self.id)
 
@@ -110,9 +111,11 @@ class Worker:
                         else:
                             logger.debug("[%r] Stopped and/or Killed", self.id)
                             # On going execution was stopped or killed. Lets
-                            # save any progress on the current state
+                            # save any progress on the current state using the
+                            # same id. No other worker will use this state in
+                            # this run
                             m._save(current_state, state_id=current_state.id)
-                            m._revive(current_state.id)
+                            m._revive_state(current_state.id)
                             current_state = None
 
                         assert current_state is None
@@ -133,9 +136,13 @@ class Worker:
                         # Notify this state is done
                         m._publish('will_terminate_state', current_state, exc)
                         # Update the stored version of the current state
+
                         m._save(current_state, state_id=current_state.id)
-                        # Add the state to the terminated state list
-                        m._terminate(current_state.id)
+                        # Add the state to the terminated state list re-using
+                        # the same id. No other worker will use this state in
+                        # this run
+                        m._terminate_state(current_state.id)
+
                         m._publish('did_terminate_state', current_state, exc)
                         current_state = None
 
@@ -149,10 +156,10 @@ class Worker:
                         # Drop any work on this state in case it is inconsistent
 
                         # Update the stored version of the current state
+                        # Saved to a fresh id in case other worker have an old
+                        # version this state cached over the old id
                         m._save(current_state, state_id=current_state.id)
-                        with m._lock:
-                            m._busy_states.remove(current_state.id)
-                            m._killed_states.append(current_state.id)
+                        m._kill_state(current_state.id)
                         current_state = None
                     break
 
