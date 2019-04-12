@@ -14037,6 +14037,10 @@ class Aarch64SymInstructions(unittest.TestCase, Aarch64Instructions):
         return values[0]
 
     def _execute(self, check_pc=True, **kwargs):
+        # Make sure there are some constraints.  Otherwise, it would be the same
+        # as testing concrete values.
+        self.assertTrue(len(self.cs) > 0)
+
         pc = self.cpu.PC
 
         # XXX: Copied from 'test_x86.py'.
