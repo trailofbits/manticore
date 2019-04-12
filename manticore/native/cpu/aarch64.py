@@ -1331,8 +1331,13 @@ class Aarch64Cpu(Cpu):
             raise Aarch64InvalidInstruction
 
         size = elem_size * elem_count
+
         reg1 = Operators.EXTRACT(reg1, 0, size)
         reg2 = Operators.EXTRACT(reg2, 0, size)
+
+        reg1 = Operators.ZEXTEND(reg1, size * 2)
+        reg2 = Operators.ZEXTEND(reg2, size * 2)
+
         concat = UInt((reg2 << size) | reg1, size * 2)
 
         result = 0
@@ -1340,6 +1345,7 @@ class Aarch64Cpu(Cpu):
             elem1 = Operators.EXTRACT(concat, (2 * i)     * elem_size, elem_size)
             elem2 = Operators.EXTRACT(concat, (2 * i + 1) * elem_size, elem_size)
             elem = UInt(elem1 + elem2, elem_size)
+            elem = Operators.ZEXTEND(elem, res_op.size)
             result |= elem << (i * elem_size)
 
         result = UInt(result, res_op.size)
