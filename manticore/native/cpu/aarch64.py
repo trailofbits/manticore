@@ -2,7 +2,6 @@ import warnings
 
 import capstone as cs
 import collections
-from decimal import Decimal
 import re
 import struct
 
@@ -5142,10 +5141,19 @@ class Aarch64Cpu(Cpu):
         reg1 = UInt(reg_op1.read(), reg_op1.size)
         reg2 = UInt(reg_op2.read(), reg_op2.size)
 
-        if reg2 == 0:
-            result = 0
-        else:
-            result = int(Decimal(reg1) / Decimal(reg2))  # round toward zero
+        # Compute regardless of the second argument, so it can be referenced in
+        # 'ITEBV'.  But the result shouldn't be used if 'reg2 == 0'.
+        try:
+            quot = Operators.UDIV(reg1, reg2)  # rounds toward zero
+        except ZeroDivisionError:
+            quot = 0
+
+        result = Operators.ITEBV(
+            res_op.size,
+            reg2 == 0,
+            0,
+            quot
+        )
 
         res_op.write(result)
 
