@@ -679,15 +679,33 @@ class Aarch64Cpu(Cpu):
 
         assert nzcv in range(16)
 
-        if cpu.cond_holds(cpu.instruction.cc):
-            (_, nzcv) = cpu._add_with_carry(reg_op.size, reg, ~reg_imm, 1)
-            cpu.regfile.nzcv = nzcv
-        else:
-            n = Operators.EXTRACT(nzcv, 3, 1)
-            z = Operators.EXTRACT(nzcv, 2, 1)
-            c = Operators.EXTRACT(nzcv, 1, 1)
-            v = Operators.EXTRACT(nzcv, 0, 1)
-            cpu.regfile.nzcv = (n, z, c, v)
+        # XXX: This is only necessary because of 'ITEBV'.  If more code needs
+        # this, consider just returning NZCV as a single value from
+        # '_add_with_carry'.
+        def make_nzcv(n, z, c, v):
+            n = Operators.ZEXTEND(n, 4)
+            z = Operators.ZEXTEND(z, 4)
+            c = Operators.ZEXTEND(c, 4)
+            v = Operators.ZEXTEND(v, 4)
+            nzcv  = LSL(n, 3, 4)
+            nzcv |= LSL(z, 2, 4)
+            nzcv |= LSL(c, 1, 4)
+            nzcv |= LSL(v, 0, 4)
+            return nzcv
+
+        nzcv = Operators.ITEBV(
+            4,
+            cpu.cond_holds(cpu.instruction.cc),
+            make_nzcv(*cpu._add_with_carry(reg_op.size, reg, ~reg_imm, 1)[1]),
+            nzcv
+        )
+
+        n = Operators.EXTRACT(nzcv, 3, 1)
+        z = Operators.EXTRACT(nzcv, 2, 1)
+        c = Operators.EXTRACT(nzcv, 1, 1)
+        v = Operators.EXTRACT(nzcv, 0, 1)
+
+        cpu.regfile.nzcv = (n, z, c, v)
 
     def _cmeq(cpu, res_op, reg_op, reg_imm_op, register):
         assert res_op.type is cs.arm64.ARM64_OP_REG
