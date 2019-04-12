@@ -1834,8 +1834,12 @@ class Aarch64Cpu(Cpu):
 
         imm = imm_op.op.imm
 
-        if cpu.cond_holds(cpu.instruction.cc):
-            cpu.PC = imm
+        cpu.PC = Operators.ITEBV(
+            cpu.regfile.size('PC'),
+            cpu.cond_holds(cpu.instruction.cc),
+            imm,
+            cpu.PC
+        )
 
     @instruction
     def B(cpu, imm_op):
