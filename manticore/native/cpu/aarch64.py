@@ -4150,6 +4150,7 @@ class Aarch64Cpu(Cpu):
             elem1 = Operators.EXTRACT(reg1, i * elem_size, elem_size)
             elem2 = Operators.EXTRACT(reg2, i * elem_size, elem_size)
             elem = UInt(elem1 | elem2, elem_size)
+            elem = Operators.ZEXTEND(elem, res_op.size)
             result |= elem << (i * elem_size)
 
         result = UInt(result, res_op.size)
