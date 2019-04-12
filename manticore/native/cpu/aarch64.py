@@ -4279,6 +4279,7 @@ class Aarch64Cpu(Cpu):
         step = 8
         for pos in range(0, size, step):
             byte = Operators.EXTRACT(reg, pos, step)
+            byte = Operators.ZEXTEND(byte, res_op.size)
             result <<= step
             result |= byte
 
