@@ -1636,7 +1636,7 @@ class Aarch64Cpu(Cpu):
         res_op.write(result)
 
         n = Operators.EXTRACT(result, res_op.size - 1, 1)
-        z = 1 if result == 0 else 0
+        z = Operators.ITEBV(1, result == 0, 1, 0)
         cpu.regfile.nzcv = (n, z, 0, 0)
 
     def _ANDS_shifted_register(cpu, res_op, reg_op1, reg_op2):
