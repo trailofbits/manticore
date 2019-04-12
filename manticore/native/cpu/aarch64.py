@@ -387,15 +387,20 @@ class Aarch64Cpu(Cpu):
 
             if ext == cs.arm64.ARM64_EXT_UXTB:
                 reg2 = Operators.EXTRACT(reg2, 0, 8)
+                reg2 = Operators.ZEXTEND(reg2, res_op.size)
 
             elif ext == cs.arm64.ARM64_EXT_UXTH:
                 reg2 = Operators.EXTRACT(reg2, 0, 16)
+                reg2 = Operators.ZEXTEND(reg2, res_op.size)
 
             elif ext == cs.arm64.ARM64_EXT_UXTW:
                 reg2 = Operators.EXTRACT(reg2, 0, 32)
+                reg2 = Operators.ZEXTEND(reg2, res_op.size)
 
             elif ext == cs.arm64.ARM64_EXT_UXTX:
-                reg2 = Operators.EXTRACT(reg2, 0, 64)
+                size = min(res_op.size, 64)
+                reg2 = Operators.EXTRACT(reg2, 0, size)
+                reg2 = Operators.ZEXTEND(reg2, size)
 
             elif ext == cs.arm64.ARM64_EXT_SXTB:
                 reg2 = Operators.EXTRACT(reg2, 0, 8)
@@ -410,8 +415,9 @@ class Aarch64Cpu(Cpu):
                 reg2 = Operators.SEXTEND(reg2, 32, res_op.size)
 
             elif ext == cs.arm64.ARM64_EXT_SXTX:
-                reg2 = Operators.EXTRACT(reg2, 0, 64)
-                reg2 = Operators.SEXTEND(reg2, 64, res_op.size)
+                size = min(res_op.size, 64)
+                reg2 = Operators.EXTRACT(reg2, 0, size)
+                reg2 = Operators.SEXTEND(reg2, size, size)
 
             else:
                 raise Aarch64InvalidInstruction
