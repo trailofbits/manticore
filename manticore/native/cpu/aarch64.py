@@ -2683,10 +2683,12 @@ class Aarch64Cpu(Cpu):
         reg1 = reg_op1.read()
         reg2 = reg_op2.read()
 
-        if cpu.cond_holds(cpu.instruction.cc):
-            result = reg1
-        else:
-            result = reg2
+        result = Operators.ITEBV(
+            res_op.size,
+            cpu.cond_holds(cpu.instruction.cc),
+            reg1,
+            reg2
+        )
 
         res_op.write(result)
 
