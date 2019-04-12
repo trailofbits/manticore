@@ -2080,7 +2080,7 @@ class Aarch64Cpu(Cpu):
         def action(x, y):
             result = x & ~y
             n = Operators.EXTRACT(result, res_op.size - 1, 1)
-            z = 1 if result == 0 else 0
+            z = Operators.ITEBV(1, result == 0, 1, 0)
             return (result, (n, z, 0, 0))
 
         cpu._shifted_register(
