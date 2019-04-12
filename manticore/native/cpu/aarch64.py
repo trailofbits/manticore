@@ -11,7 +11,7 @@ from .abstractcpu import (
     RegisterFile, Abi, SyscallAbi, Operand, instruction
 )
 from .arm import HighBit, Armv7Operand
-from .bitwise import SInt, UInt, ASR, LSL, LSR, ROR, Mask
+from .bitwise import SInt, UInt, ASR, LSL, LSR, ROR, Mask, GetNBits
 from .register import Register
 from ...core.smtlib import Operators
 
@@ -621,18 +621,29 @@ class Aarch64Cpu(Cpu):
         result = UInt(result, res_op.size)
         res_op.write(result)
 
+    # XXX: Copied from '_ADD' in 'arm.py'.
     def _add_with_carry(cpu, size, x, y, carry_in):
-        unsigned_sum = UInt(x, size) + UInt(y, size) + UInt(carry_in, 1)
-        signed_sum   = SInt(x, size) + SInt(y, size) + UInt(carry_in, 1)
+        y = Operators.ZEXTEND(y, size)
 
-        result = unsigned_sum & Mask(size)
+        usum  = UInt(x, size * 2)
+        usum += UInt(y, size * 2)
+        usum += UInt(carry_in, 1)
 
-        n = Operators.EXTRACT(result, size - 1, 1)
-        z = 1 if result == 0 else 0
-        c = 0 if UInt(result, size) == unsigned_sum else 1
-        v = 0 if SInt(result, size) == signed_sum   else 1
+        ssum  = SInt(Operators.SEXTEND(x, size, size * 2), size * 2)
+        ssum += SInt(Operators.SEXTEND(y, size, size * 2), size * 2)
+        ssum += UInt(carry_in, 1)
 
-        return (result, (n, z, c, v))
+        res  = GetNBits(usum, size)
+
+        ures = UInt(res, size * 2)
+        sres = SInt(Operators.SEXTEND(res, size, size * 2), size * 2)
+
+        n = Operators.EXTRACT(res, size - 1, 1)
+        z = Operators.ITEBV(1, res == 0, 1, 0)
+        c = Operators.ITEBV(1, ures == usum, 0, 1)
+        v = Operators.ITEBV(1, sres == ssum, 0, 1)
+
+        return (res, (n, z, c, v))
 
     def _ccmp_imm_reg(cpu, reg_op, reg_imm_op, nzcv_op, imm):
         assert reg_op.type is cs.arm64.ARM64_OP_REG
