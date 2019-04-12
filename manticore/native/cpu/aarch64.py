@@ -2928,6 +2928,7 @@ class Aarch64Cpu(Cpu):
             raise Aarch64InvalidInstruction
 
         reg = Operators.EXTRACT(reg, 0, elem_size)
+        reg = Operators.ZEXTEND(reg, res_op.size)
         result = 0
         for i in range(elem_count):
             result |= reg << (i * elem_size)
