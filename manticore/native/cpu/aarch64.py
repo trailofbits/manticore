@@ -189,7 +189,10 @@ class Aarch64RegisterFile(RegisterFile):
         assert register in self
         name = self._alias(register)
         parent, size = self._table[name]
-        assert value <= 2 ** size - 1
+        if isinstance(value, int):
+            assert value <= 2 ** size - 1
+        else:
+            assert value.size == size
 
         # DCZID_EL0 is read-only.
         # XXX: Allow to set this when a register is declared.
