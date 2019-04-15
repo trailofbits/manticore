@@ -2168,18 +2168,21 @@ class Aarch64Instructions:
 
     @itest_custom('adr x0, .0')
     def test_adr_0(self):
+        self._setreg('PC', self.cpu.PC)
         pc = self.cpu.PC
         self._execute()
         self.assertEqual(self.rf.read('X0'), pc)
 
     @itest_custom('adr x0, .-8')
     def test_adr_neg(self):
+        self._setreg('PC', self.cpu.PC)
         pc = self.cpu.PC
         self._execute()
         self.assertEqual(self.rf.read('X0'), pc - 8)
 
     @itest_custom('adr x0, .+8')
     def test_adr_pos(self):
+        self._setreg('PC', self.cpu.PC)
         pc = self.cpu.PC
         self._execute()
         self.assertEqual(self.rf.read('X0'), pc + 8)
