@@ -8045,6 +8045,7 @@ class Aarch64Instructions:
     @itest_custom('ldr w1, [sp, #1]')
     def test_ldr_ldur32(self):
         self.cpu.push_int(0x4142434445464748)
+        self._setreg('STACK', self.cpu.STACK)
         stack = self.cpu.STACK
         self._execute()
         self.assertEqual(self.rf.read('X1'), 0x44454647)
@@ -8057,6 +8058,7 @@ class Aarch64Instructions:
     def test_ldr_ldur_neg32(self):
         self.cpu.push_int(0x4142434445464748)
         self.cpu.STACK += 256
+        self._setreg('STACK', self.cpu.STACK)
         stack = self.cpu.STACK
         self._execute()
         self.assertEqual(self.rf.read('X1'), 0x45464748)
@@ -8067,6 +8069,7 @@ class Aarch64Instructions:
     def test_ldur_min32(self):
         self.cpu.push_int(0x4142434445464748)
         self.cpu.STACK += 256
+        self._setreg('STACK', self.cpu.STACK)
         stack = self.cpu.STACK
         self._execute()
         self.assertEqual(self.rf.read('X1'), 0x45464748)
@@ -8077,6 +8080,7 @@ class Aarch64Instructions:
     def test_ldur_max32(self):
         self.cpu.push_int(0x4142434445464748)
         self.cpu.STACK -= 255
+        self._setreg('STACK', self.cpu.STACK)
         stack = self.cpu.STACK
         self._execute()
         self.assertEqual(self.rf.read('X1'), 0x45464748)
@@ -8086,6 +8090,7 @@ class Aarch64Instructions:
     @itest_custom('ldur w1, [sp, #1]')
     def test_ldur32(self):
         self.cpu.push_int(0x4142434445464748)
+        self._setreg('STACK', self.cpu.STACK)
         stack = self.cpu.STACK
         self._execute()
         self.assertEqual(self.rf.read('X1'), 0x44454647)
@@ -8100,6 +8105,7 @@ class Aarch64Instructions:
     def test_ldr_ldur64(self):
         self.cpu.push_int(0x4142434445464748)
         self.cpu.push_int(0x5152535455565758)
+        self._setreg('STACK', self.cpu.STACK)
         stack = self.cpu.STACK
         self._execute()
         self.assertEqual(self.rf.read('X1'), 0x4546474851525354)
@@ -8112,6 +8118,7 @@ class Aarch64Instructions:
     def test_ldr_ldur_neg64(self):
         self.cpu.push_int(0x4142434445464748)
         self.cpu.STACK += 256
+        self._setreg('STACK', self.cpu.STACK)
         stack = self.cpu.STACK
         self._execute()
         self.assertEqual(self.rf.read('X1'), 0x4142434445464748)
@@ -8122,6 +8129,7 @@ class Aarch64Instructions:
     def test_ldur_min64(self):
         self.cpu.push_int(0x4142434445464748)
         self.cpu.STACK += 256
+        self._setreg('STACK', self.cpu.STACK)
         stack = self.cpu.STACK
         self._execute()
         self.assertEqual(self.rf.read('X1'), 0x4142434445464748)
@@ -8132,6 +8140,7 @@ class Aarch64Instructions:
     def test_ldur_max64(self):
         self.cpu.push_int(0x4142434445464748)
         self.cpu.STACK -= 255
+        self._setreg('STACK', self.cpu.STACK)
         stack = self.cpu.STACK
         self._execute()
         self.assertEqual(self.rf.read('X1'), 0x4142434445464748)
@@ -8142,6 +8151,7 @@ class Aarch64Instructions:
     def test_ldur64(self):
         self.cpu.push_int(0x4142434445464748)
         self.cpu.push_int(0x5152535455565758)
+        self._setreg('STACK', self.cpu.STACK)
         stack = self.cpu.STACK
         self._execute()
         self.assertEqual(self.rf.read('X1'), 0x4546474851525354)
