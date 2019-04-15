@@ -41,16 +41,7 @@ def itest_setregs(*preds):
                 except:
                     self.fail()
 
-                reg = dest.upper()
-
-                if self.mem.__class__.__name__ == 'Memory64':
-                    self.rf.write(reg, src)
-                elif self.mem.__class__.__name__ == 'SMemory64':
-                    size = self.rf.size(reg)
-                    self.rf.write(reg, self.cs.new_bitvec(size, name=reg))
-                    self.cs.add(self.rf.read(reg) == src)
-                else:
-                    self.fail()
+                self._setreg(dest, src)
 
             custom_func(self)
 
@@ -192,6 +183,18 @@ class Aarch64Instructions:
         self.rf.write('PC', start)
         self.rf.write('SP', self.stack + 0x1000 - 8)
         self.cpu.mode = mode
+
+    def _setreg(self, reg, val):
+        reg = reg.upper()
+
+        if self.mem.__class__.__name__ == 'Memory64':
+            self.rf.write(reg, val)
+        elif self.mem.__class__.__name__ == 'SMemory64':
+            size = self.rf.size(reg)
+            self.rf.write(reg, self.cs.new_bitvec(size, name=reg))
+            self.cs.add(self.rf.read(reg) == val)
+        else:
+            self.fail()
 
 
     # ADD (extended register).
