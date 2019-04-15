@@ -8940,16 +8940,19 @@ class Aarch64Instructions:
 
     # 32-bit.
 
+    @skip_sym('immediate')
     @itest("movz w0, #0")
     def test_movz32(self):
         self.assertEqual(self.rf.read('X0'), 0)
         self.assertEqual(self.rf.read('W0'), 0)
 
+    @skip_sym('immediate')
     @itest("movz w0, #65535")
     def test_movz_max32(self):
         self.assertEqual(self.rf.read('X0'), 0xffff)
         self.assertEqual(self.rf.read('W0'), 0xffff)
 
+    @skip_sym('immediate')
     @itest("movz w0, #65535, lsl #16")
     def test_movz_sft16_32(self):
         self.assertEqual(self.rf.read('X0'), 0xffff0000)
@@ -8957,26 +8960,31 @@ class Aarch64Instructions:
 
     # 64-bit.
 
+    @skip_sym('immediate')
     @itest("movz x0, #0")
     def test_movz64(self):
         self.assertEqual(self.rf.read('X0'), 0)
         self.assertEqual(self.rf.read('W0'), 0)
 
+    @skip_sym('immediate')
     @itest("movz x0, #65535")
     def test_movz_max64(self):
         self.assertEqual(self.rf.read('X0'), 0xffff)
         self.assertEqual(self.rf.read('W0'), 0xffff)
 
+    @skip_sym('immediate')
     @itest("movz x0, #65535, lsl #16")
     def test_movz_sft16_64(self):
         self.assertEqual(self.rf.read('X0'), 0xffff0000)
         self.assertEqual(self.rf.read('W0'), 0xffff0000)
 
+    @skip_sym('immediate')
     @itest("movz x0, #65535, lsl #32")
     def test_movz_sft32_64(self):
         self.assertEqual(self.rf.read('X0'), 0xffff00000000)
         self.assertEqual(self.rf.read('W0'), 0)
 
+    @skip_sym('immediate')
     @itest("movz x0, #65535, lsl #48")
     def test_movz_sft48_64(self):
         self.assertEqual(self.rf.read('X0'), 0xffff000000000000)
