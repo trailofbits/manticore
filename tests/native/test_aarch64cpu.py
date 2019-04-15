@@ -6312,6 +6312,7 @@ class Aarch64Instructions:
 
     def test_dmb(self):
         def dmb(x):
+            @skip_sym('nothing to set')
             @itest(f'dmb {x}')
             def f(self):
                 pass
