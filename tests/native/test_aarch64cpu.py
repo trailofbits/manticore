@@ -8166,6 +8166,7 @@ class Aarch64Instructions:
     @itest_custom('ldxr w1, [sp]')
     def test_ldxr32(self):
         self.cpu.push_int(0x4142434445464748)
+        self._setreg('STACK', self.cpu.STACK)
         stack = self.cpu.STACK
         self._execute()
         self.assertEqual(self.rf.read('X1'), 0x45464748)
@@ -8175,6 +8176,7 @@ class Aarch64Instructions:
     @itest_custom('ldxr w1, [sp, #0]')
     def test_ldxr_0_32(self):
         self.cpu.push_int(0x4142434445464748)
+        self._setreg('STACK', self.cpu.STACK)
         stack = self.cpu.STACK
         self._execute()
         self.assertEqual(self.rf.read('X1'), 0x45464748)
@@ -8186,6 +8188,7 @@ class Aarch64Instructions:
     @itest_custom('ldxr x1, [sp]')
     def test_ldxr64(self):
         self.cpu.push_int(0x4142434445464748)
+        self._setreg('STACK', self.cpu.STACK)
         stack = self.cpu.STACK
         self._execute()
         self.assertEqual(self.rf.read('X1'), 0x4142434445464748)
@@ -8195,6 +8198,7 @@ class Aarch64Instructions:
     @itest_custom('ldxr x1, [sp, #0]')
     def test_ldxr_0_64(self):
         self.cpu.push_int(0x4142434445464748)
+        self._setreg('STACK', self.cpu.STACK)
         stack = self.cpu.STACK
         self._execute()
         self.assertEqual(self.rf.read('X1'), 0x4142434445464748)
