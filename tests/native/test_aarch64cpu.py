@@ -7672,6 +7672,7 @@ class Aarch64Instructions:
     @itest_custom('ldrh w1, [sp]')
     def test_ldrh_imm_base32(self):
         self.cpu.push_int(0x4142434445464748)
+        self._setreg('STACK', self.cpu.STACK)
         stack = self.cpu.STACK
         self._execute()
         self.assertEqual(self.rf.read('X1'), 0x4748)
@@ -7682,6 +7683,7 @@ class Aarch64Instructions:
     def test_ldrh_imm_base_offset32(self):
         self.cpu.push_int(0x4142434445464748)
         self.cpu.push_int(0x5152535455565758)
+        self._setreg('STACK', self.cpu.STACK)
         stack = self.cpu.STACK
         self._execute()
         self.assertEqual(self.rf.read('X1'), 0x4748)
@@ -7692,6 +7694,7 @@ class Aarch64Instructions:
     def test_ldrh_imm_base_offset_max32(self):
         self.cpu.push_int(0x4142434445464748)
         self.cpu.STACK -= 8190
+        self._setreg('STACK', self.cpu.STACK)
         stack = self.cpu.STACK
         self._execute()
         self.assertEqual(self.rf.read('X1'), 0x4748)
@@ -7701,6 +7704,7 @@ class Aarch64Instructions:
     @itest_custom('ldrh w1, [sp], #8')
     def test_ldrh_imm_post_indexed32(self):
         self.cpu.push_int(0x4142434445464748)
+        self._setreg('STACK', self.cpu.STACK)
         stack = self.cpu.STACK
         self._execute()
         self.assertEqual(self.rf.read('X1'), 0x4748)
@@ -7710,6 +7714,7 @@ class Aarch64Instructions:
     @itest_custom('ldrh w1, [sp], #-256')
     def test_ldrh_imm_post_indexed_neg32(self):
         self.cpu.push_int(0x4142434445464748)
+        self._setreg('STACK', self.cpu.STACK)
         stack = self.cpu.STACK
         self._execute()
         self.assertEqual(self.rf.read('X1'), 0x4748)
@@ -7720,6 +7725,7 @@ class Aarch64Instructions:
     def test_ldrh_imm_pre_indexed32(self):
         self.cpu.push_int(0x4142434445464748)
         self.cpu.push_int(0x5152535455565758)
+        self._setreg('STACK', self.cpu.STACK)
         stack = self.cpu.STACK
         self._execute()
         self.assertEqual(self.rf.read('X1'), 0x4748)
@@ -7730,6 +7736,7 @@ class Aarch64Instructions:
     def test_ldrh_imm_pre_indexed_neg32(self):
         self.cpu.push_int(0x4142434445464748)
         self.cpu.STACK += 256
+        self._setreg('STACK', self.cpu.STACK)
         stack = self.cpu.STACK
         self._execute()
         self.assertEqual(self.rf.read('X1'), 0x4748)
@@ -7747,6 +7754,7 @@ class Aarch64Instructions:
         # Account for -8 (0xfffffff8) being treated like a large positive value
         # after zero extension to 64 bits.
         self.cpu.STACK -= 0xfffffff8
+        self._setreg('STACK', self.cpu.STACK)
         self._execute()
         self.assertEqual(self.rf.read('X0'), 0x5758)
         self.assertEqual(self.rf.read('W0'), 0x5758)
@@ -7759,6 +7767,7 @@ class Aarch64Instructions:
         # Account for -4 (0xfffffffc) being treated like a large positive value
         # after zero extension to 64 bits.
         self.cpu.STACK -= LSL(0xfffffffc, 1, 64)
+        self._setreg('STACK', self.cpu.STACK)
         self._execute()
         self.assertEqual(self.rf.read('X0'), 0x5758)
         self.assertEqual(self.rf.read('W0'), 0x5758)
@@ -7768,6 +7777,7 @@ class Aarch64Instructions:
     def test_ldrh_reg32(self):
         self.cpu.push_int(0x4142434445464748)
         self.cpu.push_int(0x5152535455565758)
+        self._setreg('STACK', self.cpu.STACK)
         self._execute()
         self.assertEqual(self.rf.read('X0'), 0x4748)
         self.assertEqual(self.rf.read('W0'), 0x4748)
@@ -7777,6 +7787,7 @@ class Aarch64Instructions:
     def test_ldrh_reg_lsl32(self):
         self.cpu.push_int(0x4142434445464748)
         self.cpu.push_int(0x5152535455565758)
+        self._setreg('STACK', self.cpu.STACK)
         self._execute()
         self.assertEqual(self.rf.read('X0'), 0x4748)
         self.assertEqual(self.rf.read('W0'), 0x4748)
@@ -7787,6 +7798,7 @@ class Aarch64Instructions:
         self.cpu.push_int(0x4142434445464748)
         self.cpu.push_int(0x5152535455565758)
         self.cpu.STACK += 8
+        self._setreg('STACK', self.cpu.STACK)
         self._execute()
         self.assertEqual(self.rf.read('X0'), 0x5758)
         self.assertEqual(self.rf.read('W0'), 0x5758)
@@ -7797,6 +7809,7 @@ class Aarch64Instructions:
         self.cpu.push_int(0x4142434445464748)
         self.cpu.push_int(0x5152535455565758)
         self.cpu.STACK += LSL(4, 1, 64)
+        self._setreg('STACK', self.cpu.STACK)
         self._execute()
         self.assertEqual(self.rf.read('X0'), 0x5758)
         self.assertEqual(self.rf.read('W0'), 0x5758)
@@ -7807,6 +7820,7 @@ class Aarch64Instructions:
         self.cpu.push_int(0x4142434445464748)
         self.cpu.push_int(0x5152535455565758)
         self.cpu.STACK += 8
+        self._setreg('STACK', self.cpu.STACK)
         self._execute()
         self.assertEqual(self.rf.read('X0'), 0x5758)
         self.assertEqual(self.rf.read('W0'), 0x5758)
@@ -7817,6 +7831,7 @@ class Aarch64Instructions:
         self.cpu.push_int(0x4142434445464748)
         self.cpu.push_int(0x5152535455565758)
         self.cpu.STACK += 8
+        self._setreg('STACK', self.cpu.STACK)
         self._execute()
         self.assertEqual(self.rf.read('X0'), 0x5758)
         self.assertEqual(self.rf.read('W0'), 0x5758)
