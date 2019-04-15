@@ -9297,6 +9297,7 @@ class Aarch64Instructions:
 
     @itest_custom('nop')
     def test_nop(self):
+        self._setreg('PC', self.cpu.PC)
         pc = self.cpu.PC
         self._execute(check_pc=False)  # check explicitly
         self.assertEqual(self.rf.read('PC'), pc + 4)
