@@ -8885,16 +8885,19 @@ class Aarch64Instructions:
 
     # 32-bit.
 
+    @skip_sym('immediate')
     @itest("movn w0, #0")
     def test_movn32(self):
         self.assertEqual(self.rf.read('X0'), 0xffffffff)
         self.assertEqual(self.rf.read('W0'), 0xffffffff)
 
+    @skip_sym('immediate')
     @itest("movn w0, #65535")
     def test_movn_max32(self):
         self.assertEqual(self.rf.read('X0'), 0xffff0000)
         self.assertEqual(self.rf.read('W0'), 0xffff0000)
 
+    @skip_sym('immediate')
     @itest("movn w0, #65535, lsl #16")
     def test_movn_sft16_32(self):
         self.assertEqual(self.rf.read('X0'), 0xffff)
@@ -8902,26 +8905,31 @@ class Aarch64Instructions:
 
     # 64-bit.
 
+    @skip_sym('immediate')
     @itest("movn x0, #0")
     def test_movn64(self):
         self.assertEqual(self.rf.read('X0'), 0xffffffffffffffff)
         self.assertEqual(self.rf.read('W0'), 0xffffffff)
 
+    @skip_sym('immediate')
     @itest("movn x0, #65535")
     def test_movn_max64(self):
         self.assertEqual(self.rf.read('X0'), 0xffffffffffff0000)
         self.assertEqual(self.rf.read('W0'), 0xffff0000)
 
+    @skip_sym('immediate')
     @itest("movn x0, #65535, lsl #16")
     def test_movn_sft16_64(self):
         self.assertEqual(self.rf.read('X0'), 0xffffffff0000ffff)
         self.assertEqual(self.rf.read('W0'), 0xffff)
 
+    @skip_sym('immediate')
     @itest("movn x0, #65535, lsl #32")
     def test_movn_sft32_64(self):
         self.assertEqual(self.rf.read('X0'), 0xffff0000ffffffff)
         self.assertEqual(self.rf.read('W0'), 0xffffffff)
 
+    @skip_sym('immediate')
     @itest("movn x0, #65535, lsl #48")
     def test_movn_sft48_64(self):
         self.assertEqual(self.rf.read('X0'), 0x0000ffffffffffff)
