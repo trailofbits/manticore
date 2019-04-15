@@ -50,6 +50,18 @@ def itest_setregs(*preds):
     return instr_dec
 
 
+def skip_sym(msg):
+    def instr_dec(assertions_func):
+        @wraps(assertions_func)
+        def wrapper(self):
+            if self.__class__.__name__ == 'Aarch64SymInstructions':
+                self.skipTest(msg)
+
+        return wrapper
+
+    return instr_dec
+
+
 def itest(asm):
     def instr_dec(assertions_func):
         @wraps(assertions_func)
