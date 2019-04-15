@@ -2189,8 +2189,12 @@ class Aarch64Cpu(Cpu):
         reg = reg_op.read()
         imm = imm_op.op.imm
 
-        if reg != 0:
-            cpu.PC = imm
+        cpu.PC = Operators.ITEBV(
+            cpu.regfile.size('PC'),
+            reg != 0,
+            imm,
+            cpu.PC
+        )
 
     @instruction
     def CBZ(cpu, reg_op, imm_op):

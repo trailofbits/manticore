@@ -3771,7 +3771,8 @@ class Aarch64Instructions:
     # Execute sequentially.
     @itest_custom(['cbnz w0, .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
     def test_cbnz_pos_zero32(self):
-        self.cpu.W0 = 0
+        self._setreg('W0', 0)
+        self._setreg('PC', self.cpu.PC)
         pc = self.cpu.PC
         self._execute(check_pc=False)
         self.assertEqual(self.rf.read('PC'), pc + 4)
@@ -3784,7 +3785,8 @@ class Aarch64Instructions:
     # Jump over the second instruction.
     @itest_custom(['cbnz w0, .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
     def test_cbnz_pos_non_zero32(self):
-        self.cpu.W0 = 1
+        self._setreg('W0', 1)
+        self._setreg('PC', self.cpu.PC)
         pc = self.cpu.PC
         self._execute(check_pc=False)
         self.assertEqual(self.rf.read('PC'), pc + 8)
@@ -3797,8 +3799,9 @@ class Aarch64Instructions:
     # Execute sequentially.
     @itest_custom(['mov x1, 42', 'cbnz w0, .-4', 'mov x2, 43'], multiple_insts=True)
     def test_cbnz_neg_zero32(self):
-        self.cpu.W0 = 0
+        self._setreg('W0', 0)
         self.cpu.PC += 4
+        self._setreg('PC', self.cpu.PC)
         pc = self.cpu.PC
         self._execute(check_pc=False)
         self.assertEqual(self.rf.read('PC'), pc + 4)
@@ -3811,8 +3814,9 @@ class Aarch64Instructions:
     # Jump one instruction back.
     @itest_custom(['mov x1, 42', 'cbnz w0, .-4', 'mov x2, 43'], multiple_insts=True)
     def test_cbnz_neg_non_zero32(self):
-        self.cpu.W0 = 1
+        self._setreg('W0', 1)
         self.cpu.PC += 4
+        self._setreg('PC', self.cpu.PC)
         pc = self.cpu.PC
         self._execute(check_pc=False)
         self.assertEqual(self.rf.read('PC'), pc - 4)
@@ -3827,7 +3831,8 @@ class Aarch64Instructions:
     # Execute sequentially.
     @itest_custom(['cbnz x0, .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
     def test_cbnz_pos_zero64(self):
-        self.cpu.X0 = 0
+        self._setreg('X0', 0)
+        self._setreg('PC', self.cpu.PC)
         pc = self.cpu.PC
         self._execute(check_pc=False)
         self.assertEqual(self.rf.read('PC'), pc + 4)
@@ -3840,7 +3845,8 @@ class Aarch64Instructions:
     # Jump over the second instruction.
     @itest_custom(['cbnz x0, .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
     def test_cbnz_pos_non_zero64(self):
-        self.cpu.X0 = 1
+        self._setreg('X0', 1)
+        self._setreg('PC', self.cpu.PC)
         pc = self.cpu.PC
         self._execute(check_pc=False)
         self.assertEqual(self.rf.read('PC'), pc + 8)
@@ -3853,8 +3859,9 @@ class Aarch64Instructions:
     # Execute sequentially.
     @itest_custom(['mov x1, 42', 'cbnz x0, .-4', 'mov x2, 43'], multiple_insts=True)
     def test_cbnz_neg_zero64(self):
-        self.cpu.X0 = 0
+        self._setreg('X0', 0)
         self.cpu.PC += 4
+        self._setreg('PC', self.cpu.PC)
         pc = self.cpu.PC
         self._execute(check_pc=False)
         self.assertEqual(self.rf.read('PC'), pc + 4)
@@ -3867,8 +3874,9 @@ class Aarch64Instructions:
     # Jump one instruction back.
     @itest_custom(['mov x1, 42', 'cbnz x0, .-4', 'mov x2, 43'], multiple_insts=True)
     def test_cbnz_neg_non_zero64(self):
-        self.cpu.X0 = 1
+        self._setreg('X0', 1)
         self.cpu.PC += 4
+        self._setreg('PC', self.cpu.PC)
         pc = self.cpu.PC
         self._execute(check_pc=False)
         self.assertEqual(self.rf.read('PC'), pc - 4)
