@@ -8590,11 +8590,13 @@ class Aarch64Instructions:
 
     # 32-bit.
 
+    @skip_sym('immediate')
     @itest('mov w0, #0xffffffff')
     def test_mov_inv_wide_imm32(self):
         self.assertEqual(self.rf.read('X0'), 0xffffffff)
         self.assertEqual(self.rf.read('W0'), 0xffffffff)
 
+    @skip_sym('immediate')
     @itest('mov w0, #-1')
     def test_mov_inv_wide_imm_neg32(self):
         self.assertEqual(self.rf.read('X0'), 0xffffffff)
@@ -8602,11 +8604,13 @@ class Aarch64Instructions:
 
     # 64-bit.
 
+    @skip_sym('immediate')
     @itest('mov x0, #0xffffffffffffffff')
     def test_mov_inv_wide_imm64(self):
         self.assertEqual(self.rf.read('X0'), 0xffffffffffffffff)
         self.assertEqual(self.rf.read('W0'), 0xffffffff)
 
+    @skip_sym('immediate')
     @itest('mov x0, #-1')
     def test_mov_inv_wide_imm_neg64(self):
         self.assertEqual(self.rf.read('X0'), 0xffffffffffffffff)
@@ -8617,16 +8621,19 @@ class Aarch64Instructions:
 
     # 32-bit.
 
+    @skip_sym('immediate')
     @itest('mov w0, #0')
     def test_mov_wide_imm_min32(self):
         self.assertEqual(self.rf.read('X0'), 0)
         self.assertEqual(self.rf.read('W0'), 0)
 
+    @skip_sym('immediate')
     @itest('mov w0, #0xffff0000')
     def test_mov_wide_imm_max32(self):
         self.assertEqual(self.rf.read('X0'), 0xffff0000)
         self.assertEqual(self.rf.read('W0'), 0xffff0000)
 
+    @skip_sym('immediate')
     @itest('mov w0, #1')
     def test_mov_wide_imm32(self):
         self.assertEqual(self.rf.read('X0'), 1)
@@ -8634,16 +8641,19 @@ class Aarch64Instructions:
 
     # 64-bit.
 
+    @skip_sym('immediate')
     @itest('mov x0, #0')
     def test_mov_wide_imm_min64(self):
         self.assertEqual(self.rf.read('X0'), 0)
         self.assertEqual(self.rf.read('W0'), 0)
 
+    @skip_sym('immediate')
     @itest('mov x0, #0xffff000000000000')
     def test_mov_wide_imm_max64(self):
         self.assertEqual(self.rf.read('X0'), 0xffff000000000000)
         self.assertEqual(self.rf.read('W0'), 0)
 
+    @skip_sym('immediate')
     @itest('mov x0, #1')
     def test_mov_wide_imm64(self):
         self.assertEqual(self.rf.read('X0'), 1)
@@ -8652,11 +8662,13 @@ class Aarch64Instructions:
 
     # MOV (bitmask immediate).
 
+    @skip_sym('immediate')
     @itest('mov w0, #0x7ffffffe')
     def test_mov_bmask_imm32(self):
         self.assertEqual(self.rf.read('X0'), 0x7ffffffe)
         self.assertEqual(self.rf.read('W0'), 0x7ffffffe)
 
+    @skip_sym('immediate')
     @itest('mov x0, #0x7ffffffffffffffe')
     def test_mov_bmask_imm64(self):
         self.assertEqual(self.rf.read('X0'), 0x7ffffffffffffffe)
@@ -8687,6 +8699,7 @@ class Aarch64Instructions:
 
     # MOV misc.
 
+    @skip_sym('immediate')
     @itest_multiple(["movn x0, #0", "mov w0, #1"])
     def test_mov_same_reg32(self):
         self.assertEqual(self.rf.read('X0'), 1)
