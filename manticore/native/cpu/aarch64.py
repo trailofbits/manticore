@@ -4921,8 +4921,12 @@ class Aarch64Cpu(Cpu):
 
         assert imm in range(reg_op.size)
 
-        if Operators.EXTRACT(reg, imm, 1) == 0:
-            cpu.PC = lab
+        cpu.PC = Operators.ITEBV(
+            cpu.regfile.size('PC'),
+            Operators.EXTRACT(reg, imm, 1) == 0,
+            lab,
+            cpu.PC
+        )
 
     def _TST_immediate(cpu, reg_op, imm_op):
         """

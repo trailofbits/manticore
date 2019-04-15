@@ -13433,7 +13433,8 @@ class Aarch64Instructions:
     # Jump over the second instruction.
     @itest_custom(['tbz w0, 0, .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
     def test_tbz_min_zero32(self):
-        self.cpu.W0 = 0
+        self._setreg('W0', 0)
+        self._setreg('PC', self.cpu.PC)
         pc = self.cpu.PC
         self._execute(check_pc=False)
         self.assertEqual(self.rf.read('PC'), pc + 8)
@@ -13446,7 +13447,8 @@ class Aarch64Instructions:
     # Execute sequentially.
     @itest_custom(['tbz w0, 0, .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
     def test_tbz_min_one32(self):
-        self.cpu.W0 = 1
+        self._setreg('W0', 1)
+        self._setreg('PC', self.cpu.PC)
         pc = self.cpu.PC
         self._execute(check_pc=False)
         self.assertEqual(self.rf.read('PC'), pc + 4)
@@ -13459,7 +13461,8 @@ class Aarch64Instructions:
     # Jump over the second instruction.
     @itest_custom(['tbz w0, 31, .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
     def test_tbz_max_zero32(self):
-        self.cpu.W0 = 0
+        self._setreg('W0', 0)
+        self._setreg('PC', self.cpu.PC)
         pc = self.cpu.PC
         self._execute(check_pc=False)
         self.assertEqual(self.rf.read('PC'), pc + 8)
@@ -13472,7 +13475,8 @@ class Aarch64Instructions:
     # Execute sequentially.
     @itest_custom(['tbz w0, 31, .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
     def test_tbz_max_one32(self):
-        self.cpu.W0 = 0x80000000
+        self._setreg('W0', 0x80000000)
+        self._setreg('PC', self.cpu.PC)
         pc = self.cpu.PC
         self._execute(check_pc=False)
         self.assertEqual(self.rf.read('PC'), pc + 4)
@@ -13485,7 +13489,8 @@ class Aarch64Instructions:
     # Jump over the second instruction.
     @itest_custom(['tbz w0, 3, .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
     def test_tbz_zero32(self):
-        self.cpu.W0 = 0
+        self._setreg('W0', 0)
+        self._setreg('PC', self.cpu.PC)
         pc = self.cpu.PC
         self._execute(check_pc=False)
         self.assertEqual(self.rf.read('PC'), pc + 8)
@@ -13498,7 +13503,8 @@ class Aarch64Instructions:
     # Execute sequentially.
     @itest_custom(['tbz w0, 3, .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
     def test_tbz_one32(self):
-        self.cpu.W0 = 8
+        self._setreg('W0', 8)
+        self._setreg('PC', self.cpu.PC)
         pc = self.cpu.PC
         self._execute(check_pc=False)
         self.assertEqual(self.rf.read('PC'), pc + 4)
@@ -13513,7 +13519,8 @@ class Aarch64Instructions:
     # Jump over the second instruction.
     @itest_custom(['tbz x0, 0, .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
     def test_tbz_min_zero64(self):
-        self.cpu.X0 = 0
+        self._setreg('X0', 0)
+        self._setreg('PC', self.cpu.PC)
         pc = self.cpu.PC
         self._execute(check_pc=False)
         self.assertEqual(self.rf.read('PC'), pc + 8)
@@ -13526,7 +13533,8 @@ class Aarch64Instructions:
     # Execute sequentially.
     @itest_custom(['tbz x0, 0, .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
     def test_tbz_min_one64(self):
-        self.cpu.X0 = 1
+        self._setreg('X0', 1)
+        self._setreg('PC', self.cpu.PC)
         pc = self.cpu.PC
         self._execute(check_pc=False)
         self.assertEqual(self.rf.read('PC'), pc + 4)
@@ -13539,7 +13547,8 @@ class Aarch64Instructions:
     # Jump over the second instruction.
     @itest_custom(['tbz x0, 63, .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
     def test_tbz_max_zero64(self):
-        self.cpu.X0 = 0
+        self._setreg('X0', 0)
+        self._setreg('PC', self.cpu.PC)
         pc = self.cpu.PC
         self._execute(check_pc=False)
         self.assertEqual(self.rf.read('PC'), pc + 8)
@@ -13552,7 +13561,8 @@ class Aarch64Instructions:
     # Execute sequentially.
     @itest_custom(['tbz x0, 63, .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
     def test_tbz_max_one64(self):
-        self.cpu.X0 = 0x8000000000000000
+        self._setreg('X0', 0x8000000000000000)
+        self._setreg('PC', self.cpu.PC)
         pc = self.cpu.PC
         self._execute(check_pc=False)
         self.assertEqual(self.rf.read('PC'), pc + 4)
@@ -13565,7 +13575,8 @@ class Aarch64Instructions:
     # Jump over the second instruction.
     @itest_custom(['tbz x0, 3, .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
     def test_tbz_zero64(self):
-        self.cpu.X0 = 0
+        self._setreg('X0', 0)
+        self._setreg('PC', self.cpu.PC)
         pc = self.cpu.PC
         self._execute(check_pc=False)
         self.assertEqual(self.rf.read('PC'), pc + 8)
@@ -13578,7 +13589,8 @@ class Aarch64Instructions:
     # Execute sequentially.
     @itest_custom(['tbz x0, 3, .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
     def test_tbz_one64(self):
-        self.cpu.X0 = 8
+        self._setreg('X0', 8)
+        self._setreg('PC', self.cpu.PC)
         pc = self.cpu.PC
         self._execute(check_pc=False)
         self.assertEqual(self.rf.read('PC'), pc + 4)
