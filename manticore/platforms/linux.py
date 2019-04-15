@@ -2499,7 +2499,6 @@ class Linux(Platform):
         '''
         return self.sys_pipe2(filedes, 0)
 
-
     def sys_pipe2(self, filedes, flags) -> int:
         '''
         # TODO (ehennenfent) create a native pipe type instead of cheating with sockets
@@ -2510,11 +2509,10 @@ class Linux(Platform):
         if flags == 0:
             l, r = Socket.pair()
             self.current.write_int(filedes, self._open(l))
-            self.current.write_int(filedes+4, self._open(r))
+            self.current.write_int(filedes + 4, self._open(r))
         else:
             logger.warning("sys_pipe2 doesn't handle flags")
             return -1
-
 
     def _arch_specific_init(self):
         assert self.arch in {'i386', 'amd64', 'armv7'}
