@@ -2192,18 +2192,21 @@ class Aarch64Instructions:
 
     @itest_custom('adrp x0, .0')
     def test_adrp_0(self):
+        self._setreg('PC', self.cpu.PC)
         pc = self.cpu.PC
         self._execute()
         self.assertEqual(self.rf.read('X0'), pc)
 
     @itest_custom('adrp x0, .-0x1000')
     def test_adrp_neg(self):
+        self._setreg('PC', self.cpu.PC)
         pc = self.cpu.PC
         self._execute()
         self.assertEqual(self.rf.read('X0'), pc - 0x1000)
 
     @itest_custom('adrp x0, .+0x1000')
     def test_adrp_pos(self):
+        self._setreg('PC', self.cpu.PC)
         pc = self.cpu.PC
         self._execute()
         self.assertEqual(self.rf.read('X0'), pc + 0x1000)
