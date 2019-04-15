@@ -1371,6 +1371,8 @@ class Linux(Platform):
         if os.access(filename, mode):
             return 0
         else:
+            if not os.path.exists(filename):
+                return -2  # Decodes to ENOENT
             return -1
 
     def sys_newuname(self, old_utsname):
@@ -2463,7 +2465,7 @@ class Linux(Platform):
         name = self.current.read_string(pathname)
         os.mkdir(name, mode=mode)
 
-        return -1
+        return 0
 
     # @unimplemented
     def sys_mkdirat(self, dfd, pathname, mode) -> int:
@@ -2475,7 +2477,7 @@ class Linux(Platform):
         name = self.current.read_string(pathname)
         os.mkdirat(name, mode=mode, dir_fd=dfd)
 
-        return -1
+        return 0
 
     # @unimplemented
     def sys_rmdir(self, pathname) -> int:
