@@ -8565,6 +8565,7 @@ class Aarch64Instructions:
     def test_mov_from_sp(self):
         # Do not overwrite SP with '_setupCpu'.
         self.rf.write('SP', MAGIC_64)
+        self._setreg('SP', self.cpu.SP)
         self._execute()
         self.assertEqual(self.rf.read('X0'), MAGIC_64)
         self.assertEqual(self.rf.read('W0'), MAGIC_32)
@@ -8579,6 +8580,7 @@ class Aarch64Instructions:
     def test_mov_from_sp32(self):
         # Do not overwrite WSP with '_setupCpu'.
         self.rf.write('WSP', MAGIC_32)
+        self._setreg('WSP', self.cpu.WSP)
         self._execute()
         self.assertEqual(self.rf.read('X0'), MAGIC_32)
         self.assertEqual(self.rf.read('W0'), MAGIC_32)
