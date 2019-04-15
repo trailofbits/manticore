@@ -2218,8 +2218,12 @@ class Aarch64Cpu(Cpu):
         reg = reg_op.read()
         imm = imm_op.op.imm
 
-        if reg == 0:
-            cpu.PC = imm
+        cpu.PC = Operators.ITEBV(
+            cpu.regfile.size('PC'),
+            reg == 0,
+            imm,
+            cpu.PC
+        )
 
     def _CCMP_immediate(cpu, reg_op, imm_op, nzcv_op):
         """
