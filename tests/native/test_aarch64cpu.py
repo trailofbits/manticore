@@ -2991,6 +2991,7 @@ class Aarch64Instructions:
     # Jump over the second instruction.
     @itest_custom(['b .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
     def test_b_pos(self):
+        self._setreg('PC', self.cpu.PC)
         pc = self.cpu.PC
         # Execute just two instructions, so it doesn't attempt to run beyond
         # valid code.
@@ -3006,6 +3007,7 @@ class Aarch64Instructions:
     @itest_custom(['mov x1, 42', 'mov x2, 43', 'b .-8'], multiple_insts=True)
     def test_b_neg(self):
         self.cpu.PC += 8  # start at 'b'
+        self._setreg('PC', self.cpu.PC)
         pc = self.cpu.PC
         # Execute just two instructions, so it doesn't loop indefinitely.
         self._execute(check_pc=False)
