@@ -9625,6 +9625,7 @@ class Aarch64Instructions:
     def test_ret(self):
         pc = self.cpu.PC
         self.cpu.X30 = pc + 16
+        self._setreg('X30', self.cpu.X30)
         self._execute(check_pc=False)
         self.assertEqual(self.rf.read('PC'), pc + 16)
 
@@ -9632,6 +9633,7 @@ class Aarch64Instructions:
     def test_ret_reg(self):
         pc = self.cpu.PC
         self.cpu.X0 = pc + 32
+        self._setreg('X0', self.cpu.X0)
         self._execute(check_pc=False)
         self.assertEqual(self.rf.read('PC'), pc + 32)
 
