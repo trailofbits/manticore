@@ -13153,14 +13153,16 @@ class Aarch64Instructions:
 
     # SVC.
 
+    @skip_sym('immediate')
     def test_svc0(self):
         with self.assertRaises(Interruption):
             self._setupCpu("svc #0")
             self._execute()
 
+    @skip_sym('immediate')
     def test_svc1(self):
         # XXX: Maybe change the behavior to be consistent with Unicorn?
-        if self.__class__.__name__ in ['Aarch64CpuInstructions', 'Aarch64SymInstructions']:
+        if self.__class__.__name__ == 'Aarch64CpuInstructions':
             e = InstructionNotImplementedError
         elif self.__class__.__name__ == 'Aarch64UnicornInstructions':
             e = Interruption
