@@ -6296,10 +6296,11 @@ class Aarch64Instructions:
 
     # DC.
 
+    @skip_sym('dczid_el0 is read-only')
     # XXX: Check that Manticore prohibits DC ZVA until it's implemented.
     @itest('mrs x0, dczid_el0')
     def test_dczid_el0(self):
-        if self.__class__.__name__ in ['Aarch64CpuInstructions', 'Aarch64SymInstructions']:
+        if self.__class__.__name__ == 'Aarch64CpuInstructions':
             self.assertEqual(self.rf.read('X0'), 16)
         elif self.__class__.__name__ == 'Aarch64UnicornInstructions':
             self.assertEqual(self.rf.read('X0'), 4)
