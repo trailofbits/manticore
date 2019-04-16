@@ -6732,13 +6732,14 @@ class Aarch64Instructions:
                 def f(self):
                     # Disable traps first.
                     for i in range(3):
-                        self._execute(reset=i == 0)
+                        self._execute(reset=i == 0, check_cs=False)
 
                     # Push in reverse order.
                     for i in range(reg_count * (size // dword_size) -1, -1, -1):
                         self.cpu.push_int(val + i * step)
 
                     # Save the stack pointer.
+                    self._setreg('STACK', self.cpu.STACK)
                     stack = self.cpu.STACK
 
                     # Write to the writeback register, if applicable.
@@ -14265,7 +14266,7 @@ class Aarch64UnicornInstructions(unittest.TestCase, Aarch64Instructions):
     # state in between.
     # Note: in HEAD, this is fixed for some system registers, so revise
     # this after upgrading from 1.0.1.
-    def _execute(self, check_pc=True, reset=True):
+    def _execute(self, check_pc=True, reset=True, **kwargs):
         pc = self.cpu.PC
         insn = self.cpu.decode_instruction(pc)
         self.emu.emulate(insn, reset=reset)
@@ -14286,10 +14287,11 @@ class Aarch64SymInstructions(unittest.TestCase, Aarch64Instructions):
         self.assertEqual(len(values), 1)
         return values[0]
 
-    def _execute(self, check_pc=True, **kwargs):
+    def _execute(self, check_pc=True, check_cs=True, **kwargs):
         # Make sure there are some constraints.  Otherwise, it would be the same
         # as testing concrete values.
-        self.assertTrue(len(self.cs) > 0)
+        if check_cs:
+            self.assertTrue(len(self.cs) > 0)
 
         pc = self.cpu.PC
 
