@@ -380,7 +380,8 @@ class FileMap(Map):
         return (self.__class__, (self.start, len(self), self.perms, self._filename, self._offset, self._overlay))
 
     def __del__(self):
-        munmap(self._data, self._mapped_size)
+        if hasattr(self, '_data'):
+            munmap(self._data, self._mapped_size)
 
     def __repr__(self):
         return f'<{self.__class__.__name__} [{self._filename}+{self._offset:x}] 0x{self.start:016x}-0x{self.end:016x} {self.perms}>'

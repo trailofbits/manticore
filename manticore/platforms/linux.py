@@ -70,7 +70,10 @@ class File:
         # TODO: assert file is seekable; otherwise we should save what was
         # read from/written to the state
         mode = mode_from_flags(flags)
-        self.file = open(path, mode)
+        if mode == 'rb+' and not os.path.exists(path):
+            self.file = open(path, 'wb+')
+        else:
+            self.file = open(path, mode)
 
     def __getstate__(self):
         state = {
@@ -2513,6 +2516,20 @@ class Linux(Platform):
         else:
             logger.warning("sys_pipe2 doesn't handle flags")
             return -1
+
+    def sys_ftruncate(self, fd, length) -> int:
+        '''
+        Truncate a file to a specified length
+        success: Returns 0
+        error: Returns -1
+        '''
+        try:
+            file = self._get_fd(fd)
+        except FdError as e:
+            logger.info("File descriptor %s is not open", fd)
+            return -e.err
+        file.file.truncate(length)
+        return 0
 
     def _arch_specific_init(self):
         assert self.arch in {'i386', 'amd64', 'armv7'}
