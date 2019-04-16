@@ -13,7 +13,10 @@ class OSException(Exception):
 def unimplemented(wrapped, _instance, args, kwargs):
     cpu = getattr(getattr(_instance, 'parent', None), 'current', None)
     addr = None if cpu is None else cpu.read_register('PC')
-    logger.warning(f"Unimplemented system call{'' if addr is None else ' at ' + hex(addr)}: {wrapped.__name__}({', '.join(hex(a) for a in args)})")
+    logger.warning(f"Unimplemented system call%s: %s(%s)",
+                   '' if addr is None else ' at ' + hex(addr),
+                   wrapped.__name__,
+                   ', '.join(hex(a) for a in args))
     return wrapped(*args, **kwargs)
 
 
