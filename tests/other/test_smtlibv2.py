@@ -1,7 +1,8 @@
 import unittest
 
-from manticore.core.smtlib import *
-
+from manticore.core.smtlib import ConstraintSet, Version, get_depth, Operators, translate_to_smtlib, pretty_print, simplify, arithmetic_simplify, constant_folder, replace
+from manticore.core.smtlib.solver import Z3Solver
+from manticore.core.smtlib.expression import *
 #logging.basicConfig(filename = "test.log",
 #                format = "%(asctime)s: %(name)s:%(levelname)s: %(message)s",
 #                level = logging.DEBUG)
@@ -10,7 +11,7 @@ class ExpressionTest(unittest.TestCase):
     _multiprocess_can_split_ = True
 
     def setUp(self):
-        self.solver = Z3Solver()
+        self.solver = Z3Solver.instance()
 
 
     def assertItemsEqual(self, a, b):
@@ -389,6 +390,7 @@ class ExpressionTest(unittest.TestCase):
         self.assertFalse(BoolConstant(False).__bool__())
 
     def test_visitors(self):
+        solver = Z3Solver.instance()
         cs = ConstraintSet()
         arr = cs.new_array(name='MEM')
         a = cs.new_bitvec(32, name='VAR')
@@ -489,6 +491,7 @@ class ExpressionTest(unittest.TestCase):
         self.assertEqual(translate_to_smtlib(x), '(bvadd #x00000064 VAR2)')
 
     def testBasicMigration(self):
+        solver = Z3Solver.instance()
         cs1 = ConstraintSet()
         cs2 = ConstraintSet()
         var1 = cs1.new_bitvec(32, 'var')
@@ -644,6 +647,7 @@ class ExpressionTest(unittest.TestCase):
 
 
     def test_SAR(self):
+        solver = Z3Solver.instance()
         A = 0xbadf00d
         for B in range(32):
             cs = ConstraintSet()
@@ -660,6 +664,7 @@ class ExpressionTest(unittest.TestCase):
 
 
     def test_ConstraintsForking(self):
+        solver = Z3Solver.instance()
         import pickle
         cs =  ConstraintSet()
         #make free 32bit bitvectors
@@ -764,6 +769,7 @@ class ExpressionTest(unittest.TestCase):
             self.assertItemsEqual(solver.get_all_values(cs_down_left, y), range(0x00, 0x80))
 
     def test_ORD(self):
+        solver = Z3Solver.instance()
         cs = ConstraintSet()
         a = cs.new_bitvec(8)
         cs.add(Operators.ORD(a) == Operators.ORD('Z'))
@@ -772,6 +778,7 @@ class ExpressionTest(unittest.TestCase):
         self.assertEqual(solver.get_value(cs, a), ord('Z'))
 
     def test_CHR(self):
+        solver = Z3Solver.instance()
         cs = ConstraintSet()
         a = cs.new_bitvec(8)
         cs.add(Operators.CHR(a) == Operators.CHR(0x41))
@@ -780,6 +787,7 @@ class ExpressionTest(unittest.TestCase):
         self.assertEqual(solver.get_value(cs, a), 0x41)
 
     def test_CONCAT(self):
+        solver = Z3Solver.instance()
         cs = ConstraintSet()
         a = cs.new_bitvec(16)
         b = cs.new_bitvec(8)
@@ -793,6 +801,7 @@ class ExpressionTest(unittest.TestCase):
         self.assertEqual(solver.get_value(cs, a), Operators.CONCAT(a.size, 0x41, 0x42))
 
     def test_ITEBV_1(self):
+        solver = Z3Solver.instance()
         cs = ConstraintSet()
         a = cs.new_bitvec(8)
         b = cs.new_bitvec(8)
@@ -806,6 +815,7 @@ class ExpressionTest(unittest.TestCase):
         self.assertEqual(solver.get_value(cs, a), 0x42)
 
     def test_ITEBV_2(self):
+        solver = Z3Solver.instance()
         cs = ConstraintSet()
         a = cs.new_bitvec(8)
         b = cs.new_bitvec(8)
@@ -819,6 +829,7 @@ class ExpressionTest(unittest.TestCase):
         self.assertEqual(solver.get_value(cs, a), 0x44)
 
     def test_ITE(self):
+        solver = Z3Solver.instance()
         cs = ConstraintSet()
         a = cs.new_bool()
         b = cs.new_bool()
@@ -832,6 +843,7 @@ class ExpressionTest(unittest.TestCase):
         self.assertEqual(solver.get_value(cs, a), False)
 
     def test_UREM(self):
+        solver = Z3Solver.instance()
         cs = ConstraintSet()
         a = cs.new_bitvec(8)
         b = cs.new_bitvec(8)
@@ -848,6 +860,7 @@ class ExpressionTest(unittest.TestCase):
         self.assertEqual(solver.get_value(cs, a), 0xF)
 
     def test_SREM(self):
+        solver = Z3Solver.instance()
         cs = ConstraintSet()
         a = cs.new_bitvec(8)
         b = cs.new_bitvec(8)
@@ -864,6 +877,7 @@ class ExpressionTest(unittest.TestCase):
         self.assertEqual(solver.get_value(cs, a), -3&0xFF)
 
     def test_UDIV(self):
+        solver = Z3Solver.instance()
         cs = ConstraintSet()
         a = cs.new_bitvec(8)
         b = cs.new_bitvec(8)
@@ -880,6 +894,7 @@ class ExpressionTest(unittest.TestCase):
         self.assertEqual(solver.get_value(cs, a), 7)
 
     def test_SDIV(self):
+        solver = Z3Solver.instance()
         cs = ConstraintSet()
         a = cs.new_bitvec(8)
         b = cs.new_bitvec(8)
