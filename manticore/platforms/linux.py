@@ -429,7 +429,7 @@ class Linux(Platform):
         self.disasm = disasm
         self.envp = envp
         self.argv = argv
-        self.stubs = SyscallStubs()
+        self.stubs = SyscallStubs(parent=self)
 
         # dict of [int -> (int, int)] where tuple is (soft, hard) limits
         self._rlimits = {
@@ -659,7 +659,7 @@ class Linux(Platform):
         self._function_abi = state['functionabi']
         self._syscall_abi = state['syscallabi']
         self._uname_machine = state['uname_machine']
-        self.stubs = SyscallStubs()
+        self.stubs = SyscallStubs(parent=self)
         if '_arm_tls_memory' in state:
             self._arm_tls_memory = state['_arm_tls_memory']
 
