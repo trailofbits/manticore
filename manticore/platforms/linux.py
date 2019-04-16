@@ -2531,6 +2531,39 @@ class Linux(Platform):
         file.file.truncate(length)
         return 0
 
+    def sys_link(self, oldname, newname) -> int:
+        '''
+        Make a new name for a file
+        success: Returns 0
+        error: Returns -1
+        '''
+        try:
+            os.link(oldname, newname)
+        except Exception as e:
+            return -e.err
+        return 0
+
+    def sys_unlink(self, pathname) -> int:
+        '''
+        Delete a name and possibly the file it refers to
+        success: Returns 0
+        error: Returns -1
+        '''
+        try:
+            os.unlink(pathname)
+        except Exception as e:
+            return -e.err
+        return 0
+
+    def sys_nanosleep(self, rqtp, rmtp) -> int:
+        '''
+        High-resolution sleep
+        success: Returns 0
+        error: Returns -1
+        '''
+        logger.info("Ignoring call to sys_nanosleep")
+        return 0
+
     def _arch_specific_init(self):
         assert self.arch in {'i386', 'amd64', 'armv7'}
 
