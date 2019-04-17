@@ -23,7 +23,7 @@ def Bit(value, idx):
     """
     return operators.EXTRACT(value, idx, 1)
 
-  
+
 def GetNBits(value, nbits):
     """
     Get the first `nbits` from `value`.
@@ -105,7 +105,6 @@ def LSL(value, amount, width):
     """
     if amount == 0:
         return value
-
     result, _ = LSL_C(value, amount, width)
     return result
 
