@@ -94,30 +94,30 @@ class Manticore(ManticoreBase):
     ###############################
 
     def init(self, f):
-        '''
+        """
         A decorator used to register a hook function to run before analysis begins. Hook
         function takes one :class:`~manticore.core.state.State` argument.
-        '''
+        """
         def callback(manticore_obj, state):
             f(state)
         self.subscribe('will_start_run', types.MethodType(callback, self))
         return f
 
     def hook(self, pc):
-        '''
+        """
         A decorator used to register a hook function for a given instruction address.
         Equivalent to calling :func:`~add_hook`.
 
         :param pc: Address of instruction to hook
         :type pc: int or None
-        '''
+        """
         def decorator(f):
             self.add_hook(pc, f)
             return f
         return decorator
 
     def add_hook(self, pc, callback):
-        '''
+        """
         Add a callback to be invoked on executing a program counter. Pass `None`
         for pc to invoke callback on every instruction. `callback` should be a callable
         that takes one :class:`~manticore.core.state.State` argument.
@@ -125,7 +125,7 @@ class Manticore(ManticoreBase):
         :param pc: Address of instruction to hook
         :type pc: int or None
         :param callable callback: Hook function
-        '''
+        """
         if not (isinstance(pc, int) or pc is None):
             raise TypeError(f"pc must be either an int or None, not {pc.__class__.__name__}")
         else:

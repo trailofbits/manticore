@@ -8,11 +8,11 @@ logger = logging.getLogger(__name__)
 
 
 class StateException(Exception):
-    ''' All state related exceptions '''
+    """ All state related exceptions """
 
 
 class TerminateState(StateException):
-    ''' Terminates current state exploration '''
+    """ Terminates current state exploration """
 
     def __init__(self, message, testcase=False):
         super().__init__(message)
@@ -20,23 +20,23 @@ class TerminateState(StateException):
 
 
 class AbandonState(TerminateState):
-    ''' Exception returned for abandoned states when
+    """ Exception returned for abandoned states when
         execution is finished
-    '''
+    """
 
     def __init__(self, message='Abandoned state'):
         super().__init__(message)
 
 
 class Concretize(StateException):
-    ''' Base class for all exceptions that trigger the concretization
+    """ Base class for all exceptions that trigger the concretization
         of a symbolic expression
 
         This will fork the state using a pre-set concretization policy
         Optional `setstate` function set the state to the actual concretized value.
         #Fixme Doc.
 
-    '''
+    """
     _ValidPolicies = ['MINMAX', 'ALL', 'SAMPLED', 'ONE']
 
     def __init__(self, message, expression, setstate=None, policy=None, **kwargs):
@@ -52,13 +52,13 @@ class Concretize(StateException):
 
 
 class ForkState(Concretize):
-    ''' Specialized concretization class for Bool expressions.
+    """ Specialized concretization class for Bool expressions.
         It tries True and False as concrete solutions. /
 
         Note: as setstate is None the concrete value is not written back
         to the state. So the expression could still by symbolic(but constrained)
         in forked states.
-    '''
+    """
 
     def __init__(self, message, expression, **kwargs):
         assert isinstance(expression, Bool), 'Need a Bool to fork a state in two states'
@@ -155,22 +155,22 @@ class StateBase(Eventful):
         raise NotImplementedError
 
     def constrain(self, constraint):
-        '''Constrain state.
+        """Constrain state.
 
         :param manticore.core.smtlib.Bool constraint: Constraint to add
-        '''
+        """
         constraint = self.migrate_expression(constraint)
         self._constraints.add(constraint)
 
     def abandon(self):
-        '''Abandon the currently-active state.
+        """Abandon the currently-active state.
 
         Note: This must be called from the Executor loop, or a :func:`~manticore.Manticore.hook`.
-        '''
+        """
         raise AbandonState
 
     def new_symbolic_buffer(self, nbytes, **options):
-        '''Create and return a symbolic buffer of length `nbytes`. The buffer is
+        """Create and return a symbolic buffer of length `nbytes`. The buffer is
         not written into State's memory; write it to the state's memory to
         introduce it into the program state.
 
@@ -182,7 +182,7 @@ class StateBase(Eventful):
         :type taint: tuple or frozenset
 
         :return: :class:`~manticore.core.smtlib.expression.Expression` representing the buffer.
-        '''
+        """
         label = options.get('label')
         avoid_collisions = False
         if label is None:
@@ -199,7 +199,7 @@ class StateBase(Eventful):
         return expr
 
     def new_symbolic_value(self, nbits, label=None, taint=frozenset()):
-        '''Create and return a symbolic value that is `nbits` bits wide. Assign
+        """Create and return a symbolic value that is `nbits` bits wide. Assign
         the value to a register or write it into the address space to introduce
         it into the program state.
 
@@ -208,7 +208,7 @@ class StateBase(Eventful):
         :param taint: Taint identifier of this value
         :type taint: tuple or frozenset
         :return: :class:`~manticore.core.smtlib.expression.Expression` representing the value
-        '''
+        """
         assert nbits in (1, 4, 8, 16, 32, 64, 128, 256)
         avoid_collisions = False
         if label is None:
@@ -220,9 +220,9 @@ class StateBase(Eventful):
         return expr
 
     def concretize(self, symbolic, policy, maxcount=7):
-        ''' This finds a set of solutions for symbolic using policy.
+        """ This finds a set of solutions for symbolic using policy.
             This raises TooManySolutions if more solutions than maxcount
-        '''
+        """
         assert self.constraints == self.platform.constraints
         symbolic = self.migrate_expression(symbolic)
 
@@ -283,7 +283,7 @@ class StateBase(Eventful):
         return not self._solver.can_be_true(self._constraints, expr == False)
 
     def solve_one(self, expr, constrain=False):
-        '''
+        """
         Concretize a symbolic :class:`~manticore.core.smtlib.expression.Expression` into
         one solution.
 
@@ -291,7 +291,7 @@ class StateBase(Eventful):
         :param bool constrain: If True, constrain expr to concretized value
         :return: Concrete value
         :rtype: int
-        '''
+        """
         expr = self.migrate_expression(expr)
         value = self._solver.get_value(self._constraints, expr)
         if constrain:
@@ -302,54 +302,54 @@ class StateBase(Eventful):
         return value
 
     def solve_n(self, expr, nsolves):
-        '''
+        """
         Concretize a symbolic :class:`~manticore.core.smtlib.expression.Expression` into
         `nsolves` solutions.
 
         :param manticore.core.smtlib.Expression expr: Symbolic value to concretize
         :return: Concrete value
         :rtype: list[int]
-        '''
+        """
         expr = self.migrate_expression(expr)
         return self._solver.get_all_values(self._constraints, expr, nsolves, silent=True)
 
     def solve_max(self, expr):
-        '''
+        """
         Solves a symbolic :class:`~manticore.core.smtlib.expression.Expression` into
         its maximum solution
 
         :param manticore.core.smtlib.Expression expr: Symbolic value to solve
         :return: Concrete value
         :rtype: list[int]
-        '''
+        """
         if isinstance(expr, int):
             return expr
         expr = self.migrate_expression(expr)
         return self._solver.max(self._constraints, expr)
 
     def solve_min(self, expr):
-        '''
+        """
         Solves a symbolic :class:`~manticore.core.smtlib.expression.Expression` into
         its minimum solution
 
         :param manticore.core.smtlib.Expression expr: Symbolic value to solve
         :return: Concrete value
         :rtype: list[int]
-        '''
+        """
         if isinstance(expr, int):
             return expr
         expr = self.migrate_expression(expr)
         return self._solver.min(self._constraints, expr)
 
     def solve_minmax(self, expr):
-        '''
+        """
         Solves a symbolic :class:`~manticore.core.smtlib.expression.Expression` into
         its minimum and maximun solution. Only defined for bitvects.
 
         :param manticore.core.smtlib.Expression expr: Symbolic value to solve
         :return: Concrete value
         :rtype: list[int]
-        '''
+        """
         if isinstance(expr, int):
             return expr
         expr = self.migrate_expression(expr)
@@ -359,7 +359,7 @@ class StateBase(Eventful):
     # The following should be moved to specific class StatePosix?
 
     def solve_buffer(self, addr, nbytes, constrain=False):
-        '''
+        """
         Reads `nbytes` of symbolic data from a buffer in memory at `addr` and attempts to
         concretize it
 
@@ -368,7 +368,7 @@ class StateBase(Eventful):
         :param bool constrain: If True, constrain the buffer to the concretized value
         :return: Concrete contents of buffer
         :rtype: list[int]
-        '''
+        """
         buffer = self.cpu.read_bytes(addr, nbytes)
         result = []
         with self._constraints as temp_cs:
@@ -379,7 +379,7 @@ class StateBase(Eventful):
         return result
 
     def symbolicate_buffer(self, data, label='INPUT', wildcard='+', string=False, taint=frozenset()):
-        '''Mark parts of a buffer as symbolic (demarked by the wildcard byte)
+        """Mark parts of a buffer as symbolic (demarked by the wildcard byte)
 
         :param str data: The string to symbolicate. If no wildcard bytes are provided,
                 this is the identity function on the first argument.
@@ -392,7 +392,7 @@ class StateBase(Eventful):
         :return: If data does not contain any wildcard bytes, data itself. Otherwise,
             a list of values derived from data. Non-wildcard bytes are kept as
             is, wildcard bytes are replaced by Expression objects.
-        '''
+        """
         if wildcard in data:
             size = len(data)
             symb = self._constraints.new_array(name=label, index_max=size, taint=taint, avoid_collisions=True)

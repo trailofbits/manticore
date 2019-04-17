@@ -1,4 +1,4 @@
-''' Common binary formats interface
+""" Common binary formats interface
 Ideally you should be able to do something like
 
         from binary import Binary
@@ -13,7 +13,7 @@ Ideally you should be able to do something like
 But there are difference between format that makes it difficult to find a simple
 and common API.  interpreters? linkers? linked DLLs?
 
-'''
+"""
 
 from manticore.binary.binary import Binary, CGCElf, Elf  # noqa
 

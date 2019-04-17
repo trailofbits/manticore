@@ -11,9 +11,9 @@ logger = logging.getLogger(__name__)
 
 
 class UnicornEmulator:
-    '''
+    """
     Helper class to emulate a single instruction via Unicorn.
-    '''
+    """
 
     def __init__(self, cpu):
         self._cpu = cpu
@@ -57,12 +57,12 @@ class UnicornEmulator:
         self._to_raise = None
 
     def _create_emulated_mapping(self, uc, address):
-        '''
+        """
         Create a mapping in Unicorn and note that we'll need it if we retry.
         :param uc: The Unicorn instance.
         :param address: The address which is contained by the mapping.
         :rtype Map
-        '''
+        """
 
         m = self._cpu.memory.map_containing(address)
 
@@ -90,9 +90,9 @@ class UnicornEmulator:
                 return self._emu.reg_read(unicorn.x86_const.UC_X86_REG_RIP)
 
     def _hook_xfer_mem(self, uc, access, address, size, value, data):
-        '''
+        """
         Handle memory operations from unicorn.
-        '''
+        """
         assert access in (unicorn.UC_MEM_WRITE, unicorn.UC_MEM_READ, unicorn.UC_MEM_FETCH)
 
         if access == unicorn.UC_MEM_WRITE:
@@ -116,9 +116,9 @@ class UnicornEmulator:
         return True
 
     def _hook_unmapped(self, uc, access, address, size, value, data):
-        '''
+        """
         We hit an unmapped region; map it into unicorn.
-        '''
+        """
 
         try:
             m = self._create_emulated_mapping(uc, address)
@@ -131,9 +131,9 @@ class UnicornEmulator:
         return False
 
     def _interrupt(self, uc, number, data):
-        '''
+        """
         Handle software interrupt (SVC/INT)
-        '''
+        """
 
         from ..native.cpu.abstractcpu import Interruption  # prevent circular imports
         self._to_raise = Interruption(number)
@@ -155,9 +155,9 @@ class UnicornEmulator:
             raise TypeError
 
     def emulate(self, instruction):
-        '''
+        """
         Emulate a single instruction.
-        '''
+        """
 
         # The emulation might restart if Unicorn needs to bring in a memory map
         # or bring a value from Manticore state.
@@ -189,9 +189,9 @@ class UnicornEmulator:
                 break
 
     def _step(self, instruction):
-        '''
+        """
         A single attempt at executing an instruction.
-        '''
+        """
         logger.debug("0x%x:\t%s\t%s"
                      % (instruction.address, instruction.mnemonic, instruction.op_str))
 
