@@ -2,8 +2,10 @@ import itertools
 import logging
 import sys
 
-from manticore.core.smtlib.expression import (BitVecVariable, BoolVariable, ArrayVariable, Array, Bool, BitVec,
-    BoolConstant, ArrayProxy, BoolEq, Variable, Constant)
+from manticore.core.smtlib.expression import (
+    BitVecVariable, BoolVariable, ArrayVariable, Array, Bool, BitVec,
+    BoolConstant, ArrayProxy, BoolEq, Variable, Constant
+)
 from manticore.core.smtlib.visitors import (GetDeclarations, TranslatorSmtlib, get_variables, simplify, replace)
 from manticore.utils.helpers import PickleSerializer
 

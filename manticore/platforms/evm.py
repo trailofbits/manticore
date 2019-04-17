@@ -1,8 +1,8 @@
 """Symbolic EVM implementation based on the yellow paper: http://gavwood.com/paper.pdf"""
 import binascii
-from collections import namedtuple
+import collections
 import copy
-from functools import wraps
+import functools
 import inspect
 import io
 import logging
@@ -13,8 +13,11 @@ import rlp
 import sha3
 from typing import List, Set, Tuple, Union
 
-from manticore.core.smtlib import (solver, BitVec, Array, ArrayProxy, Operators, Constant, ArrayVariable, ArrayStore,
-    BitVecConstant, translate_to_smtlib, to_constant)
+from manticore.core.smtlib import (
+    solver, BitVec, Array, ArrayProxy,
+    operators, Constant, ArrayVariable, ArrayStore,
+    BitVecConstant, translate_to_smtlib, to_constant
+)
 from manticore.core.smtlib.visitors import simplify
 from manticore.core.state import Concretize, TerminateState
 from manticore.exceptions import EthereumError
@@ -58,19 +61,19 @@ TOOHIGHMEM = 0x1000
 DEFAULT_FORK = 'byzantium'
 
 #FIXME. We should just use a Transaction() for this
-PendingTransaction = namedtuple("PendingTransaction", ['type', 'address', 'price', 'data', 'caller', 'value', 'gas'])
-EVMLog = namedtuple("EVMLog", ['address', 'memlog', 'topics'])
+PendingTransaction = collections.namedtuple("PendingTransaction", ['type', 'address', 'price', 'data', 'caller', 'value', 'gas'])
+EVMLog = collections.namedtuple("EVMLog", ['address', 'memlog', 'topics'])
 
 
 def ceil32(x):
     size = 256
     if isinstance(x, BitVec):
         size = x.size
-    return Operators.ITEBV(size, Operators.UREM(x, 32) == 0, x, x + 32 - Operators.UREM(x, 32))
+    return operators.ITEBV(size, operators.UREM(x, 32) == 0, x, x + 32 - operators.UREM(x, 32))
 
 
 def to_signed(i):
-    return Operators.ITEBV(256, i < TT255, i, i - TT256)
+    return operators.ITEBV(256, i < TT255, i, i - TT256)
 
 
 class Transaction:
@@ -419,7 +422,7 @@ def concretized_args(**policies):
     :return: A function decorator
     """
     def concretizer(func):
-        @wraps(func)
+        @functools.wraps(func)
         def wrapper(*args, **kwargs):
             spec = inspect.getfullargspec(func)
             for arg, policy in policies.items():
@@ -551,7 +554,7 @@ class EVM(Eventful):
             except Exception as e:
                 return
 
-        for i in EVMAsm.disassemble_all(extend_with_zeroes(bytecode)):
+        for i in pyevmasm.evmasm.disassemble_all(extend_with_zeroes(bytecode)):
             if i.mnemonic == 'JUMPDEST':
                 self._valid_jumpdests.add(i.pc)
 
@@ -577,7 +580,7 @@ class EVM(Eventful):
         self.stack = []
         # We maintain gas as a 512 bits internally to avoid overflows
         # it is shortened to 256 bits when it is used by the GAS instruction
-        self._gas = Operators.ZEXTEND(gas, 512)
+        self._gas = operators.ZEXTEND(gas, 512)
         self._world = world
         self._allocated = 0
         self._on_transaction = False  # for @transact
@@ -673,18 +676,18 @@ class EVM(Eventful):
         allocated = self.allocated
         GMEMORY = 3
         GQUADRATICMEMDENOM = 512  # 1 gas per 512 quadwords
-        old_size = Operators.ZEXTEND(Operators.UDIV(self.safe_add(allocated, 31), 32), 512)
-        new_size = Operators.ZEXTEND(Operators.UDIV(self.safe_add(address, 31), 32), 512)
+        old_size = operators.ZEXTEND(operators.UDIV(self.safe_add(allocated, 31), 32), 512)
+        new_size = operators.ZEXTEND(operators.UDIV(self.safe_add(address, 31), 32), 512)
 
-        old_totalfee = self.safe_mul(old_size, GMEMORY) + Operators.UDIV(self.safe_mul(old_size, old_size), GQUADRATICMEMDENOM)
-        new_totalfee = self.safe_mul(new_size, GMEMORY) + Operators.UDIV(self.safe_mul(new_size, new_size), GQUADRATICMEMDENOM)
+        old_totalfee = self.safe_mul(old_size, GMEMORY) + operators.UDIV(self.safe_mul(old_size, old_size), GQUADRATICMEMDENOM)
+        new_totalfee = self.safe_mul(new_size, GMEMORY) + operators.UDIV(self.safe_mul(new_size, new_size), GQUADRATICMEMDENOM)
         memfee = new_totalfee - old_totalfee
-        flag = Operators.UGT(new_totalfee, old_totalfee)
-        return Operators.ITEBV(512, size == 0, 0, Operators.ITEBV(512, flag, memfee, 0))
+        flag = operators.UGT(new_totalfee, old_totalfee)
+        return operators.ITEBV(512, size == 0, 0, operators.ITEBV(512, flag, memfee, 0))
 
     def _allocate(self, address, size=1):
-        address_c = Operators.UDIV(Operators.ZEXTEND(address, 512) + size + 31, 32) * 32
-        self._allocated = Operators.ITEBV(512, Operators.UGT(address_c, self._allocated), address_c, self.allocated)
+        address_c = operators.UDIV(operators.ZEXTEND(address, 512) + size + 31, 32) * 32
+        self._allocated = operators.ITEBV(512, operators.UGT(address_c, self._allocated), address_c, self.allocated)
 
     @property
     def allocated(self):
@@ -710,7 +713,7 @@ class EVM(Eventful):
         return value
 
     def disassemble(self):
-        return EVMAsm.disassemble(self.bytecode)
+        return pyevmasm.evmasm.disassemble(self.bytecode)
 
     @property
     def PC(self):
@@ -809,12 +812,12 @@ class EVM(Eventful):
                 if not issymbolic(self._gas) and not issymbolic(fee):
                     enough_gas_solutions = (self._gas - fee >= 0,)
                 else:
-                    enough_gas_solutions = solver.get_all_values(self.constraints, Operators.UGT(self._gas, fee))
+                    enough_gas_solutions = solver.get_all_values(self.constraints, operators.UGT(self._gas, fee))
 
                 if len(enough_gas_solutions) == 2:
                     # if gas can be both enough and insufficient, fork
                     raise Concretize("Concretize gas fee",
-                                     expression=Operators.UGT(self._gas, fee),
+                                     expression=operators.UGT(self._gas, fee),
                                      setstate=None,
                                      policy='ALL')
                 elif enough_gas_solutions[0] is False:
@@ -835,8 +838,8 @@ class EVM(Eventful):
             # Try not to OOG. If it may be enough gas we ignore the OOG case.
             # A constraint is added to assert the gas is enough and the OOG state is ignored.
             # explore only when there is enough gas if possible
-            if solver.can_be_true(self.constraints, Operators.UGT(self.gas, fee)):
-                self.constraints.add(Operators.UGT(self.gas, fee))
+            if solver.can_be_true(self.constraints, operators.UGT(self.gas, fee)):
+                self.constraints.add(operators.UGT(self.gas, fee))
             else:
                 logger.debug(f"Not enough gas for instruction {self.instruction.name} at 0x{self.pc:x}")
                 raise NotEnoughGas()
@@ -844,8 +847,8 @@ class EVM(Eventful):
             # OOG soon. If it may NOT be enough gas we ignore the normal case.
             # A constraint is added to assert the gas is NOT enough and the other state is ignored.
             # explore only when there is enough gas if possible
-            if solver.can_be_true(self.constraints, Operators.ULE(self.gas, fee)):
-                self.constraints.add(Operators.ULE(self.gas, fee))
+            if solver.can_be_true(self.constraints, operators.ULE(self.gas, fee)):
+                self.constraints.add(operators.ULE(self.gas, fee))
                 raise NotEnoughGas()
         else:
             if consts.oog != 'ignore':
@@ -1085,7 +1088,7 @@ class EVM(Eventful):
     def write_buffer(self, offset, data):
         self._allocate(offset, len(data))
         for i, c in enumerate(data):
-            self._store(offset + i, Operators.ORD(c))
+            self._store(offset + i, operators.ORD(c))
 
     def _load(self, offset, size=1):
         value = self.memory.read_BE(offset, size)
@@ -1097,24 +1100,24 @@ class EVM(Eventful):
             pass
 
         for i in range(size):
-            self._publish('did_evm_read_memory', offset + i, Operators.EXTRACT(value, (size - i - 1) * 8, 8))
+            self._publish('did_evm_read_memory', offset + i, operators.EXTRACT(value, (size - i - 1) * 8, 8))
         return value
 
     def _store(self, offset, value, size=1):
         """Stores value in memory as a big endian"""
         self.memory.write_BE(offset, value, size)
         for i in range(size):
-            self._publish('did_evm_write_memory', offset + i, Operators.EXTRACT(value, (size - i - 1) * 8, 8))
+            self._publish('did_evm_write_memory', offset + i, operators.EXTRACT(value, (size - i - 1) * 8, 8))
 
     def safe_add(self, a, b):
-        a = Operators.ZEXTEND(a, 512)
-        b = Operators.ZEXTEND(b, 512)
+        a = operators.ZEXTEND(a, 512)
+        b = operators.ZEXTEND(b, 512)
         result = a + b
         return result
 
     def safe_mul(self, a, b):
-        a = Operators.ZEXTEND(a, 512)
-        b = Operators.ZEXTEND(b, 512)
+        a = operators.ZEXTEND(a, 512)
+        b = operators.ZEXTEND(b, 512)
         result = a * b
         return result
 
@@ -1148,19 +1151,19 @@ class EVM(Eventful):
     def DIV(self, a, b):
         """Integer division operation"""
         try:
-            result = Operators.UDIV(a, b)
+            result = operators.UDIV(a, b)
         except ZeroDivisionError:
             result = 0
-        return Operators.ITEBV(256, b == 0, 0, result)
+        return operators.ITEBV(256, b == 0, 0, result)
 
     def SDIV(self, a, b):
         """Signed integer division operation (truncated)"""
         s0, s1 = to_signed(a), to_signed(b)
         try:
-            result = (Operators.ABS(s0) // Operators.ABS(s1) * Operators.ITEBV(256, (s0 < 0) != (s1 < 0), -1, 1))
+            result = (operators.ABS(s0) // operators.ABS(s1) * operators.ITEBV(256, (s0 < 0) != (s1 < 0), -1, 1))
         except ZeroDivisionError:
             result = 0
-        result = Operators.ITEBV(256, b == 0, 0, result)
+        result = operators.ITEBV(256, b == 0, 0, result)
         if not issymbolic(result):
             result = to_signed(result)
         return result
@@ -1168,7 +1171,7 @@ class EVM(Eventful):
     def MOD(self, a, b):
         """Modulo remainder operation"""
         try:
-            result = Operators.ITEBV(256, b == 0, 0, a % b)
+            result = operators.ITEBV(256, b == 0, 0, a % b)
         except ZeroDivisionError:
             result = 0
         return result
@@ -1176,18 +1179,18 @@ class EVM(Eventful):
     def SMOD(self, a, b):
         """Signed modulo remainder operation"""
         s0, s1 = to_signed(a), to_signed(b)
-        sign = Operators.ITEBV(256, s0 < 0, -1, 1)
+        sign = operators.ITEBV(256, s0 < 0, -1, 1)
         try:
-            result = (Operators.ABS(s0) % Operators.ABS(s1)) * sign
+            result = (operators.ABS(s0) % operators.ABS(s1)) * sign
         except ZeroDivisionError:
             result = 0
 
-        return Operators.ITEBV(256, s1 == 0, 0, result)
+        return operators.ITEBV(256, s1 == 0, 0, result)
 
     def ADDMOD(self, a, b, c):
         """Modulo addition operation"""
         try:
-            result = Operators.ITEBV(256, c == 0, 0, (a + b) % c)
+            result = operators.ITEBV(256, c == 0, 0, (a + b) % c)
         except ZeroDivisionError:
             result = 0
         return result
@@ -1195,7 +1198,7 @@ class EVM(Eventful):
     def MULMOD(self, a, b, c):
         """Modulo addition operation"""
         try:
-            result = Operators.ITEBV(256, c == 0, 0, (a * b) % c)
+            result = operators.ITEBV(256, c == 0, 0, (a * b) % c)
         except ZeroDivisionError:
             result = 0
         return result
@@ -1207,7 +1210,7 @@ class EVM(Eventful):
         def nbytes(e):
             result = 0
             for i in range(32):
-                result = Operators.ITEBV(512, Operators.EXTRACT(e, i * 8, 8) != 0, i + 1, result)
+                result = operators.ITEBV(512, operators.EXTRACT(e, i * 8, 8) != 0, i + 1, result)
             return result
         return EXP_SUPPLEMENTAL_GAS * nbytes(exponent)
 
@@ -1222,41 +1225,41 @@ class EVM(Eventful):
     def SIGNEXTEND(self, size, value):
         """Extend length of two's complement signed integer"""
         # FIXME maybe use Operators.SEXTEND
-        testbit = Operators.ITEBV(256, size <= 31, size * 8 + 7, 257)
+        testbit = operators.ITEBV(256, size <= 31, size * 8 + 7, 257)
         result1 = (value | (TT256 - (1 << testbit)))
         result2 = (value & ((1 << testbit) - 1))
-        result = Operators.ITEBV(256, (value & (1 << testbit)) != 0, result1, result2)
-        return Operators.ITEBV(256, size <= 31, result, value)
+        result = operators.ITEBV(256, (value & (1 << testbit)) != 0, result1, result2)
+        return operators.ITEBV(256, size <= 31, result, value)
 
     ############################################################################
     # Comparison & Bitwise Logic Operations
     def LT(self, a, b):
         """Less-than comparison"""
-        return Operators.ITEBV(256, Operators.ULT(a, b), 1, 0)
+        return operators.ITEBV(256, operators.ULT(a, b), 1, 0)
 
     def GT(self, a, b):
         """Greater-than comparison"""
-        return Operators.ITEBV(256, Operators.UGT(a, b), 1, 0)
+        return operators.ITEBV(256, operators.UGT(a, b), 1, 0)
 
     def SLT(self, a, b):
         """Signed less-than comparison"""
         # http://gavwood.com/paper.pdf
         s0, s1 = to_signed(a), to_signed(b)
-        return Operators.ITEBV(256, s0 < s1, 1, 0)
+        return operators.ITEBV(256, s0 < s1, 1, 0)
 
     def SGT(self, a, b):
         """Signed greater-than comparison"""
         # http://gavwood.com/paper.pdf
         s0, s1 = to_signed(a), to_signed(b)
-        return Operators.ITEBV(256, s0 > s1, 1, 0)
+        return operators.ITEBV(256, s0 > s1, 1, 0)
 
     def EQ(self, a, b):
         """Equality comparison"""
-        return Operators.ITEBV(256, a == b, 1, 0)
+        return operators.ITEBV(256, a == b, 1, 0)
 
     def ISZERO(self, a):
         """Simple not operator"""
-        return Operators.ITEBV(256, a == 0, 1, 0)
+        return operators.ITEBV(256, a == 0, 1, 0)
 
     def AND(self, a, b):
         """Bitwise AND operation"""
@@ -1276,8 +1279,8 @@ class EVM(Eventful):
 
     def BYTE(self, offset, value):
         """Retrieve single byte from word"""
-        offset = Operators.ITEBV(256, offset < 32, (31 - offset) * 8, 256)
-        return Operators.ZEXTEND(Operators.EXTRACT(value, offset, 8), 256)
+        offset = operators.ITEBV(256, offset < 32, (31 - offset) * 8, 256)
+        return operators.ZEXTEND(operators.EXTRACT(value, offset, 8), 256)
 
     def try_simplify_to_constant(self, data):
         concrete_data = bytearray()
@@ -1317,8 +1320,8 @@ class EVM(Eventful):
             for key, hsh in known_sha3.items():
                 assert not issymbolic(key), "Saved sha3 data,hash pairs should be concrete"
                 cond = key == data
-                known_hashes_cond = Operators.OR(cond, known_hashes_cond)
-                value = Operators.ITEBV(256, cond, hsh, value)
+                known_hashes_cond = operators.OR(cond, known_hashes_cond)
+                value = operators.ITEBV(256, cond, hsh, value)
             return value
 
         value = sha3.keccak_256(data).hexdigest()
@@ -1342,11 +1345,11 @@ class EVM(Eventful):
 
     def ORIGIN(self):
         """Get execution origination address"""
-        return Operators.ZEXTEND(self.world.tx_origin(), 256)
+        return operators.ZEXTEND(self.world.tx_origin(), 256)
 
     def CALLER(self):
         """Get caller address"""
-        return Operators.ZEXTEND(self.caller, 256)
+        return operators.ZEXTEND(self.caller, 256)
 
     def CALLVALUE(self):
         """Get deposited value by the instruction/transaction responsible for this execution"""
@@ -1367,19 +1370,19 @@ class EVM(Eventful):
         bytes = []
         for i in range(32):
             try:
-                c = Operators.ITEBV(8, offset + i < data_length, self.data[offset + i], 0)
+                c = operators.ITEBV(8, offset + i < data_length, self.data[offset + i], 0)
             except IndexError:
                 # offset + i is concrete and outside data
                 c = 0
 
             bytes.append(c)
-        return Operators.CONCAT(256, *bytes)
+        return operators.CONCAT(256, *bytes)
 
     def _use_calldata(self, n, size):
         assert not issymbolic(n)
         max_size = len(self.data)
         min_size = self._used_calldata_size
-        self._used_calldata_size = Operators.ITEBV(256, size != 0, Operators.ITEBV(256, min_size + n > max_size, max_size, min_size + n), self._used_calldata_size)
+        self._used_calldata_size = operators.ITEBV(256, size != 0, operators.ITEBV(256, min_size + n > max_size, max_size, min_size + n), self._used_calldata_size)
 
     def CALLDATASIZE(self):
         """Get size of input data in current environment"""
@@ -1409,7 +1412,7 @@ class EVM(Eventful):
         self._allocate(mem_offset, size)
         for i in range(size):
             try:
-                c = Operators.ITEBV(8, data_offset + i < len(self.data), Operators.ORD(self.data[data_offset + i]), 0)
+                c = operators.ITEBV(8, data_offset + i < len(self.data), operators.ORD(self.data[data_offset + i]), 0)
             except IndexError:
                 # data_offset + i is concrete and outside data
                 c = 0
@@ -1428,7 +1431,7 @@ class EVM(Eventful):
 
         self._allocate(mem_offset, size)
         GCOPY = 3             # cost to copy one 32 byte word
-        copyfee = self.safe_mul(GCOPY, Operators.UDIV(self.safe_add(size, 31), 32))
+        copyfee = self.safe_mul(GCOPY, operators.UDIV(self.safe_add(size, 31), 32))
         self._consume(copyfee)
 
         if issymbolic(size):
@@ -1438,7 +1441,7 @@ class EVM(Eventful):
 
         for i in range(max_size):
             if issymbolic(i < size):
-                default = Operators.ITEBV(8, i < size, 0, self._load(mem_offset + i, 1))  # Fixme. unnecessary memory read
+                default = operators.ITEBV(8, i < size, 0, self._load(mem_offset + i, 1))  # Fixme. unnecessary memory read
             else:
                 if i < size:
                     default = 0
@@ -1446,7 +1449,7 @@ class EVM(Eventful):
                     default = self._load(mem_offset + i, 1)
 
             if issymbolic(code_offset):
-                value = Operators.ITEBV(8, code_offset + i >= len(self.bytecode), default, self.bytecode[code_offset + i])
+                value = operators.ITEBV(8, code_offset + i >= len(self.bytecode), default, self.bytecode[code_offset + i])
             else:
                 if code_offset + i >= len(self.bytecode):
                     value = default
@@ -1561,7 +1564,7 @@ class EVM(Eventful):
             for taint in get_taints(self.pc):
                 value = taint_with(value, taint)
         self._allocate(address, 1)
-        self._store(address, Operators.EXTRACT(value, 0, 8), 1)
+        self._store(address, operators.EXTRACT(value, 0, 8), 1)
 
     def SLOAD(self, offset):
         """Load word from storage"""
@@ -1580,10 +1583,10 @@ class EVM(Eventful):
 
         previous_value = self.world.get_storage_data(storage_address, offset)
 
-        gascost = Operators.ITEBV(512,
+        gascost = operators.ITEBV(512,
                                   previous_value != 0,
-                                  Operators.ITEBV(512, value != 0, GSTORAGEMOD, GSTORAGEKILL),
-                                  Operators.ITEBV(512, value != 0, GSTORAGEADD, GSTORAGEMOD))
+                                  operators.ITEBV(512, value != 0, GSTORAGEMOD, GSTORAGEKILL),
+                                  operators.ITEBV(512, value != 0, GSTORAGEADD, GSTORAGEMOD))
 
         return gascost
 
@@ -1610,7 +1613,7 @@ class EVM(Eventful):
 
     def JUMPI(self, dest, cond):
         """Conditionally alter the program counter"""
-        self.pc = Operators.ITEBV(256, cond != 0, dest, self.pc + self.instruction.size)
+        self.pc = operators.ITEBV(256, cond != 0, dest, self.pc + self.instruction.size)
         #This set ups a check for JMPDEST in the next instruction if cond != 0
         self._set_check_jmpdest(cond != 0)
 
@@ -1625,7 +1628,7 @@ class EVM(Eventful):
     def GAS(self):
         """Get the amount of available gas, including the corresponding reduction the amount of available gas"""
         #fixme calculate gas consumption
-        return Operators.EXTRACT(self._gas, 0, 256)
+        return operators.EXTRACT(self._gas, 0, 256)
 
     def JUMPDEST(self):
         """Mark a valid destination for jumps"""
@@ -1712,7 +1715,7 @@ class EVM(Eventful):
         data = self.world.last_transaction.return_data
         if data is not None:
             data_size = len(data)
-            size = Operators.ITEBV(256, Operators.ULT(out_size, data_size), out_size, data_size)
+            size = operators.ITEBV(256, operators.ULT(out_size, data_size), out_size, data_size)
             self.write_buffer(out_offset, data[:size])
 
         return self.world.last_transaction.return_value
@@ -1737,7 +1740,7 @@ class EVM(Eventful):
         data = self.world.last_transaction.return_data
         if data is not None:
             data_size = len(data)
-            size = Operators.ITEBV(256, Operators.ULT(out_size, data_size), out_size, data_size)
+            size = operators.ITEBV(256, operators.ULT(out_size, data_size), out_size, data_size)
             self.write_buffer(out_offset, data[:size])
 
         return self.world.last_transaction.return_value
@@ -1771,7 +1774,7 @@ class EVM(Eventful):
         data = self.world.last_transaction.return_data
         if data is not None:
             data_size = len(data)
-            size = Operators.ITEBV(256, Operators.ULT(out_size, data_size), out_size, data_size)
+            size = operators.ITEBV(256, operators.ULT(out_size, data_size), out_size, data_size)
             self.write_buffer(out_offset, data[:size])
 
         return self.world.last_transaction.return_value
@@ -1796,7 +1799,7 @@ class EVM(Eventful):
         data = self.world.last_transaction.return_data
         if data is not None:
             data_size = len(data)
-            size = Operators.ITEBV(256, Operators.ULT(out_size, data_size), out_size, data_size)
+            size = operators.ITEBV(256, operators.ULT(out_size, data_size), out_size, data_size)
             self.write_buffer(out_offset, data[:size])
 
         return self.world.last_transaction.return_value
@@ -1816,7 +1819,7 @@ class EVM(Eventful):
     def SELFDESTRUCT(self, recipient):
         """Halt execution and register account for later deletion"""
         #This may create a user account
-        recipient = Operators.EXTRACT(recipient, 0, 160)
+        recipient = operators.EXTRACT(recipient, 0, 160)
         address = self.address
         #FIXME for on the known addresses
         if issymbolic(recipient):
@@ -2320,8 +2323,8 @@ class EVMWorld(Platform):
             # 0 is left on the stack if the looked for block number is greater or equal
             # than the current block number or more than 256 blocks behind the current
             # block. (Current block hash is unknown from inside the tx)
-            bnmax = Operators.ITEBV(256, self.block_number() > 256, 256, self.block_number())
-            value = Operators.ITEBV(256, Operators.OR(block_number >= self.block_number(), block_number < bnmax), 0, value)
+            bnmax = operators.ITEBV(256, self.block_number() > 256, 256, self.block_number())
+            value = operators.ITEBV(256, operators.OR(block_number >= self.block_number(), block_number < bnmax), 0, value)
 
         return value
 
@@ -2499,7 +2502,7 @@ class EVMWorld(Platform):
                     if cond is None:
                         cond = address == known_account
                     else:
-                        cond = Operators.OR(address == known_account, cond)
+                        cond = operators.OR(address == known_account, cond)
             return cond
 
     def _pending_transaction_concretize_address(self):
@@ -2563,7 +2566,7 @@ class EVMWorld(Platform):
         # Fork on enough funds
         if not failed:
             src_balance = self.get_balance(caller)
-            enough_balance = Operators.UGE(src_balance, value)
+            enough_balance = operators.UGE(src_balance, value)
             enough_balance_solutions = solver.get_all_values(self._constraints, enough_balance)
 
             if set(enough_balance_solutions) == {True, False}:
