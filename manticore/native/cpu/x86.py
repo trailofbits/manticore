@@ -527,7 +527,7 @@ class AMD64RegFile(RegisterFile):
         return self._registers[register_id]
 
     def _get_flags(self, reg):
-        ''' Build EFLAGS/RFLAGS from flags '''
+        """ Build EFLAGS/RFLAGS from flags """
         def make_symbolic(flag_expr):
             register_size = 32 if reg == 'EFLAGS' else 64
             value, offset = flag_expr
@@ -548,7 +548,7 @@ class AMD64RegFile(RegisterFile):
         return res
 
     def _set_flags(self, reg, res):
-        ''' Set individual flags from a EFLAGS/RFLAGS value '''
+        """ Set individual flags from a EFLAGS/RFLAGS value """
         #assert sizeof (res) == 32 if reg == 'EFLAGS' else 64
         for flag, offset in self._flags.items():
             self.write(flag, Operators.EXTRACT(res, offset, 1))
@@ -609,7 +609,7 @@ class AMD64RegFile(RegisterFile):
 
 # Operand Wrapper
 class AMD64Operand(Operand):
-    ''' This class deals with capstone X86 operands '''
+    """ This class deals with capstone X86 operands """
 
     def __init__(self, cpu, op, **kwargs):
         super().__init__(cpu, op, **kwargs)
@@ -686,16 +686,16 @@ class AMD64Operand(Operand):
 
 
 class X86Cpu(Cpu):
-    '''
+    """
     A CPU model.
-    '''
+    """
 
     def __init__(self, regfile, memory, *args, **kwargs):
-        '''
+        """
         Builds a CPU model.
         :param regfile: regfile object for this CPU.
         :param memory: memory object for this CPU.
-        '''
+        """
         super().__init__(regfile, memory, *args, **kwargs)
         #Segments ('base', 'limit', 'perms', 'gatetype')
         self._segments = {}
@@ -727,12 +727,12 @@ class X86Cpu(Cpu):
 
     # Auxiliary stack access
     def push(cpu, value, size):
-        '''
+        """
         Writes a value in the stack.
 
         :param value: the value to put in the stack.
         :param size: the size of the value.
-        '''
+        """
         assert size in (8, 16, cpu.address_bit_size)
         cpu.STACK = cpu.STACK - size // 8
         base, _, _ = cpu.get_descriptor(cpu.read_register('SS'))
@@ -740,13 +740,13 @@ class X86Cpu(Cpu):
         cpu.write_int(address, value, size)
 
     def pop(cpu, size):
-        '''
+        """
         Gets a value from the stack.
 
         :rtype: int
         :param size: the size of the value to consume from the stack.
         :return: the value from the stack.
-        '''
+        """
         assert size in (16, cpu.address_bit_size)
         base, _, _ = cpu.get_descriptor(cpu.SS)
         address = cpu.STACK + base
@@ -759,7 +759,7 @@ class X86Cpu(Cpu):
     # The instruction cache must be invalidated after an executable
     # page was changed or removed or added
     def invalidate_cache(cpu, address, size):
-        ''' remove decoded instruction from instruction cache '''
+        """ remove decoded instruction from instruction cache """
         cache = cpu.instruction_cache
         for offset in range(size):
             if address + offset in cache:
@@ -807,7 +807,7 @@ class X86Cpu(Cpu):
     # Instructions
     @instruction
     def CPUID(cpu):
-        '''
+        """
         CPUID instruction.
 
         The ID flag (bit 21) in the EFLAGS register indicates support for the
@@ -821,7 +821,7 @@ class X86Cpu(Cpu):
         register upon execution.
 
         :param cpu: current CPU.
-        '''
+        """
         # FIXME Choose conservative values and consider returning some default when eax not here
         conf = {0x0: (0x0000000d, 0x756e6547, 0x6c65746e, 0x49656e69),
                 0x1: (0x000306c3, 0x05100800, 0x7ffafbff, 0xbfebfbff),
@@ -856,14 +856,14 @@ class X86Cpu(Cpu):
 
     @instruction
     def XGETBV(cpu):
-        '''
+        """
         XGETBV instruction.
 
         Reads the contents of the extended cont register (XCR) specified in the ECX register into registers EDX:EAX.
         Implemented only for ECX = 0.
 
         :param cpu: current CPU.
-        '''
+        """
         # if cpu.ECX != 0:
         #logger.debug("XGETBV ECX=%x not implemented", cpu.ECX)
         cpu.EAX, cpu.EDX = 7, 0
@@ -875,7 +875,7 @@ class X86Cpu(Cpu):
 ########################################################################################
     @instruction
     def AND(cpu, dest, src):
-        '''
+        """
         Logical AND.
 
         Performs a bitwise AND operation on the destination (first) and source
@@ -890,7 +890,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
-        '''
+        """
         # XXX bypass a capstone bug that incorrectly extends and computes operands sizes
         # the bug has been fixed since capstone 4.0.alpha2 (commit de8dd26)
         if src.size == 64 and src.type == 'immediate' and dest.size == 64:
@@ -903,7 +903,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def TEST(cpu, src1, src2):
-        '''
+        """
         Logical compare.
 
         Computes the bit-wise logical AND of first operand (source 1 operand)
@@ -924,7 +924,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param src1: first operand.
         :param src2: second operand.
-        '''
+        """
         # Defined Flags: szp
         temp = src1.read() & src2.read()
         cpu.SF = (temp & (1 << (src1.size - 1))) != 0
@@ -935,7 +935,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def NOT(cpu, dest):
-        '''
+        """
         One's complement negation.
 
         Performs a bitwise NOT operation (each 1 is cleared to 0, and each 0
@@ -946,13 +946,13 @@ class X86Cpu(Cpu):
 
         :param cpu: current CPU.
         :param dest: destination operand.
-        '''
+        """
         res = dest.write(~dest.read())
         # Flags Affected: None.
 
     @instruction
     def XOR(cpu, dest, src):
-        '''
+        """
         Logical exclusive OR.
 
         Performs a bitwise exclusive Operators.OR(XOR) operation on the destination (first)
@@ -969,7 +969,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
-        '''
+        """
         if dest == src:
             # if the operands are the same write zero
             res = dest.write(0)
@@ -980,7 +980,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def OR(cpu, dest, src):
-        '''
+        """
         Logical inclusive OR.
 
         Performs a bitwise inclusive OR operation between the destination (first)
@@ -997,7 +997,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
-        '''
+        """
         res = dest.write(dest.read() | src.read())
         # Defined Flags: szp
         cpu._calculate_logic_flags(dest.size, res)
@@ -1011,7 +1011,7 @@ class X86Cpu(Cpu):
 ########################################################################################
     @instruction
     def AAA(cpu):
-        '''
+        """
         ASCII adjust after addition.
 
         Adjusts the sum of two unpacked BCD values to create an unpacked BCD
@@ -1041,12 +1041,12 @@ class X86Cpu(Cpu):
                 FI;
                 AL  =  AL AND 0FH;
         :param cpu: current CPU.
-        '''
+        """
         cpu.AF = Operators.OR(cpu.AL & 0x0F > 9, cpu.AF)
         cpu.CF = cpu.AF
         cpu.AH = Operators.ITEBV(8, cpu.AF, cpu.AH + 1, cpu.AH)
         cpu.AL = Operators.ITEBV(8, cpu.AF, cpu.AL + 6, cpu.AL)
-        '''
+        """
         if (cpu.AL & 0x0F > 9) or cpu.AF == 1:
             cpu.AL = cpu.AL + 6
             cpu.AH = cpu.AH + 1
@@ -1055,12 +1055,12 @@ class X86Cpu(Cpu):
         else:
             cpu.AF = False
             cpu.CF = False
-        '''
+        """
         cpu.AL = cpu.AL & 0x0f
 
     @instruction
     def AAD(cpu, imm=None):
-        '''
+        """
         ASCII adjust AX before division.
 
         Adjusts two unpacked BCD digits (the least-significant digit in the
@@ -1084,7 +1084,7 @@ class X86Cpu(Cpu):
                 AH  =  0
 
         :param cpu: current CPU.
-        '''
+        """
         if imm is None:
             imm = 10
         else:
@@ -1098,7 +1098,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def AAM(cpu, imm=None):
-        '''
+        """
         ASCII adjust AX after multiply.
 
         Adjusts the result of the multiplication of two unpacked BCD values
@@ -1119,7 +1119,7 @@ class X86Cpu(Cpu):
                 AL  =  tempAL MOD 10;
 
         :param cpu: current CPU.
-        '''
+        """
         if imm is None:
             imm = 10
         else:
@@ -1133,7 +1133,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def AAS(cpu):
-        '''
+        """
         ASCII Adjust AL after subtraction.
 
         Adjusts the result of the subtraction of two unpacked BCD values to  create a unpacked
@@ -1165,7 +1165,7 @@ class X86Cpu(Cpu):
                 AL  =  AL AND 0FH;
 
         :param cpu: current CPU.
-        '''
+        """
         if (cpu.AL & 0x0F > 9) or cpu.AF == 1:
             cpu.AX = cpu.AX - 6
             cpu.AH = cpu.AH - 1
@@ -1178,7 +1178,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def ADC(cpu, dest, src):
-        '''
+        """
         Adds with carry.
 
         Adds the destination operand (first operand), the source operand (second operand),
@@ -1199,12 +1199,12 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
-        '''
+        """
         cpu._ADD(dest, src, carry=True)
 
     @instruction
     def ADD(cpu, dest, src):
-        '''
+        """
         Add.
 
         Adds the first operand (destination operand) and the second operand (source operand)
@@ -1220,7 +1220,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
-        '''
+        """
         cpu._ADD(dest, src, carry=False)
 
     def _ADD(cpu, dest, src, carry=False):
@@ -1254,7 +1254,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def CMP(cpu, src1, src2):
-        '''
+        """
         Compares two operands.
 
         Compares the first source operand with the second source operand and sets the status flags
@@ -1271,7 +1271,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
-        '''
+        """
         arg0 = src1.read()
         arg1 = Operators.SEXTEND(src2.read(), src2.size, src1.size)
 
@@ -1280,7 +1280,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def CMPXCHG(cpu, dest, src):
-        '''
+        """
         Compares and exchanges.
 
         Compares the value in the AL, AX, EAX or RAX register (depending on the
@@ -1308,7 +1308,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
-        '''
+        """
         size = dest.size
         reg_name = {8: 'AL', 16: 'AX', 32: 'EAX', 64: 'RAX'}[size]
         accumulator = cpu.read_register(reg_name)
@@ -1323,7 +1323,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def CMPXCHG8B(cpu, dest):
-        '''
+        """
         Compares and exchanges bytes.
 
         Compares the 64-bit value in EDX:EAX (or 128-bit value in RDX:RAX if
@@ -1355,7 +1355,7 @@ class X86Cpu(Cpu):
 
         :param cpu: current CPU.
         :param dest: destination operand.
-        '''
+        """
         size = dest.size
         cmp_reg_name_l = {64: 'EAX', 128: 'RAX'}[size]
         cmp_reg_name_h = {64: 'EDX', 128: 'RDX'}[size]
@@ -1386,7 +1386,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def DAA(cpu):
-        '''
+        """
         Decimal adjusts AL after addition.
 
         Adjusts the sum of two packed BCD values to create a packed BCD result. The AL register
@@ -1414,7 +1414,7 @@ class X86Cpu(Cpu):
                 FI;
 
         :param cpu: current CPU.
-        '''
+        """
 
         cpu.AF = Operators.OR((cpu.AL & 0x0f) > 9, cpu.AF)
         oldAL = cpu.AL
@@ -1423,7 +1423,7 @@ class X86Cpu(Cpu):
 
         cpu.CF = Operators.OR((cpu.AL & 0xf0) > 0x90, cpu.CF)
         cpu.AL = Operators.ITEBV(8, cpu.CF, cpu.AL + 0x60, cpu.AL)
-        '''
+        """
         #old not-symbolic aware version...
         if ((cpu.AL & 0x0f) > 9) or cpu.AF:
             oldAL = cpu.AL
@@ -1438,7 +1438,7 @@ class X86Cpu(Cpu):
             cpu.CF  =  True
         else:
             cpu.CF  =  False
-        '''
+        """
 
         cpu.ZF = cpu.AL == 0
         cpu.SF = (cpu.AL & 0x80) != 0
@@ -1446,7 +1446,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def DAS(cpu):
-        '''
+        """
         Decimal adjusts AL after subtraction.
 
         Adjusts the result of the subtraction of two packed BCD values to create a packed BCD result.
@@ -1469,7 +1469,7 @@ class X86Cpu(Cpu):
                     CF  =  1;
 
         :param cpu: current CPU.
-        '''
+        """
         oldAL = cpu.AL
         oldCF = cpu.CF
 
@@ -1480,7 +1480,7 @@ class X86Cpu(Cpu):
         cpu.CF = Operators.ITE(Operators.OR(oldAL > 0x99, oldCF), True, cpu.CF)
         cpu.AL = Operators.ITEBV(8, Operators.OR(oldAL > 0x99, oldCF), cpu.AL - 0x60, cpu.AL)
         #
-        '''
+        """
         if (cpu.AL & 0x0f) > 9 or cpu.AF:
             cpu.AL = cpu.AL - 6;
             cpu.CF = Operators.OR(oldCF, cpu.AL > oldAL)
@@ -1491,14 +1491,14 @@ class X86Cpu(Cpu):
         if ((oldAL > 0x99) or oldCF):
             cpu.AL = cpu.AL - 0x60
             cpu.CF = True
-        '''
+        """
         cpu.ZF = cpu.AL == 0
         cpu.SF = (cpu.AL & 0x80) != 0
         cpu.PF = cpu._calculate_parity_flag(cpu.AL)
 
     @instruction
     def DEC(cpu, dest):
-        '''
+        """
         Decrements by 1.
 
         Subtracts 1 from the destination operand, while preserving the state of
@@ -1514,7 +1514,7 @@ class X86Cpu(Cpu):
 
         :param cpu: current CPU.
         :param dest: destination operand.
-        '''
+        """
         arg0 = dest.read()
         res = dest.write(arg0 - 1)
         # Affected Flags o..szapc
@@ -1528,7 +1528,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def DIV(cpu, src):
-        '''
+        """
         Unsigned divide.
 
         Divides (unsigned) the value in the AX register, DX:AX register pair,
@@ -1587,7 +1587,7 @@ class X86Cpu(Cpu):
 
         :param cpu: current CPU.
         :param src: source operand.
-        '''
+        """
         size = src.size
         reg_name_h = {8: 'DL', 16: 'DX', 32: 'EDX', 64: 'RDX'}[size]
         reg_name_l = {8: 'AL', 16: 'AX', 32: 'EAX', 64: 'RAX'}[size]
@@ -1616,7 +1616,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def IDIV(cpu, src):
-        '''
+        """
         Signed divide.
 
         Divides (signed) the value in the AL, AX, or EAX register by the source
@@ -1665,7 +1665,7 @@ class X86Cpu(Cpu):
 
         :param cpu: current CPU.
         :param src: source operand.
-        '''
+        """
 
         reg_name_h = {8: 'AH', 16: 'DX', 32: 'EDX', 64: 'RDX'}[src.size]
         reg_name_l = {8: 'AL', 16: 'AX', 32: 'EAX', 64: 'RAX'}[src.size]
@@ -1713,7 +1713,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def IMUL(cpu, *operands):
-        '''
+        """
         Signed multiply.
 
         Performs a signed multiplication of two operands. This instruction has
@@ -1819,7 +1819,7 @@ class X86Cpu(Cpu):
 
         :param cpu: current CPU.
         :param operands: variable list of operands.
-        '''
+        """
         dest = operands[0]
         OperandSize = dest.size
         reg_name_h = {8: 'AH', 16: 'DX', 32: 'EDX', 64: 'RDX'}[OperandSize]
@@ -1858,7 +1858,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def INC(cpu, dest):
-        '''
+        """
         Increments by 1.
 
         Adds 1 to the destination operand, while preserving the state of the
@@ -1871,7 +1871,7 @@ class X86Cpu(Cpu):
 
         :param cpu: current CPU.
         :param dest: destination operand.
-        '''
+        """
         arg0 = dest.read()
         res = dest.write(arg0 + 1)
         res &= (1 << dest.size) - 1
@@ -1884,7 +1884,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def MUL(cpu, src):
-        '''
+        """
         Unsigned multiply.
 
         Performs an unsigned multiplication of the first operand (destination
@@ -1913,7 +1913,7 @@ class X86Cpu(Cpu):
 
         :param cpu: current CPU.
         :param src: source operand.
-        '''
+        """
         size = src.size
         reg_name_low, reg_name_high = {8: ('AL', 'AH'),
                                        16: ('AX', 'DX'),
@@ -1928,7 +1928,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def NEG(cpu, dest):
-        '''
+        """
         Two's complement negation.
 
         Replaces the value of operand (the destination operand) with its two's complement.
@@ -1943,7 +1943,7 @@ class X86Cpu(Cpu):
 
         :param cpu: current CPU.
         :param dest: destination operand.
-        '''
+        """
         source = dest.read()
         res = dest.write(-source)
         cpu._calculate_logic_flags(dest.size, res)
@@ -1952,7 +1952,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def SBB(cpu, dest, src):
-        '''
+        """
         Integer subtraction with borrow.
 
         Adds the source operand (second operand) and the carry (CF) flag, and
@@ -1977,12 +1977,12 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
-        '''
+        """
         cpu._SUB(dest, src, carry=True)
 
     @instruction
     def SUB(cpu, dest, src):
-        '''
+        """
         Subtract.
 
         Subtracts the second operand (source operand) from the first operand
@@ -2003,7 +2003,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
-        '''
+        """
         cpu._SUB(dest, src, carry=False)
 
     def _SUB(cpu, dest, src, carry=False):
@@ -2024,7 +2024,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def XADD(cpu, dest, src):
-        '''
+        """
         Exchanges and adds.
 
         Exchanges the first operand (destination operand) with the second operand
@@ -2040,7 +2040,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
-        '''
+        """
         MASK = (1 << dest.size) - 1
         SIGN_MASK = 1 << (dest.size - 1)
 
@@ -2071,7 +2071,7 @@ class X86Cpu(Cpu):
 ########################################################################################
     @instruction
     def BSWAP(cpu, dest):
-        '''
+        """
         Byte swap.
 
         Reverses the byte order of a 32-bit (destination) register: bits 0 through
@@ -2090,7 +2090,7 @@ class X86Cpu(Cpu):
 
         :param cpu: current CPU.
         :param dest: destination operand.
-        '''
+        """
         parts = []
         arg0 = dest.read()
         for i in range(0, dest.size, 8):
@@ -2109,7 +2109,7 @@ class X86Cpu(Cpu):
     # CMOVB CMOVNAE CMOVC
     @instruction
     def CMOVB(cpu, dest, src):
-        '''
+        """
         Conditional move - Below/not above or equal.
 
         Tests the status flags in the EFLAGS register and moves the source operand
@@ -2119,13 +2119,13 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
-        '''
+        """
         dest.write(Operators.ITEBV(dest.size, cpu.CF, src.read(), dest.read()))
 
     # CMOVNBE
     @instruction
     def CMOVA(cpu, dest, src):
-        '''
+        """
         Conditional move - Above/not below or equal.
 
         Tests the status flags in the EFLAGS register and moves the source operand
@@ -2135,13 +2135,13 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
-        '''
+        """
         dest.write(Operators.ITEBV(dest.size, Operators.AND(cpu.CF == False, cpu.ZF == False), src.read(), dest.read()))
 
     # CMOVNB CMOVNC
     @instruction
     def CMOVAE(cpu, dest, src):
-        '''
+        """
         Conditional move - Above or equal/not below.
 
         Tests the status flags in the EFLAGS register and moves the source operand
@@ -2151,13 +2151,13 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
-        '''
+        """
         dest.write(Operators.ITEBV(dest.size, cpu.CF == False, src.read(), dest.read()))
 
     # CMOVNA
     @instruction
     def CMOVBE(cpu, dest, src):
-        '''
+        """
         Conditional move - Below or equal/not above.
 
         Tests the status flags in the EFLAGS register and moves the source operand
@@ -2167,12 +2167,12 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
-        '''
+        """
         dest.write(Operators.ITEBV(dest.size, Operators.OR(cpu.CF, cpu.ZF), src.read(), dest.read()))
 
     @instruction
     def CMOVZ(cpu, dest, src):
-        '''
+        """
         Conditional move - Equal/zero.
 
         Tests the status flags in the EFLAGS register and moves the source operand
@@ -2182,12 +2182,12 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
-        '''
+        """
         dest.write(Operators.ITEBV(dest.size, cpu.ZF, src.read(), dest.read()))
 
     @instruction
     def CMOVNZ(cpu, dest, src):
-        '''
+        """
         Conditional move - Not equal/not zero.
 
         Tests the status flags in the EFLAGS register and moves the source operand
@@ -2197,13 +2197,13 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
-        '''
+        """
         dest.write(Operators.ITEBV(dest.size, cpu.ZF == False, src.read(), dest.read()))
 
     # CMOVPE
     @instruction
     def CMOVP(cpu, dest, src):
-        '''
+        """
         Conditional move - Parity/parity even.
 
         Tests the status flags in the EFLAGS register and moves the source operand
@@ -2213,13 +2213,13 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
-        '''
+        """
         dest.write(Operators.ITEBV(dest.size, cpu.PF, src.read(), dest.read()))
     # CMOVPO
 
     @instruction
     def CMOVNP(cpu, dest, src):
-        '''
+        """
         Conditional move - Not parity/parity odd.
 
         Tests the status flags in the EFLAGS register and moves the source operand
@@ -2229,7 +2229,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
-        '''
+        """
         dest.write(Operators.ITEBV(dest.size, cpu.PF == False, src.read(), dest.read()))
 
 ########################################################################################
@@ -2240,7 +2240,7 @@ class X86Cpu(Cpu):
 ########################################################################################
     @instruction
     def CMOVG(cpu, dest, src):
-        '''
+        """
         Conditional move - Greater.
 
         Tests the status flags in the EFLAGS register and moves the source operand
@@ -2250,13 +2250,13 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
-        '''
+        """
         dest.write(Operators.ITEBV(dest.size, Operators.AND(cpu.ZF == 0, cpu.SF == cpu.OF), src.read(), dest.read()))
 
     # CMOVNL
     @instruction
     def CMOVGE(cpu, dest, src):
-        '''
+        """
         Conditional move - Greater or equal/not less.
 
         Tests the status flags in the EFLAGS register and moves the source operand
@@ -2266,13 +2266,13 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
-        '''
+        """
         dest.write(Operators.ITEBV(dest.size, (cpu.SF ^ cpu.OF) == 0, src.read(), dest.read()))
 
     # CMOVNGE
     @instruction
     def CMOVL(cpu, dest, src):
-        '''
+        """
         Conditional move - Less/not greater or equal.
 
         Tests the status flags in the EFLAGS register and moves the source operand
@@ -2282,13 +2282,13 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
-        '''
+        """
         dest.write(Operators.ITEBV(dest.size, cpu.SF ^ cpu.OF, src.read(), dest.read()))
 
     # CMOVNG
     @instruction
     def CMOVLE(cpu, dest, src):
-        '''
+        """
         Conditional move - Less or equal/not greater.
 
         Tests the status flags in the EFLAGS register and moves the source operand
@@ -2298,12 +2298,12 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
-        '''
+        """
         dest.write(Operators.ITEBV(dest.size, Operators.OR(cpu.SF ^ cpu.OF, cpu.ZF), src.read(), dest.read()))
 
     @instruction
     def CMOVO(cpu, dest, src):
-        '''
+        """
         Conditional move - Overflow.
 
         Tests the status flags in the EFLAGS register and moves the source operand
@@ -2313,12 +2313,12 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
-        '''
+        """
         dest.write(Operators.ITEBV(dest.size, cpu.OF, src.read(), dest.read()))
 
     @instruction
     def CMOVNO(cpu, dest, src):
-        '''
+        """
         Conditional move - Not overflow.
 
         Tests the status flags in the EFLAGS register and moves the source operand
@@ -2328,12 +2328,12 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
-        '''
+        """
         dest.write(Operators.ITEBV(dest.size, cpu.OF == False, src.read(), dest.read()))
 
     @instruction
     def CMOVS(cpu, dest, src):
-        '''
+        """
         Conditional move - Sign (negative).
 
         Tests the status flags in the EFLAGS register and moves the source operand
@@ -2343,12 +2343,12 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
-        '''
+        """
         dest.write(Operators.ITEBV(dest.size, cpu.SF, src.read(), dest.read()))
 
     @instruction
     def CMOVNS(cpu, dest, src):
-        '''
+        """
         Conditional move - Not sign (non-negative).
 
         Tests the status flags in the EFLAGS register and moves the source operand
@@ -2358,12 +2358,12 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
-        '''
+        """
         dest.write(Operators.ITEBV(dest.size, cpu.SF == False, src.read(), dest.read()))
 
     @instruction
     def LAHF(cpu):
-        '''
+        """
         Loads status flags into AH register.
 
         Moves the low byte of the EFLAGS register (which includes status flags
@@ -2375,7 +2375,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
-        '''
+        """
         used_regs = (cpu.SF, cpu.ZF, cpu.AF, cpu.PF, cpu.CF)
         is_expression = any(issymbolic(x) for x in used_regs)
 
@@ -2430,7 +2430,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def LSS(cpu, dest, src):
-        '''
+        """
         Loads far pointer.
 
         Loads a far pointer (segment selector and offset) from the second operand
@@ -2494,12 +2494,12 @@ class X86Cpu(Cpu):
                         SegmentRegister  =  SegmentSelector(SRC);
                     FI;
                     DEST  =  Offset(SRC);
-        '''
+        """
         raise NotImplementedError("LSS")  # TODO
 
     @instruction
     def LEA(cpu, dest, src):
-        '''
+        """
         Loads effective address.
 
         Computes the effective address of the second operand (the source operand) and stores it in the first operand
@@ -2512,12 +2512,12 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
-        '''
+        """
         dest.write(Operators.EXTRACT(src.address(), 0, dest.size))
 
     @instruction
     def MOV(cpu, dest, src, *rest):  # Fake argument to work around capstone issue # 950
-        '''
+        """
         Move.
 
         Copies the second operand (source operand) to the first operand (destination
@@ -2531,12 +2531,12 @@ class X86Cpu(Cpu):
         :param dest: destination operand.
         :param src: source operand.
         :param rest: workaround for a capstone bug, should never be provided
-        '''
+        """
         dest.write(src.read())
 
     @instruction
     def MOVBE(cpu, dest, src):
-        '''
+        """
         Moves data after swapping bytes.
 
         Performs a byte swap operation on the data copied from the second operand (source operand) and store the result
@@ -2571,7 +2571,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
-        '''
+        """
         size = dest.size
         arg0 = dest.read()
         temp = 0
@@ -2582,7 +2582,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def SAHF(cpu):
-        '''
+        """
         Stores AH into flags.
 
         Loads the SF, ZF, AF, PF, and CF flags of the EFLAGS register with values
@@ -2595,7 +2595,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
-        '''
+        """
 
         eflags_size = 32
         val = cpu.AH & 0xD5 | 0x02
@@ -2604,7 +2604,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def SETA(cpu, dest):
-        '''
+        """
         Sets byte if above.
 
         Sets the destination operand to 0 or 1 depending on the settings of the status flags (CF, SF, OF, ZF, and PF, 1, 0) in the
@@ -2619,302 +2619,302 @@ class X86Cpu(Cpu):
 
         :param cpu: current CPU.
         :param dest: destination operand.
-         '''
+         """
         dest.write(Operators.ITEBV(dest.size, Operators.OR(cpu.CF, cpu.ZF) == False, 1, 0))
 
     @instruction
     def SETAE(cpu, dest):
-        '''
+        """
         Sets byte if above or equal.
 
         :param cpu: current CPU.
         :param dest: destination operand.
-        '''
+        """
         dest.write(Operators.ITEBV(dest.size, cpu.CF == False, 1, 0))
 
     @instruction
     def SETB(cpu, dest):
-        '''
+        """
         Sets byte if below.
 
         :param cpu: current CPU.
         :param dest: destination operand.
-        '''
+        """
         dest.write(Operators.ITEBV(dest.size, cpu.CF, 1, 0))
 
     @instruction
     def SETBE(cpu, dest):
-        '''
+        """
         Sets byte if below or equal.
 
         :param cpu: current CPU.
         :param dest: destination operand.
-        '''
+        """
         dest.write(Operators.ITEBV(dest.size, Operators.OR(cpu.CF, cpu.ZF), 1, 0))
 
     @instruction
     def SETC(cpu, dest):
-        '''
+        """
         Sets if carry.
 
         :param cpu: current CPU.
         :param dest: destination operand.
-        '''
+        """
         dest.write(Operators.ITEBV(dest.size, cpu.CF, 1, 0))
 
     @instruction
     def SETE(cpu, dest):
-        '''
+        """
         Sets byte if equal.
 
         :param cpu: current CPU.
         :param dest: destination operand.
-        '''
+        """
         dest.write(Operators.ITEBV(dest.size, cpu.ZF, 1, 0))
 
     @instruction
     def SETG(cpu, dest):
-        '''
+        """
         Sets byte if greater.
 
         :param cpu: current CPU.
         :param dest: destination operand.
-        '''
+        """
         dest.write(Operators.ITEBV(dest.size, Operators.AND(cpu.ZF == False, cpu.SF == cpu.OF), 1, 0))
 
     @instruction
     def SETGE(cpu, dest):
-        '''
+        """
         Sets byte if greater or equal.
 
         :param cpu: current CPU.
         :param dest: destination operand.
-        '''
+        """
         dest.write(Operators.ITEBV(dest.size, cpu.SF == cpu.OF, 1, 0))
 
     @instruction
     def SETL(cpu, dest):
-        '''
+        """
         Sets byte if less.
 
         :param cpu: current CPU.
         :param dest: destination operand.
-        '''
+        """
         dest.write(Operators.ITEBV(dest.size, cpu.SF != cpu.OF, 1, 0))
 
     @instruction
     def SETLE(cpu, dest):
-        '''
+        """
         Sets byte if less or equal.
 
         :param cpu: current CPU.
         :param dest: destination operand.
-        '''
+        """
         dest.write(Operators.ITEBV(dest.size, Operators.OR(cpu.ZF, cpu.SF != cpu.OF), 1, 0))
 
     @instruction
     def SETNA(cpu, dest):
-        '''
+        """
         Sets byte if not above.
 
         :param cpu: current CPU.
         :param dest: destination operand.
-        '''
+        """
         dest.write(Operators.ITEBV(dest.size, Operators.OR(cpu.CF, cpu.ZF), 1, 0))
 
     @instruction
     def SETNAE(cpu, dest):
-        '''
+        """
         Sets byte if not above or equal.
 
         :param cpu: current CPU.
         :param dest: destination operand.
-        '''
+        """
         dest.write(Operators.ITEBV(dest.size, cpu.CF, 1, 0))
 
     @instruction
     def SETNB(cpu, dest):
-        '''
+        """
         Sets byte if not below.
 
         :param cpu: current CPU.
         :param dest: destination operand.
-        '''
+        """
         dest.write(Operators.ITEBV(dest.size, cpu.CF == False, 1, 0))
 
     @instruction
     def SETNBE(cpu, dest):
-        '''
+        """
         Sets byte if not below or equal.
 
         :param cpu: current CPU.
         :param dest: destination operand.
-        '''
+        """
         dest.write(Operators.ITEBV(dest.size, Operators.AND(cpu.CF == False, cpu.ZF == False), 1, 0))
 
     @instruction
     def SETNC(cpu, dest):
-        '''
+        """
         Sets byte if not carry.
 
         :param cpu: current CPU.
         :param dest: destination operand.
-        '''
+        """
         dest.write(Operators.ITEBV(dest.size, cpu.CF == False, 1, 0))
 
     @instruction
     def SETNE(cpu, dest):
-        '''
+        """
         Sets byte if not equal.
 
         :param cpu: current CPU.
         :param dest: destination operand.
-        '''
+        """
         dest.write(Operators.ITEBV(dest.size, cpu.ZF == False, 1, 0))
 
     @instruction
     def SETNG(cpu, dest):
-        '''
+        """
         Sets byte if not greater.
 
         :param cpu: current CPU.
         :param dest: destination operand.
-        '''
+        """
         dest.write(Operators.ITEBV(dest.size, Operators.OR(cpu.ZF, cpu.SF != cpu.OF), 1, 0))
 
     @instruction
     def SETNGE(cpu, dest):
-        '''
+        """
         Sets if not greater or equal.
 
         :param cpu: current CPU.
         :param dest: destination operand.
-        '''
+        """
         dest.write(Operators.ITEBV(dest.size, cpu.SF != cpu.OF, 1, 0))
 
     @instruction
     def SETNL(cpu, dest):
-        '''
+        """
         Sets byte if not less.
 
         :param cpu: current CPU.
         :param dest: destination operand.
-        '''
+        """
         dest.write(Operators.ITEBV(dest.size, cpu.SF == cpu.OF, 1, 0))
 
     @instruction
     def SETNLE(cpu, dest):
-        '''
+        """
         Sets byte if not less or equal.
 
         :param cpu: current CPU.
         :param dest: destination operand.
-        '''
+        """
         dest.write(Operators.ITEBV(dest.size, Operators.AND(cpu.ZF == False, cpu.SF == cpu.OF), 1, 0))
 
     @instruction
     def SETNO(cpu, dest):
-        '''
+        """
         Sets byte if not overflow.
 
         :param cpu: current CPU.
         :param dest: destination operand.
-        '''
+        """
         dest.write(Operators.ITEBV(dest.size, cpu.OF == False, 1, 0))
 
     @instruction
     def SETNP(cpu, dest):
-        '''
+        """
         Sets byte if not parity.
 
         :param cpu: current CPU.
         :param dest: destination operand.
-        '''
+        """
         dest.write(Operators.ITEBV(dest.size, cpu.PF == False, 1, 0))
 
     @instruction
     def SETNS(cpu, dest):
-        '''
+        """
         Sets byte if not sign.
 
         :param cpu: current CPU.
         :param dest: destination operand.
-        '''
+        """
         dest.write(Operators.ITEBV(dest.size, cpu.SF == False, 1, 0))
 
     @instruction
     def SETNZ(cpu, dest):
-        '''
+        """
         Sets byte if not zero.
 
         :param cpu: current CPU.
         :param dest: destination operand.
-        '''
+        """
         dest.write(Operators.ITEBV(dest.size, cpu.ZF == False, 1, 0))
 
     @instruction
     def SETO(cpu, dest):
-        '''
+        """
         Sets byte if overflow.
 
         :param cpu: current CPU.
         :param dest: destination operand.
-        '''
+        """
         dest.write(Operators.ITEBV(dest.size, cpu.OF, 1, 0))
 
     @instruction
     def SETP(cpu, dest):
-        '''
+        """
         Sets byte if parity.
 
         :param cpu: current CPU.
         :param dest: destination operand.
-        '''
+        """
         dest.write(Operators.ITEBV(dest.size, cpu.PF, 1, 0))
 
     @instruction
     def SETPE(cpu, dest):
-        '''
+        """
         Sets byte if parity even.
 
         :param cpu: current CPU.
         :param dest: destination operand.
-        '''
+        """
         dest.write(Operators.ITEBV(dest.size, cpu.PF, 1, 0))
 
     @instruction
     def SETPO(cpu, dest):
-        '''
+        """
         Sets byte if parity odd.
 
         :param cpu: current CPU.
         :param dest: destination operand.
-        '''
+        """
         dest.write(Operators.ITEBV(dest.size, cpu.PF == False, 1, 0))
 
     @instruction
     def SETS(cpu, dest):
-        '''
+        """
         Sets byte if sign.
 
         :param cpu: current CPU.
         :param dest: destination operand.
-        '''
+        """
         dest.write(Operators.ITEBV(dest.size, cpu.SF, 1, 0))
 
     @instruction
     def SETZ(cpu, dest):
-        '''
+        """
         Sets byte if zero.
 
         :param cpu: current CPU.
         :param dest: destination operand.
-        '''
+        """
         dest.write(Operators.ITEBV(dest.size, cpu.ZF, 1, 0))
 
     @instruction
     def XCHG(cpu, dest, src):
-        '''
+        """
         Exchanges register/memory with register.
 
         Exchanges the contents of the destination (first) and source (second)
@@ -2935,7 +2935,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
-        '''
+        """
         temp = dest.read()
         dest.write(src.read())
         src.write(temp)
@@ -2950,7 +2950,7 @@ class X86Cpu(Cpu):
 ########################################################################################
     @instruction
     def LEAVE(cpu):
-        '''
+        """
         High level procedure exit.
 
         Releases the stack frame set up by an earlier ENTER instruction. The
@@ -2977,13 +2977,13 @@ class X86Cpu(Cpu):
                 FI;
 
         :param cpu: current CPU.
-        '''
+        """
         cpu.STACK = cpu.FRAME
         cpu.FRAME = cpu.pop(cpu.address_bit_size)
 
     @instruction
     def POP(cpu, dest):
-        '''
+        """
         Pops a value from the stack.
 
         Loads the value from the top of the stack to the location specified
@@ -2991,19 +2991,19 @@ class X86Cpu(Cpu):
 
         :param cpu: current CPU.
         :param dest: destination operand.
-        '''
+        """
         dest.write(cpu.pop(dest.size))
 
     @instruction
     def PUSH(cpu, src):
-        '''
+        """
         Pushes a value onto the stack.
 
         Decrements the stack pointer and then stores the source operand on the top of the stack.
 
         :param cpu: current CPU.
         :param src: source operand.
-        '''
+        """
         # http://stackoverflow.com/questions/11291151/how-push-imm-encodes
         size = src.size
         v = src.read()
@@ -3014,11 +3014,11 @@ class X86Cpu(Cpu):
 
     @instruction
     def POPF(cpu):
-        '''
+        """
         Pops stack into EFLAGS register.
 
         :param cpu: current CPU.
-        '''
+        """
         mask = (0x00000001 |
                 0x00000004 |
                 0x00000010 |
@@ -3032,54 +3032,54 @@ class X86Cpu(Cpu):
 
     @instruction
     def POPFD(cpu):
-        '''
+        """
         Pops stack into EFLAGS register.
 
         :param cpu: current CPU.
-        '''
+        """
         mask = 0x00000001 | 0x00000004 | 0x00000010 | 0x00000040 | 0x00000080 | 0x00000400 | 0x00000800
         cpu.EFLAGS = cpu.pop(32) & mask
 
     @instruction
     def POPFQ(cpu):
-        '''
+        """
         Pops stack into EFLAGS register.
 
         :param cpu: current CPU.
-        '''
+        """
         mask = 0x00000001 | 0x00000004 | 0x00000010 | 0x00000040 | 0x00000080 | 0x00000400 | 0x00000800
         cpu.EFLAGS = (cpu.EFLAGS & ~mask) | cpu.pop(64) & mask
 
     @instruction
     def PUSHF(cpu):
-        '''
+        """
         Pushes FLAGS register onto the stack.
 
         :param cpu: current CPU.
-        '''
+        """
         cpu.push(cpu.EFLAGS, 16)
 
     @instruction
     def PUSHFD(cpu):
-        '''
+        """
         Pushes EFLAGS register onto the stack.
 
         :param cpu: current CPU.
-        '''
+        """
         cpu.push(cpu.EFLAGS, 32)
 
     @instruction
     def PUSHFQ(cpu):
-        '''
+        """
         Pushes RFLAGS register onto the stack.
 
         :param cpu: current CPU.
-        '''
+        """
         cpu.push(cpu.RFLAGS, 64)
 
     @instruction
     def INT(cpu, op0):
-        '''
+        """
         Calls to interrupt procedure.
 
         The INT n instruction generates a call to the interrupt or exception handler specified
@@ -3091,18 +3091,18 @@ class X86Cpu(Cpu):
 
         :param cpu: current CPU.
         :param op0: destination operand.
-        '''
+        """
         if op0.read() != 0x80:
             logger.warning("Unsupported interrupt")
         raise Interruption(op0.read())
 
     @instruction
     def INT3(cpu):
-        '''
+        """
         Breakpoint
 
         :param cpu: current CPU.
-        '''
+        """
         raise Interruption(3)
 
 ########################################################################################
@@ -3115,7 +3115,7 @@ class X86Cpu(Cpu):
 ########################################################################################
     @instruction
     def CALL(cpu, op0):
-        '''
+        """
         Procedure call.
 
         Saves procedure linking information on the stack and branches to the called procedure specified using the target
@@ -3124,7 +3124,7 @@ class X86Cpu(Cpu):
 
         :param cpu: current CPU.
         :param op0: target operand.
-        '''
+        """
         # TODO FIX 64Bit FIX segment
         proc = op0.read()
         cpu.push(cpu.PC, cpu.address_bit_size)
@@ -3132,7 +3132,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def RET(cpu, *operands):
-        '''
+        """
         Returns from procedure.
 
         Transfers program control to a return address located on the top of
@@ -3143,7 +3143,7 @@ class X86Cpu(Cpu):
 
         :param cpu: current CPU.
         :param operands: variable operands list.
-        '''
+        """
         # TODO FIX 64Bit FIX segment
         N = 0
         if len(operands) > 0:
@@ -3153,336 +3153,336 @@ class X86Cpu(Cpu):
 
     @instruction
     def JA(cpu, target):
-        '''
+        """
         Jumps short if above.
 
         :param cpu: current CPU.
         :param target: destination operand.
-        '''
+        """
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, Operators.AND(cpu.CF == False, cpu.ZF == False), target.read(), cpu.PC)
 
     @instruction
     def JAE(cpu, target):
-        '''
+        """
         Jumps short if above or equal.
 
         :param cpu: current CPU.
         :param target: destination operand.
-        '''
+        """
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, cpu.CF == False, target.read(), cpu.PC)
 
     @instruction
     def JB(cpu, target):
-        '''
+        """
         Jumps short if below.
 
         :param cpu: current CPU.
         :param target: destination operand.
-        '''
+        """
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, cpu.CF == True, target.read(), cpu.PC)
 
     @instruction
     def JBE(cpu, target):
-        '''
+        """
         Jumps short if below or equal.
 
         :param cpu: current CPU.
         :param target: destination operand.
-        '''
+        """
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, Operators.OR(cpu.CF, cpu.ZF), target.read(), cpu.PC)
 
     @instruction
     def JC(cpu, target):
-        '''
+        """
         Jumps short if carry.
 
         :param cpu: current CPU.
         :param target: destination operand.
-        '''
+        """
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, cpu.CF, target.read(), cpu.PC)
 
     @instruction
     def JCXZ(cpu, target):
-        '''
+        """
         Jumps short if CX register is 0.
 
         :param cpu: current CPU.
         :param target: destination operand.
-        '''
+        """
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, cpu.CX == 0, target.read(), cpu.PC)
 
     @instruction
     def JECXZ(cpu, target):
-        '''
+        """
         Jumps short if ECX register is 0.
 
         :param cpu: current CPU.
         :param target: destination operand.
-        '''
+        """
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, cpu.ECX == 0, target.read(), cpu.PC)
 
     @instruction
     def JRCXZ(cpu, target):
-        '''
+        """
         Jumps short if RCX register is 0.
 
         :param cpu: current CPU.
         :param target: destination operand.
-        '''
+        """
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, cpu.RCX == 0, target.read(), cpu.PC)
 
     @instruction
     def JE(cpu, target):
-        '''
+        """
         Jumps short if equal.
 
         :param cpu: current CPU.
         :param target: destination operand.
-        '''
+        """
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, cpu.ZF, target.read(), cpu.PC)
 
     @instruction
     def JG(cpu, target):
-        '''
+        """
         Jumps short if greater.
 
         :param cpu: current CPU.
         :param target: destination operand.
-        '''
+        """
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, Operators.AND(cpu.ZF == False, cpu.SF == cpu.OF), target.read(), cpu.PC)
 
     @instruction
     def JGE(cpu, target):
-        '''
+        """
         Jumps short if greater or equal.
 
         :param cpu: current CPU.
         :param target: destination operand.
-        '''
+        """
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, (cpu.SF == cpu.OF), target.read(), cpu.PC)
 
     @instruction
     def JL(cpu, target):
-        '''
+        """
         Jumps short if less.
 
         :param cpu: current CPU.
         :param target: destination operand.
-        '''
+        """
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, (cpu.SF != cpu.OF), target.read(), cpu.PC)
 
     @instruction
     def JLE(cpu, target):
-        '''
+        """
         Jumps short if less or equal.
 
         :param cpu: current CPU.
         :param target: destination operand.
-        '''
+        """
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, Operators.OR(cpu.ZF, cpu.SF != cpu.OF), target.read(), cpu.PC)
 
     @instruction
     def JNA(cpu, target):
-        '''
+        """
         Jumps short if not above.
 
         :param cpu: current CPU.
         :param target: destination operand.
-        '''
+        """
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, Operators.OR(cpu.CF, cpu.ZF), target.read(), cpu.PC)
 
     @instruction
     def JNAE(cpu, target):
-        '''
+        """
         Jumps short if not above or equal.
 
         :param cpu: current CPU.
         :param target: destination operand.
-        '''
+        """
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, cpu.CF, target.read(), cpu.PC)
 
     @instruction
     def JNB(cpu, target):
-        '''
+        """
         Jumps short if not below.
 
         :param cpu: current CPU.
         :param target: destination operand.
-        '''
+        """
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, cpu.CF == False, target.read(), cpu.PC)
 
     @instruction
     def JNBE(cpu, target):
-        '''
+        """
         Jumps short if not below or equal.
 
         :param cpu: current CPU.
         :param target: destination operand.
-        '''
+        """
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, Operators.AND(cpu.CF == False, cpu.ZF == False), target.read(), cpu.PC)
 
     @instruction
     def JNC(cpu, target):
-        '''
+        """
         Jumps short if not carry.
 
         :param cpu: current CPU.
         :param target: destination operand.
-        '''
+        """
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, False == cpu.CF, target.read(), cpu.PC)
 
     @instruction
     def JNE(cpu, target):
-        '''
+        """
         Jumps short if not equal.
 
         :param cpu: current CPU.
         :param target: destination operand.
-        '''
+        """
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, False == cpu.ZF, target.read(), cpu.PC)
 
     @instruction
     def JNG(cpu, target):
-        '''
+        """
         Jumps short if not greater.
 
         :param cpu: current CPU.
         :param target: destination operand.
-        '''
+        """
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, Operators.OR(cpu.ZF, cpu.SF != cpu.OF), target.read(), cpu.PC)
 
     @instruction
     def JNGE(cpu, target):
-        '''
+        """
         Jumps short if not greater or equal.
 
         :param cpu: current CPU.
         :param target: destination operand.
-        '''
+        """
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, (cpu.SF != cpu.OF), target.read(), cpu.PC)
 
     @instruction
     def JNL(cpu, target):
-        '''
+        """
         Jumps short if not less.
 
         :param cpu: current CPU.
         :param target: destination operand.
-        '''
+        """
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, (cpu.SF == cpu.OF), target.read(), cpu.PC)
 
     @instruction
     def JNLE(cpu, target):
-        '''
+        """
         Jumps short if not less or equal.
 
         :param cpu: current CPU.
         :param target: destination operand.
-        '''
+        """
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, Operators.AND(False == cpu.ZF, cpu.SF == cpu.OF), target.read(), cpu.PC)
 
     @instruction
     def JNO(cpu, target):
-        '''
+        """
         Jumps short if not overflow.
 
         :param cpu: current CPU.
         :param target: destination operand.
-        '''
+        """
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, False == cpu.OF, target.read(), cpu.PC)
 
     @instruction
     def JNP(cpu, target):
-        '''
+        """
         Jumps short if not parity.
 
         :param cpu: current CPU.
         :param target: destination operand.
-        '''
+        """
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, False == cpu.PF, target.read(), cpu.PC)
 
     @instruction
     def JNS(cpu, target):
-        '''
+        """
         Jumps short if not sign.
 
         :param cpu: current CPU.
         :param target: destination operand.
-        '''
+        """
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, False == cpu.SF, target.read(), cpu.PC)
 
     def JNZ(cpu, target):
-        '''
+        """
         Jumps short if not zero.
 
         :param cpu: current CPU.
         :param target: destination operand.
-        '''
+        """
         cpu.JNE(target)
 
     @instruction
     def JO(cpu, target):
-        '''
+        """
         Jumps short if overflow.
 
         :param cpu: current CPU.
         :param target: destination operand.
-        '''
+        """
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, cpu.OF, target.read(), cpu.PC)
 
     @instruction
     def JP(cpu, target):
-        '''
+        """
         Jumps short if parity.
 
         :param cpu: current CPU.
         :param target: destination operand.
-        '''
+        """
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, cpu.PF, target.read(), cpu.PC)
 
     @instruction
     def JPE(cpu, target):
-        '''
+        """
         Jumps short if parity even.
 
         :param cpu: current CPU.
         :param target: destination operand.
-        '''
+        """
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, cpu.PF, target.read(), cpu.PC)
 
     @instruction
     def JPO(cpu, target):
-        '''
+        """
         Jumps short if parity odd.
 
         :param cpu: current CPU.
         :param target: destination operand.
-        '''
+        """
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, False == cpu.PF, target.read(), cpu.PC)
 
     @instruction
     def JS(cpu, target):
-        '''
+        """
         Jumps short if sign.
 
         :param cpu: current CPU.
         :param target: destination operand.
-        '''
+        """
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, cpu.SF, target.read(), cpu.PC)
 
     @instruction
     def JZ(cpu, target):
-        '''
+        """
         Jumps short if zero.
 
         :param cpu: current CPU.
         :param target: destination operand.
-        '''
+        """
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, cpu.ZF, target.read(), cpu.PC)
 
     @instruction
     def JMP(cpu, target):
-        '''
+        """
         Jump.
 
         Transfers program control to a different point in the instruction stream without
@@ -3491,20 +3491,20 @@ class X86Cpu(Cpu):
 
         :param cpu: current CPU.
         :param target: destination operand.
-        '''
+        """
         cpu.PC = target.read()
 
     def LJMP(cpu, cs_selector, target):
-        '''
+        """
         We are just going to ignore the CS selector for now.
-        '''
+        """
         logger.info("LJMP: Jumping to: %r:%r", cs_selector.read(), target.read())
         cpu.CS = cs_selector.read()
         cpu.PC = target.read()
 
     # LOOPZ
     def LOOP(cpu, dest):
-        '''
+        """
         Loops according to ECX counter.
 
         Performs a loop operation using the ECX or CX register as a counter.
@@ -3537,18 +3537,18 @@ class X86Cpu(Cpu):
 
         :param cpu: current CPU.
         :param dest: destination operand.
-        '''
+        """
         counter_name = {16: 'CX', 32: 'ECX', 64: 'RCX'}[cpu.address_bit_size]
         counter = cpu.write_register(counter_name, cpu.read_register(counter_name) - 1)
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, counter == 0, (cpu.PC + dest.read()) & ((1 << dest.size) - 1), cpu.PC + cpu.instruction.size)
 
     def LOOPNZ(cpu, target):
-        '''
+        """
         Loops if ECX counter is nonzero.
 
         :param cpu: current CPU.
         :param target: destination operand.
-        '''
+        """
         counter_name = {16: 'CX', 32: 'ECX', 64: 'RCX'}[cpu.address_bit_size]
         counter = cpu.write_register(counter_name, cpu.read_register(counter_name) - 1)
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, counter != 0, (cpu.PC + target.read()) & ((1 << target.size) - 1), cpu.PC + cpu.instruction.size)
@@ -3563,7 +3563,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def RCL(cpu, dest, src):
-        '''
+        """
         Rotates through carry left.
 
         Shifts (rotates) the bits of the first operand (destination operand) the number of bit positions specified in the
@@ -3577,7 +3577,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: count operand.
-        '''
+        """
         OperandSize = dest.size
         count = src.read()
         countMask = {8: 0x1f,
@@ -3607,7 +3607,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def RCR(cpu, dest, src):
-        '''
+        """
         Rotates through carry right (RCR).
 
         Shifts (rotates) the bits of the first operand (destination operand) the number of bit positions specified in the
@@ -3623,7 +3623,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: count operand.
-        '''
+        """
         OperandSize = dest.size
         count = src.read()
         countMask = {8: 0x1f,
@@ -3655,7 +3655,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def ROL(cpu, dest, src):
-        '''
+        """
         Rotates left (ROL).
 
         Shifts (rotates) the bits of the first operand (destination operand) the number of bit positions specified in the
@@ -3670,7 +3670,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: count operand.
-        '''
+        """
         OperandSize = dest.size
         count = src.read()
         countMask = {8: 0x1f,
@@ -3689,7 +3689,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def ROR(cpu, dest, src):
-        '''
+        """
         Rotates right (ROR).
 
         Shifts (rotates) the bits of the first operand (destination operand) the number of bit positions specified in the
@@ -3704,7 +3704,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: count operand.
-        '''
+        """
         OperandSize = dest.size
         count = src.read()
         countMask = {8: 0x1f,
@@ -3725,7 +3725,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def SAL(cpu, dest, src):
-        '''
+        """
         The shift arithmetic left.
 
         Shifts the bits in the first operand (destination operand) to the left or right by the number of bits specified in the
@@ -3736,7 +3736,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: count operand.
-        '''
+        """
         OperandSize = dest.size
         count = src.read()
         countMask = {8: 0x1f,
@@ -3761,7 +3761,7 @@ class X86Cpu(Cpu):
         cpu.PF = Operators.OR(Operators.AND(tempCount == 0, cpu.PF), Operators.AND(tempCount != 0, cpu._calculate_parity_flag(res)))
 
     def SHL(cpu, dest, src):
-        '''
+        """
         The shift logical left.
 
         The shift arithmetic left (SAL) and shift logical left (SHL) instructions perform the same operation.
@@ -3769,12 +3769,12 @@ class X86Cpu(Cpu):
         :param cpu: current cpu.
         :param dest: destination operand.
         :param src: source operand.
-        '''
+        """
         return cpu.SAL(dest, src)
 
     @instruction
     def SAR(cpu, dest, src):
-        '''
+        """
         Shift arithmetic right.
 
         The shift arithmetic right (SAR) and shift logical right (SHR) instructions shift the bits of the destination operand to
@@ -3787,7 +3787,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
-        '''
+        """
         OperandSize = dest.size
         countMask = {8: 0x1f,
                      16: 0x1f,
@@ -3824,7 +3824,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def SHR(cpu, dest, src):
-        '''
+        """
         Shift logical right.
 
         The shift arithmetic right (SAR) and shift logical right (SHR)
@@ -3838,7 +3838,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: count operand.
-        '''
+        """
         OperandSize = dest.size
         count = Operators.ZEXTEND(src.read() & (OperandSize - 1), OperandSize)
         value = dest.read()
@@ -3885,7 +3885,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def SHRD(cpu, dest, src, count):
-        '''
+        """
         Double precision shift right.
 
         Shifts the first operand (destination operand) to the right the number of bits specified by the third operand
@@ -3896,7 +3896,7 @@ class X86Cpu(Cpu):
         :param dest: destination operand.
         :param src: source operand.
         :param count: count operand
-        '''
+        """
         OperandSize = dest.size
         MASK = ((1 << OperandSize) - 1)
         # count is masked based on destination size
@@ -3916,7 +3916,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def SHLD(cpu, dest, src, count):
-        '''
+        """
         Double precision shift right.
 
         Shifts the first operand (destination operand) to the left the number of bits specified by the third operand
@@ -3927,7 +3927,7 @@ class X86Cpu(Cpu):
         :param dest: destination operand.
         :param src: source operand.
         :param count: count operand
-        '''
+        """
         OperandSize = dest.size
         tempCount = Operators.ZEXTEND(count.read(), OperandSize) & (OperandSize - 1)
         arg0 = dest.read()
@@ -3954,8 +3954,8 @@ class X86Cpu(Cpu):
 #
 ########################################################################################
     def _getMemoryBit(cpu, bitbase, bitoffset):
-        ''' Calculate address and bit offset given a base address and a bit offset
-            relative to that address (in the form of asm operands) '''
+        """ Calculate address and bit offset given a base address and a bit offset
+            relative to that address (in the form of asm operands) """
         assert bitbase.type == 'memory'
         assert bitbase.size >= bitoffset.size
         addr = bitbase.address()
@@ -3969,7 +3969,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def BSF(cpu, dest, src):
-        '''
+        """
         Bit scan forward.
 
         Searches the source operand (second operand) for the least significant
@@ -3997,7 +3997,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
-        '''
+        """
         value = src.read()
         flag = Operators.EXTRACT(value, 0, 1) == 1
         res = 0
@@ -4010,7 +4010,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def BSR(cpu, dest, src):
-        '''
+        """
         Bit scan reverse.
 
         Searches the source operand (second operand) for the most significant
@@ -4038,7 +4038,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
-        '''
+        """
         value = src.read()
         flag = Operators.EXTRACT(value, src.size - 1, 1) == 1
         res = 0
@@ -4053,7 +4053,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def BT(cpu, dest, src):
-        '''
+        """
         Bit Test.
 
         Selects the bit in a bit string (specified with the first operand, called the bit base) at the
@@ -4070,7 +4070,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: bit base.
         :param src: bit offset.
-        '''
+        """
         if dest.type == 'register':
             cpu.CF = ((dest.read() >> (src.read() % dest.size)) & 1) != 0
         elif dest.type == 'memory':
@@ -4083,7 +4083,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def BTC(cpu, dest, src):
-        '''
+        """
         Bit test and complement.
 
         Selects the bit in a bit string (specified with the first operand, called
@@ -4094,7 +4094,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: bit base operand.
         :param src: bit offset operand.
-        '''
+        """
         if dest.type == 'register':
             value = dest.read()
             pos = src.read() % dest.size
@@ -4113,7 +4113,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def BTR(cpu, dest, src):
-        '''
+        """
         Bit test and reset.
 
         Selects the bit in a bit string (specified with the first operand, called
@@ -4124,7 +4124,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: bit base operand.
         :param src: bit offset operand.
-        '''
+        """
         if dest.type == 'register':
             value = dest.read()
             pos = src.read() % dest.size
@@ -4143,7 +4143,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def BTS(cpu, dest, src):
-        '''
+        """
         Bit test and set.
 
         Selects the bit in a bit string (specified with the first operand, called
@@ -4154,7 +4154,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: bit base operand.
         :param src: bit offset operand.
-        '''
+        """
 
         if dest.type == 'register':
             value = dest.read()
@@ -4175,7 +4175,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def POPCNT(cpu, dest, src):
-        '''
+        """
         This instruction calculates of number of bits set to 1 in the second
         operand (source) and returns the count in the first operand (a destination
         register).
@@ -4189,7 +4189,7 @@ class X86Cpu(Cpu):
         Flags Affected
         OF, SF, ZF, AF, CF, PF are all cleared.
         ZF is set if SRC = 0, otherwise ZF is cleared
-        '''
+        """
         count = 0
         source = src.read()
         for i in range(src.size):
@@ -4212,7 +4212,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def CLD(cpu):
-        '''
+        """
         Clears direction flag.
         Clears the DF flag in the EFLAGS register. When the DF flag is set to 0, string operations
         increment the index registers (ESI and/or EDI)::
@@ -4220,12 +4220,12 @@ class X86Cpu(Cpu):
             DF  =  0;
 
         :param cpu: current CPU.
-        '''
+        """
         cpu.DF = False
 
     @instruction
     def STD(cpu):
-        '''
+        """
         Sets direction flag.
 
         Sets the DF flag in the EFLAGS register. When the DF flag is set to 1, string operations decrement
@@ -4234,23 +4234,23 @@ class X86Cpu(Cpu):
             DF  =  1;
 
         :param cpu: current CPU.
-        '''
+        """
         cpu.DF = True
 
     @instruction
     def CLC(cpu):
-        '''
+        """
         Clears CF
         :param cpu: current CPU.
-        '''
+        """
         cpu.CF = False
 
     @instruction
     def STC(cpu):
-        '''
+        """
         Sets CF
         :param cpu: current CPU.
-        '''
+        """
         cpu.CF = True
 
 ########################################################################################
@@ -4261,7 +4261,7 @@ class X86Cpu(Cpu):
 ########################################################################################
     @repe
     def CMPS(cpu, dest, src):
-        '''
+        """
         Compares string operands.
 
         Compares the byte, word, double word or quad specified with the first source
@@ -4301,7 +4301,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: first source operand.
         :param src: second source operand.
-        '''
+        """
         src_reg = {8: 'SI', 32: 'ESI', 64: 'RSI'}[cpu.address_bit_size]
         dest_reg = {8: 'DI', 32: 'EDI', 64: 'RDI'}[cpu.address_bit_size]
 
@@ -4325,7 +4325,7 @@ class X86Cpu(Cpu):
 
     @rep
     def LODS(cpu, dest, src):
-        '''
+        """
         Loads string.
 
         Loads a byte, word, or doubleword from the source operand into the AL, AX, or EAX register, respectively. The
@@ -4340,7 +4340,7 @@ class X86Cpu(Cpu):
 
         :param cpu: current CPU.
         :param dest: source operand.
-        '''
+        """
         src_reg = {8: 'SI', 32: 'ESI', 64: 'RSI'}[cpu.address_bit_size]
         base, _, ty = cpu.get_descriptor(cpu.DS)
 
@@ -4355,7 +4355,7 @@ class X86Cpu(Cpu):
 
     @rep
     def MOVS(cpu, dest, src):
-        '''
+        """
         Moves data from string to string.
 
         Moves the byte, word, or doubleword specified with the second operand (source operand) to the location specified
@@ -4368,7 +4368,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
-        '''
+        """
         base, size, ty = cpu.get_descriptor(cpu.DS)
         src_addr = src.address() + base
         dest_addr = dest.address() + base
@@ -4387,7 +4387,7 @@ class X86Cpu(Cpu):
 
     @repe
     def SCAS(cpu, dest, src):
-        '''
+        """
         Scans String.
 
         Compares the byte, word, or double word specified with the memory operand
@@ -4427,7 +4427,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
-        '''
+        """
         dest_reg = dest.reg
         mem_reg = src.mem.base  # , src.type, src.read()
         size = dest.size
@@ -4441,7 +4441,7 @@ class X86Cpu(Cpu):
 
     @rep
     def STOS(cpu, dest, src):
-        '''
+        """
         Stores String.
 
         Stores a byte, word, or doubleword from the AL, AX, or EAX register,
@@ -4454,7 +4454,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
-        '''
+        """
         size = src.size
         dest.write(src.read())
         dest_reg = dest.mem.base
@@ -4470,7 +4470,7 @@ class X86Cpu(Cpu):
 ########################################################################################
     @instruction
     def EMMS(cpu):
-        '''
+        """
         Empty MMX Technology State
 
         Sets the values of all the tags in the x87 FPU tag word to empty (all
@@ -4479,7 +4479,7 @@ class X86Cpu(Cpu):
         floating-point instructions.
 
             x87FPUTagWord <- FFFFH;
-        '''
+        """
         cpu.FPTAG = 0xFFFF
 
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -4488,10 +4488,10 @@ class X86Cpu(Cpu):
 #@@@@@@@@@@@@@@@@@ compulsive coding after this @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     @instruction
     def STMXCSR(cpu, dest):
-        '''Store MXCSR Register State
+        """Store MXCSR Register State
         Stores the contents of the MXCSR control and status register to the destination operand.
         The destination operand is a 32-bit memory location. The reserved bits in the MXCSR register
-        are stored as 0s.'''
+        are stored as 0s."""
         dest.write(0x1F80)
 
     @instruction
@@ -4500,7 +4500,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def ANDN(cpu, dest, src1, src2):
-        '''Performs a bitwise logical AND of inverted second operand (the first source operand)
+        """Performs a bitwise logical AND of inverted second operand (the first source operand)
            with the third operand (the second source operand). The result is stored in the first
            operand (destination operand).
 
@@ -4509,7 +4509,7 @@ class X86Cpu(Cpu):
                 ZF <- (DEST = 0);
            Flags Affected
                 SF and ZF are updated based on result. OF and CF flags are cleared. AF and PF flags are undefined.
-        '''
+        """
         value = ~src1.read() & src2.read()
         dest.write(value)
         cpu.ZF = value == 0
@@ -4519,7 +4519,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def SHLX(cpu, dest, src, count):
-        '''
+        """
         The shift arithmetic left.
 
         Shifts the bits in the first operand (destination operand) to the left or right by the number of bits specified in the
@@ -4530,7 +4530,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: count operand.
-        '''
+        """
         OperandSize = dest.size
         count = count.read()
         countMask = {8: 0x1f,
@@ -4543,13 +4543,13 @@ class X86Cpu(Cpu):
 
     @instruction
     def SHRX(cpu, dest, src, count):
-        '''
+        """
         The shift arithmetic right.
 
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: count operand.
-        '''
+        """
         OperandSize = dest.size
         count = count.read()
         countMask = {8: 0x1f,
@@ -4562,13 +4562,13 @@ class X86Cpu(Cpu):
 
     @instruction
     def SARX(cpu, dest, src, count):
-        '''
+        """
         The shift arithmetic right.
 
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: count operand.
-        '''
+        """
         OperandSize = dest.size
         count = count.read()
         countMask = {8: 0x1f,
@@ -4630,7 +4630,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def PXOR(cpu, dest, src):
-        '''
+        """
         Logical exclusive OR.
 
         Performs a bitwise logical exclusive-OR (XOR) operation on the quadword
@@ -4646,13 +4646,13 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: quadword source operand.
-        '''
+        """
         res = dest.write(dest.read() ^ src.read())
 
     def _PUNPCKL(cpu, dest, src, item_size):
-        '''
+        """
         Generic PUNPCKL
-        '''
+        """
         assert dest.size == src.size
         size = dest.size
         dest_value = dest.read()
@@ -4673,9 +4673,9 @@ class X86Cpu(Cpu):
         dest.write(res)
 
     def _PUNPCKH(cpu, dest, src, item_size):
-        '''
+        """
         Generic PUNPCKH
-        '''
+        """
         assert dest.size == src.size
         size = dest.size
         dest_value = dest.read()
@@ -4714,7 +4714,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def PUNPCKLBW(cpu, dest, src):
-        '''
+        """
         Interleaves the low-order bytes of the source and destination operands.
 
         Unpacks and interleaves the low-order data elements (bytes, words, doublewords, and quadwords)
@@ -4724,12 +4724,12 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
-        '''
+        """
         cpu._PUNPCKL(dest, src, 8)
 
     @instruction
     def PUNPCKLWD(cpu, dest, src):
-        '''
+        """
         Interleaves the low-order bytes of the source and destination operands.
 
         Unpacks and interleaves the low-order data elements (bytes, words, doublewords, and quadwords)
@@ -4739,12 +4739,12 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
-        '''
+        """
         cpu._PUNPCKL(dest, src, 16)
 
     @instruction
     def PUNPCKLQDQ(cpu, dest, src):
-        '''
+        """
         Interleaves the low-order quad-words of the source and destination operands.
 
         Unpacks and interleaves the low-order data elements (bytes, words, doublewords, and quadwords)
@@ -4754,12 +4754,12 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
-        '''
+        """
         cpu._PUNPCKL(dest, src, 64)
 
     @instruction
     def PUNPCKLDQ(cpu, dest, src):
-        '''
+        """
         Interleaves the low-order double-words of the source and destination operands.
 
         Unpacks and interleaves the low-order data elements (bytes, words, doublewords, and quadwords)
@@ -4769,12 +4769,12 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
-        '''
+        """
         cpu._PUNPCKL(dest, src, 32)
 
     @instruction
     def PSHUFW(cpu, op0, op1, op3):
-        '''
+        """
         Packed shuffle words.
 
         Copies doublewords from source operand (second operand) and inserts them in the destination operand
@@ -4784,7 +4784,7 @@ class X86Cpu(Cpu):
         :param op0: destination operand.
         :param op1: source operand.
         :param op3: order operand.
-         '''
+         """
         size = op0.size
         arg0 = op0.read()
         arg1 = op1.read()
@@ -4798,7 +4798,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def PSHUFLW(cpu, op0, op1, op3):
-        '''
+        """
         Shuffle Packed Low Words
 
         Copies words from the low quadword of the source operand (second operand)
@@ -4813,7 +4813,7 @@ class X86Cpu(Cpu):
             Destination[32..47] = (Source >> (Order[4..5] * 16))[0..15];
             Destination[48..63] = (Source >> (Order[6..7] * 16))[0..15];
             Destination[64..127] = Source[64..127];
-        '''
+        """
         size = op0.size
         arg0 = op0.read()
         arg1 = op1.read()
@@ -4828,7 +4828,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def PSHUFD(cpu, op0, op1, op3):
-        '''
+        """
         Packed shuffle doublewords.
 
         Copies doublewords from source operand (second operand) and inserts them in the destination operand
@@ -4838,7 +4838,7 @@ class X86Cpu(Cpu):
         :param op0: destination operand.
         :param op1: source operand.
         :param op3: order operand.
-         '''
+         """
         size = op0.size
         arg0 = op0.read()
         arg1 = op1.read()
@@ -4854,7 +4854,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def MOVDQU(cpu, op0, op1):
-        '''
+        """
         Moves unaligned double quadword.
 
         Moves a double quadword from the source operand (second operand) to the destination operand
@@ -4865,13 +4865,13 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param op0: destination operand.
         :param op1: source operand.
-        '''
+        """
 
         op0.write(op1.read())
 
     @instruction
     def MOVDQA(cpu, op0, op1):
-        '''
+        """
         Moves aligned double quadword.
 
         Moves a double quadword from the source operand (second operand) to the destination operand
@@ -4882,12 +4882,12 @@ class X86Cpu(Cpu):
         :param op0: destination operand.
         :param op1: source operand.
         @todo: check alignment.
-        '''
+        """
         op0.write(op1.read())
 
     @instruction
     def PCMPEQB(cpu, op0, op1):
-        '''
+        """
         Packed compare for equal.
 
         Performs a SIMD compare for equality of the packed bytes, words, or doublewords in the
@@ -4902,7 +4902,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param op0: destination operand.
         :param op1: source operand.
-        '''
+        """
         arg0 = op0.read()
         arg1 = op1.read()
         res = 0
@@ -5019,7 +5019,7 @@ class X86Cpu(Cpu):
     # Implementation of PCMPxSTRx Instructions:
     # + PCMPESTRM, PCMPESTRI, PCMPISTRM, PCMPISTRI
     ##
-    # '''
+    # """
     # See Ref: https://software.intel.com/sites/default/files/m/8/b/8/D9156103.pdf
 
     # :param cpu: current CPU.
@@ -5031,7 +5031,7 @@ class X86Cpu(Cpu):
     #               + 01: Ranges
     #               + 10: Equal Each
     #               + 11: Equal Ordered
-    # '''
+    # """
     #############################################################################
     def _pcmpxstrx_srcdat_format(self, ctlbyte):
         # Parse CTL Byte
@@ -5232,7 +5232,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def PMOVMSKB(cpu, op0, op1):
-        '''
+        """
         Moves byte mask to general-purpose register.
 
         Creates an 8-bit mask made up of the most significant bit of each byte of the source operand
@@ -5243,7 +5243,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param op0: destination operand.
         :param op1: source operand.
-        '''
+        """
         arg0 = op0.read()
         arg1 = op1.read()
 
@@ -5254,7 +5254,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def PSRLDQ(cpu, dest, src):
-        '''
+        """
         Packed shift right logical double quadword.
 
         Shifts the destination operand (first operand) to the right by the number
@@ -5271,7 +5271,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: count operand.
-        '''
+        """
         # TODO(yan): Verify the correctness of truncating SRC like this ( tests
         # use '-1' as the value
         temp = Operators.EXTRACT(src.read(), 0, 8)
@@ -5280,7 +5280,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def NOP(cpu, arg0=None):
-        '''
+        """
         No Operation.
 
         Performs no operation. This instruction is a one-byte instruction that  takes up space in the
@@ -5289,7 +5289,7 @@ class X86Cpu(Cpu):
 
         :param cpu: current CPU.
         :param arg0: this argument is ignored.
-        '''
+        """
 
     @instruction
     def MOVD(cpu, op0, op1):
@@ -5297,7 +5297,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def MOVZX(cpu, op0, op1):
-        '''
+        """
         Moves with zero-extend.
 
         Copies the contents of the source operand (register or memory location) to the destination
@@ -5309,12 +5309,12 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param op0: destination operand.
         :param op1: source operand.
-        '''
+        """
         op0.write(Operators.ZEXTEND(op1.read(), op0.size))
 
     @instruction
     def MOVSX(cpu, op0, op1):
-        '''
+        """
         Moves with sign-extension.
 
         Copies the contents of the source operand (register or memory location) to the destination
@@ -5325,54 +5325,54 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param op0: destination operand.
         :param op1: source operand.
-        '''
+        """
         op0.write(Operators.SEXTEND(op1.read(), op1.size, op0.size))
 
     @instruction
     def MOVSXD(cpu, op0, op1):
-        '''Move DWORD with sign extension to QWORD.'''
+        """Move DWORD with sign extension to QWORD."""
         op0.write(Operators.SEXTEND(op1.read(), op1.size, op0.size))
 
     @instruction
     def CQO(cpu):
-        '''
+        """
         RDX:RAX = sign-extend of RAX.
-        '''
+        """
         res = Operators.SEXTEND(cpu.RAX, 64, 128)
         cpu.RAX = Operators.EXTRACT(res, 0, 64)
         cpu.RDX = Operators.EXTRACT(res, 64, 64)
 
     @instruction
     def CDQE(cpu):
-        '''
+        """
         RAX = sign-extend of EAX.
-        '''
+        """
         cpu.RAX = Operators.SEXTEND(cpu.EAX, 32, 64)
 
     @instruction
     def CDQ(cpu):
-        '''
+        """
         EDX:EAX = sign-extend of EAX
-        '''
+        """
         cpu.EDX = Operators.EXTRACT(Operators.SEXTEND(cpu.EAX, 32, 64), 32, 32)
 
     @instruction
     def CWDE(cpu):
-        '''
+        """
         Converts word to doubleword.
 
         ::
             DX = sign-extend of AX.
 
         :param cpu: current CPU.
-        '''
+        """
         bit = Operators.EXTRACT(cpu.AX, 15, 1)
         cpu.EAX = Operators.SEXTEND(cpu.AX, 16, 32)
         cpu.EDX = Operators.SEXTEND(bit, 1, 32)
 
     @instruction
     def CBW(cpu):
-        '''
+        """
         Converts byte to word.
 
         Double the size of the source operand by means of sign extension::
@@ -5380,12 +5380,12 @@ class X86Cpu(Cpu):
                 AX = sign-extend of AL.
 
         :param cpu: current CPU.
-        '''
+        """
         cpu.AX = Operators.SEXTEND(cpu.AL, 8, 16)
 
     @instruction
     def RDTSC(cpu):
-        '''
+        """
         Reads time-stamp counter.
 
         Loads the current value of the processor's time-stamp counter into the
@@ -5396,7 +5396,7 @@ class X86Cpu(Cpu):
         and resets it to 0 whenever the processor is reset.
 
         :param cpu: current CPU.
-        '''
+        """
         val = cpu.icount
         cpu.RAX = val & 0xffffffff
         cpu.RDX = (val >> 32) & 0xffffffff
@@ -5430,7 +5430,7 @@ class X86Cpu(Cpu):
     # FPU:
     @instruction
     def FNSTCW(cpu, dest):
-        '''
+        """
         Stores x87 FPU Control Word.
 
         Stores the current value of the FPU control word at the specified destination in memory.
@@ -5441,12 +5441,12 @@ class X86Cpu(Cpu):
 
         :param cpu: current CPU.
         :param dest: destination operand.
-        '''
+        """
         cpu.write_int(dest.address(), cpu.FPCW, 16)
 
     @instruction
     def SYSCALL(cpu):
-        '''
+        """
         Calls to interrupt procedure.
 
         The INT n instruction generates a call to the interrupt or exception handler specified
@@ -5457,14 +5457,14 @@ class X86Cpu(Cpu):
         if the OF flag is set to 1.
 
         :param cpu: current CPU.
-        '''
+        """
         cpu.RCX = cpu.RIP
         cpu.R11 = cpu.RFLAGS
         raise Syscall()
 
     @instruction
     def MOVLPD(cpu, dest, src):
-        '''
+        """
         Moves low packed double-precision floating-point value.
 
         Moves a double-precision floating-point value from the source operand (second operand) and the
@@ -5477,7 +5477,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
-        '''
+        """
         value = src.read()
         if src.size == 64 and dest.size == 128:
             value = (dest.read() & 0xffffffffffffffff0000000000000000) | Operators.ZEXTEND(value, 128)
@@ -5485,7 +5485,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def MOVHPD(cpu, dest, src):
-        '''
+        """
         Moves high packed double-precision floating-point value.
 
         Moves a double-precision floating-point value from the source operand (second operand) and the
@@ -5498,7 +5498,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
-        '''
+        """
         if src.size == 128:
             assert dest.size == 64
             dest.write(Operators.EXTRACT(src.read(), 64, 64))
@@ -5509,7 +5509,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def PSUBB(cpu, dest, src):
-        '''
+        """
         Packed subtract.
 
         Performs a SIMD subtract of the packed integers of the source operand (second operand) from the packed
@@ -5524,7 +5524,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
-        '''
+        """
         result = []
         value_a = dest.read()
         value_b = src.read()
@@ -5536,51 +5536,51 @@ class X86Cpu(Cpu):
 
     @instruction
     def POR(cpu, dest, src):
-        '''
+        """
         Performs a bitwise logical OR operation on the source operand (second operand) and the destination operand
         (first operand) and stores the result in the destination operand. The source operand can be an MMX technology
         register or a 64-bit memory location or it can be an XMM register or a 128-bit memory location. The destination
         operand can be an MMX technology register or an XMM register. Each bit of the result is set to 1 if either
         or both of the corresponding bits of the first and second operands are 1; otherwise, it is set to 0.
-        '''
+        """
         res = dest.write(dest.read() | src.read())
 
     @instruction
     def XORPS(cpu, dest, src):
-        '''
+        """
         Performs a bitwise logical OR operation on the source operand (second operand) and the destination operand
         (first operand) and stores the result in the destination operand. The source operand can be an MMX technology
         register or a 64-bit memory location or it can be an XMM register or a 128-bit memory location. The destination
         operand can be an MMX technology register or an XMM register. Each bit of the result is set to 1 if either
         or both of the corresponding bits of the first and second operands are 1; otherwise, it is set to 0.
-        '''
+        """
         res = dest.write(dest.read() ^ src.read())
 
     @instruction
     def VORPD(cpu, dest, src, src2):
-        '''
+        """
         Performs a bitwise logical OR operation on the source operand (second operand) and second source operand (third operand)
          and stores the result in the destination operand (first operand).
-        '''
+        """
         res = dest.write(src.read() | src2.read())
 
     @instruction
     def VORPS(cpu, dest, src, src2):
-        '''
+        """
         Performs a bitwise logical OR operation on the source operand (second operand) and second source operand (third operand)
          and stores the result in the destination operand (first operand).
-        '''
+        """
         res = dest.write(src.read() | src2.read())
 
     @instruction
     def PTEST(cpu, dest, src):
-        ''' PTEST
+        """ PTEST
          PTEST set the ZF flag if all bits in the result are 0 of the bitwise AND
          of the first source operand (first operand) and the second source operand
          (second operand). Also this sets the CF flag if all bits in the result
          are 0 of the bitwise AND of the second source operand (second operand)
          and the logical NOT of the destination operand.
-        '''
+        """
         cpu.OF = False
         cpu.AF = False
         cpu.PF = False
@@ -5599,7 +5599,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def MOVAPS(cpu, dest, src):
-        '''
+        """
         Moves aligned packed single-precision floating-point values.
 
         Moves a double quadword containing four packed single-precision floating-point numbers from the
@@ -5614,12 +5614,12 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
-        '''
+        """
         dest.write(src.read())
 
     @instruction
     def MOVQ(cpu, dest, src):
-        '''
+        """
         Move quadword.
 
         Copies a quadword from the source operand (second operand) to the destination operand (first operand).
@@ -5651,7 +5651,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
-        '''
+        """
         # mmx to mmx or mmx to mem
         if dest.size == src.size and dest.size == 64:
             dest.write(src.read())
@@ -5672,7 +5672,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def MOVSD(cpu, dest, src):
-        '''
+        """
         Move Scalar Double-Precision Floating-Point Value
 
         Moves a scalar double-precision floating-point value from the source
@@ -5691,7 +5691,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
-        '''
+        """
         assert dest.type != 'memory' or src.type != 'memory'
         value = Operators.EXTRACT(src.read(), 0, 64)
         if dest.size > src.size:
@@ -5700,7 +5700,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def MOVSS(cpu, dest, src):
-        '''
+        """
         Moves a scalar single-precision floating-point value
 
         Moves a scalar single-precision floating-point value from the source operand (second operand)
@@ -5725,7 +5725,7 @@ class X86Cpu(Cpu):
                 Destination[0..31] = Source;
                 Destination[32..127] = 0;
         }
-        '''
+        """
         if dest.type == 'register' and src.type == 'register':
             assert dest.size == 128 and src.size == 128
             dest.write(dest.read() & ~0xffffffff | src.read() & 0xffffffff)
@@ -5739,7 +5739,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def VMOVDQA(cpu, dest, src):
-        '''
+        """
         Move Aligned Double Quadword
 
         Moves 128 bits of packed integer values from the source operand (second
@@ -5751,13 +5751,13 @@ class X86Cpu(Cpu):
         When the source or destination operand is a memory operand, the operand
         must be aligned on a 16-byte boundary or a general-protection exception
         (#GP) will be generated. To move integer data to and from unaligned
-        memory locations, use the VMOVDQU instruction.'''
+        memory locations, use the VMOVDQU instruction."""
         # TODO raise exception when unaligned!
         dest.write(src.read())
 
     @instruction
     def VMOVDQU(cpu, dest, src):
-        '''
+        """
         Move Unaligned Double Quadword
 
         Moves 128 bits of packed integer values from the source operand (second operand)
@@ -5773,53 +5773,53 @@ class X86Cpu(Cpu):
             DEST[VLMAX-1:128] <- 0
             VMOVDQU (VEX.256 encoded version)
             DEST[255:0] <- SRC[255:0]
-        '''
+        """
         # FIXME for VEX128? or do testcase
         dest.write(src.read())
 
     @instruction
     def VEXTRACTF128(cpu, dest, src, offset):
-        '''Extract Packed Floating-Point Values
+        """Extract Packed Floating-Point Values
 
         Extracts 128-bits of packed floating-point values from the source
         operand (second operand) at an 128-bit offset from imm8[0] into the
         destination operand (first operand). The destination may be either an
         XMM register or an 128-bit memory location.
-        '''
+        """
         offset = offset.read()
         dest.write(Operators.EXTRACT(src.read(), offset * 128, (offset + 1) * 128))
 
     @instruction
     def PREFETCHT0(cpu, arg):
-        '''
+        """
         Not implemented.
 
         Performs no operation.
-        '''
+        """
 
     @instruction
     def PREFETCHT1(cpu, arg):
-        '''
+        """
         Not implemented.
 
         Performs no operation.
-        '''
+        """
 
     @instruction
     def PREFETCHT2(cpu, arg):
-        '''
+        """
         Not implemented.
 
         Performs no operation.
-        '''
+        """
 
     @instruction
     def PREFETCHTNTA(cpu, arg):
-        '''
+        """
         Not implemented.
 
         Performs no operation.
-        '''
+        """
 
     @instruction
     def PINSRW(cpu, dest, src, count):
@@ -5853,10 +5853,10 @@ class X86Cpu(Cpu):
 
     @instruction
     def PALIGNR(cpu, dest, src, offset):
-        '''ALIGNR concatenates the destination operand (the first operand) and the source
+        """ALIGNR concatenates the destination operand (the first operand) and the source
             operand (the second operand) into an intermediate composite, shifts the composite
             at byte granularity to the right by a constant immediate, and extracts the right-
-            aligned result into the destination.'''
+            aligned result into the destination."""
         dest.write(
             Operators.EXTRACT(
                 Operators.CONCAT(dest.size * 2, dest.read(), src.read()),
@@ -5865,7 +5865,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def PSLLDQ(cpu, dest, src):
-        ''' Packed Shift Left Logical Double Quadword
+        """ Packed Shift Left Logical Double Quadword
         Shifts the destination operand (first operand) to the left by the number
          of bytes specified in the count operand (second operand). The empty low-order
          bytes are cleared (set to all 0s). If the value specified by the count
@@ -5876,7 +5876,7 @@ class X86Cpu(Cpu):
             TEMP  =  COUNT;
             if (TEMP > 15) TEMP  =  16;
             DEST  =  DEST << (TEMP * 8);
-        '''
+        """
         count = Operators.ZEXTEND(src.read(), dest.size * 2)
         byte_count = Operators.ITEBV(src.size * 2, count > 15, 16, count)
         bit_count = byte_count * 8
@@ -5887,7 +5887,7 @@ class X86Cpu(Cpu):
     # FIXME
     @instruction
     def PSRLQ(cpu, dest, src):
-        '''Shift Packed Data Right Logical
+        """Shift Packed Data Right Logical
 
         Shifts the bits in the individual quadword in the destination operand to the right by
         the number of bits specified in the count operand . As the bits in the data elements
@@ -5908,7 +5908,7 @@ class X86Cpu(Cpu):
                                 Destination[64..127] = ZeroExtend(Destination[64..127] >> Count);
                         }
                 }
-        '''
+        """
 
         count = src.read()
         count = Operators.ITEBV(src.size, Operators.UGT(count, 63), 64, count)
@@ -5950,18 +5950,18 @@ class X86Cpu(Cpu):
 
     @instruction
     def SYSENTER(cpu):
-        '''
+        """
         Calls to system
 
         Executes a fast call to a level 0 system procedure or routine
 
         :param cpu: current CPU.
-        '''
+        """
         raise Syscall()
 
     @instruction
     def TZCNT(cpu, dest, src):
-        '''
+        """
         Count the number of trailing least significant zero bits in source
         operand (second operand) and returns the result in destination
         operand (first operand). TZCNT is an extension of the BSF instruction.
@@ -5971,7 +5971,7 @@ class X86Cpu(Cpu):
         the case of BSF instruction, if source operand is zero, the content of
         destination operand are undefined. On processors that do not support
         TZCNT, the instruction byte encoding is executed as BSF
-        '''
+        """
 
         value = src.read()
         flag = Operators.EXTRACT(value, 0, 1) == 1
@@ -5986,7 +5986,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def VPSHUFB(cpu, op0, op1, op3):
-        '''
+        """
         Packed shuffle bytes.
 
         Copies bytes from source operand (second operand) and inserts them in the destination operand
@@ -5996,7 +5996,7 @@ class X86Cpu(Cpu):
         :param op0: destination operand.
         :param op1: source operand.
         :param op3: order operand.
-         '''
+         """
         size = op0.size
         arg0 = op0.read()
         arg1 = op1.read()
@@ -6046,9 +6046,9 @@ class X86Cpu(Cpu):
 
 
 class I386LinuxSyscallAbi(SyscallAbi):
-    '''
+    """
     i386 Linux system call ABI
-    '''
+    """
 
     def syscall_number(self):
         return self._cpu.EAX
@@ -6062,9 +6062,9 @@ class I386LinuxSyscallAbi(SyscallAbi):
 
 
 class AMD64LinuxSyscallAbi(SyscallAbi):
-    '''
+    """
     AMD64 Linux system call ABI
-    '''
+    """
 
     # TODO(yan): Floating point or wide arguments that deviate from the norm are
     # not yet supported.
@@ -6081,9 +6081,9 @@ class AMD64LinuxSyscallAbi(SyscallAbi):
 
 
 class I386CdeclAbi(Abi):
-    '''
+    """
     i386 cdecl function call semantics
-    '''
+    """
 
     def get_arguments(self):
         base = self._cpu.STACK + self._cpu.address_bit_size // 8
@@ -6098,9 +6098,9 @@ class I386CdeclAbi(Abi):
 
 
 class I386StdcallAbi(Abi):
-    '''
+    """
     x86 Stdcall function call convention. Callee cleans up the stack.
-    '''
+    """
 
     def __init__(self, cpu):
         super().__init__(cpu)
@@ -6124,9 +6124,9 @@ class I386StdcallAbi(Abi):
 
 
 class SystemVAbi(Abi):
-    '''
+    """
     x64 SystemV function call convention
-    '''
+    """
 
     # TODO(yan): Floating point or wide arguments that deviate from the norm are
     # not yet supported.
@@ -6159,22 +6159,22 @@ class AMD64Cpu(X86Cpu):
     mode = cs.CS_MODE_64
 
     def __init__(self, memory, *args, **kwargs):
-        '''
+        """
         Builds a CPU model.
         :param memory: memory object for this CPU.
-        '''
+        """
         super().__init__(AMD64RegFile(aliases={'PC': 'RIP', 'STACK': 'RSP', 'FRAME': 'RBP'}, ),
                          memory,
                          *args,
                          **kwargs)
 
     def __str__(self):
-        '''
+        """
         Returns a string representation of cpu state
 
         :rtype: str
         :return: a string containing the name and current value for all the registers.
-        '''
+        """
         CHEADER = '\033[95m'
         CBLUE = '\033[94m'
         CGREEN = '\033[92m'
@@ -6226,7 +6226,7 @@ class AMD64Cpu(X86Cpu):
 
     @instruction
     def XLATB(cpu):
-        '''
+        """
         Table look-up translation.
 
         Locates a byte entry in a table in memory, using the contents of the
@@ -6249,7 +6249,7 @@ class AMD64Cpu(X86Cpu):
 
         :param cpu: current CPU.
         :param dest: destination operand.
-        '''
+        """
         cpu.AL = cpu.read_int(cpu.RBX + Operators.ZEXTEND(cpu.AL, 64), 8)
 
 
@@ -6262,22 +6262,22 @@ class I386Cpu(X86Cpu):
     mode = cs.CS_MODE_32
 
     def __init__(self, memory, *args, **kwargs):
-        '''
+        """
         Builds a CPU model.
         :param memory: memory object for this CPU.
-        '''
+        """
         super().__init__(AMD64RegFile({'PC': 'EIP', 'STACK': 'ESP', 'FRAME': 'EBP'}),
                          memory,
                          *args,
                          **kwargs)
 
     def __str__(self):
-        '''
+        """
         Returns a string representation of cpu state
 
         :rtype: str
         :return: a string containing the name and current value for all the registers.
-        '''
+        """
         CHEADER = '\033[95m'
         CBLUE = '\033[94m'
         CGREEN = '\033[92m'
@@ -6334,7 +6334,7 @@ class I386Cpu(X86Cpu):
 
     @instruction
     def XLATB(cpu):
-        '''
+        """
         Table look-up translation.
 
         Locates a byte entry in a table in memory, using the contents of the
@@ -6357,5 +6357,5 @@ class I386Cpu(X86Cpu):
 
         :param cpu: current CPU.
         :param dest: destination operand.
-        '''
+        """
         cpu.AL = cpu.read_int(cpu.EBX + Operators.ZEXTEND(cpu.AL, 32), 8)

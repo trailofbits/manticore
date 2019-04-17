@@ -13,15 +13,15 @@ handler.setFormatter(formatter)
 
 
 class ContextFilter(logging.Filter):
-    '''
+    """
     This is a filter which injects contextual information into the log.
-    '''
+    """
 
     def summarized_name(self, name):
-        '''
+        """
         Produce a summarized record name
           i.e. manticore.core.executor -> m.c.executor
-        '''
+        """
         components = name.split('.')
         prefix = '.'.join(c[0] for c in components[:-1])
         return f'{prefix}.{components[-1]}'
@@ -41,9 +41,9 @@ class ContextFilter(logging.Filter):
     plain_levelname_format = u'{}:'
 
     def colored_level_name(self, levelname):
-        '''
+        """
         Colors the logging level in the logging record
-        '''
+        """
         if self.colors_disabled:
             return self.plain_levelname_format.format(levelname)
         else:
@@ -59,9 +59,9 @@ ctxfilter = ContextFilter()
 
 
 class CustomLogger(logging.Logger):
-    '''
+    """
     Custom Logger class that can grab the correct verbosity level from this module
-    '''
+    """
 
     def __init__(self, name, level=DEFAULT_LOG_LEVEL, *args):
         super().__init__(name, min(get_verbosity(name), level), *args)
@@ -123,10 +123,10 @@ def get_levels():
 
 def get_verbosity(logger_name):
     def match(name, pattern):
-        '''
+        """
         Pseudo globbing that only supports full fields. 'a.*.d' matches 'a.b.d'
         but not 'a.b.c.d'.
-        '''
+        """
         name_l, pattern_l = name.split('.'), pattern.split('.')
         if len(name_l) != len(pattern_l):
             return False

@@ -88,7 +88,7 @@ class FilterFunctions(Plugin):
 
 
 class LoopDepthLimiter(Plugin):
-    ''' This just aborts explorations that are too deep '''
+    """ This just aborts explorations that are too deep """
 
     def __init__(self, loop_count_threshold=5, **kwargs):
         super().__init__(**kwargs)
