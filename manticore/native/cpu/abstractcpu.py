@@ -141,8 +141,7 @@ class Operand:
 
         :param int reg_id: Register ID
         """
-        if reg_id >= capstone.x86.X86_REG_ENDING
-
+        if reg_id >= capstone.x86.X86_REG_ENDING:
             logger.warning("Trying to get register name for a non-register")
             return None
         cs_reg_name = self.cpu.instruction.reg_name(reg_id)
