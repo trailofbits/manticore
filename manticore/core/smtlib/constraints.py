@@ -1,10 +1,13 @@
-import itertools
 import sys
-
-from ...utils.helpers import PickleSerializer
-from .expression import BitVecVariable, BoolVariable, ArrayVariable, Array, Bool, BitVec, BoolConstant, ArrayProxy, BoolEq, Variable, Constant
-from .visitors import GetDeclarations, TranslatorSmtlib, get_variables, simplify, replace
 import logging
+import itertools
+from manticore.utils.helpers import PickleSerializer
+from manticore.core.smtlib.visitors import GetDeclarations, TranslatorSmtlib, get_variables, simplify, replace
+from manticore.core.smtlib.expression import (
+    BitVecVariable, BoolVariable, ArrayVariable, Array, Bool, BitVec,
+    BoolConstant, ArrayProxy, BoolEq, Variable, Constant
+)
+
 
 logger = logging.getLogger(__name__)
 
@@ -282,7 +285,7 @@ class ConstraintSet:
                     # Note that we are discarding the ArrayProxy encapsulation
                     new_var = self.new_array(index_max=foreign_var.index_max, index_bits=foreign_var.index_bits, value_bits=foreign_var.value_bits, name=migrated_name).array
                 else:
-                    raise NotImplemented(f"Unknown expression type {type(var)} encountered during expression migration")
+                    raise NotImplemented(f"Unknown expression type {type(foreign_var)} encountered during expression migration")
                 # Update the var to var mapping
                 object_migration_map[foreign_var] = new_var
                 # Update the name to name mapping

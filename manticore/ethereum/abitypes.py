@@ -1,13 +1,10 @@
 # Minimal ethereum type signature parser.
 # This parses the signature and types used to calculate the function hash
 import warnings
-
 import ply.yacc as yacc
-
 # Lexer
 # ------------------------------------------------------------
 import ply.lex as lex
-import re
 # List of token names.   This is always required
 tokens = (
     'COMMA',
@@ -16,7 +13,6 @@ tokens = (
     'LBRAKET',
     'RBRAKET',
     'NUMBER',
-
     'UINTN',
     'INTN',
     'UINT',

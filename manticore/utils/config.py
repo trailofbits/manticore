@@ -9,12 +9,11 @@ The config values and constant are gathered from three sources:
 
 in that order of priority.
 """
-import argparse
-import logging
-from itertools import product
-
 import os
 import yaml
+import logging
+import argparse
+import itertools
 
 _groups = {}
 
@@ -242,7 +241,7 @@ def load_overrides(path=None):
         names = [path]
     else:
         possible_names = ['mcore.yml', 'manticore.yml']
-        names = [os.path.join('.', ''.join(x)) for x in product(['', '.'], possible_names)]
+        names = [os.path.join('.', ''.join(x)) for x in itertools.product(['', '.'], possible_names)]
 
     for name in names:
         try:

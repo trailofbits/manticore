@@ -1,6 +1,5 @@
 import io
-
-from elftools.elf.elffile import ELFFile
+from elftools.elf import elffile
 
 
 class Binary:
@@ -43,7 +42,7 @@ class CGCElf(Binary):
     def __init__(self, filename):
         super().__init__(filename)
         stream = self._cgc2elf(filename)
-        self.elf = ELFFile(stream)
+        self.elf = elffile.ELFFile(stream)
         self.arch = {'x86': 'i386', 'x64': 'amd64'}[self.elf.get_machine_arch()]
 
         assert 'i386' == self.arch
@@ -77,7 +76,7 @@ class CGCElf(Binary):
 class Elf(Binary):
     def __init__(self, filename):
         super().__init__(filename)
-        self.elf = ELFFile(open(filename, 'rb'))
+        self.elf = elffile.ELFFile(open(filename, 'rb'))
         self.arch = {'x86': 'i386', 'x64': 'amd64'}[self.elf.get_machine_arch()]
         assert self.elf.header.e_type in ['ET_DYN', 'ET_EXEC', 'ET_CORE']
 

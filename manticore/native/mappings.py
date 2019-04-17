@@ -1,6 +1,6 @@
 import sys
+import mmap
 import ctypes
-import mmap as MMAP
 
 mmap_function = None
 munmap_function = None
@@ -38,8 +38,8 @@ munmap_function.argtype = [ctypes.c_void_p, ctypes.c_size_t]
 
 
 def mmap(fd, offset, size):
-    prot = MMAP.PROT_READ | MMAP.PROT_WRITE
-    flags = MMAP.MAP_PRIVATE
+    prot = mmap.mmap.PROT_READ | mmap.mmap.PROT_WRITE
+    flags = mmap.mmap.MAP_PRIVATE
 
     # When trying to map the contents of a file into memory, the offset must be a multiple of the page size (see
     # `man mmap`). So we need to align it before passing it to mmap(). Doing so also increases the size of the memory

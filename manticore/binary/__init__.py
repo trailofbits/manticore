@@ -15,7 +15,7 @@ and common API.  interpreters? linkers? linked DLLs?
 
 '''
 
-from .binary import Binary, CGCElf, Elf  # noqa
+from manticore.binary.binary import Binary, CGCElf, Elf  # noqa
 
 
 if __name__ == '__main__':

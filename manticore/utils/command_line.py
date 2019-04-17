@@ -2,9 +2,8 @@
 NOTE: Most of the code here is compatible/taken from Slither project ( https://github.com/trailofbits/slither ).
 to be compatible with it.
 """
-from prettytable import PrettyTable
-
-from ..ethereum.detectors import DetectorClassification
+import prettytable
+from manticore.ethereum.detectors import DetectorClassification
 
 classification_txt = {
     DetectorClassification.INFORMATIONAL: 'Informational',
@@ -28,11 +27,9 @@ def output_detectors(detector_classes):
         confidence = classification_txt[detector.CONFIDENCE]
         detectors_list.append((argument, help_info, impact, confidence))
 
-    table = PrettyTable(["Num",
-                         "Check",
-                         "What it Detects",
-                         "Impact",
-                         "Confidence"])
+    table = prettytable.PrettyTable(
+        ["Num", "Check", "What it Detects", "Impact", "Confidence"]
+    )
 
     # Sort by impact, confidence, and name
     detectors_list = sorted(detectors_list, key=lambda element: (element[2], element[3], element[0]))

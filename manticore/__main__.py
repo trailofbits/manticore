@@ -1,15 +1,13 @@
 """
 This is the Manticore's CLI `manticore` script.
 """
-import argparse
-import logging
 import sys
-
+import logging
+import argparse
 import pkg_resources
-
-from .core.manticore import ManticoreBase
-from .ethereum.cli import ethereum_main
-from .utils import config, log, install_helper
+from manticore.ethereum.cli import ethereum_main
+from manticore.core.manticore import ManticoreBase
+from manticore.utils import config, log, install_helper
 
 consts = config.get_group('main')
 consts.add('recursionlimit', default=10000,

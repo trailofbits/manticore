@@ -1,16 +1,15 @@
-
-from . import cgcrandom
-# TODO use cpu factory
-from ..native.cpu.x86 import I386Cpu
-from ..native.cpu.abstractcpu import Interruption, ConcretizeRegister, ConcretizeArgument
-from ..native.memory import SMemory32, Memory32
-from ..core.smtlib import *
-from ..core.executor import TerminateState
-from ..utils.helpers import issymbolic
-from ..binary import CGCElf
-from ..platforms.platform import Platform
-import logging
 import random
+import logging
+from manticore.binary import CGCElf
+from manticore.platforms import cgcrandom
+from manticore.native.cpu.x86 import I386Cpu
+from manticore.utils.helpers import issymbolic
+from manticore.platforms.platform import Platform
+from manticore.core.executor import TerminateState
+from manticore.core.smtlib import solver, operators
+from manticore.native.memory import SMemory32, Memory32
+from manticore.native.cpu.abstractcpu import Interruption, ConcretizeRegister, ConcretizeArgument
+# TODO use cpu factory
 
 logger = logging.getLogger(__name__)
 
@@ -228,7 +227,7 @@ class Decree(Platform):
         """
         filename = ""
         for i in range(0, 1024):
-            c = Operators.CHR(cpu.read_int(buf + i, 8))
+            c = operators.CHR(cpu.read_int(buf + i, 8))
             if c == '\x00':
                 break
             filename += c
@@ -573,7 +572,7 @@ class Decree(Platform):
                 raise RestartSyscall()
 
             for i in range(0, count):
-                value = Operators.CHR(cpu.read_int(buf + i, 8))
+                value = operators.CHR(cpu.read_int(buf + i, 8))
                 if not isinstance(value, str):
                     logger.debug("TRANSMIT: Writing symbolic values to file %d", fd)
                     #value = str(value)

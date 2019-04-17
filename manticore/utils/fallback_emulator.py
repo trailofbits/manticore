@@ -1,16 +1,11 @@
+"""Abstract classes for capstone/unicorn based cpus.
+No emulator by default
+"""
 import logging
-
-from ..native.memory import MemoryException
-
-from .helpers import issymbolic
-######################################################################
-# Abstract classes for capstone/unicorn based cpus
-# no emulator by default
-from unicorn import *
-from unicorn.x86_const import *
-from unicorn.arm_const import *
-
-from capstone import *
+import unicorn
+import capstone
+from manticore.utils.helpers import issymbolic
+from manticore.native.memory import MemoryException
 
 logger = logging.getLogger(__name__)
 
@@ -26,39 +21,39 @@ class UnicornEmulator:
         text = cpu.memory.map_containing(cpu.PC)
         # Keep track of all memory mappings. We start with just the text section
         self._should_be_mapped = {
-            text.start: (len(text), UC_PROT_READ | UC_PROT_EXEC)
+            text.start: (len(text), unicorn.UC_PROT_READ | unicorn.UC_PROT_EXEC)
         }
 
         # Keep track of all the memory Unicorn needs while executing this
         # instruction
         self._should_be_written = {}
 
-        if self._cpu.arch == CS_ARCH_ARM:
-            self._uc_arch = UC_ARCH_ARM
+        if self._cpu.arch == capstone.CS_ARCH_ARM:
+            self._uc_arch = unicorn.UC_ARCH_ARM
             self._uc_mode = {
-                CS_MODE_ARM: UC_MODE_ARM,
-                CS_MODE_THUMB: UC_MODE_THUMB
+                capstone.CS_MODE_ARM: unicorn.UC_MODE_ARM,
+                capstone.CS_MODE_THUMB: unicorn.UC_MODE_THUMB
             }[self._cpu.mode]
 
-        elif self._cpu.arch == CS_ARCH_ARM64:
-            self._uc_arch = UC_ARCH_ARM64
+        elif self._cpu.arch == capstone.CS_ARCH_ARM64:
+            self._uc_arch = unicorn.UC_ARCH_ARM64
             self._uc_mode = {
-                CS_MODE_ARM: UC_MODE_ARM,
-                CS_MODE_THUMB: UC_MODE_THUMB
+                capstone.CS_MODE_ARM: unicorn.UC_MODE_ARM,
+                capstone.CS_MODE_THUMB: unicorn.UC_MODE_THUMB
             }[self._cpu.mode]
 
-        elif self._cpu.arch == CS_ARCH_X86:
-            self._uc_arch = UC_ARCH_X86
+        elif self._cpu.arch == capstone.CS_ARCH_X86:
+            self._uc_arch = unicorn.UC_ARCH_X86
             self._uc_mode = {
-                CS_MODE_32: UC_MODE_32,
-                CS_MODE_64: UC_MODE_64
+                capstone.CS_MODE_32: unicorn.UC_MODE_32,
+                capstone.CS_MODE_64: unicorn.UC_MODE_64
             }[self._cpu.mode]
 
         else:
             raise NotImplementedError(f'Unsupported architecture: {self._cpu.arch}')
 
     def reset(self):
-        self._emu = Uc(self._uc_arch, self._uc_mode)
+        self._emu = unicorn.Uc(self._uc_arch, self._uc_mode)
         self._to_raise = None
 
     def _create_emulated_mapping(self, uc, address):
@@ -71,13 +66,13 @@ class UnicornEmulator:
 
         m = self._cpu.memory.map_containing(address)
 
-        permissions = UC_PROT_NONE
+        permissions = unicorn.UC_PROT_NONE
         if 'r' in m.perms:
-            permissions |= UC_PROT_READ
+            permissions |= unicorn.UC_PROT_READ
         if 'w' in m.perms:
-            permissions |= UC_PROT_WRITE
+            permissions |= unicorn.UC_PROT_WRITE
         if 'x' in m.perms:
-            permissions |= UC_PROT_EXEC
+            permissions |= unicorn.UC_PROT_EXEC
 
         uc.mem_map(m.start, len(m), permissions)
 
@@ -86,28 +81,28 @@ class UnicornEmulator:
         return m
 
     def get_unicorn_pc(self):
-        if self._cpu.arch == CS_ARCH_ARM:
-            return self._emu.reg_read(UC_ARM_REG_R15)
-        elif self._cpu.arch == CS_ARCH_X86:
-            if self._cpu.mode == CS_MODE_32:
-                return self._emu.reg_read(UC_X86_REG_EIP)
-            elif self._cpu.mode == CS_MODE_64:
-                return self._emu.reg_read(UC_X86_REG_RIP)
+        if self._cpu.arch == capstone.CS_ARCH_ARM:
+            return self._emu.reg_read(unicorn.arm_const.UC_ARM_REG_R15)
+        elif self._cpu.arch == capstone.CS_ARCH_X86:
+            if self._cpu.mode == capstone.CS_MODE_32:
+                return self._emu.reg_read(unicorn.x86_const.UC_X86_REG_EIP)
+            elif self._cpu.mode == capstone.CS_MODE_64:
+                return self._emu.reg_read(unicorn.x86_const.UC_X86_REG_RIP)
 
     def _hook_xfer_mem(self, uc, access, address, size, value, data):
         '''
         Handle memory operations from unicorn.
         '''
-        assert access in (UC_MEM_WRITE, UC_MEM_READ, UC_MEM_FETCH)
+        assert access in (unicorn.UC_MEM_WRITE, unicorn.UC_MEM_READ, unicorn.UC_MEM_FETCH)
 
-        if access == UC_MEM_WRITE:
+        if access == unicorn.UC_MEM_WRITE:
             self._cpu.write_int(address, value, size * 8)
 
         # If client code is attempting to read a value, we need to bring it
         # in from Manticore state. If we try to mem_write it here, Unicorn
         # will segfault. We add the value to a list of things that need to
         # be written, and ask to restart the emulation.
-        elif access == UC_MEM_READ:
+        elif access == unicorn.UC_MEM_READ:
             value = self._cpu.read_bytes(address, size)
 
             if address in self._should_be_written:
@@ -150,9 +145,9 @@ class UnicornEmulator:
         # in until unicorn gets updated.
         if unicorn.__version__ <= '1.0.0' and reg_name == 'APSR':
             reg_name = 'CPSR'
-        if self._cpu.arch == CS_ARCH_ARM:
+        if self._cpu.arch == capstone.CS_ARCH_ARM:
             return globals()['UC_ARM_REG_' + reg_name]
-        elif self._cpu.arch == CS_ARCH_X86:
+        elif self._cpu.arch == capstone.CS_ARCH_X86:
             # TODO(yan): This needs to handle AF register
             return globals()['UC_X86_REG_' + reg_name]
         else:
@@ -203,7 +198,7 @@ class UnicornEmulator:
         registers = set(self._cpu.canonical_registers)
 
         # Refer to EFLAGS instead of individual flags for x86
-        if self._cpu.arch == CS_ARCH_X86:
+        if self._cpu.arch == capstone.CS_ARCH_X86:
             # The last 8 canonical registers of x86 are individual flags; replace
             # with the eflags
             registers -= set(['CF', 'PF', 'AF', 'ZF', 'SF', 'IF', 'DF', 'OF'])
@@ -237,21 +232,21 @@ class UnicornEmulator:
         text_bytes = self._cpu.read_bytes(self._cpu.PC, instruction.size)
         self._emu.mem_write(self._cpu.PC, b''.join(text_bytes))
 
-        self._emu.hook_add(UC_HOOK_MEM_READ_UNMAPPED, self._hook_unmapped)
-        self._emu.hook_add(UC_HOOK_MEM_WRITE_UNMAPPED, self._hook_unmapped)
-        self._emu.hook_add(UC_HOOK_MEM_FETCH_UNMAPPED, self._hook_unmapped)
-        self._emu.hook_add(UC_HOOK_MEM_READ, self._hook_xfer_mem)
-        self._emu.hook_add(UC_HOOK_MEM_WRITE, self._hook_xfer_mem)
-        self._emu.hook_add(UC_HOOK_INTR, self._interrupt)
+        self._emu.hook_add(unicorn.UC_HOOK_MEM_READ_UNMAPPED, self._hook_unmapped)
+        self._emu.hook_add(unicorn.UC_HOOK_MEM_WRITE_UNMAPPED, self._hook_unmapped)
+        self._emu.hook_add(unicorn.UC_HOOK_MEM_FETCH_UNMAPPED, self._hook_unmapped)
+        self._emu.hook_add(unicorn.UC_HOOK_MEM_READ, self._hook_xfer_mem)
+        self._emu.hook_add(unicorn.UC_HOOK_MEM_WRITE, self._hook_xfer_mem)
+        self._emu.hook_add(unicorn.UC_HOOK_INTR, self._interrupt)
 
         saved_PC = self._cpu.PC
 
         try:
             pc = self._cpu.PC
-            if self._cpu.arch == CS_ARCH_ARM and self._uc_mode == UC_MODE_THUMB:
+            if self._cpu.arch == capstone.CS_ARCH_ARM and self._uc_mode == unicorn.UC_MODE_THUMB:
                 pc |= 1
             self._emu.emu_start(pc, self._cpu.PC + instruction.size, count=1)
-        except UcError as e:
+        except unicorn.UcError as e:
             # We request re-execution by signaling error; if we we didn't set
             # _should_try_again, it was likely an actual error
             if not self._should_try_again:

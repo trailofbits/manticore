@@ -1,16 +1,14 @@
-import logging
-import types
-
-import elftools
 import os
+import types
+import logging
+import elftools
+from manticore.utils import config
+from manticore.native.state import State
 from elftools.elf.elffile import ELFFile
+from manticore.utils.helpers import issymbolic
+from manticore.core.smtlib import ConstraintSet
+from manticore.core.manticore import ManticoreBase
 from elftools.elf.sections import SymbolTableSection
-
-from .state import State
-from ..core.manticore import ManticoreBase
-from ..core.smtlib import ConstraintSet
-from ..utils import log, config
-from ..utils.helpers import issymbolic
 
 logger = logging.getLogger(__name__)
 

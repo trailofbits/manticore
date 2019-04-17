@@ -1,11 +1,10 @@
 import hashlib
 import logging
-from contextlib import contextmanager
-
-from ..core.smtlib import Operators, Constant, simplify
-from ..utils.helpers import istainted, issymbolic, taint_with, get_taints
-from ..core.plugin import Plugin
-
+import contextlib
+from manticore.core.plugin import Plugin
+from manticore.core.smtlib import operators, simplify
+from manticore.core.smtlib.constraints import Constant
+from manticore.utils.helpers import istainted, issymbolic, taint_with, get_taints
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +33,7 @@ class Detector(Plugin):
     def get_findings(self, state):
         return state.context.setdefault('{:s}.findings'.format(self.name), set())
 
-    @contextmanager
+    @contextlib.contextmanager
     def locked_global_findings(self):
         with self.manticore.locked_context('{:s}.global_findings'.format(self.name), set) as global_findings:
             yield global_findings
@@ -228,7 +227,7 @@ class DetectReentrancySimple(Detector):
             msg_sender = state.platform.current_vm.caller
             pc = state.platform.current_vm.pc
 
-            is_enough_gas = Operators.UGT(gas, 2300)
+            is_enough_gas = operators.UGT(gas, 2300)
             if not state.can_be_true(is_enough_gas):
                 return
 
@@ -350,8 +349,8 @@ class DetectIntegerOverflow(Detector):
         +3fffffff     True    False    False    False    False    False    False
         +7fffffff     True     True     True    False    False    False    False
         """
-        sub = Operators.SEXTEND(a, 256, 512) - Operators.SEXTEND(b, 256, 512)
-        cond = Operators.OR(sub < -(1 << 255), sub >= (1 << 255))
+        sub = operators.SEXTEND(a, 256, 512) - operators.SEXTEND(b, 256, 512)
+        cond = operators.OR(sub < -(1 << 255), sub >= (1 << 255))
         return cond
 
     @staticmethod
@@ -369,8 +368,8 @@ class DetectIntegerOverflow(Detector):
         +3fffffff    False    False    False    False    False    False     True
         +7fffffff    False    False    False    False     True     True     True
         """
-        add = Operators.SEXTEND(a, 256, 512) + Operators.SEXTEND(b, 256, 512)
-        cond = Operators.OR(add < -(1 << 255), add >= (1 << 255))
+        add = operators.SEXTEND(a, 256, 512) + operators.SEXTEND(b, 256, 512)
+        cond = operators.OR(add < -(1 << 255), add >= (1 << 255))
         return cond
 
     @staticmethod
@@ -388,7 +387,7 @@ class DetectIntegerOverflow(Detector):
         ffffffff     True     True     True     True     True     True     True
         7fffffff     True     True     True    False    False     True    False
         """
-        cond = Operators.UGT(b, a)
+        cond = operators.UGT(b, a)
         return cond
 
     @staticmethod
@@ -406,8 +405,8 @@ class DetectIntegerOverflow(Detector):
         ffffffff     True     True     True     True     True     True     True
         7fffffff     True     True     True    False    False     True    False
         """
-        add = Operators.ZEXTEND(a, 512) + Operators.ZEXTEND(b, 512)
-        cond = Operators.UGE(add, 1 << 256)
+        add = operators.ZEXTEND(a, 512) + operators.ZEXTEND(b, 512)
+        cond = operators.UGE(add, 1 << 256)
         return cond
 
     @staticmethod
@@ -426,8 +425,8 @@ class DetectIntegerOverflow(Detector):
         +00000000ffffffff  +0000000000000000  +00000000ffffffff *+3ffffffec0000001 *+7ffffffe80000001 *+800000007fffffff *+bffffffe40000001 *+fffffffe00000001
 
         """
-        mul = Operators.SEXTEND(a, 256, 512) * Operators.SEXTEND(b, 256, 512)
-        cond = Operators.OR(mul < -(1 << 255), mul >= (1 << 255))
+        mul = operators.SEXTEND(a, 256, 512) * operators.SEXTEND(b, 256, 512)
+        cond = operators.OR(mul < -(1 << 255), mul >= (1 << 255))
         return cond
 
     @staticmethod
@@ -446,8 +445,8 @@ class DetectIntegerOverflow(Detector):
         +00000000ffffffff  +0000000000000000  +00000000ffffffff *+3ffffffec0000001 *+7ffffffe80000001 *+800000007fffffff *+bffffffe40000001 *+fffffffe00000001
 
         """
-        mul = Operators.SEXTEND(a, 256, 512) * Operators.SEXTEND(b, 256, 512)
-        cond = Operators.UGE(mul, 1 << 256)
+        mul = operators.SEXTEND(a, 256, 512) * operators.SEXTEND(b, 256, 512)
+        cond = operators.UGE(mul, 1 << 256)
         return cond
 
     def _check_finding(self, state, what):
@@ -612,7 +611,7 @@ class DetectUninitializedMemory(Detector):
         current_contract = state.platform.current_vm.address
         for known_contract, known_offset in initialized_memory:
             if current_contract == known_contract:
-                cbu = Operators.AND(cbu, offset != known_offset)
+                cbu = operators.AND(cbu, offset != known_offset)
         if state.can_be_true(cbu):
             self.add_finding_here(state, "Potentially reading uninitialized memory at instruction (address: %r, offset %r)" % (current_contract, offset))
 
@@ -640,7 +639,7 @@ class DetectUninitializedStorage(Detector):
         cbu = True  # Can be unknown
         context_name = '{:s}.initialized_storage'.format(self.name)
         for known_address, known_offset in state.context.get(context_name, ()):
-            cbu = Operators.AND(cbu, Operators.OR(address != known_address, offset != known_offset))
+            cbu = operators.AND(cbu, operators.OR(address != known_address, offset != known_offset))
 
         if state.can_be_true(cbu):
             self.add_finding_here(state, "Potentially reading uninitialized storage")

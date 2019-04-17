@@ -1,44 +1,43 @@
-from abc import abstractmethod
-
-import capstone as cs
+import abc
+import capstone
 
 
 class Instruction:
     """Capstone-like instruction to be used internally
     """
     @property
-    @abstractmethod
+    @abc.abstractmethod
     def address(self):
         pass
 
     @property
-    @abstractmethod
+    @abc.abstractmethod
     def mnemonic(self):
         pass
 
     @property
-    @abstractmethod
+    @abc.abstractmethod
     def op_str(self):
         pass
 
     @property
-    @abstractmethod
+    @abc.abstractmethod
     def size(self):
         pass
 
     @property
-    @abstractmethod
+    @abc.abstractmethod
     def operands(self):
         pass
 
     # FIXME (theo) eliminate one of the two of insn_name, name
     @property
-    @abstractmethod
+    @abc.abstractmethod
     def insn_name(self):
         pass
 
     @property
-    @abstractmethod
+    @abc.abstractmethod
     def name(self):
         pass
 
@@ -49,7 +48,7 @@ class Disasm:
     def __init__(self, disasm):
         self.disasm = disasm
 
-    @abstractmethod
+    @abc.abstractmethod
     def disassemble_instruction(self, code, pc):
         """Get next instruction based on the disassembler in use
 
@@ -61,7 +60,7 @@ class Disasm:
 class CapstoneDisasm(Disasm):
     def __init__(self, arch, mode):
         try:
-            cap = cs.Cs(arch, mode)
+            cap = capstone.Cs(arch, mode)
         except Exception as e:
             raise e
         cap.detail = True

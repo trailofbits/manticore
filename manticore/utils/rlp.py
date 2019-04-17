@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-import collections.abc
+import abc
 
 
 def int_to_bytes(n):
@@ -54,7 +52,7 @@ def rlp_encode(item):
             ret = item
         else:
             ret = encode_length(len(item), 0x80) + item
-    elif isinstance(item, collections.abc.Sequence):
+    elif isinstance(item, abc.Sequence):
         output = b''.join(map(rlp_encode, item))
         ret = encode_length(len(output), 0xC0) + output
     elif isinstance(item, int):

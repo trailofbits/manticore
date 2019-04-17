@@ -1,7 +1,6 @@
-from .expression import Expression, Bool, BitVec, Array, BitVecConstant  # noqa
-from .constraints import ConstraintSet  # noqa
-from .solver import *  # noqa
-from . import operators as Operators  # noqa
+from manticore.core.smtlib import operators  # noqa
+from manticore.core.smtlib.solver import *  # noqa
+from manticore.core.smtlib.constraints import ConstraintSet  # noqa
+from manticore.core.smtlib.expression import Expression, Bool, BitVec, Array, BitVecConstant  # noqa
 
-import logging
 logger = logging.getLogger(__name__)

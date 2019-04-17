@@ -1,17 +1,13 @@
-import logging
 import time
-
-from capstone import *
+import logging
+import capstone
 ######################################################################
 # Abstract classes for capstone/unicorn based cpus
 # no emulator by default
-from unicorn import *
-from unicorn.arm_const import *
-from unicorn.x86_const import *
-
-from .helpers import issymbolic
-from ..core.smtlib import Operators, solver
-from ..native.memory import MemoryException
+import unicorn
+from manticore.utils.helpers import issymbolic
+from manticore.core.smtlib import operators, solver
+from manticore.native.memory import MemoryException
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -23,13 +19,13 @@ def convert_permissions(m_perms):
     :param m_perms: Manticore perm string ('rwx')
     :return: Unicorn Permissions
     """
-    permissions = UC_PROT_NONE
+    permissions = unicorn.UC_PROT_NONE
     if 'r' in m_perms:
-        permissions |= UC_PROT_READ
+        permissions |= unicorn.UC_PROT_READ
     if 'w' in m_perms:
-        permissions |= UC_PROT_WRITE
+        permissions |= unicorn.UC_PROT_WRITE
     if 'x' in m_perms:
-        permissions |= UC_PROT_EXEC
+        permissions |= unicorn.UC_PROT_EXEC
     return permissions
 
 
@@ -81,23 +77,23 @@ class ConcreteUnicornEmulator:
         cpu.subscribe('did_unmap_memory', self.unmap_memory_callback)
         cpu.subscribe('did_protect_memory', self.protect_memory_callback)
 
-        if self._cpu.arch == CS_ARCH_X86:
-            self._uc_arch = UC_ARCH_X86
+        if self._cpu.arch == capstone.CS_ARCH_X86:
+            self._uc_arch = unicorn.UC_ARCH_X86
             self._uc_mode = {
-                CS_MODE_32: UC_MODE_32,
-                CS_MODE_64: UC_MODE_64
+                capstone.CS_MODE_32: unicorn.UC_MODE_32,
+                capstone.CS_MODE_64: unicorn.UC_MODE_64
             }[self._cpu.mode]
         else:
             raise NotImplementedError(f'Unsupported architecture: {self._cpu.arch}')
 
         self.reset()
 
-        self._emu.hook_add(UC_HOOK_MEM_READ_UNMAPPED, self._hook_unmapped)
-        self._emu.hook_add(UC_HOOK_MEM_WRITE_UNMAPPED, self._hook_unmapped)
-        self._emu.hook_add(UC_HOOK_MEM_FETCH_UNMAPPED, self._hook_unmapped)
-        self._emu.hook_add(UC_HOOK_MEM_WRITE, self._hook_write_mem)
-        self._emu.hook_add(UC_HOOK_INTR, self._interrupt)
-        self._emu.hook_add(UC_HOOK_INSN, self._hook_syscall, arg1=UC_X86_INS_SYSCALL)
+        self._emu.hook_add(unicorn.UC_HOOK_MEM_READ_UNMAPPED, self._hook_unmapped)
+        self._emu.hook_add(unicorn.UC_HOOK_MEM_WRITE_UNMAPPED, self._hook_unmapped)
+        self._emu.hook_add(unicorn.UC_HOOK_MEM_FETCH_UNMAPPED, self._hook_unmapped)
+        self._emu.hook_add(unicorn.UC_HOOK_MEM_WRITE, self._hook_write_mem)
+        self._emu.hook_add(unicorn.UC_HOOK_INTR, self._interrupt)
+        self._emu.hook_add(unicorn.UC_HOOK_INSN, self._hook_syscall, arg1=unicorn.x86_const.UC_X86_INS_SYSCALL)
 
         self.registers = set(self._cpu.canonical_registers)
         # The last 8 canonical registers of x86 are individual flags; replace with the eflags
@@ -117,7 +113,7 @@ class ConcreteUnicornEmulator:
             self.map_memory_callback(m.start, len(m), m.perms, m.name, 0, m.start)
 
     def reset(self):
-        self._emu = Uc(self._uc_arch, self._uc_mode)
+        self._emu = unicorn.Uc(self._uc_arch, self._uc_mode)
         self._to_raise = None
 
     def copy_memory(self, address, size):
@@ -168,13 +164,13 @@ class ConcreteUnicornEmulator:
     def get_unicorn_pc(self):
         """ Get the program counter from Unicorn regardless of architecture.
         Legacy method, since this module only works on x86."""
-        if self._cpu.arch == CS_ARCH_ARM:
-            return self._emu.reg_read(UC_ARM_REG_R15)
-        elif self._cpu.arch == CS_ARCH_X86:
-            if self._cpu.mode == CS_MODE_32:
-                return self._emu.reg_read(UC_X86_REG_EIP)
-            elif self._cpu.mode == CS_MODE_64:
-                return self._emu.reg_read(UC_X86_REG_RIP)
+        if self._cpu.arch == capstone.CS_ARCH_ARM:
+            return self._emu.reg_read(unicorn.arm_const.UC_ARM_REG_R15)
+        elif self._cpu.arch == capstone.CS_ARCH_X86:
+            if self._cpu.mode == capstone.CS_MODE_32:
+                return self._emu.reg_read(unicorn.x86_const.UC_X86_REG_EIP)
+            elif self._cpu.mode == capstone.CS_MODE_64:
+                return self._emu.reg_read(unicorn.x86_const.UC_X86_REG_RIP)
 
     def _hook_syscall(self, uc, data):
         """
@@ -221,9 +217,9 @@ class ConcreteUnicornEmulator:
         return True
 
     def _to_unicorn_id(self, reg_name):
-        if self._cpu.arch == CS_ARCH_ARM:
+        if self._cpu.arch == capstone.CS_ARCH_ARM:
             return globals()['UC_ARM_REG_' + reg_name]
-        elif self._cpu.arch == CS_ARCH_X86:
+        elif self._cpu.arch == capstone.CS_ARCH_X86:
             # TODO(yan): This needs to handle AF register
             custom_mapping = {'PC': 'RIP', 'STACK': 'RSP'}
             try:
@@ -267,7 +263,7 @@ class ConcreteUnicornEmulator:
             if self._stop_at:
                 logger.info(f"Emulating from {hex(pc)} to  {hex(self._stop_at)}")
             self._emu.emu_start(pc, m.end if not self._stop_at else self._stop_at, count=chunksize)
-        except UcError:
+        except unicorn.UcError:
             # We request re-execution by signaling error; if we we didn't set
             # _should_try_again, it was likely an actual error
             if not self._should_try_again:
@@ -317,7 +313,7 @@ class ConcreteUnicornEmulator:
             self._emu.mem_write(where, expr)
         else:
             if issymbolic(expr):
-                data = [Operators.CHR(Operators.EXTRACT(expr, offset, 8)) for offset in range(0, size, 8)]
+                data = [operators.CHR(operators.EXTRACT(expr, offset, 8)) for offset in range(0, size, 8)]
                 concrete_data = []
                 for c in data:
                     if issymbolic(c):
@@ -325,7 +321,7 @@ class ConcreteUnicornEmulator:
                     concrete_data.append(c)
                 data = concrete_data
             else:
-                data = [Operators.CHR(Operators.EXTRACT(expr, offset, 8)) for offset in range(0, size, 8)]
+                data = [operators.CHR(operators.EXTRACT(expr, offset, 8)) for offset in range(0, size, 8)]
             logger.debug(f"Writing back {hr_size(size // 8)} to {hex(where)}: {data}")
             # TODO - the extra encoding is to handle null bytes output as strings when we concretize. That's probably a bug.
             self._emu.mem_write(where, b''.join(b.encode('utf-8') if type(b) is str else b for b in data))

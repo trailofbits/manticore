@@ -1,4 +1,3 @@
-
 ###############################################################################
 # Solver
 # A solver maintains a companion smtlib capable process connected via stdio.
@@ -14,20 +13,19 @@
 # Once you Solver.check() it the status is changed to sat or unsat (or unknown+exception)
 # You can create new symbols operate on them. The declarations will be sent to the smtlib process when needed.
 # You can add new constraints. A new constraint may change the state from {None, sat} to {sat, unsat, unknown}
-import collections
-import shlex
-import time
-from subprocess import PIPE, Popen
-
 import re
-from abc import ABCMeta, abstractmethod
-
-from . import operators as Operators
-from .constraints import *
-from .visitors import *
-from ...exceptions import Z3NotFoundError, SolverError, SolverUnknown, TooManySolutions
-from ...utils import config
-from ...utils.helpers import issymbolic
+import abc
+import time
+import shlex
+import logging
+import subprocess
+import collections
+from manticore.utils import config
+from manticore.core.smtlib import operators
+from manticore.utils.helpers import issymbolic
+from manticore.core.smtlib.constraints import ConstraintSet
+from manticore.exceptions import Z3NotFoundError, SolverError, SolverUnknown, TooManySolutions
+from manticore.core.smtlib.visitors import Expression, simplify, Array, Bool, BitVec, Variable, translate_to_smtlib
 
 logger = logging.getLogger(__name__)
 
@@ -44,8 +42,8 @@ RE_OBJECTIVES_EXPR_VALUE = re.compile('\(objectives.*\((?P<expr>.*) (?P<value>\d
 RE_MIN_MAX_OBJECTIVE_EXPR_VALUE = re.compile('(?P<expr>.*?)\s+\|->\s+(?P<value>.*)', re.DOTALL)
 
 
-class Solver(metaclass=ABCMeta):
-    @abstractmethod
+class Solver(metaclass=abc.ABCMeta):
+    @abc.abstractmethod
     def __init__(self):
         pass
 
@@ -126,7 +124,7 @@ class Z3Solver(Solver):
         See https://github.com/Z3Prover/z3
         """
         super().__init__()
-        self._proc: Popen = None
+        self._proc: subprocess.Popen = None
 
         self._command = f'{consts.z3_bin} -t:{consts.timeout*1000} -memory:{consts.memory} -smt2 -in'
 
@@ -182,7 +180,11 @@ class Z3Solver(Solver):
         """Spawns z3 solver process"""
         assert '_proc' not in dir(self) or self._proc is None
         try:
-            self._proc = Popen(shlex.split(self._command), stdin=PIPE, stdout=PIPE, bufsize=0, universal_newlines=True)
+            self._proc = subprocess.Popen(
+                shlex.split(self._command),
+                stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                bufsize=0, universal_newlines=True
+            )
         except OSError as e:
             print(e, "Probably too many cached expressions? visitors._cache...")
             # Z3 was removed from the system in the middle of operation
@@ -220,7 +222,7 @@ class Z3Solver(Solver):
                 # Wait for termination, to avoid zombies.
                 self._proc.wait()
 
-        self._proc: Popen = None
+        self._proc: subprocess.Popen = None
 
     # marshaling/pickle
     def __getstate__(self):
@@ -434,7 +436,7 @@ class Z3Solver(Solver):
         """
         assert goal in ('maximize', 'minimize')
         assert isinstance(x, BitVec)
-        operation = {'maximize': Operators.UGE, 'minimize': Operators.ULE}[goal]
+        operation = {'maximize': operators.UGE, 'minimize': operators.ULE}[goal]
 
         with constraints as temp_cs:
             X = temp_cs.new_bitvec(x.size)
@@ -473,7 +475,7 @@ class Z3Solver(Solver):
                     self._reset(temp_cs)
                     self._send(aux.declaration)
 
-            operation = {'maximize': Operators.UGT, 'minimize': Operators.ULT}[goal]
+            operation = {'maximize': operators.UGT, 'minimize': operators.ULT}[goal]
             self._assert(aux == X)
             last_value = None
             i = 0

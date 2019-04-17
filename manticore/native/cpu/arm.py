@@ -1,15 +1,13 @@
-from functools import wraps
+import functools
 import logging
 import struct
-
-import capstone as cs
-
-from .abstractcpu import Abi, Cpu, Interruption, Operand, RegisterFile, SyscallAbi
-from .abstractcpu import instruction as abstract_instruction
-from .bitwise import *
-from .register import Register
-from ...core.smtlib import Operators, BitVecConstant
-from ...utils.helpers import issymbolic
+import capstone
+from manticore.core.smtlib import operators, BitVecConstant
+from manticore.native.cpu.abstractcpu import Abi, Cpu, Interruption, Operand, RegisterFile, SyscallAbi
+from manticore.native.cpu.abstractcpu import instruction as abstract_instruction
+from manticore.native.cpu.bitwise import *
+from manticore.native.cpu.register import Register
+from manticore.utils.helpers import issymbolic
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +22,7 @@ def HighBit(n):
 
 
 def instruction(body):
-    @wraps(body)
+    @functools.wraps(body)
     def instruction_implementation(cpu, *args, **kwargs):
         ret = None
 
@@ -38,7 +36,7 @@ def instruction(body):
                 # Let's remember next time we get here we should not do this again
                 cpu._at_symbolic_conditional = cpu.instruction.address
                 i_size = cpu.instruction.size
-                cpu.PC = Operators.ITEBV(cpu.address_bit_size, should_execute, cpu.PC - i_size,
+                cpu.PC = operators.ITEBV(cpu.address_bit_size, should_execute, cpu.PC - i_size,
                                          cpu.PC)
                 return
 
@@ -54,11 +52,11 @@ def instruction(body):
 
 
 _TYPE_MAP = {
-    cs.arm.ARM_OP_REG: 'register',
-    cs.arm.ARM_OP_MEM: 'memory',
-    cs.arm.ARM_OP_IMM: 'immediate',
-    cs.arm.ARM_OP_PIMM: 'coprocessor',
-    cs.arm.ARM_OP_CIMM: 'immediate'
+    capstone.arm.ARM_OP_REG: 'register',
+    capstone.arm.ARM_OP_MEM: 'memory',
+    capstone.arm.ARM_OP_IMM: 'immediate',
+    capstone.arm.ARM_OP_PIMM: 'coprocessor',
+    capstone.arm.ARM_OP_CIMM: 'immediate'
 }
 
 
@@ -70,14 +68,14 @@ class Armv7Operand(Operand):
     @property
     def type(self):
         """
-        Corresponds to capstone's `operand.type` (cs.arm.ARM_OP_*).
+        Corresponds to capstone's `operand.type` (capstone.arm.ARM_OP_*).
         """
         return self.__type
 
     @property
     def size(self):
         assert self.__type == 'register'
-        if cs.arm.ARM_REG_D0 <= self.op.reg <= cs.arm.ARM_REG_D31:
+        if capstone.arm.ARM_REG_D0 <= self.op.reg <= capstone.arm.ARM_REG_D31:
             return 64
         else:
             # FIXME check other types of operand sizes
@@ -146,7 +144,7 @@ class Armv7Operand(Operand):
 
         :return: True if operand is shifted, otherwise False.
         """
-        return self.op.shift.type != cs.arm.ARM_SFT_INVALID
+        return self.op.shift.type != capstone.arm.ARM_SFT_INVALID
 
     def address(self):
         assert self.__type == 'memory'
@@ -181,7 +179,7 @@ class Armv7Operand(Operand):
         # Regardless of mode, our implementation of read(PC) will return the address
         # of the instruction following the next instruction.
         if self.mem.base in ('PC', 'R15'):
-            if self.cpu.mode == cs.CS_MODE_ARM:
+            if self.cpu.mode == capstone.CS_MODE_ARM:
                 logger.debug(f"ARM mode PC relative addressing: PC + offset: 0x{base:x} + 0x{4:x}")
                 return base + 4
             else:
@@ -198,8 +196,8 @@ class Armv7Operand(Operand):
         """Manually compute the carry bit produced by expanding an immediate operand (see ARMExpandImm_C)"""
         insn = struct.unpack('<I', self.cpu.instruction.bytes)[0]
         unrotated = insn & Mask(8)
-        shift = Operators.EXTRACT(insn, 8, 4)
-        _, carry = self.cpu._shift(unrotated, cs.arm.ARM_SFT_ROR, 2 * shift, carryIn)
+        shift = operators.EXTRACT(insn, 8, 4)
+        _, carry = self.cpu._shift(unrotated, capstone.arm.ARM_SFT_ROR, 2 * shift, carryIn)
         return carry
 
 
@@ -241,7 +239,7 @@ class Armv7RegisterFile(RegisterFile):
     def _read_APSR(self):
         def make_apsr_flag(flag_expr, offset):
             """Helper for constructing an expression for the APSR register"""
-            return Operators.ITEBV(32, flag_expr,
+            return operators.ITEBV(32, flag_expr,
                                    BitVecConstant(32, 1 << offset),
                                    BitVecConstant(32, 0))
 
@@ -269,10 +267,10 @@ class Armv7RegisterFile(RegisterFile):
 
     def _write_APSR(self, apsr):
         """Auxiliary function - Writes flags from a full APSR (only 4 msb used)"""
-        V = Operators.EXTRACT(apsr, 28, 1)
-        C = Operators.EXTRACT(apsr, 29, 1)
-        Z = Operators.EXTRACT(apsr, 30, 1)
-        N = Operators.EXTRACT(apsr, 31, 1)
+        V = operators.EXTRACT(apsr, 28, 1)
+        C = operators.EXTRACT(apsr, 29, 1)
+        Z = operators.EXTRACT(apsr, 30, 1)
+        N = operators.EXTRACT(apsr, 31, 1)
 
         self.write('APSR_V', V)
         self.write('APSR_C', C)
@@ -356,7 +354,7 @@ class Armv7Cpu(Cpu):
     address_bit_size = 32
     max_instr_width = 4
     machine = 'armv7'
-    arch = cs.CS_ARCH_ARM
+    arch = capstone.capstone_ARCH_ARM
     # 'mode' is usually defined here as a class member, but it can change, so
     # it's an instance property.
 
@@ -364,7 +362,7 @@ class Armv7Cpu(Cpu):
         self._it_conditional = list()
         self._last_flags = {'C': 0, 'V': 0, 'N': 0, 'Z': 0, 'GE': 0}
         self._at_symbolic_conditional = None
-        self._mode = cs.CS_MODE_ARM
+        self._mode = capstone.capstone_MODE_ARM
         super().__init__(Armv7RegisterFile(), memory)
 
     def __getstate__(self):
@@ -388,16 +386,16 @@ class Armv7Cpu(Cpu):
 
     @mode.setter
     def mode(self, new_mode):
-        assert new_mode in (cs.CS_MODE_ARM, cs.CS_MODE_THUMB)
+        assert new_mode in (capstone.capstone_MODE_ARM, capstone.capstone_MODE_THUMB)
 
         if self._mode != new_mode:
-            logger.debug(f'swapping into {"ARM" if new_mode == cs.CS_MODE_ARM else "THUMB"} mode')
+            logger.debug(f'swapping into {"ARM" if new_mode == capstone.capstone_MODE_ARM else "THUMB"} mode')
 
         self._mode = new_mode
         self.disasm.disasm.mode = new_mode
 
     def _set_mode_by_val(self, val):
-        new_mode = Operators.ITEBV(self.address_bit_size, (val & 0x1) == 0x1, cs.CS_MODE_THUMB, cs.CS_MODE_ARM)
+        new_mode = operators.ITEBV(self.address_bit_size, (val & 0x1) == 0x1, capstone.capstone_MODE_THUMB, capstone.capstone_MODE_ARM)
 
         if issymbolic(new_mode):
             from ..state import Concretize
@@ -410,11 +408,11 @@ class Armv7Cpu(Cpu):
 
     def _swap_mode(self):
         """Toggle between ARM and Thumb mode"""
-        assert self.mode in (cs.CS_MODE_ARM, cs.CS_MODE_THUMB)
-        if self.mode == cs.CS_MODE_ARM:
-            self.mode = cs.CS_MODE_THUMB
+        assert self.mode in (capstone.capstone_MODE_ARM, capstone.capstone_MODE_THUMB)
+        if self.mode == capstone.capstone_MODE_ARM:
+            self.mode = capstone.capstone_MODE_THUMB
         else:
-            self.mode = cs.CS_MODE_ARM
+            self.mode = capstone.capstone_MODE_ARM
 
     # Flags that are the result of arithmetic instructions. Unconditionally
     # set, but conditionally committed.
@@ -447,35 +445,35 @@ class Armv7Cpu(Cpu):
 
     def _shift(cpu, value, _type, amount, carry):
         """See Shift() and Shift_C() in the ARM manual"""
-        assert(cs.arm.ARM_SFT_INVALID < _type <= cs.arm.ARM_SFT_RRX_REG)
+        assert(capstone.arm.ARM_SFT_INVALID < _type <= capstone.arm.ARM_SFT_RRX_REG)
 
         # XXX: Capstone should set the value of an RRX shift to 1, which is
         # asserted in the manual, but it sets it to 0, so we have to check
-        if _type in (cs.arm.ARM_SFT_RRX, cs.arm.ARM_SFT_RRX_REG) and amount != 1:
+        if _type in (capstone.arm.ARM_SFT_RRX, capstone.arm.ARM_SFT_RRX_REG) and amount != 1:
             amount = 1
 
-        elif _type in range(cs.arm.ARM_SFT_ASR_REG, cs.arm.ARM_SFT_RRX_REG + 1):
-            if cpu.mode == cs.CS_MODE_THUMB:
+        elif _type in range(capstone.arm.ARM_SFT_ASR_REG, capstone.arm.ARM_SFT_RRX_REG + 1):
+            if cpu.mode == capstone.capstone_MODE_THUMB:
                 src = amount.read()
             else:
                 src_reg = cpu.instruction.reg_name(amount).upper()
                 src = cpu.regfile.read(src_reg)
-            amount = Operators.EXTRACT(src, 0, 8)
+            amount = operators.EXTRACT(src, 0, 8)
 
         if amount == 0:
             return value, carry
 
         width = cpu.address_bit_size
 
-        if _type in (cs.arm.ARM_SFT_ASR, cs.arm.ARM_SFT_ASR_REG):
+        if _type in (capstone.arm.ARM_SFT_ASR, capstone.arm.ARM_SFT_ASR_REG):
             return ASR_C(value, amount, width)
-        elif _type in (cs.arm.ARM_SFT_LSL, cs.arm.ARM_SFT_LSL_REG):
+        elif _type in (capstone.arm.ARM_SFT_LSL, capstone.arm.ARM_SFT_LSL_REG):
             return LSL_C(value, amount, width)
-        elif _type in (cs.arm.ARM_SFT_LSR, cs.arm.ARM_SFT_LSR_REG):
+        elif _type in (capstone.arm.ARM_SFT_LSR, capstone.arm.ARM_SFT_LSR_REG):
             return LSR_C(value, amount, width)
-        elif _type in (cs.arm.ARM_SFT_ROR, cs.arm.ARM_SFT_ROR_REG):
+        elif _type in (capstone.arm.ARM_SFT_ROR, capstone.arm.ARM_SFT_ROR_REG):
             return ROR_C(value, amount, width)
-        elif _type in (cs.arm.ARM_SFT_RRX, cs.arm.ARM_SFT_RRX_REG):
+        elif _type in (capstone.arm.ARM_SFT_RRX, capstone.arm.ARM_SFT_RRX_REG):
             return RRX_C(value, carry, width)
 
         raise NotImplementedError("Bad shift value")
@@ -537,7 +535,7 @@ class Armv7Cpu(Cpu):
     def should_commit_flags(cpu):
         # workaround for a capstone bug (issue #980);
         # the bug has been fixed the 'master' and 'next' branches of capstone as of 2017-07-31
-        if cpu.instruction.id == cs.arm.ARM_INS_UADD8:
+        if cpu.instruction.id == capstone.arm.ARM_INS_UADD8:
             return True
 
         return cpu.instruction.update_flags
@@ -545,7 +543,7 @@ class Armv7Cpu(Cpu):
     def should_execute_conditional(cpu):
         # for the IT instruction, the cc applies to the subsequent instructions,
         # so the IT instruction should be executed regardless of its cc
-        if cpu.instruction.id == cs.arm.ARM_INS_IT:
+        if cpu.instruction.id == capstone.arm.ARM_INS_IT:
             return True
 
         # support for the it[x[y[z]]] <op> instructions
@@ -561,36 +559,36 @@ class Armv7Cpu(Cpu):
         V = cpu.regfile.read('APSR_V')
         Z = cpu.regfile.read('APSR_Z')
 
-        if cc == cs.arm.ARM_CC_AL:
+        if cc == capstone.arm.ARM_CC_AL:
             ret = True
-        elif cc == cs.arm.ARM_CC_EQ:
+        elif cc == capstone.arm.ARM_CC_EQ:
             ret = Z
-        elif cc == cs.arm.ARM_CC_NE:
-            ret = Operators.NOT(Z)
-        elif cc == cs.arm.ARM_CC_HS:
+        elif cc == capstone.arm.ARM_CC_NE:
+            ret = operators.NOT(Z)
+        elif cc == capstone.arm.ARM_CC_HS:
             ret = C
-        elif cc == cs.arm.ARM_CC_LO:
-            ret = Operators.NOT(C)
-        elif cc == cs.arm.ARM_CC_MI:
+        elif cc == capstone.arm.ARM_CC_LO:
+            ret = operators.NOT(C)
+        elif cc == capstone.arm.ARM_CC_MI:
             ret = N
-        elif cc == cs.arm.ARM_CC_PL:
-            ret = Operators.NOT(N)
-        elif cc == cs.arm.ARM_CC_VS:
+        elif cc == capstone.arm.ARM_CC_PL:
+            ret = operators.NOT(N)
+        elif cc == capstone.arm.ARM_CC_VS:
             ret = V
-        elif cc == cs.arm.ARM_CC_VC:
-            ret = Operators.NOT(V)
-        elif cc == cs.arm.ARM_CC_HI:
-            ret = Operators.AND(C, Operators.NOT(Z))
-        elif cc == cs.arm.ARM_CC_LS:
-            ret = Operators.OR(Operators.NOT(C), Z)
-        elif cc == cs.arm.ARM_CC_GE:
+        elif cc == capstone.arm.ARM_CC_VC:
+            ret = operators.NOT(V)
+        elif cc == capstone.arm.ARM_CC_HI:
+            ret = operators.AND(C, operators.NOT(Z))
+        elif cc == capstone.arm.ARM_CC_LS:
+            ret = operators.OR(operators.NOT(C), Z)
+        elif cc == capstone.arm.ARM_CC_GE:
             ret = N == V
-        elif cc == cs.arm.ARM_CC_LT:
+        elif cc == capstone.arm.ARM_CC_LT:
             ret = N != V
-        elif cc == cs.arm.ARM_CC_GT:
-            ret = Operators.AND(Operators.NOT(Z), N == V)
-        elif cc == cs.arm.ARM_CC_LE:
-            ret = Operators.OR(Z, N != V)
+        elif cc == capstone.arm.ARM_CC_GT:
+            ret = operators.AND(operators.NOT(Z), N == V)
+        elif cc == capstone.arm.ARM_CC_LE:
+            ret = operators.OR(Z, N != V)
         else:
             raise NotImplementedError("Bad conditional tag")
 
@@ -615,14 +613,14 @@ class Armv7Cpu(Cpu):
         sums = list()
         carries = list()
         for i in range(4):
-            uo1 = UInt(Operators.ZEXTEND(Operators.EXTRACT(op1, (8 * i), 8), 9), 9)
-            uo2 = UInt(Operators.ZEXTEND(Operators.EXTRACT(op2, (8 * i), 8), 9), 9)
+            uo1 = UInt(operators.ZEXTEND(operators.EXTRACT(op1, (8 * i), 8), 9), 9)
+            uo2 = UInt(operators.ZEXTEND(operators.EXTRACT(op2, (8 * i), 8), 9), 9)
             byte = uo1 + uo2
-            carry = Operators.EXTRACT(byte, 8, 1)
-            sums.append(Operators.EXTRACT(byte, 0, 8))
+            carry = operators.EXTRACT(byte, 8, 1)
+            sums.append(operators.EXTRACT(byte, 0, 8))
             carries.append(carry)
-        dest.write(Operators.CONCAT(32, *reversed(sums)))
-        cpu.set_flags(GE=Operators.CONCAT(4, *reversed(carries)))
+        dest.write(operators.CONCAT(32, *reversed(sums)))
+        cpu.set_flags(GE=operators.CONCAT(4, *reversed(carries)))
 
     @instruction
     def SEL(cpu, dest, op1, op2):
@@ -631,10 +629,10 @@ class Armv7Cpu(Cpu):
         result = list()
         GE = cpu.regfile.read('APSR_GE')
         for i in range(4):
-            bit = Operators.EXTRACT(GE, i, 1)
+            bit = operators.EXTRACT(GE, i, 1)
             result.append(
-                Operators.ITEBV(8, bit, Operators.EXTRACT(op1val, i * 8, 8), Operators.EXTRACT(op2val, i * 8, 8)))
-        dest.write(Operators.CONCAT(32, *reversed(result)))
+                operators.ITEBV(8, bit, operators.EXTRACT(op1val, i * 8, 8), operators.EXTRACT(op2val, i * 8, 8)))
+        dest.write(operators.CONCAT(32, *reversed(result)))
 
     @instruction
     def MOV(cpu, dest, src):
@@ -647,7 +645,7 @@ class Armv7Cpu(Cpu):
         :param Armv7Operand dest: The destination operand; register.
         :param Armv7Operand src: The source operand; register or immediate.
         """
-        if cpu.mode == cs.CS_MODE_ARM:
+        if cpu.mode == capstone.capstone_MODE_ARM:
             result, carry_out = src.read(with_carry=True)
             dest.write(result)
             cpu.set_flags(C=carry_out, N=HighBit(result), Z=(result == 0))
@@ -711,7 +709,7 @@ class Armv7Cpu(Cpu):
         writeback = cpu._compute_writeback(src, offset)
         dest1.write(mem1)
         dest2.write(mem2)
-        cpu._cs_hack_ldr_str_writeback(src, offset, writeback)
+        cpu._capstone_hack_ldr_str_writeback(src, offset, writeback)
 
     @instruction
     def STRD(cpu, src1, src2, dest, offset=None):
@@ -724,7 +722,7 @@ class Armv7Cpu(Cpu):
         writeback = cpu._compute_writeback(dest, offset)
         cpu.write_int(dest.address(), val1, 32)
         cpu.write_int(dest.address() + 4, val2, 32)
-        cpu._cs_hack_ldr_str_writeback(dest, offset, writeback)
+        cpu._capstone_hack_ldr_str_writeback(dest, offset, writeback)
 
     @instruction
     def LDREX(cpu, dest, src, offset=None):
@@ -762,7 +760,7 @@ class Armv7Cpu(Cpu):
         :param int src_width: bits to consider of the src operand
         """
         val = GetNBits(src.read(), src_width)
-        word = Operators.ZEXTEND(val, cpu.address_bit_size)
+        word = operators.ZEXTEND(val, cpu.address_bit_size)
         dest.write(word)
 
     @instruction
@@ -799,7 +797,7 @@ class Armv7Cpu(Cpu):
         wbaddr = operand.get_mem_base_addr() + off
         return wbaddr
 
-    def _cs_hack_ldr_str_writeback(cpu, operand, offset, val):
+    def _capstone_hack_ldr_str_writeback(cpu, operand, offset, val):
         # capstone bug doesn't set writeback correctly for postindex reg
         if cpu.instruction.writeback or offset:
             operand.writeback(val)
@@ -808,7 +806,7 @@ class Armv7Cpu(Cpu):
         val = src.read()
         writeback = cpu._compute_writeback(dest, offset)
         cpu.write_int(dest.address(), val, width)
-        cpu._cs_hack_ldr_str_writeback(dest, offset, writeback)
+        cpu._capstone_hack_ldr_str_writeback(dest, offset, writeback)
 
     @instruction
     def STR(cpu, *args):
@@ -826,15 +824,15 @@ class Armv7Cpu(Cpu):
         mem = cpu.read_int(src.address(), width)
         writeback = cpu._compute_writeback(src, offset)
         if is_signed:
-            word = Operators.SEXTEND(mem, width, cpu.address_bit_size)
+            word = operators.SEXTEND(mem, width, cpu.address_bit_size)
         else:
-            word = Operators.ZEXTEND(mem, cpu.address_bit_size)
+            word = operators.ZEXTEND(mem, cpu.address_bit_size)
         if dest.reg in ('PC', 'R15'):
             cpu._set_mode_by_val(word)
             word &= ~0x1
             logger.debug(f"LDR writing 0x{word:x} -> PC")
         dest.write(word)
-        cpu._cs_hack_ldr_str_writeback(src, offset, writeback)
+        cpu._capstone_hack_ldr_str_writeback(src, offset, writeback)
 
     @instruction
     def LDR(cpu, dest, src, offset=None):
@@ -860,21 +858,21 @@ class Armv7Cpu(Cpu):
         W = cpu.address_bit_size
         # masking to 32 because sometimes capstone's op.imm field is negative.
         # this converts it back to unsigned
-        _op2 = Operators.ZEXTEND(_op2, W)
+        _op2 = operators.ZEXTEND(_op2, W)
 
         uo1 = UInt(_op1, W * 2)
         uo2 = UInt(_op2, W * 2)
         c = UInt(carry, W * 2)
         unsigned_sum = uo1 + uo2 + c
 
-        so1 = SInt(Operators.SEXTEND(_op1, W, W * 2), W * 2)
-        so2 = SInt(Operators.SEXTEND(_op2, W, W * 2), W * 2)
+        so1 = SInt(operators.SEXTEND(_op1, W, W * 2), W * 2)
+        so2 = SInt(operators.SEXTEND(_op2, W, W * 2), W * 2)
         signed_sum = so1 + so2 + c
 
         result = GetNBits(unsigned_sum, W)
 
         carry_out = UInt(result, W * 2) != unsigned_sum
-        overflow = SInt(Operators.SEXTEND(result, W, W * 2), W * 2) != signed_sum
+        overflow = SInt(operators.SEXTEND(result, W, W * 2), W * 2) != signed_sum
 
         cpu.set_flags(C=carry_out,
                       V=overflow,
@@ -1007,7 +1005,7 @@ class Armv7Cpu(Cpu):
 
     @instruction
     def BLE(cpu, dest):
-        cpu.PC = Operators.ITEBV(cpu.address_bit_size,
+        cpu.PC = operators.ITEBV(cpu.address_bit_size,
                                  cpu.regfile.read('APSR_Z'),
                                  dest.read(),
                                  cpu.PC)
@@ -1025,7 +1023,7 @@ class Armv7Cpu(Cpu):
             selects an encoding that will set imm32 to that offset. Allowed offsets are even numbers in
             the range 0 to 126.
         """
-        cpu.PC = Operators.ITEBV(cpu.address_bit_size,
+        cpu.PC = operators.ITEBV(cpu.address_bit_size,
                                  op.read(), cpu.PC, dest.read())
 
     @instruction
@@ -1041,13 +1039,13 @@ class Armv7Cpu(Cpu):
             selects an encoding that will set imm32 to that offset. Allowed offsets are even numbers in
             the range 0 to 126.
         """
-        cpu.PC = Operators.ITEBV(cpu.address_bit_size,
+        cpu.PC = operators.ITEBV(cpu.address_bit_size,
                                  op.read(), dest.read(), cpu.PC)
 
     @instruction
     def BL(cpu, label):
         next_instr_addr = cpu.regfile.read('PC')
-        if cpu.mode == cs.CS_MODE_THUMB:
+        if cpu.mode == capstone.capstone_MODE_THUMB:
             cpu.regfile.write('LR', next_instr_addr + 1)
         else:
             cpu.regfile.write('LR', next_instr_addr)
@@ -1058,7 +1056,7 @@ class Armv7Cpu(Cpu):
         address = cpu.PC
         target = dest.read()
         next_instr_addr = cpu.regfile.read('PC')
-        if cpu.mode == cs.CS_MODE_THUMB:
+        if cpu.mode == capstone.capstone_MODE_THUMB:
             cpu.regfile.write('LR', next_instr_addr + 1)
         else:
             cpu.regfile.write('LR', next_instr_addr)
@@ -1092,7 +1090,7 @@ class Armv7Cpu(Cpu):
         # Specifies the index register. This contains an integer pointing to a single byte within the
         # table. The offset within the table is the value of the index.
         offset = cpu.read_int(base_addr + dest.get_mem_offset(), 8)
-        offset = Operators.ZEXTEND(offset, cpu.address_bit_size)
+        offset = operators.ZEXTEND(offset, cpu.address_bit_size)
 
         cpu.PC += (offset << 1)
 
@@ -1116,7 +1114,7 @@ class Armv7Cpu(Cpu):
         # Specifies the index register. This contains an integer pointing to a halfword within the table.
         # The offset within the table is twice the value of the index.
         offset = cpu.read_int(base_addr + dest.get_mem_offset(), 16)
-        offset = Operators.ZEXTEND(offset, cpu.address_bit_size)
+        offset = operators.ZEXTEND(offset, cpu.address_bit_size)
 
         cpu.PC += (offset << 1)
 
@@ -1149,8 +1147,8 @@ class Armv7Cpu(Cpu):
         result = 32
 
         for pos in range(cpu.address_bit_size):
-            cond = Operators.EXTRACT(value, pos, 1) == 1
-            result = Operators.ITEBV(cpu.address_bit_size, cond, msb - pos, result)
+            cond = operators.EXTRACT(value, pos, 1) == 1
+            result = operators.ITEBV(cpu.address_bit_size, cond, msb - pos, result)
 
         dest.write(result)
 
@@ -1163,13 +1161,13 @@ class Armv7Cpu(Cpu):
         opval = op.read()
         _bytes = list()
         for i in range(4):
-            _bytes.append(Operators.EXTRACT(opval, i * 8, 8))
-        dest.write(Operators.CONCAT(32, *_bytes))
+            _bytes.append(operators.EXTRACT(opval, i * 8, 8))
+        dest.write(operators.CONCAT(32, *_bytes))
 
     @instruction
     def SXTH(cpu, dest, op):
         _op = op.read()
-        dest.write(Operators.SEXTEND(Operators.EXTRACT(_op, 0, 16), 16, 32))
+        dest.write(operators.SEXTEND(operators.EXTRACT(_op, 0, 16), 16, 32))
 
     def _LDM(cpu, insn_id, base, regs):
         """
@@ -1190,8 +1188,8 @@ class Armv7Cpu(Cpu):
         if cpu.instruction.usermode:
             raise NotImplementedError("Use of the S bit is not supported")
 
-        increment = insn_id in (cs.arm.ARM_INS_LDM, cs.arm.ARM_INS_LDMIB)
-        after = insn_id in (cs.arm.ARM_INS_LDM, cs.arm.ARM_INS_LDMDA)
+        increment = insn_id in (capstone.arm.ARM_INS_LDM, capstone.arm.ARM_INS_LDMIB)
+        after = insn_id in (capstone.arm.ARM_INS_LDM, capstone.arm.ARM_INS_LDMDA)
 
         address = base.read()
 
@@ -1216,19 +1214,19 @@ class Armv7Cpu(Cpu):
 
     @instruction
     def LDM(cpu, base, *regs):
-        cpu._LDM(cs.arm.ARM_INS_LDM, base, regs)
+        cpu._LDM(capstone.arm.ARM_INS_LDM, base, regs)
 
     @instruction
     def LDMIB(cpu, base, *regs):
-        cpu._LDM(cs.arm.ARM_INS_LDMIB, base, regs)
+        cpu._LDM(capstone.arm.ARM_INS_LDMIB, base, regs)
 
     @instruction
     def LDMDA(cpu, base, *regs):
-        cpu._LDM(cs.arm.ARM_INS_LDMDA, base, regs)
+        cpu._LDM(capstone.arm.ARM_INS_LDMDA, base, regs)
 
     @instruction
     def LDMDB(cpu, base, *regs):
-        cpu._LDM(cs.arm.ARM_INS_LDMDB, base, regs)
+        cpu._LDM(capstone.arm.ARM_INS_LDMDB, base, regs)
 
     def _STM(cpu, insn_id, base, regs):
         """
@@ -1246,8 +1244,8 @@ class Armv7Cpu(Cpu):
         if cpu.instruction.usermode:
             raise NotImplementedError("Use of the S bit is not supported")
 
-        increment = insn_id in (cs.arm.ARM_INS_STM, cs.arm.ARM_INS_STMIB)
-        after = insn_id in (cs.arm.ARM_INS_STM, cs.arm.ARM_INS_STMDA)
+        increment = insn_id in (capstone.arm.ARM_INS_STM, capstone.arm.ARM_INS_STMIB)
+        after = insn_id in (capstone.arm.ARM_INS_STM, capstone.arm.ARM_INS_STMDA)
 
         address = base.read()
 
@@ -1265,19 +1263,19 @@ class Armv7Cpu(Cpu):
 
     @instruction
     def STM(cpu, base, *regs):
-        cpu._STM(cs.arm.ARM_INS_STM, base, regs)
+        cpu._STM(capstone.arm.ARM_INS_STM, base, regs)
 
     @instruction
     def STMIB(cpu, base, *regs):
-        cpu._STM(cs.arm.ARM_INS_STMIB, base, regs)
+        cpu._STM(capstone.arm.ARM_INS_STMIB, base, regs)
 
     @instruction
     def STMDA(cpu, base, *regs):
-        cpu._STM(cs.arm.ARM_INS_STMDA, base, regs)
+        cpu._STM(capstone.arm.ARM_INS_STMDA, base, regs)
 
     @instruction
     def STMDB(cpu, base, *regs):
-        cpu._STM(cs.arm.ARM_INS_STMDB, base, regs)
+        cpu._STM(capstone.arm.ARM_INS_STMDB, base, regs)
 
     def _bitwise_instruction(cpu, operation, dest, op1, *op2):
         if op2:
@@ -1349,23 +1347,23 @@ class Armv7Cpu(Cpu):
         - In ARM mode, something like `lsr r1, 3` will not have `rest` and op will be
             the immediate.
         """
-        assert insn_id in (cs.arm.ARM_INS_ASR, cs.arm.ARM_INS_LSL, cs.arm.ARM_INS_LSR)
+        assert insn_id in (capstone.arm.ARM_INS_ASR, capstone.arm.ARM_INS_LSL, capstone.arm.ARM_INS_LSR)
 
-        if insn_id == cs.arm.ARM_INS_ASR:
+        if insn_id == capstone.arm.ARM_INS_ASR:
             if rest and rest[0].type == 'immediate':
-                srtype = cs.arm.ARM_SFT_ASR
+                srtype = capstone.arm.ARM_SFT_ASR
             else:
-                srtype = cs.arm.ARM_SFT_ASR_REG
-        elif insn_id == cs.arm.ARM_INS_LSL:
+                srtype = capstone.arm.ARM_SFT_ASR_REG
+        elif insn_id == capstone.arm.ARM_INS_LSL:
             if rest and rest[0].type == 'immediate':
-                srtype = cs.arm.ARM_SFT_LSL
+                srtype = capstone.arm.ARM_SFT_LSL
             else:
-                srtype = cs.arm.ARM_SFT_LSL_REG
-        elif insn_id == cs.arm.ARM_INS_LSR:
+                srtype = capstone.arm.ARM_SFT_LSL_REG
+        elif insn_id == capstone.arm.ARM_INS_LSR:
             if rest and rest[0].type == 'immediate':
-                srtype = cs.arm.ARM_SFT_LSR
+                srtype = capstone.arm.ARM_SFT_LSR
             else:
-                srtype = cs.arm.ARM_SFT_LSR_REG
+                srtype = capstone.arm.ARM_SFT_LSR_REG
 
         carry = cpu.regfile.read('APSR_C')
         if rest and rest[0].type == 'register':
@@ -1374,7 +1372,7 @@ class Armv7Cpu(Cpu):
         elif rest and rest[0].type == 'immediate':
             amount = rest[0].read()
             result, carry = cpu._shift(op.read(), srtype, amount, carry)
-        elif cpu.mode == cs.CS_MODE_THUMB:
+        elif cpu.mode == capstone.capstone_MODE_THUMB:
             result, carry = cpu._shift(dest.read(), srtype, op, carry)
         else:
             result, carry = op.read(with_carry=True)
@@ -1384,20 +1382,20 @@ class Armv7Cpu(Cpu):
 
     @instruction
     def ASR(cpu, dest, op, *rest):
-        cpu._SR(cs.arm.ARM_INS_ASR, dest, op, *rest)
+        cpu._SR(capstone.arm.ARM_INS_ASR, dest, op, *rest)
 
     @instruction
     def LSL(cpu, dest, op, *rest):
-        cpu._SR(cs.arm.ARM_INS_LSL, dest, op, *rest)
+        cpu._SR(capstone.arm.ARM_INS_LSL, dest, op, *rest)
 
     @instruction
     def LSR(cpu, dest, op, *rest):
-        cpu._SR(cs.arm.ARM_INS_LSR, dest, op, *rest)
+        cpu._SR(capstone.arm.ARM_INS_LSR, dest, op, *rest)
 
     @instruction
     def UMULL(cpu, rdlo, rdhi, rn, rm):
         result = UInt(rn.read(), cpu.address_bit_size * 2) * UInt(rm.read(), cpu.address_bit_size * 2)
-        rdhi.write(Operators.EXTRACT(result, cpu.address_bit_size, cpu.address_bit_size))
+        rdhi.write(operators.EXTRACT(result, cpu.address_bit_size, cpu.address_bit_size))
         rdlo.write(GetNBits(result, cpu.address_bit_size))
         cpu.set_flags(N=Bit(result, 63), Z=(result == 0))
 
@@ -1456,7 +1454,7 @@ class Armv7Cpu(Cpu):
 
     @instruction
     def VLDMIA(cpu, base, *regs):
-        cpu._LDM(cs.arm.ARM_INS_LDM, base, regs)
+        cpu._LDM(capstone.arm.ARM_INS_LDM, base, regs)
 
     @instruction
     def STCL(cpu, *operands):
@@ -1479,8 +1477,8 @@ class Armv7Cpu(Cpu):
         src2 = op2.read()
         result = []
         for offset in reversed(range(0, op1.size, 8)):
-            byte1 = Operators.EXTRACT(src1, offset, 8)
-            byte2 = Operators.EXTRACT(src2, offset, 8)
+            byte1 = operators.EXTRACT(src1, offset, 8)
+            byte2 = operators.EXTRACT(src2, offset, 8)
             byte_diff = byte1 - byte2
-            result.append(Operators.ITEBV(8, byte_diff < 0, 0, byte_diff))
-        dest.write(Operators.CONCAT(dest.size, *result))
+            result.append(operators.ITEBV(8, byte_diff < 0, 0, byte_diff))
+        dest.write(operators.CONCAT(dest.size, *result))

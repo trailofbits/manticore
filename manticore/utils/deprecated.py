@@ -1,7 +1,5 @@
-
-from functools import wraps
-import inspect
 import warnings
+import functools
 
 # DeprecationWarning is ignored by default, so we define a subcategory that we can give a different default.
 
@@ -19,7 +17,7 @@ def deprecated(message: str):
     assert isinstance(message, str), "The deprecated decorator requires a message string argument."
 
     def decorator(func):
-        @wraps(func)
+        @functools.wraps(func)
         def wrapper(*args, **kwargs):
             warnings.warn(f"`{func.__qualname__}` is deprecated. {message}",
                           category=ManticoreDeprecationWarning, stacklevel=2)
