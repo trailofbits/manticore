@@ -2,10 +2,10 @@ from manticore.core.smtlib import operators, BitVec, Bool
 
 
 class Register:
-    '''
+    """
     Generic variable width register. For 1 bit registers, allows writes of types
     bool and int, but always reads back bools.
-    '''
+    """
 
     def __init__(self, width):
         self.width = width

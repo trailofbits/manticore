@@ -29,7 +29,7 @@ consts.add('timeout', default=0, description='Timeout, in seconds, for Manticore
 
 
 class ManticoreBase(Eventful):
-    '''
+    """
     Base class for the central analysis object.
 
     :param path_or_state: Path to a binary to analyze (**deprecated**) or `State` object
@@ -37,7 +37,7 @@ class ManticoreBase(Eventful):
     :param argv: Arguments to provide to binary (**deprecated**)
     :type argv: list[str]
     :ivar dict context: Global context for arbitrary data storage
-    '''
+    """
 
     _published_events = {'start_run', 'finish_run', 'generate_testcase'}
 
@@ -166,7 +166,7 @@ class ManticoreBase(Eventful):
 
     @property
     def context(self):
-        ''' Convenient access to shared context '''
+        """ Convenient access to shared context """
         if self._context is not None:
             return self._context
         else:
@@ -245,7 +245,7 @@ class ManticoreBase(Eventful):
         return self._executor.running
 
     def enqueue(self, state):
-        ''' Dynamically enqueue states. Users should typically not need to do this '''
+        """ Dynamically enqueue states. Users should typically not need to do this """
         assert not self.running, "Can't add state when running, can we?"
         self._executor.enqueue(state)
 
@@ -420,12 +420,12 @@ class ManticoreBase(Eventful):
         self._publish('did_finish_run')
 
     def run(self, procs=1, timeout=None, should_profile=False):
-        '''
+        """
         Runs analysis.
 
         :param int procs: Number of parallel worker processes
         :param timeout: Analysis timeout, in seconds
-        '''
+        """
         assert not self.running, "Manticore is already running."
         self._start_run()
 
@@ -438,21 +438,21 @@ class ManticoreBase(Eventful):
 
     #Fixme remove. terminate is used to TerminateState. May be confusing
     def terminate(self):
-        '''
+        """
         Gracefully terminate the currently-executing run. Typically called from within
         a :func:`~hook`.
-        '''
+        """
         self._executor.shutdown()
 
     def shutdown(self):
-        '''
+        """
         Gracefully terminate the currently-executing run. Typically called from within
         a :func:`~hook`.
-        '''
+        """
         self._executor.shutdown()
 
     def is_shutdown(self):
-        ''' Returns True if shutdown was requested '''
+        """ Returns True if shutdown was requested """
         return self._executor.is_shutdown()
 
     @property

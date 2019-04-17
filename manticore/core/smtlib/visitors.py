@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 class Visitor:
-    ''' Class/Type Visitor
+    """ Class/Type Visitor
 
        Inherit your class visitor from this one and get called on a different
        visiting function for each type of expression. It will call the first
@@ -30,7 +30,7 @@ class Visitor:
         visit_Bool()
         visit_Array()
 
-    '''
+    """
 
     def __init__(self, cache=None, **kwargs):
         super().__init__()
@@ -65,7 +65,7 @@ class Visitor:
         return self._rebuild(expression, args)
 
     def visit(self, node, use_fixed_point=False):
-        '''
+        """
         The entry point of the visitor.
         The exploration algorithm is a DFS post-order traversal
         The implementation used two stacks instead of a recursion
@@ -75,7 +75,7 @@ class Visitor:
         :type node: Expression
         :param use_fixed_point: if True, it runs _methods until a fixed point is found
         :type use_fixed_point: Bool
-        '''
+        """
         cache = self._cache
         visited = set()
         stack = []
@@ -120,8 +120,8 @@ class Visitor:
 
 
 class Translator(Visitor):
-    ''' Simple visitor to translate an expression into something else
-    '''
+    """ Simple visitor to translate an expression into something else
+    """
 
     def _method(self, expression, *args):
         #Special case. Need to get the unsleeved version of the array
@@ -139,9 +139,9 @@ class Translator(Visitor):
 
 
 class GetDeclarations(Visitor):
-    ''' Simple visitor to collect all variables in an expression or set of
+    """ Simple visitor to collect all variables in an expression or set of
         expressions
-    '''
+    """
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -156,9 +156,9 @@ class GetDeclarations(Visitor):
 
 
 class GetDepth(Translator):
-    ''' Simple visitor to collect all variables in an expression or set of
+    """ Simple visitor to collect all variables in an expression or set of
         expressions
-    '''
+    """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -188,19 +188,19 @@ class PrettyPrinter(Visitor):
         self.output += '\n'
 
     def visit(self, expression):
-        '''
+        """
         Overload Visitor.visit because:
         - We need a pre-order traversal
         - We use a recursion as it makes it easier to keep track of the indentation
 
-        '''
+        """
         self._method(expression)
 
     def _method(self, expression, *args):
-        '''
+        """
         Overload Visitor._method because we want to stop to iterate over the
         visit_ functions as soon as a valid visit_ function is found
-        '''
+        """
         assert expression.__class__.__mro__[-1] is object
         for cls in expression.__class__.__mro__:
             sort = cls.__name__
@@ -317,7 +317,7 @@ class ConstantFolderSimplifier(Visitor):
             return a
 
     def visit_Operation(self, expression, *operands):
-        ''' constant folding, if all operands of an expression are a Constant do the math '''
+        """ constant folding, if all operands of an expression are a Constant do the math """
         operation = self.operations.get(type(expression), None)
         if operation is not None and \
                 all(isinstance(o, Constant) for o in operands):
@@ -362,7 +362,7 @@ class ArithmeticSimplifier(Visitor):
         return any(operands[i] is not expression.operands[i] for i in range(arity))
 
     def visit_Operation(self, expression, *operands):
-        ''' constant folding, if all operands of an expression are a Constant do the math '''
+        """ constant folding, if all operands of an expression are a Constant do the math """
         if all(isinstance(o, Constant) for o in operands):
             expression = constant_folder(expression)
         if self._changed(expression, operands):
@@ -388,9 +388,9 @@ class ArithmeticSimplifier(Visitor):
             return BitVecITE(expression.size, *operands, taint=expression.taint)
 
     def visit_BitVecConcat(self, expression, *operands):
-        ''' concat( extract(k1, 0, a), extract(sizeof(a)-k1, k1, a))  ==> a
+        """ concat( extract(k1, 0, a), extract(sizeof(a)-k1, k1, a))  ==> a
             concat( extract(k1, beg, a), extract(end, k1, a))  ==> extract(beg, end, a)
-        '''
+        """
         op = expression.operands[0]
 
         value = None
@@ -422,10 +422,10 @@ class ArithmeticSimplifier(Visitor):
                 return BitVecExtract(value, begining, end - begining + 1, taint=expression.taint)
 
     def visit_BitVecExtract(self, expression, *operands):
-        ''' extract(sizeof(a), 0)(a)  ==> a
+        """ extract(sizeof(a), 0)(a)  ==> a
             extract(16, 0)( concat(a,b,c,d) ) => concat(c, d)
             extract(m,M)(and/or/xor a b ) => and/or/xor((extract(m,M) a) (extract(m,M) a)
-        '''
+        """
         op = expression.operands[0]
         begining = expression.begining
         end = expression.end
@@ -454,9 +454,9 @@ class ArithmeticSimplifier(Visitor):
             return op.__class__(BitVecExtract(bitoperand_a, begining, expression.size), BitVecExtract(bitoperand_b, begining, expression.size), taint=expression.taint)
 
     def visit_BitVecAdd(self, expression, *operands):
-        ''' a + 0  ==> a
+        """ a + 0  ==> a
             0 + a  ==> a
-        '''
+        """
         left = expression.operands[0]
         right = expression.operands[1]
         if isinstance(right, BitVecConstant):
@@ -467,10 +467,10 @@ class ArithmeticSimplifier(Visitor):
                 return right
 
     def visit_BitVecSub(self, expression, *operands):
-        ''' a - 0 ==> 0
+        """ a - 0 ==> 0
             (a + b) - b  ==> a
             (b + a) - b  ==> a
-        '''
+        """
         left = expression.operands[0]
         right = expression.operands[1]
         if isinstance(left, BitVecAdd):
@@ -480,12 +480,12 @@ class ArithmeticSimplifier(Visitor):
                 return left.operands[0]
 
     def visit_BitVecOr(self, expression, *operands):
-        ''' a | 0 => a
+        """ a | 0 => a
             0 | a => a
             0xffffffff & a => 0xffffffff
             a & 0xffffffff => 0xffffffff
 
-        '''
+        """
         left = expression.operands[0]
         right = expression.operands[1]
         if isinstance(right, BitVecConstant):
@@ -502,12 +502,12 @@ class ArithmeticSimplifier(Visitor):
             return BitVecOr(right, left, taint=expression.taint)
 
     def visit_BitVecAnd(self, expression, *operands):
-        ''' ct & x => x & ct                move constants to the right
+        """ ct & x => x & ct                move constants to the right
             a & 0 => 0                      remove zero
             a & 0xffffffff => a             remove full mask
             (b & ct2) & ct => b & (ct&ct2)  associative property
             (a & (b | c) => a&b | a&c       distribute over |
-        '''
+        """
         left = expression.operands[0]
         right = expression.operands[1]
         if isinstance(right, BitVecConstant):
@@ -529,9 +529,9 @@ class ArithmeticSimplifier(Visitor):
             return BitVecAnd(right, left, taint=expression.taint)
 
     def visit_BitVecShiftLeft(self, expression, *operands):
-        ''' a << 0 => a                       remove zero
+        """ a << 0 => a                       remove zero
             a << ct => 0 if ct > sizeof(a)    remove big constant shift
-        '''
+        """
         left = expression.operands[0]
         right = expression.operands[1]
         if isinstance(right, BitVecConstant):
@@ -541,9 +541,9 @@ class ArithmeticSimplifier(Visitor):
                 return left
 
     def visit_ArraySelect(self, expression, *operands):
-        ''' ArraySelect (ArrayStore((ArrayStore(x0,v0) ...),xn, vn), x0)
+        """ ArraySelect (ArrayStore((ArrayStore(x0,v0) ...),xn, vn), x0)
                 -> v0
-        '''
+        """
         arr, index = operands
         if isinstance(arr, ArrayVariable):
             return
@@ -580,10 +580,10 @@ def arithmetic_simplify(expression):
 
 
 def to_constant(expression):
-    '''
+    """
         Iff the expression can be simplified to a Constant get the actual concrete value.
         This discards/ignore any taint
-    '''
+    """
     value = simplify(expression)
     if isinstance(value, Expression) and value.taint:
         raise ValueError("Can not simplify tainted values to constant")
@@ -611,8 +611,8 @@ def simplify(expression):
 
 
 class TranslatorSmtlib(Translator):
-    ''' Simple visitor to translate an expression to its smtlib representation
-    '''
+    """ Simple visitor to translate an expression to its smtlib representation
+    """
     unique = 0
 
     def __init__(self, use_bindings=False, *args, **kw):
@@ -733,7 +733,7 @@ def translate_to_smtlib(expression, **kwargs):
 
 
 class Replace(Visitor):
-    ''' Simple visitor to replaces expressions '''
+    """ Simple visitor to replaces expressions """
 
     def __init__(self, bindings=None, **kwargs):
         super().__init__(**kwargs)

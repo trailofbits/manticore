@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-'''
+"""
 Generate syscall tables from the Linux source. Used to generate
 manticore/platforms/linux_syscalls.py.
 
@@ -10,7 +10,7 @@ Usage:
 
     ./extract_syscalls.py [--linux_version linux_version] linux_syscalls.py
 
-'''
+"""
 
 import argparse
 import sys
@@ -69,5 +69,5 @@ if __name__=='__main__':
         for entry, num in additional_syscalls.get(arch, {}):
             output.write(f'    {num}: "{entry}",\n')
         output.write('}\n')
-        
+
 
