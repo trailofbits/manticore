@@ -54,7 +54,7 @@ def SInt(value, width):
     :param int width: The width of the bitstring to consider
     :return: The converted value
     :rtype int or long or BitVec
-    """     
+    """
     return operators.ITEBV(width, Bit(value, width - 1) == 1,
                            GetNBits(value, width) - 2**width,
                            GetNBits(value, width))
