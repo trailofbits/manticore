@@ -2,7 +2,8 @@ from manticore.ethereum.detectors import (
     DetectInvalid, DetectIntegerOverflow, DetectUninitializedStorage,
     DetectUninitializedMemory, DetectReentrancySimple, DetectReentrancyAdvanced,
     DetectUnusedRetVal, DetectSuicidal, DetectDelegatecall,
-    DetectExternalCallAndLeak, DetectEnvInstruction)
+    DetectExternalCallAndLeak, DetectEnvInstruction
+)
 from manticore.ethereum.manticore import ManticoreEVM
 from manticore.ethereum.plugins import FilterFunctions, LoopDepthLimiter, VerboseTrace
 

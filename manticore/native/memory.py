@@ -1,10 +1,11 @@
-from abc import ABCMeta, abstractmethod
+import abc
 import functools
 import logging
-from weakref import WeakValueDictionary
-
-from manticore.core.smtlib import (Operators, ConstraintSet, arithmetic_simplify, solver, TooManySolutions, BitVec,
-    BitVecConstant, expression)
+import weakref
+from manticore.core.smtlib import (
+    operators, ConstraintSet, arithmetic_simplify,
+    solver, TooManySolutions, BitVec, BitVecConstant, expression
+)
 from manticore.native.mappings import mmap, munmap
 from manticore.utils.helpers import issymbolic, interval_intersection
 
@@ -84,7 +85,7 @@ def _normalize(c):
         return c
 
 
-class Map(object, metaclass=ABCMeta):
+class Map(object, metaclass=abc.ABCMeta):
     '''
     A memory map.
 
@@ -214,7 +215,7 @@ class Map(object, metaclass=ABCMeta):
             index -= self.start
         return index
 
-    @abstractmethod
+    @abc.abstractmethod
     def __getitem__(self, index):
         '''
         Reads a byte from an address or a sequence of bytes from a range of addresses
@@ -224,7 +225,7 @@ class Map(object, metaclass=ABCMeta):
         :rtype: byte or array
         '''
 
-    @abstractmethod
+    @abc.abstractmethod
     def __setitem__(self, index, value):
         '''
         Writes a byte to an address or a sequence of bytes to a range of addresses
@@ -233,7 +234,7 @@ class Map(object, metaclass=ABCMeta):
         :param value: byte or sequence of bytes to put in this map.
         '''
 
-    @abstractmethod
+    @abc.abstractmethod
     def split(self, address):
         '''
         Split the current map into two mappings
@@ -284,20 +285,20 @@ class AnonMap(Map):
         index = self._get_offset(index)
 
         if issymbolic(value[0]) and isinstance(self._data, bytearray):
-            self._data = [Operators.ORD(b) for b in self._data]  # completely convert everything to a list if we need to store some symbolic data, just copying fpse
+            self._data = [operators.ORD(b) for b in self._data]  # completely convert everything to a list if we need to store some symbolic data, just copying fpse
 
         if isinstance(index, slice):
             if not isinstance(value[0], int):
-                value = [Operators.ORD(n) for n in value]
+                value = [operators.ORD(n) for n in value]
             self._data[index] = value
         else:
-            self._data[index] = Operators.ORD(value)
+            self._data[index] = operators.ORD(value)
 
     def __getitem__(self, index):
         index = self._get_offset(index)
         if isinstance(index, slice):
-            return [Operators.CHR(i) for i in self._data[index]]
-        return Operators.CHR(self._data[index])
+            return [operators.CHR(i) for i in self._data[index]]
+        return operators.CHR(self._data[index])
 
 
 class ArrayMap(Map):
@@ -492,7 +493,7 @@ class StubCPU:
         return None
 
 
-class Memory(object, metaclass=ABCMeta):
+class Memory(object, metaclass=abc.ABCMeta):
     '''
     The memory manager.
     This class handles all virtual memory mappings and symbolic chunks.
@@ -508,7 +509,7 @@ class Memory(object, metaclass=ABCMeta):
         else:
             self._maps = set(maps)
         self.cpu = cpu
-        self._page2map = WeakValueDictionary()  # {page -> ref{MAP}}
+        self._page2map = weakref.WeakValueDictionary()  # {page -> ref{MAP}}
         self._recording_stack = []
         for m in self._maps:
             for i in range(self._page(m.start), self._page(m.end)):
@@ -519,12 +520,12 @@ class Memory(object, metaclass=ABCMeta):
         return (self.__class__, (self._maps, self.cpu))
 
     @property
-    @abstractmethod
+    @abc.abstractmethod
     def memory_bit_size(self):
         return 32
 
     @property
-    @abstractmethod
+    @abc.abstractmethod
     def page_bit_size(self):
         return 12
 
@@ -1052,7 +1053,7 @@ class SMemory(Memory):
                 for start, end, perms, offset, name in self.mappings():
                     if start <= M + size and end >= m:
                         if 'r' in perms:
-                            crashing_condition = Operators.AND(Operators.OR((address + size).ult(start), address.uge(end)), crashing_condition)
+                            crashing_condition = operators.AND(operators.OR((address + size).ult(start), address.uge(end)), crashing_condition)
 
                 if solver.can_be_true(self.constraints, crashing_condition):
                     raise InvalidSymbolicMemoryAccess(address, 'r', size, crashing_condition)
@@ -1061,7 +1062,7 @@ class SMemory(Memory):
                 logger.info('INCOMPLETE Result! Using the sampled solutions we have as result')
                 condition = False
                 for base in e.solutions:
-                    condition = Operators.OR(address == base, condition)
+                    condition = operators.OR(address == base, condition)
                 from .state import ForkState
                 raise ForkState("Forking state on incomplete result", condition)
 
@@ -1069,7 +1070,7 @@ class SMemory(Memory):
 
             condition = False
             for base in solutions:
-                condition = Operators.OR(address == base, condition)
+                condition = operators.OR(address == base, condition)
 
             result = []
             # consider size ==1 to read following code
@@ -1077,26 +1078,26 @@ class SMemory(Memory):
                 # Given ALL solutions for the symbolic address
                 for base in solutions:
                     addr_value = base + offset
-                    byte = Operators.ORD(self.map_containing(addr_value)[addr_value])
+                    byte = operators.ORD(self.map_containing(addr_value)[addr_value])
                     if addr_value in self._symbols:
                         for condition, value in self._symbols[addr_value]:
-                            byte = Operators.ITEBV(8, condition, Operators.ORD(value), byte)
+                            byte = operators.ITEBV(8, condition, operators.ORD(value), byte)
                     if len(result) > offset:
-                        result[offset] = Operators.ITEBV(8, address == base, byte, result[offset])
+                        result[offset] = operators.ITEBV(8, address == base, byte, result[offset])
                     else:
                         result.append(byte)
                     assert len(result) == offset + 1
-            return list(map(Operators.CHR, result))
+            return list(map(operators.CHR, result))
         else:
-            result = list(map(Operators.ORD, super().read(address, size, force)))
+            result = list(map(operators.ORD, super().read(address, size, force)))
             for offset in range(size):
                 if address + offset in self._symbols:
                     for condition, value in self._symbols[address + offset]:
                         if condition is True:
-                            result[offset] = Operators.ORD(value)
+                            result[offset] = operators.ORD(value)
                         else:
-                            result[offset] = Operators.ITEBV(8, condition, Operators.ORD(value), result[offset])
-            return list(map(Operators.CHR, result))
+                            result[offset] = operators.ITEBV(8, condition, operators.ORD(value), result[offset])
+            return list(map(operators.CHR, result))
 
     def write(self, address, value, force=False):
         '''
@@ -1147,7 +1148,7 @@ class SMemory(Memory):
         crashing_condition = False
         for base in solutions:
             if not self.access_ok(slice(base, base + size), access, force):
-                crashing_condition = Operators.OR(address == base, crashing_condition)
+                crashing_condition = operators.OR(address == base, crashing_condition)
 
         if solver.can_be_true(self.constraints, crashing_condition):
             raise InvalidSymbolicMemoryAccess(address, access, size, crashing_condition)
@@ -1232,7 +1233,7 @@ class LazySMemory(SMemory):
         if not issymbolic(address):
             return address >= mapping.start and address + size < mapping.end
         else:
-            constraint = Operators.AND(address >= mapping.start, address + size < mapping.end)
+            constraint = operators.AND(address >= mapping.start, address + size < mapping.end)
             return solver.can_be_true(self.constraints, constraint)
 
     def _import_concrete_memory(self, from_addr, to_addr):
@@ -1262,9 +1263,9 @@ class LazySMemory(SMemory):
                 self.backed_by_symbolic_store.add(addr)
 
     def _map_deref_expr(self, map, address):
-        return Operators.AND(
-            Operators.UGE(address, map.start),
-            Operators.ULT(address, map.end))
+        return operators.AND(
+            operators.UGE(address, map.start),
+            operators.ULT(address, map.end))
 
     def _reachable_range(self, sym_address, size):
         addr_min, addr_max = solver.minmax(self.constraints, sym_address)
@@ -1274,12 +1275,12 @@ class LazySMemory(SMemory):
         assert issymbolic(address)
 
         expressions = [self._map_deref_expr(m, address) for m in self._maps]
-        valid = functools.reduce(Operators.OR, expressions)
+        valid = functools.reduce(operators.OR, expressions)
 
         return valid
 
     def invalid_ptr(self, address):
-        return Operators.NOT(self.valid_ptr(address))
+        return operators.NOT(self.valid_ptr(address))
 
     def read(self, address, size, force=False):
 
@@ -1325,7 +1326,7 @@ class LazySMemory(SMemory):
             self._import_concrete_memory(access_min, access_max)
 
             for addr, byte in zip(addrs_to_access, value):
-                self.backing_array[addr] = Operators.ORD(byte)
+                self.backing_array[addr] = operators.ORD(byte)
         else:
             self.backed_by_symbolic_store -= set(addrs_to_access)
             Memory.write(self, address, value)

@@ -1,6 +1,5 @@
 import abc
-
-import capstone as cs
+import capstone
 
 
 class Instruction:
@@ -49,7 +48,7 @@ class Disasm:
     def __init__(self, disasm):
         self.disasm = disasm
 
-    @abstractmethod
+    @abc.abstractmethod
     def disassemble_instruction(self, code, pc):
         """Get next instruction based on the disassembler in use
 
@@ -61,7 +60,7 @@ class Disasm:
 class CapstoneDisasm(Disasm):
     def __init__(self, arch, mode):
         try:
-            cap = cs.Cs(arch, mode)
+            cap = capstone.Cs(arch, mode)
         except Exception as e:
             raise e
         cap.detail = True

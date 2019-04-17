@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from manticore.core.smtlib import Operators
+from manticore.core.smtlib import operators
 from manticore.core.smtlib.expression import BitVec
 
 
@@ -23,7 +23,7 @@ def Bit(value, idx):
     :param idx: Bit index
     :return: int or long or BitVex
     '''
-    return Operators.EXTRACT(value, idx, 1)
+    return operators.EXTRACT(value, idx, 1)
 
 
 def GetNBits(value, nbits):
@@ -38,12 +38,12 @@ def GetNBits(value, nbits):
     '''
     # NOP if sizes are the same
     if isinstance(value, int):
-        return Operators.EXTRACT(value, 0, nbits)
+        return operators.EXTRACT(value, 0, nbits)
     elif isinstance(value, BitVec):
         if value.size < nbits:
-            return Operators.ZEXTEND(value, nbits)
+            return operators.ZEXTEND(value, nbits)
         else:
-            return Operators.EXTRACT(value, 0, nbits)
+            return operators.EXTRACT(value, 0, nbits)
 
 
 def SInt(value, width):
@@ -57,7 +57,7 @@ def SInt(value, width):
     :return: The converted value
     :rtype int or long or BitVec
     '''
-    return Operators.ITEBV(width, Bit(value, width - 1) == 1,
+    return operators.ITEBV(width, Bit(value, width - 1) == 1,
                            GetNBits(value, width) - 2**width,
                            GetNBits(value, width))
 
@@ -87,7 +87,7 @@ def LSL_C(value, amount, width):
     :rtype tuple
     '''
     assert amount > 0
-    value = Operators.ZEXTEND(value, width * 2)
+    value = operators.ZEXTEND(value, width * 2)
     shifted = value << amount
     result = GetNBits(shifted, width)
     carry = Bit(shifted, width)
@@ -160,7 +160,7 @@ def ASR_C(value, amount, width):
     assert amount <= width
     assert amount > 0
     assert amount + width <= width * 2
-    value = Operators.SEXTEND(value, width, width * 2)
+    value = operators.SEXTEND(value, width, width * 2)
     result = GetNBits(value >> amount, width)
     carry = Bit(value, amount - 1)
     return (result, carry)

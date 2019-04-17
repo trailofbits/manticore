@@ -1,6 +1,8 @@
 from manticore.native.cpu.arm import Armv7Cpu, Armv7CdeclAbi, Armv7LinuxSyscallAbi
-from manticore.native.cpu.x86 import (AMD64Cpu, I386Cpu, AMD64LinuxSyscallAbi, I386LinuxSyscallAbi, I386CdeclAbi,
-    SystemVAbi)
+from manticore.native.cpu.x86 import (
+    AMD64Cpu, I386Cpu, AMD64LinuxSyscallAbi,
+    I386LinuxSyscallAbi, I386CdeclAbi, SystemVAbi
+)
 
 
 class CpuFactory:

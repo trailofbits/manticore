@@ -1,4 +1,3 @@
-
 ###############################################################################
 # Solver
 # A solver maintains a companion smtlib capable process connected via stdio.

@@ -10,14 +10,15 @@ import re
 import string
 import subprocess
 import tempfile
-
 import pyevmasm
 import sha3
 from typing import Dict, Optional, Union
 
 from manticore.core.manticore import ManticoreBase
-from manticore.core.smtlib import (ConstraintSet, Array, ArrayProxy, BitVec, operators, BoolConstant, BoolOperation,
-    Expression)
+from manticore.core.smtlib import (
+    ConstraintSet, Array, ArrayProxy, BitVec,
+    operators, BoolConstant, BoolOperation, Expression
+)
 from manticore.core.state import TerminateState, AbandonState
 from manticore.ethereum.account import EVMContract, EVMAccount, ABI
 from manticore.ethereum.detectors import Detector

@@ -1,14 +1,12 @@
-from functools import wraps
+import functools
 import inspect
 import io
-from itertools import islice
+import itertools
 import logging
 import struct
-
-from capstone.x86 import X86_REG_ENDING
+import capstone
 import unicorn
-
-from manticore.core.smtlib import Expression, BitVec, Operators, Constant
+from manticore.core.smtlib import Expression, BitVec, operators, Constant
 from manticore.core.smtlib import visitors
 from manticore.core.smtlib.solver import solver
 from manticore.native.cpu.disasm import init_disassembler
@@ -143,7 +141,7 @@ class Operand:
 
         :param int reg_id: Register ID
         '''
-        if reg_id >= X86_REG_ENDING:
+        if reg_id >= capstone.x86.X86_REG_ENDING:
             logger.warning("Trying to get register name for a non-register")
             return None
         cs_reg_name = self.cpu.instruction.reg_name(reg_id)
@@ -331,7 +329,7 @@ class Abi:
         if isvariadic(model):
             arguments = prefix_args + (argument_iter,)
         else:
-            arguments = prefix_args + tuple(islice(argument_iter, nargs))
+            arguments = prefix_args + tuple(itertools.islice(argument_iter, nargs))
 
         return arguments
 
@@ -359,7 +357,7 @@ class Abi:
 
             # Arguments were lazily computed in case of variadic, so recompute here
             descriptors = self.get_arguments()
-            src = next(islice(descriptors, idx, idx + 1))
+            src = next(itertools.islice(descriptors, idx, idx + 1))
 
             msg = 'Concretizing due to model invocation'
             if isinstance(src, str):
@@ -610,7 +608,7 @@ class Cpu(Eventful):
         assert size in SANE_SIZES
         self._publish('will_write_memory', where, expression, size)
 
-        data = [Operators.CHR(Operators.EXTRACT(expression, offset, 8)) for offset in range(0, size, 8)]
+        data = [operators.CHR(operators.EXTRACT(expression, offset, 8)) for offset in range(0, size, 8)]
         self._memory.write(where, data, force)
 
         self._publish('did_write_memory', where, expression, size)
@@ -666,7 +664,7 @@ class Cpu(Eventful):
 
         data = self._memory.read(where, size // 8, force)
         assert (8 * len(data)) == size
-        value = Operators.CONCAT(size, *map(Operators.ORD, reversed(data)))
+        value = operators.CONCAT(size, *map(operators.ORD, reversed(data)))
 
         self._publish('did_read_memory', where, value, size)
         return value
@@ -701,7 +699,7 @@ class Cpu(Eventful):
             self._publish('did_write_memory', where, data, 8 * len(data))
         else:
             for i in range(len(data)):
-                self.write_int(where + i, Operators.ORD(data[i]), 8, force)
+                self.write_int(where + i, operators.ORD(data[i]), 8, force)
 
     def read_bytes(self, where, size, force=False):
         '''
@@ -715,7 +713,7 @@ class Cpu(Eventful):
         '''
         result = []
         for i in range(size):
-            result.append(Operators.CHR(self.read_int(where + i, 8, force)))
+            result.append(operators.CHR(self.read_int(where + i, 8, force)))
         return result
 
     def write_string(self, where, string, max_length=None, force=False):
@@ -757,7 +755,7 @@ class Cpu(Eventful):
                 if max_length == 0:
                     break
                 max_length = max_length - 1
-            s.write(Operators.CHR(c))
+            s.write(operators.CHR(c))
             where += 1
         return s.getvalue().decode()
 
@@ -1056,7 +1054,7 @@ class Cpu(Eventful):
 
 def instruction(old_method):
     # This should decorate every instruction implementation
-    @wraps(old_method)
+    @functools.wraps(old_method)
     def new_method(cpu, *args, **kw_args):
         cpu.PC += cpu.instruction.size
         return old_method(cpu, *args, **kw_args)

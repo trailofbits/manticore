@@ -1,5 +1,4 @@
 import logging
-
 from capstone import *
 ######################################################################
 # Abstract classes for capstone/unicorn based cpus
@@ -7,7 +6,6 @@ from capstone import *
 from unicorn import *
 from unicorn.arm_const import *
 from unicorn.x86_const import *
-
 from manticore.native.memory import MemoryException
 from manticore.utils.helpers import issymbolic
 

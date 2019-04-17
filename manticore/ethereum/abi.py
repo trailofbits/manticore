@@ -1,7 +1,6 @@
 import logging
 import re
 import uuid
-
 import sha3
 
 from manticore.core.smtlib import Array, operators, BitVec, ArrayVariable, ArrayProxy

@@ -7,12 +7,10 @@ import inspect
 import io
 import logging
 import random
-
 import pyevmasm
 import rlp
 import sha3
 from typing import List, Set, Tuple, Union
-
 from manticore.core.smtlib import (
     solver, BitVec, Array, ArrayProxy,
     operators, Constant, ArrayVariable, ArrayStore,

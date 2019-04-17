@@ -1,4 +1,3 @@
-
 import pyevmasm
 from typing import Any, Dict, Mapping, Optional, Sequence, Iterable, Tuple
 

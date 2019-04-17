@@ -4,9 +4,7 @@ This is the Manticore's CLI `manticore` script.
 import argparse
 import logging
 import sys
-
 import pkg_resources
-
 from manticore.core.manticore import ManticoreBase
 from manticore.ethereum.cli import ethereum_main
 from manticore.utils import config, log, install_helper

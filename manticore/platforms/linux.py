@@ -8,7 +8,6 @@ import random
 import socket
 import struct
 import time
-
 from elftools.elf.descriptions import describe_symbol_type
 # Remove in favor of binary.py
 from elftools.elf.elffile import ELFFile
@@ -18,7 +17,7 @@ import resource
 from typing import Union, List, TypeVar, cast
 
 from manticore.core.executor import TerminateState
-from manticore.core.smtlib import ConstraintSet, solver, Operators
+from manticore.core.smtlib import ConstraintSet, solver, operators
 from manticore.core.smtlib import Expression
 from manticore.exceptions import SolverError
 from manticore.native.cpu.abstractcpu import Syscall, ConcretizeArgument, Interruption
@@ -1347,7 +1346,7 @@ class Linux(Platform):
         '''
         filename = b''
         for i in range(0, 255):
-            c = Operators.CHR(self.current.read_int(buf + i, 8))
+            c = operators.CHR(self.current.read_int(buf + i, 8))
             if c == b'\x00':
                 break
             filename += c
@@ -1859,7 +1858,7 @@ class Linux(Platform):
             buf = cpu.read_int(iov + i * sizeof_iovec, ptrsize)
             size = cpu.read_int(iov + i * sizeof_iovec + (sizeof_iovec // 2), ptrsize)
 
-            data = [Operators.CHR(cpu.read_int(buf + i, 8)) for i in range(size)]
+            data = [operators.CHR(cpu.read_int(buf + i, 8)) for i in range(size)]
             data = self._transform_write_data(data)
             write_fd.write(data)
             self.syscall_trace.append(("_write", fd, data))

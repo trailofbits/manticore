@@ -13,7 +13,7 @@ import re
 import ply.lex as lex
 import ply.yacc as yacc
 
-from manticore.core.smtlib import Operators
+from manticore.core.smtlib import operators
 
 # List of token names.   This is always required
 tokens = (
@@ -218,7 +218,7 @@ def p_expression_deref(p):
     size = sizes[p[1]]
     address = p[4]
     char_list = functions['read_memory'](address, size)
-    value = Operators.CONCAT(8 * len(char_list), *reversed(map(Operators.ORD, char_list)))
+    value = operators.CONCAT(8 * len(char_list), *reversed(map(operators.ORD, char_list)))
     p[0] = value
 
 
@@ -230,7 +230,7 @@ def p_expression_derefseg(p):
     base, limit, _ = functions['get_descriptor'](seg)
     address = base + address
     char_list = functions['read_memory'](address, size)
-    value = Operators.CONCAT(8 * len(char_list), *reversed(map(Operators.ORD, char_list)))
+    value = operators.CONCAT(8 * len(char_list), *reversed(map(operators.ORD, char_list)))
     p[0] = value
 
 
@@ -277,25 +277,25 @@ def p_expression_lnot(p):
 def p_expression_lt(p):
     'expression : expression LT expression'
     #p[0] = p[1] < p[3]
-    p[0] = Operators.ULT(p[1], p[3])
+    p[0] = operators.ULT(p[1], p[3])
 
 
 def p_expression_le(p):
     'expression : expression LE expression'
     #p[0] = p[1] <= p[3]
-    p[0] = Operators.ULE(p[1], p[3])
+    p[0] = operators.ULE(p[1], p[3])
 
 
 def p_expression_gt(p):
     'expression : expression GT expression'
     #p[0] = p[1] > p[3]
-    p[0] = Operators.UGT(p[1], p[3])
+    p[0] = operators.UGT(p[1], p[3])
 
 
 def p_expression_ge(p):
     'expression : expression GE expression'
     #p[0] = p[1] >= p[3]
-    p[0] = Operators.UGE(p[1], p[3])
+    p[0] = operators.UGE(p[1], p[3])
 
 
 # Error rule for syntax errors

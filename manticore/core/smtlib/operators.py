@@ -1,9 +1,8 @@
-
 import math
 
 from manticore.core.smtlib.expression import (
-    BitVec, BitVecExtract, BitVecSignExtend, BitVecZeroExtend, BitVecConstant,
-    BitVecConcat, Bool, BitVecITE, BoolConstant, BoolITE
+    BitVec, BitVecExtract, BitVecSignExtend, BitVecZeroExtend,
+    BitVecConstant, BitVecConcat, Bool, BitVecITE, BoolConstant, BoolITE
 )
 from manticore.utils.helpers import issymbolic
 
