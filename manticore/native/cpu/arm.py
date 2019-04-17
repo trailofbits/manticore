@@ -179,7 +179,7 @@ class Armv7Operand(Operand):
         # Regardless of mode, our implementation of read(PC) will return the address
         # of the instruction following the next instruction.
         if self.mem.base in ('PC', 'R15'):
-            if self.cpu.mode == capstone.capstone_MODE_ARM:
+            if self.cpu.mode == capstone.CS_MODE_ARM:
                 logger.debug(f"ARM mode PC relative addressing: PC + offset: 0x{base:x} + 0x{4:x}")
                 return base + 4
             else:
