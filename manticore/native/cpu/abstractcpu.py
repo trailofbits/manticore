@@ -1,26 +1,23 @@
+from functools import wraps
 import inspect
 import io
+from itertools import islice
 import logging
 import struct
-from functools import wraps
-from itertools import islice
-
-import unicorn
-
-from .disasm import init_disassembler
-from ..memory import (
-    ConcretizeMemory, InvalidMemoryAccess, FileMap, AnonMap
-)
-from ..memory import LazySMemory
-from ...core.smtlib import Expression, BitVec, Operators, Constant
-from ...core.smtlib import visitors
-from ...core.smtlib.solver import solver
-from ...utils.emulate import ConcreteUnicornEmulator
-from ...utils.event import Eventful
-from ...utils.fallback_emulator import UnicornEmulator
-from ...utils.helpers import issymbolic
 
 from capstone.x86 import X86_REG_ENDING
+import unicorn
+
+from manticore.core.smtlib import Expression, BitVec, Operators, Constant
+from manticore.core.smtlib import visitors
+from manticore.core.smtlib.solver import solver
+from manticore.native.cpu.disasm import init_disassembler
+from manticore.native.memory import (ConcretizeMemory, InvalidMemoryAccess, FileMap, AnonMap)
+from manticore.native.memory import LazySMemory
+from manticore.utils.emulate import ConcreteUnicornEmulator
+from manticore.utils.event import Eventful
+from manticore.utils.fallback_emulator import UnicornEmulator
+from manticore.utils.helpers import issymbolic
 
 logger = logging.getLogger(__name__)
 register_logger = logging.getLogger(f'{__name__}.registers')

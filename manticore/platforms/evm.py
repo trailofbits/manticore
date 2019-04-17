@@ -1,24 +1,27 @@
 """Symbolic EVM implementation based on the yellow paper: http://gavwood.com/paper.pdf"""
 import binascii
-import random
-import io
-import copy
-import inspect
-from functools import wraps
-from typing import List, Set, Tuple, Union
-from ..utils.helpers import issymbolic, get_taints, taint_with, istainted
-from ..platforms.platform import *
-from ..core.smtlib import solver, BitVec, Array, ArrayProxy, Operators, Constant, ArrayVariable, ArrayStore, BitVecConstant, translate_to_smtlib, to_constant, simplify
-from ..core.state import Concretize, TerminateState
-from ..utils.event import Eventful
-from ..utils import config
-from ..core.smtlib.visitors import simplify
-from ..exceptions import EthereumError
-import pyevmasm as EVMAsm
-import logging
 from collections import namedtuple
-import sha3
+import copy
+from functools import wraps
+import inspect
+import io
+import logging
+import random
+
+import pyevmasm
 import rlp
+import sha3
+from typing import List, Set, Tuple, Union
+
+from manticore.core.smtlib import (solver, BitVec, Array, ArrayProxy, Operators, Constant, ArrayVariable, ArrayStore,
+    BitVecConstant, translate_to_smtlib, to_constant)
+from manticore.core.smtlib.visitors import simplify
+from manticore.core.state import Concretize, TerminateState
+from manticore.exceptions import EthereumError
+from manticore.platforms.platform import *
+from manticore.utils import config
+from manticore.utils.event import Eventful
+from manticore.utils.helpers import issymbolic, get_taints, taint_with, istainted
 
 logger = logging.getLogger(__name__)
 
@@ -665,7 +668,7 @@ class EVM(Eventful):
         """
         if not issymbolic(size) and size == 0:
             return 0
- 
+
         address = self.safe_add(address, size)
         allocated = self.allocated
         GMEMORY = 3
@@ -741,7 +744,7 @@ class EVM(Eventful):
                 yield simplify(bytecode[pc_i]).value
             while True:
                 yield 0
-        instruction = EVMAsm.disassemble_one(getcode(), pc=pc, fork=DEFAULT_FORK)
+        instruction = pyevmasm.evmasm.disassemble_one(getcode(), pc=pc, fork=DEFAULT_FORK)
         _decoding_cache[pc] = instruction
         return instruction
 
@@ -1574,7 +1577,7 @@ class EVM(Eventful):
         GSTORAGEKILL = 5000
         GSTORAGEMOD = 5000
         GSTORAGEADD = 20000
-        
+
         previous_value = self.world.get_storage_data(storage_address, offset)
 
         gascost = Operators.ITEBV(512,
@@ -2583,7 +2586,7 @@ class EVMWorld(Platform):
         #Transaction to normal account
         elif sort in ('CALL', 'DELEGATECALL', 'CALLCODE') and not self.get_code(address):
             self._close_transaction('STOP')
-            
+
     def dump(self, stream, state, mevm, message):
         from ..ethereum.manticore import calculate_coverage, flagged
         blockchain = state.platform

@@ -1,27 +1,25 @@
 import cProfile
+from contextlib import contextmanager
+import functools
 import itertools
 import logging
+from multiprocessing import Process
 import os
 import pstats
-import sys
-import time
-from contextlib import contextmanager
-from multiprocessing import Process
-from threading import Timer
-
-import functools
 import shlex
+import sys
+from threading import Timer
+import time
 
-from ..core.executor import Executor
-from ..core.plugin import Plugin
-from ..core.smtlib import solver
-from ..core.state import TerminateState, StateBase
-from ..core.workspace import ManticoreOutput
-from ..utils import config
-from ..utils import log
-from ..utils.event import Eventful
-from ..utils.helpers import issymbolic
-from ..utils.nointerrupt import WithKeyboardInterruptAs
+from manticore.core.executor import Executor
+from manticore.core.plugin import Plugin
+from manticore.core.smtlib import solver
+from manticore.core.state import TerminateState, StateBase
+from manticore.core.workspace import ManticoreOutput
+from manticore.utils import config
+from manticore.utils import log
+from manticore.utils.event import Eventful
+from manticore.utils.nointerrupt import WithKeyboardInterruptAs
 
 logger = logging.getLogger(__name__)
 

@@ -1,4 +1,4 @@
-from abc import abstractmethod
+import abc
 
 import capstone as cs
 
@@ -7,38 +7,38 @@ class Instruction:
     """Capstone-like instruction to be used internally
     """
     @property
-    @abstractmethod
+    @abc.abstractmethod
     def address(self):
         pass
 
     @property
-    @abstractmethod
+    @abc.abstractmethod
     def mnemonic(self):
         pass
 
     @property
-    @abstractmethod
+    @abc.abstractmethod
     def op_str(self):
         pass
 
     @property
-    @abstractmethod
+    @abc.abstractmethod
     def size(self):
         pass
 
     @property
-    @abstractmethod
+    @abc.abstractmethod
     def operands(self):
         pass
 
     # FIXME (theo) eliminate one of the two of insn_name, name
     @property
-    @abstractmethod
+    @abc.abstractmethod
     def insn_name(self):
         pass
 
     @property
-    @abstractmethod
+    @abc.abstractmethod
     def name(self):
         pass
 

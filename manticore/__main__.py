@@ -7,9 +7,9 @@ import sys
 
 import pkg_resources
 
-from .core.manticore import ManticoreBase
-from .ethereum.cli import ethereum_main
-from .utils import config, log, install_helper
+from manticore.core.manticore import ManticoreBase
+from manticore.ethereum.cli import ethereum_main
+from manticore.utils import config, log, install_helper
 
 consts = config.get_group('main')
 consts.add('recursionlimit', default=10000,

@@ -1,4 +1,4 @@
-from ...core.smtlib import Operators, BitVec, Bool
+from manticore.core.smtlib import Operators, BitVec, Bool
 
 
 class Register:

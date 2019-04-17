@@ -1,11 +1,12 @@
 from abc import ABCMeta, abstractmethod
-from weakref import WeakValueDictionary
-from ..core.smtlib import Operators, ConstraintSet, arithmetic_simplify, solver, TooManySolutions, BitVec, BitVecConstant, expression
-from ..native.mappings import mmap, munmap
-from ..utils.helpers import issymbolic, interval_intersection
-
 import functools
 import logging
+from weakref import WeakValueDictionary
+
+from manticore.core.smtlib import (Operators, ConstraintSet, arithmetic_simplify, solver, TooManySolutions, BitVec,
+    BitVecConstant, expression)
+from manticore.native.mappings import mmap, munmap
+from manticore.utils.helpers import issymbolic, interval_intersection
 
 logger = logging.getLogger(__name__)
 

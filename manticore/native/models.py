@@ -2,11 +2,10 @@
 Models here are intended to be passed to :meth:`~manticore.native.state.State.invoke_model`, not invoked directly.
 """
 
-from .cpu.abstractcpu import ConcretizeArgument
-from ..utils.helpers import issymbolic
-from ..core.smtlib.solver import solver
-from ..core.smtlib.operators import ITEBV, ZEXTEND
-
+from manticore.core.smtlib.operators import ITEBV, ZEXTEND
+from manticore.core.smtlib.solver import solver
+from manticore.native.cpu.abstractcpu import ConcretizeArgument
+from manticore.utils.helpers import issymbolic
 
 VARIADIC_FUNC_ATTR = '_variadic'
 

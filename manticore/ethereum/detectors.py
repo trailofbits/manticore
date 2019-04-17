@@ -1,11 +1,10 @@
+from contextlib import contextmanager
 import hashlib
 import logging
-from contextlib import contextmanager
 
-from ..core.smtlib import Operators, Constant, simplify
-from ..utils.helpers import istainted, issymbolic, taint_with, get_taints
-from ..core.plugin import Plugin
-
+from manticore.core.plugin import Plugin
+from manticore.core.smtlib import Operators, Constant, simplify
+from manticore.utils.helpers import istainted, issymbolic, taint_with, get_taints
 
 logger = logging.getLogger(__name__)
 

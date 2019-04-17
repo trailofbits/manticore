@@ -1,13 +1,13 @@
 import logging
+import re
 import uuid
 
-import re
 import sha3
 
-from . import abitypes
-from ..utils.helpers import issymbolic
-from ..core.smtlib import Array, Operators, BitVec, ArrayVariable, ArrayProxy
-from ..exceptions import EthereumError
+from manticore.core.smtlib import Array, Operators, BitVec, ArrayVariable, ArrayProxy
+from manticore.ethereum import abitypes
+from manticore.exceptions import EthereumError
+from manticore.utils.helpers import issymbolic
 
 logger = logging.getLogger(__name__)
 

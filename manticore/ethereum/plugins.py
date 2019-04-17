@@ -1,11 +1,8 @@
-import sys
-
 from functools import reduce
-
 import re
 
-from ..core.plugin import Plugin
-from ..core.smtlib import Operators
+from manticore.core.plugin import Plugin
+from manticore.core.smtlib import Operators
 
 
 class FilterFunctions(Plugin):

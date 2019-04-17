@@ -1,32 +1,32 @@
 import binascii
 import ctypes
 import errno
-import fcntl
+import io
 import logging
+import os
+import random
 import socket
 import struct
 import time
-import resource
-from typing import Union, List, TypeVar, cast
 
-import io
-import os
-import random
 from elftools.elf.descriptions import describe_symbol_type
 # Remove in favor of binary.py
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
+import fcntl
+import resource
+from typing import Union, List, TypeVar, cast
 
-from . import linux_syscalls
-from ..core.executor import TerminateState
-from ..core.smtlib import ConstraintSet, solver, Operators
-from ..core.smtlib import Expression
-from ..exceptions import SolverError
-from ..native.cpu.abstractcpu import Syscall, ConcretizeArgument, Interruption
-from ..native.cpu.cpufactory import CpuFactory
-from ..native.memory import SMemory32, SMemory64, Memory32, Memory64, LazySMemory32, LazySMemory64
-from ..platforms.platform import Platform, SyscallNotImplemented
-from ..utils.helpers import issymbolic
+from manticore.core.executor import TerminateState
+from manticore.core.smtlib import ConstraintSet, solver, Operators
+from manticore.core.smtlib import Expression
+from manticore.exceptions import SolverError
+from manticore.native.cpu.abstractcpu import Syscall, ConcretizeArgument, Interruption
+from manticore.native.cpu.cpufactory import CpuFactory
+from manticore.native.memory import SMemory32, SMemory64, Memory32, Memory64, LazySMemory32, LazySMemory64
+from manticore.platforms import linux_syscalls
+from manticore.platforms.platform import Platform, SyscallNotImplemented
+from manticore.utils.helpers import issymbolic
 
 logger = logging.getLogger(__name__)
 

@@ -1,31 +1,32 @@
 import binascii
+import io
 import json
 import logging
-import string
 from multiprocessing import Queue, Process
-from queue import Empty as EmptyQueue
-from subprocess import check_output, Popen, PIPE
-from typing import Dict, Optional, Union
-
-import io
 import os
-import pyevmasm as EVMAsm
+from queue import Empty as EmptyQueue
 import random
 import re
-import sha3
+import string
+from subprocess import check_output, Popen, PIPE
 import tempfile
 
-from ..core.manticore import ManticoreBase
-from ..core.smtlib import ConstraintSet, Array, ArrayProxy, BitVec, Operators, BoolConstant, BoolOperation, Expression
-from ..core.state import TerminateState, AbandonState
-from .account import EVMContract, EVMAccount, ABI
-from .detectors import Detector
-from .solidity import SolidityMetadata
-from .state import State
-from ..exceptions import EthereumError, DependencyError, NoAliveStates
-from ..platforms import evm
-from ..utils import config, log
-from ..utils.helpers import PickleSerializer, issymbolic
+import pyevmasm
+import sha3
+from typing import Dict, Optional, Union
+
+from manticore.core.manticore import ManticoreBase
+from manticore.core.smtlib import (ConstraintSet, Array, ArrayProxy, BitVec, Operators, BoolConstant, BoolOperation,
+    Expression)
+from manticore.core.state import TerminateState, AbandonState
+from manticore.ethereum.account import EVMContract, EVMAccount, ABI
+from manticore.ethereum.detectors import Detector
+from manticore.ethereum.solidity import SolidityMetadata
+from manticore.ethereum.state import State
+from manticore.exceptions import EthereumError, DependencyError, NoAliveStates
+from manticore.platforms import evm
+from manticore.utils import config
+from manticore.utils.helpers import PickleSerializer, issymbolic
 
 logger = logging.getLogger(__name__)
 
@@ -1644,7 +1645,7 @@ class ManticoreEVM(ManticoreBase):
                 with self.locked_context('runtime_coverage') as seen:
 
                     count, total = 0, 0
-                    for i in EVMAsm.disassemble_all(runtime_bytecode):
+                    for i in pyevmasm.evmasm.disassemble_all(runtime_bytecode):
                         if (address, i.pc) in seen:
                             count += 1
                             global_runtime_asm.write('*')
@@ -1657,7 +1658,7 @@ class ManticoreEVM(ManticoreBase):
             with self._output.save_stream('global_%s.init_asm' % md.name) as global_init_asm:
                 with self.locked_context('init_coverage') as seen:
                     count, total = 0, 0
-                    for i in EVMAsm.disassemble_all(md.init_bytecode):
+                    for i in pyevmasm.evmasm.disassemble_all(md.init_bytecode):
                         if (address, i.pc) in seen:
                             count += 1
                             global_init_asm.write('*')

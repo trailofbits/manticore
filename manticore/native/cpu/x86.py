@@ -1,20 +1,14 @@
 import collections
+import functools
 import logging
-
-from functools import wraps
 
 import capstone as cs
 
-from .abstractcpu import (
-    Abi, SyscallAbi, Cpu, RegisterFile, Operand, instruction,
-    ConcretizeRegister, Interruption, Syscall, DivideByZeroError
-)
-
-
-from ...core.smtlib import Operators, BitVec, Bool, BitVecConstant, operator, visitors
-from ..memory import ConcretizeMemory
-from ...utils.helpers import issymbolic
-from functools import reduce
+from manticore.core.smtlib import (Operators, BitVec, Bool, BitVecConstant, operator, visitors)
+from manticore.native.cpu.abstractcpu import (Abi, SyscallAbi, Cpu, RegisterFile, Operand, instruction,
+    ConcretizeRegister, Interruption, Syscall, DivideByZeroError)
+from manticore.native.memory import ConcretizeMemory
+from manticore.utils.helpers import issymbolic
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +48,7 @@ OP_NAME_MAP = {
 # Auxiliary decorators...
 def rep(old_method):
     # This decorates REP instructions (STOS, LODS, MOVS, INS, OUTS)
-    @wraps(old_method)
+    @functools.wraps(old_method)
     def new_method(cpu, *args, **kw_args):
         prefix = cpu.instruction.prefix
         if (cs.x86.X86_PREFIX_REP in prefix):
@@ -83,7 +77,7 @@ def rep(old_method):
 
 def repe(old_method):
     # This decorates REPE enabled instructions (SCAS, CMPS)
-    @wraps(old_method)
+    @functools.wraps(old_method)
     def new_method(cpu, *args, **kw_args):
         prefix = cpu.instruction.prefix
         if (cs.x86.X86_PREFIX_REP in prefix) or (cs.x86.X86_PREFIX_REPNE in prefix):
@@ -540,7 +534,7 @@ class AMD64RegFile(RegisterFile):
             flags.append((self._registers[flag], offset))
 
         if any(issymbolic(flag) for flag, offset in flags):
-            res = reduce(operator.or_, map(make_symbolic, flags))
+            res = functools.reduce(operator.or_, map(make_symbolic, flags))
         else:
             res = 0
             for flag, offset in flags:

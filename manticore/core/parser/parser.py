@@ -1,8 +1,8 @@
 
 # Minimal INTEL assembler expression calculator
-import ply.yacc as yacc
 import copy
-from ..smtlib import Operators
+import re
+
 # Lexer
 # ------------------------------------------------------------
 # calclex.py
@@ -11,7 +11,10 @@ from ..smtlib import Operators
 # numbers and +,-,*,/
 # ------------------------------------------------------------
 import ply.lex as lex
-import re
+import ply.yacc as yacc
+
+from manticore.core.smtlib import Operators
+
 # List of token names.   This is always required
 tokens = (
     'NUMBER',

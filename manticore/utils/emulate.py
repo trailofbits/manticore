@@ -9,9 +9,9 @@ from unicorn import *
 from unicorn.arm_const import *
 from unicorn.x86_const import *
 
-from .helpers import issymbolic
-from ..core.smtlib import Operators, solver
-from ..native.memory import MemoryException
+from manticore.core.smtlib import Operators, solver
+from manticore.native.memory import MemoryException
+from manticore.utils.helpers import issymbolic
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

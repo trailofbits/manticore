@@ -1,9 +1,9 @@
 
+import pyevmasm
 from typing import Any, Dict, Mapping, Optional, Sequence, Iterable, Tuple
-import pyevmasm as EVMAsm
 
-from .abi import ABI
-from ..utils.deprecated import deprecated
+from manticore.ethereum.abi import ABI
+from manticore.utils.deprecated import deprecated
 
 
 class SolidityMetadata:
@@ -99,7 +99,7 @@ class SolidityMetadata:
             jump_type = md.get(3, None)  # this can be either i, o or - signifying whether a jump instruction goes into a function, returns from a function or is a regular jump as part of e.g. a loop
 
             pos_to_offset = {}
-            for i in EVMAsm.disassemble_all(bytecode):
+            for i in pyevmasm.evmasm.disassemble_all(bytecode):
                 pos_to_offset[asm_pos] = asm_offset
                 asm_pos += 1
                 asm_offset += i.size

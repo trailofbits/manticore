@@ -1,5 +1,5 @@
-from ..core.state import StateBase, Concretize, TerminateState
-from ..native.memory import ConcretizeMemory, MemoryException
+from manticore.core.state import StateBase, Concretize, TerminateState
+from manticore.native.memory import ConcretizeMemory, MemoryException
 
 
 class State(StateBase):

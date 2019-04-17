@@ -1,5 +1,5 @@
+import contextlib
 import logging
-from contextlib import contextmanager
 
 from ..utils.helpers import issymbolic
 
@@ -10,7 +10,7 @@ class Plugin:
     def __init__(self):
         self.manticore = None
 
-    @contextmanager
+    @contextlib.contextmanager
     def locked_context(self, key=None, value_type=list):
         """
         A context manager that provides safe parallel access to the global Manticore context.

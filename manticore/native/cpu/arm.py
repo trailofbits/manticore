@@ -4,12 +4,12 @@ import struct
 
 import capstone as cs
 
-from .abstractcpu import Abi, Cpu, Interruption, Operand, RegisterFile, SyscallAbi
-from .abstractcpu import instruction as abstract_instruction
-from .bitwise import *
-from .register import Register
-from ...core.smtlib import Operators, BitVecConstant
-from ...utils.helpers import issymbolic
+from manticore.core.smtlib import Operators, BitVecConstant
+from manticore.native.cpu.abstractcpu import Abi, Cpu, Interruption, Operand, RegisterFile, SyscallAbi
+from manticore.native.cpu.abstractcpu import instruction as abstract_instruction
+from manticore.native.cpu.bitwise import *
+from manticore.native.cpu.register import Register
+from manticore.utils.helpers import issymbolic
 
 logger = logging.getLogger(__name__)
 

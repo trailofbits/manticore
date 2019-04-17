@@ -1,19 +1,18 @@
 
+from contextlib import contextmanager
+import logging
+from multiprocessing.managers import SyncManager
 import os
 import random
-import logging
 import signal
 
-from ..exceptions import ExecutorError, SolverError
-from ..utils.nointerrupt import WithKeyboardInterruptAs
-from ..utils.event import Eventful
-from ..utils import config
-from .smtlib import Z3Solver, Expression
-from .state import Concretize, TerminateState
-
-from .workspace import Workspace
-from multiprocessing.managers import SyncManager
-from contextlib import contextmanager
+from manticore.core.smtlib import Z3Solver, Expression
+from manticore.core.state import Concretize, TerminateState
+from manticore.core.workspace import Workspace
+from manticore.exceptions import ExecutorError, SolverError
+from manticore.utils import config
+from manticore.utils.event import Eventful
+from manticore.utils.nointerrupt import WithKeyboardInterruptAs
 
 # This is the single global manager that will handle all shared memory among workers
 

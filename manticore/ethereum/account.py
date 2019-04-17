@@ -1,9 +1,9 @@
 from collections import namedtuple
+
 from typing import Optional
 
-from .abi import ABI
-from ..exceptions import EthereumError
-
+from manticore.ethereum.abi import ABI
+from manticore.exceptions import EthereumError
 
 HashesEntry = namedtuple('HashesEntry', 'signature func_id')
 

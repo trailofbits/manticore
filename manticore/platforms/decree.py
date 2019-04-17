@@ -1,16 +1,17 @@
 
-from . import cgcrandom
-# TODO use cpu factory
-from ..native.cpu.x86 import I386Cpu
-from ..native.cpu.abstractcpu import Interruption, ConcretizeRegister, ConcretizeArgument
-from ..native.memory import SMemory32, Memory32
-from ..core.smtlib import *
-from ..core.executor import TerminateState
-from ..utils.helpers import issymbolic
-from ..binary import CGCElf
-from ..platforms.platform import Platform
 import logging
 import random
+
+from manticore.binary import CGCElf
+from manticore.core.executor import TerminateState
+from manticore.core.smtlib import *
+from manticore.native.cpu.abstractcpu import Interruption, ConcretizeRegister, ConcretizeArgument
+# TODO use cpu factory
+from manticore.native.cpu.x86 import I386Cpu
+from manticore.native.memory import SMemory32, Memory32
+from manticore.platforms import cgcrandom
+from manticore.platforms.platform import Platform
+from manticore.utils.helpers import issymbolic
 
 logger = logging.getLogger(__name__)
 
