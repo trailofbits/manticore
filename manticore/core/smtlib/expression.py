@@ -1,4 +1,4 @@
-from functools import reduce
+import functools
 import uuid
 
 
@@ -73,7 +73,7 @@ class Operation(Expression):
 
         # If taint was not forced by a keyword argument, calculate default
         if 'taint' not in kwargs:
-            kwargs['taint'] = reduce(lambda x, y: x.union(y.taint), operands, frozenset())
+            kwargs['taint'] = functools.reduce(lambda x, y: x.union(y.taint), operands, frozenset())
 
         super().__init__(**kwargs)
 

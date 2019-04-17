@@ -1,7 +1,7 @@
 import contextlib
 import logging
 
-from ..utils.helpers import issymbolic
+from manticore.utils.helpers import issymbolic
 
 logger = logging.getLogger(__name__)
 

@@ -1,9 +1,9 @@
 
-from .expression import (
-    BitVec, BitVecExtract, BitVecSignExtend, BitVecZeroExtend, BitVecConstant, BitVecConcat, Bool, BitVecITE, BoolConstant, BoolITE
-)
-from ...utils.helpers import issymbolic
 import math
+
+from manticore.core.smtlib.expression import (BitVec, BitVecExtract, BitVecSignExtend, BitVecZeroExtend, BitVecConstant,
+    BitVecConcat, Bool, BitVecITE, BoolConstant, BoolITE)
+from manticore.utils.helpers import issymbolic
 
 
 def ORD(s):

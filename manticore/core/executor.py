@@ -1,7 +1,6 @@
-
-from contextlib import contextmanager
+import contextlib
 import logging
-from multiprocessing.managers import SyncManager
+import multiprocessing
 import os
 import random
 import signal
@@ -47,7 +46,7 @@ class Policy:
         self._executor = executor
         self._executor.subscribe('did_enqueue_state', self._add_state_callback)
 
-    @contextmanager
+    @contextlib.contextmanager
     def locked_context(self, key=None, default=dict):
         ''' Policy shared context dictionary '''
         keys = ['policy']
@@ -180,7 +179,7 @@ class Executor(Eventful):
         self.subscribe('did_load_state', self._register_state_callbacks)
 
         # This is the global manager that will handle all shared memory access among workers
-        self.manager = SyncManager()
+        self.manager = multiprocessing.managers.SyncManager()
         self.manager.start(lambda: signal.signal(signal.SIGINT, signal.SIG_IGN))
 
         # The main executor lock. Acquire this for accessing shared objects
@@ -221,7 +220,7 @@ class Executor(Eventful):
     def __del__(self):
         self.manager.shutdown()
 
-    @contextmanager
+    @contextlib.contextmanager
     def locked_context(self, key=None, default=dict):
         ''' Executor context is a shared memory object. All workers share this.
             It needs a lock. Its used like this:

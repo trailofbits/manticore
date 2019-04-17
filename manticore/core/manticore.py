@@ -1,14 +1,14 @@
 import cProfile
-from contextlib import contextmanager
+import contextlib
 import functools
 import itertools
 import logging
-from multiprocessing import Process
+import multiprocessing
 import os
 import pstats
 import shlex
 import sys
-from threading import Timer
+import threading
 import time
 
 from manticore.core.executor import Executor
@@ -173,7 +173,7 @@ class ManticoreBase(Eventful):
             logger.warning("Using shared context without a lock")
             return self._executor._shared_context
 
-    @contextmanager
+    @contextlib.contextmanager
     def locked_context(self, key=None, value_type=list):
         """
         A context manager that provides safe parallel access to the global Manticore context.
@@ -198,7 +198,7 @@ class ManticoreBase(Eventful):
         :type value_type: list or dict or set
         """
 
-        @contextmanager
+        @contextlib.contextmanager
         def _real_context():
             if self._context is not None:
                 yield self._context
@@ -215,7 +215,7 @@ class ManticoreBase(Eventful):
                 yield ctx
                 context[key] = ctx
 
-    @contextmanager
+    @contextlib.contextmanager
     def shutdown_timeout(self, timeout=None):
         if timeout is None:
             timeout = consts.timeout
@@ -224,7 +224,7 @@ class ManticoreBase(Eventful):
             yield
             return
 
-        timer = Timer(timeout, self.shutdown)
+        timer = threading.Timer(timeout, self.shutdown)
         timer.start()
 
         try:
@@ -279,7 +279,7 @@ class ManticoreBase(Eventful):
             target()
         else:
             for _ in range(num_processes):
-                p = Process(target=target, args=())
+                p = multiprocessing.Process(target=target, args=())
                 self._workers.append(p)
                 p.start()
 
