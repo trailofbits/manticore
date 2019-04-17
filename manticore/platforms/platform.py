@@ -1,4 +1,4 @@
-from ..utils.event import Eventful
+from manticore.utils.event import Eventful
 
 
 class OSException(Exception):

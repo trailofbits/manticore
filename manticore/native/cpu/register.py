@@ -1,4 +1,4 @@
-from ...core.smtlib import Operators, BitVec, Bool
+from manticore.core.smtlib import operators, BitVec, Bool
 
 
 class Register:
@@ -23,7 +23,7 @@ class Register:
         elif isinstance(val, BitVec):
             self.value = val.Bool() if self.is_flag() else val
         elif isinstance(val, int):
-            self.value = Operators.EXTRACT(val, 0, self.width)
+            self.value = operators.EXTRACT(val, 0, self.width)
             if self.is_flag():
                 self.value = bool(self.value)
         else:

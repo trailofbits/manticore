@@ -1,8 +1,10 @@
-from ...utils.helpers import CacheDict
-from .expression import *
-from functools import lru_cache
+import functools
 import logging
 import operator
+
+from manticore.core.smtlib.expression import *
+from manticore.utils.helpers import CacheDict
+
 logger = logging.getLogger(__name__)
 
 
@@ -334,7 +336,7 @@ class ConstantFolderSimplifier(Visitor):
 constant_folder_simplifier_cache = CacheDict(max_size=150000, flush_perc=25)
 
 
-@lru_cache(maxsize=128)
+@functools.lru_cache(maxsize=128)
 def constant_folder(expression):
     global constant_folder_simplifier_cache
     simp = ConstantFolderSimplifier(cache=constant_folder_simplifier_cache)
@@ -569,7 +571,7 @@ class ArithmeticSimplifier(Visitor):
 arithmetic_simplifier_cache = CacheDict(max_size=150000, flush_perc=25)
 
 
-@lru_cache(maxsize=128)
+@functools.lru_cache(maxsize=128)
 def arithmetic_simplify(expression):
     global arithmetic_simplifier_cache
     simp = ArithmeticSimplifier(cache=arithmetic_simplifier_cache)
@@ -601,7 +603,7 @@ def to_constant(expression):
     return value
 
 
-@lru_cache(maxsize=128)
+@functools.lru_cache(maxsize=128)
 def simplify(expression):
     expression = constant_folder(expression)
     expression = arithmetic_simplify(expression)

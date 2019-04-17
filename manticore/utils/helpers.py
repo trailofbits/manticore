@@ -1,8 +1,7 @@
 import logging
 import pickle
 import sys
-from collections import OrderedDict
-
+import collections
 import copy
 import re
 
@@ -95,7 +94,7 @@ def interval_intersection(min1, max1, min2, max2):
     return None
 
 
-class CacheDict(OrderedDict):
+class CacheDict(collections.OrderedDict):
     def __init__(self, *args, max_size=30000, flush_perc=30, **kwargs):
         self._max_size = max_size
         self._purge_percent = flush_perc * 0.01

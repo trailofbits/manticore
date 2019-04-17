@@ -1,8 +1,8 @@
 import copy
 import inspect
+import itertools
 import logging
-from itertools import takewhile
-from weakref import WeakKeyDictionary, ref
+import weakref
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +20,7 @@ class EventsGatherMetaclass(type):
         if name is 'Eventful':
             return eventful_sub
 
-        subclasses = takewhile(lambda c: c is not Eventful, bases)
+        subclasses = itertools.takewhile(lambda c: c is not Eventful, bases)
         relevant_classes = [eventful_sub] + list(subclasses)
 
         # Add a class that defines '_published_events' classmethod to a dict for
@@ -76,13 +76,13 @@ class Eventful(object, metaclass=EventsGatherMetaclass):
         # Note that several methods can be associated with the same object
         self._signals = dict()
         # a set of sink eventful objects (see forward_events_from())
-        self._forwards = WeakKeyDictionary()
+        self._forwards = weakref.WeakKeyDictionary()
         super().__init__()
 
     def __setstate__(self, state):
         """It wont get serialized by design, user is responsible to reconnect"""
         self._signals = dict()
-        self._forwards = WeakKeyDictionary()
+        self._forwards = weakref.WeakKeyDictionary()
         return True
 
     def __getstate__(self):
@@ -147,7 +147,7 @@ class Eventful(object, metaclass=EventsGatherMetaclass):
         assert inspect.ismethod(method), f'{method.__class__.__name__} is not a method'
         obj, callback = method.__self__, method.__func__
         bucket = self._get_signal_bucket(name)
-        robj = ref(obj, self._unref)  # see unref() for explanation
+        robj = weakref.ref(obj, self._unref)  # see unref() for explanation
         bucket.setdefault(robj, set()).add(callback)
         self.__sub_events__.add(name)
 

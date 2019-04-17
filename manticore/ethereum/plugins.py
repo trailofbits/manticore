@@ -1,11 +1,8 @@
-import sys
-
-from functools import reduce
-
+import functools
 import re
 
-from ..core.plugin import Plugin
-from ..core.smtlib import Operators
+from manticore.core.plugin import Plugin
+from manticore.core.smtlib import operators
 
 
 class FilterFunctions(Plugin):
@@ -77,7 +74,7 @@ class FilterFunctions(Plugin):
 
             if self._include:
                 # constrain the input so it can take only the interesting values
-                constraint = reduce(Operators.OR, (tx.data[:4] == x for x in selected_functions))
+                constraint = functools.reduce(operators.OR, (tx.data[:4] == x for x in selected_functions))
                 state.constrain(constraint)
             else:
                 #Avoid all not selected hashes

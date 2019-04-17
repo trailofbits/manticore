@@ -11,7 +11,7 @@ in that order of priority.
 """
 import argparse
 import logging
-from itertools import product
+import itertools
 
 import os
 import yaml
@@ -242,7 +242,7 @@ def load_overrides(path=None):
         names = [path]
     else:
         possible_names = ['mcore.yml', 'manticore.yml']
-        names = [os.path.join('.', ''.join(x)) for x in product(['', '.'], possible_names)]
+        names = [os.path.join('.', ''.join(x)) for x in itertools.product(['', '.'], possible_names)]
 
     for name in names:
         try:

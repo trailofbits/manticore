@@ -1,6 +1,5 @@
 import logging
 import time
-
 from capstone import *
 ######################################################################
 # Abstract classes for capstone/unicorn based cpus
@@ -8,10 +7,9 @@ from capstone import *
 from unicorn import *
 from unicorn.arm_const import *
 from unicorn.x86_const import *
-
-from .helpers import issymbolic
-from ..core.smtlib import Operators, solver
-from ..native.memory import MemoryException
+from manticore.core.smtlib import operators, solver
+from manticore.native.memory import MemoryException
+from manticore.utils.helpers import issymbolic
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -317,7 +315,7 @@ class ConcreteUnicornEmulator:
             self._emu.mem_write(where, expr)
         else:
             if issymbolic(expr):
-                data = [Operators.CHR(Operators.EXTRACT(expr, offset, 8)) for offset in range(0, size, 8)]
+                data = [operators.CHR(operators.EXTRACT(expr, offset, 8)) for offset in range(0, size, 8)]
                 concrete_data = []
                 for c in data:
                     if issymbolic(c):
@@ -325,7 +323,7 @@ class ConcreteUnicornEmulator:
                     concrete_data.append(c)
                 data = concrete_data
             else:
-                data = [Operators.CHR(Operators.EXTRACT(expr, offset, 8)) for offset in range(0, size, 8)]
+                data = [operators.CHR(operators.EXTRACT(expr, offset, 8)) for offset in range(0, size, 8)]
             logger.debug(f"Writing back {hr_size(size // 8)} to {hex(where)}: {data}")
             # TODO - the extra encoding is to handle null bytes output as strings when we concretize. That's probably a bug.
             self._emu.mem_write(where, b''.join(b.encode('utf-8') if type(b) is str else b for b in data))

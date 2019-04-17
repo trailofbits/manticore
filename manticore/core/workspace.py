@@ -1,18 +1,17 @@
-import os
-import sys
+import contextlib
 import glob
-import signal
-import logging
-import tempfile
 import io
+import logging
+import multiprocessing
+import os
+import signal
+import sys
+import tempfile
 
-from contextlib import contextmanager
-from multiprocessing.managers import SyncManager
-
-from ..utils import config
-from ..utils.helpers import PickleSerializer
-from .smtlib import solver
-from .state import StateBase
+from manticore.core.smtlib import solver
+from manticore.core.state import StateBase
+from manticore.utils import config
+from manticore.utils.helpers import PickleSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +25,7 @@ _manager = None
 def manager():
     global _manager
     if _manager is None:
-        _manager = SyncManager()
+        _manager = multiprocessing.managers.SyncManager()
         _manager.start(lambda: signal.signal(signal.SIGINT, signal.SIG_IGN))
     return _manager
 
@@ -115,7 +114,7 @@ class Store:
         with self.load_stream(key, binary=binary) as s:
             return s.read()
 
-    @contextmanager
+    @contextlib.contextmanager
     def save_stream(self, key, binary=False):
         """
         Return a managed file-like object into which the calling code can write
@@ -128,7 +127,7 @@ class Store:
         yield s
         self.save_value(key, s.getvalue())
 
-    @contextmanager
+    @contextlib.contextmanager
     def load_stream(self, key, binary=False):
         """
         Return a managed file-like object from which the calling code can read
@@ -201,7 +200,7 @@ class FilesystemStore(Store):
 
         super().__init__(uri)
 
-    @contextmanager
+    @contextlib.contextmanager
     def save_stream(self, key, binary=False):
         """
         Yield a file object representing `key`
@@ -214,7 +213,7 @@ class FilesystemStore(Store):
         with open(os.path.join(self.uri, key), mode) as f:
             yield f
 
-    @contextmanager
+    @contextlib.contextmanager
     def load_stream(self, key, binary=False):
         """
         :param str key: name of stream to load
@@ -466,7 +465,7 @@ class ManticoreOutput:
     def save_stream(self, key, *rest, **kwargs):
         return self._store.save_stream(key, *rest, **kwargs)
 
-    @contextmanager
+    @contextlib.contextmanager
     def _named_stream(self, name, binary=False):
         """
         Create an indexed output stream i.e. 'test_00000001.name'

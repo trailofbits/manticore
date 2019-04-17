@@ -1,4 +1,4 @@
-from ..core.state import StateBase
+from manticore.core.state import StateBase
 
 
 class State(StateBase):

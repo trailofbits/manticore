@@ -1,9 +1,11 @@
-from .detectors import DetectInvalid, DetectIntegerOverflow, DetectUninitializedStorage, \
-    DetectUninitializedMemory, DetectReentrancySimple, DetectReentrancyAdvanced, \
-    DetectUnusedRetVal, DetectSuicidal, DetectDelegatecall, \
-    DetectExternalCallAndLeak, DetectEnvInstruction, DetectRaceCondition, DetectorClassification
-from .manticore import ManticoreEVM
-from .plugins import FilterFunctions, LoopDepthLimiter, VerboseTrace
+from manticore.ethereum.detectors import (
+    DetectInvalid, DetectIntegerOverflow, DetectUninitializedStorage,
+    DetectUninitializedMemory, DetectReentrancySimple, DetectReentrancyAdvanced,
+    DetectUnusedRetVal, DetectSuicidal, DetectDelegatecall,
+    DetectExternalCallAndLeak, DetectEnvInstruction
+)
+from manticore.ethereum.manticore import ManticoreEVM
+from manticore.ethereum.plugins import FilterFunctions, LoopDepthLimiter, VerboseTrace
 
 
 def get_detectors_classes():

@@ -1,13 +1,12 @@
 import logging
-import uuid
-
 import re
+import uuid
 import sha3
 
-from . import abitypes
-from ..utils.helpers import issymbolic
-from ..core.smtlib import Array, Operators, BitVec, ArrayVariable, ArrayProxy
-from ..exceptions import EthereumError
+from manticore.core.smtlib import Array, operators, BitVec, ArrayVariable, ArrayProxy
+from manticore.ethereum import abitypes
+from manticore.exceptions import EthereumError
+from manticore.utils.helpers import issymbolic
 
 logger = logging.getLogger(__name__)
 
@@ -222,7 +221,7 @@ class ABI:
         elif ty[0] == 'bytesM':
             result = buf[offset:offset + ty[1]]
         elif ty[0] == 'function':
-            address = Operators.ZEXTEND(ABI._readBE(buf[offset:offset + 20], 20), 256)
+            address = operators.ZEXTEND(ABI._readBE(buf[offset:offset + 20], 20), 256)
             func_id = buf[offset + 20:offset + 24]
             result = (address, func_id)
         elif ty[0] in ('bytes', 'string'):
@@ -266,10 +265,10 @@ class ABI:
             # FIXME This temporary array variable should be obtained from a specific constraint store
             bytes = ArrayVariable(index_bits=256, index_max=32, value_bits=8, name='temp{}'.format(uuid.uuid1()))
             if value.size <= size * 8:
-                value = Operators.ZEXTEND(value, size * 8)
+                value = operators.ZEXTEND(value, size * 8)
             else:
                 # automatically truncate, e.g. if they passed a BitVec(256) for an `address` argument (160 bits)
-                value = Operators.EXTRACT(value, 0, size * 8)
+                value = operators.EXTRACT(value, 0, size * 8)
             bytes = ArrayProxy(bytes.write_BE(padding, value, size))
         else:
             value = int(value)
@@ -277,7 +276,7 @@ class ABI:
             for _ in range(padding):
                 bytes.append(0)
             for position in reversed(range(size)):
-                bytes.append(Operators.EXTRACT(value, position * 8, 8))
+                bytes.append(operators.EXTRACT(value, position * 8, 8))
         assert len(bytes) == size + padding
         return bytes
 
@@ -292,7 +291,7 @@ class ABI:
             raise ValueError
         if issymbolic(value):
             buf = ArrayVariable(index_bits=256, index_max=32, value_bits=8, name='temp{}'.format(uuid.uuid1()))
-            value = Operators.SEXTEND(value, value.size, size * 8)
+            value = operators.SEXTEND(value, value.size, size * 8)
             buf = ArrayProxy(buf.write_BE(padding, value, size))
         else:
             value = int(value)
@@ -301,7 +300,7 @@ class ABI:
                 buf.append(0)
 
             for position in reversed(range(size)):
-                buf.append(Operators.EXTRACT(value, position * 8, 8))
+                buf.append(operators.EXTRACT(value, position * 8, 8))
         return buf
 
     @staticmethod
@@ -329,7 +328,7 @@ class ABI:
             else:
                 values.append(data[pos])
             pos += 1
-        return Operators.CONCAT(nbytes * 8, *values)
+        return operators.CONCAT(nbytes * 8, *values)
 
     @staticmethod
     def _deserialize_uint(data, nbytes=32, padding=0, offset=0):
@@ -342,7 +341,7 @@ class ABI:
         """
         assert isinstance(data, (bytearray, Array))
         value = ABI._readBE(data, nbytes, padding=True, offset=offset)
-        value = Operators.ZEXTEND(value, (nbytes + padding) * 8)
+        value = operators.ZEXTEND(value, (nbytes + padding) * 8)
         return value
 
     @staticmethod
@@ -356,7 +355,7 @@ class ABI:
         """
         assert isinstance(data, (bytearray, Array))
         value = ABI._readBE(data, nbytes, padding=True)
-        value = Operators.SEXTEND(value, nbytes * 8, (nbytes + padding) * 8)
+        value = operators.SEXTEND(value, nbytes * 8, (nbytes + padding) * 8)
         if not issymbolic(value):
             # sign bit on
             if value & (1 << (nbytes * 8 - 1)):

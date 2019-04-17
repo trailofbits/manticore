@@ -1,5 +1,5 @@
-from .manticore import Manticore
-from ..core.plugin import InstructionCounter, Visited, Tracer, RecordSymbolicBranches
+from manticore.core.plugin import InstructionCounter, Visited, Tracer, RecordSymbolicBranches
+from manticore.native.manticore import Manticore
 
 
 def native_main(args, _logger):

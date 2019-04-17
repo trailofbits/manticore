@@ -1,9 +1,9 @@
 import copy
 import logging
 
-from .smtlib import solver, Bool
-from ..utils.helpers import issymbolic
-from ..utils.event import Eventful
+from manticore.core.smtlib import solver, Bool
+from manticore.utils.event import Eventful
+from manticore.utils.helpers import issymbolic
 
 logger = logging.getLogger(__name__)
 

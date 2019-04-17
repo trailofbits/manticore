@@ -1,27 +1,25 @@
 import cProfile
+import contextlib
+import functools
 import itertools
 import logging
+import multiprocessing
 import os
 import pstats
-import sys
-import time
-from contextlib import contextmanager
-from multiprocessing import Process
-from threading import Timer
-
-import functools
 import shlex
+import sys
+import threading
+import time
 
-from ..core.executor import Executor
-from ..core.plugin import Plugin
-from ..core.smtlib import solver
-from ..core.state import TerminateState, StateBase
-from ..core.workspace import ManticoreOutput
-from ..utils import config
-from ..utils import log
-from ..utils.event import Eventful
-from ..utils.helpers import issymbolic
-from ..utils.nointerrupt import WithKeyboardInterruptAs
+from manticore.core.executor import Executor
+from manticore.core.plugin import Plugin
+from manticore.core.smtlib import solver
+from manticore.core.state import TerminateState, StateBase
+from manticore.core.workspace import ManticoreOutput
+from manticore.utils import config
+from manticore.utils import log
+from manticore.utils.event import Eventful
+from manticore.utils.nointerrupt import WithKeyboardInterruptAs
 
 logger = logging.getLogger(__name__)
 
@@ -175,7 +173,7 @@ class ManticoreBase(Eventful):
             logger.warning("Using shared context without a lock")
             return self._executor._shared_context
 
-    @contextmanager
+    @contextlib.contextmanager
     def locked_context(self, key=None, value_type=list):
         """
         A context manager that provides safe parallel access to the global Manticore context.
@@ -200,7 +198,7 @@ class ManticoreBase(Eventful):
         :type value_type: list or dict or set
         """
 
-        @contextmanager
+        @contextlib.contextmanager
         def _real_context():
             if self._context is not None:
                 yield self._context
@@ -217,7 +215,7 @@ class ManticoreBase(Eventful):
                 yield ctx
                 context[key] = ctx
 
-    @contextmanager
+    @contextlib.contextmanager
     def shutdown_timeout(self, timeout=None):
         if timeout is None:
             timeout = consts.timeout
@@ -226,7 +224,7 @@ class ManticoreBase(Eventful):
             yield
             return
 
-        timer = Timer(timeout, self.shutdown)
+        timer = threading.Timer(timeout, self.shutdown)
         timer.start()
 
         try:
@@ -281,7 +279,7 @@ class ManticoreBase(Eventful):
             target()
         else:
             for _ in range(num_processes):
-                p = Process(target=target, args=())
+                p = multiprocessing.Process(target=target, args=())
                 self._workers.append(p)
                 p.start()
 
