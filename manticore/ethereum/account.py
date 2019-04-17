@@ -1,11 +1,11 @@
-from collections import namedtuple
+import collections
 
 from typing import Optional
 
 from manticore.ethereum.abi import ABI
 from manticore.exceptions import EthereumError
 
-HashesEntry = namedtuple('HashesEntry', 'signature func_id')
+HashesEntry = collections.namedtuple('HashesEntry', 'signature func_id')
 
 
 class EVMAccount:

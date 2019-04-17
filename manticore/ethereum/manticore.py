@@ -2,13 +2,13 @@ import binascii
 import io
 import json
 import logging
-from multiprocessing import Queue, Process
+import multiprocessing
 import os
-from queue import Empty as EmptyQueue
+import queue
 import random
 import re
 import string
-from subprocess import check_output, Popen, PIPE
+import subprocess
 import tempfile
 
 import pyevmasm
@@ -16,7 +16,7 @@ import sha3
 from typing import Dict, Optional, Union
 
 from manticore.core.manticore import ManticoreBase
-from manticore.core.smtlib import (ConstraintSet, Array, ArrayProxy, BitVec, Operators, BoolConstant, BoolOperation,
+from manticore.core.smtlib import (ConstraintSet, Array, ArrayProxy, BitVec, operators, BoolConstant, BoolOperation,
     Expression)
 from manticore.core.state import TerminateState, AbandonState
 from manticore.ethereum.account import EVMContract, EVMAccount, ABI
@@ -59,7 +59,7 @@ def calculate_coverage(runtime_bytecode, seen):
     """ Calculates what percentage of runtime_bytecode has been seen """
     count, total = 0, 0
     bytecode = SolidityMetadata._without_metadata(runtime_bytecode)
-    for i in EVMAsm.disassemble_all(bytecode):
+    for i in pyevmasm.evmasm.disassemble_all(bytecode):
         if i.pc in seen:
             count += 1
         total += 1
@@ -160,7 +160,7 @@ class ManticoreEVM(ManticoreBase):
 
         constraint = symbolic_address == 0
         for account in self._accounts.values():
-            constraint = Operators.OR(symbolic_address == int(account), constraint)
+            constraint = operators.OR(symbolic_address == int(account), constraint)
         self.constrain(constraint)
 
         return symbolic_address
@@ -267,7 +267,7 @@ class ManticoreEVM(ManticoreBase):
             relative_filepath
         ]
         logger.debug(f"Running: {' '.join(solc_invocation)}")
-        p = Popen(solc_invocation, stdout=PIPE, stderr=PIPE, **additional_kwargs)
+        p = subprocess.Popen(solc_invocation, stdout=subprocess.PIPE, stderr=subprocess.PIPE, **additional_kwargs)
         stdout, stderr = p.communicate()
 
         stdout, stderr = stdout.decode(), stderr.decode()
@@ -1064,11 +1064,11 @@ class ManticoreEVM(ManticoreBase):
         for selector in selectors:
             c = symbolic_selector == selector
             if value_is_symbolic and not contract_metadata.get_abi(selector)['payable']:
-                c = Operators.AND(c, value == 0)
+                c = operators.AND(c, value == 0)
             if constraint is None:
                 constraint = c
             else:
-                constraint = Operators.OR(constraint, c)
+                constraint = operators.OR(constraint, c)
 
         return constraint
 
@@ -1239,7 +1239,7 @@ class ManticoreEVM(ManticoreBase):
                     continue
 
                 results.append((key, value))
-                known_hashes_cond = Operators.OR(cond, known_hashes_cond)
+                known_hashes_cond = operators.OR(cond, known_hashes_cond)
 
             # adding a single random example so we can explore further in case
             # there are not known sha3 pairs that match yet
@@ -1250,7 +1250,7 @@ class ManticoreEVM(ManticoreBase):
                 results.append((data_concrete, data_hash))
                 known_hashes_cond = data_concrete == data
                 known_sha3.add((data_concrete, data_hash))
-            not_known_hashes_cond = Operators.NOT(known_hashes_cond)
+            not_known_hashes_cond = operators.NOT(known_hashes_cond)
 
             # We need to fork/save the state
             #################################
@@ -1585,10 +1585,10 @@ class ManticoreEVM(ManticoreBase):
             try:
                 while True:
                     finalizer(q.get_nowait())
-            except EmptyQueue:
+            except queue.Empty:
                 pass
 
-        q = Queue()
+        q = multiprocessing.Queue()
         for state_id in self._all_state_ids:
             #we need to remove -1 state before forking because it may be in memory
             if state_id == -1:
@@ -1598,7 +1598,7 @@ class ManticoreEVM(ManticoreBase):
 
         report_workers = []
         for _ in range(self._config_procs):
-            proc = Process(target=worker_finalize, args=(q,))
+            proc = multiprocessing.Process(target=worker_finalize, args=(q,))
             proc.start()
             report_workers.append(proc)
 
