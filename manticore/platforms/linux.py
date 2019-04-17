@@ -10,7 +10,7 @@ import fcntl
 import logging
 import binascii
 import resource
-from elftools.elf.elffile import ELFFile # Remove in favor of binary.py
+from elftools.elf.elffile import ELFFile  # Remove in favor of binary.py
 from manticore.core.smtlib import Expression
 from manticore.exceptions import SolverError
 from typing import Union, List, TypeVar, cast
