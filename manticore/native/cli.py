@@ -29,7 +29,6 @@ def native_main(args, _logger):
         for file in args.files:
             initial_state.platform.add_symbolic_file(file)
 
-
     with m.kill_timeout():
         m.run()
 

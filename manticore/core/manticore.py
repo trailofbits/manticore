@@ -324,7 +324,7 @@ class ManticoreBase(Eventful):
         with self._lock:
             self._busy_states.remove(state.id)
             self._remove(state.id)
-            state._id=None
+            state._id = None
             self._lock.notify_all()
 
         logger.debug("Forking current state %r into states %r", state.id, children)
@@ -837,7 +837,6 @@ class ManticoreBase(Eventful):
         self._publish('did_run')
         assert not self.is_running()
 
-
     @sync
     @at_not_running
     def remove_all(self):
@@ -852,33 +851,6 @@ class ManticoreBase(Eventful):
         del self._terminated_states[:]
         del self._killed_states[:]
 
-    def __del__(self):
-        ''' This will be called at every worker '''
-        return
-        if self._is_main:
-            try:
-                self.kill()
-            except Exception as e:
-                # ignoring exceptions at __del__
-                print (e)
-                pass
-            try:
-                for w in self._workers:
-                    try:
-                        w.join()
-                    except:
-                        pass
-            except Exception as e:
-                # ignoring exceptions at __del__
-                print (e)
-                pass
-            try:
-                self.remove_all()
-            except Exception as e:
-                # ignoring exceptions at __del__
-                print (e)
-                pass
-        print ("end del")
 
     def finalize(self):
         """
