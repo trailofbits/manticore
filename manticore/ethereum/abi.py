@@ -188,7 +188,7 @@ class ABI:
 
     @staticmethod
     def deserialize(type_spec, data):
-       try:
+        try:
             if isinstance(data, str):
                 data = bytearray(data.encode())
             elif isinstance(data, bytes):
@@ -210,8 +210,8 @@ class ABI:
                 ty = type_spec
                 result = ABI._deserialize(abitypes.parse(ty), data)
             return result
-       except Exception as e:
-           raise EthereumError("Error {} deserializing type {:s}".format(str(e), type_spec))
+        except Exception as e:
+            raise EthereumError("Error {} deserializing type {:s}".format(str(e), type_spec))
 
     @staticmethod
     def _deserialize(ty, buf, offset=0):
