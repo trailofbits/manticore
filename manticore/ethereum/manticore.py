@@ -803,7 +803,7 @@ class ManticoreEVM(ManticoreBase):
             if name_i.startswith(stem):
                 try:
                     count = max(count, int(name_i[len(stem):]) + 1)
-                except:
+                except Exception:
                     pass
         name = "{:s}{:d}".format(stem, count)
         assert name not in self.accounts
