@@ -37,13 +37,13 @@ Manticore has a command line interface which can be used to easily symbolically 
 Use the CLI to explore possible states in Ethereum smart contracts. Manticore includes _detectors_ that flag potentially vulnerable code in discovered states; output from them will be written to stdout and the results directory.
 Solidity smart contracts must have a `.sol` extension for analysis by Manticore. See a [demo](https://asciinema.org/a/154012).
 
-```
+```bash
 $ manticore ./path/to/contract.sol  # runs, and creates a mcore_* directory with analysis results
 ```
 
 The command line can also be used to simply explore a Linux binary:
 
-```
+```bash
 $ manticore ./path/to/binary        # runs, and creates a mcore_* directory with analysis results
 $ manticore ./path/to/binary ab cd  # use concrete strings "ab", "cd" as program arguments
 $ manticore ./path/to/binary ++ ++  # use two symbolic strings of length two as program arguments
@@ -114,7 +114,7 @@ m.run()
 
 Install and try Manticore in a few shell commands:
 
-```
+```bash
 # Install system dependencies
 sudo apt-get update && sudo apt-get install python3 python3-pip -y
 
@@ -139,7 +139,7 @@ python3 count_instructions.py ../linux/helloworld
 
 You can also use Docker to quickly install and try Manticore:
 
-```
+```bash
 # Run container with a shared examples/ directory
 # Note that `--rm` will make the container be deleted if you exit it
 # (if you want to persist data from the container, use docker volumes)
@@ -173,7 +173,7 @@ install these also, substitute `manticore[native]` for `manticore` in any `pip` 
 
 Option 1: Perform a user install (requires `~/.local/bin` in your `PATH`).
 
-```
+```bash
 echo "PATH=\$PATH:~/.local/bin" >> ~/.profile
 source ~/.profile
 pip3 install --user manticore
@@ -181,7 +181,7 @@ pip3 install --user manticore
 
 Option 2: Use a virtual environment (requires [virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/en/latest/) or [similar](https://virtualenv.pypa.io/en/stable/)).
 
-```
+```bash
 sudo pip3 install virtualenvwrapper
 echo "source /usr/local/bin/virtualenvwrapper.sh" >> ~/.profile
 source ~/.profile
@@ -191,13 +191,13 @@ sudo ./manticore/bin/pip3 install manticore
 
 Option 3: Perform a system install.
 
-```
+```bash
 sudo pip3 install manticore
 ```
 
 Option 4: Install via Docker.
 
-```
+```bash
 docker pull trailofbits/manticore
 ```
 
@@ -207,7 +207,7 @@ For installing a development version of Manticore, see our [wiki](https://github
 
 If you use Mac OS X you may need to install dependencies manually:
 
-```
+```bash
 brew install capstone
 export MACOS_UNIVERSAL=no && pip install capstone
 
@@ -217,7 +217,7 @@ UNICORN_QEMU_FLAGS="--python=`whereis python`" pip install unicorn
 
 ## Getting Help
 
-Feel free to stop by our [Slack channel](https://empirehacking.slack.com/messages/C3PTWK7UM) for help on using or extending Manticore.
+Feel free to stop by our #manticore slack channel in [Empire Hacking](https://empireslacking.herokuapp.com/) for help using or extending Manticore.
 
 
 Documentation is available in several places:

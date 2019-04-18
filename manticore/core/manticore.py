@@ -4,7 +4,6 @@ import sys
 import time
 import random
 import weakref
-import os
 
 from contextlib import contextmanager
 
@@ -54,9 +53,6 @@ consts.add('mprocessing', default=MProcessingType.multiprocessing, description='
 
 
 class ManticoreBase(Eventful):
-    '''
-    Base class for the central analysis object.
-    '''
 
     def __new__(cls, *args, **kwargs):
         if consts.mprocessing.title() not in ('Single', 'Multiprocessing', 'Threading'):
@@ -115,8 +111,9 @@ class ManticoreBase(Eventful):
 
     def __init__(self, initial_state, workspace_url=None, policy='random', **kwargs):
         """
+        :param initial_state: State to start from.
 
-                   Manticore symbolically explores program states.
+               Manticore symbolically explores program states.
 
 
         Manticore phases
@@ -263,7 +260,7 @@ class ManticoreBase(Eventful):
         return f"<{str(type(self))[8:-2]}| Alive States: {self.count_ready_states()}; Running States: {self.count_busy_states()} Terminated States: {self.count_terminated_states()} Killed States: {self.count_killed_states()} Started: {self._running.value} Killed: {self._killed.value}>"
 
     def _fork(self, state, expression, policy='ALL', setstate=None):
-        '''
+        """
         Fork state on expression concretizations.
         Using policy build a list of solutions for expression.
         For the state on each solution setting the new state with setstate
@@ -283,7 +280,7 @@ class ManticoreBase(Eventful):
         Parent state is removed from the busy list and tht child states are added
         to the ready list.
 
-        '''
+        """
         assert isinstance(expression, Expression)
 
         if setstate is None:
@@ -331,6 +328,10 @@ class ManticoreBase(Eventful):
 
     @staticmethod
     def verbosity(level):
+        """ Sets global vervosity level.
+            This will activate different logging profiles globally depending
+            on the provided numeric value
+        """
         logger.info("Deprecated!")
         set_verbosity(level)
 
@@ -438,13 +439,13 @@ class ManticoreBase(Eventful):
 
     @sync
     def _revive_state(self, state_id):
-        ''' Send a BUSY state back to READY list
+        """ Send a BUSY state back to READY list
 
             +--------+        +------+
             | READY  +<-------+ BUSY |
             +---+----+        +------+
 
-        '''
+        """
         # Move from BUSY to READY
         self._busy_states.remove(state_id)
         self._ready_states.append(state_id)
@@ -452,7 +453,7 @@ class ManticoreBase(Eventful):
 
     @sync
     def _terminate_state(self, state_id, delete=False):
-        ''' Send a BUSY state to the TERMINATED list or trash it if delete is True
+        """ Send a BUSY state to the TERMINATED list or trash it if delete is True
 
             +------+        +------------+
             | BUSY +------->+ TERMINATED |
@@ -462,7 +463,7 @@ class ManticoreBase(Eventful):
                ###
                ###
 
-        '''
+        """
         # wait for a state id to be added to the ready list and remove it
         if state_id not in self._busy_states:
             raise Exception("Can not terminate. State is not being analyzed")
@@ -479,7 +480,7 @@ class ManticoreBase(Eventful):
 
     @sync
     def _kill_state(self, state_id, delete=False):
-        ''' Send a BUSY state to the KILLED list or trash it if delete is True
+        """ Send a BUSY state to the KILLED list or trash it if delete is True
 
             +------+        +--------+
             | BUSY +------->+ KILLED |
@@ -489,7 +490,7 @@ class ManticoreBase(Eventful):
                ###
                ###
 
-        '''
+        """
         # wait for a state id to be added to the ready list and remove it
         if state_id not in self._busy_states:
             raise Exception("Can not even kill it. State is not being analyzed")
@@ -538,9 +539,10 @@ class ManticoreBase(Eventful):
 
     @property
     @sync
-    def cancelled_states(self):
+    @at_not_running
+    def killed_states(self):
         """
-        Iterates over the cancelled states.
+        Iterates over the cancelled/killed states.
 
         See also `ready_states`.
         """
@@ -554,9 +556,9 @@ class ManticoreBase(Eventful):
     @sync
     @at_not_running
     def _all_states(self):
-        ''' Only allowed at not running.
+        """ Only allowed at not running.
             (At running we can have states at busy)
-        '''
+        """
         return tuple(self._ready_states) + tuple(self._terminated_states) + tuple(self._killed_states)
 
     @property
@@ -668,6 +670,7 @@ class ManticoreBase(Eventful):
         plugin.manticore = None
 
     def subscribe(self, name, callback):
+        """ Register a callback to an event"""
         from types import MethodType
         if not isinstance(callback, MethodType):
             callback = MethodType(callback, self)
@@ -676,11 +679,11 @@ class ManticoreBase(Eventful):
     @property
     @at_not_running
     def context(self):
-        ''' Convenient access to shared context. We maintain a local copy of the
+        """ Convenient access to shared context. We maintain a local copy of the
             share context during the time manticore is not running.
             This local context is copied to the shared context when a run starts
             and copied back when a run finishes
-        '''
+        """
         return self._shared_context
 
     @contextmanager
@@ -748,7 +751,7 @@ class ManticoreBase(Eventful):
 
     @sync
     def is_running(self):
-        ''' True if workers are exploring BUSY states or waiting for READY states '''
+        """ True if workers are exploring BUSY states or waiting for READY states """
         # If there are still states in the BUSY list then the STOP/KILL event
         # was not yet answered
         # We know that BUSY states can only decrease after a stop is requested
@@ -756,7 +759,7 @@ class ManticoreBase(Eventful):
 
     @sync
     def is_killed(self):
-        ''' True if workers are killed. It is safe to join them '''
+        """ True if workers are killed. It is safe to join them """
         # If there are still states in the BUSY list then the STOP/KILL event
         # was not yet answered
         # We know that BUSY states can only decrease after a kill is requested
@@ -768,9 +771,9 @@ class ManticoreBase(Eventful):
 
     @contextmanager
     def kill_timeout(self, timeout=None):
-        ''' A convenient context manager that will kill a manticore run after
+        """ A convenient context manager that will kill a manticore run after
             timeout seconds
-        '''
+        """
         if timeout is None:
             timeout = consts.timeout
 
@@ -792,10 +795,10 @@ class ManticoreBase(Eventful):
 
     @at_not_running
     def run(self, timeout=None):
-        '''
+        """
         Runs analysis.
         :param timeout: Analysis timeout, in seconds
-        '''
+        """
         # Delete state cache
         # The cached version of a state may get out of sync if a worker in a
         # different process modifies the state
@@ -840,9 +843,9 @@ class ManticoreBase(Eventful):
     @sync
     @at_not_running
     def remove_all(self):
-        '''
+        """
             Deletes all streams from storage and clean state lists
-        '''
+        """
         for state_id in self._all_states:
             self._remove(state_id)
 
@@ -850,7 +853,6 @@ class ManticoreBase(Eventful):
         del self._busy_states[:]
         del self._terminated_states[:]
         del self._killed_states[:]
-
 
     def finalize(self):
         """

@@ -281,7 +281,7 @@ hexlify(b''.join(platform.current.read_bytes(stat, 100))))
         #   0x1000: add.w   r0, r1, r2
         # which is a Thumb instruction, so the entrypoint is set to 0x1001
         m = Manticore.linux(os.path.join(os.path.dirname(__file__), 'binaries', 'thumb_mode_entrypoint'))
-        m.success = False
+        m.context['success'] = False
 
         @m.init
         def init(m):
@@ -300,8 +300,9 @@ hexlify(b''.join(platform.current.read_bytes(stat, 100))))
         def post(state):
             # If the wrong execution mode was set by the loader, the wrong instruction
             # will have been executed, so the register value will be incorrect
-            m.success = state.cpu.regfile.read('R0') == 0x68ac
+            with m.locked_context() as ctx:
+                ctx['success'] = state.cpu.regfile.read('R0') == 0x68ac
             state.abandon()
 
         m.run()
-        self.assertTrue(m.success)
+        self.assertTrue(m.context['success'])
