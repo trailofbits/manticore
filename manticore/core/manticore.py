@@ -776,8 +776,10 @@ class ManticoreBase(Eventful):
 
         # Run forever is timeout is negative
         if timeout <= 0:
-            yield
-            return
+            try:
+                yield
+            finally:
+                return
 
         # THINKME kill grabs the lock. Is npt this a deadlock hazard?
         timer = threading.Timer(timeout, self.kill)

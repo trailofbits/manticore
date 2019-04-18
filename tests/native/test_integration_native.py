@@ -77,12 +77,12 @@ class NativeIntegrationTest(unittest.TestCase):
 
         output_lines = output.splitlines()
 
-        self.assertEqual(len(output_lines), 4)
+        self.assertEqual(len(output_lines), 3)
 
-        self.assertIn(b'Verbosity set to 1.', output_lines[0])
-        self.assertIn(b'Loading program', output_lines[1])
-        self.assertIn(b'Generated testcase No. 0 -', output_lines[2])
-        self.assertIn(b'Generated testcase No. 1 -', output_lines[3])
+        #self.assertIn(b'Verbosity set to 1.', output_lines[1])
+        self.assertIn(b'Loading program', output_lines[0])
+        self.assertIn(b'Generated testcase No. 0 -', output_lines[1])
+        self.assertIn(b'Generated testcase No. 1 -', output_lines[2])
 
     def _test_arguments_assertions_aux(self, binname, testcases_number, visited, add_assertion=False):
         filename = os.path.abspath(os.path.join(DIRPATH, 'binaries', binname))
@@ -113,14 +113,13 @@ class NativeIntegrationTest(unittest.TestCase):
             '+++++++++',
         ]
         output = subprocess.check_output(cmd).splitlines()
+        #self.assertIn(b'm.c.manticore:INFO: Verbosity set to 1.', output[0])
 
-        self.assertIn(b'm.c.manticore:INFO: Verbosity set to 1.', output[0])
-
-        self.assertIn(b'm.n.manticore:INFO: Loading program', output[1])
-        self.assertIn(bytes(binname, 'utf-8'), output[1])  # the binname should be in the path
+        self.assertIn(b'm.n.manticore:INFO: Loading program', output[0])
+        self.assertIn(bytes(binname, 'utf-8'), output[0])  # the binname should be in the path
 
         for i in range(testcases_number):
-            line = output[2+i]
+            line = output[1+i]
 
             # After `expected1` there's the testcase id; because we fork use `--core.procs 4`
             # it might not be in the increasing order
@@ -217,11 +216,11 @@ class NativeIntegrationTest(unittest.TestCase):
 
         output = subprocess.check_output(cmd).splitlines()
 
-        self.assertEqual(len(output), 4)
-        self.assertIn(b'm.c.manticore:INFO: Verbosity set to 1.', output[0])
-        self.assertIn(b'm.n.manticore:INFO: Loading program ', output[1])
-        self.assertIn(b'm.c.manticore:INFO: Generated testcase No. 0 - ', output[2])
-        self.assertIn(b'm.c.manticore:INFO: Generated testcase No. 1 - ', output[3])
+        self.assertEqual(len(output), 3)
+        #self.assertIn(b'm.c.manticore:INFO: Verbosity set to 1.', output[0])
+        self.assertIn(b'm.n.manticore:INFO: Loading program ', output[0])
+        self.assertIn(b'm.c.manticore:INFO: Generated testcase No. 0 - ', output[1])
+        self.assertIn(b'm.c.manticore:INFO: Generated testcase No. 1 - ', output[2])
 
         with open(os.path.join(workspace, "test_00000000.stdout")) as f:
             self.assertIn("Message", f.read())
@@ -258,11 +257,11 @@ class NativeIntegrationTest(unittest.TestCase):
 
         output = subprocess.check_output(cmd).splitlines()
 
-        self.assertEqual(len(output), 3)
+        self.assertEqual(len(output), 2)
 
-        self.assertIn(b'm.c.manticore:INFO: Verbosity set to 1.', output[0])
-        self.assertIn(b'm.n.manticore:INFO: Loading program ', output[1])
-        self.assertIn(b'm.c.manticore:INFO: Generated testcase No. 0 - ', output[2])
+        #self.assertIn(b'm.c.manticore:INFO: Verbosity set to 1.', output[0])
+        self.assertIn(b'm.n.manticore:INFO: Loading program ', output[0])
+        self.assertIn(b'm.c.manticore:INFO: Generated testcase No. 0 - ', output[1])
 
         # with open(os.path.join(workspace, "test_00000000.messages")) as f:
         #     self.assertIn("finished with exit status: 0", f.read())
