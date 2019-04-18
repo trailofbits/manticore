@@ -290,7 +290,7 @@ class StateBase(Eventful):
 
     def must_be_true(self, expr):
         expr = self.migrate_expression(expr)
-        return not self._solver.can_be_true(self._constraints, expr == True)
+        return self._solver.can_be_true(self._constraints, expr) and not self._solver.can_be_true(self._constraints, expr == False)
 
     def solve_one(self, expr, constrain=False):
         '''
