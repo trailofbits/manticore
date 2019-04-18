@@ -132,7 +132,7 @@ def input_from_cons(constupl, datas):
     def make_chr(c):
         try:
             return chr(c)
-        except:
+        except Exception:
             return c
     newset = constraints_to_constraintset(constupl)
 

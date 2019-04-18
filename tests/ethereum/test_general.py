@@ -1078,7 +1078,7 @@ class EthTests(unittest.TestCase):
                         func_name, args = ABI.deserialize("is_symbolic(bytes)", state.platform.current_transaction.data)
                         try:
                             arg = to_constant(args[0])
-                        except:
+                        except Exception:
                             raise Return(TRUE)
                         raise Return(FALSE)
                     elif func_id == ABI.function_selector("is_symbolic(uint256)"):

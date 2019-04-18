@@ -725,7 +725,7 @@ class EVM(Eventful):
         #    raise InvalidOpcode('Opcode inside a PUSH immediate')
         try:
             _decoding_cache = getattr(self, '_decoding_cache')
-        except:
+        except Exception:
             _decoding_cache = self._decoding_cache = {}
 
         pc = self.pc
@@ -1090,7 +1090,7 @@ class EVM(Eventful):
             value = simplify(value)
             if not value.taint:
                 value = value.value
-        except:
+        except Exception:
             pass
 
         for i in range(size):
@@ -1834,7 +1834,7 @@ class EVM(Eventful):
             c = simplify(self.memory[offset])
             try:
                 c = c.value
-            except:
+            except Exception:
                 pass
             m.append(c)
 
@@ -2638,7 +2638,7 @@ class EVMWorld(Platform):
 
                         temp_cs.add(storage.get(a_index) != 0)
                         temp_cs.add(index != a_index)
-                except:
+                except Exception:
                     pass
 
             if all_used_indexes:
