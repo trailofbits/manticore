@@ -7,6 +7,8 @@ import sys
 
 import pkg_resources
 
+from crytic_compile import is_supported, cryticparser
+
 from .core.manticore import ManticoreBase
 from .ethereum.cli import ethereum_main
 from .utils import config, log, install_helper
@@ -19,6 +21,8 @@ consts.add('recursionlimit', default=10000,
 # XXX(yan): This would normally be __name__, but then logger output will be pre-
 # pended by 'm.__main__: ', which is not very pleasing. hard-coding to 'main'
 logger = logging.getLogger('manticore.main')
+
+
 
 if install_helper.has_native:
     from manticore.native.cli import native_main
@@ -37,7 +41,7 @@ def main():
 
     ManticoreBase.verbosity(args.v)
 
-    if args.argv[0].endswith('.sol'):
+    if args.argv[0].endswith('.sol') or is_supported(args.argv[0]):
         ethereum_main(args, logger)
     else:
         install_helper.ensure_native_deps()
@@ -53,6 +57,10 @@ def parse_arguments():
 
     parser = argparse.ArgumentParser(description='Symbolic execution tool', prog='manticore',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    # Add crytic compile arguments
+    cryticparser.init(parser)
+
     parser.add_argument('--context', type=str, default=None,
                         help=argparse.SUPPRESS)
     parser.add_argument('--coverage', type=str, default=None,

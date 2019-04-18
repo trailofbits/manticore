@@ -188,12 +188,14 @@ class ABI:
 
     @staticmethod
     def deserialize(type_spec, data):
-        try:
+       try:
             if isinstance(data, str):
                 data = bytearray(data.encode())
             elif isinstance(data, bytes):
                 data = bytearray(data)
             assert isinstance(data, (bytearray, Array))
+
+
 
             m = re.match(r"(?P<name>[a-zA-Z_0-9]+)(?P<type>\(.*\))", type_spec)
             if m and m.group('name'):
@@ -208,8 +210,8 @@ class ABI:
                 ty = type_spec
                 result = ABI._deserialize(abitypes.parse(ty), data)
             return result
-        except Exception as e:
-            raise EthereumError("Error {} deserializing type {:s}".format(str(e), type_spec))
+       except Exception as e:
+           raise EthereumError("Error {} deserializing type {:s}".format(str(e), type_spec))
 
     @staticmethod
     def _deserialize(ty, buf, offset=0):
