@@ -26,8 +26,18 @@ function install_cc_env {
     pip install awscli
 }
 
+# TODO: temporary function, until crytic-compile is pused on pypi
+function install_crytic_compile {
+    git clone https://github.com/crytic/crytic-compile
+    cd crytic-compile
+    pip install .
+    cd ..
+}
+
 # install CodeClimate env in all conditions
 install_cc_env
+
+install_crytic_compile
 
 if [ "$1" != "env" ]; then
     install_solc
