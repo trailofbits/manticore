@@ -334,6 +334,8 @@ class EndTx(EVMException):
 
     def __str__(self):
         return f'EndTX<{self.result}>'
+
+
 class InvalidOpcode(EndTx):
     """Trying to execute invalid opcode"""
 
@@ -587,7 +589,6 @@ class EVM(Eventful):
         self._used_calldata_size = 0
         self._calldata_size = len(self.data)
         self._valid_jmpdests = set()
-
 
     @property
     def bytecode(self):
@@ -2583,7 +2584,7 @@ class EVMWorld(Platform):
         #Transaction to normal account
         elif sort in ('CALL', 'DELEGATECALL', 'CALLCODE') and not self.get_code(address):
             self._close_transaction('STOP')
-            
+
     def dump(self, stream, state, mevm, message):
         from ..ethereum.manticore import calculate_coverage, flagged
         blockchain = state.platform
