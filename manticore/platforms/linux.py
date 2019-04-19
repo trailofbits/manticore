@@ -2131,7 +2131,7 @@ class Linux(Platform):
         logger.warning("sys_clock_time not really implemented")
         if clock_id == 1:
             t = int(time.monotonic() * 1000000000)  # switch to monotonic_ns in py3.7
-            self.current.write_bytes(timespec, struct.pack('I', t // 1000000000) + struct.pack('I', t))
+            self.current.write_bytes(timespec, struct.pack('L', t // 1000000000) + struct.pack('L', t))
         return 0
 
     def sys_time(self, tloc):
@@ -2148,8 +2148,8 @@ class Linux(Platform):
         error: Returns -1
         '''
         if tv != 0:
-            microseconds = int(time.time() * 10 ** -6)
-            self.current.write_bytes(tv, struct.pack('I', microseconds // (10 ** 6)) + struct.pack('I', microseconds))
+            microseconds = int(time.time() * 10 ** 6)
+            self.current.write_bytes(tv, struct.pack('L', microseconds // (10 ** 6)) + struct.pack('L', microseconds))
         if tz != 0:
             logger.warning("No support for time zones in sys_gettimeofday")
         return 0
