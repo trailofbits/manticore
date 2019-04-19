@@ -297,7 +297,7 @@ class ManticoreEVM(ManticoreBase):
             raise EthereumError('Solidity compilation error:\n\n{}'.format(stderr))
 
     @staticmethod
-    def _compile(source_code, contract_name, libraries=None, solc_bin=None, solc_remaps=[], working_dir=None, critic_compile_args=None):
+    def _compile(source_code, contract_name, libraries=None, solc_bin=None, solc_remaps=[], working_dir=None, critic_compile_args=dict()):
         """ Compile a Solidity contract, used internally
 
             :param source_code: solidity source as either a string or a file handle
@@ -313,6 +313,9 @@ class ManticoreEVM(ManticoreBase):
         if isinstance(source_code, io.IOBase):
             source_code = source_code.name
 
+        if solc_remaps:
+            critic_compile_args['solc_remaps'] = solc_remaps
+
         if isinstance(source_code, str) and not is_supported(source_code):
             with tempfile.NamedTemporaryFile('w+', suffix='.sol') as temp:
                 temp.write(source_code)
@@ -327,7 +330,7 @@ class ManticoreEVM(ManticoreBase):
         else:
             try:
                 if critic_compile_args:
-                    crytic_compile = CryticCompile(source_code, **vars( critic_compile_args))
+                    crytic_compile = CryticCompile(source_code, **vars(critic_compile_args))
                 else:
                     crytic_compile = CryticCompile(source_code)
             except InvalidCompilation as e:
@@ -335,14 +338,19 @@ class ManticoreEVM(ManticoreBase):
                     f'Errors : {e}\n. Solidity failed to generate bytecode for your contract. Check if all the abstract functions are implemented. ')
 
         if not contract_name:
-            if len(crytic_compile.contracts_name)>1:
+            if len(crytic_compile.contracts_name) > 1:
                 raise EthereumError(f'Solidity file must contain exactly one contract or you must use a `--contract` parameter to specify one. Contracts found: {", ".join(crytic_compile.contracts_name)}')
             contract_name = list(crytic_compile.contracts_name)[0]
 
-        if not contract_name in  crytic_compile.contracts_name:
+        if contract_name not in crytic_compile.contracts_name:
             raise ValueError(f'Specified contract not found: {contract_name}')
 
         name = contract_name
+
+        libs = crytic_compile.libraries(name)
+        libs = [l for l in libs if l not  in libraries]
+        if libs:
+            raise DependencyError(libs)
 
         bytecode = bytes.fromhex(crytic_compile.init_bytecode(name, libraries))
         runtime = bytes.fromhex(crytic_compile.runtime_bytecode(name, libraries))
@@ -621,7 +629,7 @@ class ManticoreEVM(ManticoreBase):
             item_type = item['type']
             if item_type in ('function'):
                 signature = SolidityMetadata.function_signature_for_name_and_inputs(item['name'], item['inputs'])
-                hashes[signature] = sha3.keccak_256(signature.encode()).hexdigest()[:8]
+                hashes[signature] = int("0x" + sha3.keccak_256(signature.encode()).hexdigest()[:8], 16)
                 if 'signature' in item:
                     if item['signature'] != f'0x{hashes[signature]}':
                         raise Exception(f"Something wrong with the sha3 of the method {signature} signature (a.k.a. the hash)")
@@ -746,7 +754,7 @@ class ManticoreEVM(ManticoreBase):
                     raise EthereumError("Failed to build contract %s" % contract_name_i)
                 self.metadata[int(contract_account)] = md
 
-                deps[contract_name_i] = contract_account
+                deps[contract_name_i] = int(contract_account)
             except DependencyError as e:
                 contract_names.append(contract_name_i)
                 for lib_name in e.lib_names:
@@ -1090,9 +1098,9 @@ class ManticoreEVM(ManticoreBase):
         # Pretty print
         logger.info("Starting symbolic create contract")
 
-
-        contract_account = self.solidity_create_contract(solidity_filename, contract_name=contract_name, owner=owner_account,
-                                                         args=args, working_dir=working_dir, critic_compile_args=critic_compile_args)
+        contract_account = self.solidity_create_contract(solidity_filename, contract_name=contract_name,
+                                                         owner=owner_account, args=args, working_dir=working_dir,
+                                                         critic_compile_args=critic_compile_args)
 
         if tx_account == "attacker":
             tx_account = [attacker_account]

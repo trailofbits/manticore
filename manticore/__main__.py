@@ -23,7 +23,6 @@ consts.add('recursionlimit', default=10000,
 logger = logging.getLogger('manticore.main')
 
 
-
 if install_helper.has_native:
     from manticore.native.cli import native_main
 

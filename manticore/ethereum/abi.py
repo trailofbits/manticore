@@ -195,8 +195,6 @@ class ABI:
                 data = bytearray(data)
             assert isinstance(data, (bytearray, Array))
 
-
-
             m = re.match(r"(?P<name>[a-zA-Z_0-9]+)(?P<type>\(.*\))", type_spec)
             if m and m.group('name'):
                 # Type has function name. Let's take the function id from the data
