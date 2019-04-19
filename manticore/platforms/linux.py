@@ -2537,10 +2537,12 @@ class Linux(Platform):
         success: Returns 0
         error: Returns -1
         '''
+        oldname = self.current.read_string(oldname)
+        newname = self.current.read_string(newname)
         try:
             os.link(oldname, newname)
         except Exception as e:
-            return -e.err
+            return -e.errno
         return 0
 
     def sys_unlink(self, pathname) -> int:
@@ -2549,11 +2551,42 @@ class Linux(Platform):
         success: Returns 0
         error: Returns -1
         '''
+        pathname = self.current.read_string(pathname)
         try:
             os.unlink(pathname)
         except Exception as e:
-            return -e.err
+            return -e.errno
         return 0
+
+    def sys_getdents(self, fd, dirent, count) -> int:
+        '''
+        Get directory entries
+        success: Returns the number of bytes read - On end of directory, 0
+        error: Returns -1
+        '''
+        buf = b''
+        try:
+            file = self._get_fd(fd)
+        except FdError as e:
+            logger.info("File descriptor %s is not open", fd)
+            return -e.err
+        if not isinstance(file, Directory):
+            logger.info("Can't get directory entries for a file")
+            return -1
+
+        with os.scandir(file.path) as dent_iter:
+            for index, item in zip(range(count), dent_iter):
+                fmt = f'LLH{len(item.name) + 1}sxc'
+                size = struct.calcsize(fmt)
+
+                stat = item.stat()
+                print("FILE MODE:", item.name, " :: ", stat.st_mode)
+
+                buf += struct.pack(fmt, item.inode(), size, size, bytes(item.name, 'utf-8') + b'\x00', b'\x00')
+
+
+        self.current.write_bytes(dirent, buf)
+        return len(buf)
 
     def sys_nanosleep(self, rqtp, rmtp) -> int:
         '''
