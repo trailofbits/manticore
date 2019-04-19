@@ -202,7 +202,6 @@ class Transaction:
         stream.write('\n\n')
         return is_something_symbolic
 
-
     @property
     def sort(self):
         return self._sort
@@ -295,6 +294,7 @@ class ConcretizeFee(EVMException):
     def __init__(self, policy='MINMAX'):
         self.message = "Concretizing evm instruction gas fee"
         self.policy = policy
+
 
 class ConcretizeGas(EVMException):
 
@@ -666,7 +666,7 @@ class EVM(Eventful):
         """
         if not issymbolic(size) and size == 0:
             return 0
- 
+
         address = self.safe_add(address, size)
         allocated = self.allocated
         GMEMORY = 3
@@ -1575,7 +1575,7 @@ class EVM(Eventful):
         GSTORAGEKILL = 5000
         GSTORAGEMOD = 5000
         GSTORAGEADD = 20000
-        
+
         previous_value = self.world.get_storage_data(storage_address, offset)
 
         gascost = Operators.ITEBV(512,
