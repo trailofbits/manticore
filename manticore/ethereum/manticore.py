@@ -31,7 +31,7 @@ from ..utils.helpers import PickleSerializer, issymbolic
 
 logger = logging.getLogger(__name__)
 
-logging.getLogger('CryticCompile').setLevel(logging.INFO)
+logging.getLogger('CryticCompile').setLevel(logging.ERROR)
 
 
 cfg = config.get_group('evm')
@@ -314,7 +314,7 @@ class ManticoreEVM(ManticoreBase):
             source_code = source_code.name
 
         if isinstance(source_code, str) and not is_supported(source_code):
-            with tempfile.NamedTemporaryFile('w+') as temp:
+            with tempfile.NamedTemporaryFile('w+', suffix='.sol') as temp:
                 temp.write(source_code)
                 temp.flush()
                 try:
