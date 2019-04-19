@@ -338,16 +338,16 @@ class ManticoreEVM(ManticoreBase):
                     f'Errors : {e}\n. Solidity failed to generate bytecode for your contract. Check if all the abstract functions are implemented. ')
 
         if not contract_name:
-            if len(crytic_compile.contracts_name) > 1:
-                raise EthereumError(f'Solidity file must contain exactly one contract or you must use a `--contract` parameter to specify one. Contracts found: {", ".join(crytic_compile.contracts_name)}')
-            contract_name = list(crytic_compile.contracts_name)[0]
+            if len(crytic_compile.contracts_names_without_libraries) > 1:
+                raise EthereumError(f'Solidity file must contain exactly one contract or you must use a `--contract` parameter to specify one. Contracts found: {", ".join(crytic_compile.contracts_names)}')
+            contract_name = list(crytic_compile.contracts_names_without_libraries)[0]
 
-        if contract_name not in crytic_compile.contracts_name:
+        if contract_name not in crytic_compile.contracts_names:
             raise ValueError(f'Specified contract not found: {contract_name}')
 
         name = contract_name
 
-        libs = crytic_compile.libraries(name)
+        libs = crytic_compile.libraries_names(name)
         libs = [l for l in libs if l not  in libraries]
         if libs:
             raise DependencyError(libs)
