@@ -31,7 +31,7 @@ from ..utils.helpers import PickleSerializer, issymbolic
 
 logger = logging.getLogger(__name__)
 
-logging.getLogger('CryticCompile').setLevel(logging.INFO)
+logging.getLogger('CryticCompile').setLevel(logging.ERROR)
 
 cfg = config.get_group('evm')
 cfg.add('defaultgas', 3000000, 'Default gas value for ethereum transactions.')
@@ -323,8 +323,10 @@ class ManticoreEVM(ManticoreBase):
 
             name = contract_name
 
+
             libs = crytic_compile.libraries_names(name)
-            libs = [l for l in libs if l not in libraries]
+            if libraries:
+                libs = [l for l in libs if l not in libraries]
             if libs:
                 raise DependencyError(libs)
 
@@ -336,7 +338,8 @@ class ManticoreEVM(ManticoreBase):
             abi = crytic_compile.abi(name)
 
             filename = crytic_compile.filename_of_contract(name)
-            filename = filename if not 'solc_working_dir' in crytic_compile_args else os.path.join(crytic_compile_args['solc_working_dir'], filename)
+            if crytic_compile_args and 'solc_working_dir' in crytic_compile_args and crytic_compile_args['solc_working_dir']:
+                filename = os.path.join(crytic_compile_args['solc_working_dir'], filename)
             with open(filename) as f:
                 source_code = f.read()
 
@@ -702,7 +705,7 @@ class ManticoreEVM(ManticoreBase):
         return contract_account
 
     def solidity_create_contract(self, source_code, owner, name=None, contract_name=None, libraries=None,
-                                 balance=0, address=None, args=(), gas=None, crytic_compile_args=None):
+                                 balance=0, address=None, args=(), gas=None, crytic_compile_args=dict()):
         """ Creates a solidity contract and library dependencies
 
             :param source_code: solidity source code
@@ -1104,7 +1107,7 @@ class ManticoreEVM(ManticoreBase):
 
     def multi_tx_analysis(self, solidity_filename, contract_name=None,
                           tx_limit=None, tx_use_coverage=True,
-                          tx_send_ether=True, tx_account="attacker", tx_preconstrain=False, args=None, crytic_compile_args=None):
+                          tx_send_ether=True, tx_account="attacker", tx_preconstrain=False, args=None, crytic_compile_args=dict()):
         owner_account = self.create_account(balance=1000, name='owner')
         attacker_account = self.create_account(balance=1000, name='attacker')
 
