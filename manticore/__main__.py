@@ -22,7 +22,6 @@ consts.add('recursionlimit', default=10000,
 # pended by 'm.__main__: ', which is not very pleasing. hard-coding to 'main'
 logger = logging.getLogger('manticore.main')
 
-
 if install_helper.has_native:
     from manticore.native.cli import native_main
 
@@ -58,6 +57,7 @@ def parse_arguments():
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     # Add crytic compile arguments
+    # See https://github.com/crytic/crytic-compile/wiki/Configuration
     cryticparser.init(parser)
 
     parser.add_argument('--context', type=str, default=None,

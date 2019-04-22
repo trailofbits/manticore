@@ -33,7 +33,6 @@ logger = logging.getLogger(__name__)
 
 logging.getLogger('CryticCompile').setLevel(logging.INFO)
 
-
 cfg = config.get_group('evm')
 cfg.add('defaultgas', 3000000, 'Default gas value for ethereum transactions.')
 
@@ -177,9 +176,9 @@ class ManticoreEVM(ManticoreBase):
                 state.constrain(constraint)
 
     @staticmethod
-    def compile(source_code, contract_name=None, libraries=None, runtime=False, solc_remaps=[]):
+    def compile(source_code, contract_name=None, libraries=None, runtime=False, crytic_compile_args=dict()):
         """ Get initialization bytecode from a Solidity source code """
-        name, source_code, init_bytecode, runtime_bytecode, srcmap, srcmap_runtime, hashes, abi, warnings = ManticoreEVM._compile(source_code, contract_name, libraries, solc_remaps)
+        name, source_code, init_bytecode, runtime_bytecode, srcmap, srcmap_runtime, hashes, abi, warnings = ManticoreEVM._compile(source_code, contract_name, libraries, crytic_compile_args)
         if runtime:
             return runtime_bytecode
         return init_bytecode
@@ -298,7 +297,15 @@ class ManticoreEVM(ManticoreBase):
 
 
     @staticmethod
-    def _compile_through_crytic_compile(filename, crytic_compile_args, contract_name, libraries):
+    def _compile_through_crytic_compile(filename, contract_name, libraries, crytic_compile_args):
+        """
+        :param filename: filename to compile
+        :param contract_name: contract to extract
+        :param libraries: an itemizable of pairs (library_name, address)
+        :param crytic_compile_args: crytic compile options (https://github.com/crytic/crytic-compile/wiki/Configuration)
+        :type crytic_compile_args: dict
+        :return:
+        """
         try:
             if crytic_compile_args:
                 crytic_compile = CryticCompile(filename, **vars(crytic_compile_args))
@@ -338,37 +345,35 @@ class ManticoreEVM(ManticoreBase):
                 f'Errors : {e}\n. Solidity failed to generate bytecode for your contract. Check if all the abstract functions are implemented. ')
 
     @staticmethod
-    def _compile(source_code, contract_name, libraries=None, solc_remaps=[], crytic_compile_args=dict()):
+    def _compile(source_code, contract_name, libraries=None, crytic_compile_args=dict()):
         """ Compile a Solidity contract, used internally
 
-            :param source_code: solidity source as either a string or a file handle
+            :param source_code: solidity source
+            :type source_code: string (filename, directory, etherscan address) or a file handle
             :param contract_name: a string with the name of the contract to analyze
             :param libraries: an itemizable of pairs (library_name, address)
-            :param solc_remaps: solc import remaps
-            :param working_dir: working directory for solc compilation (defaults to current)
+            :param crytic_compile_args: crytic compile options (https://github.com/crytic/crytic-compile/wiki/Configuration)
+            :type crytic_compile_args: dict
             :return: name, source_code, bytecode, srcmap, srcmap_runtime, hashes
             :return: name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
         """
-        # Todo consider remmoving support for file handle
+
         if isinstance(source_code, io.IOBase):
             source_code = source_code.name
-
-        if solc_remaps:
-            crytic_compile_args['solc_remaps'] = solc_remaps
 
         if isinstance(source_code, str) and not is_supported(source_code):
             with tempfile.NamedTemporaryFile('w+', suffix='.sol') as temp:
                 temp.write(source_code)
                 temp.flush()
                 compilation_result = ManticoreEVM._compile_through_crytic_compile(temp.name,
-                                                                                  crytic_compile_args,
                                                                                   contract_name,
-                                                                                  libraries)
+                                                                                  libraries,
+                                                                                  crytic_compile_args)
         else:
             compilation_result = ManticoreEVM._compile_through_crytic_compile(source_code,
-                                                                              crytic_compile_args,
                                                                               contract_name,
-                                                                              libraries)
+                                                                              libraries,
+                                                                              crytic_compile_args)
 
         name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi = compilation_result
         warnings = ''
@@ -695,11 +700,11 @@ class ManticoreEVM(ManticoreBase):
         return contract_account
 
     def solidity_create_contract(self, source_code, owner, name=None, contract_name=None, libraries=None,
-                                 balance=0, address=None, args=(), solc_remaps=[],
-                                 working_dir=None, gas=None, crytic_compile_args=None):
+                                 balance=0, address=None, args=(), gas=None, crytic_compile_args=None):
         """ Creates a solidity contract and library dependencies
 
-            :param str source_code: solidity source code
+            :param source_code: solidity source code
+            :type source_code: string (filename, directory, etherscan address) or a file handle
             :param owner: owner account (will be default caller in any transactions)
             :type owner: int or EVMAccount
             :param contract_name: Name of the contract to analyze (optional if there is a single one in the source code)
@@ -709,10 +714,8 @@ class ManticoreEVM(ManticoreBase):
             :param address: the address for the new contract (optional)
             :type address: int or EVMAccount
             :param tuple args: constructor arguments
-            :param solc_remaps: solc import remaps
-            :type solc_remaps: list of str
-            :param working_dir: working directory for solc compilation (defaults to current)
-            :type working_dir: str
+            :param crytic_compile_args: crytic compile options (https://github.com/crytic/crytic-compile/wiki/Configuration)
+            :type crytic_compile_args: dict
             :param gas: gas budget for each contract creation needed (may be more than one if several related contracts defined in the solidity source)
             :type gas: int
             :rtype: EVMAccount
@@ -727,8 +730,7 @@ class ManticoreEVM(ManticoreBase):
             contract_name_i = contract_names.pop()
             try:
                 compile_results = self._compile(source_code, contract_name_i,
-                                                libraries=deps, solc_remaps=solc_remaps,
-                                                working_dir=working_dir, crytic_compile_args=crytic_compile_args)
+                                                libraries=deps, crytic_compile_args=crytic_compile_args)
                 md = SolidityMetadata(*compile_results)
                 if contract_name_i == contract_name:
                     constructor_types = md.get_constructor_arguments()
@@ -1098,7 +1100,7 @@ class ManticoreEVM(ManticoreBase):
 
         return constraint
 
-    def multi_tx_analysis(self, solidity_filename, working_dir=None, contract_name=None,
+    def multi_tx_analysis(self, solidity_filename, contract_name=None,
                           tx_limit=None, tx_use_coverage=True,
                           tx_send_ether=True, tx_account="attacker", tx_preconstrain=False, args=None, crytic_compile_args=None):
         owner_account = self.create_account(balance=1000, name='owner')
@@ -1108,7 +1110,7 @@ class ManticoreEVM(ManticoreBase):
         logger.info("Starting symbolic create contract")
 
         contract_account = self.solidity_create_contract(solidity_filename, contract_name=contract_name,
-                                                         owner=owner_account, args=args, working_dir=working_dir,
+                                                         owner=owner_account, args=args,
                                                          crytic_compile_args=crytic_compile_args)
 
         if tx_account == "attacker":
