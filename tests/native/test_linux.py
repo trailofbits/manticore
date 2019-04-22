@@ -13,7 +13,6 @@ from manticore.core.smtlib.solver import Z3Solver
 from manticore.core.smtlib import BitVecVariable, issymbolic
 from manticore.native import Manticore
 from manticore.platforms import linux, linux_syscalls
-solver = Z3Solver.instance()
 
 class LinuxTest(unittest.TestCase):
     _multiprocess_can_split_ = True
@@ -72,7 +71,8 @@ class LinuxTest(unittest.TestCase):
         second_map_name = os.path.basename(second_map[4])
         self.assertEqual(first_map_name, 'basic_linux_amd64')
         self.assertEqual(second_map_name, 'basic_linux_amd64')
-
+    
+    @unittest.skip("Stat differs in different test environments")
     def test_syscall_fstat(self):
         nr_fstat64 = 197
 
@@ -226,7 +226,7 @@ hexlify(b''.join(platform.current.read_bytes(stat, 100))))
 
             e = cm.exception
 
-            _min, _max = solver.minmax(platform.constraints, e.cpu.read_register(e.reg_name))
+            _min, _max = Z3Solver.instance().minmax(platform.constraints, e.cpu.read_register(e.reg_name))
             self.assertLess(_min, len(platform.files))
             self.assertGreater(_max, len(platform.files)-1)
         finally:
