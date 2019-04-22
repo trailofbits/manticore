@@ -82,7 +82,7 @@ class LinuxTest(unittest.TestCase):
         platform.current.SP = 0x2000-4
 
         # open a file
-        filename = platform.current.push_bytes('/proc\x00')
+        filename = platform.current.push_bytes('/\x00')
         fd = platform.sys_open(filename, os.O_RDONLY, 0o600)
 
         stat = platform.current.SP - 0x100
@@ -92,7 +92,7 @@ class LinuxTest(unittest.TestCase):
         self.assertEqual(linux_syscalls.armv7[nr_fstat64], 'sys_fstat64')
 
         platform.syscall()
-        self.assertEqual(b'040000000000000001000000000000006d410000460100000000000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000654815ca6629f020654815ca6629f020654815ca6629f0200000000',
+        self.assertEqual(b'02030100000000000200000000000000ed41000018000000000000000000000000000000000000000000000000000000001000000000000000100000000000000800000000000000e5c1bc5c15e85e260789ab5c8cd5db350789ab5c8cd5db3500000000',
 hexlify(b''.join(platform.current.read_bytes(stat, 100))))
 
     def test_linux_symbolic_files_workspace_files(self):
