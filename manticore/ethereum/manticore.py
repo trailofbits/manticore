@@ -295,7 +295,6 @@ class ManticoreEVM(ManticoreBase):
         except ValueError:
             raise EthereumError('Solidity compilation error:\n\n{}'.format(stderr))
 
-
     @staticmethod
     def _compile_through_crytic_compile(filename, contract_name, libraries, crytic_compile_args):
         """
@@ -322,7 +321,6 @@ class ManticoreEVM(ManticoreBase):
                 raise ValueError(f'Specified contract not found: {contract_name}')
 
             name = contract_name
-
 
             libs = crytic_compile.libraries_names(name)
             if libraries:
