@@ -308,7 +308,7 @@ class ManticoreEVM(ManticoreBase):
         """
         try:
             if crytic_compile_args:
-                crytic_compile = CryticCompile(filename, **vars(crytic_compile_args))
+                crytic_compile = CryticCompile(filename, **crytic_compile_args)
             else:
                 crytic_compile = CryticCompile(filename)
 
@@ -335,7 +335,9 @@ class ManticoreEVM(ManticoreBase):
             hashes = crytic_compile.hashes(name)
             abi = crytic_compile.abi(name)
 
-            with open(crytic_compile.filename_of_contract(name)) as f:
+            filename = crytic_compile.filename_of_contract(name)
+            filename = filename if not 'solc_working_dir' in crytic_compile_args else os.path.join(crytic_compile_args['solc_working_dir'], filename)
+            with open(filename) as f:
                 source_code = f.read()
 
             return name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi
