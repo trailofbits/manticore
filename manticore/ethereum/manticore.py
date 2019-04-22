@@ -328,9 +328,9 @@ class ManticoreEVM(ManticoreBase):
             if libs:
                 raise DependencyError(libs)
 
-            bytecode = bytes.fromhex(crytic_compile.init_bytecode(name, libraries))
-            runtime = bytes.fromhex(crytic_compile.runtime_bytecode(name, libraries))
-            srcmap = crytic_compile.srcmap(name)
+            bytecode = bytes.fromhex(crytic_compile.bytecode_init(name, libraries))
+            runtime = bytes.fromhex(crytic_compile.bytecode_runtime(name, libraries))
+            srcmap = crytic_compile.srcmap_init(name)
             srcmap_runtime = crytic_compile.srcmap_runtime(name)
             hashes = crytic_compile.hashes(name)
             abi = crytic_compile.abi(name)
