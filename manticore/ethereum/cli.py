@@ -65,7 +65,7 @@ def ethereum_main(args, logger):
     with m.shutdown_timeout():
         m.multi_tx_analysis(args.argv[0], contract_name=args.contract, tx_limit=args.txlimit,
                             tx_use_coverage=not args.txnocoverage, tx_send_ether=not args.txnoether,
-                            tx_account=args.txaccount, tx_preconstrain=args.txpreconstrain, critic_compile_args=args)
+                            tx_account=args.txaccount, tx_preconstrain=args.txpreconstrain, crytic_compile_args=args)
 
     if not args.no_testcases:
         m.finalize()
