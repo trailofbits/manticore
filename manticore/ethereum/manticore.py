@@ -177,9 +177,9 @@ class ManticoreEVM(ManticoreBase):
                 state.constrain(constraint)
 
     @staticmethod
-    def compile(source_code, contract_name=None, libraries=None, runtime=False, solc_bin=None, solc_remaps=[]):
+    def compile(source_code, contract_name=None, libraries=None, runtime=False, solc_remaps=[]):
         """ Get initialization bytecode from a Solidity source code """
-        name, source_code, init_bytecode, runtime_bytecode, srcmap, srcmap_runtime, hashes, abi, warnings = ManticoreEVM._compile(source_code, contract_name, libraries, solc_bin, solc_remaps)
+        name, source_code, init_bytecode, runtime_bytecode, srcmap, srcmap_runtime, hashes, abi, warnings = ManticoreEVM._compile(source_code, contract_name, libraries, solc_remaps)
         if runtime:
             return runtime_bytecode
         return init_bytecode
@@ -298,25 +298,52 @@ class ManticoreEVM(ManticoreBase):
 
 
     @staticmethod
-    def _call_crytic_compile(filename, crytic_compile_args):
+    def _compile_through_crytic_compile(filename, crytic_compile_args, contract_name, libraries):
         try:
             if crytic_compile_args:
                 crytic_compile = CryticCompile(filename, **vars(crytic_compile_args))
             else:
                 crytic_compile = CryticCompile(filename)
-            return crytic_compile
+
+            if not contract_name:
+                if len(crytic_compile.contracts_names_without_libraries) > 1:
+                    raise EthereumError(
+                        f'Solidity file must contain exactly one contract or you must use a `--contract` parameter to specify one. Contracts found: {", ".join(crytic_compile.contracts_names)}')
+                contract_name = list(crytic_compile.contracts_names_without_libraries)[0]
+
+            if contract_name not in crytic_compile.contracts_names:
+                raise ValueError(f'Specified contract not found: {contract_name}')
+
+            name = contract_name
+
+            libs = crytic_compile.libraries_names(name)
+            libs = [l for l in libs if l not in libraries]
+            if libs:
+                raise DependencyError(libs)
+
+            bytecode = bytes.fromhex(crytic_compile.init_bytecode(name, libraries))
+            runtime = bytes.fromhex(crytic_compile.runtime_bytecode(name, libraries))
+            srcmap = crytic_compile.srcmap(name)
+            srcmap_runtime = crytic_compile.srcmap_runtime(name)
+            hashes = crytic_compile.hashes(name)
+            abi = crytic_compile.abi(name)
+
+            with open(crytic_compile.filename_of_contract(name)) as f:
+                source_code = f.read()
+
+            return name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi
+
         except InvalidCompilation as e:
             raise EthereumError(
                 f'Errors : {e}\n. Solidity failed to generate bytecode for your contract. Check if all the abstract functions are implemented. ')
 
     @staticmethod
-    def _compile(source_code, contract_name, libraries=None, solc_bin=None, solc_remaps=[], working_dir=None, crytic_compile_args=dict()):
+    def _compile(source_code, contract_name, libraries=None, solc_remaps=[], crytic_compile_args=dict()):
         """ Compile a Solidity contract, used internally
 
             :param source_code: solidity source as either a string or a file handle
             :param contract_name: a string with the name of the contract to analyze
             :param libraries: an itemizable of pairs (library_name, address)
-            :param solc_bin: path to solc binary
             :param solc_remaps: solc import remaps
             :param working_dir: working directory for solc compilation (defaults to current)
             :return: name, source_code, bytecode, srcmap, srcmap_runtime, hashes
@@ -333,36 +360,17 @@ class ManticoreEVM(ManticoreBase):
             with tempfile.NamedTemporaryFile('w+', suffix='.sol') as temp:
                 temp.write(source_code)
                 temp.flush()
-                crytic_compile = ManticoreEVM._call_crytic_compile(temp.name, crytic_compile_args)
+                compilation_result = ManticoreEVM._compile_through_crytic_compile(temp.name,
+                                                                                  crytic_compile_args,
+                                                                                  contract_name,
+                                                                                  libraries)
         else:
-            crytic_compile = ManticoreEVM._call_crytic_compile(source_code, crytic_compile_args)
+            compilation_result = ManticoreEVM._compile_through_crytic_compile(source_code,
+                                                                              crytic_compile_args,
+                                                                              contract_name,
+                                                                              libraries)
 
-        if not contract_name:
-            if len(crytic_compile.contracts_names_without_libraries) > 1:
-                raise EthereumError(f'Solidity file must contain exactly one contract or you must use a `--contract` parameter to specify one. Contracts found: {", ".join(crytic_compile.contracts_names)}')
-            contract_name = list(crytic_compile.contracts_names_without_libraries)[0]
-
-        if contract_name not in crytic_compile.contracts_names:
-            raise ValueError(f'Specified contract not found: {contract_name}')
-
-        name = contract_name
-
-        libs = crytic_compile.libraries_names(name)
-        libs = [l for l in libs if l not  in libraries]
-        if libs:
-            raise DependencyError(libs)
-
-        bytecode = bytes.fromhex(crytic_compile.init_bytecode(name, libraries))
-        runtime = bytes.fromhex(crytic_compile.runtime_bytecode(name, libraries))
-        # TODO: crytic-compile does not support srcmap for now
-        srcmap = crytic_compile.srcmap(name)
-        srcmap_runtime = crytic_compile.srcmap_runtime(name)
-        hashes = crytic_compile.hashes(name)
-        abi = crytic_compile.abi(name)
-
-        with open(crytic_compile.filename_of_contract(name)) as f:
-            source_code = f.read()
-
+        name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi = compilation_result
         warnings = ''
 
         return name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
@@ -687,7 +695,7 @@ class ManticoreEVM(ManticoreBase):
         return contract_account
 
     def solidity_create_contract(self, source_code, owner, name=None, contract_name=None, libraries=None,
-                                 balance=0, address=None, args=(), solc_bin=None, solc_remaps=[],
+                                 balance=0, address=None, args=(), solc_remaps=[],
                                  working_dir=None, gas=None, crytic_compile_args=None):
         """ Creates a solidity contract and library dependencies
 
@@ -701,8 +709,6 @@ class ManticoreEVM(ManticoreBase):
             :param address: the address for the new contract (optional)
             :type address: int or EVMAccount
             :param tuple args: constructor arguments
-            :param solc_bin: path to solc binary
-            :type solc_bin: str
             :param solc_remaps: solc import remaps
             :type solc_remaps: list of str
             :param working_dir: working directory for solc compilation (defaults to current)
@@ -721,7 +727,7 @@ class ManticoreEVM(ManticoreBase):
             contract_name_i = contract_names.pop()
             try:
                 compile_results = self._compile(source_code, contract_name_i,
-                                                libraries=deps, solc_bin=solc_bin, solc_remaps=solc_remaps,
+                                                libraries=deps, solc_remaps=solc_remaps,
                                                 working_dir=working_dir, crytic_compile_args=crytic_compile_args)
                 md = SolidityMetadata(*compile_results)
                 if contract_name_i == contract_name:
