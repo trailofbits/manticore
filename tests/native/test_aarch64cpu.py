@@ -2910,7 +2910,8 @@ class Aarch64Instructions:
             asms = [f'b.{cond} .+8', 'mov x1, 42', 'mov x2, 43']
 
             def b_cond(self, add_pc, x1, x2):
-                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                def assertEqual(x, y):
+                    self.assertEqual(x, y, msg=cond)
                 pc = self.cpu.PC
                 # Execute just two instructions, so it doesn't attempt to run
                 # beyond valid code.
@@ -3964,19 +3965,22 @@ class Aarch64Instructions:
             @itest_setregs(f'NZCV={cond_true}', 'W0=0')
             @itest(f'ccmp w0, #0, #15, {cond}')
             def ccmp_imm_true_zc32(self):
-                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                def assertEqual(x, y):
+                    self.assertEqual(x, y, msg=cond)
                 assertEqual(self.rf.read('NZCV'), 0x60000000)
 
             @itest_setregs(f'NZCV={cond_true}', 'W0=0x8fffffff')
             @itest(f'ccmp w0, #31, #15, {cond}')
             def ccmp_imm_true_nc32(self):
-                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                def assertEqual(x, y):
+                    self.assertEqual(x, y, msg=cond)
                 assertEqual(self.rf.read('NZCV'), 0xa0000000)
 
             @itest_setregs(f'NZCV={cond_false}', 'W0=0xffffffff')
             @itest(f'ccmp w0, #0, #15, {cond}')
             def ccmp_imm_false32(self):
-                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                def assertEqual(x, y):
+                    self.assertEqual(x, y, msg=cond)
                 assertEqual(self.rf.read('NZCV'), 0xf0000000)
 
             # 64-bit.
@@ -3984,19 +3988,22 @@ class Aarch64Instructions:
             @itest_setregs(f'NZCV={cond_true}', 'X0=0')
             @itest(f'ccmp x0, #0, #15, {cond}')
             def ccmp_imm_true_zc64(self):
-                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                def assertEqual(x, y):
+                    self.assertEqual(x, y, msg=cond)
                 assertEqual(self.rf.read('NZCV'), 0x60000000)
 
             @itest_setregs(f'NZCV={cond_true}', 'X0=0x8fffffffffffffff')
             @itest(f'ccmp x0, #31, #15, {cond}')
             def ccmp_imm_true_nc64(self):
-                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                def assertEqual(x, y):
+                    self.assertEqual(x, y, msg=cond)
                 assertEqual(self.rf.read('NZCV'), 0xa0000000)
 
             @itest_setregs(f'NZCV={cond_false}', 'X0=0xffffffffffffffff')
             @itest(f'ccmp x0, #0, #15, {cond}')
             def ccmp_imm_false64(self):
-                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                def assertEqual(x, y):
+                    self.assertEqual(x, y, msg=cond)
                 assertEqual(self.rf.read('NZCV'), 0xf0000000)
 
             if cond_true:
@@ -4031,19 +4038,22 @@ class Aarch64Instructions:
             @itest_setregs(f'NZCV={cond_true}', 'W0=0xffffffff', 'W1=0xffffffff')
             @itest(f'ccmp w0, w1, #15, {cond}')
             def ccmp_reg_true_zc32(self):
-                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                def assertEqual(x, y):
+                    self.assertEqual(x, y, msg=cond)
                 assertEqual(self.rf.read('NZCV'), 0x60000000)
 
             @itest_setregs(f'NZCV={cond_true}', 'W0=0x7fffffff', 'W1=0xffffffff')
             @itest(f'ccmp w0, w1, #15, {cond}')
             def ccmp_reg_true_nv32(self):
-                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                def assertEqual(x, y):
+                    self.assertEqual(x, y, msg=cond)
                 assertEqual(self.rf.read('NZCV'), 0x90000000)
 
             @itest_setregs(f'NZCV={cond_false}', 'W0=0xffffffff', 'W1=0xffffffff')
             @itest(f'ccmp w0, w1, #15, {cond}')
             def ccmp_reg_false32(self):
-                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                def assertEqual(x, y):
+                    self.assertEqual(x, y, msg=cond)
                 assertEqual(self.rf.read('NZCV'), 0xf0000000)
 
             # 64-bit.
@@ -4055,7 +4065,8 @@ class Aarch64Instructions:
             )
             @itest(f'ccmp x0, x1, #15, {cond}')
             def ccmp_reg_true_zc64(self):
-                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                def assertEqual(x, y):
+                    self.assertEqual(x, y, msg=cond)
                 assertEqual(self.rf.read('NZCV'), 0x60000000)
 
             @itest_setregs(
@@ -4065,7 +4076,8 @@ class Aarch64Instructions:
             )
             @itest(f'ccmp x0, x1, #15, {cond}')
             def ccmp_reg_true_nv64(self):
-                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                def assertEqual(x, y):
+                    self.assertEqual(x, y, msg=cond)
                 assertEqual(self.rf.read('NZCV'), 0x90000000)
 
             @itest_setregs(
@@ -4075,7 +4087,8 @@ class Aarch64Instructions:
             )
             @itest(f'ccmp x0, x1, #15, {cond}')
             def ccmp_reg_false64(self):
-                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                def assertEqual(x, y):
+                    self.assertEqual(x, y, msg=cond)
                 assertEqual(self.rf.read('NZCV'), 0xf0000000)
 
             if cond_true:
@@ -4112,21 +4125,24 @@ class Aarch64Instructions:
             @itest_setregs(f'NZCV={cond_true}', 'W1=0x41424344')
             @itest(f'cinc w0, w1, {cond}')
             def cinc_true32(self):
-                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                def assertEqual(x, y):
+                    self.assertEqual(x, y, msg=cond)
                 assertEqual(self.rf.read('X0'), 0x41424345)
                 assertEqual(self.rf.read('W0'), 0x41424345)
 
             @itest_setregs(f'NZCV={cond_true}', 'W1=0xffffffff')
             @itest(f'cinc w0, w1, {cond}')
             def cinc_true_of32(self):
-                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                def assertEqual(x, y):
+                    self.assertEqual(x, y, msg=cond)
                 assertEqual(self.rf.read('X0'), 0)
                 assertEqual(self.rf.read('W0'), 0)
 
             @itest_setregs(f'NZCV={cond_false}', 'W1=0x41424344')
             @itest(f'cinc w0, w1, {cond}')
             def cinc_false32(self):
-                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                def assertEqual(x, y):
+                    self.assertEqual(x, y, msg=cond)
                 assertEqual(self.rf.read('X0'), 0x41424344)
                 assertEqual(self.rf.read('W0'), 0x41424344)
 
@@ -4135,21 +4151,24 @@ class Aarch64Instructions:
             @itest_setregs(f'NZCV={cond_true}', 'X1=0x4142434445464748')
             @itest(f'cinc x0, x1, {cond}')
             def cinc_true64(self):
-                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                def assertEqual(x, y):
+                    self.assertEqual(x, y, msg=cond)
                 assertEqual(self.rf.read('X0'), 0x4142434445464749)
                 assertEqual(self.rf.read('W0'), 0x45464749)
 
             @itest_setregs(f'NZCV={cond_true}', 'X1=0xffffffffffffffff')
             @itest(f'cinc x0, x1, {cond}')
             def cinc_true_of64(self):
-                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                def assertEqual(x, y):
+                    self.assertEqual(x, y, msg=cond)
                 assertEqual(self.rf.read('X0'), 0)
                 assertEqual(self.rf.read('W0'), 0)
 
             @itest_setregs(f'NZCV={cond_false}', 'X1=0x4142434445464748')
             @itest(f'cinc x0, x1, {cond}')
             def cinc_false64(self):
-                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                def assertEqual(x, y):
+                    self.assertEqual(x, y, msg=cond)
                 assertEqual(self.rf.read('X0'), 0x4142434445464748)
                 assertEqual(self.rf.read('W0'), 0x45464748)
 
@@ -4187,14 +4206,16 @@ class Aarch64Instructions:
             @itest_setregs(f'NZCV={cond_true}', 'W1=0x41424344')
             @itest(f'cinv w0, w1, {cond}')
             def cinv_true32(self):
-                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                def assertEqual(x, y):
+                    self.assertEqual(x, y, msg=cond)
                 assertEqual(self.rf.read('X0'), 0xbebdbcbb)
                 assertEqual(self.rf.read('W0'), 0xbebdbcbb)
 
             @itest_setregs(f'NZCV={cond_false}', 'W1=0x41424344')
             @itest(f'cinv w0, w1, {cond}')
             def cinv_false32(self):
-                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                def assertEqual(x, y):
+                    self.assertEqual(x, y, msg=cond)
                 assertEqual(self.rf.read('X0'), 0x41424344)
                 assertEqual(self.rf.read('W0'), 0x41424344)
 
@@ -4203,14 +4224,16 @@ class Aarch64Instructions:
             @itest_setregs(f'NZCV={cond_true}', 'X1=0x4142434445464748')
             @itest(f'cinv x0, x1, {cond}')
             def cinv_true64(self):
-                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                def assertEqual(x, y):
+                    self.assertEqual(x, y, msg=cond)
                 assertEqual(self.rf.read('X0'), 0xbebdbcbbbab9b8b7)
                 assertEqual(self.rf.read('W0'), 0xbab9b8b7)
 
             @itest_setregs(f'NZCV={cond_false}', 'X1=0x4142434445464748')
             @itest(f'cinv x0, x1, {cond}')
             def cinv_false64(self):
-                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                def assertEqual(x, y):
+                    self.assertEqual(x, y, msg=cond)
                 assertEqual(self.rf.read('X0'), 0x4142434445464748)
                 assertEqual(self.rf.read('W0'), 0x45464748)
 
@@ -5879,14 +5902,16 @@ class Aarch64Instructions:
             @itest_setregs(f'NZCV={cond_true}', 'W1=0x41424344', 'W2=0x51525354')
             @itest(f'csel w0, w1, w2, {cond}')
             def csel_true32(self):
-                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                def assertEqual(x, y):
+                    self.assertEqual(x, y, msg=cond)
                 assertEqual(self.rf.read('X0'), 0x41424344)
                 assertEqual(self.rf.read('W0'), 0x41424344)
 
             @itest_setregs(f'NZCV={cond_false}', 'W1=0x41424344', 'W2=0x51525354')
             @itest(f'csel w0, w1, w2, {cond}')
             def csel_false32(self):
-                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                def assertEqual(x, y):
+                    self.assertEqual(x, y, msg=cond)
                 assertEqual(self.rf.read('X0'), 0x51525354)
                 assertEqual(self.rf.read('W0'), 0x51525354)
 
@@ -5899,7 +5924,8 @@ class Aarch64Instructions:
             )
             @itest(f'csel x0, x1, x2, {cond}')
             def csel_true64(self):
-                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                def assertEqual(x, y):
+                    self.assertEqual(x, y, msg=cond)
                 assertEqual(self.rf.read('X0'), 0x4142434445464748)
                 assertEqual(self.rf.read('W0'), 0x45464748)
 
@@ -5910,7 +5936,8 @@ class Aarch64Instructions:
             )
             @itest(f'csel x0, x1, x2, {cond}')
             def csel_false64(self):
-                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                def assertEqual(x, y):
+                    self.assertEqual(x, y, msg=cond)
                 assertEqual(self.rf.read('X0'), 0x5152535455565758)
                 assertEqual(self.rf.read('W0'), 0x55565758)
 
@@ -5942,14 +5969,16 @@ class Aarch64Instructions:
             @itest_setregs(f'NZCV={cond_true}')
             @itest(f'cset w0, {cond}')
             def cset_true32(self):
-                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                def assertEqual(x, y):
+                    self.assertEqual(x, y, msg=cond)
                 assertEqual(self.rf.read('X0'), 1)
                 assertEqual(self.rf.read('W0'), 1)
 
             @itest_setregs(f'NZCV={cond_false}')
             @itest(f'cset w0, {cond}')
             def cset_false32(self):
-                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                def assertEqual(x, y):
+                    self.assertEqual(x, y, msg=cond)
                 assertEqual(self.rf.read('X0'), 0)
                 assertEqual(self.rf.read('W0'), 0)
 
@@ -5958,14 +5987,16 @@ class Aarch64Instructions:
             @itest_setregs(f'NZCV={cond_true}')
             @itest(f'cset x0, {cond}')
             def cset_true64(self):
-                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                def assertEqual(x, y):
+                    self.assertEqual(x, y, msg=cond)
                 assertEqual(self.rf.read('X0'), 1)
                 assertEqual(self.rf.read('W0'), 1)
 
             @itest_setregs(f'NZCV={cond_false}')
             @itest(f'cset x0, {cond}')
             def cset_false64(self):
-                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                def assertEqual(x, y):
+                    self.assertEqual(x, y, msg=cond)
                 assertEqual(self.rf.read('X0'), 0)
                 assertEqual(self.rf.read('W0'), 0)
 
@@ -5997,14 +6028,16 @@ class Aarch64Instructions:
             @itest_setregs(f'NZCV={cond_true}')
             @itest(f'csetm w0, {cond}')
             def csetm_true32(self):
-                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                def assertEqual(x, y):
+                    self.assertEqual(x, y, msg=cond)
                 assertEqual(self.rf.read('X0'), 0xffffffff)
                 assertEqual(self.rf.read('W0'), 0xffffffff)
 
             @itest_setregs(f'NZCV={cond_false}')
             @itest(f'csetm w0, {cond}')
             def csetm_false32(self):
-                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                def assertEqual(x, y):
+                    self.assertEqual(x, y, msg=cond)
                 assertEqual(self.rf.read('X0'), 0)
                 assertEqual(self.rf.read('W0'), 0)
 
@@ -6013,14 +6046,16 @@ class Aarch64Instructions:
             @itest_setregs(f'NZCV={cond_true}')
             @itest(f'csetm x0, {cond}')
             def csetm_true64(self):
-                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                def assertEqual(x, y):
+                    self.assertEqual(x, y, msg=cond)
                 assertEqual(self.rf.read('X0'), 0xffffffffffffffff)
                 assertEqual(self.rf.read('W0'), 0xffffffff)
 
             @itest_setregs(f'NZCV={cond_false}')
             @itest(f'csetm x0, {cond}')
             def csetm_false64(self):
-                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                def assertEqual(x, y):
+                    self.assertEqual(x, y, msg=cond)
                 assertEqual(self.rf.read('X0'), 0)
                 assertEqual(self.rf.read('W0'), 0)
 
@@ -6050,21 +6085,24 @@ class Aarch64Instructions:
             @itest_setregs(f'NZCV={cond_true}', 'W1=0x41424344', 'W2=0x51525354')
             @itest(f'csinc w0, w1, w2, {cond}')
             def csinc_true32(self):
-                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                def assertEqual(x, y):
+                    self.assertEqual(x, y, msg=cond)
                 assertEqual(self.rf.read('X0'), 0x41424344)
                 assertEqual(self.rf.read('W0'), 0x41424344)
 
             @itest_setregs(f'NZCV={cond_false}', 'W1=0x41424344', 'W2=0x51525354')
             @itest(f'csinc w0, w1, w2, {cond}')
             def csinc_false32(self):
-                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                def assertEqual(x, y):
+                    self.assertEqual(x, y, msg=cond)
                 assertEqual(self.rf.read('X0'), 0x51525355)
                 assertEqual(self.rf.read('W0'), 0x51525355)
 
             @itest_setregs(f'NZCV={cond_false}', 'W1=0x41424344', 'W2=0xffffffff')
             @itest(f'csinc w0, w1, w2, {cond}')
             def csinc_false_of32(self):
-                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                def assertEqual(x, y):
+                    self.assertEqual(x, y, msg=cond)
                 assertEqual(self.rf.read('X0'), 0)
                 assertEqual(self.rf.read('W0'), 0)
 
@@ -6077,7 +6115,8 @@ class Aarch64Instructions:
             )
             @itest(f'csinc x0, x1, x2, {cond}')
             def csinc_true64(self):
-                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                def assertEqual(x, y):
+                    self.assertEqual(x, y, msg=cond)
                 assertEqual(self.rf.read('X0'), 0x4142434445464748)
                 assertEqual(self.rf.read('W0'), 0x45464748)
 
@@ -6088,7 +6127,8 @@ class Aarch64Instructions:
             )
             @itest(f'csinc x0, x1, x2, {cond}')
             def csinc_false64(self):
-                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                def assertEqual(x, y):
+                    self.assertEqual(x, y, msg=cond)
                 assertEqual(self.rf.read('X0'), 0x5152535455565759)
                 assertEqual(self.rf.read('W0'), 0x55565759)
 
@@ -6099,7 +6139,8 @@ class Aarch64Instructions:
             )
             @itest(f'csinc x0, x1, x2, {cond}')
             def csinc_false_of64(self):
-                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                def assertEqual(x, y):
+                    self.assertEqual(x, y, msg=cond)
                 assertEqual(self.rf.read('X0'), 0)
                 assertEqual(self.rf.read('W0'), 0)
 
@@ -6135,14 +6176,16 @@ class Aarch64Instructions:
             @itest_setregs(f'NZCV={cond_true}', 'W1=0x41424344', 'W2=0x51525354')
             @itest(f'csinv w0, w1, w2, {cond}')
             def csinv_true32(self):
-                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                def assertEqual(x, y):
+                    self.assertEqual(x, y, msg=cond)
                 assertEqual(self.rf.read('X0'), 0x41424344)
                 assertEqual(self.rf.read('W0'), 0x41424344)
 
             @itest_setregs(f'NZCV={cond_false}', 'W1=0x41424344', 'W2=0x51525354')
             @itest(f'csinv w0, w1, w2, {cond}')
             def csinv_false32(self):
-                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                def assertEqual(x, y):
+                    self.assertEqual(x, y, msg=cond)
                 assertEqual(self.rf.read('X0'), 0xaeadacab)
                 assertEqual(self.rf.read('W0'), 0xaeadacab)
 
@@ -6155,7 +6198,8 @@ class Aarch64Instructions:
             )
             @itest(f'csinv x0, x1, x2, {cond}')
             def csinv_true64(self):
-                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                def assertEqual(x, y):
+                    self.assertEqual(x, y, msg=cond)
                 assertEqual(self.rf.read('X0'), 0x4142434445464748)
                 assertEqual(self.rf.read('W0'), 0x45464748)
 
@@ -6166,7 +6210,8 @@ class Aarch64Instructions:
             )
             @itest(f'csinv x0, x1, x2, {cond}')
             def csinv_false64(self):
-                assertEqual = lambda x, y: self.assertEqual(x, y, msg=cond)
+                def assertEqual(x, y):
+                    self.assertEqual(x, y, msg=cond)
                 assertEqual(self.rf.read('X0'), 0xaeadacabaaa9a8a7)
                 assertEqual(self.rf.read('W0'), 0xaaa9a8a7)
 
@@ -6627,7 +6672,8 @@ class Aarch64Instructions:
                     # Execute the target instruction.
                     self._execute(reset=False)
 
-                    assertEqual = lambda x, y: self.assertEqual(x, y, msg=insn)
+                    def assertEqual(x, y):
+                        self.assertEqual(x, y, msg=insn)
                     for i in range(reg_count):
                         # Calculate the result.
                         j = i * (size // dword_size)
@@ -13927,9 +13973,10 @@ class Aarch64Instructions:
                 multiple_insts=True
             )
             def f(self):
+                def assertEqual(x, y):
+                    self.assertEqual(x, y, msg=insn)
                 for i in range(4):
                     self._execute(reset=i == 0)
-                assertEqual = lambda x, y: self.assertEqual(x, y, msg=insn)
                 assertEqual(self.rf.read('X0'), res & Mask(64))
                 assertEqual(self.rf.read('W0'), res & Mask(32))
 

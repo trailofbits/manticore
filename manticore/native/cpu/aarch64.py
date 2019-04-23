@@ -499,9 +499,11 @@ class Aarch64Cpu(Cpu):
         assert re.match(insn_rx, cpu.insn_bit_str)
 
         if mnem in ('add', 'adds'):
-            action = lambda x, y: cpu._add_with_carry(res_op.size, x, y, 0)
+            def action(x, y):
+                return cpu._add_with_carry(res_op.size, x, y, 0)
         else:
-            action = lambda x, y: cpu._add_with_carry(res_op.size, x, ~y, 1)
+            def action(x, y):
+                return cpu._add_with_carry(res_op.size, x, ~y, 1)
 
         if mnem in ('add', 'sub'):
             flags = False
