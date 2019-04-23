@@ -302,8 +302,7 @@ class Aarch64Cpu(Cpu):
         if (name == 'ORR' and len(ops) == 3 and
             ops[1].type == cs.arm64.ARM64_OP_REG and
             ops[1].reg in ['WZR', 'XZR'] and
-            not ops[2].is_shifted()
-           ):
+            not ops[2].is_shifted()):
             name = 'MOV'
             insn._raw.mnemonic = name.lower().encode('ascii')
             del ops[1]
@@ -311,16 +310,14 @@ class Aarch64Cpu(Cpu):
         # Map all B.cond variants to a single implementation.
         elif (len(name_list) == 2 and
               name_list[0] == 'B' and
-              insn.cc != cs.arm64.ARM64_CC_INVALID
-             ):
+              insn.cc != cs.arm64.ARM64_CC_INVALID):
             name = 'B_cond'
 
         # XXX: BFI is only valid when Rn != 11111:
         # https://github.com/aquynh/capstone/issues/1441
         elif (name == 'BFI' and len(ops) == 4 and
               ops[1].type == cs.arm64.ARM64_OP_REG and
-              ops[1].reg in ['WZR', 'XZR']
-             ):
+              ops[1].reg in ['WZR', 'XZR']):
             name = 'BFC'
             insn._raw.mnemonic = name.lower().encode('ascii')
             del ops[1]
