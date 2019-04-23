@@ -512,12 +512,12 @@ class Aarch64Cpu(Cpu):
             flags = True
 
         cpu._shifted_register(
-            res_op = res_op,
-            reg_op1 = reg_op1,
-            reg_op2 = reg_op2,
-            action = action,
-            flags = flags,
-            shifts = [
+            res_op=res_op,
+            reg_op1=reg_op1,
+            reg_op2=reg_op2,
+            action=action,
+            flags=flags,
+            shifts=[
                 cs.arm64.ARM64_SFT_LSL,
                 cs.arm64.ARM64_SFT_LSR,
                 cs.arm64.ARM64_SFT_ASR
@@ -1523,11 +1523,11 @@ class Aarch64Cpu(Cpu):
         assert re.match(insn_rx, cpu.insn_bit_str)
 
         cpu._shifted_register(
-            res_op = res_op,
-            reg_op1 = reg_op1,
-            reg_op2 = reg_op2,
-            action = lambda x, y: (x & y, None),
-            shifts = [
+            res_op=res_op,
+            reg_op1=reg_op1,
+            reg_op2=reg_op2,
+            action=lambda x, y: (x & y, None),
+            shifts=[
                 cs.arm64.ARM64_SFT_LSL,
                 cs.arm64.ARM64_SFT_LSR,
                 cs.arm64.ARM64_SFT_ASR,
@@ -1669,12 +1669,12 @@ class Aarch64Cpu(Cpu):
             return (result, (n, z, 0, 0))
 
         cpu._shifted_register(
-            res_op = res_op,
-            reg_op1 = reg_op1,
-            reg_op2 = reg_op2,
-            action = lambda x, y: action(x, y),
-            flags = True,
-            shifts = [
+            res_op=res_op,
+            reg_op1=reg_op1,
+            reg_op2=reg_op2,
+            action=lambda x, y: action(x, y),
+            flags=True,
+            shifts=[
                 cs.arm64.ARM64_SFT_LSL,
                 cs.arm64.ARM64_SFT_LSR,
                 cs.arm64.ARM64_SFT_ASR,
@@ -2040,11 +2040,11 @@ class Aarch64Cpu(Cpu):
         assert re.match(insn_rx, cpu.insn_bit_str)
 
         cpu._shifted_register(
-            res_op = res_op,
-            reg_op1 = reg_op1,
-            reg_op2 = reg_op2,
-            action = lambda x, y: (x & ~y, None),
-            shifts = [
+            res_op=res_op,
+            reg_op1=reg_op1,
+            reg_op2=reg_op2,
+            action=lambda x, y: (x & ~y, None),
+            shifts=[
                 cs.arm64.ARM64_SFT_LSL,
                 cs.arm64.ARM64_SFT_LSR,
                 cs.arm64.ARM64_SFT_ASR,
@@ -2083,12 +2083,12 @@ class Aarch64Cpu(Cpu):
             return (result, (n, z, 0, 0))
 
         cpu._shifted_register(
-            res_op = res_op,
-            reg_op1 = reg_op1,
-            reg_op2 = reg_op2,
-            action = lambda x, y: action(x, y),
-            flags = True,
-            shifts = [
+            res_op=res_op,
+            reg_op1=reg_op1,
+            reg_op2=reg_op2,
+            action=lambda x, y: action(x, y),
+            flags=True,
+            shifts=[
                 cs.arm64.ARM64_SFT_LSL,
                 cs.arm64.ARM64_SFT_LSR,
                 cs.arm64.ARM64_SFT_ASR,
@@ -2970,11 +2970,11 @@ class Aarch64Cpu(Cpu):
         assert re.match(insn_rx, cpu.insn_bit_str)
 
         cpu._shifted_register(
-            res_op = res_op,
-            reg_op1 = reg_op1,
-            reg_op2 = reg_op2,
-            action = lambda x, y: (x ^ y, None),
-            shifts = [
+            res_op=res_op,
+            reg_op1=reg_op1,
+            reg_op2=reg_op2,
+            action=lambda x, y: (x ^ y, None),
+            shifts=[
                 cs.arm64.ARM64_SFT_LSL,
                 cs.arm64.ARM64_SFT_LSR,
                 cs.arm64.ARM64_SFT_ASR,
@@ -4098,11 +4098,11 @@ class Aarch64Cpu(Cpu):
         assert re.match(insn_rx, cpu.insn_bit_str)
 
         cpu._shifted_register(
-            res_op = res_op,
-            reg_op1 = reg_op1,
-            reg_op2 = reg_op2,
-            action = lambda x, y: (x | y, None),
-            shifts = [
+            res_op=res_op,
+            reg_op1=reg_op1,
+            reg_op2=reg_op2,
+            action=lambda x, y: (x | y, None),
+            shifts=[
                 cs.arm64.ARM64_SFT_LSL,
                 cs.arm64.ARM64_SFT_LSR,
                 cs.arm64.ARM64_SFT_ASR,
