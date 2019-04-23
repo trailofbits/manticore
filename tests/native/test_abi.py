@@ -44,9 +44,9 @@ class ABITest(unittest.TestCase):
         def write(mem, where, val, size):
             mem[where:where + size // 8] = [Operators.CHR(Operators.EXTRACT(val, offset, 8)) for offset in range(0, size, 8)]
         for val in range(0, 0x100, 4):
-            write(mem32, 0x1000+val, val, 32)
+            write(mem32, 0x1000 + val, val, 32)
         for val in range(0, 0x100, 8):
-            write(mem64, 0x1000+val, val, 64)
+            write(mem64, 0x1000 + val, val, 64)
 
     def test_executor(self):
         pass
@@ -295,7 +295,7 @@ class ABITest(unittest.TestCase):
         # Make sure eax is unchanged
         self.assertEqual(cpu.EAX, prev_eax)
         # Make sure EIP wasn't popped
-        self.assertEqual(base, cpu.ESP+4)
+        self.assertEqual(base, cpu.ESP + 4)
         self.assertNotEqual(cpu.EIP, 0x1234)
 
     def test_i386_vararg(self):
@@ -477,7 +477,7 @@ class ABITest(unittest.TestCase):
 
         class Kls:
             def method(self, a, b):
-                return a+b
+                return a + b
 
         obj = Kls()
         result = cpu.func_abi.invoke(obj.method)

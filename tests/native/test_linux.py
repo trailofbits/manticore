@@ -54,13 +54,13 @@ class LinuxTest(unittest.TestCase):
         self.assertEqual(cpu.read_int(cpu.STACK), 4)
 
         argv_ptr = cpu.STACK + 8
-        envp_ptr = argv_ptr + len(real_argv)*8 + 8
+        envp_ptr = argv_ptr + len(real_argv) * 8 + 8
 
         for i, arg in enumerate(real_argv):
-            self.assertEqual(cpu.read_string(cpu.read_int(argv_ptr + i*8)), arg)
+            self.assertEqual(cpu.read_string(cpu.read_int(argv_ptr + i * 8)), arg)
 
         for i, env in enumerate(envp):
-            self.assertEqual(cpu.read_string(cpu.read_int(envp_ptr + i*8)), env)
+            self.assertEqual(cpu.read_string(cpu.read_int(envp_ptr + i * 8)), env)
 
     def test_load_maps(self):
         mappings = self.linux.current.memory.mappings()
@@ -113,7 +113,7 @@ class LinuxTest(unittest.TestCase):
         # Create a minimal state
         platform = self.symbolic_linux_armv7
         platform.current.memory.mmap(0x1000, 0x1000, 'rw ')
-        platform.current.SP = 0x2000-4
+        platform.current.SP = 0x2000 - 4
 
         # open a file
         filename = platform.current.push_bytes('/bin/true\x00')
@@ -142,7 +142,7 @@ class LinuxTest(unittest.TestCase):
 
         # create filename in memory
         platform.current.memory.mmap(0x1000, 0x1000, 'rw ')
-        platform.current.SP = 0x2000-4
+        platform.current.SP = 0x2000 - 4
         fname_ptr = platform.current.push_bytes(fname + '\x00')
 
         # open and close file
@@ -189,7 +189,7 @@ class LinuxTest(unittest.TestCase):
         # Create a minimal state
         platform = self.symbolic_linux_armv7
         platform.current.memory.mmap(0x1000, 0x1000, 'rw ')
-        platform.current.SP = 0x2000-4
+        platform.current.SP = 0x2000 - 4
         platform.current.memory.mmap(0x2000, 0x2000, 'rwx')
         platform.current.PC = 0x2000
         platform.current.write_int(platform.current.PC, 0x050f)
@@ -211,7 +211,7 @@ class LinuxTest(unittest.TestCase):
         platform.execute()
         post_icount = platform.current.icount
 
-        self.assertEqual(pre_icount+1, post_icount)
+        self.assertEqual(pre_icount + 1, post_icount)
         self.assertEqual(r.nevents, 2)
 
     def _armv7_create_openat_state(self):
@@ -220,7 +220,7 @@ class LinuxTest(unittest.TestCase):
         # Create a minimal state
         platform = self.symbolic_linux_armv7
         platform.current.memory.mmap(0x1000, 0x1000, 'rw ')
-        platform.current.SP = 0x2000-4
+        platform.current.SP = 0x2000 - 4
 
         dir_path = tempfile.mkdtemp()
         file_name = "file"
@@ -229,9 +229,9 @@ class LinuxTest(unittest.TestCase):
             f.write(b'test')
 
         # open a file + directory
-        dirname = platform.current.push_bytes(dir_path+'\x00')
+        dirname = platform.current.push_bytes(dir_path + '\x00')
         dirfd = platform.sys_open(dirname, os.O_RDONLY, 0o700)
-        filename = platform.current.push_bytes(file_name+'\x00')
+        filename = platform.current.push_bytes(file_name + '\x00')
 
         stat = platform.current.SP - 0x100
         platform.current.R0 = dirfd
@@ -263,7 +263,7 @@ class LinuxTest(unittest.TestCase):
 
             _min, _max = solver.minmax(platform.constraints, e.cpu.read_register(e.reg_name))
             self.assertLess(_min, len(platform.files))
-            self.assertGreater(_max, len(platform.files)-1)
+            self.assertGreater(_max, len(platform.files) - 1)
         finally:
             shutil.rmtree(temp_dir)
 
@@ -271,7 +271,7 @@ class LinuxTest(unittest.TestCase):
         # Create a minimal state
         platform = self.symbolic_linux_armv7
         platform.current.memory.mmap(0x1000, 0x1000, 'rw ')
-        platform.current.SP = 0x2000-4
+        platform.current.SP = 0x2000 - 4
 
         # should error with ENOENT
         this_file = os.path.realpath(__file__)
@@ -292,12 +292,12 @@ class LinuxTest(unittest.TestCase):
                                  envp={'TEST': '+'})
         state = self.m.initial_state
 
-        ptr = state.cpu.read_int(state.cpu.RSP + (8*2))  # get argv[1]
+        ptr = state.cpu.read_int(state.cpu.RSP + (8 * 2))  # get argv[1]
         mem = state.cpu.read_bytes(ptr, 2)
         self.assertTrue(issymbolic(mem[0]))
         self.assertEqual(mem[1], b'\0')
 
-        ptr = state.cpu.read_int(state.cpu.RSP + (8*4))  # get envp[0]
+        ptr = state.cpu.read_int(state.cpu.RSP + (8 * 4))  # get envp[0]
         mem = state.cpu.read_bytes(ptr, 7)
         self.assertEqual(b''.join(mem[:5]), b'TEST=')
         self.assertEqual(mem[6], b'\0')

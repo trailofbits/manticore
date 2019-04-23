@@ -1384,7 +1384,7 @@ class UnicornConcretization(unittest.TestCase):
             self.assertFalse(True)
         except ConcretizeMemory as e:
             sp = self.rf.read('SP')
-            self.assertTrue(e.address in range(sp, sp+len(val)))
+            self.assertTrue(e.address in range(sp, sp + len(val)))
 
     @itest_custom("mov r1, r2")
     def test_load_symbolic_from_register(self):
@@ -1419,7 +1419,7 @@ class UnicornConcretization(unittest.TestCase):
 
         emulate_next(self.cpu)
 
-        self.assertEqual(self.rf.read('PC'), self.code+8)
+        self.assertEqual(self.rf.read('PC'), self.code + 8)
         self.assertEqual(self.rf.read('R0'), 0x12345678)
 
     @itest_custom("mov r1, r2")

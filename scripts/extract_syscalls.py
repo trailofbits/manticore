@@ -69,7 +69,7 @@ def write_without_includes(f, res):
             f.write(line + '\n')
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Generate syscall tables')
     parser.add_argument('output', help='Python output to generate tables')
     parser.add_argument('--linux_version', help='Major version of the Linux kernel to use', default='4.11')

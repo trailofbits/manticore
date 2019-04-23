@@ -6613,7 +6613,7 @@ class Aarch64Instructions:
                         self._execute(reset=i == 0, check_cs=False)
 
                     # Push in reverse order.
-                    for i in range(reg_count * (size // dword_size) -1, -1, -1):
+                    for i in range(reg_count * (size // dword_size) - 1, -1, -1):
                         self.cpu.push_int(val + i * step)
 
                     # Save the stack pointer.
@@ -9595,7 +9595,7 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W0'), 0x41424344)
 
     # This is actually sbfiz.
-    @itest_setregs('W0=0xffffffff','W1=0x44434241')
+    @itest_setregs('W0=0xffffffff', 'W1=0x44434241')
     @itest('sbfm w0, w1, #31, #0')
     def test_sbfm_lt_max32(self):
         self.assertEqual(self.rf.read('X0'), 0xfffffffe)
@@ -9665,7 +9665,7 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W0'), 0x45464748)
 
     # This is actually sbfiz.
-    @itest_setregs('X0=0xffffffffffffffff','X1=0x4847464544434241')
+    @itest_setregs('X0=0xffffffffffffffff', 'X1=0x4847464544434241')
     @itest('sbfm x0, x1, #63, #0')
     def test_sbfm_lt_max64(self):
         self.assertEqual(self.rf.read('X0'), 0xfffffffffffffffe)
@@ -13707,7 +13707,7 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W0'), 0x41424344)
 
     # This is actually ubfiz.
-    @itest_setregs('W0=0xffffffff','W1=0x44434241')
+    @itest_setregs('W0=0xffffffff', 'W1=0x44434241')
     @itest('ubfm w0, w1, #31, #0')
     def test_ubfm_lt_max32(self):
         self.assertEqual(self.rf.read('X0'), 2)
@@ -13765,7 +13765,7 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W0'), 0x45464748)
 
     # This is actually ubfiz.
-    @itest_setregs('X0=0xffffffffffffffff','X1=0x4847464544434241')
+    @itest_setregs('X0=0xffffffffffffffff', 'X1=0x4847464544434241')
     @itest('ubfm x0, x1, #63, #0')
     def test_ubfm_lt_max64(self):
         self.assertEqual(self.rf.read('X0'), 2)
