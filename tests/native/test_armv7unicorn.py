@@ -5,6 +5,7 @@ import struct
 from capstone import CS_MODE_THUMB, CS_MODE_ARM
 from functools import wraps
 from keystone import Ks, KS_ARCH_ARM, KS_MODE_ARM, KS_MODE_THUMB
+import logging
 from unicorn import UC_QUERY_MODE, UC_MODE_THUMB
 
 from manticore.native.cpu.abstractcpu import ConcretizeRegister
@@ -17,8 +18,6 @@ from manticore.utils.emulate import UnicornEmulator
 
 ks = Ks(KS_ARCH_ARM, KS_MODE_ARM)
 ks_thumb = Ks(KS_ARCH_ARM, KS_MODE_THUMB)
-
-import logging
 
 logger = logging.getLogger("ARM_TESTS")
 
