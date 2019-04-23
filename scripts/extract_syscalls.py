@@ -24,7 +24,7 @@ BASE_URL = 'https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/p
 
 # Use an associative list rather than a dict to get deterministic output.
 ARCH_TABLES = [
-    ('i386',  'arch/x86/entry/syscalls/syscall_32.tbl'),
+    ('i386', 'arch/x86/entry/syscalls/syscall_32.tbl'),
     ('amd64', 'arch/x86/entry/syscalls/syscall_64.tbl'),
     ('armv7', 'arch/arm/tools/syscall.tbl'),
 ]

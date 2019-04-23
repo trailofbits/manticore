@@ -6325,7 +6325,7 @@ class Aarch64Instructions:
             dmb(f'#{imm}')
 
         for bar in (
-            'sy',  'st',    'ld',
+            'sy', 'st', 'ld',
             'ish', 'ishst', 'ishld',
             'nsh', 'nshst', 'nshld',
             'osh', 'oshst', 'oshld'
@@ -10063,7 +10063,7 @@ class Aarch64Instructions:
         self.cpu.push_int(0x7172737475767778)
         stack = self.cpu.STACK
         self._execute()
-        self.assertEqual(self.cpu.read_int(stack),     0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack), 0x4142434445464748)
         self.assertEqual(self.cpu.read_int(stack + 8), 0x5152535455565758)
         self.assertEqual(self.rf.read('SP'), stack)  # no writeback
 
@@ -10075,7 +10075,7 @@ class Aarch64Instructions:
         self.cpu.push_int(0x8182838485868788)
         stack = self.cpu.STACK
         self._execute()
-        self.assertEqual(self.cpu.read_int(stack + 8),     0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x4142434445464748)
         self.assertEqual(self.cpu.read_int(stack + 8 + 8), 0x5152535455565758)
         self.assertEqual(self.rf.read('SP'), stack)  # no writeback
 
@@ -10087,7 +10087,7 @@ class Aarch64Instructions:
         self.cpu.STACK -= 504
         stack = self.cpu.STACK
         self._execute()
-        self.assertEqual(self.cpu.read_int(stack + 504),     0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 504), 0x4142434445464748)
         self.assertEqual(self.cpu.read_int(stack + 504 + 8), 0x5152535455565758)
         self.assertEqual(self.rf.read('SP'), stack)  # no writeback
 
@@ -10099,7 +10099,7 @@ class Aarch64Instructions:
         self.cpu.STACK += 512
         stack = self.cpu.STACK
         self._execute()
-        self.assertEqual(self.cpu.read_int(stack - 512),     0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack - 512), 0x4142434445464748)
         self.assertEqual(self.cpu.read_int(stack - 512 + 8), 0x5152535455565758)
         self.assertEqual(self.rf.read('SP'), stack)  # no writeback
 
@@ -10110,7 +10110,7 @@ class Aarch64Instructions:
         self.cpu.push_int(0x7172737475767778)
         stack = self.cpu.STACK
         self._execute()
-        self.assertEqual(self.cpu.read_int(stack),     0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack), 0x4142434445464748)
         self.assertEqual(self.cpu.read_int(stack + 8), 0x5152535455565758)
         self.assertEqual(self.rf.read('SP'), stack + 8)  # writeback
 
@@ -10121,7 +10121,7 @@ class Aarch64Instructions:
         self.cpu.push_int(0x7172737475767778)
         stack = self.cpu.STACK
         self._execute()
-        self.assertEqual(self.cpu.read_int(stack),     0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack), 0x4142434445464748)
         self.assertEqual(self.cpu.read_int(stack + 8), 0x5152535455565758)
         self.assertEqual(self.rf.read('SP'), stack + 504)  # writeback
 
@@ -10132,7 +10132,7 @@ class Aarch64Instructions:
         self.cpu.push_int(0x7172737475767778)
         stack = self.cpu.STACK
         self._execute()
-        self.assertEqual(self.cpu.read_int(stack),     0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack), 0x4142434445464748)
         self.assertEqual(self.cpu.read_int(stack + 8), 0x5152535455565758)
         self.assertEqual(self.rf.read('SP'), stack - 512)  # writeback
 
@@ -10143,7 +10143,7 @@ class Aarch64Instructions:
         self.cpu.push_int(0x7172737475767778)
         stack = self.cpu.STACK
         self._execute()
-        self.assertEqual(self.cpu.read_int(stack + 8),     0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x4142434445464748)
         self.assertEqual(self.cpu.read_int(stack + 8 + 8), 0x5152535455565758)
         self.assertEqual(self.rf.read('SP'), stack + 8)  # writeback
 
@@ -10155,7 +10155,7 @@ class Aarch64Instructions:
         self.cpu.STACK -= 504
         stack = self.cpu.STACK
         self._execute()
-        self.assertEqual(self.cpu.read_int(stack + 504),     0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 504), 0x4142434445464748)
         self.assertEqual(self.cpu.read_int(stack + 504 + 8), 0x5152535455565758)
         self.assertEqual(self.rf.read('SP'), stack + 504)  # writeback
 
@@ -10167,7 +10167,7 @@ class Aarch64Instructions:
         self.cpu.STACK += 512
         stack = self.cpu.STACK
         self._execute()
-        self.assertEqual(self.cpu.read_int(stack - 512),     0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack - 512), 0x4142434445464748)
         self.assertEqual(self.cpu.read_int(stack - 512 + 8), 0x5152535455565758)
         self.assertEqual(self.rf.read('SP'), stack - 512)  # writeback
 
@@ -10391,7 +10391,7 @@ class Aarch64Instructions:
         self.cpu.push_int(0xffffffffffffffff)
         stack = self.cpu.STACK
         self._execute(reset=False)
-        self.assertEqual(self.cpu.read_int(stack),     0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack), 0x4142434445464748)
         self.assertEqual(self.cpu.read_int(stack + 8), 0x5152535455565758)
         self.assertEqual(self.rf.read('SP'), stack)  # no writeback
 
@@ -10413,7 +10413,7 @@ class Aarch64Instructions:
         self.cpu.push_int(0xffffffffffffffff)
         stack = self.cpu.STACK
         self._execute(reset=False)
-        self.assertEqual(self.cpu.read_int(stack + 8),     0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x4142434445464748)
         self.assertEqual(self.cpu.read_int(stack + 8 + 8), 0x5152535455565758)
         self.assertEqual(self.rf.read('SP'), stack)  # no writeback
 
@@ -10435,7 +10435,7 @@ class Aarch64Instructions:
         self.cpu.STACK -= 504
         stack = self.cpu.STACK
         self._execute(reset=False)
-        self.assertEqual(self.cpu.read_int(stack + 504),     0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 504), 0x4142434445464748)
         self.assertEqual(self.cpu.read_int(stack + 504 + 8), 0x5152535455565758)
         self.assertEqual(self.rf.read('SP'), stack)  # no writeback
 
@@ -10457,7 +10457,7 @@ class Aarch64Instructions:
         self.cpu.STACK += 512
         stack = self.cpu.STACK
         self._execute(reset=False)
-        self.assertEqual(self.cpu.read_int(stack - 512),     0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack - 512), 0x4142434445464748)
         self.assertEqual(self.cpu.read_int(stack - 512 + 8), 0x5152535455565758)
         self.assertEqual(self.rf.read('SP'), stack)  # no writeback
 
@@ -10478,7 +10478,7 @@ class Aarch64Instructions:
         self.cpu.push_int(0xffffffffffffffff)
         stack = self.cpu.STACK
         self._execute(reset=False)
-        self.assertEqual(self.cpu.read_int(stack),     0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack), 0x4142434445464748)
         self.assertEqual(self.cpu.read_int(stack + 8), 0x5152535455565758)
         self.assertEqual(self.rf.read('SP'), stack + 8)  # writeback
 
@@ -10499,7 +10499,7 @@ class Aarch64Instructions:
         self.cpu.push_int(0xffffffffffffffff)
         stack = self.cpu.STACK
         self._execute(reset=False)
-        self.assertEqual(self.cpu.read_int(stack),     0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack), 0x4142434445464748)
         self.assertEqual(self.cpu.read_int(stack + 8), 0x5152535455565758)
         self.assertEqual(self.rf.read('SP'), stack + 504)  # writeback
 
@@ -10520,7 +10520,7 @@ class Aarch64Instructions:
         self.cpu.push_int(0xffffffffffffffff)
         stack = self.cpu.STACK
         self._execute(reset=False)
-        self.assertEqual(self.cpu.read_int(stack),     0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack), 0x4142434445464748)
         self.assertEqual(self.cpu.read_int(stack + 8), 0x5152535455565758)
         self.assertEqual(self.rf.read('SP'), stack - 512)  # writeback
 
@@ -10541,7 +10541,7 @@ class Aarch64Instructions:
         self.cpu.push_int(0xffffffffffffffff)
         stack = self.cpu.STACK
         self._execute(reset=False)
-        self.assertEqual(self.cpu.read_int(stack + 8),     0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x4142434445464748)
         self.assertEqual(self.cpu.read_int(stack + 8 + 8), 0x5152535455565758)
         self.assertEqual(self.rf.read('SP'), stack + 8)  # writeback
 
@@ -10563,7 +10563,7 @@ class Aarch64Instructions:
         self.cpu.STACK -= 504
         stack = self.cpu.STACK
         self._execute(reset=False)
-        self.assertEqual(self.cpu.read_int(stack + 504),     0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 504), 0x4142434445464748)
         self.assertEqual(self.cpu.read_int(stack + 504 + 8), 0x5152535455565758)
         self.assertEqual(self.rf.read('SP'), stack + 504)  # writeback
 
@@ -10585,7 +10585,7 @@ class Aarch64Instructions:
         self.cpu.STACK += 512
         stack = self.cpu.STACK
         self._execute(reset=False)
-        self.assertEqual(self.cpu.read_int(stack - 512),     0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack - 512), 0x4142434445464748)
         self.assertEqual(self.cpu.read_int(stack - 512 + 8), 0x5152535455565758)
         self.assertEqual(self.rf.read('SP'), stack - 512)  # writeback
 
@@ -10613,8 +10613,8 @@ class Aarch64Instructions:
         self.cpu.push_int(0xffffffffffffffff)
         stack = self.cpu.STACK
         self._execute(reset=False)
-        self.assertEqual(self.cpu.read_int(stack),      0x5152535455565758)
-        self.assertEqual(self.cpu.read_int(stack + 8),  0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack), 0x5152535455565758)
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x4142434445464748)
         self.assertEqual(self.cpu.read_int(stack + 16), 0x7172737475767778)
         self.assertEqual(self.cpu.read_int(stack + 24), 0x6162636465666768)
         self.assertEqual(self.rf.read('SP'), stack)  # no writeback
@@ -10643,8 +10643,8 @@ class Aarch64Instructions:
         self.cpu.push_int(0xffffffffffffffff)
         stack = self.cpu.STACK
         self._execute(reset=False)
-        self.assertEqual(self.cpu.read_int(stack + 16),      0x5152535455565758)
-        self.assertEqual(self.cpu.read_int(stack + 16 + 8),  0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 16), 0x5152535455565758)
+        self.assertEqual(self.cpu.read_int(stack + 16 + 8), 0x4142434445464748)
         self.assertEqual(self.cpu.read_int(stack + 16 + 16), 0x7172737475767778)
         self.assertEqual(self.cpu.read_int(stack + 16 + 24), 0x6162636465666768)
         self.assertEqual(self.rf.read('SP'), stack)  # no writeback
@@ -10672,8 +10672,8 @@ class Aarch64Instructions:
         self.cpu.STACK -= 1008
         stack = self.cpu.STACK
         self._execute(reset=False)
-        self.assertEqual(self.cpu.read_int(stack + 1008),      0x5152535455565758)
-        self.assertEqual(self.cpu.read_int(stack + 1008 + 8),  0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 1008), 0x5152535455565758)
+        self.assertEqual(self.cpu.read_int(stack + 1008 + 8), 0x4142434445464748)
         self.assertEqual(self.cpu.read_int(stack + 1008 + 16), 0x7172737475767778)
         self.assertEqual(self.cpu.read_int(stack + 1008 + 24), 0x6162636465666768)
         self.assertEqual(self.rf.read('SP'), stack)  # no writeback
@@ -10701,8 +10701,8 @@ class Aarch64Instructions:
         self.cpu.STACK += 1024
         stack = self.cpu.STACK
         self._execute(reset=False)
-        self.assertEqual(self.cpu.read_int(stack - 1024),      0x5152535455565758)
-        self.assertEqual(self.cpu.read_int(stack - 1024 + 8),  0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack - 1024), 0x5152535455565758)
+        self.assertEqual(self.cpu.read_int(stack - 1024 + 8), 0x4142434445464748)
         self.assertEqual(self.cpu.read_int(stack - 1024 + 16), 0x7172737475767778)
         self.assertEqual(self.cpu.read_int(stack - 1024 + 24), 0x6162636465666768)
         self.assertEqual(self.rf.read('SP'), stack)  # no writeback
@@ -10729,8 +10729,8 @@ class Aarch64Instructions:
         self.cpu.push_int(0xffffffffffffffff)
         stack = self.cpu.STACK
         self._execute(reset=False)
-        self.assertEqual(self.cpu.read_int(stack),      0x5152535455565758)
-        self.assertEqual(self.cpu.read_int(stack + 8),  0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack), 0x5152535455565758)
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x4142434445464748)
         self.assertEqual(self.cpu.read_int(stack + 16), 0x7172737475767778)
         self.assertEqual(self.cpu.read_int(stack + 24), 0x6162636465666768)
         self.assertEqual(self.rf.read('SP'), stack + 16)  # writeback
@@ -10757,8 +10757,8 @@ class Aarch64Instructions:
         self.cpu.push_int(0xffffffffffffffff)
         stack = self.cpu.STACK
         self._execute(reset=False)
-        self.assertEqual(self.cpu.read_int(stack),      0x5152535455565758)
-        self.assertEqual(self.cpu.read_int(stack + 8),  0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack), 0x5152535455565758)
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x4142434445464748)
         self.assertEqual(self.cpu.read_int(stack + 16), 0x7172737475767778)
         self.assertEqual(self.cpu.read_int(stack + 24), 0x6162636465666768)
         self.assertEqual(self.rf.read('SP'), stack + 1008)  # writeback
@@ -10785,8 +10785,8 @@ class Aarch64Instructions:
         self.cpu.push_int(0xffffffffffffffff)
         stack = self.cpu.STACK
         self._execute(reset=False)
-        self.assertEqual(self.cpu.read_int(stack),      0x5152535455565758)
-        self.assertEqual(self.cpu.read_int(stack + 8),  0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack), 0x5152535455565758)
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x4142434445464748)
         self.assertEqual(self.cpu.read_int(stack + 16), 0x7172737475767778)
         self.assertEqual(self.cpu.read_int(stack + 24), 0x6162636465666768)
         self.assertEqual(self.rf.read('SP'), stack - 1024)  # writeback
@@ -10815,8 +10815,8 @@ class Aarch64Instructions:
         self.cpu.push_int(0xffffffffffffffff)
         stack = self.cpu.STACK
         self._execute(reset=False)
-        self.assertEqual(self.cpu.read_int(stack + 16),      0x5152535455565758)
-        self.assertEqual(self.cpu.read_int(stack + 16 + 8),  0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 16), 0x5152535455565758)
+        self.assertEqual(self.cpu.read_int(stack + 16 + 8), 0x4142434445464748)
         self.assertEqual(self.cpu.read_int(stack + 16 + 16), 0x7172737475767778)
         self.assertEqual(self.cpu.read_int(stack + 16 + 24), 0x6162636465666768)
         self.assertEqual(self.rf.read('SP'), stack + 16)  # writeback
@@ -10844,8 +10844,8 @@ class Aarch64Instructions:
         self.cpu.STACK -= 1008
         stack = self.cpu.STACK
         self._execute(reset=False)
-        self.assertEqual(self.cpu.read_int(stack + 1008),      0x5152535455565758)
-        self.assertEqual(self.cpu.read_int(stack + 1008 + 8),  0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 1008), 0x5152535455565758)
+        self.assertEqual(self.cpu.read_int(stack + 1008 + 8), 0x4142434445464748)
         self.assertEqual(self.cpu.read_int(stack + 1008 + 16), 0x7172737475767778)
         self.assertEqual(self.cpu.read_int(stack + 1008 + 24), 0x6162636465666768)
         self.assertEqual(self.rf.read('SP'), stack + 1008)  # writeback
@@ -10873,8 +10873,8 @@ class Aarch64Instructions:
         self.cpu.STACK += 1024
         stack = self.cpu.STACK
         self._execute(reset=False)
-        self.assertEqual(self.cpu.read_int(stack - 1024),      0x5152535455565758)
-        self.assertEqual(self.cpu.read_int(stack - 1024 + 8),  0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack - 1024), 0x5152535455565758)
+        self.assertEqual(self.cpu.read_int(stack - 1024 + 8), 0x4142434445464748)
         self.assertEqual(self.cpu.read_int(stack - 1024 + 16), 0x7172737475767778)
         self.assertEqual(self.cpu.read_int(stack - 1024 + 24), 0x6162636465666768)
         self.assertEqual(self.rf.read('SP'), stack - 1024)  # writeback
@@ -14185,7 +14185,7 @@ class Aarch64Instructions:
 
 
     def test_umov(self):
-        self._umov(mnem='umov', dst='w', vess='b', elem_size=8,  elem_count=16)
+        self._umov(mnem='umov', dst='w', vess='b', elem_size=8, elem_count=16)
         self._umov(mnem='umov', dst='w', vess='h', elem_size=16, elem_count=8)
         self._umov(mnem='umov', dst='w', vess='s', elem_size=32, elem_count=4)
         self._umov(mnem='umov', dst='x', vess='d', elem_size=64, elem_count=2)

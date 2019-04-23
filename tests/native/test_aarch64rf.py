@@ -3,16 +3,16 @@ import unittest
 from manticore.native.cpu.aarch64 import Aarch64RegisterFile as RF
 
 MAX_128 = 2 ** 128 - 1
-MAX_64  = 2 **  64 - 1
-MAX_32  = 2 **  32 - 1
-MAX_16  = 2 **  16 - 1
-MAX_8   = 2 **   8 - 1
+MAX_64 = 2 ** 64 - 1
+MAX_32 = 2 ** 32 - 1
+MAX_16 = 2 ** 16 - 1
+MAX_8 = 2 ** 8 - 1
 
 MAGIC_128 = 0x41424344454647484950515253545556
-MAGIC_64  = MAGIC_128 & MAX_64
-MAGIC_32  = MAGIC_128 & MAX_32
-MAGIC_16  = MAGIC_128 & MAX_16
-MAGIC_8   = MAGIC_128 & MAX_8
+MAGIC_64 = MAGIC_128 & MAX_64
+MAGIC_32 = MAGIC_128 & MAX_32
+MAGIC_16 = MAGIC_128 & MAX_16
+MAGIC_8 = MAGIC_128 & MAX_8
 
 
 # XXX: Test vectors.
@@ -124,7 +124,7 @@ class Aarch64RFTest(unittest.TestCase):
 
         self.r.write('SP', MAGIC_64)
         self.assertEqual(self.r.read('STACK'), MAGIC_64)
-        self.assertEqual(self.r.read('SP'),  MAGIC_64)
+        self.assertEqual(self.r.read('SP'), MAGIC_64)
         self.assertEqual(self.r.read('WSP'), MAGIC_32)
 
         for i in range(32):
@@ -152,7 +152,7 @@ class Aarch64RFTest(unittest.TestCase):
 
         self.r.write('WSP', MAGIC_32)
         self.assertEqual(self.r.read('STACK'), MAGIC_32)
-        self.assertEqual(self.r.read('SP'),  MAGIC_32)
+        self.assertEqual(self.r.read('SP'), MAGIC_32)
         self.assertEqual(self.r.read('WSP'), MAGIC_32)
 
         for i in range(32):

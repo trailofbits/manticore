@@ -75,7 +75,7 @@ class ABITest(unittest.TestCase):
             self.assertEqual(ten,    0x88)
             self.assertEqual(eleven, 0x90)
 
-            self.assertEqual(cpu.SP,  0x1080)
+            self.assertEqual(cpu.SP, 0x1080)
             return 42
 
         cpu.func_abi.invoke(test)
@@ -152,7 +152,7 @@ class ABITest(unittest.TestCase):
             self.assertEqual(six,     0x84)
             self.assertEqual(seven,   0x88)
 
-            self.assertEqual(cpu.SP,  0x1080)
+            self.assertEqual(cpu.SP, 0x1080)
             return 34
 
         cpu.func_abi.invoke(test)

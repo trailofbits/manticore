@@ -56,8 +56,8 @@ COND_MAP = {
     cs.arm64.ARM64_CC_GT: Condspec(cs.arm64.ARM64_CC_LE, lambda n, z, c, v: Operators.AND(z == 0, n == v)),
     cs.arm64.ARM64_CC_LE: Condspec(cs.arm64.ARM64_CC_GT, lambda n, z, c, v: Operators.NOT(Operators.AND(z == 0, n == v))),
 
-    cs.arm64.ARM64_CC_AL: Condspec(None,                 lambda n, z, c, v: True),
-    cs.arm64.ARM64_CC_NV: Condspec(None,                 lambda n, z, c, v: True)
+    cs.arm64.ARM64_CC_AL: Condspec(None, lambda n, z, c, v: True),
+    cs.arm64.ARM64_CC_NV: Condspec(None, lambda n, z, c, v: True)
 }
 
 
@@ -85,7 +85,7 @@ class Aarch64RegisterFile(RegisterFile):
 
     # Stack pointer.
     # See "D1.8.2 SP alignment checking".
-    _table['SP']  = Regspec('SP', 64)
+    _table['SP'] = Regspec('SP', 64)
     _table['WSP'] = Regspec('SP', 32)
 
     # Program counter.
@@ -358,7 +358,7 @@ class Aarch64Cpu(Cpu):
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
         assert mnem in ('add', 'adds', 'sub', 'subs')
 
-        insn_rx  = '[01]'     # sf
+        insn_rx = '[01]'      # sf
         if mnem in ('add', 'adds'):
             insn_rx += '0'    # op
         else:
@@ -441,7 +441,7 @@ class Aarch64Cpu(Cpu):
         assert imm_op.type is cs.arm64.ARM64_OP_IMM
         assert mnem in ('add', 'adds', 'sub', 'subs')
 
-        insn_rx  = '[01]'              # sf
+        insn_rx = '[01]'               # sf
         if mnem in ('add', 'adds'):
             insn_rx += '0'             # op
         else:
@@ -477,12 +477,12 @@ class Aarch64Cpu(Cpu):
             cpu.regfile.nzcv = nzcv
 
     def _adds_subs_shifted_register(cpu, res_op, reg_op1, reg_op2, mnem):
-        assert res_op.type  is cs.arm64.ARM64_OP_REG
+        assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
         assert mnem in ('add', 'adds', 'sub', 'subs')
 
-        insn_rx  = '[01]'     # sf
+        insn_rx = '[01]'      # sf
         if mnem in ('add', 'adds'):
             insn_rx += '0'    # op
         else:
@@ -528,7 +528,7 @@ class Aarch64Cpu(Cpu):
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        scalar_rx  = '01'
+        scalar_rx = '01'
         if add:
             scalar_rx += '0'    # U
         else:
@@ -542,7 +542,7 @@ class Aarch64Cpu(Cpu):
         scalar_rx += '[01]{5}'  # Rn
         scalar_rx += '[01]{5}'  # Rd
 
-        vector_rx  = '0'
+        vector_rx = '0'
         vector_rx += '[01]'     # Q
         if add:
             vector_rx += '0'    # U
@@ -624,15 +624,15 @@ class Aarch64Cpu(Cpu):
     def _add_with_carry(cpu, size, x, y, carry_in):
         y = Operators.ZEXTEND(y, size)
 
-        usum  = UInt(x, size * 2)
+        usum = UInt(x, size * 2)
         usum += UInt(y, size * 2)
         usum += UInt(carry_in, 1)
 
-        ssum  = SInt(Operators.SEXTEND(x, size, size * 2), size * 2)
+        ssum = SInt(Operators.SEXTEND(x, size, size * 2), size * 2)
         ssum += SInt(Operators.SEXTEND(y, size, size * 2), size * 2)
         ssum += UInt(carry_in, 1)
 
-        res  = GetNBits(usum, size)
+        res = GetNBits(usum, size)
 
         ures = UInt(res, size * 2)
         sres = SInt(Operators.SEXTEND(res, size, size * 2), size * 2)
@@ -649,7 +649,7 @@ class Aarch64Cpu(Cpu):
         assert reg_imm_op.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
         assert nzcv_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx  = '[01]'         # sf
+        insn_rx = '[01]'          # sf
         insn_rx += '1'            # op
         insn_rx += '1'
         insn_rx += '11010010'
@@ -686,7 +686,7 @@ class Aarch64Cpu(Cpu):
             z = Operators.ZEXTEND(z, 4)
             c = Operators.ZEXTEND(c, 4)
             v = Operators.ZEXTEND(v, 4)
-            nzcv  = LSL(n, 3, 4)
+            nzcv = LSL(n, 3, 4)
             nzcv |= LSL(z, 2, 4)
             nzcv |= LSL(c, 1, 4)
             nzcv |= LSL(v, 0, 4)
@@ -866,7 +866,7 @@ class Aarch64Cpu(Cpu):
         assert mem_op.type is cs.arm64.ARM64_OP_MEM
         assert not mimm_op or mimm_op.type is cs.arm64.ARM64_OP_IMM
 
-        post_index_rx  = '[01]{2}'  # opc
+        post_index_rx = '[01]{2}'   # opc
         post_index_rx += '101'
         post_index_rx += '[01]'
         post_index_rx += '001'
@@ -879,7 +879,7 @@ class Aarch64Cpu(Cpu):
         post_index_rx += '[01]{5}'  # Rn
         post_index_rx += '[01]{5}'  # Rt
 
-        pre_index_rx  = '[01]{2}'  # opc
+        pre_index_rx = '[01]{2}'   # opc
         pre_index_rx += '101'
         pre_index_rx += '[01]'
         pre_index_rx += '011'
@@ -892,7 +892,7 @@ class Aarch64Cpu(Cpu):
         pre_index_rx += '[01]{5}'  # Rn
         pre_index_rx += '[01]{5}'  # Rt
 
-        signed_offset_rx  = '[01]{2}'  # opc
+        signed_offset_rx = '[01]{2}'   # opc
         signed_offset_rx += '101'
         signed_offset_rx += '[01]'
         signed_offset_rx += '010'
@@ -1133,7 +1133,7 @@ class Aarch64Cpu(Cpu):
         assert reg_op.type is cs.arm64.ARM64_OP_REG
         assert mem_op.type is cs.arm64.ARM64_OP_MEM
 
-        insn_rx  = '1[01]'    # size
+        insn_rx = '1[01]'     # size
         insn_rx += '111'
         insn_rx += '0'
         insn_rx += '00'
@@ -1212,8 +1212,8 @@ class Aarch64Cpu(Cpu):
         :param op2: source register or immediate.
         """
         assert res_op.type is cs.arm64.ARM64_OP_REG
-        assert op1.type    is cs.arm64.ARM64_OP_REG
-        assert op2.type    in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
+        assert op1.type is cs.arm64.ARM64_OP_REG
+        assert op2.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
 
         bit21 = cpu.insn_bit_str[-22]
         bit24 = cpu.insn_bit_str[-25]
@@ -1243,7 +1243,7 @@ class Aarch64Cpu(Cpu):
         assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx  = '01'
+        insn_rx = '01'
         insn_rx += '0'
         insn_rx += '11110'
         insn_rx += '[01]{2}'  # size
@@ -1261,7 +1261,7 @@ class Aarch64Cpu(Cpu):
 
         assert reg_op.op.vas == cs.arm64.ARM64_VAS_2D
         hi = Operators.EXTRACT(reg, 64, 64)
-        lo = Operators.EXTRACT(reg, 0,  64)
+        lo = Operators.EXTRACT(reg, 0, 64)
 
         result = UInt(hi + lo, res_op.size)
         res_op.write(result)
@@ -1278,7 +1278,7 @@ class Aarch64Cpu(Cpu):
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx  = '0'
+        insn_rx = '0'
         insn_rx += '[01]'     # Q
         insn_rx += '0'
         insn_rx += '01110'
@@ -1341,7 +1341,7 @@ class Aarch64Cpu(Cpu):
 
         result = 0
         for i in range(elem_count):
-            elem1 = Operators.EXTRACT(concat, (2 * i)     * elem_size, elem_size)
+            elem1 = Operators.EXTRACT(concat, (2 * i) * elem_size, elem_size)
             elem2 = Operators.EXTRACT(concat, (2 * i + 1) * elem_size, elem_size)
             elem = UInt(elem1 + elem2, elem_size)
             elem = Operators.ZEXTEND(elem, res_op.size)
@@ -1409,8 +1409,8 @@ class Aarch64Cpu(Cpu):
         :param op2: source register or immediate.
         """
         assert res_op.type is cs.arm64.ARM64_OP_REG
-        assert op1.type    is cs.arm64.ARM64_OP_REG
-        assert op2.type    in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
+        assert op1.type is cs.arm64.ARM64_OP_REG
+        assert op2.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
 
         bit21 = cpu.insn_bit_str[-22]
 
@@ -1437,7 +1437,7 @@ class Aarch64Cpu(Cpu):
         assert res_op.type is cs.arm64.ARM64_OP_REG
         assert imm_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx  = '0'         # op
+        insn_rx = '0'          # op
         insn_rx += '[01]{2}'   # immlo
         insn_rx += '10000'
         insn_rx += '[01]{19}'  # immhi
@@ -1459,7 +1459,7 @@ class Aarch64Cpu(Cpu):
         assert res_op.type is cs.arm64.ARM64_OP_REG
         assert imm_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx  = '1'         # op
+        insn_rx = '1'          # op
         insn_rx += '[01]{2}'   # immlo
         insn_rx += '10000'
         insn_rx += '[01]{19}'  # immhi
@@ -1482,7 +1482,7 @@ class Aarch64Cpu(Cpu):
         assert reg_op.type is cs.arm64.ARM64_OP_REG
         assert imm_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx  = '[01]'     # sf
+        insn_rx = '[01]'      # sf
         insn_rx += '00'       # opc
         insn_rx += '100100'
         insn_rx += '[01]'     # N
@@ -1506,11 +1506,11 @@ class Aarch64Cpu(Cpu):
         :param reg_op1: source register.
         :param reg_op2: source register.
         """
-        assert res_op.type  is cs.arm64.ARM64_OP_REG
+        assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx  = '[01]'     # sf
+        insn_rx = '[01]'      # sf
         insn_rx += '00'       # opc
         insn_rx += '01010'
         insn_rx += '[01]{2}'  # shift
@@ -1542,11 +1542,11 @@ class Aarch64Cpu(Cpu):
         :param reg_op1: source register.
         :param reg_op2: source register.
         """
-        assert res_op.type  is cs.arm64.ARM64_OP_REG
+        assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx  = '0'
+        insn_rx = '0'
         insn_rx += '[01]'     # Q
         insn_rx += '0'
         insn_rx += '01110'
@@ -1618,7 +1618,7 @@ class Aarch64Cpu(Cpu):
         assert reg_op.type is cs.arm64.ARM64_OP_REG
         assert imm_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx  = '[01]'     # sf
+        insn_rx = '[01]'      # sf
         insn_rx += '11'       # opc
         insn_rx += '100100'
         insn_rx += '[01]'     # N
@@ -1646,11 +1646,11 @@ class Aarch64Cpu(Cpu):
         :param reg_op1: source register.
         :param reg_op2: source register.
         """
-        assert res_op.type  is cs.arm64.ARM64_OP_REG
+        assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx  = '[01]'     # sf
+        insn_rx = '[01]'      # sf
         insn_rx += '11'       # opc
         insn_rx += '01010'
         insn_rx += '[01]{2}'  # shift
@@ -1715,7 +1715,7 @@ class Aarch64Cpu(Cpu):
         assert reg_op.type is cs.arm64.ARM64_OP_REG
         assert immr_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx  = '[01]'      # sf
+        insn_rx = '[01]'       # sf
         insn_rx += '00'        # opc
         insn_rx += '100110'
         insn_rx += '[01]'      # N
@@ -1745,7 +1745,7 @@ class Aarch64Cpu(Cpu):
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx  = '[01]'      # sf
+        insn_rx = '[01]'       # sf
         insn_rx += '0'
         insn_rx += '0'
         insn_rx += '11010110'
@@ -1796,7 +1796,7 @@ class Aarch64Cpu(Cpu):
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx  = '[01]'      # sf
+        insn_rx = '[01]'       # sf
         insn_rx += '0'
         insn_rx += '0'
         insn_rx += '11010110'
@@ -1823,7 +1823,7 @@ class Aarch64Cpu(Cpu):
         """
         assert imm_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx  = '0101010'
+        insn_rx = '0101010'
         insn_rx += '0'
         insn_rx += '[01]{19}'  # imm19
         insn_rx += '0'
@@ -1849,7 +1849,7 @@ class Aarch64Cpu(Cpu):
         """
         assert imm_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx  = '0'         # op
+        insn_rx = '0'          # op
         insn_rx += '00101'
         insn_rx += '[01]{26}'  # imm26
 
@@ -1871,7 +1871,7 @@ class Aarch64Cpu(Cpu):
         assert lsb_op.type is cs.arm64.ARM64_OP_IMM
         assert width_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx  = '[01]'     # sf
+        insn_rx = '[01]'      # sf
         insn_rx += '01'       # opc
         insn_rx += '100110'
         insn_rx += '[01]'     # N
@@ -1913,7 +1913,7 @@ class Aarch64Cpu(Cpu):
         assert lsb_op.type is cs.arm64.ARM64_OP_IMM
         assert width_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx  = '[01]'             # sf
+        insn_rx = '[01]'              # sf
         insn_rx += '01'               # opc
         insn_rx += '100110'
         insn_rx += '[01]'             # N
@@ -1947,7 +1947,7 @@ class Aarch64Cpu(Cpu):
         assert immr_op.type is cs.arm64.ARM64_OP_IMM
         assert imms_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx  = '[01]'     # sf
+        insn_rx = '[01]'      # sf
         insn_rx += '01'       # opc
         insn_rx += '100110'
         insn_rx += '[01]'     # N
@@ -1994,7 +1994,7 @@ class Aarch64Cpu(Cpu):
         assert lsb_op.type is cs.arm64.ARM64_OP_IMM
         assert width_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx  = '[01]'     # sf
+        insn_rx = '[01]'      # sf
         insn_rx += '01'       # opc
         insn_rx += '100110'
         insn_rx += '[01]'     # N
@@ -2023,11 +2023,11 @@ class Aarch64Cpu(Cpu):
         :param reg_op1: source register.
         :param reg_op2: source register.
         """
-        assert res_op.type  is cs.arm64.ARM64_OP_REG
+        assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx  = '[01]'     # sf
+        insn_rx = '[01]'      # sf
         insn_rx += '00'       # opc
         insn_rx += '01010'
         insn_rx += '[01]{2}'  # shift
@@ -2060,11 +2060,11 @@ class Aarch64Cpu(Cpu):
         :param reg_op1: source register.
         :param reg_op2: source register.
         """
-        assert res_op.type  is cs.arm64.ARM64_OP_REG
+        assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx  = '[01]'     # sf
+        insn_rx = '[01]'      # sf
         insn_rx += '11'       # opc
         insn_rx += '01010'
         insn_rx += '[01]{2}'  # shift
@@ -2104,7 +2104,7 @@ class Aarch64Cpu(Cpu):
         """
         assert imm_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx  = '1'         # op
+        insn_rx = '1'          # op
         insn_rx += '00101'
         insn_rx += '[01]{26}'  # imm26
 
@@ -2124,7 +2124,7 @@ class Aarch64Cpu(Cpu):
         """
         assert reg_op.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx  = '1101011'
+        insn_rx = '1101011'
         insn_rx += '0'        # Z
         insn_rx += '0'
         insn_rx += '01'       # op
@@ -2151,7 +2151,7 @@ class Aarch64Cpu(Cpu):
         """
         assert reg_op.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx  = '1101011'
+        insn_rx = '1101011'
         insn_rx += '0'        # Z
         insn_rx += '0'
         insn_rx += '00'       # op
@@ -2178,7 +2178,7 @@ class Aarch64Cpu(Cpu):
         assert reg_op.type is cs.arm64.ARM64_OP_REG
         assert imm_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx  = '[01]'      # sf
+        insn_rx = '[01]'       # sf
         insn_rx += '011010'
         insn_rx += '1'         # op
         insn_rx += '[01]{19}'  # imm19
@@ -2207,7 +2207,7 @@ class Aarch64Cpu(Cpu):
         assert reg_op.type is cs.arm64.ARM64_OP_REG
         assert imm_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx  = '[01]'      # sf
+        insn_rx = '[01]'       # sf
         insn_rx += '011010'
         insn_rx += '0'         # op
         insn_rx += '[01]{19}'  # imm19
@@ -2278,7 +2278,7 @@ class Aarch64Cpu(Cpu):
         assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx  = '[01]'                # sf
+        insn_rx = '[01]'                 # sf
         insn_rx += '0'                   # op
         insn_rx += '0'
         insn_rx += '11010100'
@@ -2308,7 +2308,7 @@ class Aarch64Cpu(Cpu):
         assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx  = '[01]'                # sf
+        insn_rx = '[01]'                 # sf
         insn_rx += '1'                   # op
         insn_rx += '0'
         insn_rx += '11010100'
@@ -2339,7 +2339,7 @@ class Aarch64Cpu(Cpu):
         assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx  = '[01]'     # sf
+        insn_rx = '[01]'      # sf
         insn_rx += '1'
         insn_rx += '0'
         insn_rx += '11010110'
@@ -2411,7 +2411,7 @@ class Aarch64Cpu(Cpu):
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx  = '[01]'     # sf
+        insn_rx = '[01]'      # sf
         insn_rx += '0'        # op
         insn_rx += '1'        # S
         insn_rx += '01011'
@@ -2447,7 +2447,7 @@ class Aarch64Cpu(Cpu):
         assert reg_op.type is cs.arm64.ARM64_OP_REG
         assert imm_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx  = '[01]'              # sf
+        insn_rx = '[01]'               # sf
         insn_rx += '0'                 # op
         insn_rx += '1'                 # S
         insn_rx += '10001'
@@ -2480,7 +2480,7 @@ class Aarch64Cpu(Cpu):
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx  = '[01]'     # sf
+        insn_rx = '[01]'      # sf
         insn_rx += '0'        # op
         insn_rx += '1'        # S
         insn_rx += '01011'
@@ -2541,7 +2541,7 @@ class Aarch64Cpu(Cpu):
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx  = '[01]'     # sf
+        insn_rx = '[01]'      # sf
         insn_rx += '1'        # op
         insn_rx += '1'        # S
         insn_rx += '01011'
@@ -2577,7 +2577,7 @@ class Aarch64Cpu(Cpu):
         assert reg_op.type is cs.arm64.ARM64_OP_REG
         assert imm_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx  = '[01]'              # sf
+        insn_rx = '[01]'               # sf
         insn_rx += '1'                 # op
         insn_rx += '1'                 # S
         insn_rx += '10001'
@@ -2610,7 +2610,7 @@ class Aarch64Cpu(Cpu):
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx  = '[01]'     # sf
+        insn_rx = '[01]'      # sf
         insn_rx += '1'        # op
         insn_rx += '1'        # S
         insn_rx += '01011'
@@ -2670,11 +2670,11 @@ class Aarch64Cpu(Cpu):
         :param reg_op1: source register.
         :param reg_op2: source register.
         """
-        assert res_op.type  is cs.arm64.ARM64_OP_REG
+        assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx  = '[01]'      # sf
+        insn_rx = '[01]'       # sf
         insn_rx += '0'         # op
         insn_rx += '0'
         insn_rx += '11010100'
@@ -2708,7 +2708,7 @@ class Aarch64Cpu(Cpu):
         """
         assert res_op.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx  = '[01]'                # sf
+        insn_rx = '[01]'                 # sf
         insn_rx += '0'                   # op
         insn_rx += '0'
         insn_rx += '11010100'
@@ -2744,7 +2744,7 @@ class Aarch64Cpu(Cpu):
         """
         assert res_op.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx  = '[01]'                # sf
+        insn_rx = '[01]'                 # sf
         insn_rx += '1'                   # op
         insn_rx += '0'
         insn_rx += '11010100'
@@ -2780,11 +2780,11 @@ class Aarch64Cpu(Cpu):
         :param reg_op1: source register.
         :param reg_op2: source register.
         """
-        assert res_op.type  is cs.arm64.ARM64_OP_REG
+        assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx  = '[01]'      # sf
+        insn_rx = '[01]'       # sf
         insn_rx += '0'         # op
         insn_rx += '0'
         insn_rx += '11010100'
@@ -2819,11 +2819,11 @@ class Aarch64Cpu(Cpu):
         :param reg_op1: source register.
         :param reg_op2: source register.
         """
-        assert res_op.type  is cs.arm64.ARM64_OP_REG
+        assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx  = '[01]'      # sf
+        insn_rx = '[01]'       # sf
         insn_rx += '1'         # op
         insn_rx += '0'
         insn_rx += '11010100'
@@ -2858,7 +2858,7 @@ class Aarch64Cpu(Cpu):
         """
         assert op.type in [cs.arm64.ARM64_OP_BARRIER, cs.arm64.ARM64_OP_IMM]
 
-        insn_rx  = '1101010100'
+        insn_rx = '1101010100'
         insn_rx += '0'
         insn_rx += '00'
         insn_rx += '011'
@@ -2885,7 +2885,7 @@ class Aarch64Cpu(Cpu):
         assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx  = '0'
+        insn_rx = '0'
         insn_rx += '[01]'      # Q
         insn_rx += '0'
         insn_rx += '01110000'
@@ -2957,7 +2957,7 @@ class Aarch64Cpu(Cpu):
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx  = '[01]'     # sf
+        insn_rx = '[01]'      # sf
         insn_rx += '10'       # opc
         insn_rx += '01010'
         insn_rx += '[01]{2}'  # shift
@@ -3001,7 +3001,7 @@ class Aarch64Cpu(Cpu):
         assert not op5 or op5.type in [cs.arm64.ARM64_OP_MEM, cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
         assert not op6 or op6.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
 
-        no_offset_rx  = '0'
+        no_offset_rx = '0'
         no_offset_rx += '[01]'          # Q
         no_offset_rx += '0011000'
         no_offset_rx += '1'             # L
@@ -3011,7 +3011,7 @@ class Aarch64Cpu(Cpu):
         no_offset_rx += '[01]{5}'       # Rn
         no_offset_rx += '[01]{5}'       # Rt
 
-        post_index_rx  = '0'
+        post_index_rx = '0'
         post_index_rx += '[01]'          # Q
         post_index_rx += '0011001'
         post_index_rx += '1'             # L
@@ -3122,7 +3122,7 @@ class Aarch64Cpu(Cpu):
         assert reg_op.type is cs.arm64.ARM64_OP_REG
         assert mem_op.type is cs.arm64.ARM64_OP_MEM
 
-        insn_rx  = '1[01]'    # size
+        insn_rx = '1[01]'     # size
         insn_rx += '001000'
         insn_rx += '0'
         insn_rx += '1'        # L
@@ -3361,7 +3361,7 @@ class Aarch64Cpu(Cpu):
         assert reg_op.type is cs.arm64.ARM64_OP_REG
         assert mem_op.type is cs.arm64.ARM64_OP_MEM
 
-        insn_rx  = '1[01]'    # size
+        insn_rx = '1[01]'     # size
         insn_rx += '001000'
         insn_rx += '0'
         insn_rx += '1'        # L
@@ -3395,7 +3395,7 @@ class Aarch64Cpu(Cpu):
         assert reg_op.type is cs.arm64.ARM64_OP_REG
         assert imm_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx  = '[01]'     # sf
+        insn_rx = '[01]'      # sf
         insn_rx += '10'       # opc
         insn_rx += '100110'
         insn_rx += '[01]'     # N
@@ -3428,7 +3428,7 @@ class Aarch64Cpu(Cpu):
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx  = '[01]'      # sf
+        insn_rx = '[01]'       # sf
         insn_rx += '0'
         insn_rx += '0'
         insn_rx += '11010110'
@@ -3479,7 +3479,7 @@ class Aarch64Cpu(Cpu):
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx  = '[01]'      # sf
+        insn_rx = '[01]'       # sf
         insn_rx += '0'
         insn_rx += '0'
         insn_rx += '11010110'
@@ -3509,7 +3509,7 @@ class Aarch64Cpu(Cpu):
         assert reg_op.type is cs.arm64.ARM64_OP_REG
         assert immr_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx  = '[01]'      # sf
+        insn_rx = '[01]'       # sf
         insn_rx += '10'        # opc
         insn_rx += '100110'
         insn_rx += '[01]'      # N
@@ -3539,7 +3539,7 @@ class Aarch64Cpu(Cpu):
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx  = '[01]'      # sf
+        insn_rx = '[01]'       # sf
         insn_rx += '0'
         insn_rx += '0'
         insn_rx += '11010110'
@@ -3590,7 +3590,7 @@ class Aarch64Cpu(Cpu):
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx  = '[01]'      # sf
+        insn_rx = '[01]'       # sf
         insn_rx += '0'
         insn_rx += '0'
         insn_rx += '11010110'
@@ -3618,12 +3618,12 @@ class Aarch64Cpu(Cpu):
         :param reg_op2: source register.
         :param reg_op3: source register.
         """
-        assert res_op.type  is cs.arm64.ARM64_OP_REG
+        assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
         assert reg_op3.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx  = '[01]'     # sf
+        insn_rx = '[01]'      # sf
         insn_rx += '00'
         insn_rx += '11011'
         insn_rx += '000'
@@ -3652,7 +3652,7 @@ class Aarch64Cpu(Cpu):
         assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx  = '0'
+        insn_rx = '0'
         insn_rx += '[01]'       # Q
         insn_rx += '0'
         insn_rx += '01110000'
@@ -3770,7 +3770,7 @@ class Aarch64Cpu(Cpu):
         assert res_op.type is cs.arm64.ARM64_OP_REG
         assert imm_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx  = '[01]'      # sf
+        insn_rx = '[01]'       # sf
         insn_rx += '11'        # opc
         insn_rx += '100101'
         insn_rx += '[01]{2}'   # hw
@@ -3808,7 +3808,7 @@ class Aarch64Cpu(Cpu):
         assert dst.type is cs.arm64.ARM64_OP_REG
         assert src.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx  = '[01]'      # sf
+        insn_rx = '[01]'       # sf
         insn_rx += '00'        # opc
         insn_rx += '100101'
         insn_rx += '[01]{2}'   # hw
@@ -3843,7 +3843,7 @@ class Aarch64Cpu(Cpu):
         assert dst.type is cs.arm64.ARM64_OP_REG
         assert src.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx  = '[01]'      # sf
+        insn_rx = '[01]'       # sf
         insn_rx += '10'        # opc
         insn_rx += '100101'
         insn_rx += '[01]{2}'   # hw
@@ -3878,7 +3878,7 @@ class Aarch64Cpu(Cpu):
         assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op.type is cs.arm64.ARM64_OP_REG_MRS
 
-        insn_rx  = '1101010100'
+        insn_rx = '1101010100'
         insn_rx += '1'           # L
         insn_rx += '1'
         insn_rx += '[01]'        # o0
@@ -3905,7 +3905,7 @@ class Aarch64Cpu(Cpu):
         assert res_op.type is cs.arm64.ARM64_OP_REG_MSR
         assert reg_op.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx  = '1101010100'
+        insn_rx = '1101010100'
         insn_rx += '0'           # L
         insn_rx += '1'
         insn_rx += '[01]'        # o0
@@ -3930,12 +3930,12 @@ class Aarch64Cpu(Cpu):
         :param reg_op2: source register.
         :param reg_op3: source register.
         """
-        assert res_op.type  is cs.arm64.ARM64_OP_REG
+        assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
         assert reg_op3.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx  = '[01]'     # sf
+        insn_rx = '[01]'      # sf
         insn_rx += '00'
         insn_rx += '11011'
         insn_rx += '000'
@@ -3964,11 +3964,11 @@ class Aarch64Cpu(Cpu):
         :param reg_op1: source register.
         :param reg_op2: source register.
         """
-        assert res_op.type  is cs.arm64.ARM64_OP_REG
+        assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx  = '[01]'     # sf
+        insn_rx = '[01]'      # sf
         insn_rx += '00'
         insn_rx += '11011'
         insn_rx += '000'
@@ -4004,7 +4004,7 @@ class Aarch64Cpu(Cpu):
         assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx  = '[01]'     # sf
+        insn_rx = '[01]'      # sf
         insn_rx += '1'        # op
         insn_rx += '0'        # S
         insn_rx += '01011'
@@ -4034,7 +4034,7 @@ class Aarch64Cpu(Cpu):
         """
         NOP.
         """
-        insn_rx  = '1101010100'
+        insn_rx = '1101010100'
         insn_rx += '0'
         insn_rx += '00'
         insn_rx += '011'
@@ -4057,7 +4057,7 @@ class Aarch64Cpu(Cpu):
         assert reg_op.type is cs.arm64.ARM64_OP_REG
         assert imm_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx  = '[01]'     # sf
+        insn_rx = '[01]'      # sf
         insn_rx += '01'       # opc
         insn_rx += '100100'
         insn_rx += '[01]'     # N
@@ -4081,11 +4081,11 @@ class Aarch64Cpu(Cpu):
         :param reg_op1: source register.
         :param reg_op2: source register.
         """
-        assert res_op.type  is cs.arm64.ARM64_OP_REG
+        assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx  = '[01]'     # sf
+        insn_rx = '[01]'      # sf
         insn_rx += '01'       # opc
         insn_rx += '01010'
         insn_rx += '[01]{2}'  # shift
@@ -4121,7 +4121,7 @@ class Aarch64Cpu(Cpu):
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx  = '0'
+        insn_rx = '0'
         insn_rx += '[01]'     # Q
         insn_rx += '0'
         insn_rx += '01110'
@@ -4175,8 +4175,8 @@ class Aarch64Cpu(Cpu):
         :param op2: source register or immediate.
         """
         assert res_op.type is cs.arm64.ARM64_OP_REG
-        assert op1.type    is cs.arm64.ARM64_OP_REG
-        assert op2.type    in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
+        assert op1.type is cs.arm64.ARM64_OP_REG
+        assert op2.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
 
         bit21 = cpu.insn_bit_str[-22]
 
@@ -4204,7 +4204,7 @@ class Aarch64Cpu(Cpu):
         assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx  = '[01]'     # sf
+        insn_rx = '[01]'      # sf
         insn_rx += '1'
         insn_rx += '0'
         insn_rx += '11010110'
@@ -4237,7 +4237,7 @@ class Aarch64Cpu(Cpu):
         """
         assert not reg_op or reg_op.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx  = '1101011'
+        insn_rx = '1101011'
         insn_rx += '0'        # Z
         insn_rx += '0'
         insn_rx += '10'       # op
@@ -4267,7 +4267,7 @@ class Aarch64Cpu(Cpu):
         assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx  = '[01]'     # sf
+        insn_rx = '[01]'      # sf
         insn_rx += '1'
         insn_rx += '0'
         insn_rx += '11010110'
@@ -4307,7 +4307,7 @@ class Aarch64Cpu(Cpu):
         assert lsb_op.type is cs.arm64.ARM64_OP_IMM
         assert width_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx  = '[01]'     # sf
+        insn_rx = '[01]'      # sf
         insn_rx += '00'       # opc
         insn_rx += '100110'
         insn_rx += '[01]'     # N
@@ -4341,7 +4341,7 @@ class Aarch64Cpu(Cpu):
         assert immr_op.type is cs.arm64.ARM64_OP_IMM
         assert imms_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx  = '[01]'     # sf
+        insn_rx = '[01]'      # sf
         insn_rx += '00'       # opc
         insn_rx += '100110'
         insn_rx += '[01]'     # N
@@ -4394,7 +4394,7 @@ class Aarch64Cpu(Cpu):
         assert lsb_op.type is cs.arm64.ARM64_OP_IMM
         assert width_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx  = '[01]'     # sf
+        insn_rx = '[01]'      # sf
         insn_rx += '00'       # opc
         insn_rx += '100110'
         insn_rx += '[01]'     # N
@@ -4427,7 +4427,7 @@ class Aarch64Cpu(Cpu):
         assert reg_op.type is cs.arm64.ARM64_OP_REG
         assert mem_op.type is cs.arm64.ARM64_OP_MEM
 
-        insn_rx  = '1[01]'    # size
+        insn_rx = '1[01]'     # size
         insn_rx += '001000'
         insn_rx += '0'
         insn_rx += '0'        # L
@@ -4599,7 +4599,7 @@ class Aarch64Cpu(Cpu):
         assert reg_op.type is cs.arm64.ARM64_OP_REG
         assert mem_op.type is cs.arm64.ARM64_OP_MEM
 
-        insn_rx  = '1[01]'    # size
+        insn_rx = '1[01]'     # size
         insn_rx += '001000'
         insn_rx += '0'
         insn_rx += '0'        # L
@@ -4673,8 +4673,8 @@ class Aarch64Cpu(Cpu):
         :param op2: source register or immediate.
         """
         assert res_op.type is cs.arm64.ARM64_OP_REG
-        assert op1.type    is cs.arm64.ARM64_OP_REG
-        assert op2.type    in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
+        assert op1.type is cs.arm64.ARM64_OP_REG
+        assert op2.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
 
         bit21 = cpu.insn_bit_str[-22]
         bit24 = cpu.insn_bit_str[-25]
@@ -4735,8 +4735,8 @@ class Aarch64Cpu(Cpu):
         :param op2: source register or immediate.
         """
         assert res_op.type is cs.arm64.ARM64_OP_REG
-        assert op1.type    is cs.arm64.ARM64_OP_REG
-        assert op2.type    in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
+        assert op1.type is cs.arm64.ARM64_OP_REG
+        assert op2.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
 
         bit21 = cpu.insn_bit_str[-22]
 
@@ -4779,7 +4779,7 @@ class Aarch64Cpu(Cpu):
         assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx  = '[01]'     # sf
+        insn_rx = '[01]'      # sf
         insn_rx += '00'       # opc
         insn_rx += '100110'
         insn_rx += '[01]'     # N
@@ -4809,7 +4809,7 @@ class Aarch64Cpu(Cpu):
         assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx  = '[01]'     # sf
+        insn_rx = '[01]'      # sf
         insn_rx += '00'       # opc
         insn_rx += '100110'
         insn_rx += '[01]'     # N
@@ -4839,7 +4839,7 @@ class Aarch64Cpu(Cpu):
         assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx  = '1'        # sf
+        insn_rx = '1'         # sf
         insn_rx += '00'       # opc
         insn_rx += '100110'
         insn_rx += '1'        # N
@@ -4871,7 +4871,7 @@ class Aarch64Cpu(Cpu):
         assert imm_op.type is cs.arm64.ARM64_OP_IMM
         assert lab_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx  = '[01]'      # b5
+        insn_rx = '[01]'       # b5
         insn_rx += '011011'
         insn_rx += '1'         # op
         insn_rx += '[01]{5}'   # b40
@@ -4906,7 +4906,7 @@ class Aarch64Cpu(Cpu):
         assert imm_op.type is cs.arm64.ARM64_OP_IMM
         assert lab_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx  = '[01]'      # b5
+        insn_rx = '[01]'       # b5
         insn_rx += '011011'
         insn_rx += '0'         # op
         insn_rx += '[01]{5}'   # b40
@@ -4938,7 +4938,7 @@ class Aarch64Cpu(Cpu):
         assert reg_op.type is cs.arm64.ARM64_OP_REG
         assert imm_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx  = '[01]'     # sf
+        insn_rx = '[01]'      # sf
         insn_rx += '11'       # opc
         insn_rx += '100100'
         insn_rx += '[01]'     # N
@@ -4971,7 +4971,7 @@ class Aarch64Cpu(Cpu):
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx  = '[01]'     # sf
+        insn_rx = '[01]'      # sf
         insn_rx += '11'       # opc
         insn_rx += '01010'
         insn_rx += '[01]{2}'  # shift
@@ -5030,7 +5030,7 @@ class Aarch64Cpu(Cpu):
         assert lsb_op.type is cs.arm64.ARM64_OP_IMM
         assert width_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx  = '[01]'     # sf
+        insn_rx = '[01]'      # sf
         insn_rx += '10'       # opc
         insn_rx += '100110'
         insn_rx += '[01]'     # N
@@ -5064,7 +5064,7 @@ class Aarch64Cpu(Cpu):
         assert immr_op.type is cs.arm64.ARM64_OP_IMM
         assert imms_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx  = '[01]'     # sf
+        insn_rx = '[01]'      # sf
         insn_rx += '10'       # opc
         insn_rx += '100110'
         insn_rx += '[01]'     # N
@@ -5110,7 +5110,7 @@ class Aarch64Cpu(Cpu):
         assert lsb_op.type is cs.arm64.ARM64_OP_IMM
         assert width_op.type is cs.arm64.ARM64_OP_IMM
 
-        insn_rx  = '[01]'     # sf
+        insn_rx = '[01]'      # sf
         insn_rx += '10'       # opc
         insn_rx += '100110'
         insn_rx += '[01]'     # N
@@ -5138,11 +5138,11 @@ class Aarch64Cpu(Cpu):
         :param reg_op1: source register.
         :param reg_op2: source register.
         """
-        assert res_op.type  is cs.arm64.ARM64_OP_REG
+        assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx  = '[01]'      # sf
+        insn_rx = '[01]'       # sf
         insn_rx += '0'
         insn_rx += '0'
         insn_rx += '11010110'
@@ -5184,7 +5184,7 @@ class Aarch64Cpu(Cpu):
         assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx  = '0'
+        insn_rx = '0'
         insn_rx += '[01]'      # Q
         insn_rx += '0'
         insn_rx += '01110000'
@@ -5232,11 +5232,11 @@ class Aarch64Cpu(Cpu):
         :param reg_op1: source register.
         :param reg_op2: source register.
         """
-        assert res_op.type  is cs.arm64.ARM64_OP_REG
+        assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op1.type is cs.arm64.ARM64_OP_REG
         assert reg_op2.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx  = '1'
+        insn_rx = '1'
         insn_rx += '00'
         insn_rx += '11011'
         insn_rx += '1'        # U
@@ -5269,7 +5269,7 @@ class Aarch64Cpu(Cpu):
         assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx  = '0'        # sf
+        insn_rx = '0'         # sf
         insn_rx += '10'       # opc
         insn_rx += '100110'
         insn_rx += '0'        # N
@@ -5299,7 +5299,7 @@ class Aarch64Cpu(Cpu):
         assert res_op.type is cs.arm64.ARM64_OP_REG
         assert reg_op.type is cs.arm64.ARM64_OP_REG
 
-        insn_rx  = '0'        # sf
+        insn_rx = '0'         # sf
         insn_rx += '10'       # opc
         insn_rx += '100110'
         insn_rx += '0'        # N
