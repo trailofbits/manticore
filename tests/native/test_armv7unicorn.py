@@ -28,6 +28,7 @@ semantics from ARM tests to ensure that they match. UnicornConcretization tests
 to make sure symbolic values get properly concretized.
 '''
 
+
 def assemble(asm, mode=CS_MODE_ARM):
     if CS_MODE_ARM == mode:
         ords = ks.asm(asm)[0]
@@ -38,6 +39,7 @@ def assemble(asm, mode=CS_MODE_ARM):
     if not ords:
         raise Exception(f'bad assembly: {asm}')
     return ''.join(map(chr, ords))
+
 
 def emulate_next(cpu):
     'Read the next instruction and emulate it with Unicorn '
@@ -98,6 +100,7 @@ class Armv7UnicornInstructions(unittest.TestCase):
     all semantics match.
     '''
     _multiprocess_can_split_ = True
+
     def setUp(self):
         self.cpu = Cpu(Memory32())
         self.mem = self.cpu.memory

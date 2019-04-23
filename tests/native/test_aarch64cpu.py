@@ -17,6 +17,7 @@ from .test_aarch64rf import MAGIC_64, MAGIC_32
 
 ks = Ks(KS_ARCH_ARM64, KS_MODE_LITTLE_ENDIAN)
 
+
 def assemble(asm):
     ords = ks.asm(asm)[0]
     if not ords:

@@ -14,6 +14,7 @@ from manticore.native.models import variadic
 
 class ABITest(unittest.TestCase):
     _multiprocess_can_split_ = True
+
     def setUp(self):
         mem32 = SMemory32(ConstraintSet())
         mem32.mmap(0x1000, 0x1000, 'rw ')
@@ -259,6 +260,7 @@ class ABITest(unittest.TestCase):
         eip = 0xDEADBEEF
         base = cpu.ESP
         cpu.EIP = eip
+
         def test(one, two, three, four, five):
             raise ConcretizeArgument(cpu, 2)
 

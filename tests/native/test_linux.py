@@ -180,8 +180,10 @@ class LinuxTest(unittest.TestCase):
         class Receiver:
             def __init__(self):
                 self.nevents = 0
+
             def will_exec(self, pc, i):
                 self.nevents += 1
+
             def did_exec(self, last_pc, pc, i):
                 self.nevents += 1
 

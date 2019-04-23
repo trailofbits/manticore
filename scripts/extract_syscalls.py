@@ -51,6 +51,7 @@ ADDITIONAL_SYSCALLS = {
     ]
 }
 
+
 def open_url(url):
     res = urlopen(url)
     if res.code // 100 != 2:
@@ -59,12 +60,14 @@ def open_url(url):
         sys.exit(1)
     return res
 
+
 def write_without_includes(f, res):
     for line in res.readlines():
         line = line.decode()
         line = line.strip()
         if not line.startswith("#include"):
             f.write(line + '\n')
+
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser(description='Generate syscall tables')

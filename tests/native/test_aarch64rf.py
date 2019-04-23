@@ -14,6 +14,7 @@ MAGIC_32  = MAGIC_128 & MAX_32
 MAGIC_16  = MAGIC_128 & MAX_16
 MAGIC_8   = MAGIC_128 & MAX_8
 
+
 # XXX: Test vectors.
 class Aarch64RFTest(unittest.TestCase):
     _multiprocess_can_split_ = True

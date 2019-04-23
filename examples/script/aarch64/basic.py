@@ -20,15 +20,18 @@ STDIN = sys.stdin.readline()
 # more flexible.
 m = Manticore(FILE, concrete_start='', stdin_size=0)
 
+
 @m.init
 def init(state):
     state.platform.input.write(state.symbolicate_buffer(STDIN, label='STDIN'))
+
 
 # Hook the 'if' case.
 @m.hook(0x4006bc)
 def hook_if(state):
     print('hook if')
     state.abandon()
+
 
 # Hook the 'else' case.
 @m.hook(0x4006cc)
@@ -47,12 +50,14 @@ def hook_else(state):
     solved = state.solve_one(w0)
     print(struct.pack("<I", solved))
 
+
 # Hook 'puts' in the 'else' case.
 @m.hook(0x4006d4)
 def hook_puts(state):
     print('hook puts')
     cpu = state.cpu
     print(cpu.read_string(cpu.X0))
+
 
 def print_constraints(state, nlines):
     i = 0
@@ -61,5 +66,6 @@ def print_constraints(state, nlines):
             break
         print(c)
         i += 1
+
 
 m.run()
