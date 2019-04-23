@@ -62,18 +62,18 @@ class ABITest(unittest.TestCase):
         self.assertEqual(cpu.read_int(cpu.SP), 0x80)
 
         # First 8 arguments in registers, then on stack.
-        def test(one, two, three, four, five, six, seven, eight, nine, ten, eleven):
-            self.assertEqual(one,    0)
-            self.assertEqual(two,    1)
-            self.assertEqual(three,  2)
-            self.assertEqual(four,   3)
-            self.assertEqual(five,   4)
-            self.assertEqual(six,    5)
-            self.assertEqual(seven,  6)
-            self.assertEqual(eight,  7)
-            self.assertEqual(nine,   0x80)
-            self.assertEqual(ten,    0x88)
-            self.assertEqual(eleven, 0x90)
+        def test(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10):
+            self.assertEqual(a0, 0)
+            self.assertEqual(a1, 1)
+            self.assertEqual(a2, 2)
+            self.assertEqual(a3, 3)
+            self.assertEqual(a4, 4)
+            self.assertEqual(a5, 5)
+            self.assertEqual(a6, 6)
+            self.assertEqual(a7, 7)
+            self.assertEqual(a8, 0x80)
+            self.assertEqual(a9, 0x88)
+            self.assertEqual(a10, 0x90)
 
             self.assertEqual(cpu.SP, 0x1080)
             return 42
@@ -94,13 +94,13 @@ class ABITest(unittest.TestCase):
         for i in range(6):
             cpu.write_register(f'X{i}', i)
 
-        def test(one, two, three, four, five, six):
-            self.assertEqual(one, 0)
-            self.assertEqual(two, 1)
-            self.assertEqual(three, 2)
-            self.assertEqual(four, 3)
-            self.assertEqual(five, 4)
-            self.assertEqual(six, 5)
+        def test(a0, a1, a2, a3, a4, a5):
+            self.assertEqual(a0, 0)
+            self.assertEqual(a1, 1)
+            self.assertEqual(a2, 2)
+            self.assertEqual(a3, 3)
+            self.assertEqual(a4, 4)
+            self.assertEqual(a5, 5)
             return 42
 
         self.assertEqual(cpu.syscall_abi.syscall_number(), 6)
@@ -117,11 +117,11 @@ class ABITest(unittest.TestCase):
 
         cpu.LR = 0x1234
 
-        def test(one, two, three, four):
-            self.assertEqual(one,   0)
-            self.assertEqual(two,   1)
-            self.assertEqual(three, 2)
-            self.assertEqual(four,  3)
+        def test(a0, a1, a2, a3):
+            self.assertEqual(a0, 0)
+            self.assertEqual(a1, 1)
+            self.assertEqual(a2, 2)
+            self.assertEqual(a3, 3)
             return 34
 
         cpu.func_abi.invoke(test)
@@ -143,14 +143,14 @@ class ABITest(unittest.TestCase):
 
         self.assertEqual(cpu.read_int(cpu.SP), 0x80)
 
-        def test(one, two, three, four, five, six, seven):
-            self.assertEqual(one,     0)
-            self.assertEqual(two,     1)
-            self.assertEqual(three,   2)
-            self.assertEqual(four,    3)
-            self.assertEqual(five,    0x80)
-            self.assertEqual(six,     0x84)
-            self.assertEqual(seven,   0x88)
+        def test(a0, a1, a2, a3, a4, a5, a6):
+            self.assertEqual(a0, 0)
+            self.assertEqual(a1, 1)
+            self.assertEqual(a2, 2)
+            self.assertEqual(a3, 3)
+            self.assertEqual(a4, 0x80)
+            self.assertEqual(a5, 0x84)
+            self.assertEqual(a6, 0x88)
 
             self.assertEqual(cpu.SP, 0x1080)
             return 34
@@ -173,7 +173,7 @@ class ABITest(unittest.TestCase):
         previous_r0 = cpu.R0
         self.assertEqual(cpu.read_int(cpu.SP), 0x80)
 
-        def test(one, two, three, four, five, six):
+        def test(a0, a1, a2, a3, a4, a5):
             raise ConcretizeArgument(cpu, 0)
 
         with self.assertRaises(ConcretizeRegister) as cr:
@@ -192,7 +192,7 @@ class ABITest(unittest.TestCase):
         previous_r0 = cpu.R0
         self.assertEqual(cpu.read_int(cpu.SP), 0x80)
 
-        def test(one, two, three, four, five):
+        def test(a0, a1, a2, a3, a4):
             raise ConcretizeArgument(cpu, 4)
 
         with self.assertRaises(ConcretizeMemory) as cr:
@@ -210,12 +210,12 @@ class ABITest(unittest.TestCase):
         self.assertEqual(cpu.read_int(cpu.ESP), 0x80)
         cpu.push(0x1234, cpu.address_bit_size)
 
-        def test(one, two, three, four, five):
-            self.assertEqual(one,   0x80)
-            self.assertEqual(two,   0x84)
-            self.assertEqual(three, 0x88)
-            self.assertEqual(four,  0x8c)
-            self.assertEqual(five,  0x90)
+        def test(a0, a1, a2, a3, a4):
+            self.assertEqual(a0, 0x80)
+            self.assertEqual(a1, 0x84)
+            self.assertEqual(a2, 0x88)
+            self.assertEqual(a3, 0x8c)
+            self.assertEqual(a4, 0x90)
             return 3
 
         cpu.func_abi.invoke(test)
@@ -234,12 +234,12 @@ class ABITest(unittest.TestCase):
 
         cpu.push(0x1234, cpu.address_bit_size)
 
-        def test(one, two, three, four, five):
-            self.assertEqual(one,   0x80)
-            self.assertEqual(two,   0x84)
-            self.assertEqual(three, 0x88)
-            self.assertEqual(four,  0x8c)
-            self.assertEqual(five,  0x90)
+        def test(a0, a1, a2, a3, a4):
+            self.assertEqual(a0, 0x80)
+            self.assertEqual(a1, 0x84)
+            self.assertEqual(a2, 0x88)
+            self.assertEqual(a3, 0x8c)
+            self.assertEqual(a4, 0x90)
             return 3
 
         abi = I386StdcallAbi(cpu)
@@ -261,7 +261,7 @@ class ABITest(unittest.TestCase):
         base = cpu.ESP
         cpu.EIP = eip
 
-        def test(one, two, three, four, five):
+        def test(a0, a1, a2, a3, a4):
             raise ConcretizeArgument(cpu, 2)
 
         abi = I386StdcallAbi(cpu)
@@ -283,8 +283,8 @@ class ABITest(unittest.TestCase):
         self.assertEqual(cpu.read_int(cpu.ESP), 0x80)
         cpu.push(0x1234, cpu.address_bit_size)
 
-        def test(one, two, three, four, five):
-            raise ConcretizeArgument(cpu, 0) # 0x1068
+        def test(a0, a1, a2, a3, a4):
+            raise ConcretizeArgument(cpu, 0)  # 0x1068
             return 3
 
         with self.assertRaises(ConcretizeMemory) as cr:
@@ -328,13 +328,13 @@ class ABITest(unittest.TestCase):
 
         cpu.push(0x1234, cpu.address_bit_size)
 
-        def test(one, two, three, four, five, six):
-            self.assertEqual(one, 1)
-            self.assertEqual(two, 2)
-            self.assertEqual(three, 3)
-            self.assertEqual(four, 4)
-            self.assertEqual(five, 5)
-            self.assertEqual(six, 6)
+        def test(a0, a1, a2, a3, a4, a5):
+            self.assertEqual(a0, 1)
+            self.assertEqual(a1, 2)
+            self.assertEqual(a2, 3)
+            self.assertEqual(a3, 4)
+            self.assertEqual(a4, 5)
+            self.assertEqual(a5, 6)
 
         cpu.func_abi.invoke(test)
 
@@ -352,15 +352,15 @@ class ABITest(unittest.TestCase):
 
         cpu.push(0x1234, cpu.address_bit_size)
 
-        def test(one, two, three, four, five, six, seven, eight):
-            self.assertEqual(one, 1)
-            self.assertEqual(two, 2)
-            self.assertEqual(three, 3)
-            self.assertEqual(four, 4)
-            self.assertEqual(five, 5)
-            self.assertEqual(six, 6)
-            self.assertEqual(seven, 0x80)
-            self.assertEqual(eight, 0x88)
+        def test(a0, a1, a2, a3, a4, a5, a6, a7):
+            self.assertEqual(a0, 1)
+            self.assertEqual(a1, 2)
+            self.assertEqual(a2, 3)
+            self.assertEqual(a3, 4)
+            self.assertEqual(a4, 5)
+            self.assertEqual(a5, 6)
+            self.assertEqual(a6, 0x80)
+            self.assertEqual(a7, 0x88)
 
         cpu.func_abi.invoke(test)
 
@@ -371,7 +371,7 @@ class ABITest(unittest.TestCase):
 
         cpu.push(0x1234, cpu.address_bit_size)
 
-        def test(one, two, three, four, five, six):
+        def test(a0, a1, a2, a3, a4, a5):
             raise ConcretizeArgument(cpu, 0)
 
         with self.assertRaises(ConcretizeRegister) as cr:
@@ -407,13 +407,13 @@ class ABITest(unittest.TestCase):
         for idx, reg in enumerate(['EBX', 'ECX', 'EDX', 'ESI', 'EDI', 'EBP']):
             cpu.write_register(reg, idx)
 
-        def test(one, two, three, four, five, six):
-            self.assertEqual(one, 0)
-            self.assertEqual(two, 1)
-            self.assertEqual(three, 2)
-            self.assertEqual(four, 3)
-            self.assertEqual(five, 4)
-            self.assertEqual(six, 5)
+        def test(a0, a1, a2, a3, a4, a5):
+            self.assertEqual(a0, 0)
+            self.assertEqual(a1, 1)
+            self.assertEqual(a2, 2)
+            self.assertEqual(a3, 3)
+            self.assertEqual(a4, 4)
+            self.assertEqual(a5, 5)
             return 34
 
         self.assertEqual(cpu.syscall_abi.syscall_number(), 5)
@@ -429,13 +429,13 @@ class ABITest(unittest.TestCase):
         for idx, reg in enumerate(['RDI', 'RSI', 'RDX', 'R10', 'R8', 'R9']):
             cpu.write_register(reg, idx)
 
-        def test(one, two, three, four, five, six):
-            self.assertEqual(one, 0)
-            self.assertEqual(two, 1)
-            self.assertEqual(three, 2)
-            self.assertEqual(four, 3)
-            self.assertEqual(five, 4)
-            self.assertEqual(six, 5)
+        def test(a0, a1, a2, a3, a4, a5):
+            self.assertEqual(a0, 0)
+            self.assertEqual(a1, 1)
+            self.assertEqual(a2, 2)
+            self.assertEqual(a3, 3)
+            self.assertEqual(a4, 4)
+            self.assertEqual(a5, 5)
             return 34
 
         self.assertEqual(cpu.syscall_abi.syscall_number(), 5)
