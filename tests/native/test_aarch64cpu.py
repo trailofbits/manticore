@@ -209,7 +209,6 @@ class Aarch64Instructions:
         else:
             self.fail()
 
-
     # ADD (extended register).
 
     # 32-bit.
@@ -580,7 +579,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W0'), 0x9aabbcc8)
         self.assertEqual(self.rf.read('NZCV'), 0)
 
-
     # ADD (immediate).
 
     # 32-bit.
@@ -656,7 +654,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X0'), 0x4142434445465748)
         self.assertEqual(self.rf.read('W0'), 0x45465748)
         self.assertEqual(self.rf.read('NZCV'), 0)
-
 
     # ADD (shifted register).
 
@@ -804,7 +801,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W0'), 0x45464748)
         self.assertEqual(self.rf.read('NZCV'), 0)
 
-
     # ADD (scalar).
 
     # XXX: Uses 'reset'.
@@ -832,7 +828,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('H0'), 0xced0)
         self.assertEqual(self.rf.read('B0'), 0xd0)
 
-
     @itest_setregs(
         'V1=0xffffffffffffffffffffffffffffffff',
         'V2=0xffffffffffffffffffffffffffffffff'
@@ -855,7 +850,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('S0'), 0xfffffffe)
         self.assertEqual(self.rf.read('H0'), 0xfffe)
         self.assertEqual(self.rf.read('B0'), 0xfe)
-
 
     # ADD (vector).
 
@@ -1197,7 +1191,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('H0'), 0xfffe)
         self.assertEqual(self.rf.read('B0'), 0xfe)
 
-
     # ADDP (scalar).
 
     # XXX: Uses 'reset'.
@@ -1241,7 +1234,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('S0'), 0xfffffffe)
         self.assertEqual(self.rf.read('H0'), 0xfffe)
         self.assertEqual(self.rf.read('B0'), 0xfe)
-
 
     # ADDP (vector).
 
@@ -1580,7 +1572,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('S0'), 0xfffffffe)
         self.assertEqual(self.rf.read('H0'), 0xfffe)
         self.assertEqual(self.rf.read('B0'), 0xfe)
-
 
     # ADDS (extended register).
 
@@ -1952,7 +1943,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W0'), 0x9aabbcc8)
         self.assertEqual(self.rf.read('NZCV'), 0)
 
-
     # ADDS (immediate).
 
     # 32-bit.
@@ -2028,7 +2018,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X0'), 0x4142434445465748)
         self.assertEqual(self.rf.read('W0'), 0x45465748)
         self.assertEqual(self.rf.read('NZCV'), 0)
-
 
     # ADDS (shifted register).
 
@@ -2176,7 +2165,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W0'), 0x45464748)
         self.assertEqual(self.rf.read('NZCV'), 0x20000000)
 
-
     # ADR.
 
     @itest_custom('adr x0, .0')
@@ -2200,7 +2188,6 @@ class Aarch64Instructions:
         self._execute()
         self.assertEqual(self.rf.read('X0'), pc + 8)
 
-
     # ADRP.
 
     @itest_custom('adrp x0, .0')
@@ -2223,7 +2210,6 @@ class Aarch64Instructions:
         pc = self.cpu.PC
         self._execute()
         self.assertEqual(self.rf.read('X0'), pc + 0x1000)
-
 
     # AND (immediate).
 
@@ -2272,7 +2258,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X0'), 1)
         self.assertEqual(self.rf.read('W0'), 1)
         self.assertEqual(self.rf.read('NZCV'), 0)
-
 
     # AND (shifted register).
 
@@ -2462,7 +2447,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W0'), 0x44546474)
         self.assertEqual(self.rf.read('NZCV'), 0)
 
-
     # AND (vector).
 
     # XXX: Uses 'reset'.
@@ -2563,7 +2547,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('H0'), 0xffff)
         self.assertEqual(self.rf.read('B0'), 0xff)
 
-
     # ANDS (immediate).
 
     # 32-bit.
@@ -2625,7 +2608,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X0'), 0)
         self.assertEqual(self.rf.read('W0'), 0)
         self.assertEqual(self.rf.read('NZCV'), 0x40000000)
-
 
     # ANDS (shifted register).
 
@@ -2829,7 +2811,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W0'), 0x44546474)
         self.assertEqual(self.rf.read('NZCV'), 0x80000000)
 
-
     # ASR (immediate).
 
     # 32-bit.
@@ -2871,7 +2852,6 @@ class Aarch64Instructions:
     def test_asr_imm64(self):
         self.assertEqual(self.rf.read('X0'), 0xf814243444546474)
         self.assertEqual(self.rf.read('W0'), 0x44546474)
-
 
     # ASR (register).
 
@@ -2915,7 +2895,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X0'), 0xf814243444546474)
         self.assertEqual(self.rf.read('W0'), 0x44546474)
 
-
     # ASRV.
 
     # 32-bit.
@@ -2958,7 +2937,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X0'), 0xf814243444546474)
         self.assertEqual(self.rf.read('W0'), 0x44546474)
 
-
     # B.cond.
 
     # XXX: Bundles everything into one testcase.
@@ -2998,7 +2976,6 @@ class Aarch64Instructions:
                 self.setUp()
                 b_cond_false(self)
 
-
     # B.
 
     # Jump over the second instruction.
@@ -3030,7 +3007,6 @@ class Aarch64Instructions:
         self._execute()
         self.assertEqual(self.rf.read('X1'), 42)
         self.assertEqual(self.rf.read('X2'), 0)
-
 
     # BFC.
 
@@ -3090,7 +3066,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X0'), 0x1ffffffff)
         self.assertEqual(self.rf.read('W0'), 0xffffffff)
 
-
     # BFI.
 
     # 32-bit.
@@ -3148,7 +3123,6 @@ class Aarch64Instructions:
     def test_bfi64(self):
         self.assertEqual(self.rf.read('X0'), 0x1ffffffff)
         self.assertEqual(self.rf.read('W0'), 0xffffffff)
-
 
     # BFM.
 
@@ -3240,7 +3214,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X0'), 0x7fffffffffffffff)
         self.assertEqual(self.rf.read('W0'), 0xffffffff)
 
-
     # BFXIL.
 
     # 32-bit.
@@ -3294,7 +3267,6 @@ class Aarch64Instructions:
     def test_bfxil64(self):
         self.assertEqual(self.rf.read('X0'), 0xffffffff00000000)
         self.assertEqual(self.rf.read('W0'), 0)
-
 
     # BIC (shifted register).
 
@@ -3484,7 +3456,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W0'), 0x5464748)
         self.assertEqual(self.rf.read('NZCV'), 0)
 
-
     # BICS (shifted register).
 
     # 32-bit.
@@ -3673,7 +3644,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W0'), 0x5464748)
         self.assertEqual(self.rf.read('NZCV'), 0)
 
-
     # BL.
 
     # Jump over the second instruction.
@@ -3705,7 +3675,6 @@ class Aarch64Instructions:
         self._execute()
         self.assertEqual(self.rf.read('X1'), 42)
         self.assertEqual(self.rf.read('X2'), 0)
-
 
     # BLR.
 
@@ -3741,7 +3710,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X1'), 42)
         self.assertEqual(self.rf.read('X2'), 0)
 
-
     # BR.
 
     # Jump over the second instruction.
@@ -3775,7 +3743,6 @@ class Aarch64Instructions:
         self._execute()
         self.assertEqual(self.rf.read('X1'), 42)
         self.assertEqual(self.rf.read('X2'), 0)
-
 
     # CBNZ.
 
@@ -3899,7 +3866,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X1'), 42)
         self.assertEqual(self.rf.read('X2'), 0)
 
-
     # CBZ.
 
     # 32-bit.
@@ -4022,7 +3988,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X1'), 0)
         self.assertEqual(self.rf.read('X2'), 43)
 
-
     # CCMP (immediate).
 
     # XXX: Bundles everything into one testcase.
@@ -4089,7 +4054,6 @@ class Aarch64Instructions:
 
                 self.setUp()
                 ccmp_imm_false64(self)
-
 
     # CCMP (register).
 
@@ -4170,7 +4134,6 @@ class Aarch64Instructions:
                 self.setUp()
                 ccmp_reg_false64(self)
 
-
     # CINC.
 
     # XXX: Bundles everything into one testcase.
@@ -4226,7 +4189,6 @@ class Aarch64Instructions:
                 assertEqual(self.rf.read('X0'), 0x4142434445464748)
                 assertEqual(self.rf.read('W0'), 0x45464748)
 
-
             if cond_true:
                 self.setUp()
                 cinc_true32(self)
@@ -4246,7 +4208,6 @@ class Aarch64Instructions:
 
                 self.setUp()
                 cinc_false64(self)
-
 
     # CINV.
 
@@ -4303,7 +4264,6 @@ class Aarch64Instructions:
                 self.setUp()
                 cinv_false64(self)
 
-
     # CLZ.
 
     # 32-bit.
@@ -4345,7 +4305,6 @@ class Aarch64Instructions:
     def test_clz64(self):
         self.assertEqual(self.rf.read('X0'), 25)
         self.assertEqual(self.rf.read('W0'), 25)
-
 
     # CMEQ (register, scalar).
 
@@ -4396,7 +4355,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('S0'), 0)
         self.assertEqual(self.rf.read('H0'), 0)
         self.assertEqual(self.rf.read('B0'), 0)
-
 
     # CMEQ (register, vector).
 
@@ -4577,7 +4535,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('H0'), 0)
         self.assertEqual(self.rf.read('B0'), 0)
 
-
     # CMEQ (zero, scalar).
 
     # XXX: Uses 'reset'.
@@ -4621,7 +4578,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('S0'), 0)
         self.assertEqual(self.rf.read('H0'), 0)
         self.assertEqual(self.rf.read('B0'), 0)
-
 
     # CMEQ (zero, vector).
 
@@ -4780,7 +4736,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('S0'), 0)
         self.assertEqual(self.rf.read('H0'), 0)
         self.assertEqual(self.rf.read('B0'), 0)
-
 
     # CMN (extended register).
 
@@ -5152,7 +5107,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W0'), 0)
         self.assertEqual(self.rf.read('NZCV'), 0)
 
-
     # CMN (immediate).
 
     # 32-bit.
@@ -5228,7 +5182,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X0'), 0)
         self.assertEqual(self.rf.read('W0'), 0)
         self.assertEqual(self.rf.read('NZCV'), 0)
-
 
     # CMN (shifted register).
 
@@ -5375,7 +5328,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X0'), 0)
         self.assertEqual(self.rf.read('W0'), 0)
         self.assertEqual(self.rf.read('NZCV'), 0x20000000)
-
 
     # CMP (extended register).
 
@@ -5747,7 +5699,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W0'), 0)
         self.assertEqual(self.rf.read('NZCV'), 0x20000000)
 
-
     # CMP (immediate).
 
     # 32-bit.
@@ -5823,7 +5774,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X0'), 0)
         self.assertEqual(self.rf.read('W0'), 0)
         self.assertEqual(self.rf.read('NZCV'), 0x20000000)
-
 
     # CMP (shifted register).
 
@@ -5971,7 +5921,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W0'), 0)
         self.assertEqual(self.rf.read('NZCV'), 0x90000000)
 
-
     # CSEL.
 
     # XXX: Bundles everything into one testcase.
@@ -6033,7 +5982,6 @@ class Aarch64Instructions:
                 self.setUp()
                 csel_false64(self)
 
-
     # CSET.
 
     # XXX: Bundles everything into one testcase.
@@ -6089,7 +6037,6 @@ class Aarch64Instructions:
                 self.setUp()
                 cset_false64(self)
 
-
     # CSETM.
 
     # XXX: Bundles everything into one testcase.
@@ -6144,7 +6091,6 @@ class Aarch64Instructions:
 
                 self.setUp()
                 csetm_false64(self)
-
 
     # CSINC.
 
@@ -6211,7 +6157,6 @@ class Aarch64Instructions:
                 assertEqual(self.rf.read('X0'), 0)
                 assertEqual(self.rf.read('W0'), 0)
 
-
             if cond_true:
                 self.setUp()
                 csinc_true32(self)
@@ -6231,7 +6176,6 @@ class Aarch64Instructions:
 
                 self.setUp()
                 csinc_false_of64(self)
-
 
     # CSINV.
 
@@ -6294,7 +6238,6 @@ class Aarch64Instructions:
                 self.setUp()
                 csinv_false64(self)
 
-
     # DC.
 
     @skip_sym('dczid_el0 is read-only')
@@ -6307,7 +6250,6 @@ class Aarch64Instructions:
             self.assertEqual(self.rf.read('X0'), 4)
         else:
             self.fail()
-
 
     # DMB.
 
@@ -6331,7 +6273,6 @@ class Aarch64Instructions:
             'osh', 'oshst', 'oshld'
         ):
             dmb(f'{bar}')
-
 
     # DUP (general).
 
@@ -6490,7 +6431,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('S0'), 0x95969798)
         self.assertEqual(self.rf.read('H0'), 0x9798)
         self.assertEqual(self.rf.read('B0'), 0x98)
-
 
     # EOR (shifted register).
 
@@ -6680,7 +6620,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W0'), 0xb5464748)
         self.assertEqual(self.rf.read('NZCV'), 0)
 
-
     # LD1 (multiple structures).
 
     # XXX: Uses 'reset'.
@@ -6788,7 +6727,6 @@ class Aarch64Instructions:
         self._ld1_mlt_structs(vess='d', elem_size=64, elem_count=1)
         self._ld1_mlt_structs(vess='d', elem_size=64, elem_count=2)
 
-
     # LDAXR.
 
     # 32-bit.
@@ -6834,7 +6772,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X1'), 0x4142434445464748)
         self.assertEqual(self.rf.read('W1'), 0x45464748)
         self.assertEqual(self.rf.read('SP'), stack)  # no writeback
-
 
     # LDP.
 
@@ -7109,7 +7046,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W2'), 0x55565758)
         self.assertEqual(self.rf.read('SP'), stack - 512)  # writeback
 
-
     # LDR (immediate).
 
     # ldr w1, [x27]          base register (opt. offset omitted):  w1 = [x27]
@@ -7269,7 +7205,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W1'), 0x45464748)
         self.assertEqual(self.rf.read('SP'), stack - 256)  # writeback
 
-
     # LDR (literal).
 
     @itest_custom('ldr w0, .+8')
@@ -7313,7 +7248,6 @@ class Aarch64Instructions:
         self._execute()
         self.assertEqual(self.rf.read('X0'), 0x4142434445464748)
         self.assertEqual(self.rf.read('W0'), 0x45464748)
-
 
     # LDR (register).
 
@@ -7502,7 +7436,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X0'), 0x5152535455565758)
         self.assertEqual(self.rf.read('W0'), 0x55565758)
 
-
     # LDRB (immediate).
 
     # ldrb w1, [x27]          base register (opt. offset omitted):  w1 = [x27]
@@ -7583,7 +7516,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X1'), 0x48)
         self.assertEqual(self.rf.read('W1'), 0x48)
         self.assertEqual(self.rf.read('SP'), stack - 256)  # writeback
-
 
     # LDRB (register).
 
@@ -7677,7 +7609,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X0'), 0x58)
         self.assertEqual(self.rf.read('W0'), 0x58)
 
-
     # LDRH (immediate).
 
     # ldrh w1, [x27]          base register (opt. offset omitted):  w1 = [x27]
@@ -7758,7 +7689,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X1'), 0x4748)
         self.assertEqual(self.rf.read('W1'), 0x4748)
         self.assertEqual(self.rf.read('SP'), stack - 256)  # writeback
-
 
     # LDRH (register).
 
@@ -7852,7 +7782,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X0'), 0x5758)
         self.assertEqual(self.rf.read('W0'), 0x5758)
 
-
     # LDRSW (immediate).
 
     # ldrsw x1, [x27]          base register (opt. offset omitted):  x1 = [x27]
@@ -7934,7 +7863,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W1'), 0x85464748)
         self.assertEqual(self.rf.read('SP'), stack - 256)  # writeback
 
-
     # LDRSW (literal).
 
     @itest_custom('ldrsw x0, .+8')
@@ -7957,7 +7885,6 @@ class Aarch64Instructions:
         self._execute()
         self.assertEqual(self.rf.read('X0'), 0xffffffff85464748)
         self.assertEqual(self.rf.read('W0'), 0x85464748)
-
 
     # LDRSW (register).
 
@@ -8050,7 +7977,6 @@ class Aarch64Instructions:
         self._execute()
         self.assertEqual(self.rf.read('X0'), 0xffffffff85565758)
         self.assertEqual(self.rf.read('W0'), 0x85565758)
-
 
     # LDUR.
 
@@ -8174,7 +8100,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W1'), 0x51525354)
         self.assertEqual(self.rf.read('SP'), stack)  # no writeback
 
-
     # LDXR.
 
     # 32-bit.
@@ -8221,7 +8146,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W1'), 0x45464748)
         self.assertEqual(self.rf.read('SP'), stack)  # no writeback
 
-
     # LSL (register).
 
     # 32-bit.
@@ -8263,7 +8187,6 @@ class Aarch64Instructions:
     def test_lsl_reg64(self):
         self.assertEqual(self.rf.read('X0'), 0x1424344454647480)
         self.assertEqual(self.rf.read('W0'), 0x54647480)
-
 
     # LSL (immediate).
 
@@ -8307,7 +8230,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X0'), 0x1424344454647480)
         self.assertEqual(self.rf.read('W0'), 0x54647480)
 
-
     # LSLV.
 
     # 32-bit.
@@ -8349,7 +8271,6 @@ class Aarch64Instructions:
     def test_lslv64(self):
         self.assertEqual(self.rf.read('X0'), 0x1424344454647480)
         self.assertEqual(self.rf.read('W0'), 0x54647480)
-
 
     # LSR (register).
 
@@ -8393,7 +8314,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X0'), 0x414243444546474)
         self.assertEqual(self.rf.read('W0'), 0x44546474)
 
-
     # LSR (immediate).
 
     # 32-bit.
@@ -8436,7 +8356,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X0'), 0x414243444546474)
         self.assertEqual(self.rf.read('W0'), 0x44546474)
 
-
     # LSRV.
 
     # 32-bit.
@@ -8478,7 +8397,6 @@ class Aarch64Instructions:
     def test_lsrv64(self):
         self.assertEqual(self.rf.read('X0'), 0x414243444546474)
         self.assertEqual(self.rf.read('W0'), 0x44546474)
-
 
     # MADD.
 
@@ -8554,7 +8472,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X0'), 10)
         self.assertEqual(self.rf.read('W0'), 10)
 
-
     # MOV (to/from SP).
 
     @itest_setregs(f"X0={MAGIC_64}")
@@ -8587,7 +8504,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X0'), MAGIC_32)
         self.assertEqual(self.rf.read('W0'), MAGIC_32)
 
-
     # MOV (inverted wide immediate).
 
     # 32-bit.
@@ -8617,7 +8533,6 @@ class Aarch64Instructions:
     def test_mov_inv_wide_imm_neg64(self):
         self.assertEqual(self.rf.read('X0'), 0xffffffffffffffff)
         self.assertEqual(self.rf.read('W0'), 0xffffffff)
-
 
     # MOV (wide immediate).
 
@@ -8661,7 +8576,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X0'), 1)
         self.assertEqual(self.rf.read('W0'), 1)
 
-
     # MOV (bitmask immediate).
 
     @skip_sym('immediate')
@@ -8675,7 +8589,6 @@ class Aarch64Instructions:
     def test_mov_bmask_imm64(self):
         self.assertEqual(self.rf.read('X0'), 0x7ffffffffffffffe)
         self.assertEqual(self.rf.read('W0'), 0xfffffffe)
-
 
     # MOV (register).
 
@@ -8691,13 +8604,11 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X0'), 42)
         self.assertEqual(self.rf.read('W0'), 42)
 
-
     # MOV (to general).
 
     def test_mov_to_general(self):
         self._umov(mnem='mov', dst='w', vess='s', elem_size=32, elem_count=4)
         self._umov(mnem='mov', dst='x', vess='d', elem_size=64, elem_count=2)
-
 
     # MOV misc.
 
@@ -8706,7 +8617,6 @@ class Aarch64Instructions:
     def test_mov_same_reg32(self):
         self.assertEqual(self.rf.read('X0'), 1)
         self.assertEqual(self.rf.read('W0'), 1)
-
 
     # MOVK.
 
@@ -8882,7 +8792,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X0'), 0x1001434445464748)
         self.assertEqual(self.rf.read('W0'), 0x45464748)
 
-
     # MOVN.
 
     # 32-bit.
@@ -8936,7 +8845,6 @@ class Aarch64Instructions:
     def test_movn_sft48_64(self):
         self.assertEqual(self.rf.read('X0'), 0x0000ffffffffffff)
         self.assertEqual(self.rf.read('W0'), 0xffffffff)
-
 
     # MOVZ.
 
@@ -8992,7 +8900,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X0'), 0xffff000000000000)
         self.assertEqual(self.rf.read('W0'), 0)
 
-
     # MSR (register) and MRS.
 
     # XXX: Uses 'reset'.
@@ -9020,7 +8927,6 @@ class Aarch64Instructions:
         self._execute(reset=False)
         self.assertEqual(self.rf.read('X0'), 0x4142434445464748)
         self.assertEqual(self.rf.read('W0'), 0x45464748)
-
 
     # MSUB.
 
@@ -9079,7 +8985,6 @@ class Aarch64Instructions:
     def test_msub64(self):
         self.assertEqual(self.rf.read('X0'), 0xfffffffffffffff9)
         self.assertEqual(self.rf.read('W0'), 0xfffffff9)
-
 
     # MUL.
 
@@ -9146,7 +9051,6 @@ class Aarch64Instructions:
     def test_mul_pos_neg64(self):
         self.assertEqual(self.rf.read('X0'), 0xfffffffffffffffa)
         self.assertEqual(self.rf.read('W0'), 0xfffffffa)
-
 
     # NEG (shifted register).
 
@@ -9294,7 +9198,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W0'), 0)
         self.assertEqual(self.rf.read('NZCV'), 0)
 
-
     # NOP.
 
     @itest_custom('nop')
@@ -9303,7 +9206,6 @@ class Aarch64Instructions:
         pc = self.cpu.PC
         self._execute(check_pc=False)  # check explicitly
         self.assertEqual(self.rf.read('PC'), pc + 4)
-
 
     # ORR (immediate).
 
@@ -9346,7 +9248,6 @@ class Aarch64Instructions:
     def test_orr_imm3_64(self):
         self.assertEqual(self.rf.read('X0'), 0x4142434445464749)
         self.assertEqual(self.rf.read('W0'), 0x45464749)
-
 
     # ORR (shifted register).
 
@@ -9510,7 +9411,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X0'), 0x8000000041424344)
         self.assertEqual(self.rf.read('W0'), 0x41424344)
 
-
     # ORR (vector, register).
 
     # XXX: Uses 'reset'.
@@ -9564,7 +9464,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('S0'), 0x95969798)
         self.assertEqual(self.rf.read('H0'), 0x9798)
         self.assertEqual(self.rf.read('B0'), 0x98)
-
 
     # RBIT.
 
@@ -9620,7 +9519,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X0'), 0x12e262a222c24282)
         self.assertEqual(self.rf.read('W0'), 0x22c24282)
 
-
     # RET.
 
     @itest_custom('ret')
@@ -9638,7 +9536,6 @@ class Aarch64Instructions:
         self._setreg('X0', self.cpu.X0)
         self._execute(check_pc=False)
         self.assertEqual(self.rf.read('PC'), pc + 32)
-
 
     # REV.
 
@@ -9681,7 +9578,6 @@ class Aarch64Instructions:
     def test_rev64(self):
         self.assertEqual(self.rf.read('X0'), 0x4847464544434241)
         self.assertEqual(self.rf.read('W0'), 0x44434241)
-
 
     # SBFIZ.
 
@@ -9736,7 +9632,6 @@ class Aarch64Instructions:
     def test_sbfiz64(self):
         self.assertEqual(self.rf.read('X0'), 0xfffffffe00000000)
         self.assertEqual(self.rf.read('W0'), 0)
-
 
     # SBFM.
 
@@ -9893,7 +9788,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X0'), 0xffffffff85464748)
         self.assertEqual(self.rf.read('W0'), 0x85464748)
 
-
     # SBFX.
 
     # 32-bit.
@@ -9947,7 +9841,6 @@ class Aarch64Instructions:
     def test_sbfx64(self):
         self.assertEqual(self.rf.read('X0'), 0xffffffffffffffff)
         self.assertEqual(self.rf.read('W0'), 0xffffffff)
-
 
     # STP.
 
@@ -10170,7 +10063,6 @@ class Aarch64Instructions:
         self.assertEqual(self.cpu.read_int(stack - 512), 0x4142434445464748)
         self.assertEqual(self.cpu.read_int(stack - 512 + 8), 0x5152535455565758)
         self.assertEqual(self.rf.read('SP'), stack - 512)  # writeback
-
 
     # STP (SIMD&FP).
 
@@ -10879,7 +10771,6 @@ class Aarch64Instructions:
         self.assertEqual(self.cpu.read_int(stack - 1024 + 24), 0x6162636465666768)
         self.assertEqual(self.rf.read('SP'), stack - 1024)  # writeback
 
-
     # STR (immediate).
 
     # str w1, [x27]          base register (opt. offset omitted):  [x27]     = w1
@@ -11024,7 +10915,6 @@ class Aarch64Instructions:
         self._execute()
         self.assertEqual(self.cpu.read_int(stack - 256), 0x4142434445464748)
         self.assertEqual(self.rf.read('SP'), stack - 256)  # writeback
-
 
     # STR (register).
 
@@ -11181,7 +11071,6 @@ class Aarch64Instructions:
         self._execute()
         self.assertEqual(self.cpu.read_int(stack), 0x4142434445464748)
 
-
     # STRB (immediate).
 
     # strb w1, [x27]          base register (opt. offset omitted):  [x27]     = w1
@@ -11255,7 +11144,6 @@ class Aarch64Instructions:
         self._execute()
         self.assertEqual(self.cpu.read_int(stack - 256), 0x5152535455565744)
         self.assertEqual(self.rf.read('SP'), stack - 256)  # writeback
-
 
     # STRB (register).
 
@@ -11333,7 +11221,6 @@ class Aarch64Instructions:
         self._execute()
         self.assertEqual(self.cpu.read_int(stack), 0x5152535455565744)
 
-
     # STRH (immediate).
 
     # strh w1, [x27]          base register (opt. offset omitted):  [x27]     = w1
@@ -11407,7 +11294,6 @@ class Aarch64Instructions:
         self._execute()
         self.assertEqual(self.cpu.read_int(stack - 256), 0x5152535455564344)
         self.assertEqual(self.rf.read('SP'), stack - 256)  # writeback
-
 
     # STRH (register).
 
@@ -11484,7 +11370,6 @@ class Aarch64Instructions:
         self.cpu.STACK += 8
         self._execute()
         self.assertEqual(self.cpu.read_int(stack), 0x5152535455564344)
-
 
     # STUR.
 
@@ -11569,7 +11454,6 @@ class Aarch64Instructions:
         self._execute()
         self.assertEqual(self.cpu.read_int(stack), 0x4142434445464748)
         self.assertEqual(self.rf.read('SP'), stack)  # no writeback
-
 
     # SUB (extended register).
 
@@ -11941,7 +11825,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W0'), 0xefe0d1c8)
         self.assertEqual(self.rf.read('NZCV'), 0)
 
-
     # SUB (immediate).
 
     # 32-bit.
@@ -12017,7 +11900,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X0'), 0x4142434445463748)
         self.assertEqual(self.rf.read('W0'), 0x45463748)
         self.assertEqual(self.rf.read('NZCV'), 0)
-
 
     # SUB (shifted register).
 
@@ -12165,7 +12047,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W0'), 0x45464748)
         self.assertEqual(self.rf.read('NZCV'), 0)
 
-
     # SUB (scalar).
 
     # XXX: Uses 'reset'.
@@ -12215,7 +12096,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('S0'), 0)
         self.assertEqual(self.rf.read('H0'), 0)
         self.assertEqual(self.rf.read('B0'), 0)
-
 
     # SUB (vector).
 
@@ -12556,7 +12436,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('S0'), 0)
         self.assertEqual(self.rf.read('H0'), 0)
         self.assertEqual(self.rf.read('B0'), 0)
-
 
     # SUBS (extended register).
 
@@ -12928,7 +12807,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W0'), 0xefe0d1c8)
         self.assertEqual(self.rf.read('NZCV'), 0x20000000)
 
-
     # SUBS (immediate).
 
     # 32-bit.
@@ -13004,7 +12882,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X0'), 0x4142434445463748)
         self.assertEqual(self.rf.read('W0'), 0x45463748)
         self.assertEqual(self.rf.read('NZCV'), 0x20000000)
-
 
     # SUBS (shifted register).
 
@@ -13152,7 +13029,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('W0'), 0x45464748)
         self.assertEqual(self.rf.read('NZCV'), 0x90000000)
 
-
     # SVC.
 
     @skip_sym('immediate')
@@ -13174,7 +13050,6 @@ class Aarch64Instructions:
         with self.assertRaises(e):
             self._setupCpu("svc #1")
             self._execute()
-
 
     # SXTB.
 
@@ -13206,7 +13081,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X0'), 0xffffffffffffff88)
         self.assertEqual(self.rf.read('W0'), 0xffffff88)
 
-
     # SXTH.
 
     # 32-bit.
@@ -13237,7 +13111,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X0'), 0xffffffffffff8748)
         self.assertEqual(self.rf.read('W0'), 0xffff8748)
 
-
     # SXTW.
 
     @itest_setregs('X1=0x4142434445464748')
@@ -13251,7 +13124,6 @@ class Aarch64Instructions:
     def test_sxtw_one(self):
         self.assertEqual(self.rf.read('X0'), 0xffffffff85464748)
         self.assertEqual(self.rf.read('W0'), 0x85464748)
-
 
     # TBNZ.
 
@@ -13427,7 +13299,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X1'), 0)
         self.assertEqual(self.rf.read('X2'), 43)
 
-
     # TBZ.
 
     # 32-bit.
@@ -13602,7 +13473,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X1'), 42)
         self.assertEqual(self.rf.read('X2'), 0)
 
-
     # TST (immediate).
 
     # 32-bit.
@@ -13664,7 +13534,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('XZR'), 0)
         self.assertEqual(self.rf.read('WZR'), 0)
         self.assertEqual(self.rf.read('NZCV'), 0x40000000)
-
 
     # TST (shifted register).
 
@@ -13868,7 +13737,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('WZR'), 0)
         self.assertEqual(self.rf.read('NZCV'), 0x80000000)
 
-
     # UBFIZ.
 
     # 32-bit.
@@ -13922,7 +13790,6 @@ class Aarch64Instructions:
     def test_ubfiz64(self):
         self.assertEqual(self.rf.read('X0'), 0xfffffffe00000000)
         self.assertEqual(self.rf.read('W0'), 0)
-
 
     # UBFM.
 
@@ -14028,7 +13895,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X0'), 0x8000000000000000)
         self.assertEqual(self.rf.read('W0'), 0)
 
-
     # UBFX.
 
     # 32-bit.
@@ -14082,7 +13948,6 @@ class Aarch64Instructions:
     def test_ubfx64(self):
         self.assertEqual(self.rf.read('X0'), 0xffffffff)
         self.assertEqual(self.rf.read('W0'), 0xffffffff)
-
 
     # UDIV.
 
@@ -14150,7 +14015,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X0'), 0)
         self.assertEqual(self.rf.read('W0'), 0)
 
-
     # UMOV.
 
     # XXX: Uses 'reset'.
@@ -14183,13 +14047,11 @@ class Aarch64Instructions:
             self.setUp()
             f(self)
 
-
     def test_umov(self):
         self._umov(mnem='umov', dst='w', vess='b', elem_size=8, elem_count=16)
         self._umov(mnem='umov', dst='w', vess='h', elem_size=16, elem_count=8)
         self._umov(mnem='umov', dst='w', vess='s', elem_size=32, elem_count=4)
         self._umov(mnem='umov', dst='x', vess='d', elem_size=64, elem_count=2)
-
 
     # UMULH.
 
@@ -14211,7 +14073,6 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X0'), 0x10a2b74f6c0e36e6)
         self.assertEqual(self.rf.read('W0'), 0x6c0e36e6)
 
-
     # UXTB.
 
     @itest_setregs('W1=0x41424381')
@@ -14219,7 +14080,6 @@ class Aarch64Instructions:
     def test_uxtb(self):
         self.assertEqual(self.rf.read('X0'), 0x81)
         self.assertEqual(self.rf.read('W0'), 0x81)
-
 
     # UXTH.
 

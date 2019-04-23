@@ -69,7 +69,6 @@ class Aarch64RFTest(unittest.TestCase):
         self.r.write('NZCV', 67)
         self.r.write('XZR', 68)
 
-
         for i in range(31):
             self.assertEqual(self.r.read(f'X{i}'), i)
             self.assertEqual(self.r.read(f'W{i}'), i)

@@ -159,7 +159,6 @@ class LinuxTest(unittest.TestCase):
         self.assertIn(fname, files)
         self.assertEqual(len(files[fname]), 1)
 
-
     def test_armv7_linux_workspace_files(self):
         platform = self.symbolic_linux_armv7
         platform.argv = ["arg1", "arg2"]

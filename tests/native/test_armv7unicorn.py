@@ -1346,7 +1346,6 @@ class UnicornConcretization(unittest.TestCase):
             cls.cpu = platform._mk_proc('armv7')
         return (cls.cpu, cls.state)
 
-
     def setUp(self):
         self.cpu, self.state = self.__class__.get_state()
         self.mem = self.cpu.memory
@@ -1423,7 +1422,6 @@ class UnicornConcretization(unittest.TestCase):
         self.assertEqual(self.rf.read('PC'), self.code+8)
         self.assertEqual(self.rf.read('R0'), 0x12345678)
 
-
     @itest_custom("mov r1, r2")
     def test_concretize_register_isnt_consumed(self):
         val = self.state.new_symbolic_value(32)
@@ -1431,4 +1429,3 @@ class UnicornConcretization(unittest.TestCase):
 
         with self.assertRaises(ConcretizeRegister):
             self.cpu.emulate(self.cpu.decode_instruction(self.cpu.PC))
-

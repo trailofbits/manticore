@@ -3724,7 +3724,6 @@ class Aarch64Cpu(Cpu):
                 # method.
                 cpu.ADD.__wrapped__(cpu, dst, src, zero)
 
-
             # MOV (register).
             elif bit26 == '0' and opc == '01':
                 # The 'instruction' decorator advances PC, so call the original

@@ -298,7 +298,6 @@ class ABITest(unittest.TestCase):
         self.assertEqual(base, cpu.ESP+4)
         self.assertNotEqual(cpu.EIP, 0x1234)
 
-
     def test_i386_vararg(self):
         cpu = self._cpu_x86
 
@@ -316,7 +315,6 @@ class ABITest(unittest.TestCase):
 
         cpu.func_abi.invoke(test)
         self.assertEqual(cpu.EIP, 0x1234)
-
 
     def test_amd64_basic_funcall(self):
         cpu = self._cpu_x64
@@ -485,4 +483,3 @@ class ABITest(unittest.TestCase):
         result = cpu.func_abi.invoke(obj.method)
 
         self.assertEqual(result, 3)
-
