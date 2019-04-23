@@ -41,9 +41,9 @@ if __name__ == '__main__':
         print(f'{msg}: 0x{insn.address:x}: {insn.mnemonic} {insn.op_str}')
 
     m.subscribe('will_execute_instruction', lambda self, state, pc, insn:
-        execute_instruction(self, insn, 'next'))
+                execute_instruction(self, insn, 'next'))
     m.subscribe('did_execute_instruction', lambda self, state, last_pc, pc, insn:
-        execute_instruction(self, insn, 'done'))
+                execute_instruction(self, insn, 'done'))
 
     m.run(procs=1)
 

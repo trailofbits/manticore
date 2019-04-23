@@ -265,8 +265,7 @@ class UnicornEmulator:
             # too small.  Tests that work fine without 'timeout' start to fail
             # because registers are not being written to.
             self._emu.emu_start(pc, self._cpu.PC + instruction.size,
-                count=1, timeout=1000000  # microseconds
-            )
+                                count=1, timeout=1000000)  # microseconds
         except UcError as e:
             # We request re-execution by signaling error; if we we didn't set
             # _should_try_again, it was likely an actual error

@@ -822,7 +822,7 @@ class Aarch64Cpu(Cpu):
         res_op.write(result)
 
     def _shifted_register(cpu, res_op, reg_op1, reg_op2, action, shifts,
-            flags=False):
+                          flags=False):
         reg1 = reg_op1.read()
         reg2 = reg_op2.read()
         reg2_size = cpu.regfile.size(reg_op2.reg)
