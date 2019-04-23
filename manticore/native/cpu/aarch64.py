@@ -5365,7 +5365,7 @@ class Aarch64Operand(Operand):
     def __init__(self, cpu, op, **kwargs):
         super(Aarch64Operand, self).__init__(cpu, op)
 
-        if not self.op.type in (
+        if self.op.type not in (
             cs.arm64.ARM64_OP_REG,
             cs.arm64.ARM64_OP_REG_MRS,
             cs.arm64.ARM64_OP_REG_MSR,
