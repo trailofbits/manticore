@@ -39,7 +39,7 @@ def itest_setregs(*preds):
 
                 try:
                     src = int(src, 0)
-                except:
+                except ValueError:
                     self.fail()
 
                 self._setreg(dest, src)

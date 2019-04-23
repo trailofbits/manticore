@@ -71,7 +71,7 @@ def itest_setregs(*preds):
 
                 try:
                     src = int(src, 0)
-                except:
+                except ValueError:
                     pass
 
                 self.rf.write(dest.upper(), src)
