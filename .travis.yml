@@ -4,7 +4,7 @@ os:
   - linux
 language: python
 python:
-  - 3.6.5
+  - 3.6.6
 
 stages:
   - prepare
@@ -14,7 +14,7 @@ stages:
 env:
   global:
     - CC_TEST_REPORTER_ID=db72f1ed59628c16eb0c00cbcd629c4c71f68aa1892ef42d18c7c2b8326f460a
-    - JOB_COUNT=2 # Two jobs generate test coverage
+    - JOB_COUNT=3 # Three jobs generate test coverage: ethereum, native, and other
     - PYTHONWARNINGS="default::ResourceWarning" # Enable ResourceWarnings
   matrix:
     - TEST_TYPE=examples
@@ -30,8 +30,8 @@ branches:
 cache:
   pip: true
   directories:
-  - $HOME/virtualenv/python3.6.5/lib/python3.6/site-packages
-  - $HOME/virtualenv/python3.6.5/bin/
+  - $HOME/virtualenv/python3.6.6/lib/python3.6/site-packages
+  - $HOME/virtualenv/python3.6.6/bin/
 
 jobs:
   include:
@@ -45,7 +45,7 @@ jobs:
       script:
         - true
       after_script:
-        - aws s3 sync "s3://manticore-testdata/coverage/$TRAVIS_COMMIT" coverage/ 
+        - aws s3 sync "s3://manticore-testdata/coverage/$TRAVIS_COMMIT" coverage/
         - ./cc-test-reporter sum-coverage --output - --parts $JOB_COUNT coverage/codeclimate.*.json | ./cc-test-reporter upload-coverage --input -
 
 install:
@@ -57,4 +57,3 @@ script:
 after_success:
   - ./cc-test-reporter format-coverage -t coverage.py -o "coverage/codeclimate.$TEST_TYPE.json"
   - aws s3 sync coverage/ "s3://manticore-testdata/coverage/$TRAVIS_COMMIT"
-
