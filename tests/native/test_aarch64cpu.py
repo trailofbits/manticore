@@ -814,8 +814,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'add d0, d1, d2'
-        ],
+         'add d0, d1, d2'],
         multiple_insts=True
     )
     def test_add_scalar(self):
@@ -837,8 +836,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'add d0, d1, d2'
-        ],
+         'add d0, d1, d2'],
         multiple_insts=True
     )
     def test_add_scalar_max(self):
@@ -866,8 +864,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'add v0.8b, v1.8b, v2.8b'
-        ],
+         'add v0.8b, v1.8b, v2.8b'],
         multiple_insts=True
     )
     def test_add_vector_8b(self):
@@ -889,8 +886,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'add v0.8b, v1.8b, v2.8b'
-        ],
+         'add v0.8b, v1.8b, v2.8b'],
         multiple_insts=True
     )
     def test_add_vector_8b_max(self):
@@ -914,8 +910,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'add v0.16b, v1.16b, v2.16b'
-        ],
+         'add v0.16b, v1.16b, v2.16b'],
         multiple_insts=True
     )
     def test_add_vector_16b(self):
@@ -937,8 +932,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'add v0.16b, v1.16b, v2.16b'
-        ],
+         'add v0.16b, v1.16b, v2.16b'],
         multiple_insts=True
     )
     def test_add_vector_16b_max(self):
@@ -962,8 +956,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'add v0.4h, v1.4h, v2.4h'
-        ],
+         'add v0.4h, v1.4h, v2.4h'],
         multiple_insts=True
     )
     def test_add_vector_4h(self):
@@ -985,8 +978,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'add v0.4h, v1.4h, v2.4h'
-        ],
+         'add v0.4h, v1.4h, v2.4h'],
         multiple_insts=True
     )
     def test_add_vector_4h_max(self):
@@ -1010,8 +1002,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'add v0.8h, v1.8h, v2.8h'
-        ],
+         'add v0.8h, v1.8h, v2.8h'],
         multiple_insts=True
     )
     def test_add_vector_8h(self):
@@ -1033,8 +1024,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'add v0.8h, v1.8h, v2.8h'
-        ],
+         'add v0.8h, v1.8h, v2.8h'],
         multiple_insts=True
     )
     def test_add_vector_8h_max(self):
@@ -1058,8 +1048,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'add v0.2s, v1.2s, v2.2s'
-        ],
+         'add v0.2s, v1.2s, v2.2s'],
         multiple_insts=True
     )
     def test_add_vector_2s(self):
@@ -1081,8 +1070,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'add v0.2s, v1.2s, v2.2s'
-        ],
+         'add v0.2s, v1.2s, v2.2s'],
         multiple_insts=True
     )
     def test_add_vector_2s_max(self):
@@ -1106,8 +1094,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'add v0.4s, v1.4s, v2.4s'
-        ],
+         'add v0.4s, v1.4s, v2.4s'],
         multiple_insts=True
     )
     def test_add_vector_4s(self):
@@ -1129,8 +1116,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'add v0.4s, v1.4s, v2.4s'
-        ],
+         'add v0.4s, v1.4s, v2.4s'],
         multiple_insts=True
     )
     def test_add_vector_4s_max(self):
@@ -1154,8 +1140,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'add v0.2d, v1.2d, v2.2d'
-        ],
+         'add v0.2d, v1.2d, v2.2d'],
         multiple_insts=True
     )
     def test_add_vector_2d(self):
@@ -1177,8 +1162,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'add v0.2d, v1.2d, v2.2d'
-        ],
+         'add v0.2d, v1.2d, v2.2d'],
         multiple_insts=True
     )
     def test_add_vector_2d_max(self):
@@ -1201,8 +1185,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'addp d0, v1.2d'
-        ],
+         'addp d0, v1.2d'],
         multiple_insts=True
     )
     def test_addp_scalar(self):
@@ -1221,8 +1204,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'addp d0, v1.2d'
-        ],
+         'addp d0, v1.2d'],
         multiple_insts=True
     )
     def test_addp_scalar_max(self):
@@ -1248,8 +1230,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'addp v0.8b, v1.8b, v2.8b'
-        ],
+         'addp v0.8b, v1.8b, v2.8b'],
         multiple_insts=True
     )
     def test_addp_vector_8b(self):
@@ -1271,8 +1252,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'addp v0.8b, v1.8b, v2.8b'
-        ],
+         'addp v0.8b, v1.8b, v2.8b'],
         multiple_insts=True
     )
     def test_addp_vector_8b_max(self):
@@ -1296,8 +1276,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'addp v0.16b, v1.16b, v2.16b'
-        ],
+         'addp v0.16b, v1.16b, v2.16b'],
         multiple_insts=True
     )
     def test_addp_vector_16b(self):
@@ -1319,8 +1298,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'addp v0.16b, v1.16b, v2.16b'
-        ],
+         'addp v0.16b, v1.16b, v2.16b'],
         multiple_insts=True
     )
     def test_addp_vector_16b_max(self):
@@ -1344,8 +1322,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'addp v0.4h, v1.4h, v2.4h'
-        ],
+         'addp v0.4h, v1.4h, v2.4h'],
         multiple_insts=True
     )
     def test_addp_vector_4h(self):
@@ -1367,8 +1344,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'addp v0.4h, v1.4h, v2.4h'
-        ],
+         'addp v0.4h, v1.4h, v2.4h'],
         multiple_insts=True
     )
     def test_addp_vector_4h_max(self):
@@ -1392,8 +1368,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'addp v0.8h, v1.8h, v2.8h'
-        ],
+         'addp v0.8h, v1.8h, v2.8h'],
         multiple_insts=True
     )
     def test_addp_vector_8h(self):
@@ -1415,8 +1390,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'addp v0.8h, v1.8h, v2.8h'
-        ],
+         'addp v0.8h, v1.8h, v2.8h'],
         multiple_insts=True
     )
     def test_addp_vector_8h_max(self):
@@ -1440,8 +1414,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'addp v0.2s, v1.2s, v2.2s'
-        ],
+         'addp v0.2s, v1.2s, v2.2s'],
         multiple_insts=True
     )
     def test_addp_vector_2s(self):
@@ -1463,8 +1436,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'addp v0.2s, v1.2s, v2.2s'
-        ],
+         'addp v0.2s, v1.2s, v2.2s'],
         multiple_insts=True
     )
     def test_addp_vector_2s_max(self):
@@ -1488,8 +1460,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'addp v0.4s, v1.4s, v2.4s'
-        ],
+         'addp v0.4s, v1.4s, v2.4s'],
         multiple_insts=True
     )
     def test_addp_vector_4s(self):
@@ -1511,8 +1482,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'addp v0.4s, v1.4s, v2.4s'
-        ],
+         'addp v0.4s, v1.4s, v2.4s'],
         multiple_insts=True
     )
     def test_addp_vector_4s_max(self):
@@ -1536,8 +1506,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'addp v0.2d, v1.2d, v2.2d'
-        ],
+         'addp v0.2d, v1.2d, v2.2d'],
         multiple_insts=True
     )
     def test_addp_vector_2d(self):
@@ -1559,8 +1528,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'addp v0.2d, v1.2d, v2.2d'
-        ],
+         'addp v0.2d, v1.2d, v2.2d'],
         multiple_insts=True
     )
     def test_addp_vector_2d_max(self):
@@ -2462,8 +2430,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'and v0.8b, v1.8b, v2.8b'
-        ],
+         'and v0.8b, v1.8b, v2.8b'],
         multiple_insts=True
     )
     def test_and_vector_8b(self):
@@ -2485,8 +2452,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'and v0.8b, v1.8b, v2.8b'
-        ],
+         'and v0.8b, v1.8b, v2.8b'],
         multiple_insts=True
     )
     def test_and_vector_8b_max(self):
@@ -2510,8 +2476,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'and v0.16b, v1.16b, v2.16b'
-        ],
+         'and v0.16b, v1.16b, v2.16b'],
         multiple_insts=True
     )
     def test_and_vector_16b(self):
@@ -2533,8 +2498,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'and v0.16b, v1.16b, v2.16b'
-        ],
+         'and v0.16b, v1.16b, v2.16b'],
         multiple_insts=True
     )
     def test_and_vector_16b_max(self):
@@ -4319,8 +4283,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'cmeq d0, d1, d2'
-        ],
+         'cmeq d0, d1, d2'],
         multiple_insts=True
     )
     def test_cmeq_reg_scalar_eq(self):
@@ -4342,8 +4305,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'cmeq d0, d1, d2'
-        ],
+         'cmeq d0, d1, d2'],
         multiple_insts=True
     )
     def test_cmeq_reg_scalar_neq(self):
@@ -4371,8 +4333,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'cmeq v0.8b, v1.8b, v2.8b'
-        ],
+         'cmeq v0.8b, v1.8b, v2.8b'],
         multiple_insts=True
     )
     def test_cmeq_reg_vector_8b(self):
@@ -4396,8 +4357,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'cmeq v0.16b, v1.16b, v2.16b'
-        ],
+         'cmeq v0.16b, v1.16b, v2.16b'],
         multiple_insts=True
     )
     def test_cmeq_reg_vector_16b(self):
@@ -4421,8 +4381,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'cmeq v0.4h, v1.4h, v2.4h'
-        ],
+         'cmeq v0.4h, v1.4h, v2.4h'],
         multiple_insts=True
     )
     def test_cmeq_reg_vector_4h(self):
@@ -4446,8 +4405,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'cmeq v0.8h, v1.8h, v2.8h'
-        ],
+         'cmeq v0.8h, v1.8h, v2.8h'],
         multiple_insts=True
     )
     def test_cmeq_reg_vector_8h(self):
@@ -4471,8 +4429,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'cmeq v0.2s, v1.2s, v2.2s'
-        ],
+         'cmeq v0.2s, v1.2s, v2.2s'],
         multiple_insts=True
     )
     def test_cmeq_reg_vector_2s(self):
@@ -4496,8 +4453,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'cmeq v0.4s, v1.4s, v2.4s'
-        ],
+         'cmeq v0.4s, v1.4s, v2.4s'],
         multiple_insts=True
     )
     def test_cmeq_reg_vector_4s(self):
@@ -4521,8 +4477,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'cmeq v0.2d, v1.2d, v2.2d'
-        ],
+         'cmeq v0.2d, v1.2d, v2.2d'],
         multiple_insts=True
     )
     def test_cmeq_reg_vector_2d(self):
@@ -4545,8 +4500,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'cmeq d0, d1, #0'
-        ],
+         'cmeq d0, d1, #0'],
         multiple_insts=True
     )
     def test_cmeq_zero_scalar_eq(self):
@@ -4565,8 +4519,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'cmeq d0, d1, #0'
-        ],
+         'cmeq d0, d1, #0'],
         multiple_insts=True
     )
     def test_cmeq_zero_scalar_neq(self):
@@ -4591,8 +4544,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'cmeq v0.8b, v1.8b, #0'
-        ],
+         'cmeq v0.8b, v1.8b, #0'],
         multiple_insts=True
     )
     def test_cmeq_zero_vector_8b(self):
@@ -4613,8 +4565,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'cmeq v0.16b, v1.16b, #0'
-        ],
+         'cmeq v0.16b, v1.16b, #0'],
         multiple_insts=True
     )
     def test_cmeq_zero_vector_16b(self):
@@ -4635,8 +4586,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'cmeq v0.4h, v1.4h, #0'
-        ],
+         'cmeq v0.4h, v1.4h, #0'],
         multiple_insts=True
     )
     def test_cmeq_zero_vector_4h(self):
@@ -4657,8 +4607,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'cmeq v0.8h, v1.8h, #0'
-        ],
+         'cmeq v0.8h, v1.8h, #0'],
         multiple_insts=True
     )
     def test_cmeq_zero_vector_8h(self):
@@ -4679,8 +4628,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'cmeq v0.2s, v1.2s, #0'
-        ],
+         'cmeq v0.2s, v1.2s, #0'],
         multiple_insts=True
     )
     def test_cmeq_zero_vector_2s(self):
@@ -4701,8 +4649,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'cmeq v0.4s, v1.4s, #0'
-        ],
+         'cmeq v0.4s, v1.4s, #0'],
         multiple_insts=True
     )
     def test_cmeq_zero_vector_4s(self):
@@ -4723,8 +4670,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'cmeq v0.2d, v1.2d, #0'
-        ],
+         'cmeq v0.2d, v1.2d, #0'],
         multiple_insts=True
     )
     def test_cmeq_zero_vector_2d(self):
@@ -6286,8 +6232,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'dup v0.8b, w1'
-        ],
+         'dup v0.8b, w1'],
         multiple_insts=True
     )
     def test_dup_gen_8b(self):
@@ -6308,8 +6253,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'dup v0.16b, w1'
-        ],
+         'dup v0.16b, w1'],
         multiple_insts=True
     )
     def test_dup_gen_16b(self):
@@ -6330,8 +6274,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'dup v0.4h, w1'
-        ],
+         'dup v0.4h, w1'],
         multiple_insts=True
     )
     def test_dup_gen_4h(self):
@@ -6352,8 +6295,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'dup v0.8h, w1'
-        ],
+         'dup v0.8h, w1'],
         multiple_insts=True
     )
     def test_dup_gen_8h(self):
@@ -6374,8 +6316,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'dup v0.2s, w1'
-        ],
+         'dup v0.2s, w1'],
         multiple_insts=True
     )
     def test_dup_gen_2s(self):
@@ -6396,8 +6337,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'dup v0.4s, w1'
-        ],
+         'dup v0.4s, w1'],
         multiple_insts=True
     )
     def test_dup_gen_4s(self):
@@ -6418,8 +6358,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'dup v0.2d, x1'
-        ],
+         'dup v0.2d, x1'],
         multiple_insts=True
     )
     def test_dup_gen_2d(self):
@@ -6665,8 +6604,7 @@ class Aarch64Instructions:
                     ['mrs x30, cpacr_el1',
                      'orr x30, x30, #0x300000',
                      'msr cpacr_el1, x30',
-                     insn,
-                    ],
+                     insn],
                     multiple_insts=True
                 )
                 def f(self):
@@ -9426,8 +9364,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'orr v0.8b, v1.8b, v2.8b'
-        ],
+         'orr v0.8b, v1.8b, v2.8b'],
         multiple_insts=True
     )
     def test_orr_vector_8b(self):
@@ -9451,8 +9388,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'orr v0.16b, v1.16b, v2.16b'
-        ],
+         'orr v0.16b, v1.16b, v2.16b'],
         multiple_insts=True
     )
     def test_orr_vector_16b(self):
@@ -10074,8 +10010,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'stp s1, s2, [sp]'
-        ],
+         'stp s1, s2, [sp]'],
         multiple_insts=True
     )
     def test_stp_simd_fp_base32(self):
@@ -10093,8 +10028,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'stp s1, s2, [sp, #8]'
-        ],
+         'stp s1, s2, [sp, #8]'],
         multiple_insts=True
     )
     def test_stp_simd_fp_base_offset32(self):
@@ -10113,8 +10047,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'stp s1, s2, [sp, #252]'
-        ],
+         'stp s1, s2, [sp, #252]'],
         multiple_insts=True
     )
     def test_stp_simd_fp_base_offset_max32(self):
@@ -10133,8 +10066,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'stp s1, s2, [sp, #-256]'
-        ],
+         'stp s1, s2, [sp, #-256]'],
         multiple_insts=True
     )
     def test_stp_simd_fp_base_offset_min32(self):
@@ -10153,8 +10085,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'stp s1, s2, [sp], #8'
-        ],
+         'stp s1, s2, [sp], #8'],
         multiple_insts=True
     )
     def test_stp_simd_fp_post_indexed32(self):
@@ -10172,8 +10103,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'stp s1, s2, [sp], #252'
-        ],
+         'stp s1, s2, [sp], #252'],
         multiple_insts=True
     )
     def test_stp_simd_fp_post_indexed_max32(self):
@@ -10191,8 +10121,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'stp s1, s2, [sp], #-256'
-        ],
+         'stp s1, s2, [sp], #-256'],
         multiple_insts=True
     )
     def test_stp_simd_fp_post_indexed_min32(self):
@@ -10210,8 +10139,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'stp s1, s2, [sp, #8]!'
-        ],
+         'stp s1, s2, [sp, #8]!'],
         multiple_insts=True
     )
     def test_stp_simd_fp_pre_indexed32(self):
@@ -10230,8 +10158,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'stp s1, s2, [sp, #252]!'
-        ],
+         'stp s1, s2, [sp, #252]!'],
         multiple_insts=True
     )
     def test_stp_simd_fp_pre_indexed_max32(self):
@@ -10250,8 +10177,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'stp s1, s2, [sp, #-256]!'
-        ],
+         'stp s1, s2, [sp, #-256]!'],
         multiple_insts=True
     )
     def test_stp_simd_fp_pre_indexed_min32(self):
@@ -10272,8 +10198,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'stp d1, d2, [sp]'
-        ],
+         'stp d1, d2, [sp]'],
         multiple_insts=True
     )
     def test_stp_simd_fp_base64(self):
@@ -10293,8 +10218,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'stp d1, d2, [sp, #8]'
-        ],
+         'stp d1, d2, [sp, #8]'],
         multiple_insts=True
     )
     def test_stp_simd_fp_base_offset64(self):
@@ -10315,8 +10239,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'stp d1, d2, [sp, #504]'
-        ],
+         'stp d1, d2, [sp, #504]'],
         multiple_insts=True
     )
     def test_stp_simd_fp_base_offset_max64(self):
@@ -10337,8 +10260,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'stp d1, d2, [sp, #-512]'
-        ],
+         'stp d1, d2, [sp, #-512]'],
         multiple_insts=True
     )
     def test_stp_simd_fp_base_offset_min64(self):
@@ -10359,8 +10281,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'stp d1, d2, [sp], #8'
-        ],
+         'stp d1, d2, [sp], #8'],
         multiple_insts=True
     )
     def test_stp_simd_fp_post_indexed64(self):
@@ -10380,8 +10301,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'stp d1, d2, [sp], #504'
-        ],
+         'stp d1, d2, [sp], #504'],
         multiple_insts=True
     )
     def test_stp_simd_fp_post_indexed_max64(self):
@@ -10401,8 +10321,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'stp d1, d2, [sp], #-512'
-        ],
+         'stp d1, d2, [sp], #-512'],
         multiple_insts=True
     )
     def test_stp_simd_fp_post_indexed_min64(self):
@@ -10422,8 +10341,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'stp d1, d2, [sp, #8]!'
-        ],
+         'stp d1, d2, [sp, #8]!'],
         multiple_insts=True
     )
     def test_stp_simd_fp_pre_indexed64(self):
@@ -10443,8 +10361,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'stp d1, d2, [sp, #504]!'
-        ],
+         'stp d1, d2, [sp, #504]!'],
         multiple_insts=True
     )
     def test_stp_simd_fp_pre_indexed_max64(self):
@@ -10465,8 +10382,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'stp d1, d2, [sp, #-512]!'
-        ],
+         'stp d1, d2, [sp, #-512]!'],
         multiple_insts=True
     )
     def test_stp_simd_fp_pre_indexed_min64(self):
@@ -10492,8 +10408,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'stp q1, q2, [sp]'
-        ],
+         'stp q1, q2, [sp]'],
         multiple_insts=True
     )
     def test_stp_simd_fp_base128(self):
@@ -10520,8 +10435,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'stp q1, q2, [sp, #16]'
-        ],
+         'stp q1, q2, [sp, #16]'],
         multiple_insts=True
     )
     def test_stp_simd_fp_base_offset128(self):
@@ -10550,8 +10464,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'stp q1, q2, [sp, #1008]'
-        ],
+         'stp q1, q2, [sp, #1008]'],
         multiple_insts=True
     )
     def test_stp_simd_fp_base_offset_max128(self):
@@ -10579,8 +10492,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'stp q1, q2, [sp, #-1024]'
-        ],
+         'stp q1, q2, [sp, #-1024]'],
         multiple_insts=True
     )
     def test_stp_simd_fp_base_offset_min128(self):
@@ -10608,8 +10520,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'stp q1, q2, [sp], #16'
-        ],
+         'stp q1, q2, [sp], #16'],
         multiple_insts=True
     )
     def test_stp_simd_fp_post_indexed128(self):
@@ -10636,8 +10547,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'stp q1, q2, [sp], #1008'
-        ],
+         'stp q1, q2, [sp], #1008'],
         multiple_insts=True
     )
     def test_stp_simd_fp_post_indexed_max128(self):
@@ -10664,8 +10574,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'stp q1, q2, [sp], #-1024'
-        ],
+         'stp q1, q2, [sp], #-1024'],
         multiple_insts=True
     )
     def test_stp_simd_fp_post_indexed_min128(self):
@@ -10692,8 +10601,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'stp q1, q2, [sp, #16]!'
-        ],
+         'stp q1, q2, [sp, #16]!'],
         multiple_insts=True
     )
     def test_stp_simd_fp_pre_indexed128(self):
@@ -10722,8 +10630,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'stp q1, q2, [sp, #1008]!'
-        ],
+         'stp q1, q2, [sp, #1008]!'],
         multiple_insts=True
     )
     def test_stp_simd_fp_pre_indexed_max128(self):
@@ -10751,8 +10658,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'stp q1, q2, [sp, #-1024]!'
-        ],
+         'stp q1, q2, [sp, #-1024]!'],
         multiple_insts=True
     )
     def test_stp_simd_fp_pre_indexed_min128(self):
@@ -12060,8 +11966,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'sub d0, d1, d2'
-        ],
+         'sub d0, d1, d2'],
         multiple_insts=True
     )
     def test_sub_scalar(self):
@@ -12083,8 +11988,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'sub d0, d1, d2'
-        ],
+         'sub d0, d1, d2'],
         multiple_insts=True
     )
     def test_sub_scalar_max(self):
@@ -12112,8 +12016,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'sub v0.8b, v1.8b, v2.8b'
-        ],
+         'sub v0.8b, v1.8b, v2.8b'],
         multiple_insts=True
     )
     def test_sub_vector_8b(self):
@@ -12135,8 +12038,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'sub v0.8b, v1.8b, v2.8b'
-        ],
+         'sub v0.8b, v1.8b, v2.8b'],
         multiple_insts=True
     )
     def test_sub_vector_8b_max(self):
@@ -12160,8 +12062,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'sub v0.16b, v1.16b, v2.16b'
-        ],
+         'sub v0.16b, v1.16b, v2.16b'],
         multiple_insts=True
     )
     def test_sub_vector_16b(self):
@@ -12183,8 +12084,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'sub v0.16b, v1.16b, v2.16b'
-        ],
+         'sub v0.16b, v1.16b, v2.16b'],
         multiple_insts=True
     )
     def test_sub_vector_16b_max(self):
@@ -12208,8 +12108,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'sub v0.4h, v1.4h, v2.4h'
-        ],
+         'sub v0.4h, v1.4h, v2.4h'],
         multiple_insts=True
     )
     def test_sub_vector_4h(self):
@@ -12231,8 +12130,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'sub v0.4h, v1.4h, v2.4h'
-        ],
+         'sub v0.4h, v1.4h, v2.4h'],
         multiple_insts=True
     )
     def test_sub_vector_4h_max(self):
@@ -12256,8 +12154,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'sub v0.8h, v1.8h, v2.8h'
-        ],
+         'sub v0.8h, v1.8h, v2.8h'],
         multiple_insts=True
     )
     def test_sub_vector_8h(self):
@@ -12279,8 +12176,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'sub v0.8h, v1.8h, v2.8h'
-        ],
+         'sub v0.8h, v1.8h, v2.8h'],
         multiple_insts=True
     )
     def test_sub_vector_8h_max(self):
@@ -12304,8 +12200,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'sub v0.2s, v1.2s, v2.2s'
-        ],
+         'sub v0.2s, v1.2s, v2.2s'],
         multiple_insts=True
     )
     def test_sub_vector_2s(self):
@@ -12327,8 +12222,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'sub v0.2s, v1.2s, v2.2s'
-        ],
+         'sub v0.2s, v1.2s, v2.2s'],
         multiple_insts=True
     )
     def test_sub_vector_2s_max(self):
@@ -12352,8 +12246,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'sub v0.4s, v1.4s, v2.4s'
-        ],
+         'sub v0.4s, v1.4s, v2.4s'],
         multiple_insts=True
     )
     def test_sub_vector_4s(self):
@@ -12375,8 +12268,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'sub v0.4s, v1.4s, v2.4s'
-        ],
+         'sub v0.4s, v1.4s, v2.4s'],
         multiple_insts=True
     )
     def test_sub_vector_4s_max(self):
@@ -12400,8 +12292,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'sub v0.2d, v1.2d, v2.2d'
-        ],
+         'sub v0.2d, v1.2d, v2.2d'],
         multiple_insts=True
     )
     def test_sub_vector_2d(self):
@@ -12423,8 +12314,7 @@ class Aarch64Instructions:
         ['mrs x30, cpacr_el1',
          'orr x30, x30, #0x300000',
          'msr cpacr_el1, x30',
-         'sub v0.2d, v1.2d, v2.2d'
-        ],
+         'sub v0.2d, v1.2d, v2.2d'],
         multiple_insts=True
     )
     def test_sub_vector_2d_max(self):
@@ -14033,8 +13923,7 @@ class Aarch64Instructions:
                 ['mrs x30, cpacr_el1',
                  'orr x30, x30, #0x300000',
                  'msr cpacr_el1, x30',
-                 insn
-                ],
+                 insn],
                 multiple_insts=True
             )
             def f(self):
