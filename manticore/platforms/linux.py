@@ -2208,7 +2208,7 @@ class Linux(Platform):
     def connections(self, fd):
         """ File descriptors are connected to each other like pipes, except
         for 0, 1, and 2. If you write to FD(N) for N >=3, then that comes
-		out from FD(N+1) and vice-versa
+        out from FD(N+1) and vice-versa
         """
         if fd in [0, 1, 2]:
             return None
