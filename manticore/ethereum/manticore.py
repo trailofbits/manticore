@@ -335,9 +335,7 @@ class ManticoreEVM(ManticoreBase):
             hashes = crytic_compile.hashes(name)
             abi = crytic_compile.abi(name)
 
-            filename = crytic_compile.filename_of_contract(name)
-            if crytic_compile_args and 'solc_working_dir' in crytic_compile_args and crytic_compile_args['solc_working_dir']:
-                filename = os.path.join(crytic_compile_args['solc_working_dir'], filename)
+            filename = crytic_compile.filename_of_contract(name).absolute
             with open(filename) as f:
                 source_code = f.read()
 
