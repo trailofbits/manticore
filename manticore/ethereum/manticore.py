@@ -1425,27 +1425,24 @@ class ManticoreEVM(ManticoreBase):
             #we need to remove -1 state before forking because it may be in memory
             q.put(state_id)
 
-        report_workers = []
-        for _ in range(procs):
-            proc = Process(target=worker_finalize, args=(q,))
+        report_workers = [Process(target=worker_finalize, args=(q,)) for _ in range(procs)]
+        for proc in report_workers:
             proc.start()
-            report_workers.append(proc)
 
         for proc in report_workers:
             proc.join()
 
         # global summary
-        if len(self.global_findings):
-            with self._output.save_stream('global.findings') as global_findings:
-                for address, pc, finding, at_init in self.global_findings:
-                    global_findings.write('- %s -\n' % finding)
-                    write_findings(global_findings, '  ', address, pc, at_init)
-                    md = self.get_metadata(address)
-                    if md is not None:
-                        source_code_snippet = md.get_source_for(pc, runtime=not at_init)
-                        global_findings.write('  Solidity snippet:\n')
-                        global_findings.write('    '.join(source_code_snippet.splitlines(True)))
-                        global_findings.write('\n')
+        with self._output.save_stream('global.findings') as global_findings_stream:
+            for address, pc, finding, at_init in self.global_findings:
+                global_findings_stream.write('- %s -\n' % finding)
+                write_findings(global_findings_stream, '  ', address, pc, at_init)
+                md = self.get_metadata(address)
+                if md is not None:
+                    source_code_snippet = md.get_source_for(pc, runtime=not at_init)
+                    global_findings_stream.write('  Solidity snippet:\n')
+                    global_findings_stream.write('    '.join(source_code_snippet.splitlines(True)))
+                    global_findings_stream.write('\n')
 
         self._save_run_data()
 
@@ -1468,49 +1465,48 @@ class ManticoreEVM(ManticoreBase):
             with self._output.save_stream('global_%s_init.bytecode' % md.name, binary=True) as global_init_bytecode:
                 global_init_bytecode.write(md.init_bytecode)
 
-            with self._output.save_stream('global_%s.runtime_asm' % md.name) as global_runtime_asm:
+            with self._output.save_stream('global_%s.runtime_asm' % md.name) as global_runtime_asm,\
+                 self.locked_context('runtime_coverage') as seen:
+
                 runtime_bytecode = md.runtime_bytecode
+                count, total = 0, 0
+                for i in EVMAsm.disassemble_all(runtime_bytecode):
+                    if (address, i.pc) in seen:
+                        count += 1
+                        global_runtime_asm.write('*')
+                    else:
+                        global_runtime_asm.write(' ')
 
-                with self.locked_context('runtime_coverage') as seen:
+                    global_runtime_asm.write('%4x: %s\n' % (i.pc, i))
+                    total += 1
 
-                    count, total = 0, 0
-                    for i in EVMAsm.disassemble_all(runtime_bytecode):
-                        if (address, i.pc) in seen:
-                            count += 1
-                            global_runtime_asm.write('*')
-                        else:
-                            global_runtime_asm.write(' ')
+            with self._output.save_stream('global_%s.init_asm' % md.name) as global_init_asm,\
+                 self.locked_context('init_coverage') as seen:
+                count, total = 0, 0
+                for i in EVMAsm.disassemble_all(md.init_bytecode):
+                    if (address, i.pc) in seen:
+                        count += 1
+                        global_init_asm.write('*')
+                    else:
+                        global_init_asm.write(' ')
 
-                        global_runtime_asm.write('%4x: %s\n' % (i.pc, i))
-                        total += 1
+                    global_init_asm.write('%4x: %s\n' % (i.pc, i))
+                    total += 1
 
-            with self._output.save_stream('global_%s.init_asm' % md.name) as global_init_asm:
-                with self.locked_context('init_coverage') as seen:
-                    count, total = 0, 0
-                    for i in EVMAsm.disassemble_all(md.init_bytecode):
-                        if (address, i.pc) in seen:
-                            count += 1
-                            global_init_asm.write('*')
-                        else:
-                            global_init_asm.write(' ')
+            with self._output.save_stream('global_%s.init_visited' % md.name) as f,\
+                 self.locked_context('init_coverage') as seen:
+                visited = set((o for (a, o) in seen if a == address))
+                for o in sorted(visited):
+                    f.write('0x%x\n' % o)
 
-                        global_init_asm.write('%4x: %s\n' % (i.pc, i))
-                        total += 1
-
-            with self._output.save_stream('global_%s.init_visited' % md.name) as f:
-                with self.locked_context('init_coverage') as seen:
-                    visited = set((o for (a, o) in seen if a == address))
-                    for o in sorted(visited):
-                        f.write('0x%x\n' % o)
-
-            with self._output.save_stream('global_%s.runtime_visited' % md.name) as f:
-                with self.locked_context('runtime_coverage') as seen:
-                    visited = set()
-                    for (a, o) in seen:
-                        if a == address:
-                            visited.add(o)
-                    for o in sorted(visited):
-                        f.write('0x%x\n' % o)
+            with self._output.save_stream('global_%s.runtime_visited' % md.name) as f,\
+                 self.locked_context('runtime_coverage') as seen:
+                visited = set()
+                for (a, o) in seen:
+                    if a == address:
+                        visited.add(o)
+                for o in sorted(visited):
+                    f.write('0x%x\n' % o)
 
         self.remove_all()
 
