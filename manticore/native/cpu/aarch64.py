@@ -1201,33 +1201,33 @@ class Aarch64Cpu(Cpu):
         cpu._add_sub_vector(res_op, reg_op1, reg_op2, add=True)
 
     @instruction
-    def ADD(cpu, res_op, op1, op2):
+    def ADD(cpu, res_op, reg_op, reg_imm_op):
         """
         Combines ADD (extended register), ADD (immediate), ADD (shifted
         register), and ADD (vector).
 
         :param res_op: destination register.
-        :param op1: source register.
-        :param op2: source register or immediate.
+        :param reg_op: source register.
+        :param reg_imm_op: source register or immediate.
         """
         assert res_op.type is cs.arm64.ARM64_OP_REG
-        assert op1.type is cs.arm64.ARM64_OP_REG
-        assert op2.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_imm_op.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
 
         bit21 = cpu.insn_bit_str[-22]
         bit24 = cpu.insn_bit_str[-25]
 
-        if op2.type == cs.arm64.ARM64_OP_IMM:
-            cpu._ADD_immediate(res_op, op1, op2)
+        if reg_imm_op.type == cs.arm64.ARM64_OP_IMM:
+            cpu._ADD_immediate(res_op, reg_op, reg_imm_op)
 
-        elif op2.type == cs.arm64.ARM64_OP_REG and bit24 == '0':
-            cpu._ADD_vector(res_op, op1, op2)
+        elif reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit24 == '0':
+            cpu._ADD_vector(res_op, reg_op, reg_imm_op)
 
-        elif op2.type == cs.arm64.ARM64_OP_REG and bit24 == '1' and bit21 == '0':
-            cpu._ADD_shifted_register(res_op, op1, op2)
+        elif reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit24 == '1' and bit21 == '0':
+            cpu._ADD_shifted_register(res_op, reg_op, reg_imm_op)
 
-        elif op2.type == cs.arm64.ARM64_OP_REG and bit24 == '1' and bit21 == '1':
-            cpu._ADD_extended_register(res_op, op1, op2)
+        elif reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit24 == '1' and bit21 == '1':
+            cpu._ADD_extended_register(res_op, reg_op, reg_imm_op)
 
         else:
             raise Aarch64InvalidInstruction
@@ -1398,29 +1398,29 @@ class Aarch64Cpu(Cpu):
         cpu._adds_subs_shifted_register(res_op, reg_op1, reg_op2, mnem='adds')
 
     @instruction
-    def ADDS(cpu, res_op, op1, op2):
+    def ADDS(cpu, res_op, reg_op, reg_imm_op):
         """
         Combines ADDS (extended register), ADDS (immediate), and ADDS (shifted
         register).
 
         :param res_op: destination register.
-        :param op1: source register.
-        :param op2: source register or immediate.
+        :param reg_op: source register.
+        :param reg_imm_op: source register or immediate.
         """
         assert res_op.type is cs.arm64.ARM64_OP_REG
-        assert op1.type is cs.arm64.ARM64_OP_REG
-        assert op2.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_imm_op.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
 
         bit21 = cpu.insn_bit_str[-22]
 
-        if op2.type == cs.arm64.ARM64_OP_IMM:
-            cpu._ADDS_immediate(res_op, op1, op2)
+        if reg_imm_op.type == cs.arm64.ARM64_OP_IMM:
+            cpu._ADDS_immediate(res_op, reg_op, reg_imm_op)
 
-        elif op2.type == cs.arm64.ARM64_OP_REG and bit21 == '0':
-            cpu._ADDS_shifted_register(res_op, op1, op2)
+        elif reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit21 == '0':
+            cpu._ADDS_shifted_register(res_op, reg_op, reg_imm_op)
 
-        elif op2.type == cs.arm64.ARM64_OP_REG and bit21 == '1':
-            cpu._ADDS_extended_register(res_op, op1, op2)
+        elif reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit21 == '1':
+            cpu._ADDS_extended_register(res_op, reg_op, reg_imm_op)
 
         else:
             raise Aarch64InvalidInstruction
@@ -1579,28 +1579,28 @@ class Aarch64Cpu(Cpu):
         res_op.write(result)
 
     @instruction
-    def AND(cpu, res_op, op1, op2):
+    def AND(cpu, res_op, reg_op, reg_imm_op):
         """
         Combines AND (immediate), AND (shifted register), and AND (vector).
 
         :param res_op: destination register.
-        :param op1: source register.
-        :param op2: source register or immediate.
+        :param reg_op: source register.
+        :param reg_imm_op: source register or immediate.
         """
         assert res_op.type is cs.arm64.ARM64_OP_REG
-        assert op1.type is cs.arm64.ARM64_OP_REG
-        assert op2.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_imm_op.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
 
         bit21 = cpu.insn_bit_str[-22]
 
-        if op2.type == cs.arm64.ARM64_OP_REG and bit21 == '0':
-            cpu._AND_shifted_register(res_op, op1, op2)
+        if reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit21 == '0':
+            cpu._AND_shifted_register(res_op, reg_op, reg_imm_op)
 
-        elif op2.type == cs.arm64.ARM64_OP_REG and bit21 == '1':
-            cpu._AND_vector(res_op, op1, op2)
+        elif reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit21 == '1':
+            cpu._AND_vector(res_op, reg_op, reg_imm_op)
 
-        elif op2.type == cs.arm64.ARM64_OP_IMM:
-            cpu._AND_immediate(res_op, op1, op2)
+        elif reg_imm_op.type == cs.arm64.ARM64_OP_IMM:
+            cpu._AND_immediate(res_op, reg_op, reg_imm_op)
 
         else:
             raise Aarch64InvalidInstruction
@@ -1681,23 +1681,23 @@ class Aarch64Cpu(Cpu):
             ])
 
     @instruction
-    def ANDS(cpu, res_op, op1, op2):
+    def ANDS(cpu, res_op, reg_op, reg_imm_op):
         """
         Combines ANDS (immediate) and ANDS (shifted register).
 
         :param res_op: destination register.
-        :param op1: source register.
-        :param op2: source register or immediate.
+        :param reg_op: source register.
+        :param reg_imm_op: source register or immediate.
         """
         assert res_op.type is cs.arm64.ARM64_OP_REG
-        assert op1.type is cs.arm64.ARM64_OP_REG
-        assert op2.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_imm_op.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
 
-        if op2.type == cs.arm64.ARM64_OP_REG:
-            cpu._ANDS_shifted_register(res_op, op1, op2)
+        if reg_imm_op.type == cs.arm64.ARM64_OP_REG:
+            cpu._ANDS_shifted_register(res_op, reg_op, reg_imm_op)
 
-        elif op2.type == cs.arm64.ARM64_OP_IMM:
-            cpu._ANDS_immediate(res_op, op1, op2)
+        elif reg_imm_op.type == cs.arm64.ARM64_OP_IMM:
+            cpu._ANDS_immediate(res_op, reg_op, reg_imm_op)
 
         else:
             raise Aarch64InvalidInstruction
@@ -1761,23 +1761,23 @@ class Aarch64Cpu(Cpu):
         cpu.ASRV.__wrapped__(cpu, res_op, reg_op1, reg_op2)
 
     @instruction
-    def ASR(cpu, res_op, op1, op2):
+    def ASR(cpu, res_op, reg_op, reg_imm_op):
         """
         Combines ASR (register) and ASR (immediate).
 
         :param res_op: destination register.
-        :param op1: source register.
-        :param op2: source register or immediate.
+        :param reg_op: source register.
+        :param reg_imm_op: source register or immediate.
         """
         assert res_op.type is cs.arm64.ARM64_OP_REG
-        assert op1.type is cs.arm64.ARM64_OP_REG
-        assert op2.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_imm_op.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
 
-        if op2.type == cs.arm64.ARM64_OP_REG:
-            cpu._ASR_register(res_op, op1, op2)
+        if reg_imm_op.type == cs.arm64.ARM64_OP_REG:
+            cpu._ASR_register(res_op, reg_op, reg_imm_op)
 
-        elif op2.type == cs.arm64.ARM64_OP_IMM:
-            cpu._ASR_immediate(res_op, op1, op2)
+        elif reg_imm_op.type == cs.arm64.ARM64_OP_IMM:
+            cpu._ASR_immediate(res_op, reg_op, reg_imm_op)
 
         else:
             raise Aarch64InvalidInstruction
@@ -2245,23 +2245,23 @@ class Aarch64Cpu(Cpu):
         cpu._ccmp_imm_reg(reg_op1, reg_op2, nzcv_op, imm=False)
 
     @instruction
-    def CCMP(cpu, op1, op2, nzcv_op):
+    def CCMP(cpu, reg_op, reg_imm_op, nzcv_op):
         """
         Combines CCMP (register) and CCMP (immediate).
 
-        :param op1: register.
-        :param op2: register or immediate.
+        :param reg_op: register.
+        :param reg_imm_op: register or immediate.
         :param nzcv_op: immediate.
         """
-        assert op1.type is cs.arm64.ARM64_OP_REG
-        assert op2.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_imm_op.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
         assert nzcv_op.type is cs.arm64.ARM64_OP_IMM
 
-        if op2.type == cs.arm64.ARM64_OP_REG:
-            cpu._CCMP_register(op1, op2, nzcv_op)
+        if reg_imm_op.type == cs.arm64.ARM64_OP_REG:
+            cpu._CCMP_register(reg_op, reg_imm_op, nzcv_op)
 
-        elif op2.type == cs.arm64.ARM64_OP_IMM:
-            cpu._CCMP_immediate(op1, op2, nzcv_op)
+        elif reg_imm_op.type == cs.arm64.ARM64_OP_IMM:
+            cpu._CCMP_immediate(reg_op, reg_imm_op, nzcv_op)
 
         else:
             raise Aarch64InvalidInstruction
@@ -2505,27 +2505,27 @@ class Aarch64Cpu(Cpu):
         cpu.ADDS.__wrapped__(cpu, zr, reg_op1, reg_op2)
 
     @instruction
-    def CMN(cpu, op1, op2):
+    def CMN(cpu, reg_op, reg_imm_op):
         """
         Combines CMN (extended register), CMN (immediate), and CMN (shifted
         register).
 
-        :param op1: source register.
-        :param op2: source register or immediate.
+        :param reg_op: source register.
+        :param reg_imm_op: source register or immediate.
         """
-        assert op1.type is cs.arm64.ARM64_OP_REG
-        assert op2.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_imm_op.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
 
         bit21 = cpu.insn_bit_str[-22]
 
-        if op2.type == cs.arm64.ARM64_OP_IMM:
-            cpu._CMN_immediate(op1, op2)
+        if reg_imm_op.type == cs.arm64.ARM64_OP_IMM:
+            cpu._CMN_immediate(reg_op, reg_imm_op)
 
-        elif op2.type == cs.arm64.ARM64_OP_REG and bit21 == '0':
-            cpu._CMN_shifted_register(op1, op2)
+        elif reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit21 == '0':
+            cpu._CMN_shifted_register(reg_op, reg_imm_op)
 
-        elif op2.type == cs.arm64.ARM64_OP_REG and bit21 == '1':
-            cpu._CMN_extended_register(op1, op2)
+        elif reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit21 == '1':
+            cpu._CMN_extended_register(reg_op, reg_imm_op)
 
         else:
             raise Aarch64InvalidInstruction
@@ -2635,27 +2635,27 @@ class Aarch64Cpu(Cpu):
         cpu.SUBS.__wrapped__(cpu, zr, reg_op1, reg_op2)
 
     @instruction
-    def CMP(cpu, op1, op2):
+    def CMP(cpu, reg_op, reg_imm_op):
         """
         Combines CMP (extended register), CMP (immediate), and CMP (shifted
         register).
 
-        :param op1: source register.
-        :param op2: source register or immediate.
+        :param reg_op: source register.
+        :param reg_imm_op: source register or immediate.
         """
-        assert op1.type is cs.arm64.ARM64_OP_REG
-        assert op2.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_imm_op.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
 
         bit21 = cpu.insn_bit_str[-22]
 
-        if op2.type == cs.arm64.ARM64_OP_IMM:
-            cpu._CMP_immediate(op1, op2)
+        if reg_imm_op.type == cs.arm64.ARM64_OP_IMM:
+            cpu._CMP_immediate(reg_op, reg_imm_op)
 
-        elif op2.type == cs.arm64.ARM64_OP_REG and bit21 == '0':
-            cpu._CMP_shifted_register(op1, op2)
+        elif reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit21 == '0':
+            cpu._CMP_shifted_register(reg_op, reg_imm_op)
 
-        elif op2.type == cs.arm64.ARM64_OP_REG and bit21 == '1':
-            cpu._CMP_extended_register(op1, op2)
+        elif reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit21 == '1':
+            cpu._CMP_extended_register(reg_op, reg_imm_op)
 
         else:
             raise Aarch64InvalidInstruction
@@ -2849,13 +2849,13 @@ class Aarch64Cpu(Cpu):
         res_op.write(UInt(result, res_op.size))
 
     @instruction
-    def DMB(cpu, op):
+    def DMB(cpu, bar_imm_op):
         """
         DMB.
 
-        :param op: barrier or immediate.
+        :param bar_imm_op: barrier or immediate.
         """
-        assert op.type in [cs.arm64.ARM64_OP_BARRIER, cs.arm64.ARM64_OP_IMM]
+        assert bar_imm_op.type in [cs.arm64.ARM64_OP_BARRIER, cs.arm64.ARM64_OP_IMM]
 
         insn_rx = '1101010100'
         insn_rx += '0'
@@ -3187,26 +3187,26 @@ class Aarch64Cpu(Cpu):
     # XXX: Support LDR (immediate, SIMD&FP), LDR (literal, SIMD&FP), and LDR
     # (register, SIMD&FP).
     @instruction
-    def LDR(cpu, dst, src, rest=None):
+    def LDR(cpu, res_op, mem_imm_op, mimm_op=None):
         """
         Combines LDR (immediate), LDR (literal), and LDR (register).
 
-        :param dst: destination register.
-        :param src: memory or immediate.
-        :param rest: None or immediate.
+        :param res_op: destination register.
+        :param mem_imm_op: memory or immediate.
+        :param mimm_op: None or immediate.
         """
-        assert dst.type is cs.arm64.ARM64_OP_REG
-        assert src.type in [cs.arm64.ARM64_OP_MEM, cs.arm64.ARM64_OP_IMM]
-        assert not rest or rest.type is cs.arm64.ARM64_OP_IMM
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert mem_imm_op.type in [cs.arm64.ARM64_OP_MEM, cs.arm64.ARM64_OP_IMM]
+        assert not mimm_op or mimm_op.type is cs.arm64.ARM64_OP_IMM
 
-        if src.type == cs.arm64.ARM64_OP_MEM:
-            if src.mem.index:
-                cpu._LDR_register(dst, src)
+        if mem_imm_op.type == cs.arm64.ARM64_OP_MEM:
+            if mem_imm_op.mem.index:
+                cpu._LDR_register(res_op, mem_imm_op)
             else:
-                cpu._LDR_immediate(dst, src, rest)
+                cpu._LDR_immediate(res_op, mem_imm_op, mimm_op)
 
-        elif src.type == cs.arm64.ARM64_OP_IMM:
-            cpu._LDR_literal(dst, src)
+        elif mem_imm_op.type == cs.arm64.ARM64_OP_IMM:
+            cpu._LDR_literal(res_op, mem_imm_op)
 
         else:
             raise Aarch64InvalidInstruction
@@ -3314,26 +3314,26 @@ class Aarch64Cpu(Cpu):
         cpu._ldr_str_register(reg_op, mem_op, ldr=True, size=32, sextend=True)
 
     @instruction
-    def LDRSW(cpu, dst, src, rest=None):
+    def LDRSW(cpu, res_op, mem_imm_op, mimm_op=None):
         """
         Combines LDRSW (immediate), LDRSW (literal), and LDRSW (register).
 
-        :param dst: destination register.
-        :param src: memory or immediate.
-        :param rest: None or immediate.
+        :param res_op: destination register.
+        :param mem_imm_op: memory or immediate.
+        :param mimm_op: None or immediate.
         """
-        assert dst.type is cs.arm64.ARM64_OP_REG
-        assert src.type in [cs.arm64.ARM64_OP_MEM, cs.arm64.ARM64_OP_IMM]
-        assert not rest or rest.type is cs.arm64.ARM64_OP_IMM
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert mem_imm_op.type in [cs.arm64.ARM64_OP_MEM, cs.arm64.ARM64_OP_IMM]
+        assert not mimm_op or mimm_op.type is cs.arm64.ARM64_OP_IMM
 
-        if src.type == cs.arm64.ARM64_OP_MEM:
-            if src.mem.index:
-                cpu._LDRSW_register(dst, src)
+        if mem_imm_op.type == cs.arm64.ARM64_OP_MEM:
+            if mem_imm_op.mem.index:
+                cpu._LDRSW_register(res_op, mem_imm_op)
             else:
-                cpu._LDRSW_immediate(dst, src, rest)
+                cpu._LDRSW_immediate(res_op, mem_imm_op, mimm_op)
 
-        elif src.type == cs.arm64.ARM64_OP_IMM:
-            cpu._LDRSW_literal(dst, src)
+        elif mem_imm_op.type == cs.arm64.ARM64_OP_IMM:
+            cpu._LDRSW_literal(res_op, mem_imm_op)
 
         else:
             raise Aarch64InvalidInstruction
@@ -3444,23 +3444,23 @@ class Aarch64Cpu(Cpu):
         cpu.LSLV.__wrapped__(cpu, res_op, reg_op1, reg_op2)
 
     @instruction
-    def LSL(cpu, res_op, op1, op2):
+    def LSL(cpu, res_op, reg_op, reg_imm_op):
         """
         Combines LSL (register) and LSL (immediate).
 
         :param res_op: destination register.
-        :param op1: source register.
-        :param op2: source register or immediate.
+        :param reg_op: source register.
+        :param reg_imm_op: source register or immediate.
         """
         assert res_op.type is cs.arm64.ARM64_OP_REG
-        assert op1.type is cs.arm64.ARM64_OP_REG
-        assert op2.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_imm_op.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
 
-        if op2.type == cs.arm64.ARM64_OP_REG:
-            cpu._LSL_register(res_op, op1, op2)
+        if reg_imm_op.type == cs.arm64.ARM64_OP_REG:
+            cpu._LSL_register(res_op, reg_op, reg_imm_op)
 
-        elif op2.type == cs.arm64.ARM64_OP_IMM:
-            cpu._LSL_immediate(res_op, op1, op2)
+        elif reg_imm_op.type == cs.arm64.ARM64_OP_IMM:
+            cpu._LSL_immediate(res_op, reg_op, reg_imm_op)
 
         else:
             raise Aarch64InvalidInstruction
@@ -3555,23 +3555,23 @@ class Aarch64Cpu(Cpu):
         cpu.LSRV.__wrapped__(cpu, res_op, reg_op1, reg_op2)
 
     @instruction
-    def LSR(cpu, res_op, op1, op2):
+    def LSR(cpu, res_op, reg_op, reg_imm_op):
         """
         Combines LSR (register) and LSR (immediate).
 
         :param res_op: destination register.
-        :param op1: source register.
-        :param op2: source register or immediate.
+        :param reg_op: source register.
+        :param reg_imm_op: source register or immediate.
         """
         assert res_op.type is cs.arm64.ARM64_OP_REG
-        assert op1.type is cs.arm64.ARM64_OP_REG
-        assert op2.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_imm_op.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
 
-        if op2.type == cs.arm64.ARM64_OP_REG:
-            cpu._LSR_register(res_op, op1, op2)
+        if reg_imm_op.type == cs.arm64.ARM64_OP_REG:
+            cpu._LSR_register(res_op, reg_op, reg_imm_op)
 
-        elif op2.type == cs.arm64.ARM64_OP_IMM:
-            cpu._LSR_immediate(res_op, op1, op2)
+        elif reg_imm_op.type == cs.arm64.ARM64_OP_IMM:
+            cpu._LSR_immediate(res_op, reg_op, reg_imm_op)
 
         else:
             raise Aarch64InvalidInstruction
@@ -3686,22 +3686,22 @@ class Aarch64Cpu(Cpu):
     # XXX: Support MOV (scalar), MOV (element), MOV (from general), and MOV
     # (vector).
     @instruction
-    def MOV(cpu, dst, src):
+    def MOV(cpu, res_op, reg_imm_op):
         """
         Combines MOV (to/from SP), MOV (inverted wide immediate), MOV (wide
         immediate), MOV (bitmask immediate), MOV (register), and MOV (to
         general).
 
-        :param dst: destination register.
-        :param src: source register or immediate.
+        :param res_op: destination register.
+        :param reg_imm_op: source register or immediate.
         """
-        assert dst.type is cs.arm64.ARM64_OP_REG
-        assert src.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_imm_op.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
 
         # Fake a register operand.
-        if dst.size == 32:
+        if res_op.size == 32:
             zr = Aarch64Operand.make_reg(cpu, cs.arm64.ARM64_REG_WZR)
-        elif dst.size == 64:
+        elif res_op.size == 64:
             zr = Aarch64Operand.make_reg(cpu, cs.arm64.ARM64_REG_XZR)
         else:
             raise Aarch64InvalidInstruction
@@ -3709,10 +3709,10 @@ class Aarch64Cpu(Cpu):
         opc = cpu.insn_bit_str[1:3]  # 'op S' for MOV (to/from SP)
         bit26 = cpu.insn_bit_str[-27]
 
-        if src.type is cs.arm64.ARM64_OP_REG:
+        if reg_imm_op.type is cs.arm64.ARM64_OP_REG:
             # MOV (to general).
             if bit26 == '1':
-                cpu._MOV_to_general(dst, src)
+                cpu._MOV_to_general(res_op, reg_imm_op)
 
             # MOV (to/from SP).
             elif bit26 == '0' and opc == '00':
@@ -3721,35 +3721,35 @@ class Aarch64Cpu(Cpu):
 
                 # The 'instruction' decorator advances PC, so call the original
                 # method.
-                cpu.ADD.__wrapped__(cpu, dst, src, zero)
+                cpu.ADD.__wrapped__(cpu, res_op, reg_imm_op, zero)
 
             # MOV (register).
             elif bit26 == '0' and opc == '01':
                 # The 'instruction' decorator advances PC, so call the original
                 # method.
-                cpu.ORR.__wrapped__(cpu, dst, zr, src)
+                cpu.ORR.__wrapped__(cpu, res_op, zr, reg_imm_op)
 
             else:
                 raise Aarch64InvalidInstruction
 
-        elif src.type is cs.arm64.ARM64_OP_IMM:
+        elif reg_imm_op.type is cs.arm64.ARM64_OP_IMM:
             # MOV (inverted wide immediate).
             if opc == '00':
                 # The 'instruction' decorator advances PC, so call the original
                 # method.
-                cpu.MOVN.__wrapped__(cpu, dst, src)
+                cpu.MOVN.__wrapped__(cpu, res_op, reg_imm_op)
 
             # MOV (wide immediate).
             elif opc == '10':
                 # The 'instruction' decorator advances PC, so call the original
                 # method.
-                cpu.MOVZ.__wrapped__(cpu, dst, src)
+                cpu.MOVZ.__wrapped__(cpu, res_op, reg_imm_op)
 
             # MOV (bitmask immediate).
             elif opc == '01':
                 # The 'instruction' decorator advances PC, so call the original
                 # method.
-                cpu.ORR.__wrapped__(cpu, dst, zr, src)
+                cpu.ORR.__wrapped__(cpu, res_op, zr, reg_imm_op)
 
             else:
                 raise Aarch64InvalidInstruction
@@ -3796,15 +3796,15 @@ class Aarch64Cpu(Cpu):
         res_op.write(result)
 
     @instruction
-    def MOVN(cpu, dst, src):
+    def MOVN(cpu, res_op, imm_op):
         """
         MOVN.
 
-        :param dst: destination register.
-        :param src: immediate.
+        :param res_op: destination register.
+        :param imm_op: immediate.
         """
-        assert dst.type is cs.arm64.ARM64_OP_REG
-        assert src.type is cs.arm64.ARM64_OP_IMM
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert imm_op.type is cs.arm64.ARM64_OP_IMM
 
         insn_rx = '[01]'       # sf
         insn_rx += '00'        # opc
@@ -3815,31 +3815,31 @@ class Aarch64Cpu(Cpu):
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
-        imm = src.op.imm
-        sft = src.op.shift.value
+        imm = imm_op.op.imm
+        sft = imm_op.op.shift.value
 
-        if src.is_shifted():
-            assert src.op.shift.type == cs.arm64.ARM64_SFT_LSL
+        if imm_op.is_shifted():
+            assert imm_op.op.shift.type == cs.arm64.ARM64_SFT_LSL
 
         assert imm >= 0 and imm <= 65535
         assert (
-            (dst.size == 32 and sft in [0, 16]) or
-            (dst.size == 64 and sft in [0, 16, 32, 48])
+            (res_op.size == 32 and sft in [0, 16]) or
+            (res_op.size == 64 and sft in [0, 16, 32, 48])
         )
 
-        result = UInt(~LSL(imm, sft, dst.size), dst.size)
-        dst.write(result)
+        result = UInt(~LSL(imm, sft, res_op.size), res_op.size)
+        res_op.write(result)
 
     @instruction
-    def MOVZ(cpu, dst, src):
+    def MOVZ(cpu, res_op, imm_op):
         """
         MOVZ.
 
-        :param dst: destination register.
-        :param src: immediate.
+        :param res_op: destination register.
+        :param imm_op: immediate.
         """
-        assert dst.type is cs.arm64.ARM64_OP_REG
-        assert src.type is cs.arm64.ARM64_OP_IMM
+        assert res_op.type is cs.arm64.ARM64_OP_REG
+        assert imm_op.type is cs.arm64.ARM64_OP_IMM
 
         insn_rx = '[01]'       # sf
         insn_rx += '10'        # opc
@@ -3850,20 +3850,20 @@ class Aarch64Cpu(Cpu):
 
         assert re.match(insn_rx, cpu.insn_bit_str)
 
-        imm = src.op.imm
-        sft = src.op.shift.value
+        imm = imm_op.op.imm
+        sft = imm_op.op.shift.value
 
-        if src.is_shifted():
-            assert src.op.shift.type == cs.arm64.ARM64_SFT_LSL
+        if imm_op.is_shifted():
+            assert imm_op.op.shift.type == cs.arm64.ARM64_SFT_LSL
 
         assert imm >= 0 and imm <= 65535
         assert (
-            (dst.size == 32 and sft in [0, 16]) or
-            (dst.size == 64 and sft in [0, 16, 32, 48])
+            (res_op.size == 32 and sft in [0, 16]) or
+            (res_op.size == 64 and sft in [0, 16, 32, 48])
         )
 
-        result = UInt(LSL(imm, sft, dst.size), dst.size)
-        dst.write(result)
+        result = UInt(LSL(imm, sft, res_op.size), res_op.size)
+        res_op.write(result)
 
     @instruction
     def MRS(cpu, res_op, reg_op):
@@ -4163,29 +4163,29 @@ class Aarch64Cpu(Cpu):
 
     # XXX: Support ORR (vector, immediate).
     @instruction
-    def ORR(cpu, res_op, op1, op2):
+    def ORR(cpu, res_op, reg_op, reg_imm_op):
         """
         Combines ORR (immediate), ORR (shifted register), and ORR (vector,
         register).
 
         :param res_op: destination register.
-        :param op1: source register.
-        :param op2: source register or immediate.
+        :param reg_op: source register.
+        :param reg_imm_op: source register or immediate.
         """
         assert res_op.type is cs.arm64.ARM64_OP_REG
-        assert op1.type is cs.arm64.ARM64_OP_REG
-        assert op2.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_imm_op.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
 
         bit21 = cpu.insn_bit_str[-22]
 
-        if op2.type == cs.arm64.ARM64_OP_IMM:
-            cpu._ORR_immediate(res_op, op1, op2)
+        if reg_imm_op.type == cs.arm64.ARM64_OP_IMM:
+            cpu._ORR_immediate(res_op, reg_op, reg_imm_op)
 
-        elif op2.type == cs.arm64.ARM64_OP_REG and bit21 == '0':
-            cpu._ORR_shifted_register(res_op, op1, op2)
+        elif reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit21 == '0':
+            cpu._ORR_shifted_register(res_op, reg_op, reg_imm_op)
 
-        elif op2.type == cs.arm64.ARM64_OP_REG and bit21 == '1':
-            cpu._ORR_vector_register(res_op, op1, op2)
+        elif reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit21 == '1':
+            cpu._ORR_vector_register(res_op, reg_op, reg_imm_op)
 
         else:
             raise Aarch64InvalidInstruction
@@ -4661,33 +4661,33 @@ class Aarch64Cpu(Cpu):
         cpu._add_sub_vector(res_op, reg_op1, reg_op2, add=False)
 
     @instruction
-    def SUB(cpu, res_op, op1, op2):
+    def SUB(cpu, res_op, reg_op, reg_imm_op):
         """
         Combines SUB (extended register), SUB (immediate), SUB (shifted
         register), and SUB (vector).
 
         :param res_op: destination register.
-        :param op1: source register.
-        :param op2: source register or immediate.
+        :param reg_op: source register.
+        :param reg_imm_op: source register or immediate.
         """
         assert res_op.type is cs.arm64.ARM64_OP_REG
-        assert op1.type is cs.arm64.ARM64_OP_REG
-        assert op2.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_imm_op.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
 
         bit21 = cpu.insn_bit_str[-22]
         bit24 = cpu.insn_bit_str[-25]
 
-        if op2.type == cs.arm64.ARM64_OP_IMM:
-            cpu._SUB_immediate(res_op, op1, op2)
+        if reg_imm_op.type == cs.arm64.ARM64_OP_IMM:
+            cpu._SUB_immediate(res_op, reg_op, reg_imm_op)
 
-        elif op2.type == cs.arm64.ARM64_OP_REG and bit24 == '0':
-            cpu._SUB_vector(res_op, op1, op2)
+        elif reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit24 == '0':
+            cpu._SUB_vector(res_op, reg_op, reg_imm_op)
 
-        elif op2.type == cs.arm64.ARM64_OP_REG and bit24 == '1' and bit21 == '0':
-            cpu._SUB_shifted_register(res_op, op1, op2)
+        elif reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit24 == '1' and bit21 == '0':
+            cpu._SUB_shifted_register(res_op, reg_op, reg_imm_op)
 
-        elif op2.type == cs.arm64.ARM64_OP_REG and bit24 == '1' and bit21 == '1':
-            cpu._SUB_extended_register(res_op, op1, op2)
+        elif reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit24 == '1' and bit21 == '1':
+            cpu._SUB_extended_register(res_op, reg_op, reg_imm_op)
 
         else:
             raise Aarch64InvalidInstruction
@@ -4723,29 +4723,29 @@ class Aarch64Cpu(Cpu):
         cpu._adds_subs_shifted_register(res_op, reg_op1, reg_op2, mnem='subs')
 
     @instruction
-    def SUBS(cpu, res_op, op1, op2):
+    def SUBS(cpu, res_op, reg_op, reg_imm_op):
         """
         Combines SUBS (extended register), SUBS (immediate), and SUBS (shifted
         register).
 
         :param res_op: destination register.
-        :param op1: source register.
-        :param op2: source register or immediate.
+        :param reg_op: source register.
+        :param reg_imm_op: source register or immediate.
         """
         assert res_op.type is cs.arm64.ARM64_OP_REG
-        assert op1.type is cs.arm64.ARM64_OP_REG
-        assert op2.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_imm_op.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
 
         bit21 = cpu.insn_bit_str[-22]
 
-        if op2.type == cs.arm64.ARM64_OP_IMM:
-            cpu._SUBS_immediate(res_op, op1, op2)
+        if reg_imm_op.type == cs.arm64.ARM64_OP_IMM:
+            cpu._SUBS_immediate(res_op, reg_op, reg_imm_op)
 
-        elif op2.type == cs.arm64.ARM64_OP_REG and bit21 == '0':
-            cpu._SUBS_shifted_register(res_op, op1, op2)
+        elif reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit21 == '0':
+            cpu._SUBS_shifted_register(res_op, reg_op, reg_imm_op)
 
-        elif op2.type == cs.arm64.ARM64_OP_REG and bit21 == '1':
-            cpu._SUBS_extended_register(res_op, op1, op2)
+        elif reg_imm_op.type == cs.arm64.ARM64_OP_REG and bit21 == '1':
+            cpu._SUBS_extended_register(res_op, reg_op, reg_imm_op)
 
         else:
             raise Aarch64InvalidInstruction
@@ -4994,21 +4994,21 @@ class Aarch64Cpu(Cpu):
         cpu.ANDS.__wrapped__(cpu, zr, reg_op1, reg_op2)
 
     @instruction
-    def TST(cpu, op1, op2):
+    def TST(cpu, reg_op, reg_imm_op):
         """
         Combines TST (immediate) and TST (shifted register).
 
-        :param op1: source register.
-        :param op2: source register or immediate.
+        :param reg_op: source register.
+        :param reg_imm_op: source register or immediate.
         """
-        assert op1.type is cs.arm64.ARM64_OP_REG
-        assert op2.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
+        assert reg_op.type is cs.arm64.ARM64_OP_REG
+        assert reg_imm_op.type in [cs.arm64.ARM64_OP_REG, cs.arm64.ARM64_OP_IMM]
 
-        if op2.type == cs.arm64.ARM64_OP_REG:
-            cpu._TST_shifted_register(op1, op2)
+        if reg_imm_op.type == cs.arm64.ARM64_OP_REG:
+            cpu._TST_shifted_register(reg_op, reg_imm_op)
 
-        elif op2.type == cs.arm64.ARM64_OP_IMM:
-            cpu._TST_immediate(op1, op2)
+        elif reg_imm_op.type == cs.arm64.ARM64_OP_IMM:
+            cpu._TST_immediate(reg_op, reg_imm_op)
 
         else:
             raise Aarch64InvalidInstruction
