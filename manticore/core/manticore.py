@@ -804,7 +804,6 @@ class ManticoreBase(Eventful):
         # different process modifies the state
         self.stcache = weakref.WeakValueDictionary()
 
-
         # Lazy process start. At the first run() the workers are not forked.
         # This actually starts the worker procs/threads
         if self.subscribe:
