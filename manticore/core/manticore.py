@@ -42,6 +42,8 @@ class MProcessingType(Enum):
     def from_string(cls, name):
         return cls.__members__[name]
 
+    def to_class(self):
+        return globals()[f'Manticore{self.title()}']
 
 logger = logging.getLogger(__name__)
 
@@ -55,13 +57,10 @@ consts.add('mprocessing', default=MProcessingType.multiprocessing, description='
 class ManticoreBase(Eventful):
 
     def __new__(cls, *args, **kwargs):
-        if consts.mprocessing.title() not in ('Single', 'Multiprocessing', 'Threading'):
-            raise Exception("Single, multiprocessing or threading expected")
         if cls in (ManticoreBase, ManticoreSingle, ManticoreThreading, ManticoreMultiprocessing):
             raise Exception("Should not instantiate this")
 
-        #logger.info("Using concurrency type: %r", consts.mprocessing.title())
-        cl = globals()[f'Manticore{consts.mprocessing.title()}']
+        cl = consts.mprocessing.to_class()
         if cl not in cls.__bases__:
             #change ManticoreBase for the more specific class
             idx = cls.__bases__.index(ManticoreBase)
