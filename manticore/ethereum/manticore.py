@@ -462,7 +462,7 @@ class ManticoreEVM(ManticoreBase):
 
     def make_symbolic_arguments(self, types):
         """
-            Make a reasonable serialization of the symbolic argument types
+            Build a reasonable set of symbolic arguments matching the types list
         """
         # FIXME this is more naive than reasonable.
         return ABI.deserialize(types, self.make_symbolic_buffer(32, name='INITARGS', avoid_collisions=True))
