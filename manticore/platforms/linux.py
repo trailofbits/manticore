@@ -2584,7 +2584,6 @@ class Linux(Platform):
 
                 buf += struct.pack(fmt, item.inode(), size, size, bytes(item.name, 'utf-8') + b'\x00', b'\x00')
 
-
         self.current.write_bytes(dirent, buf)
         return len(buf)
 
@@ -2595,6 +2594,26 @@ class Linux(Platform):
         error: Returns -1
         '''
         logger.info("Ignoring call to sys_nanosleep")
+        return 0
+
+    def sys_chmod(self, filename, mode) -> int:
+        '''
+        Change permissions of a file
+        success: Returns 0
+        error: Returns -1
+        '''
+        filename = self.current.read_string(filename)
+        os.chmod(filename, mode)
+        return 0
+
+    def sys_chown(self, filename, user, group) -> int:
+        '''
+        Change ownership of a file
+        success: Returns 0
+        error: Returns -1
+        '''
+        filename = self.current.read_string(filename)
+        os.chown(filename, user, group)
         return 0
 
     def _arch_specific_init(self):
