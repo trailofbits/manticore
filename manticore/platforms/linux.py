@@ -325,10 +325,10 @@ class SocketDesc:
         self.protocol = protocol
 
     def close(self):
-        '''
+        """
         Doesn't need to do anything for internal SocketDesc type;
         fixes 'SocketDesc' has no attribute 'close' error.
-        '''
+        """
         pass
 
 
@@ -395,9 +395,9 @@ class Socket:
         raise FdError("Invalid lseek() operation on Socket", errno.EINVAL)
 
     def close(self):
-        '''
+        """
         Doesn't need to do anything; fixes "no attribute 'close'" error.
-        '''
+        """
         pass
 
 
@@ -2013,9 +2013,9 @@ class Linux(Platform):
         return self._is_sockfd(sockfd)
 
     def sys_accept(self, sockfd, addr, addrlen):
-        '''
+        """
         https://github.com/torvalds/linux/blob/63bdf4284c38a48af21745ceb148a087b190cd21/net/socket.c#L1649-L1653
-        '''
+        """
         return self.sys_accept4(sockfd, addr, addrlen, 0)
 
     def sys_accept4(self, sockfd, addr, addrlen, flags):
@@ -2108,16 +2108,16 @@ class Linux(Platform):
 
     @unimplemented
     def sys_futex(self, uaddr, op, val, utime, uaddr2, val3) -> int:
-        '''
+        """
         Fast user-space locking
         success: Depends on the operation, but often 0
         error: Returns -1
-        '''
+        """
         return 0
 
     @unimplemented
     def sys_clone_ptregs(self, flags, child_stack, ptid, ctid, regs):
-        '''
+        """
         Create a child process
         :param flags:
         :param child_stack:
@@ -2125,7 +2125,7 @@ class Linux(Platform):
         :param ctid:
         :param regs:
         :return: The PID of the child process
-        '''
+        """
         return self.sys_getpid()
 
     # Dispatchers...
@@ -2166,11 +2166,11 @@ class Linux(Platform):
         return int(t)
 
     def sys_gettimeofday(self, tv, tz) -> int:
-        '''
+        """
         Get time
         success: Returns 0
         error: Returns -1
-        '''
+        """
         if tv != 0:
             microseconds = int(time.time() * 10 ** 6)
             self.current.write_bytes(tv, struct.pack('L', microseconds // (10 ** 6)) + struct.pack('L', microseconds))
@@ -2484,11 +2484,11 @@ class Linux(Platform):
 
     # @unimplemented
     def sys_mkdir(self, pathname, mode) -> int:
-        '''
+        """
         Create a directory
         success: Returns 0
         error: Returns -1
-        '''
+        """
         name = self.current.read_string(pathname)
         os.mkdir(name, mode=mode)
 
@@ -2496,11 +2496,11 @@ class Linux(Platform):
 
     # @unimplemented
     def sys_mkdirat(self, dfd, pathname, mode) -> int:
-        '''
+        """
         Create a directory
         success: Returns 0
         error: Returns -1
-        '''
+        """
         name = self.current.read_string(pathname)
         os.mkdirat(name, mode=mode, dir_fd=dfd)
 
@@ -2508,31 +2508,31 @@ class Linux(Platform):
 
     # @unimplemented
     def sys_rmdir(self, pathname) -> int:
-        '''
+        """
         Delete a directory
         success: Returns 0
         error: Returns -1
-        '''
+        """
         name = self.current.read_string(pathname)
         os.rmdir(name)
 
         return -1
 
     def sys_pipe(self, filedes) -> int:
-        '''
+        """
         Create pipe
         success: Returns 0
         error: Returns -1
-        '''
+        """
         return self.sys_pipe2(filedes, 0)
 
     def sys_pipe2(self, filedes, flags) -> int:
-        '''
+        """
         # TODO (ehennenfent) create a native pipe type instead of cheating with sockets
         Create pipe
         success: Returns 0
         error: Returns -1
-        '''
+        """
         if flags == 0:
             l, r = Socket.pair()
             self.current.write_int(filedes, self._open(l))
@@ -2542,11 +2542,11 @@ class Linux(Platform):
             return -1
 
     def sys_ftruncate(self, fd, length) -> int:
-        '''
+        """
         Truncate a file to a specified length
         success: Returns 0
         error: Returns -1
-        '''
+        """
         try:
             file = self._get_fd(fd)
         except FdError as e:
@@ -2556,11 +2556,11 @@ class Linux(Platform):
         return 0
 
     def sys_link(self, oldname, newname) -> int:
-        '''
+        """
         Make a new name for a file
         success: Returns 0
         error: Returns -1
-        '''
+        """
         oldname = self.current.read_string(oldname)
         newname = self.current.read_string(newname)
         try:
@@ -2570,11 +2570,11 @@ class Linux(Platform):
         return 0
 
     def sys_unlink(self, pathname) -> int:
-        '''
+        """
         Delete a name and possibly the file it refers to
         success: Returns 0
         error: Returns -1
-        '''
+        """
         pathname = self.current.read_string(pathname)
         try:
             os.unlink(pathname)
@@ -2583,11 +2583,11 @@ class Linux(Platform):
         return 0
 
     def sys_getdents(self, fd, dirent, count) -> int:
-        '''
+        """
         Get directory entries
         success: Returns the number of bytes read - On end of directory, 0
         error: Returns -1
-        '''
+        """
         buf = b''
         try:
             file = self._get_fd(fd)
@@ -2612,30 +2612,30 @@ class Linux(Platform):
         return len(buf)
 
     def sys_nanosleep(self, rqtp, rmtp) -> int:
-        '''
+        """
         High-resolution sleep
         success: Returns 0
         error: Returns -1
-        '''
+        """
         logger.info("Ignoring call to sys_nanosleep")
         return 0
 
     def sys_chmod(self, filename, mode) -> int:
-        '''
+        """
         Change permissions of a file
         success: Returns 0
         error: Returns -1
-        '''
+        """
         filename = self.current.read_string(filename)
         os.chmod(filename, mode)
         return 0
 
     def sys_chown(self, filename, user, group) -> int:
-        '''
+        """
         Change ownership of a file
         success: Returns 0
         error: Returns -1
-        '''
+        """
         filename = self.current.read_string(filename)
         os.chown(filename, user, group)
         return 0
