@@ -53,5 +53,3 @@ class DependencyError(EthereumError):
 
 class NoAliveStates(EthereumError):
     pass
-
-

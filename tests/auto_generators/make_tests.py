@@ -10,7 +10,7 @@ with open(sys.argv[1], 'r') as f:
 for t_str in tests_str:
     try:
         tests.append(eval(t_str))
-    except:
+    except Exception:
         pass
 
 random.shuffle(tests)

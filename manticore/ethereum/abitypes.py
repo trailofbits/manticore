@@ -150,7 +150,7 @@ lexer = lex.lex()
 
 # parser
 def p_basic_type(p):
-    '''
+    """
      T : UINTN
      T : UINT
      T : INTN
@@ -166,51 +166,51 @@ def p_basic_type(p):
      T : BYTES
      T : STRING
 
-    '''
+    """
     p[0] = p[1]
 
 
 def p_type_list_one(p):
-    '''
+    """
      TL : T
-    '''
+    """
     p[0] = (p[1],)
 
 
 def p_type_list(p):
-    '''
+    """
      TL : T COMMA TL
-    '''
+    """
     p[0] = (p[1],) + p[3]
 
 
 def p_tuple(p):
-    '''
+    """
      T : LPAREN TL RPAREN
-    '''
+    """
     p[0] = ('tuple', p[2])
 
 
 def p_tuple_empty(p):
-    '''
+    """
      T : LPAREN RPAREN
-    '''
+    """
     p[0] = ('tuple', ())
 
 
 def p_dynamic_type(p):
-    '''
+    """
      T : T LBRAKET RBRAKET
-    '''
+    """
     reps = None
     base_type = p[1]
     p[0] = ('array', reps, base_type)
 
 
 def p_dynamic_fixed_type(p):
-    '''
+    """
      T : T LBRAKET NUMBER RBRAKET
-    '''
+    """
     reps = int(p[3])
     base_type = p[1]
     p[0] = ('array', reps, base_type)

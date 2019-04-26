@@ -1,6 +1,37 @@
 # Change Log
 
-## [Unreleased](https://github.com/trailofbits/manticore/compare/0.2.4...HEAD)
+## [Unreleased](https://github.com/trailofbits/manticore/compare/0.2.5...HEAD)
+
+## 0.2.5 - 2019-03-18
+
+Thanks to our external contributors!
+
+ - [werew](https://github.com/trailofbits/manticore/commits?author=werew)
+ - [NicolaiSoeborg](https://github.com/trailofbits/manticore/commits?author=NicolaiSoeborg)
+ - [Joool](https://github.com/trailofbits/manticore/commits?author=Joool)
+
+### Ethereum
+
+* **[added API]** `json_create_contract` - support creating EVM contracts from Truffle JSON artifacts ([#1376](https://github.com/trailofbits/manticore/pull/1376))
+* **[changed API]** Moved default gas value to config module ([#1346](https://github.com/trailofbits/manticore/pull/1346))
+* **[fixed API]** Fixed account creation with a code field ([#1371](https://github.com/trailofbits/manticore/pull/1371))
+* **[fixed API]** Fixed an incorrect attribute in `last_return` ([#1341](https://github.com/trailofbits/manticore/pull/1341))
+* **[refactor]** Inlined get_possible solutions function as it's only used once ([#1372](https://github.com/trailofbits/manticore/pull/1372))
+* Fixed `_check_jumpdest` when run with detectors - this bug could lead to not detecting an int overflow due to tainting made by another detector ([#1347](https://github.com/trailofbits/manticore/pull/1347))
+* Made findings print addresses in hex ([#1339](https://github.com/trailofbits/manticore/pull/1339))
+
+### Native
+
+* **[added API]** Added Unicorn preloading, for quickly performing concrete emulation until a target address is reached. ([#1356](https://github.com/trailofbits/manticore/pull/1356))
+* Fixed incorrect return value in `sys_lseek` ([#1355](https://github.com/trailofbits/manticore/pull/1355))
+* Added check for missing native packages ([#1367](https://github.com/trailofbits/manticore/pull/1367))
+
+### Other
+
+* **[added API]** Added context managers for the config module, allowing for temporary configurations ([#1345](https://github.com/trailofbits/manticore/pull/1345))
+* Updated Capstone to 4.0.1 ([#1312](https://github.com/trailofbits/manticore/pull/1312))
+* Embedded parsetab.py so users no longer need to generate it ([#1383](https://github.com/trailofbits/manticore/pull/1383))
+
 
 ## 0.2.4 - 2019-01-10
 

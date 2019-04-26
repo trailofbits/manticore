@@ -122,7 +122,7 @@ def itest_setregs(*preds):
 
                 try:
                     src = int(src, 0)
-                except:
+                except Exception:
                     pass
 
                 self.rf.write(dest.upper(), src)

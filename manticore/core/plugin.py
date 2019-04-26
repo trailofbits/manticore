@@ -27,30 +27,30 @@ class Plugin:
 
     @property
     def context(self):
-        ''' Convenient access to shared context '''
+        """ Convenient access to shared context """
         plugin_context_name = str(type(self))
         if plugin_context_name not in self.manticore.context:
             self.manticore.context[plugin_context_name] = {}
         return self.manticore.context[plugin_context_name]
 
     def on_register(self):
-        ''' Called by parent manticore on registration '''
+        """ Called by parent manticore on registration """
         pass
 
     def on_unregister(self):
-        ''' Called be parent manticore on un-registration '''
+        """ Called be parent manticore on un-registration """
         pass
 
 
 def _dict_diff(d1, d2):
-    '''
+    """
     Produce a dict that includes all the keys in d2 that represent different values in d1, as well as values that
     aren't in d1.
 
     :param dict d1: First dict
     :param dict d2: Dict to compare with
     :rtype: dict
-    '''
+    """
     d = {}
     for key in set(d1).intersection(set(d2)):
         if d2[key] != d1[key]:
@@ -67,9 +67,9 @@ class Tracer(Plugin):
 
 class ExtendedTracer(Plugin):
     def __init__(self):
-        '''
+        """
         Record a detailed execution trace
-        '''
+        """
         super().__init__()
         self.last_dict = {}
         self.current_pc = None
@@ -259,9 +259,9 @@ class ExamplePlugin(Plugin):
         logger.info('did_execute_instruction %r %r %r %r', state, pc, target_pc, instruction)
 
     def will_start_run_callback(self, state):
-        ''' Called once at the beginning of the run.
+        """ Called once at the beginning of the run.
             state is the initial root state
-        '''
+        """
         logger.info('will_start_run')
 
     def did_finish_run_callback(self):
