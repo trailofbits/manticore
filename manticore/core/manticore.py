@@ -45,6 +45,7 @@ class MProcessingType(Enum):
     def to_class(self):
         return globals()[f'Manticore{self.title()}']
 
+
 logger = logging.getLogger(__name__)
 
 consts = config.get_group('core')
