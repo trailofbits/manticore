@@ -580,12 +580,12 @@ class ManticoreEVM(ManticoreBase):
         from . import abitypes
         return self._make_symbolic_arguments(abitypes.parse(types))
 
-
     def _make_symbolic_arguments(self, ty):
         ''' This makes a tuple of symbols to be used as arguments of type ty'''
 
         # If the types describe an string or an array this will produce strings
         # or arrays of a default size.
+        #TODO: add a configuration constant for these two
         default_string_size = 32
         default_array_size = 32
         if ty[0] in ('int', 'uint'):
@@ -606,14 +606,13 @@ class ManticoreEVM(ManticoreBase):
             result = []
             rep = ty[1]
             if rep is None:
-                rep = default_array_size # ?
+                rep = default_array_size
             for _ in range(rep):
                 result.append(self._make_symbolic_arguments(ty[2]))
         else:
             raise NotImplemented
 
         return result
-
 
     def json_create_contract(self, jfile, owner=None, name=None, contract_name=None, balance=0, gas=None, network_id=None, args=()):
         """ Creates a solidity contract based on a truffle json artifact.
