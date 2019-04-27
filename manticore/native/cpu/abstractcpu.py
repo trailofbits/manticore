@@ -2,6 +2,7 @@ import inspect
 import io
 import logging
 import struct
+import typing
 from functools import wraps
 from itertools import islice
 
@@ -380,6 +381,7 @@ class Abi:
 
 platform_logger = logging.getLogger('manticore.platforms.platform')
 
+
 def unsigned_hexlify(i):
     if type(i) is int:
         if i < 0:
@@ -413,7 +415,9 @@ class SyscallAbi(Abi):
 
         self._cpu._publish('will_execute_syscall', model)
         ret = super().invoke(model, prefix_args)
-        self._cpu._publish('did_execute_syscall', model.__func__.__name__, self._last_arguments, ret)
+        self._cpu._publish('did_execute_syscall',
+                           model.__func__.__name__ if type(model) is typing.MethodType else model.__name__,
+                           self._last_arguments, ret)
 
         if platform_logger.isEnabledFor(logging.DEBUG):
             # Try to expand strings up to max_arg_expansion
