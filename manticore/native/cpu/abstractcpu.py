@@ -2,7 +2,7 @@ import inspect
 import io
 import logging
 import struct
-import typing
+import types
 from functools import wraps
 from itertools import islice
 
@@ -416,7 +416,7 @@ class SyscallAbi(Abi):
         self._cpu._publish('will_execute_syscall', model)
         ret = super().invoke(model, prefix_args)
         self._cpu._publish('did_execute_syscall',
-                           model.__func__.__name__ if type(model) is typing.MethodType else model.__name__,
+                           model.__func__.__name__ if type(model) is types.MethodType else model.__name__,
                            self._last_arguments, ret)
 
         if platform_logger.isEnabledFor(logging.DEBUG):
