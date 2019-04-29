@@ -577,8 +577,42 @@ class ManticoreEVM(ManticoreBase):
         """
             Make a reasonable serialization of the symbolic argument types
         """
-        # FIXME this is more naive than reasonable.
-        return ABI.deserialize(types, self.make_symbolic_buffer(32, name='INITARGS', avoid_collisions=True))
+        from . import abitypes
+        return self._make_symbolic_arguments(abitypes.parse(types))
+
+    def _make_symbolic_arguments(self, ty):
+        ''' This makes a tuple of symbols to be used as arguments of type ty'''
+
+        # If the types describe an string or an array this will produce strings
+        # or arrays of a default size.
+        #TODO: add a configuration constant for these two
+        default_string_size = 32
+        default_array_size = 32
+        if ty[0] in ('int', 'uint'):
+            result = self.make_symbolic_value()
+        elif ty[0] == 'bytesM':
+            result = self.make_symbolic_buffer(size=ty[1])
+        elif ty[0] == 'function':
+            address = self.make_symbolic_value()
+            func_id = self.make_symbolic_buffer(size=4)
+            result = (address, func_id)
+        elif ty[0] in ('bytes', 'string'):
+            result = self.make_symbolic_buffer(size=default_string_size)
+        elif ty[0] == 'tuple':
+            result = ()
+            for ty_i in ty[1]:
+                result += (self._make_symbolic_arguments(ty_i), )
+        elif ty[0] == 'array':
+            result = []
+            rep = ty[1]
+            if rep is None:
+                rep = default_array_size
+            for _ in range(rep):
+                result.append(self._make_symbolic_arguments(ty[2]))
+        else:
+            raise NotImplemented
+
+        return result
 
     def json_create_contract(self, jfile, owner=None, name=None, contract_name=None, balance=0, gas=None, network_id=None, args=()):
         """ Creates a solidity contract based on a truffle json artifact.
