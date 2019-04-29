@@ -8382,6 +8382,4685 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X0'), 0x414243444546474)
         self.assertEqual(self.rf.read('W0'), 0x44546474)
 
+    # MADD.
+
+    # 32-bit.
+
+    @itest_setregs('W1=0xffffffff', 'W2=0xffffffff', 'W3=0xffffffff')
+    @itest('madd w0, w1, w2, w3')
+    def test_madd_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs('W1=-1', 'W2=-1', 'W3=-1')
+    @itest('madd w0, w1, w2, w3')
+    def test_madd_neg32(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs('W1=1', 'W2=1', 'W3=0xffffffff')
+    @itest('madd w0, w1, w2, w3')
+    def test_madd_of1_32(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs('W1=0xffffffff', 'W2=2', 'W3=0xffffffff')
+    @itest('madd w0, w1, w2, w3')
+    def test_madd_of2_32(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffd)
+        self.assertEqual(self.rf.read('W0'), 0xfffffffd)
+
+    @itest_setregs('W1=2', 'W2=3', 'W3=4')
+    @itest('madd w0, w1, w2, w3')
+    def test_madd32(self):
+        self.assertEqual(self.rf.read('X0'), 10)
+        self.assertEqual(self.rf.read('W0'), 10)
+
+    # 64-bit.
+
+    @itest_setregs(
+        'X1=0xffffffffffffffff',
+        'X2=0xffffffffffffffff',
+        'X3=0xffffffffffffffff'
+    )
+    @itest('madd x0, x1, x2, x3')
+    def test_madd_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs('X1=-1', 'X2=-1', 'X3=-1')
+    @itest('madd x0, x1, x2, x3')
+    def test_madd_neg64(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs('X1=1', 'X2=1', 'X3=0xffffffffffffffff')
+    @itest('madd x0, x1, x2, x3')
+    def test_madd_of1_64(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs(
+        'X1=0xffffffffffffffff',
+        'X2=2',
+        'X3=0xffffffffffffffff'
+    )
+    @itest('madd x0, x1, x2, x3')
+    def test_madd_of2_64(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffffffffffd)
+        self.assertEqual(self.rf.read('W0'), 0xfffffffd)
+
+    @itest_setregs('X1=2', 'X2=3', 'X3=4')
+    @itest('madd x0, x1, x2, x3')
+    def test_madd64(self):
+        self.assertEqual(self.rf.read('X0'), 10)
+        self.assertEqual(self.rf.read('W0'), 10)
+
+    # MOV (to/from SP).
+
+    @itest_setregs(f"X0={MAGIC_64}")
+    @itest("mov sp, x0")
+    def test_mov_to_sp(self):
+        self.assertEqual(self.rf.read('SP'), MAGIC_64)
+        self.assertEqual(self.rf.read('WSP'), MAGIC_32)
+
+    @itest_custom("mov x0, sp")
+    def test_mov_from_sp(self):
+        # Do not overwrite SP with '_setupCpu'.
+        self.rf.write('SP', MAGIC_64)
+        self._setreg('SP', self.cpu.SP)
+        self._execute()
+        self.assertEqual(self.rf.read('X0'), MAGIC_64)
+        self.assertEqual(self.rf.read('W0'), MAGIC_32)
+
+    @itest_setregs(f"W0={MAGIC_32}")
+    @itest("mov wsp, w0")
+    def test_mov_to_sp32(self):
+        self.assertEqual(self.rf.read('SP'), MAGIC_32)
+        self.assertEqual(self.rf.read('WSP'), MAGIC_32)
+
+    @itest_custom("mov w0, wsp")
+    def test_mov_from_sp32(self):
+        # Do not overwrite WSP with '_setupCpu'.
+        self.rf.write('WSP', MAGIC_32)
+        self._setreg('WSP', self.cpu.WSP)
+        self._execute()
+        self.assertEqual(self.rf.read('X0'), MAGIC_32)
+        self.assertEqual(self.rf.read('W0'), MAGIC_32)
+
+    # MOV (inverted wide immediate).
+
+    # 32-bit.
+
+    @skip_sym('immediate')
+    @itest('mov w0, #0xffffffff')
+    def test_mov_inv_wide_imm32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    @skip_sym('immediate')
+    @itest('mov w0, #-1')
+    def test_mov_inv_wide_imm_neg32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    # 64-bit.
+
+    @skip_sym('immediate')
+    @itest('mov x0, #0xffffffffffffffff')
+    def test_mov_inv_wide_imm64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffffffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    @skip_sym('immediate')
+    @itest('mov x0, #-1')
+    def test_mov_inv_wide_imm_neg64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffffffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    # MOV (wide immediate).
+
+    # 32-bit.
+
+    @skip_sym('immediate')
+    @itest('mov w0, #0')
+    def test_mov_wide_imm_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @skip_sym('immediate')
+    @itest('mov w0, #0xffff0000')
+    def test_mov_wide_imm_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffff0000)
+        self.assertEqual(self.rf.read('W0'), 0xffff0000)
+
+    @skip_sym('immediate')
+    @itest('mov w0, #1')
+    def test_mov_wide_imm32(self):
+        self.assertEqual(self.rf.read('X0'), 1)
+        self.assertEqual(self.rf.read('W0'), 1)
+
+    # 64-bit.
+
+    @skip_sym('immediate')
+    @itest('mov x0, #0')
+    def test_mov_wide_imm_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @skip_sym('immediate')
+    @itest('mov x0, #0xffff000000000000')
+    def test_mov_wide_imm_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffff000000000000)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @skip_sym('immediate')
+    @itest('mov x0, #1')
+    def test_mov_wide_imm64(self):
+        self.assertEqual(self.rf.read('X0'), 1)
+        self.assertEqual(self.rf.read('W0'), 1)
+
+    # MOV (bitmask immediate).
+
+    @skip_sym('immediate')
+    @itest('mov w0, #0x7ffffffe')
+    def test_mov_bmask_imm32(self):
+        self.assertEqual(self.rf.read('X0'), 0x7ffffffe)
+        self.assertEqual(self.rf.read('W0'), 0x7ffffffe)
+
+    @skip_sym('immediate')
+    @itest('mov x0, #0x7ffffffffffffffe')
+    def test_mov_bmask_imm64(self):
+        self.assertEqual(self.rf.read('X0'), 0x7ffffffffffffffe)
+        self.assertEqual(self.rf.read('W0'), 0xfffffffe)
+
+    # MOV (register).
+
+    @itest_setregs("X1=42")
+    @itest("mov x0, x1")
+    def test_mov_reg(self):
+        self.assertEqual(self.rf.read('X0'), 42)
+        self.assertEqual(self.rf.read('W0'), 42)
+
+    @itest_setregs("W1=42")
+    @itest("mov w0, w1")
+    def test_mov_reg32(self):
+        self.assertEqual(self.rf.read('X0'), 42)
+        self.assertEqual(self.rf.read('W0'), 42)
+
+    # MOV (to general).
+
+    def test_mov_to_general(self):
+        self._umov(mnem='mov', dst='w', vess='s', elem_size=32, elem_count=4)
+        self._umov(mnem='mov', dst='x', vess='d', elem_size=64, elem_count=2)
+
+    # MOV misc.
+
+    @skip_sym('immediate')
+    @itest_multiple(["movn x0, #0", "mov w0, #1"])
+    def test_mov_same_reg32(self):
+        self.assertEqual(self.rf.read('X0'), 1)
+        self.assertEqual(self.rf.read('W0'), 1)
+
+    # MOVK.
+
+    # 32-bit.
+
+    @skip_sym('immediate')
+    @itest_setregs('W0=0x41424344')
+    @itest('movk w0, #0')
+    def test_movk_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41420000)
+        self.assertEqual(self.rf.read('W0'), 0x41420000)
+
+    @skip_sym('immediate')
+    @itest_setregs('W0=0x41424344')
+    @itest('movk w0, #0xffff')
+    def test_movk_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142ffff)
+        self.assertEqual(self.rf.read('W0'), 0x4142ffff)
+
+    @skip_sym('immediate')
+    @itest_setregs('W0=0x41424344')
+    @itest('movk w0, #0x1001')
+    def test_movk32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41421001)
+        self.assertEqual(self.rf.read('W0'), 0x41421001)
+
+    @skip_sym('immediate')
+    @itest_setregs('W0=0x41424344')
+    @itest('movk w0, #0, lsl #0')
+    def test_movk_sft0_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41420000)
+        self.assertEqual(self.rf.read('W0'), 0x41420000)
+
+    @skip_sym('immediate')
+    @itest_setregs('W0=0x41424344')
+    @itest('movk w0, #0xffff, lsl #0')
+    def test_movk_sft0_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142ffff)
+        self.assertEqual(self.rf.read('W0'), 0x4142ffff)
+
+    @skip_sym('immediate')
+    @itest_setregs('W0=0x41424344')
+    @itest('movk w0, #0x1001, lsl #0')
+    def test_movk_sft0_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41421001)
+        self.assertEqual(self.rf.read('W0'), 0x41421001)
+
+    @skip_sym('immediate')
+    @itest_setregs('W0=0x41424344')
+    @itest('movk w0, #0, lsl #16')
+    def test_movk_sft16_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0x4344)
+        self.assertEqual(self.rf.read('W0'), 0x4344)
+
+    @skip_sym('immediate')
+    @itest_setregs('W0=0x41424344')
+    @itest('movk w0, #0xffff, lsl #16')
+    def test_movk_sft16_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffff4344)
+        self.assertEqual(self.rf.read('W0'), 0xffff4344)
+
+    @skip_sym('immediate')
+    @itest_setregs('W0=0x41424344')
+    @itest('movk w0, #0x1001, lsl #16')
+    def test_movk_sft16_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x10014344)
+        self.assertEqual(self.rf.read('W0'), 0x10014344)
+
+    # 64-bit.
+
+    @skip_sym('immediate')
+    @itest_setregs('X0=0x4142434445464748')
+    @itest('movk x0, #0')
+    def test_movk_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445460000)
+        self.assertEqual(self.rf.read('W0'), 0x45460000)
+
+    @skip_sym('immediate')
+    @itest_setregs('X0=0x4142434445464748')
+    @itest('movk x0, #0xffff')
+    def test_movk_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0x414243444546ffff)
+        self.assertEqual(self.rf.read('W0'), 0x4546ffff)
+
+    @skip_sym('immediate')
+    @itest_setregs('X0=0x4142434445464748')
+    @itest('movk x0, #0x1001')
+    def test_movk64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445461001)
+        self.assertEqual(self.rf.read('W0'), 0x45461001)
+
+    @skip_sym('immediate')
+    @itest_setregs('X0=0x4142434445464748')
+    @itest('movk x0, #0, lsl #0')
+    def test_movk_sft0_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445460000)
+        self.assertEqual(self.rf.read('W0'), 0x45460000)
+
+    @skip_sym('immediate')
+    @itest_setregs('X0=0x4142434445464748')
+    @itest('movk x0, #0xffff, lsl #0')
+    def test_movk_sft0_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0x414243444546ffff)
+        self.assertEqual(self.rf.read('W0'), 0x4546ffff)
+
+    @skip_sym('immediate')
+    @itest_setregs('X0=0x4142434445464748')
+    @itest('movk x0, #0x1001, lsl #0')
+    def test_movk_sft0_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445461001)
+        self.assertEqual(self.rf.read('W0'), 0x45461001)
+
+    @skip_sym('immediate')
+    @itest_setregs('X0=0x4142434445464748')
+    @itest('movk x0, #0, lsl #16')
+    def test_movk_sft16_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434400004748)
+        self.assertEqual(self.rf.read('W0'), 0x4748)
+
+    @skip_sym('immediate')
+    @itest_setregs('X0=0x4142434445464748')
+    @itest('movk x0, #0xffff, lsl #16')
+    def test_movk_sft16_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344ffff4748)
+        self.assertEqual(self.rf.read('W0'), 0xffff4748)
+
+    @skip_sym('immediate')
+    @itest_setregs('X0=0x4142434445464748')
+    @itest('movk x0, #0x1001, lsl #16')
+    def test_movk_sft16_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434410014748)
+        self.assertEqual(self.rf.read('W0'), 0x10014748)
+
+    @skip_sym('immediate')
+    @itest_setregs('X0=0x4142434445464748')
+    @itest('movk x0, #0, lsl #32')
+    def test_movk_sft32_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142000045464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @skip_sym('immediate')
+    @itest_setregs('X0=0x4142434445464748')
+    @itest('movk x0, #0xffff, lsl #32')
+    def test_movk_sft32_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142ffff45464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @skip_sym('immediate')
+    @itest_setregs('X0=0x4142434445464748')
+    @itest('movk x0, #0x1001, lsl #32')
+    def test_movk_sft32_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142100145464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @skip_sym('immediate')
+    @itest_setregs('X0=0x4142434445464748')
+    @itest('movk x0, #0, lsl #48')
+    def test_movk_sft48_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0x434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @skip_sym('immediate')
+    @itest_setregs('X0=0x4142434445464748')
+    @itest('movk x0, #0xffff, lsl #48')
+    def test_movk_sft48_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffff434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @skip_sym('immediate')
+    @itest_setregs('X0=0x4142434445464748')
+    @itest('movk x0, #0x1001, lsl #48')
+    def test_movk_sft48_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x1001434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    # MOVN.
+
+    # 32-bit.
+
+    @skip_sym('immediate')
+    @itest("movn w0, #0")
+    def test_movn32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    @skip_sym('immediate')
+    @itest("movn w0, #65535")
+    def test_movn_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffff0000)
+        self.assertEqual(self.rf.read('W0'), 0xffff0000)
+
+    @skip_sym('immediate')
+    @itest("movn w0, #65535, lsl #16")
+    def test_movn_sft16_32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffff)
+        self.assertEqual(self.rf.read('W0'), 0xffff)
+
+    # 64-bit.
+
+    @skip_sym('immediate')
+    @itest("movn x0, #0")
+    def test_movn64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffffffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    @skip_sym('immediate')
+    @itest("movn x0, #65535")
+    def test_movn_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffffffff0000)
+        self.assertEqual(self.rf.read('W0'), 0xffff0000)
+
+    @skip_sym('immediate')
+    @itest("movn x0, #65535, lsl #16")
+    def test_movn_sft16_64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffff0000ffff)
+        self.assertEqual(self.rf.read('W0'), 0xffff)
+
+    @skip_sym('immediate')
+    @itest("movn x0, #65535, lsl #32")
+    def test_movn_sft32_64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffff0000ffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    @skip_sym('immediate')
+    @itest("movn x0, #65535, lsl #48")
+    def test_movn_sft48_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x0000ffffffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    # MOVZ.
+
+    # 32-bit.
+
+    @skip_sym('immediate')
+    @itest("movz w0, #0")
+    def test_movz32(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @skip_sym('immediate')
+    @itest("movz w0, #65535")
+    def test_movz_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffff)
+        self.assertEqual(self.rf.read('W0'), 0xffff)
+
+    @skip_sym('immediate')
+    @itest("movz w0, #65535, lsl #16")
+    def test_movz_sft16_32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffff0000)
+        self.assertEqual(self.rf.read('W0'), 0xffff0000)
+
+    # 64-bit.
+
+    @skip_sym('immediate')
+    @itest("movz x0, #0")
+    def test_movz64(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @skip_sym('immediate')
+    @itest("movz x0, #65535")
+    def test_movz_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffff)
+        self.assertEqual(self.rf.read('W0'), 0xffff)
+
+    @skip_sym('immediate')
+    @itest("movz x0, #65535, lsl #16")
+    def test_movz_sft16_64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffff0000)
+        self.assertEqual(self.rf.read('W0'), 0xffff0000)
+
+    @skip_sym('immediate')
+    @itest("movz x0, #65535, lsl #32")
+    def test_movz_sft32_64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffff00000000)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @skip_sym('immediate')
+    @itest("movz x0, #65535, lsl #48")
+    def test_movz_sft48_64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffff000000000000)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    # MSR (register) and MRS.
+
+    # XXX: Uses 'reset'.
+
+    # TPIDR_EL0.
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest_custom(
+        ['msr tpidr_el0, x1', 'mrs x0, tpidr_el0'],
+        multiple_insts=True
+    )
+    def test_msr_mrs_tpidr_el0(self):
+        self._execute()
+        self._execute(reset=False)
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest_custom(
+        ['msr s3_3_c13_c0_2, x1', 'mrs x0, s3_3_c13_c0_2'],
+        multiple_insts=True
+    )
+    def test_msr_mrs_tpidr_el0_s(self):
+        self._execute()
+        self._execute(reset=False)
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    # MSUB.
+
+    # 32-bit.
+
+    @itest_setregs('W1=0xffffffff', 'W2=0xffffffff', 'W3=0xffffffff')
+    @itest('msub w0, w1, w2, w3')
+    def test_msub_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffe)
+        self.assertEqual(self.rf.read('W0'), 0xfffffffe)
+
+    @itest_setregs('W1=-1', 'W2=-1', 'W3=-1')
+    @itest('msub w0, w1, w2, w3')
+    def test_msub_neg32(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffe)
+        self.assertEqual(self.rf.read('W0'), 0xfffffffe)
+
+    @itest_setregs('W1=0xffffffff', 'W2=2', 'W3=1')
+    @itest('msub w0, w1, w2, w3')
+    def test_msub_of32(self):
+        self.assertEqual(self.rf.read('X0'), 3)
+        self.assertEqual(self.rf.read('W0'), 3)
+
+    @itest_setregs('W1=3', 'W2=4', 'W3=5')
+    @itest('msub w0, w1, w2, w3')
+    def test_msub32(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffff9)
+        self.assertEqual(self.rf.read('W0'), 0xfffffff9)
+
+    # 64-bit.
+
+    @itest_setregs(
+        'X1=0xffffffffffffffff',
+        'X2=0xffffffffffffffff',
+        'X3=0xffffffffffffffff'
+    )
+    @itest('msub x0, x1, x2, x3')
+    def test_msub_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffffffffffe)
+        self.assertEqual(self.rf.read('W0'), 0xfffffffe)
+
+    @itest_setregs('X1=-1', 'X2=-1', 'X3=-1')
+    @itest('msub x0, x1, x2, x3')
+    def test_msub_neg64(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffffffffffe)
+        self.assertEqual(self.rf.read('W0'), 0xfffffffe)
+
+    @itest_setregs('X1=0xffffffffffffffff', 'X2=2', 'X3=1')
+    @itest('msub x0, x1, x2, x3')
+    def test_msub_of64(self):
+        self.assertEqual(self.rf.read('X0'), 3)
+        self.assertEqual(self.rf.read('W0'), 3)
+
+    @itest_setregs('X1=3', 'X2=4', 'X3=5')
+    @itest('msub x0, x1, x2, x3')
+    def test_msub64(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffffffffff9)
+        self.assertEqual(self.rf.read('W0'), 0xfffffff9)
+
+    # MUL.
+
+    # 32-bit.
+
+    @itest_setregs('W1=0xffffffff', 'W2=0xffffffff')
+    @itest('mul w0, w1, w2')
+    def test_mul_max32(self):
+        self.assertEqual(self.rf.read('X0'), 1)
+        self.assertEqual(self.rf.read('W0'), 1)
+
+    @itest_setregs('W1=-1', 'W2=-1')
+    @itest('mul w0, w1, w2')
+    def test_mul_neg32(self):
+        self.assertEqual(self.rf.read('X0'), 1)
+        self.assertEqual(self.rf.read('W0'), 1)
+
+    @itest_setregs('W1=0x80000000', 'W2=2')
+    @itest('mul w0, w1, w2')
+    def test_mul_of32(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs('W1=2', 'W2=3')
+    @itest('mul w0, w1, w2')
+    def test_mul32(self):
+        self.assertEqual(self.rf.read('X0'), 6)
+        self.assertEqual(self.rf.read('W0'), 6)
+
+    @itest_setregs('W1=2', 'W2=-3')
+    @itest('mul w0, w1, w2')
+    def test_mul_pos_neg32(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffa)
+        self.assertEqual(self.rf.read('W0'), 0xfffffffa)
+
+    # 64-bit.
+
+    @itest_setregs('X1=0xffffffffffffffff', 'X2=0xffffffffffffffff')
+    @itest('mul x0, x1, x2')
+    def test_mul_max64(self):
+        self.assertEqual(self.rf.read('X0'), 1)
+        self.assertEqual(self.rf.read('W0'), 1)
+
+    @itest_setregs('X1=-1', 'X2=-1')
+    @itest('mul x0, x1, x2')
+    def test_mul_neg64(self):
+        self.assertEqual(self.rf.read('X0'), 1)
+        self.assertEqual(self.rf.read('W0'), 1)
+
+    @itest_setregs('X1=0x8000000000000000', 'X2=2')
+    @itest('mul x0, x1, x2')
+    def test_mul_of64(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs('X1=2', 'X2=3')
+    @itest('mul x0, x1, x2')
+    def test_mul64(self):
+        self.assertEqual(self.rf.read('X0'), 6)
+        self.assertEqual(self.rf.read('W0'), 6)
+
+    @itest_setregs('X1=2', 'X2=-3')
+    @itest('mul x0, x1, x2')
+    def test_mul_pos_neg64(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffffffffffa)
+        self.assertEqual(self.rf.read('W0'), 0xfffffffa)
+
+    # NEG (shifted register).
+
+    # 32-bit.
+
+    @itest_setregs('W1=0x41424344')
+    @itest('neg w0, w1')
+    def test_neg_sft_reg32(self):
+        self.assertEqual(self.rf.read('X0'), 0xbebdbcbc)
+        self.assertEqual(self.rf.read('W0'), 0xbebdbcbc)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344')
+    @itest('neg w0, w1, lsl #0')
+    def test_neg_sft_reg_lsl_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0xbebdbcbc)
+        self.assertEqual(self.rf.read('W0'), 0xbebdbcbc)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=1')
+    @itest('neg w0, w1, lsl #31')
+    def test_neg_sft_reg_lsl_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0x80000000)
+        self.assertEqual(self.rf.read('W0'), 0x80000000)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344')
+    @itest('neg w0, w1, lsl #1')
+    def test_neg_sft_reg_lsl32(self):
+        self.assertEqual(self.rf.read('X0'), 0x7d7b7978)
+        self.assertEqual(self.rf.read('W0'), 0x7d7b7978)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344')
+    @itest('neg w0, w1, lsr #0')
+    def test_neg_sft_reg_lsr_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0xbebdbcbc)
+        self.assertEqual(self.rf.read('W0'), 0xbebdbcbc)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x80000000')
+    @itest('neg w0, w1, lsr #31')
+    def test_neg_sft_reg_lsr_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x80000000')
+    @itest('neg w0, w1, lsr #1')
+    def test_neg_sft_reg_lsr32(self):
+        self.assertEqual(self.rf.read('X0'), 0xc0000000)
+        self.assertEqual(self.rf.read('W0'), 0xc0000000)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344')
+    @itest('neg w0, w1, asr #0')
+    def test_neg_sft_reg_asr_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0xbebdbcbc)
+        self.assertEqual(self.rf.read('W0'), 0xbebdbcbc)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x80000000')
+    @itest('neg w0, w1, asr #31')
+    def test_neg_sft_reg_asr_max32(self):
+        self.assertEqual(self.rf.read('X0'), 1)
+        self.assertEqual(self.rf.read('W0'), 1)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x80000000')
+    @itest('neg w0, w1, asr #1')
+    def test_neg_sft_reg_asr32(self):
+        self.assertEqual(self.rf.read('X0'), 0x40000000)
+        self.assertEqual(self.rf.read('W0'), 0x40000000)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    # 64-bit.
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest('neg x0, x1')
+    def test_neg_sft_reg64(self):
+        self.assertEqual(self.rf.read('X0'), 0xbebdbcbbbab9b8b8)
+        self.assertEqual(self.rf.read('W0'), 0xbab9b8b8)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest('neg x0, x1, lsl #0')
+    def test_neg_sft_reg_lsl_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0xbebdbcbbbab9b8b8)
+        self.assertEqual(self.rf.read('W0'), 0xbab9b8b8)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=1')
+    @itest('neg x0, x1, lsl #63')
+    def test_neg_sft_reg_lsl_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0x8000000000000000)
+        self.assertEqual(self.rf.read('W0'), 0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest('neg x0, x1, lsl #1')
+    def test_neg_sft_reg_lsl64(self):
+        self.assertEqual(self.rf.read('X0'), 0x7d7b797775737170)
+        self.assertEqual(self.rf.read('W0'), 0x75737170)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest('neg x0, x1, lsr #0')
+    def test_neg_sft_reg_lsr_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0xbebdbcbbbab9b8b8)
+        self.assertEqual(self.rf.read('W0'), 0xbab9b8b8)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x8000000000000000')
+    @itest('neg x0, x1, lsr #63')
+    def test_neg_sft_reg_lsr_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffffffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x8000000000000000')
+    @itest('neg x0, x1, lsr #1')
+    def test_neg_sft_reg_lsr64(self):
+        self.assertEqual(self.rf.read('X0'), 0xc000000000000000)
+        self.assertEqual(self.rf.read('W0'), 0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest('neg x0, x1, asr #0')
+    def test_neg_sft_reg_asr_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0xbebdbcbbbab9b8b8)
+        self.assertEqual(self.rf.read('W0'), 0xbab9b8b8)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x8000000000000000')
+    @itest('neg x0, x1, asr #63')
+    def test_neg_sft_reg_asr_max64(self):
+        self.assertEqual(self.rf.read('X0'), 1)
+        self.assertEqual(self.rf.read('W0'), 1)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x8000000000000000')
+    @itest('neg x0, x1, asr #1')
+    def test_neg_sft_reg_asr64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4000000000000000)
+        self.assertEqual(self.rf.read('W0'), 0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    # NOP.
+
+    @itest_custom('nop')
+    def test_nop(self):
+        self._setreg('PC', self.cpu.PC)
+        pc = self.cpu.PC
+        self._execute(check_pc=False)  # check explicitly
+        self.assertEqual(self.rf.read('PC'), pc + 4)
+
+    # ORR (immediate).
+
+    # 32-bit.
+
+    @itest_setregs('W1=0x41420000')
+    @itest('orr w0, w1, #0xffff')
+    def test_orr_imm32(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142ffff)
+        self.assertEqual(self.rf.read('W0'), 0x4142ffff)
+
+    @itest_setregs('W1=0x00004344')
+    @itest('orr w0, w1, #0xffff0000')
+    def test_orr_imm2_32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffff4344)
+        self.assertEqual(self.rf.read('W0'), 0xffff4344)
+
+    @itest_setregs('W1=0x41424344')
+    @itest('orr w0, w1, #1')
+    def test_orr_imm3_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424345)
+        self.assertEqual(self.rf.read('W0'), 0x41424345)
+
+    # 64-bit.
+
+    @itest_setregs('X1=0x0000414200004344')
+    @itest('orr x0, x1, #0xffff0000ffff0000')
+    def test_orr_imm64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffff4142ffff4344)
+        self.assertEqual(self.rf.read('W0'), 0xffff4344)
+
+    @itest_setregs('X1=0x4142000043440000')
+    @itest('orr x0, x1, #0x0000ffff0000ffff')
+    def test_orr_imm2_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142ffff4344ffff)
+        self.assertEqual(self.rf.read('W0'), 0x4344ffff)
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest('orr x0, x1, #1')
+    def test_orr_imm3_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464749)
+        self.assertEqual(self.rf.read('W0'), 0x45464749)
+
+    # ORR (shifted register).
+
+    # 32-bit.
+
+    @itest_setregs('W1=0x41420000', 'W2=0x4344')
+    @itest('orr w0, w1, w2')
+    def test_orr_sft_reg32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344)
+        self.assertEqual(self.rf.read('W0'), 0x41424344)
+
+    @itest_setregs('W1=0x41420000', 'W2=0x4344')
+    @itest('orr w0, w1, w2, lsl #0')
+    def test_orr_sft_reg_lsl_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344)
+        self.assertEqual(self.rf.read('W0'), 0x41424344)
+
+    @itest_setregs('W1=0x4142', 'W2=1')
+    @itest('orr w0, w1, w2, lsl #31')
+    def test_orr_sft_reg_lsl_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0x80004142)
+        self.assertEqual(self.rf.read('W0'), 0x80004142)
+
+    @itest_setregs('W1=0x41420000', 'W2=0x4344')
+    @itest('orr w0, w1, w2, lsl #1')
+    def test_orr_sft_reg_lsl32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41428688)
+        self.assertEqual(self.rf.read('W0'), 0x41428688)
+
+    @itest_setregs('W1=0x41420000', 'W2=0x4344')
+    @itest('orr w0, w1, w2, lsr #0')
+    def test_orr_sft_reg_lsr_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344)
+        self.assertEqual(self.rf.read('W0'), 0x41424344)
+
+    @itest_setregs('W1=0x41420000', 'W2=0x80000000')
+    @itest('orr w0, w1, w2, lsr #31')
+    def test_orr_sft_reg_lsr_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41420001)
+        self.assertEqual(self.rf.read('W0'), 0x41420001)
+
+    @itest_setregs('W1=0x4142', 'W2=0x80000000')
+    @itest('orr w0, w1, w2, lsr #1')
+    def test_orr_sft_reg_lsr32(self):
+        self.assertEqual(self.rf.read('X0'), 0x40004142)
+        self.assertEqual(self.rf.read('W0'), 0x40004142)
+
+    @itest_setregs('W1=0x41420000', 'W2=0x4344')
+    @itest('orr w0, w1, w2, asr #0')
+    def test_orr_sft_reg_asr_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344)
+        self.assertEqual(self.rf.read('W0'), 0x41424344)
+
+    @itest_setregs('W1=0x41420000', 'W2=0x80000000')
+    @itest('orr w0, w1, w2, asr #31')
+    def test_orr_sft_reg_asr_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    @itest_setregs('W1=0x4142', 'W2=0x80000000')
+    @itest('orr w0, w1, w2, asr #1')
+    def test_orr_sft_reg_asr32(self):
+        self.assertEqual(self.rf.read('X0'), 0xc0004142)
+        self.assertEqual(self.rf.read('W0'), 0xc0004142)
+
+    @itest_setregs('W1=0x41420000', 'W2=0x4344')
+    @itest('orr w0, w1, w2, ror #0')
+    def test_orr_sft_reg_ror_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344)
+        self.assertEqual(self.rf.read('W0'), 0x41424344)
+
+    @itest_setregs('W1=0x4140', 'W2=0x80000001')
+    @itest('orr w0, w1, w2, ror #31')
+    def test_orr_sft_reg_ror_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0x00004143)
+        self.assertEqual(self.rf.read('W0'), 0x00004143)
+
+    @itest_setregs('W1=0x4142', 'W2=1')
+    @itest('orr w0, w1, w2, ror #1')
+    def test_orr_sft_reg_ror32(self):
+        self.assertEqual(self.rf.read('X0'), 0x80004142)
+        self.assertEqual(self.rf.read('W0'), 0x80004142)
+
+    # 64-bit.
+
+    @itest_setregs('X1=0x4142434400000000', 'X2=0x45464748')
+    @itest('orr x0, x1, x2')
+    def test_orr_sft_reg64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @itest_setregs('X1=0x4142434400000000', 'X2=0x45464748')
+    @itest('orr x0, x1, x2, lsl #0')
+    def test_orr_sft_reg_lsl_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @itest_setregs('X1=0x41424344', 'X2=1')
+    @itest('orr x0, x1, x2, lsl #63')
+    def test_orr_sft_reg_lsl_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0x8000000041424344)
+        self.assertEqual(self.rf.read('W0'), 0x41424344)
+
+    @itest_setregs('X1=0x4142434400000000', 'X2=0x45464748')
+    @itest('orr x0, x1, x2, lsl #1')
+    def test_orr_sft_reg_lsl64(self):
+        self.assertEqual(self.rf.read('X0'), 0x414243448a8c8e90)
+        self.assertEqual(self.rf.read('W0'), 0x8a8c8e90)
+
+    @itest_setregs('X1=0x4142434400000000', 'X2=0x45464748')
+    @itest('orr x0, x1, x2, lsr #0')
+    def test_orr_sft_reg_lsr_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @itest_setregs('X1=0x4142434400000000', 'X2=0x8000000000000000')
+    @itest('orr x0, x1, x2, lsr #63')
+    def test_orr_sft_reg_lsr_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434400000001)
+        self.assertEqual(self.rf.read('W0'), 1)
+
+    @itest_setregs('X1=0x41424344', 'X2=0x8000000000000000')
+    @itest('orr x0, x1, x2, lsr #1')
+    def test_orr_sft_reg_lsr64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4000000041424344)
+        self.assertEqual(self.rf.read('W0'), 0x41424344)
+
+    @itest_setregs('X1=0x4142434400000000', 'X2=0x45464748')
+    @itest('orr x0, x1, x2, asr #0')
+    def test_orr_sft_reg_asr_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @itest_setregs('X1=0x4142434400000000', 'X2=0x8000000000000000')
+    @itest('orr x0, x1, x2, asr #63')
+    def test_orr_sft_reg_asr_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffffffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    @itest_setregs('X1=0x41424344', 'X2=0x8000000000000000')
+    @itest('orr x0, x1, x2, asr #1')
+    def test_orr_sft_reg_asr64(self):
+        self.assertEqual(self.rf.read('X0'), 0xc000000041424344)
+        self.assertEqual(self.rf.read('W0'), 0x41424344)
+
+    @itest_setregs('X1=0x4142434400000000', 'X2=0x45464748')
+    @itest('orr x0, x1, x2, ror #0')
+    def test_orr_sft_reg_ror_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @itest_setregs('X1=0x4142434445464740', 'X2=0x8000000000000001')
+    @itest('orr x0, x1, x2, ror #63')
+    def test_orr_sft_reg_ror_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464743)
+        self.assertEqual(self.rf.read('W0'), 0x45464743)
+
+    @itest_setregs('X1=0x41424344', 'X2=1')
+    @itest('orr x0, x1, x2, ror #1')
+    def test_orr_sft_reg_ror64(self):
+        self.assertEqual(self.rf.read('X0'), 0x8000000041424344)
+        self.assertEqual(self.rf.read('W0'), 0x41424344)
+
+    # ORR (vector, register).
+
+    # XXX: Uses 'reset'.
+
+    # 8b.
+
+    @itest_setregs(
+        'V1=0x81008300850087009100930095009700',
+        'V2=0x00820084008600880092009400960098'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'orr v0.8b, v1.8b, v2.8b'],
+        multiple_insts=True
+    )
+    def test_orr_vector_8b(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0x9192939495969798)
+        self.assertEqual(self.rf.read('Q0'), 0x9192939495969798)
+        self.assertEqual(self.rf.read('D0'), 0x9192939495969798)
+        self.assertEqual(self.rf.read('S0'), 0x95969798)
+        self.assertEqual(self.rf.read('H0'), 0x9798)
+        self.assertEqual(self.rf.read('B0'), 0x98)
+
+    # 16b.
+
+    @itest_setregs(
+        'V1=0x81008300850087009100930095009700',
+        'V2=0x00820084008600880092009400960098'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'orr v0.16b, v1.16b, v2.16b'],
+        multiple_insts=True
+    )
+    def test_orr_vector_16b(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0x81828384858687889192939495969798)
+        self.assertEqual(self.rf.read('Q0'), 0x81828384858687889192939495969798)
+        self.assertEqual(self.rf.read('D0'), 0x9192939495969798)
+        self.assertEqual(self.rf.read('S0'), 0x95969798)
+        self.assertEqual(self.rf.read('H0'), 0x9798)
+        self.assertEqual(self.rf.read('B0'), 0x98)
+
+    # RBIT.
+
+    # 32-bit.
+
+    @itest_setregs('W1=0')
+    @itest('rbit w0, w1')
+    def test_rbit_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs('W1=0xffffffff')
+    @itest('rbit w0, w1')
+    def test_rbit_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    @itest_setregs('W1=1')
+    @itest('rbit w0, w1')
+    def test_rbit_one32(self):
+        self.assertEqual(self.rf.read('X0'), 0x80000000)
+        self.assertEqual(self.rf.read('W0'), 0x80000000)
+
+    @itest_setregs('W1=0x41424344')
+    @itest('rbit w0, w1')
+    def test_rbit32(self):
+        self.assertEqual(self.rf.read('X0'), 0x22c24282)
+        self.assertEqual(self.rf.read('W0'), 0x22c24282)
+
+    # 64-bit.
+
+    @itest_setregs('X1=0')
+    @itest('rbit x0, x1')
+    def test_rbit_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs('X1=0xffffffffffffffff')
+    @itest('rbit x0, x1')
+    def test_rbit_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffffffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    @itest_setregs('X1=1')
+    @itest('rbit x0, x1')
+    def test_rbit_one64(self):
+        self.assertEqual(self.rf.read('X0'), 0x8000000000000000)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest('rbit x0, x1')
+    def test_rbit64(self):
+        self.assertEqual(self.rf.read('X0'), 0x12e262a222c24282)
+        self.assertEqual(self.rf.read('W0'), 0x22c24282)
+
+    # RET.
+
+    @itest_custom('ret')
+    def test_ret(self):
+        pc = self.cpu.PC
+        self.cpu.X30 = pc + 16
+        self._setreg('X30', self.cpu.X30)
+        self._execute(check_pc=False)
+        self.assertEqual(self.rf.read('PC'), pc + 16)
+
+    @itest_custom('ret X0')
+    def test_ret_reg(self):
+        pc = self.cpu.PC
+        self.cpu.X0 = pc + 32
+        self._setreg('X0', self.cpu.X0)
+        self._execute(check_pc=False)
+        self.assertEqual(self.rf.read('PC'), pc + 32)
+
+    # REV.
+
+    # 32-bit.
+
+    @itest_setregs('W1=0')
+    @itest('rev w0, w1')
+    def test_rev_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs('W1=0xffffffff')
+    @itest('rev w0, w1')
+    def test_rev_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    @itest_setregs('W1=0x41424344')
+    @itest('rev w0, w1')
+    def test_rev32(self):
+        self.assertEqual(self.rf.read('X0'), 0x44434241)
+        self.assertEqual(self.rf.read('W0'), 0x44434241)
+
+    # 64-bit.
+
+    @itest_setregs('X1=0')
+    @itest('rev x0, x1')
+    def test_rev_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs('X1=0xffffffffffffffff')
+    @itest('rev x0, x1')
+    def test_rev_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffffffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest('rev x0, x1')
+    def test_rev64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4847464544434241)
+        self.assertEqual(self.rf.read('W0'), 0x44434241)
+
+    # SBFIZ.
+
+    # 32-bit.
+
+    @itest_setregs('W1=0x44434241')
+    @itest('sbfiz w0, w1, #0, #1')
+    def test_sbfiz_min_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    @itest_setregs('W1=0x41424344')
+    @itest('sbfiz w0, w1, #0, #32')
+    def test_sbfiz_min_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344)
+        self.assertEqual(self.rf.read('W0'), 0x41424344)
+
+    @itest_setregs('W1=0x44434241')
+    @itest('sbfiz w0, w1, #31, #1')
+    def test_sbfiz_max_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0x80000000)
+        self.assertEqual(self.rf.read('W0'), 0x80000000)
+
+    @itest_setregs('W1=0x41427fff')
+    @itest('sbfiz w0, w1, #17, #15')
+    def test_sbfiz32(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffe0000)
+        self.assertEqual(self.rf.read('W0'), 0xfffe0000)
+
+    # 64-bit.
+
+    @itest_setregs('X1=0x4847464544434241')
+    @itest('sbfiz x0, x1, #0, #1')
+    def test_sbfiz_min_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffffffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest('sbfiz x0, x1, #0, #64')
+    def test_sbfiz_min_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @itest_setregs('X1=0x4847464544434241')
+    @itest('sbfiz x0, x1, #63, #1')
+    def test_sbfiz_max_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0x8000000000000000)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs('X1=0x414243447fffffff')
+    @itest('sbfiz x0, x1, #33, #31')
+    def test_sbfiz64(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffe00000000)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    # SBFM.
+
+    # 32-bit.
+
+    # This is actually sbfx.
+    @itest_setregs('W0=0xffffffff', 'W1=0x41424328')
+    @itest('sbfm w0, w1, #3, #5')
+    def test_sbfm_ge32(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffd)
+        self.assertEqual(self.rf.read('W0'), 0xfffffffd)
+
+    # This is actually sbfiz.
+    @itest_setregs('W0=0xffffffff', 'W1=0x41424349')
+    @itest('sbfm w0, w1, #5, #3')
+    def test_sbfm_lt32(self):
+        self.assertEqual(self.rf.read('X0'), 0xc8000000)
+        self.assertEqual(self.rf.read('W0'), 0xc8000000)
+
+    # This is actually asr.
+    @itest_setregs('W0=0xffffffff', 'W1=0x41424344')
+    @itest('sbfm w0, w1, #0, #31')
+    def test_sbfm_ge_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344)
+        self.assertEqual(self.rf.read('W0'), 0x41424344)
+
+    # This is actually sbfiz.
+    @itest_setregs('W0=0xffffffff', 'W1=0x44434241')
+    @itest('sbfm w0, w1, #31, #0')
+    def test_sbfm_lt_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffe)
+        self.assertEqual(self.rf.read('W0'), 0xfffffffe)
+
+    # This is actually sbfx.
+    @itest_setregs('W0=0xffffffff', 'W1=0x44434241')
+    @itest('sbfm w0, w1, #0, #0')
+    def test_sbfm_ge_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    # This is actually sbfiz.
+    @itest_setregs('W0=0xffffffff', 'W1=0x44434241')
+    @itest('sbfm w0, w1, #1, #0')
+    def test_sbfm_lt_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0x80000000)
+        self.assertEqual(self.rf.read('W0'), 0x80000000)
+
+    # This is actually sxtb.
+    @itest_setregs('W0=0xffffffff', 'W1=0x41424344')
+    @itest('sbfm w0, w1, #0, #7')
+    def test_sbfm_sxtb_zero32(self):
+        self.assertEqual(self.rf.read('X0'), 0x44)
+        self.assertEqual(self.rf.read('W0'), 0x44)
+
+    @itest_setregs('W0=0xffffffff', 'W1=0x41424384')
+    @itest('sbfm w0, w1, #0, #7')
+    def test_sbfm_sxtb_one32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffff84)
+        self.assertEqual(self.rf.read('W0'), 0xffffff84)
+
+    # This is actually sxth.
+    @itest_setregs('W0=0xffffffff', 'W1=0x41424344')
+    @itest('sbfm w0, w1, #0, #15')
+    def test_sbfm_sxth_zero32(self):
+        self.assertEqual(self.rf.read('X0'), 0x4344)
+        self.assertEqual(self.rf.read('W0'), 0x4344)
+
+    @itest_setregs('W0=0xffffffff', 'W1=0x41428344')
+    @itest('sbfm w0, w1, #0, #15')
+    def test_sbfm_sxth_one32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffff8344)
+        self.assertEqual(self.rf.read('W0'), 0xffff8344)
+
+    # 64-bit.
+
+    # This is actually sbfx.
+    @itest_setregs('X0=0xffffffffffffffff', 'X1=0x4142434445464728')
+    @itest('sbfm x0, x1, #3, #5')
+    def test_sbfm_ge64(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffffffffffd)
+        self.assertEqual(self.rf.read('W0'), 0xfffffffd)
+
+    # This is actually sbfiz.
+    @itest_setregs('X0=0xffffffffffffffff', 'X1=0x4142434445464749')
+    @itest('sbfm x0, x1, #5, #3')
+    def test_sbfm_lt64(self):
+        self.assertEqual(self.rf.read('X0'), 0xc800000000000000)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    # This is actually asr.
+    @itest_setregs('X0=0xffffffffffffffff', 'X1=0x4142434445464748')
+    @itest('sbfm x0, x1, #0, #63')
+    def test_sbfm_ge_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    # This is actually sbfiz.
+    @itest_setregs('X0=0xffffffffffffffff', 'X1=0x4847464544434241')
+    @itest('sbfm x0, x1, #63, #0')
+    def test_sbfm_lt_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffffffffffe)
+        self.assertEqual(self.rf.read('W0'), 0xfffffffe)
+
+    # This is actually sbfx.
+    @itest_setregs('X0=0xffffffffffffffff', 'X1=0x4847464544434241')
+    @itest('sbfm x0, x1, #0, #0')
+    def test_sbfm_ge_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffffffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    # This is actually sbfiz.
+    @itest_setregs('X0=0xffffffffffffffff', 'X1=0x4847464544434241')
+    @itest('sbfm x0, x1, #1, #0')
+    def test_sbfm_lt_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0x8000000000000000)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    # This is actually sxtb.
+    @itest_setregs('X0=0xffffffffffffffff', 'X1=0x4142434445464748')
+    @itest('sbfm x0, x1, #0, #7')
+    def test_sbfm_sxtb_zero64(self):
+        self.assertEqual(self.rf.read('X0'), 0x48)
+        self.assertEqual(self.rf.read('W0'), 0x48)
+
+    @itest_setregs('X0=0xffffffffffffffff', 'X1=0x4142434445464788')
+    @itest('sbfm x0, x1, #0, #7')
+    def test_sbfm_sxtb_one64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffffffffff88)
+        self.assertEqual(self.rf.read('W0'), 0xffffff88)
+
+    # This is actually sxth.
+    @itest_setregs('X0=0xffffffffffffffff', 'X1=0x4142434445464748')
+    @itest('sbfm x0, x1, #0, #15')
+    def test_sbfm_sxth_zero64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4748)
+        self.assertEqual(self.rf.read('W0'), 0x4748)
+
+    @itest_setregs('X0=0xffffffffffffffff', 'X1=0x4142434445468748')
+    @itest('sbfm x0, x1, #0, #15')
+    def test_sbfm_sxth_one64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffffffff8748)
+        self.assertEqual(self.rf.read('W0'), 0xffff8748)
+
+    # This is actually sxtw.
+    @itest_setregs('X0=0xffffffffffffffff', 'X1=0x4142434445464748')
+    @itest('sbfm x0, x1, #0, #31')
+    def test_sbfm_sxtw_zero(self):
+        self.assertEqual(self.rf.read('X0'), 0x45464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @itest_setregs('X0=0xffffffffffffffff', 'X1=0x4142434485464748')
+    @itest('sbfm x0, x1, #0, #31')
+    def test_sbfm_sxtw_one(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffff85464748)
+        self.assertEqual(self.rf.read('W0'), 0x85464748)
+
+    # SBFX.
+
+    # 32-bit.
+
+    @itest_setregs('W1=0x44434241')
+    @itest('sbfx w0, w1, #0, #1')
+    def test_sbfx_min_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    @itest_setregs('W1=0x41424344')
+    @itest('sbfx w0, w1, #0, #32')
+    def test_sbfx_min_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344)
+        self.assertEqual(self.rf.read('W0'), 0x41424344)
+
+    @itest_setregs('W1=0x81424344')
+    @itest('sbfx w0, w1, #31, #1')
+    def test_sbfx_max_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    @itest_setregs('W1=0xffff4344')
+    @itest('sbfx w0, w1, #16, #16')
+    def test_sbfx32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    # 64-bit.
+
+    @itest_setregs('X1=0x4847464544434241')
+    @itest('sbfx x0, x1, #0, #1')
+    def test_sbfx_min_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffffffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest('sbfx x0, x1, #0, #64')
+    def test_sbfx_min_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @itest_setregs('X1=0x8142434445464748')
+    @itest('sbfx x0, x1, #63, #1')
+    def test_sbfx_max_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffffffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    @itest_setregs('X1=0xffffffff45464748')
+    @itest('sbfx x0, x1, #32, #32')
+    def test_sbfx64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffffffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    # STP.
+
+    # stp w1, w2, [x27]       base register:     [x27]     = w1, [x27 + 4]     = w2
+    # stp w3, w4, [x28, #8]   base plus offset:  [x28 + 8] = w3, [x28 + 8 + 4] = w4
+    # stp w5, w6, [x29], #8   post-indexed:      [x29]     = w5, [x29 + 4]     = w6, x29 += 8
+    # stp w7, w8, [x30, #8]!  pre-indexed:       [x30 + 8] = w7, [x30 + 8 + 4] = w8, x30 += 8
+
+    # 32-bit.
+
+    @itest_setregs('W1=0x45464748', 'W2=0x41424344')
+    @itest_custom('stp w1, w2, [sp]')
+    def test_stp_base32(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('W1=0x45464748', 'W2=0x41424344')
+    @itest_custom('stp w1, w2, [sp, #8]')
+    def test_stp_base_offset32(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.push_int(0x6162636465666768)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('W1=0x45464748', 'W2=0x41424344')
+    @itest_custom('stp w1, w2, [sp, #252]')
+    def test_stp_base_offset_max32(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.STACK -= 252
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack + 252), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('W1=0x45464748', 'W2=0x41424344')
+    @itest_custom('stp w1, w2, [sp, #-256]')
+    def test_stp_base_offset_min32(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.STACK += 256
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack - 256), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('W1=0x45464748', 'W2=0x41424344')
+    @itest_custom('stp w1, w2, [sp], #8')
+    def test_stp_post_indexed32(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack + 8)  # writeback
+
+    @itest_setregs('W1=0x45464748', 'W2=0x41424344')
+    @itest_custom('stp w1, w2, [sp], #252')
+    def test_stp_post_indexed_max32(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack + 252)  # writeback
+
+    @itest_setregs('W1=0x45464748', 'W2=0x41424344')
+    @itest_custom('stp w1, w2, [sp], #-256')
+    def test_stp_post_indexed_min32(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack - 256)  # writeback
+
+    @itest_setregs('W1=0x45464748', 'W2=0x41424344')
+    @itest_custom('stp w1, w2, [sp, #8]!')
+    def test_stp_pre_indexed32(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.push_int(0x6162636465666768)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack + 8)  # writeback
+
+    @itest_setregs('W1=0x45464748', 'W2=0x41424344')
+    @itest_custom('stp w1, w2, [sp, #252]!')
+    def test_stp_pre_indexed_max32(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.STACK -= 252
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack + 252), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack + 252)  # writeback
+
+    @itest_setregs('W1=0x45464748', 'W2=0x41424344')
+    @itest_custom('stp w1, w2, [sp, #-256]!')
+    def test_stp_pre_indexed_min32(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.STACK += 256
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack - 256), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack - 256)  # writeback
+
+    # 64-bit.
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x5152535455565758')
+    @itest_custom('stp x1, x2, [sp]')
+    def test_stp_base64(self):
+        self.cpu.push_int(0x6162636465666768)
+        self.cpu.push_int(0x7172737475767778)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x5152535455565758)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x5152535455565758')
+    @itest_custom('stp x1, x2, [sp, #8]')
+    def test_stp_base_offset64(self):
+        self.cpu.push_int(0x6162636465666768)
+        self.cpu.push_int(0x7172737475767778)
+        self.cpu.push_int(0x8182838485868788)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 8 + 8), 0x5152535455565758)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x5152535455565758')
+    @itest_custom('stp x1, x2, [sp, #504]')
+    def test_stp_base_offset_max64(self):
+        self.cpu.push_int(0x6162636465666768)
+        self.cpu.push_int(0x7172737475767778)
+        self.cpu.STACK -= 504
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack + 504), 0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 504 + 8), 0x5152535455565758)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x5152535455565758')
+    @itest_custom('stp x1, x2, [sp, #-512]')
+    def test_stp_base_offset_min64(self):
+        self.cpu.push_int(0x6162636465666768)
+        self.cpu.push_int(0x7172737475767778)
+        self.cpu.STACK += 512
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack - 512), 0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack - 512 + 8), 0x5152535455565758)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x5152535455565758')
+    @itest_custom('stp x1, x2, [sp], #8')
+    def test_stp_post_indexed64(self):
+        self.cpu.push_int(0x6162636465666768)
+        self.cpu.push_int(0x7172737475767778)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x5152535455565758)
+        self.assertEqual(self.rf.read('SP'), stack + 8)  # writeback
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x5152535455565758')
+    @itest_custom('stp x1, x2, [sp], #504')
+    def test_stp_post_indexed_max64(self):
+        self.cpu.push_int(0x6162636465666768)
+        self.cpu.push_int(0x7172737475767778)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x5152535455565758)
+        self.assertEqual(self.rf.read('SP'), stack + 504)  # writeback
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x5152535455565758')
+    @itest_custom('stp x1, x2, [sp], #-512')
+    def test_stp_post_indexed_min64(self):
+        self.cpu.push_int(0x6162636465666768)
+        self.cpu.push_int(0x7172737475767778)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x5152535455565758)
+        self.assertEqual(self.rf.read('SP'), stack - 512)  # writeback
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x5152535455565758')
+    @itest_custom('stp x1, x2, [sp, #8]!')
+    def test_stp_pre_indexed64(self):
+        self.cpu.push_int(0x6162636465666768)
+        self.cpu.push_int(0x7172737475767778)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 8 + 8), 0x5152535455565758)
+        self.assertEqual(self.rf.read('SP'), stack + 8)  # writeback
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x5152535455565758')
+    @itest_custom('stp x1, x2, [sp, #504]!')
+    def test_stp_pre_indexed_max64(self):
+        self.cpu.push_int(0x6162636465666768)
+        self.cpu.push_int(0x7172737475767778)
+        self.cpu.STACK -= 504
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack + 504), 0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 504 + 8), 0x5152535455565758)
+        self.assertEqual(self.rf.read('SP'), stack + 504)  # writeback
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x5152535455565758')
+    @itest_custom('stp x1, x2, [sp, #-512]!')
+    def test_stp_pre_indexed_min64(self):
+        self.cpu.push_int(0x6162636465666768)
+        self.cpu.push_int(0x7172737475767778)
+        self.cpu.STACK += 512
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack - 512), 0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack - 512 + 8), 0x5152535455565758)
+        self.assertEqual(self.rf.read('SP'), stack - 512)  # writeback
+
+    # STP (SIMD&FP).
+
+    # 32-bit.
+
+    @itest_setregs('S1=0x45464748', 'S2=0x41424344')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp s1, s2, [sp]'],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_base32(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('S1=0x45464748', 'S2=0x41424344')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp s1, s2, [sp, #8]'],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_base_offset32(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('S1=0x45464748', 'S2=0x41424344')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp s1, s2, [sp, #252]'],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_base_offset_max32(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.STACK -= 252
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack + 252), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('S1=0x45464748', 'S2=0x41424344')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp s1, s2, [sp, #-256]'],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_base_offset_min32(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.STACK += 256
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack - 256), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('S1=0x45464748', 'S2=0x41424344')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp s1, s2, [sp], #8'],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_post_indexed32(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack + 8)  # writeback
+
+    @itest_setregs('S1=0x45464748', 'S2=0x41424344')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp s1, s2, [sp], #252'],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_post_indexed_max32(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack + 252)  # writeback
+
+    @itest_setregs('S1=0x45464748', 'S2=0x41424344')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp s1, s2, [sp], #-256'],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_post_indexed_min32(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack - 256)  # writeback
+
+    @itest_setregs('S1=0x45464748', 'S2=0x41424344')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp s1, s2, [sp, #8]!'],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_pre_indexed32(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack + 8)  # writeback
+
+    @itest_setregs('S1=0x45464748', 'S2=0x41424344')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp s1, s2, [sp, #252]!'],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_pre_indexed_max32(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.STACK -= 252
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack + 252), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack + 252)  # writeback
+
+    @itest_setregs('S1=0x45464748', 'S2=0x41424344')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp s1, s2, [sp, #-256]!'],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_pre_indexed_min32(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.STACK += 256
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack - 256), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack - 256)  # writeback
+
+    # 64-bit.
+
+    @itest_setregs('D1=0x4142434445464748', 'D2=0x5152535455565758')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp d1, d2, [sp]'],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_base64(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack), 0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x5152535455565758)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('D1=0x4142434445464748', 'D2=0x5152535455565758')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp d1, d2, [sp, #8]'],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_base_offset64(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 8 + 8), 0x5152535455565758)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('D1=0x4142434445464748', 'D2=0x5152535455565758')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp d1, d2, [sp, #504]'],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_base_offset_max64(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.STACK -= 504
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack + 504), 0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 504 + 8), 0x5152535455565758)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('D1=0x4142434445464748', 'D2=0x5152535455565758')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp d1, d2, [sp, #-512]'],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_base_offset_min64(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.STACK += 512
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack - 512), 0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack - 512 + 8), 0x5152535455565758)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('D1=0x4142434445464748', 'D2=0x5152535455565758')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp d1, d2, [sp], #8'],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_post_indexed64(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack), 0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x5152535455565758)
+        self.assertEqual(self.rf.read('SP'), stack + 8)  # writeback
+
+    @itest_setregs('D1=0x4142434445464748', 'D2=0x5152535455565758')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp d1, d2, [sp], #504'],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_post_indexed_max64(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack), 0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x5152535455565758)
+        self.assertEqual(self.rf.read('SP'), stack + 504)  # writeback
+
+    @itest_setregs('D1=0x4142434445464748', 'D2=0x5152535455565758')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp d1, d2, [sp], #-512'],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_post_indexed_min64(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack), 0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x5152535455565758)
+        self.assertEqual(self.rf.read('SP'), stack - 512)  # writeback
+
+    @itest_setregs('D1=0x4142434445464748', 'D2=0x5152535455565758')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp d1, d2, [sp, #8]!'],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_pre_indexed64(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 8 + 8), 0x5152535455565758)
+        self.assertEqual(self.rf.read('SP'), stack + 8)  # writeback
+
+    @itest_setregs('D1=0x4142434445464748', 'D2=0x5152535455565758')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp d1, d2, [sp, #504]!'],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_pre_indexed_max64(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.STACK -= 504
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack + 504), 0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 504 + 8), 0x5152535455565758)
+        self.assertEqual(self.rf.read('SP'), stack + 504)  # writeback
+
+    @itest_setregs('D1=0x4142434445464748', 'D2=0x5152535455565758')
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp d1, d2, [sp, #-512]!'],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_pre_indexed_min64(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.STACK += 512
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack - 512), 0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack - 512 + 8), 0x5152535455565758)
+        self.assertEqual(self.rf.read('SP'), stack - 512)  # writeback
+
+    # 128-bit.
+
+    @itest_setregs(
+        'Q1=0x41424344454647485152535455565758',
+        'Q2=0x61626364656667687172737475767778'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp q1, q2, [sp]'],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_base128(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack), 0x5152535455565758)
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 16), 0x7172737475767778)
+        self.assertEqual(self.cpu.read_int(stack + 24), 0x6162636465666768)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs(
+        'Q1=0x41424344454647485152535455565758',
+        'Q2=0x61626364656667687172737475767778'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp q1, q2, [sp, #16]'],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_base_offset128(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack + 16), 0x5152535455565758)
+        self.assertEqual(self.cpu.read_int(stack + 16 + 8), 0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 16 + 16), 0x7172737475767778)
+        self.assertEqual(self.cpu.read_int(stack + 16 + 24), 0x6162636465666768)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs(
+        'Q1=0x41424344454647485152535455565758',
+        'Q2=0x61626364656667687172737475767778'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp q1, q2, [sp, #1008]'],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_base_offset_max128(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.STACK -= 1008
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack + 1008), 0x5152535455565758)
+        self.assertEqual(self.cpu.read_int(stack + 1008 + 8), 0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 1008 + 16), 0x7172737475767778)
+        self.assertEqual(self.cpu.read_int(stack + 1008 + 24), 0x6162636465666768)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs(
+        'Q1=0x41424344454647485152535455565758',
+        'Q2=0x61626364656667687172737475767778'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp q1, q2, [sp, #-1024]'],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_base_offset_min128(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.STACK += 1024
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack - 1024), 0x5152535455565758)
+        self.assertEqual(self.cpu.read_int(stack - 1024 + 8), 0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack - 1024 + 16), 0x7172737475767778)
+        self.assertEqual(self.cpu.read_int(stack - 1024 + 24), 0x6162636465666768)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs(
+        'Q1=0x41424344454647485152535455565758',
+        'Q2=0x61626364656667687172737475767778'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp q1, q2, [sp], #16'],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_post_indexed128(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack), 0x5152535455565758)
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 16), 0x7172737475767778)
+        self.assertEqual(self.cpu.read_int(stack + 24), 0x6162636465666768)
+        self.assertEqual(self.rf.read('SP'), stack + 16)  # writeback
+
+    @itest_setregs(
+        'Q1=0x41424344454647485152535455565758',
+        'Q2=0x61626364656667687172737475767778'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp q1, q2, [sp], #1008'],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_post_indexed_max128(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack), 0x5152535455565758)
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 16), 0x7172737475767778)
+        self.assertEqual(self.cpu.read_int(stack + 24), 0x6162636465666768)
+        self.assertEqual(self.rf.read('SP'), stack + 1008)  # writeback
+
+    @itest_setregs(
+        'Q1=0x41424344454647485152535455565758',
+        'Q2=0x61626364656667687172737475767778'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp q1, q2, [sp], #-1024'],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_post_indexed_min128(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack), 0x5152535455565758)
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 16), 0x7172737475767778)
+        self.assertEqual(self.cpu.read_int(stack + 24), 0x6162636465666768)
+        self.assertEqual(self.rf.read('SP'), stack - 1024)  # writeback
+
+    @itest_setregs(
+        'Q1=0x41424344454647485152535455565758',
+        'Q2=0x61626364656667687172737475767778'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp q1, q2, [sp, #16]!'],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_pre_indexed128(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack + 16), 0x5152535455565758)
+        self.assertEqual(self.cpu.read_int(stack + 16 + 8), 0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 16 + 16), 0x7172737475767778)
+        self.assertEqual(self.cpu.read_int(stack + 16 + 24), 0x6162636465666768)
+        self.assertEqual(self.rf.read('SP'), stack + 16)  # writeback
+
+    @itest_setregs(
+        'Q1=0x41424344454647485152535455565758',
+        'Q2=0x61626364656667687172737475767778'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp q1, q2, [sp, #1008]!'],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_pre_indexed_max128(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.STACK -= 1008
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack + 1008), 0x5152535455565758)
+        self.assertEqual(self.cpu.read_int(stack + 1008 + 8), 0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack + 1008 + 16), 0x7172737475767778)
+        self.assertEqual(self.cpu.read_int(stack + 1008 + 24), 0x6162636465666768)
+        self.assertEqual(self.rf.read('SP'), stack + 1008)  # writeback
+
+    @itest_setregs(
+        'Q1=0x41424344454647485152535455565758',
+        'Q2=0x61626364656667687172737475767778'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'stp q1, q2, [sp, #-1024]!'],
+        multiple_insts=True
+    )
+    def test_stp_simd_fp_pre_indexed_min128(self):
+        for i in range(3):
+            self._execute(reset=i == 0)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.push_int(0xffffffffffffffff)
+        self.cpu.STACK += 1024
+        stack = self.cpu.STACK
+        self._execute(reset=False)
+        self.assertEqual(self.cpu.read_int(stack - 1024), 0x5152535455565758)
+        self.assertEqual(self.cpu.read_int(stack - 1024 + 8), 0x4142434445464748)
+        self.assertEqual(self.cpu.read_int(stack - 1024 + 16), 0x7172737475767778)
+        self.assertEqual(self.cpu.read_int(stack - 1024 + 24), 0x6162636465666768)
+        self.assertEqual(self.rf.read('SP'), stack - 1024)  # writeback
+
+    # STR (immediate).
+
+    # str w1, [x27]          base register (opt. offset omitted):  [x27]     = w1
+    # str w2, [x28, #8]      base plus offset:                     [x28 + 8] = w2
+    # str w3, [x29], #8      post-indexed:                         [x29]     = w3, x29 += 8
+    # str w4, [x30, #8]!     pre-indexed:                          [x30 + 8] = w4, x30 += 8
+
+    # 32-bit.
+
+    @itest_setregs('W1=0x41424344')
+    @itest_custom('str w1, [sp]')
+    def test_str_imm_base32(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x5152535441424344)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('W1=0x41424344')
+    @itest_custom('str w1, [sp, #8]')
+    def test_str_imm_base_offset32(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.push_int(0x6162636465666768)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x5152535441424344)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('W1=0x41424344')
+    @itest_custom('str w1, [sp, #16380]')
+    def test_str_imm_base_offset_max32(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.STACK -= 16380
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack + 16380), 0x5152535441424344)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('W1=0x41424344')
+    @itest_custom('str w1, [sp], #8')
+    def test_str_imm_post_indexed32(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x5152535441424344)
+        self.assertEqual(self.rf.read('SP'), stack + 8)  # writeback
+
+    @itest_setregs('W1=0x41424344')
+    @itest_custom('str w1, [sp], #-256')
+    def test_str_imm_post_indexed_neg32(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x5152535441424344)
+        self.assertEqual(self.rf.read('SP'), stack - 256)  # writeback
+
+    @itest_setregs('W1=0x41424344')
+    @itest_custom('str w1, [sp, #8]!')
+    def test_str_imm_pre_indexed32(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.push_int(0x6162636465666768)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x5152535441424344)
+        self.assertEqual(self.rf.read('SP'), stack + 8)  # writeback
+
+    @itest_setregs('W1=0x41424344')
+    @itest_custom('str w1, [sp, #-256]!')
+    def test_str_imm_pre_indexed_neg32(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.STACK += 256
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack - 256), 0x5152535441424344)
+        self.assertEqual(self.rf.read('SP'), stack - 256)  # writeback
+
+    # 64-bit.
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest_custom('str x1, [sp]')
+    def test_str_imm_base64(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest_custom('str x1, [sp, #8]')
+    def test_str_imm_base_offset64(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.push_int(0x6162636465666768)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest_custom('str x1, [sp, #32760]')
+    def test_str_imm_base_offset_max64(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.STACK -= 32760
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack + 32760), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest_custom('str x1, [sp], #8')
+    def test_str_imm_post_indexed64(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack + 8)  # writeback
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest_custom('str x1, [sp], #-256')
+    def test_str_imm_post_indexed_neg64(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack - 256)  # writeback
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest_custom('str x1, [sp, #8]!')
+    def test_str_imm_pre_indexed64(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.push_int(0x6162636465666768)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack + 8)  # writeback
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest_custom('str x1, [sp, #-256]!')
+    def test_str_imm_pre_indexed_neg64(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.STACK += 256
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack - 256), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack - 256)  # writeback
+
+    # STR (register).
+
+    # 32-bit.
+
+    @itest_setregs('W0=0x41424344', 'W1=-8')
+    @itest_custom('str w0, [sp, w1, uxtw]')
+    def test_str_reg_uxtw32(self):
+        self.cpu.push_int(0x5152535455565758)
+        # Account for -8 (0xfffffff8) being treated like a large positive value
+        # after zero extension to 64 bits.
+        stack = self.cpu.STACK
+        self.cpu.STACK -= 0xfffffff8
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x5152535441424344)
+
+    @itest_setregs('W0=0x41424344', 'W1=-8')
+    @itest_custom('str w0, [sp, w1, uxtw #2]')
+    def test_str_reg_uxtw2_32(self):
+        self.cpu.push_int(0x5152535455565758)
+        # Account for -8 (0xfffffff8) being treated like a large positive value
+        # after zero extension to 64 bits.
+        stack = self.cpu.STACK
+        self.cpu.STACK -= LSL(0xfffffff8, 2, 64)
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x5152535441424344)
+
+    @itest_setregs('W0=0x41424344', 'X1=8')
+    @itest_custom('str w0, [sp, x1]')
+    def test_str_reg32(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.push_int(0x6162636465666768)
+        self._execute()
+        self.assertEqual(self.cpu.read_int(self.cpu.STACK + 8), 0x5152535441424344)
+
+    @itest_setregs('W0=0x41424344', 'X1=2')
+    @itest_custom('str w0, [sp, x1, lsl #2]')
+    def test_str_reg_lsl32(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.push_int(0x6162636465666768)
+        self._execute()
+        self.assertEqual(self.cpu.read_int(self.cpu.STACK + 8), 0x5152535441424344)
+
+    @itest_setregs('W0=0x41424344', 'W1=-8')
+    @itest_custom('str w0, [sp, w1, sxtw]')
+    def test_str_reg_sxtw32(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self.cpu.STACK += 8
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x5152535441424344)
+
+    @itest_setregs('W0=0x41424344', 'W1=-8')
+    @itest_custom('str w0, [sp, w1, sxtw #2]')
+    def test_str_reg_sxtw2_32(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self.cpu.STACK += LSL(8, 2, 64)
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x5152535441424344)
+
+    @itest_setregs('W0=0x41424344', 'X1=-8')
+    @itest_custom('str w0, [sp, x1, sxtx]')
+    def test_str_reg_sxtx32(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self.cpu.STACK += 8
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x5152535441424344)
+
+    @itest_setregs('W0=0x41424344', 'X1=-2')
+    @itest_custom('str w0, [sp, x1, sxtx #2]')
+    def test_str_reg_sxtx2_32(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self.cpu.STACK += 8
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x5152535441424344)
+
+    # 64-bit.
+
+    @itest_setregs('X0=0x4142434445464748', 'W1=-8')
+    @itest_custom('str x0, [sp, w1, uxtw]')
+    def test_str_reg_uxtw64(self):
+        self.cpu.push_int(0x5152535455565758)
+        # Account for -8 (0xfffffff8) being treated like a large positive value
+        # after zero extension to 64 bits.
+        stack = self.cpu.STACK
+        self.cpu.STACK -= 0xfffffff8
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x4142434445464748)
+
+    @itest_setregs('X0=0x4142434445464748', 'W1=-8')
+    @itest_custom('str x0, [sp, w1, uxtw #3]')
+    def test_str_reg_uxtw3_64(self):
+        self.cpu.push_int(0x5152535455565758)
+        # Account for -8 (0xfffffff8) being treated like a large positive value
+        # after zero extension to 64 bits.
+        stack = self.cpu.STACK
+        self.cpu.STACK -= LSL(0xfffffff8, 3, 64)
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x4142434445464748)
+
+    @itest_setregs('X0=0x4142434445464748', 'X1=8')
+    @itest_custom('str x0, [sp, x1]')
+    def test_str_reg64(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.push_int(0x6162636465666768)
+        self._execute()
+        self.assertEqual(self.cpu.read_int(self.cpu.STACK + 8), 0x4142434445464748)
+
+    @itest_setregs('X0=0x4142434445464748', 'X1=2')
+    @itest_custom('str x0, [sp, x1, lsl #3]')
+    def test_str_reg_lsl64(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.push_int(0x6162636465666768)
+        self.cpu.push_int(0x7172737475767778)
+        self._execute()
+        self.assertEqual(self.cpu.read_int(self.cpu.STACK + 16), 0x4142434445464748)
+
+    @itest_setregs('X0=0x4142434445464748', 'W1=-8')
+    @itest_custom('str x0, [sp, w1, sxtw]')
+    def test_str_reg_sxtw64(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self.cpu.STACK += 8
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x4142434445464748)
+
+    @itest_setregs('X0=0x4142434445464748', 'W1=-8')
+    @itest_custom('str x0, [sp, w1, sxtw #3]')
+    def test_str_reg_sxtw3_64(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self.cpu.STACK += LSL(8, 3, 64)
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x4142434445464748)
+
+    @itest_setregs('X0=0x4142434445464748', 'X1=-8')
+    @itest_custom('str x0, [sp, x1, sxtx]')
+    def test_str_reg_sxtx64(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self.cpu.STACK += 8
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x4142434445464748)
+
+    @itest_setregs('X0=0x4142434445464748', 'X1=-2')
+    @itest_custom('str x0, [sp, x1, sxtx #3]')
+    def test_str_reg_sxtx3_64(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self.cpu.STACK += 16
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x4142434445464748)
+
+    # STRB (immediate).
+
+    # strb w1, [x27]          base register (opt. offset omitted):  [x27]     = w1
+    # strb w2, [x28, #8]      base plus offset:                     [x28 + 8] = w2
+    # strb w3, [x29], #8      post-indexed:                         [x29]     = w3, x29 += 8
+    # strb w4, [x30, #8]!     pre-indexed:                          [x30 + 8] = w4, x30 += 8
+
+    @itest_setregs('W1=0x41424344')
+    @itest_custom('strb w1, [sp]')
+    def test_strb_imm_base32(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x5152535455565744)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('W1=0x41424344')
+    @itest_custom('strb w1, [sp, #8]')
+    def test_strb_imm_base_offset32(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.push_int(0x6162636465666768)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x5152535455565744)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('W1=0x41424344')
+    @itest_custom('strb w1, [sp, #4095]')
+    def test_strb_imm_base_offset_max32(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.STACK -= 4095
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack + 4095), 0x5152535455565744)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('W1=0x41424344')
+    @itest_custom('strb w1, [sp], #8')
+    def test_strb_imm_post_indexed32(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x5152535455565744)
+        self.assertEqual(self.rf.read('SP'), stack + 8)  # writeback
+
+    @itest_setregs('W1=0x41424344')
+    @itest_custom('strb w1, [sp], #-256')
+    def test_strb_imm_post_indexed_neg32(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x5152535455565744)
+        self.assertEqual(self.rf.read('SP'), stack - 256)  # writeback
+
+    @itest_setregs('W1=0x41424344')
+    @itest_custom('strb w1, [sp, #8]!')
+    def test_strb_imm_pre_indexed32(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.push_int(0x6162636465666768)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x5152535455565744)
+        self.assertEqual(self.rf.read('SP'), stack + 8)  # writeback
+
+    @itest_setregs('W1=0x41424344')
+    @itest_custom('strb w1, [sp, #-256]!')
+    def test_strb_imm_pre_indexed_neg32(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.STACK += 256
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack - 256), 0x5152535455565744)
+        self.assertEqual(self.rf.read('SP'), stack - 256)  # writeback
+
+    # STRB (register).
+
+    @itest_setregs('W0=0x41424344', 'W1=-8')
+    @itest_custom('strb w0, [sp, w1, uxtw]')
+    def test_strb_reg_uxtw32(self):
+        self.cpu.push_int(0x5152535455565758)
+        # Account for -8 (0xfffffff8) being treated like a large positive value
+        # after zero extension to 64 bits.
+        stack = self.cpu.STACK
+        self.cpu.STACK -= 0xfffffff8
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x5152535455565744)
+
+    @itest_setregs('W0=0x41424344', 'W1=-8')
+    @itest_custom('strb w0, [sp, w1, uxtw #0]')
+    def test_strb_reg_uxtw0_32(self):
+        self.cpu.push_int(0x5152535455565758)
+        # Account for -8 (0xfffffff8) being treated like a large positive value
+        # after zero extension to 64 bits.
+        stack = self.cpu.STACK
+        self.cpu.STACK -= 0xfffffff8
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x5152535455565744)
+
+    @itest_setregs('W0=0x41424344', 'X1=8')
+    @itest_custom('strb w0, [sp, x1]')
+    def test_strb_reg32(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.push_int(0x6162636465666768)
+        self._execute()
+        self.assertEqual(self.cpu.read_int(self.cpu.STACK + 8), 0x5152535455565744)
+
+    @itest_setregs('W0=0x41424344', 'X1=8')
+    @itest_custom('strb w0, [sp, x1, lsl #0]')
+    def test_strb_reg_lsl32(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.push_int(0x6162636465666768)
+        self._execute()
+        self.assertEqual(self.cpu.read_int(self.cpu.STACK + 8), 0x5152535455565744)
+
+    @itest_setregs('W0=0x41424344', 'W1=-8')
+    @itest_custom('strb w0, [sp, w1, sxtw]')
+    def test_strb_reg_sxtw32(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self.cpu.STACK += 8
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x5152535455565744)
+
+    @itest_setregs('W0=0x41424344', 'W1=-8')
+    @itest_custom('strb w0, [sp, w1, sxtw #0]')
+    def test_strb_reg_sxtw0_32(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self.cpu.STACK += 8
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x5152535455565744)
+
+    @itest_setregs('W0=0x41424344', 'X1=-8')
+    @itest_custom('strb w0, [sp, x1, sxtx]')
+    def test_strb_reg_sxtx32(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self.cpu.STACK += 8
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x5152535455565744)
+
+    @itest_setregs('W0=0x41424344', 'X1=-8')
+    @itest_custom('strb w0, [sp, x1, sxtx #0]')
+    def test_strb_reg_sxtx0_32(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self.cpu.STACK += 8
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x5152535455565744)
+
+    # STRH (immediate).
+
+    # strh w1, [x27]          base register (opt. offset omitted):  [x27]     = w1
+    # strh w2, [x28, #8]      base plus offset:                     [x28 + 8] = w2
+    # strh w3, [x29], #8      post-indexed:                         [x29]     = w3, x29 += 8
+    # strh w4, [x30, #8]!     pre-indexed:                          [x30 + 8] = w4, x30 += 8
+
+    @itest_setregs('W1=0x41424344')
+    @itest_custom('strh w1, [sp]')
+    def test_strh_imm_base32(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x5152535455564344)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('W1=0x41424344')
+    @itest_custom('strh w1, [sp, #8]')
+    def test_strh_imm_base_offset32(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.push_int(0x6162636465666768)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x5152535455564344)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('W1=0x41424344')
+    @itest_custom('strh w1, [sp, #8190]')
+    def test_strh_imm_base_offset_max32(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.STACK -= 8190
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack + 8190), 0x5152535455564344)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('W1=0x41424344')
+    @itest_custom('strh w1, [sp], #8')
+    def test_strh_imm_post_indexed32(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x5152535455564344)
+        self.assertEqual(self.rf.read('SP'), stack + 8)  # writeback
+
+    @itest_setregs('W1=0x41424344')
+    @itest_custom('strh w1, [sp], #-256')
+    def test_strh_imm_post_indexed_neg32(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x5152535455564344)
+        self.assertEqual(self.rf.read('SP'), stack - 256)  # writeback
+
+    @itest_setregs('W1=0x41424344')
+    @itest_custom('strh w1, [sp, #8]!')
+    def test_strh_imm_pre_indexed32(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.push_int(0x6162636465666768)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack + 8), 0x5152535455564344)
+        self.assertEqual(self.rf.read('SP'), stack + 8)  # writeback
+
+    @itest_setregs('W1=0x41424344')
+    @itest_custom('strh w1, [sp, #-256]!')
+    def test_strh_imm_pre_indexed_neg32(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.STACK += 256
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack - 256), 0x5152535455564344)
+        self.assertEqual(self.rf.read('SP'), stack - 256)  # writeback
+
+    # STRH (register).
+
+    @itest_setregs('W0=0x41424344', 'W1=-8')
+    @itest_custom('strh w0, [sp, w1, uxtw]')
+    def test_strh_reg_uxtw32(self):
+        self.cpu.push_int(0x5152535455565758)
+        # Account for -8 (0xfffffff8) being treated like a large positive value
+        # after zero extension to 64 bits.
+        stack = self.cpu.STACK
+        self.cpu.STACK -= 0xfffffff8
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x5152535455564344)
+
+    @itest_setregs('W0=0x41424344', 'W1=-4')
+    @itest_custom('strh w0, [sp, w1, uxtw #1]')
+    def test_strh_reg_uxtw1_32(self):
+        self.cpu.push_int(0x5152535455565758)
+        # Account for -4 (0xfffffffc) being treated like a large positive value
+        # after zero extension to 64 bits.
+        stack = self.cpu.STACK
+        self.cpu.STACK -= LSL(0xfffffffc, 1, 64)
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x5152535455564344)
+
+    @itest_setregs('W0=0x41424344', 'X1=8')
+    @itest_custom('strh w0, [sp, x1]')
+    def test_strh_reg32(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.push_int(0x6162636465666768)
+        self._execute()
+        self.assertEqual(self.cpu.read_int(self.cpu.STACK + 8), 0x5152535455564344)
+
+    @itest_setregs('W0=0x41424344', 'X1=4')
+    @itest_custom('strh w0, [sp, x1, lsl #1]')
+    def test_strh_reg_lsl32(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.push_int(0x6162636465666768)
+        self._execute()
+        self.assertEqual(self.cpu.read_int(self.cpu.STACK + 8), 0x5152535455564344)
+
+    @itest_setregs('W0=0x41424344', 'W1=-8')
+    @itest_custom('strh w0, [sp, w1, sxtw]')
+    def test_strh_reg_sxtw32(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self.cpu.STACK += 8
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x5152535455564344)
+
+    @itest_setregs('W0=0x41424344', 'W1=-4')
+    @itest_custom('strh w0, [sp, w1, sxtw #1]')
+    def test_strh_reg_sxtw1_32(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self.cpu.STACK += LSL(4, 1, 64)
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x5152535455564344)
+
+    @itest_setregs('W0=0x41424344', 'X1=-8')
+    @itest_custom('strh w0, [sp, x1, sxtx]')
+    def test_strh_reg_sxtx32(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self.cpu.STACK += 8
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x5152535455564344)
+
+    @itest_setregs('W0=0x41424344', 'X1=-4')
+    @itest_custom('strh w0, [sp, x1, sxtx #1]')
+    def test_strh_reg_sxtx1_32(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self.cpu.STACK += 8
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x5152535455564344)
+
+    # STUR.
+
+    # 32-bit.
+
+    @itest_setregs('W1=0x41424344')
+    @itest_custom('stur w1, [sp, #-256]')
+    def test_stur_min32(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.STACK += 256
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack - 256), 0x5152535441424344)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('W1=0x41424344')
+    @itest_custom('stur w1, [sp, #255]')
+    def test_stur_max32(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.STACK -= 255
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack + 255), 0x5152535441424344)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('W1=0x41424344')
+    @itest_custom('stur w1, [sp, #1]')
+    def test_stur_one32(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.push_int(0x6162636465666768)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack + 1), 0x5861626341424344)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('W1=0x41424344')
+    @itest_custom('stur w1, [sp]')
+    def test_stur32(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x5152535441424344)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    # 64-bit.
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest_custom('stur x1, [sp, #-256]')
+    def test_stur_min64(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.STACK += 256
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack - 256), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest_custom('stur x1, [sp, #255]')
+    def test_stur_max64(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.STACK -= 255
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack + 255), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest_custom('stur x1, [sp, #1]')
+    def test_stur_one64(self):
+        self.cpu.push_int(0x5152535455565758)
+        self.cpu.push_int(0x6162636465666768)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack + 1), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest_custom('stur x1, [sp]')
+    def test_stur64(self):
+        self.cpu.push_int(0x5152535455565758)
+        stack = self.cpu.STACK
+        self._execute()
+        self.assertEqual(self.cpu.read_int(stack), 0x4142434445464748)
+        self.assertEqual(self.rf.read('SP'), stack)  # no writeback
+
+    # SUB (extended register).
+
+    # 32-bit.
+
+    @itest_setregs('W1=0x41424344', 'W2=0x51525384')
+    @itest('sub w0, w1, w2, uxtb')
+    def test_sub_ext_reg_uxtb32(self):
+        self.assertEqual(self.rf.read('X0'), 0x414242c0)
+        self.assertEqual(self.rf.read('W0'), 0x414242c0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x51525384')
+    @itest('sub w0, w1, w2, uxtb #0')
+    def test_sub_ext_reg_uxtb0_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x414242c0)
+        self.assertEqual(self.rf.read('W0'), 0x414242c0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x51525384')
+    @itest('sub w0, w1, w2, uxtb #4')
+    def test_sub_ext_reg_uxtb4_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41423b04)
+        self.assertEqual(self.rf.read('W0'), 0x41423b04)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x51528354')
+    @itest('sub w0, w1, w2, uxth')
+    def test_sub_ext_reg_uxth32(self):
+        self.assertEqual(self.rf.read('X0'), 0x4141bff0)
+        self.assertEqual(self.rf.read('W0'), 0x4141bff0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x51528354')
+    @itest('sub w0, w1, w2, uxth #0')
+    def test_sub_ext_reg_uxth0_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x4141bff0)
+        self.assertEqual(self.rf.read('W0'), 0x4141bff0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x51528354')
+    @itest('sub w0, w1, w2, uxth #4')
+    def test_sub_ext_reg_uxth4_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x413a0e04)
+        self.assertEqual(self.rf.read('W0'), 0x413a0e04)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x81525354')
+    @itest('sub w0, w1, w2, uxtw')
+    def test_sub_ext_reg_uxtw32(self):
+        self.assertEqual(self.rf.read('X0'), 0xbfefeff0)
+        self.assertEqual(self.rf.read('W0'), 0xbfefeff0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x81525354')
+    @itest('sub w0, w1, w2, uxtw #0')
+    def test_sub_ext_reg_uxtw0_32(self):
+        self.assertEqual(self.rf.read('X0'), 0xbfefeff0)
+        self.assertEqual(self.rf.read('W0'), 0xbfefeff0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x81525354')
+    @itest('sub w0, w1, w2, uxtw #4')
+    def test_sub_ext_reg_uxtw4_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x2c1d0e04)
+        self.assertEqual(self.rf.read('W0'), 0x2c1d0e04)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x81525354')
+    @itest('sub w0, w1, w2, uxtx')
+    def test_sub_ext_reg_uxtx32(self):
+        self.assertEqual(self.rf.read('X0'), 0xbfefeff0)
+        self.assertEqual(self.rf.read('W0'), 0xbfefeff0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x81525354')
+    @itest('sub w0, w1, w2, uxtx #0')
+    def test_sub_ext_reg_uxtx0_32(self):
+        self.assertEqual(self.rf.read('X0'), 0xbfefeff0)
+        self.assertEqual(self.rf.read('W0'), 0xbfefeff0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x81525354')
+    @itest('sub w0, w1, w2, uxtx #4')
+    def test_sub_ext_reg_uxtx4_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x2c1d0e04)
+        self.assertEqual(self.rf.read('W0'), 0x2c1d0e04)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x51525384')
+    @itest('sub w0, w1, w2, sxtb')
+    def test_sub_ext_reg_sxtb32(self):
+        self.assertEqual(self.rf.read('X0'), 0x414243c0)
+        self.assertEqual(self.rf.read('W0'), 0x414243c0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x51525384')
+    @itest('sub w0, w1, w2, sxtb #0')
+    def test_sub_ext_reg_sxtb0_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x414243c0)
+        self.assertEqual(self.rf.read('W0'), 0x414243c0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x51525384')
+    @itest('sub w0, w1, w2, sxtb #4')
+    def test_sub_ext_reg_sxtb4_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424b04)
+        self.assertEqual(self.rf.read('W0'), 0x41424b04)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x51528354')
+    @itest('sub w0, w1, w2, sxth')
+    def test_sub_ext_reg_sxth32(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142bff0)
+        self.assertEqual(self.rf.read('W0'), 0x4142bff0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x51528354')
+    @itest('sub w0, w1, w2, sxth #0')
+    def test_sub_ext_reg_sxth0_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142bff0)
+        self.assertEqual(self.rf.read('W0'), 0x4142bff0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x51528354')
+    @itest('sub w0, w1, w2, sxth #4')
+    def test_sub_ext_reg_sxth4_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x414a0e04)
+        self.assertEqual(self.rf.read('W0'), 0x414a0e04)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x81525354')
+    @itest('sub w0, w1, w2, sxtw')
+    def test_sub_ext_reg_sxtw32(self):
+        self.assertEqual(self.rf.read('X0'), 0xbfefeff0)
+        self.assertEqual(self.rf.read('W0'), 0xbfefeff0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x81525354')
+    @itest('sub w0, w1, w2, sxtw #0')
+    def test_sub_ext_reg_sxtw0_32(self):
+        self.assertEqual(self.rf.read('X0'), 0xbfefeff0)
+        self.assertEqual(self.rf.read('W0'), 0xbfefeff0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x81525354')
+    @itest('sub w0, w1, w2, sxtw #4')
+    def test_sub_ext_reg_sxtw4_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x2c1d0e04)
+        self.assertEqual(self.rf.read('W0'), 0x2c1d0e04)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x81525354')
+    @itest('sub w0, w1, w2, sxtx')
+    def test_sub_ext_reg_sxtx32(self):
+        self.assertEqual(self.rf.read('X0'), 0xbfefeff0)
+        self.assertEqual(self.rf.read('W0'), 0xbfefeff0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x81525354')
+    @itest('sub w0, w1, w2, sxtx #0')
+    def test_sub_ext_reg_sxtx0_32(self):
+        self.assertEqual(self.rf.read('X0'), 0xbfefeff0)
+        self.assertEqual(self.rf.read('W0'), 0xbfefeff0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x81525354')
+    @itest('sub w0, w1, w2, sxtx #4')
+    def test_sub_ext_reg_sxtx4_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x2c1d0e04)
+        self.assertEqual(self.rf.read('W0'), 0x2c1d0e04)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x81525354')
+    @itest('sub w0, w1, w2, lsl #0')
+    def test_sub_ext_reg_lsl0_32(self):
+        self.assertEqual(self.rf.read('X0'), 0xbfefeff0)
+        self.assertEqual(self.rf.read('W0'), 0xbfefeff0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x81525354')
+    @itest('sub w0, w1, w2, lsl #4')
+    def test_sub_ext_reg_lsl4_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x2c1d0e04)
+        self.assertEqual(self.rf.read('W0'), 0x2c1d0e04)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    # 64-bit.
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x51525384')
+    @itest('sub x0, x1, w2, uxtb')
+    def test_sub_ext_reg_uxtb64(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344454646c4)
+        self.assertEqual(self.rf.read('W0'), 0x454646c4)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x51525384')
+    @itest('sub x0, x1, w2, uxtb #0')
+    def test_sub_ext_reg_uxtb0_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344454646c4)
+        self.assertEqual(self.rf.read('W0'), 0x454646c4)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x51525384')
+    @itest('sub x0, x1, w2, uxtb #4')
+    def test_sub_ext_reg_uxtb4_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445463f08)
+        self.assertEqual(self.rf.read('W0'), 0x45463f08)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x51528354')
+    @itest('sub x0, x1, w2, uxth')
+    def test_sub_ext_reg_uxth64(self):
+        self.assertEqual(self.rf.read('X0'), 0x414243444545c3f4)
+        self.assertEqual(self.rf.read('W0'), 0x4545c3f4)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x51528354')
+    @itest('sub x0, x1, w2, uxth #0')
+    def test_sub_ext_reg_uxth0_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x414243444545c3f4)
+        self.assertEqual(self.rf.read('W0'), 0x4545c3f4)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x51528354')
+    @itest('sub x0, x1, w2, uxth #4')
+    def test_sub_ext_reg_uxth4_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344453e1208)
+        self.assertEqual(self.rf.read('W0'), 0x453e1208)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x81525354')
+    @itest('sub x0, x1, w2, uxtw')
+    def test_sub_ext_reg_uxtw64(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424343c3f3f3f4)
+        self.assertEqual(self.rf.read('W0'), 0xc3f3f3f4)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x81525354')
+    @itest('sub x0, x1, w2, uxtw #0')
+    def test_sub_ext_reg_uxtw0_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424343c3f3f3f4)
+        self.assertEqual(self.rf.read('W0'), 0xc3f3f3f4)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x81525354')
+    @itest('sub x0, x1, w2, uxtw #4')
+    def test_sub_ext_reg_uxtw4_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142433c30211208)
+        self.assertEqual(self.rf.read('W0'), 0x30211208)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x8152535455565758')
+    @itest('sub x0, x1, x2, uxtx')
+    def test_sub_ext_reg_uxtx64(self):
+        self.assertEqual(self.rf.read('X0'), 0xbfefefefefefeff0)
+        self.assertEqual(self.rf.read('W0'), 0xefefeff0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x8152535455565758')
+    @itest('sub x0, x1, x2, uxtx #0')
+    def test_sub_ext_reg_uxtx0_64(self):
+        self.assertEqual(self.rf.read('X0'), 0xbfefefefefefeff0)
+        self.assertEqual(self.rf.read('W0'), 0xefefeff0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x8152535455565758')
+    @itest('sub x0, x1, x2, uxtx #4')
+    def test_sub_ext_reg_uxtx4_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x2c1d0dfeefe0d1c8)
+        self.assertEqual(self.rf.read('W0'), 0xefe0d1c8)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x51525384')
+    @itest('sub x0, x1, w2, sxtb')
+    def test_sub_ext_reg_sxtb64(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344454647c4)
+        self.assertEqual(self.rf.read('W0'), 0x454647c4)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x51525384')
+    @itest('sub x0, x1, w2, sxtb #0')
+    def test_sub_ext_reg_sxtb0_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344454647c4)
+        self.assertEqual(self.rf.read('W0'), 0x454647c4)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x51525384')
+    @itest('sub x0, x1, w2, sxtb #4')
+    def test_sub_ext_reg_sxtb4_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464f08)
+        self.assertEqual(self.rf.read('W0'), 0x45464f08)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x51528354')
+    @itest('sub x0, x1, w2, sxth')
+    def test_sub_ext_reg_sxth64(self):
+        self.assertEqual(self.rf.read('X0'), 0x414243444546c3f4)
+        self.assertEqual(self.rf.read('W0'), 0x4546c3f4)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x51528354')
+    @itest('sub x0, x1, w2, sxth #0')
+    def test_sub_ext_reg_sxth0_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x414243444546c3f4)
+        self.assertEqual(self.rf.read('W0'), 0x4546c3f4)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x51528354')
+    @itest('sub x0, x1, w2, sxth #4')
+    def test_sub_ext_reg_sxth4_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344454e1208)
+        self.assertEqual(self.rf.read('W0'), 0x454e1208)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x81525354')
+    @itest('sub x0, x1, w2, sxtw')
+    def test_sub_ext_reg_sxtw64(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344c3f3f3f4)
+        self.assertEqual(self.rf.read('W0'), 0xc3f3f3f4)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x81525354')
+    @itest('sub x0, x1, w2, sxtw #0')
+    def test_sub_ext_reg_sxtw0_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344c3f3f3f4)
+        self.assertEqual(self.rf.read('W0'), 0xc3f3f3f4)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x81525354')
+    @itest('sub x0, x1, w2, sxtw #4')
+    def test_sub_ext_reg_sxtw4_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434c30211208)
+        self.assertEqual(self.rf.read('W0'), 0x30211208)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x8152535455565758')
+    @itest('sub x0, x1, x2, sxtx')
+    def test_sub_ext_reg_sxtx64(self):
+        self.assertEqual(self.rf.read('X0'), 0xbfefefefefefeff0)
+        self.assertEqual(self.rf.read('W0'), 0xefefeff0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x8152535455565758')
+    @itest('sub x0, x1, x2, sxtx #0')
+    def test_sub_ext_reg_sxtx0_64(self):
+        self.assertEqual(self.rf.read('X0'), 0xbfefefefefefeff0)
+        self.assertEqual(self.rf.read('W0'), 0xefefeff0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x8152535455565758')
+    @itest('sub x0, x1, x2, sxtx #4')
+    def test_sub_ext_reg_sxtx4_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x2c1d0dfeefe0d1c8)
+        self.assertEqual(self.rf.read('W0'), 0xefe0d1c8)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x8152535455565758')
+    @itest('sub x0, x1, x2, lsl #0')
+    def test_sub_ext_reg_lsl0_64(self):
+        self.assertEqual(self.rf.read('X0'), 0xbfefefefefefeff0)
+        self.assertEqual(self.rf.read('W0'), 0xefefeff0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x8152535455565758')
+    @itest('sub x0, x1, x2, lsl #4')
+    def test_sub_ext_reg_lsl4_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x2c1d0dfeefe0d1c8)
+        self.assertEqual(self.rf.read('W0'), 0xefe0d1c8)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    # SUB (immediate).
+
+    # 32-bit.
+
+    @itest_setregs('W1=0x41424344')
+    @itest('sub w0, w1, #0')
+    def test_sub_imm_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344)
+        self.assertEqual(self.rf.read('W0'), 0x41424344)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344')
+    @itest('sub w0, w1, #4095')
+    def test_sub_imm_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41423345)
+        self.assertEqual(self.rf.read('W0'), 0x41423345)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344')
+    @itest('sub w0, w1, #1')
+    def test_sub_imm32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424343)
+        self.assertEqual(self.rf.read('W0'), 0x41424343)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344')
+    @itest('sub w0, w1, #1, lsl #0')
+    def test_sub_imm_lsl0_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424343)
+        self.assertEqual(self.rf.read('W0'), 0x41424343)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344')
+    @itest('sub w0, w1, #1, lsl #12')
+    def test_sub_imm_lsl12_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41423344)
+        self.assertEqual(self.rf.read('W0'), 0x41423344)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    # 64-bit.
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest('sub x0, x1, #0')
+    def test_sub_imm_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest('sub x0, x1, #4095')
+    def test_sub_imm_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445463749)
+        self.assertEqual(self.rf.read('W0'), 0x45463749)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest('sub x0, x1, #1')
+    def test_sub_imm64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464747)
+        self.assertEqual(self.rf.read('W0'), 0x45464747)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest('sub x0, x1, #1, lsl #0')
+    def test_sub_imm_lsl0_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464747)
+        self.assertEqual(self.rf.read('W0'), 0x45464747)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest('sub x0, x1, #1, lsl #12')
+    def test_sub_imm_lsl12_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445463748)
+        self.assertEqual(self.rf.read('W0'), 0x45463748)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    # SUB (shifted register).
+
+    # 32-bit.
+
+    @itest_setregs('W1=0x41424344', 'W2=0x45464748')
+    @itest('sub w0, w1, w2')
+    def test_sub_sft_reg32(self):
+        self.assertEqual(self.rf.read('X0'), 0xfbfbfbfc)
+        self.assertEqual(self.rf.read('W0'), 0xfbfbfbfc)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x45464748')
+    @itest('sub w0, w1, w2, lsl #0')
+    def test_sub_sft_reg_lsl_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0xfbfbfbfc)
+        self.assertEqual(self.rf.read('W0'), 0xfbfbfbfc)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344', 'W2=1')
+    @itest('sub w0, w1, w2, lsl #31')
+    def test_sub_sft_reg_lsl_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0xc1424344)
+        self.assertEqual(self.rf.read('W0'), 0xc1424344)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x45464748')
+    @itest('sub w0, w1, w2, lsl #1')
+    def test_sub_sft_reg_lsl32(self):
+        self.assertEqual(self.rf.read('X0'), 0xb6b5b4b4)
+        self.assertEqual(self.rf.read('W0'), 0xb6b5b4b4)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x45464748')
+    @itest('sub w0, w1, w2, lsr #0')
+    def test_sub_sft_reg_lsr_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0xfbfbfbfc)
+        self.assertEqual(self.rf.read('W0'), 0xfbfbfbfc)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x80000000')
+    @itest('sub w0, w1, w2, lsr #31')
+    def test_sub_sft_reg_lsr_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424343)
+        self.assertEqual(self.rf.read('W0'), 0x41424343)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x80000000')
+    @itest('sub w0, w1, w2, lsr #1')
+    def test_sub_sft_reg_lsr32(self):
+        self.assertEqual(self.rf.read('X0'), 0x1424344)
+        self.assertEqual(self.rf.read('W0'), 0x1424344)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x45464748')
+    @itest('sub w0, w1, w2, asr #0')
+    def test_sub_sft_reg_asr_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0xfbfbfbfc)
+        self.assertEqual(self.rf.read('W0'), 0xfbfbfbfc)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x80000000')
+    @itest('sub w0, w1, w2, asr #31')
+    def test_sub_sft_reg_asr_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424345)
+        self.assertEqual(self.rf.read('W0'), 0x41424345)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x80000000')
+    @itest('sub w0, w1, w2, asr #1')
+    def test_sub_sft_reg_asr32(self):
+        self.assertEqual(self.rf.read('X0'), 0x81424344)
+        self.assertEqual(self.rf.read('W0'), 0x81424344)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    # 64-bit.
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x5152535455565758')
+    @itest('sub x0, x1, x2')
+    def test_sub_sft_reg64(self):
+        self.assertEqual(self.rf.read('X0'), 0xefefefefefefeff0)
+        self.assertEqual(self.rf.read('W0'), 0xefefeff0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x5152535455565758')
+    @itest('sub x0, x1, x2, lsl #0')
+    def test_sub_sft_reg_lsl_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0xefefefefefefeff0)
+        self.assertEqual(self.rf.read('W0'), 0xefefeff0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=1')
+    @itest('sub x0, x1, x2, lsl #63')
+    def test_sub_sft_reg_lsl_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0xc142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x5152535455565758')
+    @itest('sub x0, x1, x2, lsl #1')
+    def test_sub_sft_reg_lsl64(self):
+        self.assertEqual(self.rf.read('X0'), 0x9e9d9c9b9a999898)
+        self.assertEqual(self.rf.read('W0'), 0x9a999898)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x5152535455565758')
+    @itest('sub x0, x1, x2, lsr #0')
+    def test_sub_sft_reg_lsr_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0xefefefefefefeff0)
+        self.assertEqual(self.rf.read('W0'), 0xefefeff0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x8000000000000000')
+    @itest('sub x0, x1, x2, lsr #63')
+    def test_sub_sft_reg_lsr_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464747)
+        self.assertEqual(self.rf.read('W0'), 0x45464747)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x8000000000000000')
+    @itest('sub x0, x1, x2, lsr #1')
+    def test_sub_sft_reg_lsr64(self):
+        self.assertEqual(self.rf.read('X0'), 0x142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x5152535455565758')
+    @itest('sub x0, x1, x2, asr #0')
+    def test_sub_sft_reg_asr_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0xefefefefefefeff0)
+        self.assertEqual(self.rf.read('W0'), 0xefefeff0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x8000000000000000')
+    @itest('sub x0, x1, x2, asr #63')
+    def test_sub_sft_reg_asr_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464749)
+        self.assertEqual(self.rf.read('W0'), 0x45464749)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x8000000000000000')
+    @itest('sub x0, x1, x2, asr #1')
+    def test_sub_sft_reg_asr64(self):
+        self.assertEqual(self.rf.read('X0'), 0x8142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    # SUB (scalar).
+
+    # XXX: Uses 'reset'.
+
+    @itest_setregs(
+        'V1=0x41424344454647485152535455565758',
+        'V2=0x61626364656667687172737475767778'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'sub d0, d1, d2'],
+        multiple_insts=True
+    )
+    def test_sub_scalar(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0xdfdfdfdfdfdfdfe0)
+        self.assertEqual(self.rf.read('Q0'), 0xdfdfdfdfdfdfdfe0)
+        self.assertEqual(self.rf.read('D0'), 0xdfdfdfdfdfdfdfe0)
+        self.assertEqual(self.rf.read('S0'), 0xdfdfdfe0)
+        self.assertEqual(self.rf.read('H0'), 0xdfe0)
+        self.assertEqual(self.rf.read('B0'), 0xe0)
+
+    @itest_setregs(
+        'V1=0xffffffffffffffffffffffffffffffff',
+        'V2=0xffffffffffffffffffffffffffffffff'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'sub d0, d1, d2'],
+        multiple_insts=True
+    )
+    def test_sub_scalar_max(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0)
+        self.assertEqual(self.rf.read('Q0'), 0)
+        self.assertEqual(self.rf.read('D0'), 0)
+        self.assertEqual(self.rf.read('S0'), 0)
+        self.assertEqual(self.rf.read('H0'), 0)
+        self.assertEqual(self.rf.read('B0'), 0)
+
+    # SUB (vector).
+
+    # XXX: Uses 'reset'.
+
+    # 8b.
+
+    @itest_setregs(
+        'V1=0x41424344454647485152535455565758',
+        'V2=0x61626364656667687172737475767778'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'sub v0.8b, v1.8b, v2.8b'],
+        multiple_insts=True
+    )
+    def test_sub_vector_8b(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0xe0e0e0e0e0e0e0e0)
+        self.assertEqual(self.rf.read('Q0'), 0xe0e0e0e0e0e0e0e0)
+        self.assertEqual(self.rf.read('D0'), 0xe0e0e0e0e0e0e0e0)
+        self.assertEqual(self.rf.read('S0'), 0xe0e0e0e0)
+        self.assertEqual(self.rf.read('H0'), 0xe0e0)
+        self.assertEqual(self.rf.read('B0'), 0xe0)
+
+    @itest_setregs(
+        'V1=0xffffffffffffffffffffffffffffffff',
+        'V2=0xffffffffffffffffffffffffffffffff'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'sub v0.8b, v1.8b, v2.8b'],
+        multiple_insts=True
+    )
+    def test_sub_vector_8b_max(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0)
+        self.assertEqual(self.rf.read('Q0'), 0)
+        self.assertEqual(self.rf.read('D0'), 0)
+        self.assertEqual(self.rf.read('S0'), 0)
+        self.assertEqual(self.rf.read('H0'), 0)
+        self.assertEqual(self.rf.read('B0'), 0)
+
+    # 16b.
+
+    @itest_setregs(
+        'V1=0x41424344454647485152535455565758',
+        'V2=0x61626364656667687172737475767778'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'sub v0.16b, v1.16b, v2.16b'],
+        multiple_insts=True
+    )
+    def test_sub_vector_16b(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0xe0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0)
+        self.assertEqual(self.rf.read('Q0'), 0xe0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0)
+        self.assertEqual(self.rf.read('D0'), 0xe0e0e0e0e0e0e0e0)
+        self.assertEqual(self.rf.read('S0'), 0xe0e0e0e0)
+        self.assertEqual(self.rf.read('H0'), 0xe0e0)
+        self.assertEqual(self.rf.read('B0'), 0xe0)
+
+    @itest_setregs(
+        'V1=0xffffffffffffffffffffffffffffffff',
+        'V2=0xffffffffffffffffffffffffffffffff'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'sub v0.16b, v1.16b, v2.16b'],
+        multiple_insts=True
+    )
+    def test_sub_vector_16b_max(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0)
+        self.assertEqual(self.rf.read('Q0'), 0)
+        self.assertEqual(self.rf.read('D0'), 0)
+        self.assertEqual(self.rf.read('S0'), 0)
+        self.assertEqual(self.rf.read('H0'), 0)
+        self.assertEqual(self.rf.read('B0'), 0)
+
+    # 4h.
+
+    @itest_setregs(
+        'V1=0x41424344454647485152535455565758',
+        'V2=0x61626364656667687172737475767778'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'sub v0.4h, v1.4h, v2.4h'],
+        multiple_insts=True
+    )
+    def test_sub_vector_4h(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0xdfe0dfe0dfe0dfe0)
+        self.assertEqual(self.rf.read('Q0'), 0xdfe0dfe0dfe0dfe0)
+        self.assertEqual(self.rf.read('D0'), 0xdfe0dfe0dfe0dfe0)
+        self.assertEqual(self.rf.read('S0'), 0xdfe0dfe0)
+        self.assertEqual(self.rf.read('H0'), 0xdfe0)
+        self.assertEqual(self.rf.read('B0'), 0xe0)
+
+    @itest_setregs(
+        'V1=0xffffffffffffffffffffffffffffffff',
+        'V2=0xffffffffffffffffffffffffffffffff'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'sub v0.4h, v1.4h, v2.4h'],
+        multiple_insts=True
+    )
+    def test_sub_vector_4h_max(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0)
+        self.assertEqual(self.rf.read('Q0'), 0)
+        self.assertEqual(self.rf.read('D0'), 0)
+        self.assertEqual(self.rf.read('S0'), 0)
+        self.assertEqual(self.rf.read('H0'), 0)
+        self.assertEqual(self.rf.read('B0'), 0)
+
+    # 8h.
+
+    @itest_setregs(
+        'V1=0x41424344454647485152535455565758',
+        'V2=0x61626364656667687172737475767778'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'sub v0.8h, v1.8h, v2.8h'],
+        multiple_insts=True
+    )
+    def test_sub_vector_8h(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0xdfe0dfe0dfe0dfe0dfe0dfe0dfe0dfe0)
+        self.assertEqual(self.rf.read('Q0'), 0xdfe0dfe0dfe0dfe0dfe0dfe0dfe0dfe0)
+        self.assertEqual(self.rf.read('D0'), 0xdfe0dfe0dfe0dfe0)
+        self.assertEqual(self.rf.read('S0'), 0xdfe0dfe0)
+        self.assertEqual(self.rf.read('H0'), 0xdfe0)
+        self.assertEqual(self.rf.read('B0'), 0xe0)
+
+    @itest_setregs(
+        'V1=0xffffffffffffffffffffffffffffffff',
+        'V2=0xffffffffffffffffffffffffffffffff'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'sub v0.8h, v1.8h, v2.8h'],
+        multiple_insts=True
+    )
+    def test_sub_vector_8h_max(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0)
+        self.assertEqual(self.rf.read('Q0'), 0)
+        self.assertEqual(self.rf.read('D0'), 0)
+        self.assertEqual(self.rf.read('S0'), 0)
+        self.assertEqual(self.rf.read('H0'), 0)
+        self.assertEqual(self.rf.read('B0'), 0)
+
+    # 2s.
+
+    @itest_setregs(
+        'V1=0x41424344454647485152535455565758',
+        'V2=0x61626364656667687172737475767778'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'sub v0.2s, v1.2s, v2.2s'],
+        multiple_insts=True
+    )
+    def test_sub_vector_2s(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0xdfdfdfe0dfdfdfe0)
+        self.assertEqual(self.rf.read('Q0'), 0xdfdfdfe0dfdfdfe0)
+        self.assertEqual(self.rf.read('D0'), 0xdfdfdfe0dfdfdfe0)
+        self.assertEqual(self.rf.read('S0'), 0xdfdfdfe0)
+        self.assertEqual(self.rf.read('H0'), 0xdfe0)
+        self.assertEqual(self.rf.read('B0'), 0xe0)
+
+    @itest_setregs(
+        'V1=0xffffffffffffffffffffffffffffffff',
+        'V2=0xffffffffffffffffffffffffffffffff'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'sub v0.2s, v1.2s, v2.2s'],
+        multiple_insts=True
+    )
+    def test_sub_vector_2s_max(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0)
+        self.assertEqual(self.rf.read('Q0'), 0)
+        self.assertEqual(self.rf.read('D0'), 0)
+        self.assertEqual(self.rf.read('S0'), 0)
+        self.assertEqual(self.rf.read('H0'), 0)
+        self.assertEqual(self.rf.read('B0'), 0)
+
+    # 4s.
+
+    @itest_setregs(
+        'V1=0x41424344454647485152535455565758',
+        'V2=0x61626364656667687172737475767778'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'sub v0.4s, v1.4s, v2.4s'],
+        multiple_insts=True
+    )
+    def test_sub_vector_4s(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0xdfdfdfe0dfdfdfe0dfdfdfe0dfdfdfe0)
+        self.assertEqual(self.rf.read('Q0'), 0xdfdfdfe0dfdfdfe0dfdfdfe0dfdfdfe0)
+        self.assertEqual(self.rf.read('D0'), 0xdfdfdfe0dfdfdfe0)
+        self.assertEqual(self.rf.read('S0'), 0xdfdfdfe0)
+        self.assertEqual(self.rf.read('H0'), 0xdfe0)
+        self.assertEqual(self.rf.read('B0'), 0xe0)
+
+    @itest_setregs(
+        'V1=0xffffffffffffffffffffffffffffffff',
+        'V2=0xffffffffffffffffffffffffffffffff'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'sub v0.4s, v1.4s, v2.4s'],
+        multiple_insts=True
+    )
+    def test_sub_vector_4s_max(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0)
+        self.assertEqual(self.rf.read('Q0'), 0)
+        self.assertEqual(self.rf.read('D0'), 0)
+        self.assertEqual(self.rf.read('S0'), 0)
+        self.assertEqual(self.rf.read('H0'), 0)
+        self.assertEqual(self.rf.read('B0'), 0)
+
+    # 2d.
+
+    @itest_setregs(
+        'V1=0x41424344454647485152535455565758',
+        'V2=0x61626364656667687172737475767778'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'sub v0.2d, v1.2d, v2.2d'],
+        multiple_insts=True
+    )
+    def test_sub_vector_2d(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0xdfdfdfdfdfdfdfe0dfdfdfdfdfdfdfe0)
+        self.assertEqual(self.rf.read('Q0'), 0xdfdfdfdfdfdfdfe0dfdfdfdfdfdfdfe0)
+        self.assertEqual(self.rf.read('D0'), 0xdfdfdfdfdfdfdfe0)
+        self.assertEqual(self.rf.read('S0'), 0xdfdfdfe0)
+        self.assertEqual(self.rf.read('H0'), 0xdfe0)
+        self.assertEqual(self.rf.read('B0'), 0xe0)
+
+    @itest_setregs(
+        'V1=0xffffffffffffffffffffffffffffffff',
+        'V2=0xffffffffffffffffffffffffffffffff'
+    )
+    @itest_custom(
+        # Disable traps first.
+        ['mrs x30, cpacr_el1',
+         'orr x30, x30, #0x300000',
+         'msr cpacr_el1, x30',
+         'sub v0.2d, v1.2d, v2.2d'],
+        multiple_insts=True
+    )
+    def test_sub_vector_2d_max(self):
+        for i in range(4):
+            self._execute(reset=i == 0)
+        self.assertEqual(self.rf.read('V0'), 0)
+        self.assertEqual(self.rf.read('Q0'), 0)
+        self.assertEqual(self.rf.read('D0'), 0)
+        self.assertEqual(self.rf.read('S0'), 0)
+        self.assertEqual(self.rf.read('H0'), 0)
+        self.assertEqual(self.rf.read('B0'), 0)
+
+    # SUBS (extended register).
+
+    # 32-bit.
+
+    @itest_setregs('W1=0x41424344', 'W2=0x51525384')
+    @itest('subs w0, w1, w2, uxtb')
+    def test_subs_ext_reg_uxtb32(self):
+        self.assertEqual(self.rf.read('X0'), 0x414242c0)
+        self.assertEqual(self.rf.read('W0'), 0x414242c0)
+        self.assertEqual(self.rf.read('NZCV'), 0x20000000)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x51525384')
+    @itest('subs w0, w1, w2, uxtb #0')
+    def test_subs_ext_reg_uxtb0_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x414242c0)
+        self.assertEqual(self.rf.read('W0'), 0x414242c0)
+        self.assertEqual(self.rf.read('NZCV'), 0x20000000)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x51525384')
+    @itest('subs w0, w1, w2, uxtb #4')
+    def test_subs_ext_reg_uxtb4_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41423b04)
+        self.assertEqual(self.rf.read('W0'), 0x41423b04)
+        self.assertEqual(self.rf.read('NZCV'), 0x20000000)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x51528354')
+    @itest('subs w0, w1, w2, uxth')
+    def test_subs_ext_reg_uxth32(self):
+        self.assertEqual(self.rf.read('X0'), 0x4141bff0)
+        self.assertEqual(self.rf.read('W0'), 0x4141bff0)
+        self.assertEqual(self.rf.read('NZCV'), 0x20000000)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x51528354')
+    @itest('subs w0, w1, w2, uxth #0')
+    def test_subs_ext_reg_uxth0_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x4141bff0)
+        self.assertEqual(self.rf.read('W0'), 0x4141bff0)
+        self.assertEqual(self.rf.read('NZCV'), 0x20000000)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x51528354')
+    @itest('subs w0, w1, w2, uxth #4')
+    def test_subs_ext_reg_uxth4_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x413a0e04)
+        self.assertEqual(self.rf.read('W0'), 0x413a0e04)
+        self.assertEqual(self.rf.read('NZCV'), 0x20000000)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x81525354')
+    @itest('subs w0, w1, w2, uxtw')
+    def test_subs_ext_reg_uxtw32(self):
+        self.assertEqual(self.rf.read('X0'), 0xbfefeff0)
+        self.assertEqual(self.rf.read('W0'), 0xbfefeff0)
+        self.assertEqual(self.rf.read('NZCV'), 0x90000000)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x81525354')
+    @itest('subs w0, w1, w2, uxtw #0')
+    def test_subs_ext_reg_uxtw0_32(self):
+        self.assertEqual(self.rf.read('X0'), 0xbfefeff0)
+        self.assertEqual(self.rf.read('W0'), 0xbfefeff0)
+        self.assertEqual(self.rf.read('NZCV'), 0x90000000)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x81525354')
+    @itest('subs w0, w1, w2, uxtw #4')
+    def test_subs_ext_reg_uxtw4_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x2c1d0e04)
+        self.assertEqual(self.rf.read('W0'), 0x2c1d0e04)
+        self.assertEqual(self.rf.read('NZCV'), 0x20000000)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x81525354')
+    @itest('subs w0, w1, w2, uxtx')
+    def test_subs_ext_reg_uxtx32(self):
+        self.assertEqual(self.rf.read('X0'), 0xbfefeff0)
+        self.assertEqual(self.rf.read('W0'), 0xbfefeff0)
+        self.assertEqual(self.rf.read('NZCV'), 0x90000000)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x81525354')
+    @itest('subs w0, w1, w2, uxtx #0')
+    def test_subs_ext_reg_uxtx0_32(self):
+        self.assertEqual(self.rf.read('X0'), 0xbfefeff0)
+        self.assertEqual(self.rf.read('W0'), 0xbfefeff0)
+        self.assertEqual(self.rf.read('NZCV'), 0x90000000)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x81525354')
+    @itest('subs w0, w1, w2, uxtx #4')
+    def test_subs_ext_reg_uxtx4_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x2c1d0e04)
+        self.assertEqual(self.rf.read('W0'), 0x2c1d0e04)
+        self.assertEqual(self.rf.read('NZCV'), 0x20000000)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x51525384')
+    @itest('subs w0, w1, w2, sxtb')
+    def test_subs_ext_reg_sxtb32(self):
+        self.assertEqual(self.rf.read('X0'), 0x414243c0)
+        self.assertEqual(self.rf.read('W0'), 0x414243c0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x51525384')
+    @itest('subs w0, w1, w2, sxtb #0')
+    def test_subs_ext_reg_sxtb0_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x414243c0)
+        self.assertEqual(self.rf.read('W0'), 0x414243c0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x51525384')
+    @itest('subs w0, w1, w2, sxtb #4')
+    def test_subs_ext_reg_sxtb4_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424b04)
+        self.assertEqual(self.rf.read('W0'), 0x41424b04)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x51528354')
+    @itest('subs w0, w1, w2, sxth')
+    def test_subs_ext_reg_sxth32(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142bff0)
+        self.assertEqual(self.rf.read('W0'), 0x4142bff0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x51528354')
+    @itest('subs w0, w1, w2, sxth #0')
+    def test_subs_ext_reg_sxth0_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142bff0)
+        self.assertEqual(self.rf.read('W0'), 0x4142bff0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x51528354')
+    @itest('subs w0, w1, w2, sxth #4')
+    def test_subs_ext_reg_sxth4_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x414a0e04)
+        self.assertEqual(self.rf.read('W0'), 0x414a0e04)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x81525354')
+    @itest('subs w0, w1, w2, sxtw')
+    def test_subs_ext_reg_sxtw32(self):
+        self.assertEqual(self.rf.read('X0'), 0xbfefeff0)
+        self.assertEqual(self.rf.read('W0'), 0xbfefeff0)
+        self.assertEqual(self.rf.read('NZCV'), 0x90000000)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x81525354')
+    @itest('subs w0, w1, w2, sxtw #0')
+    def test_subs_ext_reg_sxtw0_32(self):
+        self.assertEqual(self.rf.read('X0'), 0xbfefeff0)
+        self.assertEqual(self.rf.read('W0'), 0xbfefeff0)
+        self.assertEqual(self.rf.read('NZCV'), 0x90000000)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x81525354')
+    @itest('subs w0, w1, w2, sxtw #4')
+    def test_subs_ext_reg_sxtw4_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x2c1d0e04)
+        self.assertEqual(self.rf.read('W0'), 0x2c1d0e04)
+        self.assertEqual(self.rf.read('NZCV'), 0x20000000)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x81525354')
+    @itest('subs w0, w1, w2, sxtx')
+    def test_subs_ext_reg_sxtx32(self):
+        self.assertEqual(self.rf.read('X0'), 0xbfefeff0)
+        self.assertEqual(self.rf.read('W0'), 0xbfefeff0)
+        self.assertEqual(self.rf.read('NZCV'), 0x90000000)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x81525354')
+    @itest('subs w0, w1, w2, sxtx #0')
+    def test_subs_ext_reg_sxtx0_32(self):
+        self.assertEqual(self.rf.read('X0'), 0xbfefeff0)
+        self.assertEqual(self.rf.read('W0'), 0xbfefeff0)
+        self.assertEqual(self.rf.read('NZCV'), 0x90000000)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x81525354')
+    @itest('subs w0, w1, w2, sxtx #4')
+    def test_subs_ext_reg_sxtx4_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x2c1d0e04)
+        self.assertEqual(self.rf.read('W0'), 0x2c1d0e04)
+        self.assertEqual(self.rf.read('NZCV'), 0x20000000)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x81525354')
+    @itest('subs w0, w1, w2, lsl #0')
+    def test_subs_ext_reg_lsl0_32(self):
+        self.assertEqual(self.rf.read('X0'), 0xbfefeff0)
+        self.assertEqual(self.rf.read('W0'), 0xbfefeff0)
+        self.assertEqual(self.rf.read('NZCV'), 0x90000000)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x81525354')
+    @itest('subs w0, w1, w2, lsl #4')
+    def test_subs_ext_reg_lsl4_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x2c1d0e04)
+        self.assertEqual(self.rf.read('W0'), 0x2c1d0e04)
+        self.assertEqual(self.rf.read('NZCV'), 0x20000000)
+
+    # 64-bit.
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x51525384')
+    @itest('subs x0, x1, w2, uxtb')
+    def test_subs_ext_reg_uxtb64(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344454646c4)
+        self.assertEqual(self.rf.read('W0'), 0x454646c4)
+        self.assertEqual(self.rf.read('NZCV'), 0x20000000)
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x51525384')
+    @itest('subs x0, x1, w2, uxtb #0')
+    def test_subs_ext_reg_uxtb0_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344454646c4)
+        self.assertEqual(self.rf.read('W0'), 0x454646c4)
+        self.assertEqual(self.rf.read('NZCV'), 0x20000000)
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x51525384')
+    @itest('subs x0, x1, w2, uxtb #4')
+    def test_subs_ext_reg_uxtb4_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445463f08)
+        self.assertEqual(self.rf.read('W0'), 0x45463f08)
+        self.assertEqual(self.rf.read('NZCV'), 0x20000000)
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x51528354')
+    @itest('subs x0, x1, w2, uxth')
+    def test_subs_ext_reg_uxth64(self):
+        self.assertEqual(self.rf.read('X0'), 0x414243444545c3f4)
+        self.assertEqual(self.rf.read('W0'), 0x4545c3f4)
+        self.assertEqual(self.rf.read('NZCV'), 0x20000000)
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x51528354')
+    @itest('subs x0, x1, w2, uxth #0')
+    def test_subs_ext_reg_uxth0_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x414243444545c3f4)
+        self.assertEqual(self.rf.read('W0'), 0x4545c3f4)
+        self.assertEqual(self.rf.read('NZCV'), 0x20000000)
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x51528354')
+    @itest('subs x0, x1, w2, uxth #4')
+    def test_subs_ext_reg_uxth4_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344453e1208)
+        self.assertEqual(self.rf.read('W0'), 0x453e1208)
+        self.assertEqual(self.rf.read('NZCV'), 0x20000000)
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x81525354')
+    @itest('subs x0, x1, w2, uxtw')
+    def test_subs_ext_reg_uxtw64(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424343c3f3f3f4)
+        self.assertEqual(self.rf.read('W0'), 0xc3f3f3f4)
+        self.assertEqual(self.rf.read('NZCV'), 0x20000000)
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x81525354')
+    @itest('subs x0, x1, w2, uxtw #0')
+    def test_subs_ext_reg_uxtw0_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424343c3f3f3f4)
+        self.assertEqual(self.rf.read('W0'), 0xc3f3f3f4)
+        self.assertEqual(self.rf.read('NZCV'), 0x20000000)
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x81525354')
+    @itest('subs x0, x1, w2, uxtw #4')
+    def test_subs_ext_reg_uxtw4_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142433c30211208)
+        self.assertEqual(self.rf.read('W0'), 0x30211208)
+        self.assertEqual(self.rf.read('NZCV'), 0x20000000)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x8152535455565758')
+    @itest('subs x0, x1, x2, uxtx')
+    def test_subs_ext_reg_uxtx64(self):
+        self.assertEqual(self.rf.read('X0'), 0xbfefefefefefeff0)
+        self.assertEqual(self.rf.read('W0'), 0xefefeff0)
+        self.assertEqual(self.rf.read('NZCV'), 0x90000000)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x8152535455565758')
+    @itest('subs x0, x1, x2, uxtx #0')
+    def test_subs_ext_reg_uxtx0_64(self):
+        self.assertEqual(self.rf.read('X0'), 0xbfefefefefefeff0)
+        self.assertEqual(self.rf.read('W0'), 0xefefeff0)
+        self.assertEqual(self.rf.read('NZCV'), 0x90000000)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x8152535455565758')
+    @itest('subs x0, x1, x2, uxtx #4')
+    def test_subs_ext_reg_uxtx4_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x2c1d0dfeefe0d1c8)
+        self.assertEqual(self.rf.read('W0'), 0xefe0d1c8)
+        self.assertEqual(self.rf.read('NZCV'), 0x20000000)
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x51525384')
+    @itest('subs x0, x1, w2, sxtb')
+    def test_subs_ext_reg_sxtb64(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344454647c4)
+        self.assertEqual(self.rf.read('W0'), 0x454647c4)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x51525384')
+    @itest('subs x0, x1, w2, sxtb #0')
+    def test_subs_ext_reg_sxtb0_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344454647c4)
+        self.assertEqual(self.rf.read('W0'), 0x454647c4)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x51525384')
+    @itest('subs x0, x1, w2, sxtb #4')
+    def test_subs_ext_reg_sxtb4_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464f08)
+        self.assertEqual(self.rf.read('W0'), 0x45464f08)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x51528354')
+    @itest('subs x0, x1, w2, sxth')
+    def test_subs_ext_reg_sxth64(self):
+        self.assertEqual(self.rf.read('X0'), 0x414243444546c3f4)
+        self.assertEqual(self.rf.read('W0'), 0x4546c3f4)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x51528354')
+    @itest('subs x0, x1, w2, sxth #0')
+    def test_subs_ext_reg_sxth0_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x414243444546c3f4)
+        self.assertEqual(self.rf.read('W0'), 0x4546c3f4)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x51528354')
+    @itest('subs x0, x1, w2, sxth #4')
+    def test_subs_ext_reg_sxth4_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344454e1208)
+        self.assertEqual(self.rf.read('W0'), 0x454e1208)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x81525354')
+    @itest('subs x0, x1, w2, sxtw')
+    def test_subs_ext_reg_sxtw64(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344c3f3f3f4)
+        self.assertEqual(self.rf.read('W0'), 0xc3f3f3f4)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x81525354')
+    @itest('subs x0, x1, w2, sxtw #0')
+    def test_subs_ext_reg_sxtw0_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344c3f3f3f4)
+        self.assertEqual(self.rf.read('W0'), 0xc3f3f3f4)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748', 'W2=0x81525354')
+    @itest('subs x0, x1, w2, sxtw #4')
+    def test_subs_ext_reg_sxtw4_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434c30211208)
+        self.assertEqual(self.rf.read('W0'), 0x30211208)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x8152535455565758')
+    @itest('subs x0, x1, x2, sxtx')
+    def test_subs_ext_reg_sxtx64(self):
+        self.assertEqual(self.rf.read('X0'), 0xbfefefefefefeff0)
+        self.assertEqual(self.rf.read('W0'), 0xefefeff0)
+        self.assertEqual(self.rf.read('NZCV'), 0x90000000)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x8152535455565758')
+    @itest('subs x0, x1, x2, sxtx #0')
+    def test_subs_ext_reg_sxtx0_64(self):
+        self.assertEqual(self.rf.read('X0'), 0xbfefefefefefeff0)
+        self.assertEqual(self.rf.read('W0'), 0xefefeff0)
+        self.assertEqual(self.rf.read('NZCV'), 0x90000000)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x8152535455565758')
+    @itest('subs x0, x1, x2, sxtx #4')
+    def test_subs_ext_reg_sxtx4_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x2c1d0dfeefe0d1c8)
+        self.assertEqual(self.rf.read('W0'), 0xefe0d1c8)
+        self.assertEqual(self.rf.read('NZCV'), 0x20000000)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x8152535455565758')
+    @itest('subs x0, x1, x2, lsl #0')
+    def test_subs_ext_reg_lsl0_64(self):
+        self.assertEqual(self.rf.read('X0'), 0xbfefefefefefeff0)
+        self.assertEqual(self.rf.read('W0'), 0xefefeff0)
+        self.assertEqual(self.rf.read('NZCV'), 0x90000000)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x8152535455565758')
+    @itest('subs x0, x1, x2, lsl #4')
+    def test_subs_ext_reg_lsl4_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x2c1d0dfeefe0d1c8)
+        self.assertEqual(self.rf.read('W0'), 0xefe0d1c8)
+        self.assertEqual(self.rf.read('NZCV'), 0x20000000)
+
+    # SUBS (immediate).
+
+    # 32-bit.
+
+    @itest_setregs('W1=0x41424344')
+    @itest('subs w0, w1, #0')
+    def test_subs_imm_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344)
+        self.assertEqual(self.rf.read('W0'), 0x41424344)
+        self.assertEqual(self.rf.read('NZCV'), 0x20000000)
+
+    @itest_setregs('W1=0x41424344')
+    @itest('subs w0, w1, #4095')
+    def test_subs_imm_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41423345)
+        self.assertEqual(self.rf.read('W0'), 0x41423345)
+        self.assertEqual(self.rf.read('NZCV'), 0x20000000)
+
+    @itest_setregs('W1=0x41424344')
+    @itest('subs w0, w1, #1')
+    def test_subs_imm32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424343)
+        self.assertEqual(self.rf.read('W0'), 0x41424343)
+        self.assertEqual(self.rf.read('NZCV'), 0x20000000)
+
+    @itest_setregs('W1=0x41424344')
+    @itest('subs w0, w1, #1, lsl #0')
+    def test_subs_imm_lsl0_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424343)
+        self.assertEqual(self.rf.read('W0'), 0x41424343)
+        self.assertEqual(self.rf.read('NZCV'), 0x20000000)
+
+    @itest_setregs('W1=0x41424344')
+    @itest('subs w0, w1, #1, lsl #12')
+    def test_subs_imm_lsl12_32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41423344)
+        self.assertEqual(self.rf.read('W0'), 0x41423344)
+        self.assertEqual(self.rf.read('NZCV'), 0x20000000)
+
+    # 64-bit.
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest('subs x0, x1, #0')
+    def test_subs_imm_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+        self.assertEqual(self.rf.read('NZCV'), 0x20000000)
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest('subs x0, x1, #4095')
+    def test_subs_imm_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445463749)
+        self.assertEqual(self.rf.read('W0'), 0x45463749)
+        self.assertEqual(self.rf.read('NZCV'), 0x20000000)
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest('subs x0, x1, #1')
+    def test_subs_imm64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464747)
+        self.assertEqual(self.rf.read('W0'), 0x45464747)
+        self.assertEqual(self.rf.read('NZCV'), 0x20000000)
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest('subs x0, x1, #1, lsl #0')
+    def test_subs_imm_lsl0_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464747)
+        self.assertEqual(self.rf.read('W0'), 0x45464747)
+        self.assertEqual(self.rf.read('NZCV'), 0x20000000)
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest('subs x0, x1, #1, lsl #12')
+    def test_subs_imm_lsl12_64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445463748)
+        self.assertEqual(self.rf.read('W0'), 0x45463748)
+        self.assertEqual(self.rf.read('NZCV'), 0x20000000)
+
+    # SUBS (shifted register).
+
+    # 32-bit.
+
+    @itest_setregs('W1=0x41424344', 'W2=0x45464748')
+    @itest('subs w0, w1, w2')
+    def test_subs_sft_reg32(self):
+        self.assertEqual(self.rf.read('X0'), 0xfbfbfbfc)
+        self.assertEqual(self.rf.read('W0'), 0xfbfbfbfc)
+        self.assertEqual(self.rf.read('NZCV'), 0x80000000)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x45464748')
+    @itest('subs w0, w1, w2, lsl #0')
+    def test_subs_sft_reg_lsl_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0xfbfbfbfc)
+        self.assertEqual(self.rf.read('W0'), 0xfbfbfbfc)
+        self.assertEqual(self.rf.read('NZCV'), 0x80000000)
+
+    @itest_setregs('W1=0x41424344', 'W2=1')
+    @itest('subs w0, w1, w2, lsl #31')
+    def test_subs_sft_reg_lsl_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0xc1424344)
+        self.assertEqual(self.rf.read('W0'), 0xc1424344)
+        self.assertEqual(self.rf.read('NZCV'), 0x90000000)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x45464748')
+    @itest('subs w0, w1, w2, lsl #1')
+    def test_subs_sft_reg_lsl32(self):
+        self.assertEqual(self.rf.read('X0'), 0xb6b5b4b4)
+        self.assertEqual(self.rf.read('W0'), 0xb6b5b4b4)
+        self.assertEqual(self.rf.read('NZCV'), 0x90000000)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x45464748')
+    @itest('subs w0, w1, w2, lsr #0')
+    def test_subs_sft_reg_lsr_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0xfbfbfbfc)
+        self.assertEqual(self.rf.read('W0'), 0xfbfbfbfc)
+        self.assertEqual(self.rf.read('NZCV'), 0x80000000)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x80000000')
+    @itest('subs w0, w1, w2, lsr #31')
+    def test_subs_sft_reg_lsr_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424343)
+        self.assertEqual(self.rf.read('W0'), 0x41424343)
+        self.assertEqual(self.rf.read('NZCV'), 0x20000000)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x80000000')
+    @itest('subs w0, w1, w2, lsr #1')
+    def test_subs_sft_reg_lsr32(self):
+        self.assertEqual(self.rf.read('X0'), 0x1424344)
+        self.assertEqual(self.rf.read('W0'), 0x1424344)
+        self.assertEqual(self.rf.read('NZCV'), 0x20000000)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x45464748')
+    @itest('subs w0, w1, w2, asr #0')
+    def test_subs_sft_reg_asr_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0xfbfbfbfc)
+        self.assertEqual(self.rf.read('W0'), 0xfbfbfbfc)
+        self.assertEqual(self.rf.read('NZCV'), 0x80000000)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x80000000')
+    @itest('subs w0, w1, w2, asr #31')
+    def test_subs_sft_reg_asr_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424345)
+        self.assertEqual(self.rf.read('W0'), 0x41424345)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x41424344', 'W2=0x80000000')
+    @itest('subs w0, w1, w2, asr #1')
+    def test_subs_sft_reg_asr32(self):
+        self.assertEqual(self.rf.read('X0'), 0x81424344)
+        self.assertEqual(self.rf.read('W0'), 0x81424344)
+        self.assertEqual(self.rf.read('NZCV'), 0x90000000)
+
+    # 64-bit.
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x5152535455565758')
+    @itest('subs x0, x1, x2')
+    def test_subs_sft_reg64(self):
+        self.assertEqual(self.rf.read('X0'), 0xefefefefefefeff0)
+        self.assertEqual(self.rf.read('W0'), 0xefefeff0)
+        self.assertEqual(self.rf.read('NZCV'), 0x80000000)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x5152535455565758')
+    @itest('subs x0, x1, x2, lsl #0')
+    def test_subs_sft_reg_lsl_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0xefefefefefefeff0)
+        self.assertEqual(self.rf.read('W0'), 0xefefeff0)
+        self.assertEqual(self.rf.read('NZCV'), 0x80000000)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=1')
+    @itest('subs x0, x1, x2, lsl #63')
+    def test_subs_sft_reg_lsl_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0xc142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+        self.assertEqual(self.rf.read('NZCV'), 0x90000000)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x5152535455565758')
+    @itest('subs x0, x1, x2, lsl #1')
+    def test_subs_sft_reg_lsl64(self):
+        self.assertEqual(self.rf.read('X0'), 0x9e9d9c9b9a999898)
+        self.assertEqual(self.rf.read('W0'), 0x9a999898)
+        self.assertEqual(self.rf.read('NZCV'), 0x90000000)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x5152535455565758')
+    @itest('subs x0, x1, x2, lsr #0')
+    def test_subs_sft_reg_lsr_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0xefefefefefefeff0)
+        self.assertEqual(self.rf.read('W0'), 0xefefeff0)
+        self.assertEqual(self.rf.read('NZCV'), 0x80000000)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x8000000000000000')
+    @itest('subs x0, x1, x2, lsr #63')
+    def test_subs_sft_reg_lsr_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464747)
+        self.assertEqual(self.rf.read('W0'), 0x45464747)
+        self.assertEqual(self.rf.read('NZCV'), 0x20000000)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x8000000000000000')
+    @itest('subs x0, x1, x2, lsr #1')
+    def test_subs_sft_reg_lsr64(self):
+        self.assertEqual(self.rf.read('X0'), 0x142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+        self.assertEqual(self.rf.read('NZCV'), 0x20000000)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x5152535455565758')
+    @itest('subs x0, x1, x2, asr #0')
+    def test_subs_sft_reg_asr_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0xefefefefefefeff0)
+        self.assertEqual(self.rf.read('W0'), 0xefefeff0)
+        self.assertEqual(self.rf.read('NZCV'), 0x80000000)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x8000000000000000')
+    @itest('subs x0, x1, x2, asr #63')
+    def test_subs_sft_reg_asr_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464749)
+        self.assertEqual(self.rf.read('W0'), 0x45464749)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x8000000000000000')
+    @itest('subs x0, x1, x2, asr #1')
+    def test_subs_sft_reg_asr64(self):
+        self.assertEqual(self.rf.read('X0'), 0x8142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+        self.assertEqual(self.rf.read('NZCV'), 0x90000000)
+
+    # SVC.
+
+    @skip_sym('immediate')
+    def test_svc0(self):
+        with self.assertRaises(Interruption):
+            self._setupCpu("svc #0")
+            self._execute()
+
+    @skip_sym('immediate')
+    def test_svc1(self):
+        # XXX: Maybe change the behavior to be consistent with Unicorn?
+        if self.__class__.__name__ == 'Aarch64CpuInstructions':
+            e = InstructionNotImplementedError
+        elif self.__class__.__name__ == 'Aarch64UnicornInstructions':
+            e = Interruption
+        else:
+            self.fail()
+
+        with self.assertRaises(e):
+            self._setupCpu("svc #1")
+            self._execute()
+
+    # SXTB.
+
+    # 32-bit.
+
+    @itest_setregs('W1=0x41424344')
+    @itest('sxtb w0, w1')
+    def test_sxtb_zero32(self):
+        self.assertEqual(self.rf.read('X0'), 0x44)
+        self.assertEqual(self.rf.read('W0'), 0x44)
+
+    @itest_setregs('W1=0x41424384')
+    @itest('sxtb w0, w1')
+    def test_sxtb_one32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffff84)
+        self.assertEqual(self.rf.read('W0'), 0xffffff84)
+
+    # 64-bit.
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest('sxtb x0, x1')
+    def test_sxtb_zero64(self):
+        self.assertEqual(self.rf.read('X0'), 0x48)
+        self.assertEqual(self.rf.read('W0'), 0x48)
+
+    @itest_setregs('X1=0x4142434445464788')
+    @itest('sxtb x0, x1')
+    def test_sxtb_one64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffffffffff88)
+        self.assertEqual(self.rf.read('W0'), 0xffffff88)
+
+    # SXTH.
+
+    # 32-bit.
+
+    @itest_setregs('W1=0x41424344')
+    @itest('sxth w0, w1')
+    def test_sxth_zero32(self):
+        self.assertEqual(self.rf.read('X0'), 0x4344)
+        self.assertEqual(self.rf.read('W0'), 0x4344)
+
+    @itest_setregs('W1=0x41428344')
+    @itest('sxth w0, w1')
+    def test_sxth_one32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffff8344)
+        self.assertEqual(self.rf.read('W0'), 0xffff8344)
+
+    # 64-bit.
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest('sxth x0, x1')
+    def test_sxth_zero64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4748)
+        self.assertEqual(self.rf.read('W0'), 0x4748)
+
+    @itest_setregs('X1=0x4142434445468748')
+    @itest('sxth x0, x1')
+    def test_sxth_one64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffffffff8748)
+        self.assertEqual(self.rf.read('W0'), 0xffff8748)
+
+    # SXTW.
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest('sxtw x0, x1')
+    def test_sxtw_zero(self):
+        self.assertEqual(self.rf.read('X0'), 0x45464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @itest_setregs('X1=0x4142434485464748')
+    @itest('sxtw x0, x1')
+    def test_sxtw_one(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffff85464748)
+        self.assertEqual(self.rf.read('W0'), 0x85464748)
+
 
 class Aarch64CpuInstructions(unittest.TestCase, Aarch64Instructions):
     def setUp(self):
