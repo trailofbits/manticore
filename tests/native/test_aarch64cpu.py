@@ -13,7 +13,7 @@ from manticore.native.cpu.abstractcpu import (
 )
 from manticore.native.cpu.bitwise import LSL, Mask
 from manticore.utils.fallback_emulator import UnicornEmulator
-from .test_aarch64rf import MAGIC_64, MAGIC_32
+from tests.native.test_aarch64rf import MAGIC_64, MAGIC_32
 
 ks = Ks(KS_ARCH_ARM64, KS_MODE_LITTLE_ENDIAN)
 
