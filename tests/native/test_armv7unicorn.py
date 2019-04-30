@@ -5,6 +5,7 @@ import struct
 from capstone import CS_MODE_THUMB, CS_MODE_ARM
 from functools import wraps
 from keystone import Ks, KS_ARCH_ARM, KS_MODE_ARM, KS_MODE_THUMB
+import logging
 from unicorn import UC_QUERY_MODE, UC_MODE_THUMB
 
 from manticore.native.cpu.abstractcpu import ConcretizeRegister
@@ -18,8 +19,6 @@ from manticore.utils.fallback_emulator import UnicornEmulator
 ks = Ks(KS_ARCH_ARM, KS_MODE_ARM)
 ks_thumb = Ks(KS_ARCH_ARM, KS_MODE_THUMB)
 
-import logging
-
 logger = logging.getLogger("ARM_TESTS")
 
 __doc__ = '''
@@ -27,6 +26,7 @@ Test the Unicorn emulation stub.  Armv7UnicornInstructions includes all
 semantics from ARM tests to ensure that they match. UnicornConcretization tests
 to make sure symbolic values get properly concretized.
 '''
+
 
 def assemble(asm, mode=CS_MODE_ARM):
     if CS_MODE_ARM == mode:
@@ -38,6 +38,7 @@ def assemble(asm, mode=CS_MODE_ARM):
     if not ords:
         raise Exception(f'bad assembly: {asm}')
     return ''.join(map(chr, ords))
+
 
 def emulate_next(cpu):
     'Read the next instruction and emulate it with Unicorn '
@@ -69,7 +70,7 @@ def itest_setregs(*preds):
 
                 try:
                     src = int(src, 0)
-                except Exception:
+                except ValueError:
                     pass
 
                 self.rf.write(dest.upper(), src)
@@ -98,6 +99,7 @@ class Armv7UnicornInstructions(unittest.TestCase):
     all semantics match.
     '''
     _multiprocess_can_split_ = True
+
     def setUp(self):
         self.cpu = Cpu(Memory32())
         self.mem = self.cpu.memory
@@ -1343,7 +1345,6 @@ class UnicornConcretization(unittest.TestCase):
             cls.cpu = platform._mk_proc('armv7')
         return (cls.cpu, cls.state)
 
-
     def setUp(self):
         self.cpu, self.state = self.__class__.get_state()
         self.mem = self.cpu.memory
@@ -1382,7 +1383,7 @@ class UnicornConcretization(unittest.TestCase):
             self.assertFalse(True)
         except ConcretizeMemory as e:
             sp = self.rf.read('SP')
-            self.assertTrue(e.address in range(sp, sp+len(val)))
+            self.assertTrue(e.address in range(sp, sp + len(val)))
 
     @itest_custom("mov r1, r2")
     def test_load_symbolic_from_register(self):
@@ -1417,9 +1418,8 @@ class UnicornConcretization(unittest.TestCase):
 
         emulate_next(self.cpu)
 
-        self.assertEqual(self.rf.read('PC'), self.code+8)
+        self.assertEqual(self.rf.read('PC'), self.code + 8)
         self.assertEqual(self.rf.read('R0'), 0x12345678)
-
 
     @itest_custom("mov r1, r2")
     def test_concretize_register_isnt_consumed(self):
@@ -1428,4 +1428,3 @@ class UnicornConcretization(unittest.TestCase):
 
         with self.assertRaises(ConcretizeRegister):
             self.cpu.emulate(self.cpu.decode_instruction(self.cpu.PC))
-
