@@ -3710,9 +3710,8 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X2'), 0)
 
     # CBNZ.
-
+    
     # 32-bit.
-
     # Execute sequentially.
     @itest_custom(['cbnz w0, .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
     def test_cbnz_pos_zero32(self):

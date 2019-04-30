@@ -473,6 +473,15 @@ class EthTests(unittest.TestCase):
 
         self.assertEqual(str(e.exception), 'The number of values to serialize is greater than the number of types')
 
+    def test_create_contract_with_string_args(self):
+        source_code = 'contract DontWork1{ string s; constructor(string memory s_) public{ s = s_;} }'
+        owner = self.mevm.create_account()
+
+        sym_args = self.mevm.make_symbolic_arguments('(string)')
+        contract = self.mevm.solidity_create_contract(source_code, owner=owner, args=sym_args)
+        self.assertIsNotNone(contract)
+        self.assertEqual(self.mevm.count_states(), 1)
+
     def test_create_contract_two_instances(self):
         source_code = 'contract A { constructor(uint32 arg) {} }'
         owner = self.mevm.create_account()
