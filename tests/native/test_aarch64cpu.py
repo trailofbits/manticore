@@ -5,7 +5,7 @@ from functools import wraps
 from keystone import Ks, KS_ARCH_ARM64, KS_MODE_LITTLE_ENDIAN
 from nose.tools import nottest
 
-from manticore.core.smtlib import *
+from manticore.core.smtlib import ConstraintSet, solver
 from manticore.native.memory import SMemory64, Memory64
 from manticore.native.cpu.aarch64 import Aarch64Cpu as Cpu
 from manticore.native.cpu.abstractcpu import (
