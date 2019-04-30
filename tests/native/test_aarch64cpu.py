@@ -13061,6 +13061,970 @@ class Aarch64Instructions:
         self.assertEqual(self.rf.read('X0'), 0xffffffff85464748)
         self.assertEqual(self.rf.read('W0'), 0x85464748)
 
+    # TBNZ.
+
+    # 32-bit.
+
+    # Execute sequentially.
+    @itest_custom(['tbnz w0, 0, .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
+    def test_tbnz_min_zero32(self):
+        self._setreg('W0', 0)
+        self._setreg('PC', self.cpu.PC)
+        pc = self.cpu.PC
+        self._execute(check_pc=False)
+        self.assertEqual(self.rf.read('PC'), pc + 4)
+        self.assertEqual(self.rf.read('LR'), 0)
+        self.assertEqual(self.rf.read('X30'), 0)
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 42)
+        self.assertEqual(self.rf.read('X2'), 0)
+
+    # Jump over the second instruction.
+    @itest_custom(['tbnz w0, 0, .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
+    def test_tbnz_min_one32(self):
+        self._setreg('W0', 1)
+        self._setreg('PC', self.cpu.PC)
+        pc = self.cpu.PC
+        self._execute(check_pc=False)
+        self.assertEqual(self.rf.read('PC'), pc + 8)
+        self.assertEqual(self.rf.read('LR'), 0)
+        self.assertEqual(self.rf.read('X30'), 0)
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0)
+        self.assertEqual(self.rf.read('X2'), 43)
+
+    # Execute sequentially.
+    @itest_custom(['tbnz w0, 31, .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
+    def test_tbnz_max_zero32(self):
+        self._setreg('W0', 0)
+        self._setreg('PC', self.cpu.PC)
+        pc = self.cpu.PC
+        self._execute(check_pc=False)
+        self.assertEqual(self.rf.read('PC'), pc + 4)
+        self.assertEqual(self.rf.read('LR'), 0)
+        self.assertEqual(self.rf.read('X30'), 0)
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 42)
+        self.assertEqual(self.rf.read('X2'), 0)
+
+    # Jump over the second instruction.
+    @itest_custom(['tbnz w0, 31, .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
+    def test_tbnz_max_one32(self):
+        self._setreg('W0', 0x80000000)
+        self._setreg('PC', self.cpu.PC)
+        pc = self.cpu.PC
+        self._execute(check_pc=False)
+        self.assertEqual(self.rf.read('PC'), pc + 8)
+        self.assertEqual(self.rf.read('LR'), 0)
+        self.assertEqual(self.rf.read('X30'), 0)
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0)
+        self.assertEqual(self.rf.read('X2'), 43)
+
+    # Execute sequentially.
+    @itest_custom(['tbnz w0, 3, .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
+    def test_tbnz_zero32(self):
+        self._setreg('W0', 0)
+        self._setreg('PC', self.cpu.PC)
+        pc = self.cpu.PC
+        self._execute(check_pc=False)
+        self.assertEqual(self.rf.read('PC'), pc + 4)
+        self.assertEqual(self.rf.read('LR'), 0)
+        self.assertEqual(self.rf.read('X30'), 0)
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 42)
+        self.assertEqual(self.rf.read('X2'), 0)
+
+    # Jump over the second instruction.
+    @itest_custom(['tbnz w0, 3, .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
+    def test_tbnz_one32(self):
+        self._setreg('W0', 8)
+        self._setreg('PC', self.cpu.PC)
+        pc = self.cpu.PC
+        self._execute(check_pc=False)
+        self.assertEqual(self.rf.read('PC'), pc + 8)
+        self.assertEqual(self.rf.read('LR'), 0)
+        self.assertEqual(self.rf.read('X30'), 0)
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0)
+        self.assertEqual(self.rf.read('X2'), 43)
+
+    # 64-bit.
+
+    # Execute sequentially.
+    @itest_custom(['tbnz x0, 0, .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
+    def test_tbnz_min_zero64(self):
+        self._setreg('X0', 0)
+        self._setreg('PC', self.cpu.PC)
+        pc = self.cpu.PC
+        self._execute(check_pc=False)
+        self.assertEqual(self.rf.read('PC'), pc + 4)
+        self.assertEqual(self.rf.read('LR'), 0)
+        self.assertEqual(self.rf.read('X30'), 0)
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 42)
+        self.assertEqual(self.rf.read('X2'), 0)
+
+    # Jump over the second instruction.
+    @itest_custom(['tbnz x0, 0, .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
+    def test_tbnz_min_one64(self):
+        self._setreg('X0', 1)
+        self._setreg('PC', self.cpu.PC)
+        pc = self.cpu.PC
+        self._execute(check_pc=False)
+        self.assertEqual(self.rf.read('PC'), pc + 8)
+        self.assertEqual(self.rf.read('LR'), 0)
+        self.assertEqual(self.rf.read('X30'), 0)
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0)
+        self.assertEqual(self.rf.read('X2'), 43)
+
+    # Execute sequentially.
+    @itest_custom(['tbnz x0, 63, .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
+    def test_tbnz_max_zero64(self):
+        self._setreg('X0', 0)
+        self._setreg('PC', self.cpu.PC)
+        pc = self.cpu.PC
+        self._execute(check_pc=False)
+        self.assertEqual(self.rf.read('PC'), pc + 4)
+        self.assertEqual(self.rf.read('LR'), 0)
+        self.assertEqual(self.rf.read('X30'), 0)
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 42)
+        self.assertEqual(self.rf.read('X2'), 0)
+
+    # Jump over the second instruction.
+    @itest_custom(['tbnz x0, 63, .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
+    def test_tbnz_max_one64(self):
+        self._setreg('X0', 0x8000000000000000)
+        self._setreg('PC', self.cpu.PC)
+        pc = self.cpu.PC
+        self._execute(check_pc=False)
+        self.assertEqual(self.rf.read('PC'), pc + 8)
+        self.assertEqual(self.rf.read('LR'), 0)
+        self.assertEqual(self.rf.read('X30'), 0)
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0)
+        self.assertEqual(self.rf.read('X2'), 43)
+
+    # Execute sequentially.
+    @itest_custom(['tbnz x0, 3, .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
+    def test_tbnz_zero64(self):
+        self._setreg('X0', 0)
+        self._setreg('PC', self.cpu.PC)
+        pc = self.cpu.PC
+        self._execute(check_pc=False)
+        self.assertEqual(self.rf.read('PC'), pc + 4)
+        self.assertEqual(self.rf.read('LR'), 0)
+        self.assertEqual(self.rf.read('X30'), 0)
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 42)
+        self.assertEqual(self.rf.read('X2'), 0)
+
+    # Jump over the second instruction.
+    @itest_custom(['tbnz x0, 3, .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
+    def test_tbnz_one64(self):
+        self._setreg('X0', 8)
+        self._setreg('PC', self.cpu.PC)
+        pc = self.cpu.PC
+        self._execute(check_pc=False)
+        self.assertEqual(self.rf.read('PC'), pc + 8)
+        self.assertEqual(self.rf.read('LR'), 0)
+        self.assertEqual(self.rf.read('X30'), 0)
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0)
+        self.assertEqual(self.rf.read('X2'), 43)
+
+    # TBZ.
+
+    # 32-bit.
+
+    # Jump over the second instruction.
+    @itest_custom(['tbz w0, 0, .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
+    def test_tbz_min_zero32(self):
+        self._setreg('W0', 0)
+        self._setreg('PC', self.cpu.PC)
+        pc = self.cpu.PC
+        self._execute(check_pc=False)
+        self.assertEqual(self.rf.read('PC'), pc + 8)
+        self.assertEqual(self.rf.read('LR'), 0)
+        self.assertEqual(self.rf.read('X30'), 0)
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0)
+        self.assertEqual(self.rf.read('X2'), 43)
+
+    # Execute sequentially.
+    @itest_custom(['tbz w0, 0, .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
+    def test_tbz_min_one32(self):
+        self._setreg('W0', 1)
+        self._setreg('PC', self.cpu.PC)
+        pc = self.cpu.PC
+        self._execute(check_pc=False)
+        self.assertEqual(self.rf.read('PC'), pc + 4)
+        self.assertEqual(self.rf.read('LR'), 0)
+        self.assertEqual(self.rf.read('X30'), 0)
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 42)
+        self.assertEqual(self.rf.read('X2'), 0)
+
+    # Jump over the second instruction.
+    @itest_custom(['tbz w0, 31, .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
+    def test_tbz_max_zero32(self):
+        self._setreg('W0', 0)
+        self._setreg('PC', self.cpu.PC)
+        pc = self.cpu.PC
+        self._execute(check_pc=False)
+        self.assertEqual(self.rf.read('PC'), pc + 8)
+        self.assertEqual(self.rf.read('LR'), 0)
+        self.assertEqual(self.rf.read('X30'), 0)
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0)
+        self.assertEqual(self.rf.read('X2'), 43)
+
+    # Execute sequentially.
+    @itest_custom(['tbz w0, 31, .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
+    def test_tbz_max_one32(self):
+        self._setreg('W0', 0x80000000)
+        self._setreg('PC', self.cpu.PC)
+        pc = self.cpu.PC
+        self._execute(check_pc=False)
+        self.assertEqual(self.rf.read('PC'), pc + 4)
+        self.assertEqual(self.rf.read('LR'), 0)
+        self.assertEqual(self.rf.read('X30'), 0)
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 42)
+        self.assertEqual(self.rf.read('X2'), 0)
+
+    # Jump over the second instruction.
+    @itest_custom(['tbz w0, 3, .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
+    def test_tbz_zero32(self):
+        self._setreg('W0', 0)
+        self._setreg('PC', self.cpu.PC)
+        pc = self.cpu.PC
+        self._execute(check_pc=False)
+        self.assertEqual(self.rf.read('PC'), pc + 8)
+        self.assertEqual(self.rf.read('LR'), 0)
+        self.assertEqual(self.rf.read('X30'), 0)
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0)
+        self.assertEqual(self.rf.read('X2'), 43)
+
+    # Execute sequentially.
+    @itest_custom(['tbz w0, 3, .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
+    def test_tbz_one32(self):
+        self._setreg('W0', 8)
+        self._setreg('PC', self.cpu.PC)
+        pc = self.cpu.PC
+        self._execute(check_pc=False)
+        self.assertEqual(self.rf.read('PC'), pc + 4)
+        self.assertEqual(self.rf.read('LR'), 0)
+        self.assertEqual(self.rf.read('X30'), 0)
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 42)
+        self.assertEqual(self.rf.read('X2'), 0)
+
+    # 64-bit.
+
+    # Jump over the second instruction.
+    @itest_custom(['tbz x0, 0, .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
+    def test_tbz_min_zero64(self):
+        self._setreg('X0', 0)
+        self._setreg('PC', self.cpu.PC)
+        pc = self.cpu.PC
+        self._execute(check_pc=False)
+        self.assertEqual(self.rf.read('PC'), pc + 8)
+        self.assertEqual(self.rf.read('LR'), 0)
+        self.assertEqual(self.rf.read('X30'), 0)
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0)
+        self.assertEqual(self.rf.read('X2'), 43)
+
+    # Execute sequentially.
+    @itest_custom(['tbz x0, 0, .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
+    def test_tbz_min_one64(self):
+        self._setreg('X0', 1)
+        self._setreg('PC', self.cpu.PC)
+        pc = self.cpu.PC
+        self._execute(check_pc=False)
+        self.assertEqual(self.rf.read('PC'), pc + 4)
+        self.assertEqual(self.rf.read('LR'), 0)
+        self.assertEqual(self.rf.read('X30'), 0)
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 42)
+        self.assertEqual(self.rf.read('X2'), 0)
+
+    # Jump over the second instruction.
+    @itest_custom(['tbz x0, 63, .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
+    def test_tbz_max_zero64(self):
+        self._setreg('X0', 0)
+        self._setreg('PC', self.cpu.PC)
+        pc = self.cpu.PC
+        self._execute(check_pc=False)
+        self.assertEqual(self.rf.read('PC'), pc + 8)
+        self.assertEqual(self.rf.read('LR'), 0)
+        self.assertEqual(self.rf.read('X30'), 0)
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0)
+        self.assertEqual(self.rf.read('X2'), 43)
+
+    # Execute sequentially.
+    @itest_custom(['tbz x0, 63, .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
+    def test_tbz_max_one64(self):
+        self._setreg('X0', 0x8000000000000000)
+        self._setreg('PC', self.cpu.PC)
+        pc = self.cpu.PC
+        self._execute(check_pc=False)
+        self.assertEqual(self.rf.read('PC'), pc + 4)
+        self.assertEqual(self.rf.read('LR'), 0)
+        self.assertEqual(self.rf.read('X30'), 0)
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 42)
+        self.assertEqual(self.rf.read('X2'), 0)
+
+    # Jump over the second instruction.
+    @itest_custom(['tbz x0, 3, .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
+    def test_tbz_zero64(self):
+        self._setreg('X0', 0)
+        self._setreg('PC', self.cpu.PC)
+        pc = self.cpu.PC
+        self._execute(check_pc=False)
+        self.assertEqual(self.rf.read('PC'), pc + 8)
+        self.assertEqual(self.rf.read('LR'), 0)
+        self.assertEqual(self.rf.read('X30'), 0)
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 0)
+        self.assertEqual(self.rf.read('X2'), 43)
+
+    # Execute sequentially.
+    @itest_custom(['tbz x0, 3, .+8', 'mov x1, 42', 'mov x2, 43'], multiple_insts=True)
+    def test_tbz_one64(self):
+        self._setreg('X0', 8)
+        self._setreg('PC', self.cpu.PC)
+        pc = self.cpu.PC
+        self._execute(check_pc=False)
+        self.assertEqual(self.rf.read('PC'), pc + 4)
+        self.assertEqual(self.rf.read('LR'), 0)
+        self.assertEqual(self.rf.read('X30'), 0)
+        self._execute()
+        self.assertEqual(self.rf.read('X1'), 42)
+        self.assertEqual(self.rf.read('X2'), 0)
+
+    # TST (immediate).
+
+    # 32-bit.
+
+    @itest_setregs('W1=0x41424344')
+    @itest('tst w1, #0xffff')
+    def test_tst_imm32(self):
+        self.assertEqual(self.rf.read('XZR'), 0)
+        self.assertEqual(self.rf.read('WZR'), 0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x81424344')
+    @itest('tst w1, #0xffff0000')
+    def test_tst_imm2_32(self):
+        self.assertEqual(self.rf.read('XZR'), 0)
+        self.assertEqual(self.rf.read('WZR'), 0)
+        self.assertEqual(self.rf.read('NZCV'), 0x80000000)
+
+    @itest_setregs('W1=0x44434241')
+    @itest('tst w1, #1')
+    def test_tst_imm3_32(self):
+        self.assertEqual(self.rf.read('XZR'), 0)
+        self.assertEqual(self.rf.read('WZR'), 0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0')
+    @itest('tst w1, #1')
+    def test_tst_imm4_32(self):
+        self.assertEqual(self.rf.read('XZR'), 0)
+        self.assertEqual(self.rf.read('WZR'), 0)
+        self.assertEqual(self.rf.read('NZCV'), 0x40000000)
+
+    # 64-bit.
+
+    @itest_setregs('X1=0x8142434445464748')
+    @itest('tst x1, #0xffff0000ffff0000')
+    def test_tst_imm64(self):
+        self.assertEqual(self.rf.read('XZR'), 0)
+        self.assertEqual(self.rf.read('WZR'), 0)
+        self.assertEqual(self.rf.read('NZCV'), 0x80000000)
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest('tst x1, #0x0000ffff0000ffff')
+    def test_tst_imm2_64(self):
+        self.assertEqual(self.rf.read('XZR'), 0)
+        self.assertEqual(self.rf.read('WZR'), 0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x4847464544434241')
+    @itest('tst x1, #1')
+    def test_tst_imm3_64(self):
+        self.assertEqual(self.rf.read('XZR'), 0)
+        self.assertEqual(self.rf.read('WZR'), 0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0')
+    @itest('tst x1, #1')
+    def test_tst_imm4_64(self):
+        self.assertEqual(self.rf.read('XZR'), 0)
+        self.assertEqual(self.rf.read('WZR'), 0)
+        self.assertEqual(self.rf.read('NZCV'), 0x40000000)
+
+    # TST (shifted register).
+
+    # 32-bit.
+
+    @itest_setregs('W1=0x4142ffff', 'W2=0xffff4344')
+    @itest('tst w1, w2')
+    def test_tst_sft_reg32(self):
+        self.assertEqual(self.rf.read('XZR'), 0)
+        self.assertEqual(self.rf.read('WZR'), 0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0xffffffff', 'W2=0')
+    @itest('tst w1, w2')
+    def test_tst_sft_reg_zero32(self):
+        self.assertEqual(self.rf.read('XZR'), 0)
+        self.assertEqual(self.rf.read('WZR'), 0)
+        self.assertEqual(self.rf.read('NZCV'), 0x40000000)
+
+    @itest_setregs('W1=0x4142ffff', 'W2=0xffff4344')
+    @itest('tst w1, w2, lsl #0')
+    def test_tst_sft_reg_lsl_min32(self):
+        self.assertEqual(self.rf.read('XZR'), 0)
+        self.assertEqual(self.rf.read('WZR'), 0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0xffffffff', 'W2=0x80000001')
+    @itest('tst w1, w2, lsl #31')
+    def test_tst_sft_reg_lsl_max32(self):
+        self.assertEqual(self.rf.read('XZR'), 0)
+        self.assertEqual(self.rf.read('WZR'), 0)
+        self.assertEqual(self.rf.read('NZCV'), 0x80000000)
+
+    @itest_setregs('W1=0xffffffff', 'W2=0x81424344')
+    @itest('tst w1, w2, lsl #4')
+    def test_tst_sft_reg_lsl32(self):
+        self.assertEqual(self.rf.read('XZR'), 0)
+        self.assertEqual(self.rf.read('WZR'), 0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x4142ffff', 'W2=0xffff4344')
+    @itest('tst w1, w2, lsr #0')
+    def test_tst_sft_reg_lsr_min32(self):
+        self.assertEqual(self.rf.read('XZR'), 0)
+        self.assertEqual(self.rf.read('WZR'), 0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0xffffffff', 'W2=0x80000001')
+    @itest('tst w1, w2, lsr #31')
+    def test_tst_sft_reg_lsr_max32(self):
+        self.assertEqual(self.rf.read('XZR'), 0)
+        self.assertEqual(self.rf.read('WZR'), 0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0xffffffff', 'W2=0x81424344')
+    @itest('tst w1, w2, lsr #4')
+    def test_tst_sft_reg_lsr32(self):
+        self.assertEqual(self.rf.read('XZR'), 0)
+        self.assertEqual(self.rf.read('WZR'), 0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0x4142ffff', 'W2=0xffff4344')
+    @itest('tst w1, w2, asr #0')
+    def test_tst_sft_reg_asr_min32(self):
+        self.assertEqual(self.rf.read('XZR'), 0)
+        self.assertEqual(self.rf.read('WZR'), 0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0xffffffff', 'W2=0x80000001')
+    @itest('tst w1, w2, asr #31')
+    def test_tst_sft_reg_asr_max32(self):
+        self.assertEqual(self.rf.read('XZR'), 0)
+        self.assertEqual(self.rf.read('WZR'), 0)
+        self.assertEqual(self.rf.read('NZCV'), 0x80000000)
+
+    @itest_setregs('W1=0xffffffff', 'W2=0x81424344')
+    @itest('tst w1, w2, asr #4')
+    def test_tst_sft_reg_asr32(self):
+        self.assertEqual(self.rf.read('XZR'), 0)
+        self.assertEqual(self.rf.read('WZR'), 0)
+        self.assertEqual(self.rf.read('NZCV'), 0x80000000)
+
+    @itest_setregs('W1=0x4142ffff', 'W2=0xffff4344')
+    @itest('tst w1, w2, ror #0')
+    def test_tst_sft_reg_ror_min32(self):
+        self.assertEqual(self.rf.read('XZR'), 0)
+        self.assertEqual(self.rf.read('WZR'), 0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0xffffffff', 'W2=0x80000001')
+    @itest('tst w1, w2, ror #31')
+    def test_tst_sft_reg_ror_max32(self):
+        self.assertEqual(self.rf.read('XZR'), 0)
+        self.assertEqual(self.rf.read('WZR'), 0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('W1=0xffffffff', 'W2=0x81424344')
+    @itest('tst w1, w2, ror #4')
+    def test_tst_sft_reg_ror32(self):
+        self.assertEqual(self.rf.read('XZR'), 0)
+        self.assertEqual(self.rf.read('WZR'), 0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    # 64-bit.
+
+    @itest_setregs('X1=0x41424344ffffffff', 'X2=0xffffffff45464748')
+    @itest('tst x1, x2')
+    def test_tst_sft_reg64(self):
+        self.assertEqual(self.rf.read('XZR'), 0)
+        self.assertEqual(self.rf.read('WZR'), 0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0xffffffffffffffff', 'X2=0')
+    @itest('tst x1, x2')
+    def test_tst_sft_reg_zero64(self):
+        self.assertEqual(self.rf.read('XZR'), 0)
+        self.assertEqual(self.rf.read('WZR'), 0)
+        self.assertEqual(self.rf.read('NZCV'), 0x40000000)
+
+    @itest_setregs('X1=0x41424344ffffffff', 'X2=0xffffffff45464748')
+    @itest('tst x1, x2, lsl #0')
+    def test_tst_sft_reg_lsl_min64(self):
+        self.assertEqual(self.rf.read('XZR'), 0)
+        self.assertEqual(self.rf.read('WZR'), 0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0xffffffffffffffff', 'X2=0x8000000000000001')
+    @itest('tst x1, x2, lsl #63')
+    def test_tst_sft_reg_lsl_max64(self):
+        self.assertEqual(self.rf.read('XZR'), 0)
+        self.assertEqual(self.rf.read('WZR'), 0)
+        self.assertEqual(self.rf.read('NZCV'), 0x80000000)
+
+    @itest_setregs('X1=0xffffffffffffffff', 'X2=0x8142434445464748')
+    @itest('tst x1, x2, lsl #4')
+    def test_tst_sft_reg_lsl64(self):
+        self.assertEqual(self.rf.read('XZR'), 0)
+        self.assertEqual(self.rf.read('WZR'), 0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x41424344ffffffff', 'X2=0xffffffff45464748')
+    @itest('tst x1, x2, lsr #0')
+    def test_tst_sft_reg_lsr_min64(self):
+        self.assertEqual(self.rf.read('XZR'), 0)
+        self.assertEqual(self.rf.read('WZR'), 0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0xffffffffffffffff', 'X2=0x8000000000000001')
+    @itest('tst x1, x2, lsr #63')
+    def test_tst_sft_reg_lsr_max64(self):
+        self.assertEqual(self.rf.read('XZR'), 0)
+        self.assertEqual(self.rf.read('WZR'), 0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0xffffffffffffffff', 'X2=0x8142434445464748')
+    @itest('tst x1, x2, lsr #4')
+    def test_tst_sft_reg_lsr64(self):
+        self.assertEqual(self.rf.read('XZR'), 0)
+        self.assertEqual(self.rf.read('WZR'), 0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0x41424344ffffffff', 'X2=0xffffffff45464748')
+    @itest('tst x1, x2, asr #0')
+    def test_tst_sft_reg_asr_min64(self):
+        self.assertEqual(self.rf.read('XZR'), 0)
+        self.assertEqual(self.rf.read('WZR'), 0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0xffffffffffffffff', 'X2=0x8000000000000001')
+    @itest('tst x1, x2, asr #63')
+    def test_tst_sft_reg_asr_max64(self):
+        self.assertEqual(self.rf.read('XZR'), 0)
+        self.assertEqual(self.rf.read('WZR'), 0)
+        self.assertEqual(self.rf.read('NZCV'), 0x80000000)
+
+    @itest_setregs('X1=0xffffffffffffffff', 'X2=0x8142434445464748')
+    @itest('tst x1, x2, asr #4')
+    def test_tst_sft_reg_asr64(self):
+        self.assertEqual(self.rf.read('XZR'), 0)
+        self.assertEqual(self.rf.read('WZR'), 0)
+        self.assertEqual(self.rf.read('NZCV'), 0x80000000)
+
+    @itest_setregs('X1=0x41424344ffffffff', 'X2=0xffffffff45464748')
+    @itest('tst x1, x2, ror #0')
+    def test_tst_sft_reg_ror_min64(self):
+        self.assertEqual(self.rf.read('XZR'), 0)
+        self.assertEqual(self.rf.read('WZR'), 0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0xffffffffffffffff', 'X2=0x8000000000000001')
+    @itest('tst x1, x2, ror #63')
+    def test_tst_sft_reg_ror_max64(self):
+        self.assertEqual(self.rf.read('XZR'), 0)
+        self.assertEqual(self.rf.read('WZR'), 0)
+        self.assertEqual(self.rf.read('NZCV'), 0)
+
+    @itest_setregs('X1=0xffffffffffffffff', 'X2=0x8142434445464748')
+    @itest('tst x1, x2, ror #4')
+    def test_tst_sft_reg_ror64(self):
+        self.assertEqual(self.rf.read('XZR'), 0)
+        self.assertEqual(self.rf.read('WZR'), 0)
+        self.assertEqual(self.rf.read('NZCV'), 0x80000000)
+
+    # UBFIZ.
+
+    # 32-bit.
+
+    @itest_setregs('W1=0x44434241')
+    @itest('ubfiz w0, w1, #0, #1')
+    def test_ubfiz_min_min32(self):
+        self.assertEqual(self.rf.read('X0'), 1)
+        self.assertEqual(self.rf.read('W0'), 1)
+
+    @itest_setregs('W1=0x41424344')
+    @itest('ubfiz w0, w1, #0, #32')
+    def test_ubfiz_min_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344)
+        self.assertEqual(self.rf.read('W0'), 0x41424344)
+
+    @itest_setregs('W1=0x44434241')
+    @itest('ubfiz w0, w1, #31, #1')
+    def test_ubfiz_max_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0x80000000)
+        self.assertEqual(self.rf.read('W0'), 0x80000000)
+
+    @itest_setregs('W1=0x41427fff')
+    @itest('ubfiz w0, w1, #17, #15')
+    def test_ubfiz32(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffe0000)
+        self.assertEqual(self.rf.read('W0'), 0xfffe0000)
+
+    # 64-bit.
+
+    @itest_setregs('X1=0x4847464544434241')
+    @itest('ubfiz x0, x1, #0, #1')
+    def test_ubfiz_min_min64(self):
+        self.assertEqual(self.rf.read('X0'), 1)
+        self.assertEqual(self.rf.read('W0'), 1)
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest('ubfiz x0, x1, #0, #64')
+    def test_ubfiz_min_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @itest_setregs('X1=0x4847464544434241')
+    @itest('ubfiz x0, x1, #63, #1')
+    def test_ubfiz_max_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0x8000000000000000)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs('X1=0x414243447fffffff')
+    @itest('ubfiz x0, x1, #33, #31')
+    def test_ubfiz64(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffe00000000)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    # UBFM.
+
+    # 32-bit.
+
+    # This is actually ubfx.
+    @itest_setregs('W0=0xffffffff', 'W1=0x41424328')
+    @itest('ubfm w0, w1, #3, #5')
+    def test_ubfm_ge32(self):
+        self.assertEqual(self.rf.read('X0'), 5)
+        self.assertEqual(self.rf.read('W0'), 5)
+
+    # This is actually ubfiz.
+    @itest_setregs('W0=0xffffffff', 'W1=0x41424349')
+    @itest('ubfm w0, w1, #5, #3')
+    def test_ubfm_lt32(self):
+        self.assertEqual(self.rf.read('X0'), 0x48000000)
+        self.assertEqual(self.rf.read('W0'), 0x48000000)
+
+    # This is actually lsr.
+    @itest_setregs('W0=0xffffffff', 'W1=0x41424344')
+    @itest('ubfm w0, w1, #0, #31')
+    def test_ubfm_ge_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344)
+        self.assertEqual(self.rf.read('W0'), 0x41424344)
+
+    # This is actually ubfiz.
+    @itest_setregs('W0=0xffffffff', 'W1=0x44434241')
+    @itest('ubfm w0, w1, #31, #0')
+    def test_ubfm_lt_max32(self):
+        self.assertEqual(self.rf.read('X0'), 2)
+        self.assertEqual(self.rf.read('W0'), 2)
+
+    # This is actually ubfx.
+    @itest_setregs('W0=0xffffffff', 'W1=0x44434241')
+    @itest('ubfm w0, w1, #0, #0')
+    def test_ubfm_ge_min32(self):
+        self.assertEqual(self.rf.read('X0'), 1)
+        self.assertEqual(self.rf.read('W0'), 1)
+
+    # This is actually lsl.
+    @itest_setregs('W0=0xffffffff', 'W1=0x44434241')
+    @itest('ubfm w0, w1, #1, #0')
+    def test_ubfm_lt_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0x80000000)
+        self.assertEqual(self.rf.read('W0'), 0x80000000)
+
+    # This is actually uxtb.
+    @itest_setregs('W0=0xffffffff', 'W1=0x41424344')
+    @itest('ubfm w0, w1, #0, #7')
+    def test_ubfm_uxtb(self):
+        self.assertEqual(self.rf.read('X0'), 0x44)
+        self.assertEqual(self.rf.read('W0'), 0x44)
+
+    # This is actually uxth.
+    @itest_setregs('W0=0xffffffff', 'W1=0x41424344')
+    @itest('ubfm w0, w1, #0, #15')
+    def test_ubfm_uxth(self):
+        self.assertEqual(self.rf.read('X0'), 0x4344)
+        self.assertEqual(self.rf.read('W0'), 0x4344)
+
+    # 64-bit.
+
+    # This is actually ubfx.
+    @itest_setregs('X0=0xffffffffffffffff', 'X1=0x4142434445464728')
+    @itest('ubfm x0, x1, #3, #5')
+    def test_ubfm_ge64(self):
+        self.assertEqual(self.rf.read('X0'), 5)
+        self.assertEqual(self.rf.read('W0'), 5)
+
+    # This is actually ubfiz.
+    @itest_setregs('X0=0xffffffffffffffff', 'X1=0x4142434445464749')
+    @itest('ubfm x0, x1, #5, #3')
+    def test_ubfm_lt64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4800000000000000)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    # This is actually lsr.
+    @itest_setregs('X0=0xffffffffffffffff', 'X1=0x4142434445464748')
+    @itest('ubfm x0, x1, #0, #63')
+    def test_ubfm_ge_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    # This is actually ubfiz.
+    @itest_setregs('X0=0xffffffffffffffff', 'X1=0x4847464544434241')
+    @itest('ubfm x0, x1, #63, #0')
+    def test_ubfm_lt_max64(self):
+        self.assertEqual(self.rf.read('X0'), 2)
+        self.assertEqual(self.rf.read('W0'), 2)
+
+    # This is actually ubfx.
+    @itest_setregs('X0=0xffffffffffffffff', 'X1=0x4847464544434241')
+    @itest('ubfm x0, x1, #0, #0')
+    def test_ubfm_ge_min64(self):
+        self.assertEqual(self.rf.read('X0'), 1)
+        self.assertEqual(self.rf.read('W0'), 1)
+
+    # This is actually lsl.
+    @itest_setregs('X0=0xffffffffffffffff', 'X1=0x4847464544434241')
+    @itest('ubfm x0, x1, #1, #0')
+    def test_ubfm_lt_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0x8000000000000000)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    # UBFX.
+
+    # 32-bit.
+
+    @itest_setregs('W1=0x44434241')
+    @itest('ubfx w0, w1, #0, #1')
+    def test_ubfx_min_min32(self):
+        self.assertEqual(self.rf.read('X0'), 1)
+        self.assertEqual(self.rf.read('W0'), 1)
+
+    @itest_setregs('W1=0x41424344')
+    @itest('ubfx w0, w1, #0, #32')
+    def test_ubfx_min_max32(self):
+        self.assertEqual(self.rf.read('X0'), 0x41424344)
+        self.assertEqual(self.rf.read('W0'), 0x41424344)
+
+    @itest_setregs('W1=0x81424344')
+    @itest('ubfx w0, w1, #31, #1')
+    def test_ubfx_max_min32(self):
+        self.assertEqual(self.rf.read('X0'), 1)
+        self.assertEqual(self.rf.read('W0'), 1)
+
+    @itest_setregs('W1=0xffff4344')
+    @itest('ubfx w0, w1, #16, #16')
+    def test_ubfx32(self):
+        self.assertEqual(self.rf.read('X0'), 0xffff)
+        self.assertEqual(self.rf.read('W0'), 0xffff)
+
+    # 64-bit.
+
+    @itest_setregs('X1=0x4847464544434241')
+    @itest('ubfx x0, x1, #0, #1')
+    def test_ubfx_min_min64(self):
+        self.assertEqual(self.rf.read('X0'), 1)
+        self.assertEqual(self.rf.read('W0'), 1)
+
+    @itest_setregs('X1=0x4142434445464748')
+    @itest('ubfx x0, x1, #0, #64')
+    def test_ubfx_min_max64(self):
+        self.assertEqual(self.rf.read('X0'), 0x4142434445464748)
+        self.assertEqual(self.rf.read('W0'), 0x45464748)
+
+    @itest_setregs('X1=0x8142434445464748')
+    @itest('ubfx x0, x1, #63, #1')
+    def test_ubfx_max_min64(self):
+        self.assertEqual(self.rf.read('X0'), 1)
+        self.assertEqual(self.rf.read('W0'), 1)
+
+    @itest_setregs('X1=0xffffffff45464748')
+    @itest('ubfx x0, x1, #32, #32')
+    def test_ubfx64(self):
+        self.assertEqual(self.rf.read('X0'), 0xffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    # UDIV.
+
+    # 32-bit.
+
+    @itest_setregs('W1=0', 'W2=0')
+    @itest('udiv w0, w1, w2')
+    def test_udiv_min32(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs('W1=0xffffffff', 'W2=0xffffffff')
+    @itest('udiv w0, w1, w2')
+    def test_udiv_max32(self):
+        self.assertEqual(self.rf.read('X0'), 1)
+        self.assertEqual(self.rf.read('W0'), 1)
+
+    @itest_setregs('W1=0xffffffff', 'W2=0')
+    @itest('udiv w0, w1, w2')
+    def test_udiv0_32(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs('W1=0xffffffff', 'W2=2')
+    @itest('udiv w0, w1, w2')
+    def test_udiv_neg32(self):
+        self.assertEqual(self.rf.read('X0'), 0x7fffffff)
+        self.assertEqual(self.rf.read('W0'), 0x7fffffff)
+
+    @itest_setregs('W1=1', 'W2=2')
+    @itest('udiv w0, w1, w2')
+    def test_udiv_pos32(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    # 64-bit.
+
+    @itest_setregs('X1=0', 'X2=0')
+    @itest('udiv x0, x1, x2')
+    def test_udiv_min64(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs('X1=0xffffffffffffffff', 'X2=0xffffffffffffffff')
+    @itest('udiv x0, x1, x2')
+    def test_udiv_max64(self):
+        self.assertEqual(self.rf.read('X0'), 1)
+        self.assertEqual(self.rf.read('W0'), 1)
+
+    @itest_setregs('X1=0xffffffffffffffff', 'X2=0')
+    @itest('udiv x0, x1, x2')
+    def test_udiv0_64(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs('X1=0xffffffffffffffff', 'X2=2')
+    @itest('udiv x0, x1, x2')
+    def test_udiv_neg64(self):
+        self.assertEqual(self.rf.read('X0'), 0x7fffffffffffffff)
+        self.assertEqual(self.rf.read('W0'), 0xffffffff)
+
+    @itest_setregs('X1=1', 'X2=2')
+    @itest('udiv x0, x1, x2')
+    def test_udiv_pos64(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    # UMOV.
+
+    # XXX: Uses 'reset'.
+
+    @nottest
+    def _umov(self, mnem, dst, vess, elem_size, elem_count):
+        for i in range(elem_count):
+            val = 0x81828384858687889192939495969798
+            sft = i * elem_size
+            res = (val >> sft) & Mask(elem_size)
+            insn = f'{mnem} {dst}0, v1.{vess}[{i}]'
+
+            @itest_setregs(f'V1={val}')
+            @itest_custom(
+                # Disable traps first.
+                ['mrs x30, cpacr_el1',
+                 'orr x30, x30, #0x300000',
+                 'msr cpacr_el1, x30',
+                 insn],
+                multiple_insts=True
+            )
+            def f(self):
+                def assertEqual(x, y):
+                    self.assertEqual(x, y, msg=insn)
+                for i in range(4):
+                    self._execute(reset=i == 0)
+                assertEqual(self.rf.read('X0'), res & Mask(64))
+                assertEqual(self.rf.read('W0'), res & Mask(32))
+
+            self.setUp()
+            f(self)
+
+    def test_umov(self):
+        self._umov(mnem='umov', dst='w', vess='b', elem_size=8, elem_count=16)
+        self._umov(mnem='umov', dst='w', vess='h', elem_size=16, elem_count=8)
+        self._umov(mnem='umov', dst='w', vess='s', elem_size=32, elem_count=4)
+        self._umov(mnem='umov', dst='x', vess='d', elem_size=64, elem_count=2)
+
+    # UMULH.
+
+    @itest_setregs('X1=0', 'X2=0')
+    @itest('umulh x0, x1, x2')
+    def test_umulh_min(self):
+        self.assertEqual(self.rf.read('X0'), 0)
+        self.assertEqual(self.rf.read('W0'), 0)
+
+    @itest_setregs('X1=0xffffffffffffffff', 'X2=0xffffffffffffffff')
+    @itest('umulh x0, x1, x2')
+    def test_umulh_max(self):
+        self.assertEqual(self.rf.read('X0'), 0xfffffffffffffffe)
+        self.assertEqual(self.rf.read('W0'), 0xfffffffe)
+
+    @itest_setregs('X1=0x4142434445464748', 'X2=0x4142434445464748')
+    @itest('umulh x0, x1, x2')
+    def test_umulh(self):
+        self.assertEqual(self.rf.read('X0'), 0x10a2b74f6c0e36e6)
+        self.assertEqual(self.rf.read('W0'), 0x6c0e36e6)
+
+    # UXTB.
+
+    @itest_setregs('W1=0x41424381')
+    @itest('uxtb w0, w1')
+    def test_uxtb(self):
+        self.assertEqual(self.rf.read('X0'), 0x81)
+        self.assertEqual(self.rf.read('W0'), 0x81)
+
+    # UXTH.
+
+    @itest_setregs('W1=0x41428561')
+    @itest('uxth w0, w1')
+    def test_uxth(self):
+        self.assertEqual(self.rf.read('X0'), 0x8561)
+        self.assertEqual(self.rf.read('W0'), 0x8561)
+
 
 class Aarch64CpuInstructions(unittest.TestCase, Aarch64Instructions):
     def setUp(self):
