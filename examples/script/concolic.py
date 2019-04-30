@@ -147,7 +147,7 @@ def input_from_cons(constupl, datas):
 def concrete_run_get_trace(inp):
     
     consts = config.get_group('core')
-    consts.mprocessing='single'
+    consts.mprocessing = consts.mprocessing.single
 
     m1 = Manticore.linux(prog, concrete_start=inp, workspace_url='mem:')
     t = ExtendedTracer()
