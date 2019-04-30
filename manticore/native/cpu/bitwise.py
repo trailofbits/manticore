@@ -75,7 +75,7 @@ def UInt(value, width):
     return GetNBits(value, width)
 
 
-def LSL_C(value, amount, width):
+def LSL_C(value, amount, width, with_carry=True):
     """
     The ARM LSL_C (logical left shift with carry) operation.
 
@@ -86,12 +86,17 @@ def LSL_C(value, amount, width):
     :return: Resultant value and the carry result
     :rtype tuple
     """
-    assert amount > 0
+    if isinstance(amount, int):
+        assert amount > 0
     value = Operators.ZEXTEND(value, width * 2)
+    amount = Operators.ZEXTEND(amount, width * 2)
     shifted = value << amount
     result = GetNBits(shifted, width)
-    carry = Bit(shifted, width)
-    return (result, carry)
+    if with_carry:
+        carry = Bit(shifted, width)
+        return (result, carry)
+    else:
+        return result
 
 
 def LSL(value, amount, width):
@@ -105,14 +110,14 @@ def LSL(value, amount, width):
     :return: Resultant value
     :rtype int or BitVec
     """
-    if amount == 0:
+    if isinstance(amount, int) and amount == 0:
         return value
 
-    result, _ = LSL_C(value, amount, width)
+    result = LSL_C(value, amount, width, with_carry=False)
     return result
 
 
-def LSR_C(value, amount, width):
+def LSR_C(value, amount, width, with_carry=True):
     """
     The ARM LSR_C (logical shift right with carry) operation.
 
@@ -123,10 +128,14 @@ def LSR_C(value, amount, width):
     :return: Resultant value and carry result
     :rtype tuple
     """
-    assert amount > 0
+    if isinstance(amount, int):
+        assert amount > 0
     result = GetNBits(value >> amount, width)
-    carry = Bit(value >> (amount - 1), 0)
-    return (result, carry)
+    if with_carry:
+        carry = Bit(value >> (amount - 1), 0)
+        return (result, carry)
+    else:
+        return result
 
 
 def LSR(value, amount, width):
@@ -140,13 +149,13 @@ def LSR(value, amount, width):
     :return: Resultant value
     :rtype int or BitVec
     """
-    if amount == 0:
+    if isinstance(amount, int) and amount == 0:
         return value
-    result, _ = LSR_C(value, amount, width)
+    result = LSR_C(value, amount, width, with_carry=False)
     return result
 
 
-def ASR_C(value, amount, width):
+def ASR_C(value, amount, width, with_carry=True):
     """
     The ARM ASR_C (arithmetic shift right with carry) operation.
 
@@ -157,13 +166,20 @@ def ASR_C(value, amount, width):
     :return: Resultant value and carry result
     :rtype tuple
     """
-    assert amount <= width
-    assert amount > 0
-    assert amount + width <= width * 2
+    if isinstance(amount, int) and isinstance(width, int):
+        assert amount <= width
+    if isinstance(amount, int):
+        assert amount > 0
+    if isinstance(amount, int) and isinstance(width, int):
+        assert amount + width <= width * 2
     value = Operators.SEXTEND(value, width, width * 2)
+    amount = Operators.ZEXTEND(amount, width * 2)
     result = GetNBits(value >> amount, width)
-    carry = Bit(value, amount - 1)
-    return (result, carry)
+    if with_carry:
+        carry = Bit(value, amount - 1)
+        return (result, carry)
+    else:
+        return result
 
 
 def ASR(value, amount, width):
@@ -177,14 +193,14 @@ def ASR(value, amount, width):
     :return: Resultant value
     :rtype int or BitVec
     """
-    if amount == 0:
+    if isinstance(amount, int) and amount == 0:
         return value
 
-    result, _ = ASR_C(value, amount, width)
+    result = ASR_C(value, amount, width, with_carry=False)
     return result
 
 
-def ROR_C(value, amount, width):
+def ROR_C(value, amount, width, with_carry=True):
     """
     The ARM ROR_C (rotate right with carry) operation.
 
@@ -195,14 +211,19 @@ def ROR_C(value, amount, width):
     :return: Resultant value and carry result
     :rtype tuple
     """
-    assert amount <= width
-    assert amount > 0
+    if isinstance(amount, int) and isinstance(width, int):
+        assert amount <= width
+    if isinstance(amount, int):
+        assert amount > 0
     m = amount % width
     right, _ = LSR_C(value, m, width)
     left, _ = LSL_C(value, width - m, width)
     result = left | right
-    carry = Bit(result, width - 1)
-    return (result, carry)
+    if with_carry:
+        carry = Bit(result, width - 1)
+        return (result, carry)
+    else:
+        return result
 
 
 def ROR(value, amount, width):
@@ -216,13 +237,13 @@ def ROR(value, amount, width):
     :return: Resultant value
     :rtype int or BitVec
     """
-    if amount == 0:
+    if isinstance(amount, int) and amount == 0:
         return value
-    result, _ = ROR_C(value, amount, width)
+    result = ROR_C(value, amount, width, with_carry=False)
     return result
 
 
-def RRX_C(value, carry, width):
+def RRX_C(value, carry, width, with_carry=True):
     """
     The ARM RRX (rotate right with extend and with carry) operation.
 
@@ -233,9 +254,12 @@ def RRX_C(value, carry, width):
     :return: Resultant value and carry result
     :rtype tuple
     """
-    carry_out = Bit(value, 0)
     result = (value >> 1) | (carry << (width - 1))
-    return (result, carry_out)
+    if with_carry:
+        carry_out = Bit(value, 0)
+        return (result, carry_out)
+    else:
+        return result
 
 
 def RRX(value, carry, width):
@@ -249,5 +273,5 @@ def RRX(value, carry, width):
     :return: Resultant value
     :rtype int or BitVec
     """
-    result, _ = RRX_C(value, carry, width)
+    result = RRX_C(value, carry, width, with_carry=False)
     return result
