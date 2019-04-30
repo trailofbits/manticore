@@ -15,7 +15,7 @@ from manticore.ethereum import ManticoreEVM, DetectIntegerOverflow, DetectUnused
 from manticore.ethereum.plugins import LoopDepthLimiter
 from manticore.utils import config
 consts = config.get_group('core')
-consts.mprocessing = 'single'
+consts.mprocessing = consts.mprocessing.single
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
