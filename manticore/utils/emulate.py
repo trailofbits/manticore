@@ -14,7 +14,6 @@ from ..core.smtlib import Operators, solver
 from ..native.memory import MemoryException
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 
 def convert_permissions(m_perms):
