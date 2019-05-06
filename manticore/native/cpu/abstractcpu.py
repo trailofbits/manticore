@@ -416,7 +416,7 @@ class SyscallAbi(Abi):
         self._cpu._publish('will_execute_syscall', model)
         ret = super().invoke(model, prefix_args)
         self._cpu._publish('did_execute_syscall',
-                           model.__func__.__name__ if type(model) is types.MethodType else model.__name__,
+                           model.__func__.__name__ if isinstance(model, types.MethodType) else model.__name__,
                            self._last_arguments, ret)
 
         if platform_logger.isEnabledFor(logging.DEBUG):
