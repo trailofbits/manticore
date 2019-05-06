@@ -20,9 +20,10 @@ from ...utils.event import Eventful
 from ...utils.fallback_emulator import UnicornEmulator
 from ...utils.helpers import issymbolic
 
-from capstone import CS_ARCH_ARM64, CS_ARCH_X86
+from capstone import CS_ARCH_ARM64, CS_ARCH_X86, CS_ARCH_ARM
 from capstone.arm64 import ARM64_REG_ENDING
 from capstone.x86 import X86_REG_ENDING
+from capstone.arm import ARM_REG_ENDING
 
 logger = logging.getLogger(__name__)
 register_logger = logging.getLogger(f'{__name__}.registers')
@@ -150,7 +151,8 @@ class Operand:
         """
         # XXX: Support other architectures.
         if ((self.cpu.arch == CS_ARCH_ARM64 and reg_id >= ARM64_REG_ENDING) or
-            (self.cpu.arch == CS_ARCH_X86 and reg_id >= X86_REG_ENDING)):
+            (self.cpu.arch == CS_ARCH_X86 and reg_id >= X86_REG_ENDING) or
+            (self.cpu.arch == CS_ARCH_ARM and reg_id >= ARM_REG_ENDING)):
             logger.warning("Trying to get register name for a non-register")
             return None
         cs_reg_name = self.cpu.instruction.reg_name(reg_id)
