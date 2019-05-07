@@ -42,16 +42,16 @@ class LinuxTest(unittest.TestCase):
         self.assertGreater(time_2_final, time_2_0, "Time did not increase!")
 
     def test_directories(self):
-        dir = f"/tmp/mcore_test_{int(random.getrandbits(32))}"
+        tmpdir = f"/tmp/mcore_test_{int(random.getrandbits(32))}"
 
         self.linux.current.memory.mmap(0x1000, 0x1000, 'rw ')
-        self.linux.current.write_string(0x1100, dir)
+        self.linux.current.write_string(0x1100, tmpdir)
 
-        self.assertFalse(os.path.exists(dir))
+        self.assertFalse(os.path.exists(tmpdir))
         self.linux.sys_mkdir(0x1100, mode=0o777)
-        self.assertTrue(os.path.exists(dir))
+        self.assertTrue(os.path.exists(tmpdir))
         self.linux.sys_rmdir(0x1100)
-        self.assertFalse(os.path.exists(dir))
+        self.assertFalse(os.path.exists(tmpdir))
 
     def test_pipe(self):
         self.linux.current.memory.mmap(0x1000, 0x1000, 'rw ')
