@@ -202,7 +202,6 @@ class Transaction:
         stream.write('\n\n')
         return is_something_symbolic
 
-
     @property
     def sort(self):
         return self._sort
@@ -296,6 +295,7 @@ class ConcretizeFee(EVMException):
         self.message = "Concretizing evm instruction gas fee"
         self.policy = policy
 
+
 class ConcretizeGas(EVMException):
 
     """
@@ -334,6 +334,8 @@ class EndTx(EVMException):
 
     def __str__(self):
         return f'EndTX<{self.result}>'
+
+
 class InvalidOpcode(EndTx):
     """Trying to execute invalid opcode"""
 
@@ -596,7 +598,6 @@ class EVM(Eventful):
         self._calldata_size = len(self.data)
         self._valid_jmpdests = set()
 
-
     @property
     def bytecode(self):
         return self._bytecode
@@ -673,7 +674,7 @@ class EVM(Eventful):
         """
         if not issymbolic(size) and size == 0:
             return 0
- 
+
         address = self.safe_add(address, size)
         allocated = self.allocated
         GMEMORY = 3
@@ -733,7 +734,7 @@ class EVM(Eventful):
         #    raise InvalidOpcode('Opcode inside a PUSH immediate')
         try:
             _decoding_cache = getattr(self, '_decoding_cache')
-        except:
+        except Exception:
             _decoding_cache = self._decoding_cache = {}
 
         pc = self.pc
@@ -797,12 +798,6 @@ class EVM(Eventful):
             if fee.size != 512:
                 raise ValueError("Fees should be 512 bit long")
 
-        def get_possible_solutions():
-            if not issymbolic(self._gas) and not issymbolic(fee):
-                return (self._gas - fee >= 0,)
-            else:
-                return solver.get_all_values(self.constraints, Operators.UGT(self._gas, fee))
-        
         # This configuration variable allows the user to control and perhaps relax the gas calculation
         # pedantic: gas is faithfully accounted and checked at instruction level. State may get forked in OOG/NoOOG
         # complete: gas is faithfully accounted and checked at basic blocks limits. State may get forked in OOG/NoOOG
@@ -815,8 +810,13 @@ class EVM(Eventful):
             # gas is faithfully accounted and ogg checked at instruction/BB level.
             if consts.oog == 'pedantic' or self.instruction.is_terminator:
                 # explore both options / fork
+
                 # FIXME this will reenter here and generate redundant queries
-                enough_gas_solutions = get_possible_solutions()
+                if not issymbolic(self._gas) and not issymbolic(fee):
+                    enough_gas_solutions = (self._gas - fee >= 0,)
+                else:
+                    enough_gas_solutions = solver.get_all_values(self.constraints, Operators.UGT(self._gas, fee))
+
                 if len(enough_gas_solutions) == 2:
                     # if gas can be both enough and insufficient, fork
                     raise Concretize("Concretize gas fee",
@@ -1099,7 +1099,7 @@ class EVM(Eventful):
             value = simplify(value)
             if not value.taint:
                 value = value.value
-        except:
+        except Exception:
             pass
 
         for i in range(size):
@@ -1593,7 +1593,7 @@ class EVM(Eventful):
         GSTORAGEKILL = 5000
         GSTORAGEMOD = 5000
         GSTORAGEADD = 20000
-        
+
         previous_value = self.world.get_storage_data(storage_address, offset)
 
         gascost = Operators.ITEBV(512,
@@ -1761,6 +1761,7 @@ class EVM(Eventful):
     def RETURN_gas(self, offset, size):
         return self._get_memfee(offset, size)
 
+    @concretized_args(size='SAMPLED')
     def RETURN(self, offset, size):
         """Halt execution returning output data"""
         data = self.read_buffer(offset, size)
@@ -1852,7 +1853,7 @@ class EVM(Eventful):
             c = simplify(self.memory[offset])
             try:
                 c = c.value
-            except:
+            except Exception:
                 pass
             m.append(c)
 
@@ -2551,7 +2552,11 @@ class EVMWorld(Platform):
         sort, address, price, data, caller, value, gas = self._pending_transaction
 
         if sort not in {'CALL', 'CREATE', 'DELEGATECALL', 'CALLCODE'}:
-            raise EVMException('Type of transaction not supported')
+            if sort == 'STATICCALL':
+                # TODO: Remove this once Issue #1168 is resolved
+                raise EVMException(f"The STATICCALL opcode is not yet supported; see https://github.com/trailofbits/manticore/issues/1168")
+            else:
+                raise EVMException(f"Transaction type '{sort}' not supported")
 
         if self.depth > 0:
             assert price is None, "Price should not be used in internal transactions"
@@ -2594,11 +2599,10 @@ class EVMWorld(Platform):
 
         if failed:
             self._close_transaction('TXERROR', rollback=True)
-
         #Transaction to normal account
-        if sort in ('CALL', 'DELEGATECALL', 'CALLCODE') and not self.get_code(address):
+        elif sort in ('CALL', 'DELEGATECALL', 'CALLCODE') and not self.get_code(address):
             self._close_transaction('STOP')
-            
+
     def dump(self, stream, state, mevm, message):
         from ..ethereum.manticore import calculate_coverage, flagged
         blockchain = state.platform
@@ -2653,7 +2657,7 @@ class EVMWorld(Platform):
 
                         temp_cs.add(storage.get(a_index) != 0)
                         temp_cs.add(index != a_index)
-                except:
+                except Exception:
                     pass
 
             if all_used_indexes:
