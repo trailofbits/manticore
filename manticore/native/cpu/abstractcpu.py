@@ -14,7 +14,7 @@ from ..memory import (
 from ..memory import LazySMemory
 from ...core.smtlib import Expression, BitVec, Operators, Constant
 from ...core.smtlib import visitors
-from ...core.smtlib.solver import solver
+from ...core.smtlib.solver import Z3Solver
 from ...utils.emulate import ConcreteUnicornEmulator
 from ...utils.event import Eventful
 from ...utils.fallback_emulator import UnicornEmulator
@@ -856,7 +856,7 @@ class Cpu(Eventful):
                         vals = visitors.simplify_array_select(c)
                         c = bytes([vals[0]])
                     except visitors.ArraySelectSimplifier.ExpressionNotSimple:
-                        c = struct.pack('B', solver.get_value(self.memory.constraints, c))
+                        c = struct.pack('B', Z3Solver().get_value(self.memory.constraints, c))
                 elif isinstance(c, Constant):
                     c = bytes([c.value])
                 else:
@@ -906,7 +906,6 @@ class Cpu(Eventful):
         """
         if issymbolic(self.PC):
             raise ConcretizeRegister(self, 'PC', policy='ALL')
-
         if not self.memory.access_ok(self.PC, 'x'):
             raise InvalidMemoryAccess(self.PC, 'x')
 

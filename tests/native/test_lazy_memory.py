@@ -11,11 +11,11 @@ import sys
 
 from manticore.native.memory import *
 from manticore.utils.helpers import issymbolic
-from manticore.core.smtlib import Solver, Operators
+from manticore.core.smtlib import Z3Solver, Operators
 from manticore.core.smtlib.expression import *
 from manticore.core.smtlib.visitors import *
 
-
+solver = Z3Solver.instance()
 class LazyMemoryTest(unittest.TestCase):
     _multiprocess_can_split_ = True
 
@@ -102,8 +102,8 @@ class LazyMemoryTest(unittest.TestCase):
         self.assertEqual(len(head), 0x800)
         self.assertEqual(len(tail), 0x800)
 
-        self.assertEquals(head.perms, m.perms)
-        self.assertEquals(tail.perms, m.perms)
+        self.assertEqual(head.perms, m.perms)
+        self.assertEqual(tail.perms, m.perms)
 
         reduced = m.__reduce__()
         self.assertIs(reduced[0], ArrayMap)

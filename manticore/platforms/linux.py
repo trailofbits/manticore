@@ -18,9 +18,9 @@ from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 
 from . import linux_syscalls
-from ..core.executor import TerminateState
-from ..core.smtlib import ConstraintSet, solver, Operators
-from ..core.smtlib import Expression
+from ..core.state import TerminateState
+from ..core.smtlib import ConstraintSet, Operators, Expression
+from ..core.smtlib.solver import Z3Solver
 from ..exceptions import SolverError
 from ..native.cpu.abstractcpu import Syscall, ConcretizeArgument, Interruption
 from ..native.cpu.cpufactory import CpuFactory
@@ -2780,7 +2780,7 @@ class SLinux(Linux):
             try:
                 for c in data:
                     if issymbolic(c):
-                        c = solver.get_value(self.constraints, c)
+                        c = Z3Solver().get_value(self.constraints, c)
                     fd.write(make_chr(c))
             except SolverError:
                 fd.write('{SolverError}')
@@ -2820,7 +2820,6 @@ class SLinux(Linux):
             'stderr': err.getvalue(),
             'net': net.getvalue()
         }
-
         for f in self.files + self._closed_files:
             if not isinstance(f, SymbolicFile):
                 continue

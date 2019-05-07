@@ -52,17 +52,17 @@ class FakePlatform:
 class StateTest(unittest.TestCase):
     _multiprocess_can_split_ = True
     def setUp(self):
-        if not hasattr(self, 'manager'):
-            self.manager = SyncManager()
-            self.manager.start(lambda: signal.signal(signal.SIGINT, signal.SIG_IGN))
+        #if not hasattr(self, 'manager'):
+        #    self.manager = SyncManager()
+        #    self.manager.start(lambda: signal.signal(signal.SIGINT, signal.SIG_IGN))
         dirname = os.path.dirname(__file__)
         l = linux.Linux(os.path.join(dirname, 'binaries', 'basic_linux_amd64'))
         self.state = State(ConstraintSet(), l)
-        self.lock = self.manager.Condition()
+        #self.lock = self.manager.Condition()
 
     def test_workspace_save_load(self):
         self.state.constraints.add(True)
-        workspace = Workspace(self.lock, 'mem:')
+        workspace = Workspace('mem:')
         id_ = workspace.save_state(self.state)
         state = workspace.load_state(id_)
 
@@ -79,7 +79,7 @@ class StateTest(unittest.TestCase):
                          str(self.state.constraints))
 
     def test_workspace_id_start_with_zero(self):
-        workspace = Workspace(self.lock, 'mem:')
+        workspace = Workspace('mem:')
         id_ = workspace.save_state(self.state)
         self.assertEquals(id_, 0)
 
@@ -87,11 +87,15 @@ class StateTest(unittest.TestCase):
         out = ManticoreOutput('mem:')
         name = 'mytest'
         message = 'custom message'
-        out.save_testcase(self.state, name, message)
+        testcase = out.testcase(prefix=name)
+
+        out.save_testcase(self.state, testcase, message)
         workspace = out._store._data
 
         # Make sure names are constructed correctly
         for entry, data in workspace.items():
+            if entry.startswith("."):
+                continue
             self.assertTrue(entry.startswith(name))
             if 'messages' in entry:
                 self.assertTrue(message in data)
@@ -106,4 +110,5 @@ class StateTest(unittest.TestCase):
         self.assertIn('trace', keys)
         self.assertIn('messages', keys)
         self.assertIn('input', keys)
-        self.assertIn('pkl', keys)
+        #self.assertIn('pkl', keys)  # This is not done by the platform but
+                                     # by the core

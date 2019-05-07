@@ -9,6 +9,7 @@ from elftools.elf.sections import SymbolTableSection
 from .state import State
 from ..core.manticore import ManticoreBase
 from ..core.smtlib import ConstraintSet
+from ..core.smtlib.solver import Z3Solver
 from ..utils import log, config
 from ..utils.helpers import issymbolic
 
@@ -19,6 +20,11 @@ consts.add('stdin_size', default=256, description='Maximum symbolic stdin size')
 
 
 class Manticore(ManticoreBase):
+
+    def generate_testcase(self, state, message='test'):
+        testcase = super().generate_testcase(state, message)
+        self._output.save_testcase(state, testcase, message)
+
     def __init__(self, path_or_state, argv=None, workspace_url=None, policy='random', **kwargs):
         """
         :param path_or_state: Path to binary or a state (object) to begin from.
@@ -33,10 +39,61 @@ class Manticore(ManticoreBase):
 
         super().__init__(initial_state, workspace_url=workspace_url, policy=policy, **kwargs)
 
-        self.subscribe('will_generate_testcase', self._generate_testcase_callback)
+        # Move the following into a linux plugin
+        self._assertions = {}
+        self._coverage_file = None
+        self.trace = None
+        # sugar for 'will_execute_instruction"
+        self._hooks = {}
+
+        #self.subscribe('will_generate_testcase', self._generate_testcase_callback)
+
+    ############################################################################
+    # Model hooks + callback
+    ############################################################################
+
+    def apply_model_hooks(self, path):
+        # TODO(yan): Simplify the partial function application
+
+        # Imported straight from __main__.py; this will be re-written once the new
+        # event code is in place.
+        import importlib
+        from manticore import platforms
+
+        with open(path, 'r') as fnames:
+            for line in fnames.readlines():
+                address, cc_name, name = line.strip().split(' ')
+                fmodel = platforms
+                name_parts = name.split('.')
+                importlib.import_module(f".platforms.{name_parts[0]}", 'manticore')
+                for n in name_parts:
+                    fmodel = getattr(fmodel, n)
+                assert fmodel != platforms
+
+                def cb_function(state):
+                    state.platform.invoke_model(fmodel, prefix_args=(state.platform,))
+                self._model_hooks.setdefault(int(address, 0), set()).add(cb_function)
+                self._executor.subscribe('will_execute_instruction', self._model_hook_callback)
+
+    def _model_hook_callback(self, state, instruction):
+        pc = state.cpu.PC
+        if pc not in self._model_hooks:
+            return
+
+        for cb in self._model_hooks[pc]:
+            cb(state)
+
+    @property
+    def coverage_file(self):
+        return self._coverage_file
+
+    @coverage_file.setter
+    @ManticoreBase.at_not_running
+    def coverage_file(self, path):
+        self._coverage_file = path
 
     def _generate_testcase_callback(self, state, testcase, message):
-        self._output.save_testcase(state, testcase.prefix, message)
+        self._output.save_testcase(state, testcase, message)
 
     @classmethod
     def linux(cls, path, argv=None, envp=None, entry_symbol=None, symbolic_files=None, concrete_start='', pure_symbolic=False, stdin_size=None, **kwargs):
@@ -85,11 +142,44 @@ class Manticore(ManticoreBase):
     @property
     def binary_path(self):
         """
-        Assumes that self._initial_state.platform.program always
-        refers to current program. Might not be true in case program
-        calls execve().
+        Assumes that all states refers to a single common program. Might not be
+        true in case program calls execve().
         """
-        return self._initial_state.platform.program
+        for st in self.all_states:
+            return st.platform.program
+
+    ############################################################################
+    # Assertion hooks + callback
+    ############################################################################
+
+    def load_assertions(self, path):
+        with open(path, 'r') as f:
+            for line in f.readlines():
+                pc = int(line.split(' ')[0], 16)
+                if pc in self._assertions:
+                    logger.debug("Repeated PC in assertions file %s", path)
+                self._assertions[pc] = ' '.join(line.split(' ')[1:])
+                self.subscribe('will_execute_instruction', self._assertions_callback)
+
+    def _assertions_callback(self, state, pc, instruction):
+        if pc not in self._assertions:
+            return
+
+        from ..core.parser.parser import parse
+
+        program = self._assertions[pc]
+
+        # This will interpret the buffer specification written in INTEL ASM.
+        # (It may dereference pointers)
+        assertion = parse(program, state.cpu.read_int, state.cpu.read_register)
+        if not Z3Solver().can_be_true(state.constraints, assertion):
+            logger.info(str(state.cpu))
+            logger.info("Assertion %x -> {%s} does not hold. Aborting state.",
+                        state.cpu.pc, program)
+            raise TerminateState()
+
+        # Everything is good add it.
+        state.constraints.add(assertion)
 
     ###############################
     # Hook Callback Methods
@@ -100,9 +190,7 @@ class Manticore(ManticoreBase):
         A decorator used to register a hook function to run before analysis begins. Hook
         function takes one :class:`~manticore.core.state.State` argument.
         """
-        def callback(manticore_obj, state):
-            f(state)
-        self.subscribe('will_start_run', types.MethodType(callback, self))
+        self.subscribe('will_run', f)
         return f
 
     def hook(self, pc):
@@ -133,7 +221,7 @@ class Manticore(ManticoreBase):
         else:
             self._hooks.setdefault(pc, set()).add(callback)
             if self._hooks:
-                self._executor.subscribe('will_execute_instruction', self._hook_callback)
+                self.subscribe('will_execute_instruction', self._hook_callback)
 
     def _hook_callback(self, state, pc, instruction):
         'Invoke all registered generic hooks'

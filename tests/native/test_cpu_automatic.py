@@ -3,7 +3,7 @@ import unittest
 from manticore.native.cpu.x86 import *
 from manticore.core.smtlib import *
 from manticore.native.memory import *
-
+solver = solver.Z3Solver.instance()
 
 class CPUTest(unittest.TestCase):
     _multiprocess_can_split_ = True

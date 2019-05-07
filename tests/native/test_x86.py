@@ -4,6 +4,8 @@ import functools
 from manticore.native.cpu.x86 import *
 from manticore.core.smtlib import *
 from manticore.native.memory import *
+from manticore.core.smtlib.solver import Z3Solver
+solver = Z3Solver.instance()
 
 def skipIfNotImplemented(f):
     # XXX(yan) the inner function name must start with test_
