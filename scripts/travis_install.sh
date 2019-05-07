@@ -26,7 +26,7 @@ function install_cc_env {
     pip install awscli
 }
 
-# TODO: temporary function, until crytic-compile is pushed to pypi
+# TODO: temporary function, until next release of crytic-compile
 function install_crytic_compile {
     git clone https://github.com/crytic/crytic-compile
     cd crytic-compile
