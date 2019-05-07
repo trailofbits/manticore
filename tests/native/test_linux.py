@@ -20,10 +20,15 @@ class LinuxTest(unittest.TestCase):
 
     def setUp(self):
         self.linux = linux.Linux(self.BIN_PATH)
-        self.symbolic_linux = linux.SLinux.empty_platform('armv7')
+        self.symbolic_linux_armv7 = linux.SLinux.empty_platform('armv7')
+        self.symbolic_linux_aarch64 = linux.SLinux.empty_platform('aarch64')
 
     def tearDown(self):
-        for f in self.linux.files + self.symbolic_linux.files:
+        for f in (
+            self.linux.files +
+            self.symbolic_linux_armv7.files +
+            self.symbolic_linux_aarch64.files
+        ):
             if isinstance(f, linux.File):
                 f.close()
 
@@ -49,13 +54,13 @@ class LinuxTest(unittest.TestCase):
         self.assertEqual(cpu.read_int(cpu.STACK), 4)
 
         argv_ptr = cpu.STACK + 8
-        envp_ptr = argv_ptr + len(real_argv)*8 + 8
+        envp_ptr = argv_ptr + len(real_argv) * 8 + 8
 
         for i, arg in enumerate(real_argv):
-            self.assertEqual(cpu.read_string(cpu.read_int(argv_ptr + i*8)), arg)
+            self.assertEqual(cpu.read_string(cpu.read_int(argv_ptr + i * 8)), arg)
 
         for i, env in enumerate(envp):
-            self.assertEqual(cpu.read_string(cpu.read_int(envp_ptr + i*8)), env)
+            self.assertEqual(cpu.read_string(cpu.read_int(envp_ptr + i * 8)), env)
 
     def test_load_maps(self):
         mappings = self.linux.current.memory.mappings()
@@ -71,15 +76,45 @@ class LinuxTest(unittest.TestCase):
         second_map_name = os.path.basename(second_map[4])
         self.assertEqual(first_map_name, 'basic_linux_amd64')
         self.assertEqual(second_map_name, 'basic_linux_amd64')
-    
+
+    def test_aarch64_syscall_write(self):
+        nr_write = 64
+
+        # Create a minimal state.
+        platform = self.symbolic_linux_aarch64
+        platform.current.memory.mmap(0x1000, 0x1000, 'rw ')
+        platform.current.SP = 0x2000 - 8
+
+        # Create a buffer.
+        buf = platform.current.SP - 0x100
+        s = "hello\n"
+        platform.current.write_bytes(buf, s)
+
+        fd = 1  # stdout
+        size = len(s)
+
+        # Invoke the syscall.
+        platform.current.X0 = fd
+        platform.current.X1 = buf
+        platform.current.X2 = size
+        platform.current.X8 = nr_write
+        self.assertEqual(linux_syscalls.aarch64[nr_write], 'sys_write')
+
+        platform.syscall()
+
+        self.assertEqual(platform.current.regfile.read('X0'), size)
+
+        res = ''.join(map(chr, platform.output.read(size)))
+        self.assertEqual(res, s)
+
     @unittest.skip("Stat differs in different test environments")
-    def test_syscall_fstat(self):
+    def test_armv7_syscall_fstat(self):
         nr_fstat64 = 197
 
         # Create a minimal state
-        platform = self.symbolic_linux
+        platform = self.symbolic_linux_armv7
         platform.current.memory.mmap(0x1000, 0x1000, 'rw ')
-        platform.current.SP = 0x2000-4
+        platform.current.SP = 0x2000 - 4
 
         # open a file
         filename = platform.current.push_bytes('/\x00')
@@ -95,9 +130,9 @@ class LinuxTest(unittest.TestCase):
         self.assertEqual(b'02030100000000000200000000000000ed41000018000000000000000000000000000000000000000000000000000000001000000000000000100000000000000800000000000000e5c1bc5c15e85e260789ab5c8cd5db350789ab5c8cd5db3500000000',
 hexlify(b''.join(platform.current.read_bytes(stat, 100))))
 
-    def test_linux_symbolic_files_workspace_files(self):
+    def test_armv7_linux_symbolic_files_workspace_files(self):
         fname = 'symfile'
-        platform = self.symbolic_linux
+        platform = self.symbolic_linux_armv7
 
         # create symbolic file
         with open(fname, 'w') as f:
@@ -108,7 +143,7 @@ hexlify(b''.join(platform.current.read_bytes(stat, 100))))
 
         # create filename in memory
         platform.current.memory.mmap(0x1000, 0x1000, 'rw ')
-        platform.current.SP = 0x2000-4
+        platform.current.SP = 0x2000 - 4
         fname_ptr = platform.current.push_bytes(fname + '\x00')
 
         # open and close file
@@ -125,9 +160,8 @@ hexlify(b''.join(platform.current.read_bytes(stat, 100))))
         self.assertIn(fname, files)
         self.assertEqual(len(files[fname]), 1)
 
-
-    def test_linux_workspace_files(self):
-        platform = self.symbolic_linux
+    def test_armv7_linux_workspace_files(self):
+        platform = self.symbolic_linux_armv7
         platform.argv = ["arg1", "arg2"]
 
         files = platform.generate_workspace_files()
@@ -140,21 +174,23 @@ hexlify(b''.join(platform.current.read_bytes(stat, 100))))
         self.assertIn('stderr', files)
         self.assertIn('net', files)
 
-    def test_syscall_events(self):
+    def test_armv7_syscall_events(self):
         nr_fstat64 = 197
 
         class Receiver:
             def __init__(self):
                 self.nevents = 0
+
             def will_exec(self, pc, i):
                 self.nevents += 1
+
             def did_exec(self, last_pc, pc, i):
                 self.nevents += 1
 
         # Create a minimal state
-        platform = self.symbolic_linux
+        platform = self.symbolic_linux_armv7
         platform.current.memory.mmap(0x1000, 0x1000, 'rw ')
-        platform.current.SP = 0x2000-4
+        platform.current.SP = 0x2000 - 4
         platform.current.memory.mmap(0x2000, 0x2000, 'rwx')
         platform.current.PC = 0x2000
         platform.current.write_int(platform.current.PC, 0x050f)
@@ -176,16 +212,16 @@ hexlify(b''.join(platform.current.read_bytes(stat, 100))))
         platform.execute()
         post_icount = platform.current.icount
 
-        self.assertEqual(pre_icount+1, post_icount)
+        self.assertEqual(pre_icount + 1, post_icount)
         self.assertEqual(r.nevents, 2)
 
-    def _create_openat_state(self):
+    def _armv7_create_openat_state(self):
         nr_openat = 322
 
         # Create a minimal state
-        platform = self.symbolic_linux
+        platform = self.symbolic_linux_armv7
         platform.current.memory.mmap(0x1000, 0x1000, 'rw ')
-        platform.current.SP = 0x2000-4
+        platform.current.SP = 0x2000 - 4
 
         dir_path = tempfile.mkdtemp()
         file_name = "file"
@@ -194,9 +230,9 @@ hexlify(b''.join(platform.current.read_bytes(stat, 100))))
             f.write(b'test')
 
         # open a file + directory
-        dirname = platform.current.push_bytes(dir_path+'\x00')
+        dirname = platform.current.push_bytes(dir_path + '\x00')
         dirfd = platform.sys_open(dirname, os.O_RDONLY, 0o700)
-        filename = platform.current.push_bytes(file_name+'\x00')
+        filename = platform.current.push_bytes(file_name + '\x00')
 
         stat = platform.current.SP - 0x100
         platform.current.R0 = dirfd
@@ -208,16 +244,16 @@ hexlify(b''.join(platform.current.read_bytes(stat, 100))))
 
         return platform, dir_path
 
-    def test_syscall_openat_concrete(self):
-        platform, temp_dir = self._create_openat_state()
+    def test_armv7_syscall_openat_concrete(self):
+        platform, temp_dir = self._armv7_create_openat_state()
         try:
             platform.syscall()
             self.assertGreater(platform.current.R0, 2)
         finally:
             shutil.rmtree(temp_dir)
 
-    def test_syscall_openat_symbolic(self):
-        platform, temp_dir = self._create_openat_state()
+    def test_armv7_syscall_openat_symbolic(self):
+        platform, temp_dir = self._armv7_create_openat_state()
         try:
             platform.current.R0 = BitVecVariable(32, 'fd')
 
@@ -228,15 +264,15 @@ hexlify(b''.join(platform.current.read_bytes(stat, 100))))
 
             _min, _max = Z3Solver.instance().minmax(platform.constraints, e.cpu.read_register(e.reg_name))
             self.assertLess(_min, len(platform.files))
-            self.assertGreater(_max, len(platform.files)-1)
+            self.assertGreater(_max, len(platform.files) - 1)
         finally:
             shutil.rmtree(temp_dir)
 
-    def test_chroot(self):
+    def test_armv7_chroot(self):
         # Create a minimal state
-        platform = self.symbolic_linux
+        platform = self.symbolic_linux_armv7
         platform.current.memory.mmap(0x1000, 0x1000, 'rw ')
-        platform.current.SP = 0x2000-4
+        platform.current.SP = 0x2000 - 4
 
         # should error with ENOENT
         this_file = os.path.realpath(__file__)
@@ -255,13 +291,14 @@ hexlify(b''.join(platform.current.read_bytes(stat, 100))))
         dirname = os.path.dirname(__file__)
         self.m = Manticore.linux(os.path.join(dirname, 'binaries', 'arguments_linux_amd64'), argv=['+'],
                                  envp={'TEST': '+'})
+
         for state in self.m.all_states:
-            ptr = state.cpu.read_int(state.cpu.RSP + (8*2))  # get argv[1]
+            ptr = state.cpu.read_int(state.cpu.RSP + (8 * 2))  # get argv[1]
             mem = state.cpu.read_bytes(ptr, 2)
             self.assertTrue(issymbolic(mem[0]))
             self.assertEqual(mem[1], b'\0')
 
-            ptr = state.cpu.read_int(state.cpu.RSP + (8*4))  # get envp[0]
+            ptr = state.cpu.read_int(state.cpu.RSP + (8 * 4))  # get envp[0]
             mem = state.cpu.read_bytes(ptr, 7)
             self.assertEqual(b''.join(mem[:5]), b'TEST=')
             self.assertEqual(mem[6], b'\0')

@@ -426,7 +426,7 @@ class Linux(Platform):
             self.elf = ELFFile(open(program, 'rb'))
             # FIXME (theo) self.arch is actually mode as initialized in the CPUs,
             # make things consistent and perhaps utilize a global mapping for this
-            self.arch = {'x86': 'i386', 'x64': 'amd64', 'ARM': 'armv7'}[self.elf.get_machine_arch()]
+            self.arch = {'x86': 'i386', 'x64': 'amd64', 'ARM': 'armv7', 'AArch64': 'aarch64'}[self.elf.get_machine_arch()]
 
             self._init_cpu(self.arch)
             self._init_std_fds()
@@ -893,7 +893,7 @@ class Linux(Platform):
         elf = self.elf
         arch = self.arch
         env = dict(var.split('=') for var in env if '=' in var)
-        addressbitsize = {'x86': 32, 'x64': 64, 'ARM': 32}[elf.get_machine_arch()]
+        addressbitsize = {'x86': 32, 'x64': 64, 'ARM': 32, 'AArch64': 64}[elf.get_machine_arch()]
         logger.debug("Loading %s as a %s elf", filename, arch)
 
         assert elf.header.e_type in ['ET_DYN', 'ET_EXEC', 'ET_CORE']
@@ -915,6 +915,7 @@ class Linux(Platform):
                         interpreter = ELFFile(open(interpreter_path_filename, 'rb'))
                         break
             break
+
         if interpreter is not None:
             assert interpreter.get_machine_arch() == elf.get_machine_arch()
             assert interpreter.header.e_type in ['ET_DYN', 'ET_EXEC']
@@ -1651,13 +1652,15 @@ class Linux(Platform):
 
     def sys_readlink(self, path, buf, bufsize):
         """
-        Read
+        Read the value of a symbolic link.
         :rtype: int
 
-        :param path: the "link path id"
-        :param buf: the buffer where the bytes will be putted.
-        :param bufsize: the max size for read the link.
-        :todo: Out eax number of bytes actually sent | EAGAIN | EBADF | EFAULT | EINTR | errno.EINVAL | EIO | ENOSPC | EPIPE
+        :param path: symbolic link.
+        :param buf: destination buffer.
+        :param bufsize: size to read.
+        :return: number of bytes placed in buffer on success, -errno on error.
+
+        :todo: return -errno on error.
         """
         if bufsize <= 0:
             return -errno.EINVAL
@@ -1667,7 +1670,33 @@ class Linux(Platform):
         else:
             data = os.readlink(filename)[:bufsize]
         self.current.write_bytes(buf, data)
+        # XXX: Return an appropriate value on error.
         return len(data)
+
+    def sys_readlinkat(self, dir_fd, path, buf, bufsize):
+        """
+        Read the value of a symbolic link relative to a directory file descriptor.
+        :rtype: int
+
+        :param dir_fd: directory file descriptor.
+        :param path: symbolic link.
+        :param buf: destination buffer.
+        :param bufsize: size to read.
+        :return: number of bytes placed in buffer on success, -errno on error.
+
+        :todo: return -errno on error, full 'dir_fd' support.
+        """
+        _path = self.current.read_string(path)
+        _dir_fd = ctypes.c_int32(dir_fd).value
+
+        if not (os.path.isabs(_path) or _dir_fd == self.FCNTL_FDCWD):
+            raise NotImplementedError(
+                "Only absolute paths or paths relative to CWD are supported"
+            )
+
+        # XXX: Use 'dir_fd'.
+        # XXX: Return an appropriate value on error.
+        return self.sys_readlink(path, buf, bufsize)
 
     def sys_mmap_pgoff(self, address, size, prot, flags, fd, offset):
         """Wrapper for mmap2"""
@@ -2232,7 +2261,7 @@ class Linux(Platform):
     def connections(self, fd):
         """ File descriptors are connected to each other like pipes, except
         for 0, 1, and 2. If you write to FD(N) for N >=3, then that comes
-		out from FD(N+1) and vice-versa
+        out from FD(N+1) and vice-versa
         """
         if fd in [0, 1, 2]:
             return None
@@ -2458,7 +2487,7 @@ class Linux(Platform):
         return ret
 
     def _arch_specific_init(self):
-        assert self.arch in {'i386', 'amd64', 'armv7'}
+        assert self.arch in {'i386', 'amd64', 'armv7', 'aarch64'}
 
         if self.arch == 'i386':
             self._uname_machine = 'i386'
@@ -2469,6 +2498,11 @@ class Linux(Platform):
             self._init_arm_kernel_helpers()
             self.current._set_mode_by_val(self.current.PC)
             self.current.PC &= ~1
+        elif self.arch == 'aarch64':
+            # XXX: Possible values: 'aarch64_be', 'aarch64', 'armv8b', 'armv8l'.
+            # See 'UTS_MACHINE' and 'COMPAT_UTS_MACHINE' in the Linux kernel source.
+            # https://stackoverflow.com/a/45125525
+            self._uname_machine = 'aarch64'
 
         # Establish segment registers for x86 architectures
         if self.arch in {'i386', 'amd64'}:

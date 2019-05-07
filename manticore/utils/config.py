@@ -328,5 +328,3 @@ def get_config_keys():
     for group_name, group in _groups.items():
         for key in group:
             yield f"{group_name}.{key}"
-
-

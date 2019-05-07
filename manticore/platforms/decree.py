@@ -339,7 +339,9 @@ class Decree(Platform):
         logger.info("Setting initial cpu state")
         # set initial CPU state
         cpu.write_register('EAX', 0x0)
-        cpu.write_register('ECX', 0x0)
+        cpu.write_register('ECX', cpu.memory.mmap(CGC_PAGESTART(0x4347c000),
+                                                  CGC_PAGEALIGN(4096 + CGC_PAGEOFFSET(0x4347c000)),
+                                                  'rwx'))
         cpu.write_register('EDX', 0x0)
         cpu.write_register('EBX', 0x0)
         cpu.write_register('ESP', stack)

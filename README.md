@@ -5,7 +5,7 @@
 <br />
 
 
-[![Build Status](https://travis-ci.org/trailofbits/manticore.svg?branch=master)](https://travis-ci.org/trailofbits/manticore)
+[![Build Status](https://travis-ci.com/trailofbits/manticore.svg?branch=master)](https://travis-ci.com/trailofbits/manticore)
 [![PyPI version](https://badge.fury.io/py/manticore.svg)](https://badge.fury.io/py/manticore)
 [![Slack Status](https://empireslacking.herokuapp.com/badge.svg)](https://empireslacking.herokuapp.com)
 [![Documentation Status](https://readthedocs.org/projects/manticore/badge/?version=latest)](http://manticore.readthedocs.io/en/latest/?badge=latest)
