@@ -13,7 +13,7 @@ class LinuxTest(unittest.TestCase):
     BIN_PATH = os.path.join(os.path.dirname(__file__), 'binaries', 'basic_linux_amd64')
 
     def setUp(self):
-        self.linux = linux.Linux(self.BIN_PATH)
+        self.linux = linux.SLinux(self.BIN_PATH)
 
     def tearDown(self):
         for f in self.linux.files:
@@ -53,7 +53,6 @@ class LinuxTest(unittest.TestCase):
         self.linux.sys_rmdir(0x1100)
         self.assertFalse(os.path.exists(dir))
 
-    @unittest.skip
     def test_pipe(self):
         self.linux.current.memory.mmap(0x1000, 0x1000, 'rw ')
         self.linux.sys_pipe(0x1100)
@@ -61,10 +60,10 @@ class LinuxTest(unittest.TestCase):
         fd1 = self.linux.current.read_int(0x1100, 8 * 4)
         fd2 = self.linux.current.read_int(0x1100 + 4, 8 * 4)
 
-        buf = b'AAAAAAAAAA'
+        buf = b'0123456789ABCDEF'
         self.linux.current.write_bytes(0x1200, buf)
 
         self.linux.sys_write(fd1, 0x1200, len(buf))
         self.linux.sys_read(fd2, 0x1300, len(buf))
 
-        self.assertEqual(buf, self.linux.current.read_bytes(0x1300, len(buf)), "Pipe Read/Write failed")
+        self.assertEqual(buf, b''.join(self.linux.current.read_bytes(0x1300, len(buf))), "Pipe Read/Write failed")
