@@ -5,6 +5,7 @@ from manticore.core.smtlib import Expression
 from manticore.native.cpu.abstractcpu import ConcretizeRegister
 from manticore.native.memory import *
 from manticore.native.cpu.x86 import AMD64Cpu
+from manticore.core.smtlib.solver import Z3Solver
 
 
 def skipIfNotImplemented(f):
@@ -8830,7 +8831,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400bec)
@@ -8838,13 +8839,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400bec)
@@ -8871,10 +8872,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_10_symbolic(self):
@@ -8918,7 +8919,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b20)
@@ -8926,13 +8927,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400b20)
@@ -8959,10 +8960,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_11_symbolic(self):
@@ -9006,7 +9007,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b38)
@@ -9014,13 +9015,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400b38)
@@ -9047,10 +9048,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_12_symbolic(self):
@@ -9094,7 +9095,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400bfe)
@@ -9102,13 +9103,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400bfe)
@@ -9135,10 +9136,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_13_symbolic(self):
@@ -9182,7 +9183,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b86)
@@ -9190,13 +9191,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400b86)
@@ -9223,10 +9224,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_14_symbolic(self):
@@ -9270,7 +9271,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400ae4)
@@ -9278,13 +9279,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400ae4)
@@ -9311,10 +9312,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_15_symbolic(self):
@@ -9358,7 +9359,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400c04)
@@ -9366,13 +9367,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400c04)
@@ -9399,10 +9400,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_16_symbolic(self):
@@ -9446,7 +9447,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b6e)
@@ -9454,13 +9455,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400b6e)
@@ -9487,10 +9488,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_17_symbolic(self):
@@ -9534,7 +9535,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b2c)
@@ -9542,13 +9543,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400b2c)
@@ -9575,10 +9576,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_18_symbolic(self):
@@ -9622,7 +9623,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400af0)
@@ -9630,13 +9631,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400af0)
@@ -9663,10 +9664,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_19_symbolic(self):
@@ -9710,7 +9711,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400be0)
@@ -9718,13 +9719,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400be0)
@@ -9751,10 +9752,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_2_symbolic(self):
@@ -9798,7 +9799,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b4a)
@@ -9806,13 +9807,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400b4a)
@@ -9839,10 +9840,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_20_symbolic(self):
@@ -9886,7 +9887,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400c0a)
@@ -9894,13 +9895,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400c0a)
@@ -9927,10 +9928,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_21_symbolic(self):
@@ -9974,7 +9975,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b14)
@@ -9982,13 +9983,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400b14)
@@ -10015,10 +10016,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_22_symbolic(self):
@@ -10062,7 +10063,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400bb6)
@@ -10070,13 +10071,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400bb6)
@@ -10103,10 +10104,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_23_symbolic(self):
@@ -10150,7 +10151,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b08)
@@ -10158,13 +10159,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400b08)
@@ -10191,10 +10192,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_24_symbolic(self):
@@ -10238,7 +10239,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400c1c)
@@ -10246,13 +10247,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400c1c)
@@ -10279,10 +10280,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_25_symbolic(self):
@@ -10326,7 +10327,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400bda)
@@ -10334,13 +10335,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400bda)
@@ -10367,10 +10368,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_26_symbolic(self):
@@ -10414,7 +10415,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400c10)
@@ -10422,13 +10423,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400c10)
@@ -10455,10 +10456,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_27_symbolic(self):
@@ -10502,7 +10503,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400c34)
@@ -10510,13 +10511,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400c34)
@@ -10543,10 +10544,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_28_symbolic(self):
@@ -10590,7 +10591,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400c2e)
@@ -10598,13 +10599,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400c2e)
@@ -10631,10 +10632,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_29_symbolic(self):
@@ -10678,7 +10679,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b80)
@@ -10686,13 +10687,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400b80)
@@ -10719,10 +10720,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_3_symbolic(self):
@@ -10766,7 +10767,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400ac6)
@@ -10774,13 +10775,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400ac6)
@@ -10807,10 +10808,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_30_symbolic(self):
@@ -10854,7 +10855,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400ba4)
@@ -10862,13 +10863,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400ba4)
@@ -10895,10 +10896,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_31_symbolic(self):
@@ -10942,7 +10943,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400ad8)
@@ -10950,13 +10951,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400ad8)
@@ -10983,10 +10984,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_32_symbolic(self):
@@ -11030,7 +11031,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b50)
@@ -11038,13 +11039,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400b50)
@@ -11071,10 +11072,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_33_symbolic(self):
@@ -11118,7 +11119,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b44)
@@ -11126,13 +11127,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400b44)
@@ -11159,10 +11160,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_34_symbolic(self):
@@ -11206,7 +11207,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400bbc)
@@ -11214,13 +11215,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400bbc)
@@ -11247,10 +11248,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_35_symbolic(self):
@@ -11294,7 +11295,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400ad2)
@@ -11302,13 +11303,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400ad2)
@@ -11335,10 +11336,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_36_symbolic(self):
@@ -11382,7 +11383,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b26)
@@ -11390,13 +11391,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400b26)
@@ -11423,10 +11424,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_37_symbolic(self):
@@ -11470,7 +11471,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400bc8)
@@ -11478,13 +11479,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400bc8)
@@ -11511,10 +11512,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_38_symbolic(self):
@@ -11558,7 +11559,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b98)
@@ -11566,13 +11567,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400b98)
@@ -11599,10 +11600,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_39_symbolic(self):
@@ -11646,7 +11647,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b02)
@@ -11654,13 +11655,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400b02)
@@ -11687,10 +11688,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_4_symbolic(self):
@@ -11734,7 +11735,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400c22)
@@ -11742,13 +11743,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400c22)
@@ -11775,10 +11776,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_40_symbolic(self):
@@ -11822,7 +11823,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400c3a)
@@ -11830,13 +11831,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400c3a)
@@ -11863,10 +11864,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_41_symbolic(self):
@@ -11910,7 +11911,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400af6)
@@ -11918,13 +11919,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400af6)
@@ -11951,10 +11952,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_42_symbolic(self):
@@ -11998,7 +11999,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400c28)
@@ -12006,13 +12007,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400c28)
@@ -12039,10 +12040,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_43_symbolic(self):
@@ -12086,7 +12087,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b62)
@@ -12094,13 +12095,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400b62)
@@ -12127,10 +12128,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_44_symbolic(self):
@@ -12174,7 +12175,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400baa)
@@ -12182,13 +12183,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400baa)
@@ -12215,10 +12216,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_45_symbolic(self):
@@ -12262,7 +12263,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b68)
@@ -12270,13 +12271,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400b68)
@@ -12303,10 +12304,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_46_symbolic(self):
@@ -12350,7 +12351,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400c16)
@@ -12358,13 +12359,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400c16)
@@ -12391,10 +12392,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_47_symbolic(self):
@@ -12438,7 +12439,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400acc)
@@ -12446,13 +12447,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400acc)
@@ -12479,10 +12480,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_48_symbolic(self):
@@ -12526,7 +12527,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b92)
@@ -12534,13 +12535,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400b92)
@@ -12567,10 +12568,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_49_symbolic(self):
@@ -12614,7 +12615,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400afc)
@@ -12622,13 +12623,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400afc)
@@ -12655,10 +12656,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_5_symbolic(self):
@@ -12702,7 +12703,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400be6)
@@ -12710,13 +12711,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400be6)
@@ -12743,10 +12744,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_50_symbolic(self):
@@ -12790,7 +12791,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b9e)
@@ -12798,13 +12799,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400b9e)
@@ -12831,10 +12832,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_51_symbolic(self):
@@ -12878,7 +12879,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400ac0)
@@ -12886,13 +12887,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400ac0)
@@ -12919,10 +12920,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_52_symbolic(self):
@@ -12966,7 +12967,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b74)
@@ -12974,13 +12975,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400b74)
@@ -13007,10 +13008,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_53_symbolic(self):
@@ -13054,7 +13055,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400bce)
@@ -13062,13 +13063,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400bce)
@@ -13095,10 +13096,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_54_symbolic(self):
@@ -13142,7 +13143,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b56)
@@ -13150,13 +13151,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400b56)
@@ -13183,10 +13184,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_55_symbolic(self):
@@ -13230,7 +13231,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b7a)
@@ -13238,13 +13239,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400b7a)
@@ -13271,10 +13272,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_56_symbolic(self):
@@ -13318,7 +13319,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b5c)
@@ -13326,13 +13327,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400b5c)
@@ -13359,10 +13360,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_57_symbolic(self):
@@ -13406,7 +13407,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400ade)
@@ -13414,13 +13415,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400ade)
@@ -13447,10 +13448,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_58_symbolic(self):
@@ -13494,7 +13495,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b3e)
@@ -13502,13 +13503,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400b3e)
@@ -13535,10 +13536,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_59_symbolic(self):
@@ -13582,7 +13583,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400bb0)
@@ -13590,13 +13591,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400bb0)
@@ -13623,10 +13624,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_6_symbolic(self):
@@ -13670,7 +13671,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b0e)
@@ -13678,13 +13679,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400b0e)
@@ -13711,10 +13712,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_60_symbolic(self):
@@ -13758,7 +13759,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b1a)
@@ -13766,13 +13767,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400b1a)
@@ -13799,10 +13800,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_61_symbolic(self):
@@ -13846,7 +13847,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400bf2)
@@ -13854,13 +13855,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400bf2)
@@ -13887,10 +13888,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_62_symbolic(self):
@@ -13934,7 +13935,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400bd4)
@@ -13942,13 +13943,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400bd4)
@@ -13975,10 +13976,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_63_symbolic(self):
@@ -14022,7 +14023,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400bf8)
@@ -14030,13 +14031,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400bf8)
@@ -14063,10 +14064,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_64_symbolic(self):
@@ -14110,7 +14111,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400bc2)
@@ -14118,13 +14119,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400bc2)
@@ -14151,10 +14152,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_7_symbolic(self):
@@ -14198,7 +14199,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b8c)
@@ -14206,13 +14207,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400b8c)
@@ -14239,10 +14240,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_8_symbolic(self):
@@ -14286,7 +14287,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400aea)
@@ -14294,13 +14295,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400aea)
@@ -14327,10 +14328,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRI_9_symbolic(self):
@@ -14374,7 +14375,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b32)
@@ -14382,13 +14383,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400b32)
@@ -14415,10 +14416,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_1_symbolic(self):
@@ -14460,7 +14461,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4009d0)
@@ -14468,13 +14469,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4009d0)
@@ -14500,10 +14501,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_10_symbolic(self):
@@ -14545,7 +14546,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4009ac)
@@ -14553,13 +14554,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4009ac)
@@ -14585,10 +14586,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_11_symbolic(self):
@@ -14630,7 +14631,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a24)
@@ -14638,13 +14639,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400a24)
@@ -14670,10 +14671,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_12_symbolic(self):
@@ -14715,7 +14716,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4009f4)
@@ -14723,13 +14724,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4009f4)
@@ -14755,10 +14756,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_13_symbolic(self):
@@ -14800,7 +14801,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a1e)
@@ -14808,13 +14809,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400a1e)
@@ -14840,10 +14841,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_14_symbolic(self):
@@ -14885,7 +14886,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a7e)
@@ -14893,13 +14894,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400a7e)
@@ -14925,10 +14926,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_15_symbolic(self):
@@ -14970,7 +14971,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400994)
@@ -14978,13 +14979,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400994)
@@ -15010,10 +15011,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_16_symbolic(self):
@@ -15055,7 +15056,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400934)
@@ -15063,13 +15064,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400934)
@@ -15095,10 +15096,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_17_symbolic(self):
@@ -15140,7 +15141,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a9c)
@@ -15148,13 +15149,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400a9c)
@@ -15180,10 +15181,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_18_symbolic(self):
@@ -15225,7 +15226,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40092e)
@@ -15233,13 +15234,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x40092e)
@@ -15265,10 +15266,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_19_symbolic(self):
@@ -15310,7 +15311,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4009a6)
@@ -15318,13 +15319,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4009a6)
@@ -15350,10 +15351,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_2_symbolic(self):
@@ -15395,7 +15396,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a54)
@@ -15403,13 +15404,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400a54)
@@ -15435,10 +15436,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_20_symbolic(self):
@@ -15480,7 +15481,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a66)
@@ -15488,13 +15489,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400a66)
@@ -15520,10 +15521,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_21_symbolic(self):
@@ -15565,7 +15566,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400958)
@@ -15573,13 +15574,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400958)
@@ -15605,10 +15606,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_22_symbolic(self):
@@ -15650,7 +15651,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40095e)
@@ -15658,13 +15659,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x40095e)
@@ -15690,10 +15691,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_23_symbolic(self):
@@ -15735,7 +15736,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400976)
@@ -15743,13 +15744,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400976)
@@ -15775,10 +15776,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_24_symbolic(self):
@@ -15820,7 +15821,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a8a)
@@ -15828,13 +15829,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400a8a)
@@ -15860,10 +15861,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_25_symbolic(self):
@@ -15905,7 +15906,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a12)
@@ -15913,13 +15914,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400a12)
@@ -15945,10 +15946,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_26_symbolic(self):
@@ -15990,7 +15991,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40093a)
@@ -15998,13 +15999,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x40093a)
@@ -16030,10 +16031,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_27_symbolic(self):
@@ -16075,7 +16076,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a30)
@@ -16083,13 +16084,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400a30)
@@ -16115,10 +16116,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_28_symbolic(self):
@@ -16160,7 +16161,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4009ca)
@@ -16168,13 +16169,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4009ca)
@@ -16200,10 +16201,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_29_symbolic(self):
@@ -16245,7 +16246,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a3c)
@@ -16253,13 +16254,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400a3c)
@@ -16285,10 +16286,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_3_symbolic(self):
@@ -16330,7 +16331,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a18)
@@ -16338,13 +16339,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400a18)
@@ -16370,10 +16371,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_30_symbolic(self):
@@ -16415,7 +16416,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40098e)
@@ -16423,13 +16424,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x40098e)
@@ -16455,10 +16456,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_31_symbolic(self):
@@ -16500,7 +16501,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a96)
@@ -16508,13 +16509,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400a96)
@@ -16540,10 +16541,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_32_symbolic(self):
@@ -16585,7 +16586,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a90)
@@ -16593,13 +16594,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400a90)
@@ -16625,10 +16626,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_33_symbolic(self):
@@ -16670,7 +16671,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a06)
@@ -16678,13 +16679,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400a06)
@@ -16710,10 +16711,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_34_symbolic(self):
@@ -16755,7 +16756,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400928)
@@ -16763,13 +16764,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400928)
@@ -16795,10 +16796,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_35_symbolic(self):
@@ -16840,7 +16841,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a84)
@@ -16848,13 +16849,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400a84)
@@ -16880,10 +16881,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_36_symbolic(self):
@@ -16925,7 +16926,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a72)
@@ -16933,13 +16934,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400a72)
@@ -16965,10 +16966,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_37_symbolic(self):
@@ -17010,7 +17011,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400946)
@@ -17018,13 +17019,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400946)
@@ -17050,10 +17051,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_38_symbolic(self):
@@ -17095,7 +17096,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400940)
@@ -17103,13 +17104,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400940)
@@ -17135,10 +17136,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_39_symbolic(self):
@@ -17180,7 +17181,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400aa2)
@@ -17188,13 +17189,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400aa2)
@@ -17220,10 +17221,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_4_symbolic(self):
@@ -17265,7 +17266,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40097c)
@@ -17273,13 +17274,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x40097c)
@@ -17305,10 +17306,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_40_symbolic(self):
@@ -17350,7 +17351,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a48)
@@ -17358,13 +17359,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400a48)
@@ -17390,10 +17391,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_41_symbolic(self):
@@ -17435,7 +17436,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400952)
@@ -17443,13 +17444,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400952)
@@ -17475,10 +17476,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_42_symbolic(self):
@@ -17520,7 +17521,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40094c)
@@ -17528,13 +17529,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x40094c)
@@ -17560,10 +17561,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_43_symbolic(self):
@@ -17605,7 +17606,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a0c)
@@ -17613,13 +17614,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400a0c)
@@ -17645,10 +17646,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_44_symbolic(self):
@@ -17690,7 +17691,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400964)
@@ -17698,13 +17699,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400964)
@@ -17730,10 +17731,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_45_symbolic(self):
@@ -17775,7 +17776,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a36)
@@ -17783,13 +17784,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400a36)
@@ -17815,10 +17816,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_46_symbolic(self):
@@ -17860,7 +17861,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40099a)
@@ -17868,13 +17869,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x40099a)
@@ -17900,10 +17901,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_47_symbolic(self):
@@ -17945,7 +17946,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400988)
@@ -17953,13 +17954,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400988)
@@ -17985,10 +17986,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_48_symbolic(self):
@@ -18030,7 +18031,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a5a)
@@ -18038,13 +18039,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400a5a)
@@ -18070,10 +18071,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_49_symbolic(self):
@@ -18115,7 +18116,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40096a)
@@ -18123,13 +18124,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x40096a)
@@ -18155,10 +18156,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_5_symbolic(self):
@@ -18200,7 +18201,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4009b2)
@@ -18208,13 +18209,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4009b2)
@@ -18240,10 +18241,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_50_symbolic(self):
@@ -18285,7 +18286,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a60)
@@ -18293,13 +18294,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400a60)
@@ -18325,10 +18326,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_51_symbolic(self):
@@ -18370,7 +18371,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4009be)
@@ -18378,13 +18379,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4009be)
@@ -18410,10 +18411,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_52_symbolic(self):
@@ -18455,7 +18456,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4009e2)
@@ -18463,13 +18464,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4009e2)
@@ -18495,10 +18496,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_53_symbolic(self):
@@ -18540,7 +18541,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4009d6)
@@ -18548,13 +18549,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4009d6)
@@ -18580,10 +18581,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_54_symbolic(self):
@@ -18625,7 +18626,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a6c)
@@ -18633,13 +18634,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400a6c)
@@ -18665,10 +18666,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_55_symbolic(self):
@@ -18710,7 +18711,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4009c4)
@@ -18718,13 +18719,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4009c4)
@@ -18750,10 +18751,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_56_symbolic(self):
@@ -18795,7 +18796,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a00)
@@ -18803,13 +18804,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400a00)
@@ -18835,10 +18836,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_57_symbolic(self):
@@ -18880,7 +18881,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4009e8)
@@ -18888,13 +18889,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4009e8)
@@ -18920,10 +18921,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_58_symbolic(self):
@@ -18965,7 +18966,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4009b8)
@@ -18973,13 +18974,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4009b8)
@@ -19005,10 +19006,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_59_symbolic(self):
@@ -19050,7 +19051,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4009ee)
@@ -19058,13 +19059,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4009ee)
@@ -19090,10 +19091,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_6_symbolic(self):
@@ -19135,7 +19136,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4009a0)
@@ -19143,13 +19144,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4009a0)
@@ -19175,10 +19176,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_60_symbolic(self):
@@ -19220,7 +19221,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400970)
@@ -19228,13 +19229,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400970)
@@ -19260,10 +19261,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_61_symbolic(self):
@@ -19305,7 +19306,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a78)
@@ -19313,13 +19314,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400a78)
@@ -19345,10 +19346,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_62_symbolic(self):
@@ -19390,7 +19391,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a2a)
@@ -19398,13 +19399,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400a2a)
@@ -19430,10 +19431,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_63_symbolic(self):
@@ -19475,7 +19476,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a42)
@@ -19483,13 +19484,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400a42)
@@ -19515,10 +19516,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_64_symbolic(self):
@@ -19560,7 +19561,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a4e)
@@ -19568,13 +19569,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400a4e)
@@ -19600,10 +19601,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_7_symbolic(self):
@@ -19645,7 +19646,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4009dc)
@@ -19653,13 +19654,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4009dc)
@@ -19685,10 +19686,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_8_symbolic(self):
@@ -19730,7 +19731,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4009fa)
@@ -19738,13 +19739,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4009fa)
@@ -19770,10 +19771,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPESTRM_9_symbolic(self):
@@ -19815,7 +19816,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400982)
@@ -19823,13 +19824,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400982)
@@ -19855,10 +19856,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_1_symbolic(self):
@@ -19898,7 +19899,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400746)
@@ -19906,13 +19907,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400746)
@@ -19937,10 +19938,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_10_symbolic(self):
@@ -19980,7 +19981,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400650)
@@ -19988,13 +19989,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400650)
@@ -20019,10 +20020,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_11_symbolic(self):
@@ -20062,7 +20063,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400668)
@@ -20070,13 +20071,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400668)
@@ -20101,10 +20102,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_12_symbolic(self):
@@ -20144,7 +20145,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400698)
@@ -20152,13 +20153,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400698)
@@ -20183,10 +20184,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_13_symbolic(self):
@@ -20226,7 +20227,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4006c8)
@@ -20234,13 +20235,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4006c8)
@@ -20265,10 +20266,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_14_symbolic(self):
@@ -20308,7 +20309,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4006bc)
@@ -20316,13 +20317,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4006bc)
@@ -20347,10 +20348,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_15_symbolic(self):
@@ -20390,7 +20391,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40068c)
@@ -20398,13 +20399,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x40068c)
@@ -20429,10 +20430,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_16_symbolic(self):
@@ -20472,7 +20473,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40062c)
@@ -20480,13 +20481,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x40062c)
@@ -20511,10 +20512,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_17_symbolic(self):
@@ -20554,7 +20555,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400764)
@@ -20562,13 +20563,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400764)
@@ -20593,10 +20594,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_18_symbolic(self):
@@ -20636,7 +20637,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4005fc)
@@ -20644,13 +20645,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4005fc)
@@ -20675,10 +20676,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_19_symbolic(self):
@@ -20718,7 +20719,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4006ce)
@@ -20726,13 +20727,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4006ce)
@@ -20757,10 +20758,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_2_symbolic(self):
@@ -20800,7 +20801,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400704)
@@ -20808,13 +20809,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400704)
@@ -20839,10 +20840,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_20_symbolic(self):
@@ -20882,7 +20883,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4006f8)
@@ -20890,13 +20891,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4006f8)
@@ -20921,10 +20922,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_21_symbolic(self):
@@ -20964,7 +20965,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4006c2)
@@ -20972,13 +20973,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4006c2)
@@ -21003,10 +21004,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_22_symbolic(self):
@@ -21046,7 +21047,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40069e)
@@ -21054,13 +21055,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x40069e)
@@ -21085,10 +21086,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_23_symbolic(self):
@@ -21128,7 +21129,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4006b6)
@@ -21136,13 +21137,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4006b6)
@@ -21167,10 +21168,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_24_symbolic(self):
@@ -21210,7 +21211,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400620)
@@ -21218,13 +21219,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400620)
@@ -21249,10 +21250,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_25_symbolic(self):
@@ -21292,7 +21293,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400710)
@@ -21300,13 +21301,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400710)
@@ -21331,10 +21332,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_26_symbolic(self):
@@ -21374,7 +21375,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4006b0)
@@ -21382,13 +21383,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4006b0)
@@ -21413,10 +21414,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_27_symbolic(self):
@@ -21456,7 +21457,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400740)
@@ -21464,13 +21465,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400740)
@@ -21495,10 +21496,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_28_symbolic(self):
@@ -21538,7 +21539,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400692)
@@ -21546,13 +21547,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400692)
@@ -21577,10 +21578,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_29_symbolic(self):
@@ -21620,7 +21621,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40064a)
@@ -21628,13 +21629,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x40064a)
@@ -21659,10 +21660,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_3_symbolic(self):
@@ -21702,7 +21703,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400728)
@@ -21710,13 +21711,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400728)
@@ -21741,10 +21742,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_30_symbolic(self):
@@ -21866,7 +21867,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40077c)
@@ -21874,13 +21875,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'RBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'RBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x40077c)
@@ -21925,10 +21926,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_31_symbolic(self):
@@ -21968,7 +21969,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400626)
@@ -21976,13 +21977,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400626)
@@ -22007,10 +22008,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_32_symbolic(self):
@@ -22050,7 +22051,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4006d4)
@@ -22058,13 +22059,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4006d4)
@@ -22089,10 +22090,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_33_symbolic(self):
@@ -22132,7 +22133,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400686)
@@ -22140,13 +22141,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400686)
@@ -22171,10 +22172,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_34_symbolic(self):
@@ -22214,7 +22215,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400770)
@@ -22222,13 +22223,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400770)
@@ -22253,10 +22254,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_35_symbolic(self):
@@ -22296,7 +22297,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40071c)
@@ -22304,13 +22305,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x40071c)
@@ -22335,10 +22336,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_36_symbolic(self):
@@ -22378,7 +22379,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400776)
@@ -22386,13 +22387,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400776)
@@ -22417,10 +22418,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_37_symbolic(self):
@@ -22460,7 +22461,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400758)
@@ -22468,13 +22469,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400758)
@@ -22499,10 +22500,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_38_symbolic(self):
@@ -22542,7 +22543,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400602)
@@ -22550,13 +22551,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400602)
@@ -22581,10 +22582,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_39_symbolic(self):
@@ -22624,7 +22625,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400608)
@@ -22632,13 +22633,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400608)
@@ -22663,10 +22664,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_4_symbolic(self):
@@ -22706,7 +22707,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400752)
@@ -22714,13 +22715,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400752)
@@ -22745,10 +22746,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_40_symbolic(self):
@@ -22788,7 +22789,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400638)
@@ -22796,13 +22797,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400638)
@@ -22827,10 +22828,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_41_symbolic(self):
@@ -22870,7 +22871,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40074c)
@@ -22878,13 +22879,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x40074c)
@@ -22909,10 +22910,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_42_symbolic(self):
@@ -22952,7 +22953,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400734)
@@ -22960,13 +22961,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400734)
@@ -22991,10 +22992,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_43_symbolic(self):
@@ -23034,7 +23035,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400644)
@@ -23042,13 +23043,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400644)
@@ -23073,10 +23074,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_44_symbolic(self):
@@ -23116,7 +23117,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40065c)
@@ -23124,13 +23125,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x40065c)
@@ -23155,10 +23156,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_45_symbolic(self):
@@ -23198,7 +23199,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40061a)
@@ -23206,13 +23207,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x40061a)
@@ -23237,10 +23238,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_46_symbolic(self):
@@ -23280,7 +23281,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40073a)
@@ -23288,13 +23289,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x40073a)
@@ -23319,10 +23320,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_47_symbolic(self):
@@ -23362,7 +23363,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40070a)
@@ -23370,13 +23371,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x40070a)
@@ -23401,10 +23402,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_48_symbolic(self):
@@ -23444,7 +23445,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4006aa)
@@ -23452,13 +23453,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4006aa)
@@ -23483,10 +23484,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_49_symbolic(self):
@@ -23526,7 +23527,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400716)
@@ -23534,13 +23535,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400716)
@@ -23565,10 +23566,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_5_symbolic(self):
@@ -23608,7 +23609,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40063e)
@@ -23616,13 +23617,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x40063e)
@@ -23647,10 +23648,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_50_symbolic(self):
@@ -23690,7 +23691,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400656)
@@ -23698,13 +23699,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400656)
@@ -23729,10 +23730,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_51_symbolic(self):
@@ -23772,7 +23773,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40072e)
@@ -23780,13 +23781,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x40072e)
@@ -23811,10 +23812,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_52_symbolic(self):
@@ -23854,7 +23855,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400680)
@@ -23862,13 +23863,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400680)
@@ -23893,10 +23894,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_53_symbolic(self):
@@ -23936,7 +23937,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400674)
@@ -23944,13 +23945,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400674)
@@ -23975,10 +23976,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_54_symbolic(self):
@@ -24018,7 +24019,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40067a)
@@ -24026,13 +24027,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x40067a)
@@ -24057,10 +24058,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_55_symbolic(self):
@@ -24100,7 +24101,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400722)
@@ -24108,13 +24109,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400722)
@@ -24139,10 +24140,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_56_symbolic(self):
@@ -24182,7 +24183,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4006e6)
@@ -24190,13 +24191,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4006e6)
@@ -24221,10 +24222,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_57_symbolic(self):
@@ -24264,7 +24265,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40076a)
@@ -24272,13 +24273,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x40076a)
@@ -24303,10 +24304,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_58_symbolic(self):
@@ -24346,7 +24347,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4006ec)
@@ -24354,13 +24355,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4006ec)
@@ -24385,10 +24386,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_59_symbolic(self):
@@ -24428,7 +24429,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400632)
@@ -24436,13 +24437,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400632)
@@ -24467,10 +24468,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_6_symbolic(self):
@@ -24510,7 +24511,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40066e)
@@ -24518,13 +24519,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x40066e)
@@ -24549,10 +24550,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_60_symbolic(self):
@@ -24592,7 +24593,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4006f2)
@@ -24600,13 +24601,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4006f2)
@@ -24631,10 +24632,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_61_symbolic(self):
@@ -24674,7 +24675,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400614)
@@ -24682,13 +24683,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400614)
@@ -24713,10 +24714,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_62_symbolic(self):
@@ -24756,7 +24757,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4006da)
@@ -24764,13 +24765,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4006da)
@@ -24795,10 +24796,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_63_symbolic(self):
@@ -24838,7 +24839,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4006a4)
@@ -24846,13 +24847,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4006a4)
@@ -24877,10 +24878,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_64_symbolic(self):
@@ -24920,7 +24921,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4006fe)
@@ -24928,13 +24929,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4006fe)
@@ -24959,10 +24960,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_65_symbolic(self):
@@ -25002,7 +25003,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400662)
@@ -25010,13 +25011,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400662)
@@ -25041,10 +25042,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_7_symbolic(self):
@@ -25084,7 +25085,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4006e0)
@@ -25092,13 +25093,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4006e0)
@@ -25123,10 +25124,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_8_symbolic(self):
@@ -25166,7 +25167,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40060e)
@@ -25174,13 +25175,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x40060e)
@@ -25205,10 +25206,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRI_9_symbolic(self):
@@ -25248,7 +25249,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40075e)
@@ -25256,13 +25257,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x40075e)
@@ -25287,10 +25288,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_1_symbolic(self):
@@ -25328,7 +25329,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400856)
@@ -25336,13 +25337,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400856)
@@ -25366,10 +25367,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_10_symbolic(self):
@@ -25407,7 +25408,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4007cc)
@@ -25415,13 +25416,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4007cc)
@@ -25445,10 +25446,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_11_symbolic(self):
@@ -25486,7 +25487,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40087a)
@@ -25494,13 +25495,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x40087a)
@@ -25524,10 +25525,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_12_symbolic(self):
@@ -25565,7 +25566,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400802)
@@ -25573,13 +25574,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400802)
@@ -25603,10 +25604,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_13_symbolic(self):
@@ -25644,7 +25645,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4007fc)
@@ -25652,13 +25653,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4007fc)
@@ -25682,10 +25683,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_14_symbolic(self):
@@ -25723,7 +25724,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4008c8)
@@ -25731,13 +25732,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4008c8)
@@ -25761,10 +25762,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_15_symbolic(self):
@@ -25802,7 +25803,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4008f8)
@@ -25810,13 +25811,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4008f8)
@@ -25840,10 +25841,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_16_symbolic(self):
@@ -25881,7 +25882,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40080e)
@@ -25889,13 +25890,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x40080e)
@@ -25919,10 +25920,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_17_symbolic(self):
@@ -25960,7 +25961,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40089e)
@@ -25968,13 +25969,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x40089e)
@@ -25998,10 +25999,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_18_symbolic(self):
@@ -26039,7 +26040,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4008f2)
@@ -26047,13 +26048,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4008f2)
@@ -26077,10 +26078,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_19_symbolic(self):
@@ -26118,7 +26119,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4007b4)
@@ -26126,13 +26127,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4007b4)
@@ -26156,10 +26157,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_2_symbolic(self):
@@ -26197,7 +26198,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4008ec)
@@ -26205,13 +26206,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4008ec)
@@ -26235,10 +26236,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_20_symbolic(self):
@@ -26276,7 +26277,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4007d8)
@@ -26284,13 +26285,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4007d8)
@@ -26314,10 +26315,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_21_symbolic(self):
@@ -26355,7 +26356,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400892)
@@ -26363,13 +26364,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400892)
@@ -26393,10 +26394,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_22_symbolic(self):
@@ -26434,7 +26435,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40084a)
@@ -26442,13 +26443,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x40084a)
@@ -26472,10 +26473,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_23_symbolic(self):
@@ -26513,7 +26514,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40088c)
@@ -26521,13 +26522,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x40088c)
@@ -26551,10 +26552,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_24_symbolic(self):
@@ -26592,7 +26593,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4008fe)
@@ -26600,13 +26601,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4008fe)
@@ -26630,10 +26631,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_25_symbolic(self):
@@ -26671,7 +26672,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400838)
@@ -26679,13 +26680,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400838)
@@ -26709,10 +26710,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_26_symbolic(self):
@@ -26750,7 +26751,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400832)
@@ -26758,13 +26759,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400832)
@@ -26788,10 +26789,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_27_symbolic(self):
@@ -26829,7 +26830,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400820)
@@ -26837,13 +26838,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400820)
@@ -26867,10 +26868,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_28_symbolic(self):
@@ -26908,7 +26909,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400850)
@@ -26916,13 +26917,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400850)
@@ -26946,10 +26947,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_29_symbolic(self):
@@ -26987,7 +26988,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4007d2)
@@ -26995,13 +26996,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4007d2)
@@ -27025,10 +27026,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_3_symbolic(self):
@@ -27066,7 +27067,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400826)
@@ -27074,13 +27075,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400826)
@@ -27104,10 +27105,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_30_symbolic(self):
@@ -27145,7 +27146,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400898)
@@ -27153,13 +27154,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400898)
@@ -27183,10 +27184,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_31_symbolic(self):
@@ -27224,7 +27225,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4008aa)
@@ -27232,13 +27233,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4008aa)
@@ -27262,10 +27263,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_32_symbolic(self):
@@ -27303,7 +27304,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4007ea)
@@ -27311,13 +27312,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4007ea)
@@ -27341,10 +27342,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_33_symbolic(self):
@@ -27382,7 +27383,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4007f6)
@@ -27390,13 +27391,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4007f6)
@@ -27420,10 +27421,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_34_symbolic(self):
@@ -27461,7 +27462,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4008b0)
@@ -27469,13 +27470,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4008b0)
@@ -27499,10 +27500,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_35_symbolic(self):
@@ -27540,7 +27541,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4008a4)
@@ -27548,13 +27549,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4008a4)
@@ -27578,10 +27579,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_36_symbolic(self):
@@ -27619,7 +27620,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4008e0)
@@ -27627,13 +27628,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4008e0)
@@ -27657,10 +27658,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_37_symbolic(self):
@@ -27698,7 +27699,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400904)
@@ -27706,13 +27707,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400904)
@@ -27736,10 +27737,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_38_symbolic(self):
@@ -27777,7 +27778,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4008c2)
@@ -27785,13 +27786,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4008c2)
@@ -27815,10 +27816,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_39_symbolic(self):
@@ -27856,7 +27857,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40081a)
@@ -27864,13 +27865,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x40081a)
@@ -27894,10 +27895,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_4_symbolic(self):
@@ -27935,7 +27936,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4008bc)
@@ -27943,13 +27944,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4008bc)
@@ -27973,10 +27974,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_40_symbolic(self):
@@ -28014,7 +28015,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4007de)
@@ -28022,13 +28023,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4007de)
@@ -28052,10 +28053,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_41_symbolic(self):
@@ -28093,7 +28094,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400814)
@@ -28101,13 +28102,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400814)
@@ -28131,10 +28132,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_42_symbolic(self):
@@ -28172,7 +28173,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4007c6)
@@ -28180,13 +28181,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4007c6)
@@ -28210,10 +28211,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_43_symbolic(self):
@@ -28251,7 +28252,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400868)
@@ -28259,13 +28260,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400868)
@@ -28289,10 +28290,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_44_symbolic(self):
@@ -28330,7 +28331,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4008ce)
@@ -28338,13 +28339,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4008ce)
@@ -28368,10 +28369,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_45_symbolic(self):
@@ -28409,7 +28410,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400874)
@@ -28417,13 +28418,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400874)
@@ -28447,10 +28448,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_46_symbolic(self):
@@ -28488,7 +28489,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40085c)
@@ -28496,13 +28497,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x40085c)
@@ -28526,10 +28527,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_47_symbolic(self):
@@ -28567,7 +28568,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4007a8)
@@ -28575,13 +28576,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4007a8)
@@ -28605,10 +28606,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_48_symbolic(self):
@@ -28646,7 +28647,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40082c)
@@ -28654,13 +28655,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x40082c)
@@ -28684,10 +28685,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_49_symbolic(self):
@@ -28725,7 +28726,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4008da)
@@ -28733,13 +28734,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4008da)
@@ -28763,10 +28764,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_5_symbolic(self):
@@ -28804,7 +28805,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4007a2)
@@ -28812,13 +28813,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4007a2)
@@ -28842,10 +28843,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_50_symbolic(self):
@@ -28883,7 +28884,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4007e4)
@@ -28891,13 +28892,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4007e4)
@@ -28921,10 +28922,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_51_symbolic(self):
@@ -28962,7 +28963,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400880)
@@ -28970,13 +28971,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400880)
@@ -29000,10 +29001,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_52_symbolic(self):
@@ -29041,7 +29042,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400886)
@@ -29049,13 +29050,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400886)
@@ -29079,10 +29080,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_53_symbolic(self):
@@ -29120,7 +29121,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4008b6)
@@ -29128,13 +29129,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4008b6)
@@ -29158,10 +29159,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_54_symbolic(self):
@@ -29199,7 +29200,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4007ba)
@@ -29207,13 +29208,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4007ba)
@@ -29237,10 +29238,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_55_symbolic(self):
@@ -29278,7 +29279,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40090a)
@@ -29286,13 +29287,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x40090a)
@@ -29316,10 +29317,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_56_symbolic(self):
@@ -29357,7 +29358,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40079c)
@@ -29365,13 +29366,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x40079c)
@@ -29395,10 +29396,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_57_symbolic(self):
@@ -29436,7 +29437,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4007ae)
@@ -29444,13 +29445,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4007ae)
@@ -29474,10 +29475,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_58_symbolic(self):
@@ -29515,7 +29516,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400844)
@@ -29523,13 +29524,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400844)
@@ -29553,10 +29554,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_59_symbolic(self):
@@ -29594,7 +29595,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4008e6)
@@ -29602,13 +29603,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4008e6)
@@ -29632,10 +29633,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_6_symbolic(self):
@@ -29673,7 +29674,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400808)
@@ -29681,13 +29682,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400808)
@@ -29711,10 +29712,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_60_symbolic(self):
@@ -29752,7 +29753,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4008d4)
@@ -29760,13 +29761,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4008d4)
@@ -29790,10 +29791,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_61_symbolic(self):
@@ -29831,7 +29832,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400796)
@@ -29839,13 +29840,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400796)
@@ -29869,10 +29870,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_62_symbolic(self):
@@ -29910,7 +29911,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40083e)
@@ -29918,13 +29919,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x40083e)
@@ -29948,10 +29949,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_63_symbolic(self):
@@ -29989,7 +29990,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400790)
@@ -29997,13 +29998,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400790)
@@ -30027,10 +30028,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_64_symbolic(self):
@@ -30068,7 +30069,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4007c0)
@@ -30076,13 +30077,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4007c0)
@@ -30106,10 +30107,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_7_symbolic(self):
@@ -30147,7 +30148,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4007f0)
@@ -30155,13 +30156,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x4007f0)
@@ -30185,10 +30186,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_8_symbolic(self):
@@ -30226,7 +30227,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40086e)
@@ -30234,13 +30235,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x40086e)
@@ -30264,10 +30265,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
     def test_PCMPISTRM_9_symbolic(self):
@@ -30305,7 +30306,7 @@ class CPUTest(unittest.TestCase):
                 done = True
             except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
-                values = solver.get_all_values(cs, symbol)
+                values = Z3Solver.instance().get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400862)
@@ -30313,13 +30314,13 @@ class CPUTest(unittest.TestCase):
             except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
-                    values = solver.get_all_values(cs, symbol)
+                    values = Z3Solver.instance().get_all_values(cs, symbol)
                     self.assertEqual(len(values), 1)
                     setattr(cpu, 'EBP', values[0])
                 for i in range(e.size):
                     symbol = mem[e.address+i]
                     if isinstance(symbol, Expression):
-                        values = solver.get_all_values(cs, symbol)
+                        values = Z3Solver.instance().get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
                 setattr(cpu, 'RIP', 0x400862)
@@ -30343,10 +30344,10 @@ class CPUTest(unittest.TestCase):
 
         with cs as temp_cs:
             temp_cs.add(condition)
-            self.assertTrue(solver.check(temp_cs))
+            self.assertTrue(Z3Solver.instance().check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
-            self.assertFalse(solver.check(temp_cs))
+            self.assertFalse(Z3Solver.instance().check(temp_cs))
           
 
 if __name__ == '__main__':

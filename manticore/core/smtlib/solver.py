@@ -14,13 +14,13 @@
 # Once you Solver.check() it the status is changed to sat or unsat (or unknown+exception)
 # You can create new symbols operate on them. The declarations will be sent to the smtlib process when needed.
 # You can add new constraints. A new constraint may change the state from {None, sat} to {sat, unsat, unknown}
+import os
+import threading
 import collections
 import shlex
 import time
 from subprocess import PIPE, Popen
-
 import re
-from abc import ABCMeta, abstractmethod
 
 from . import operators as Operators
 from .constraints import *
@@ -30,12 +30,12 @@ from ...utils import config
 from ...utils.helpers import issymbolic
 
 logger = logging.getLogger(__name__)
-
 consts = config.get_group('smt')
 consts.add('timeout', default=240, description='Timeout, in seconds, for each Z3 invocation')
 consts.add('memory', default=16384, description='Max memory for Z3 to use (in Megabytes)')
 consts.add('maxsolutions', default=10000, description='Maximum solutions to provide when solving for all values')
 consts.add('z3_bin', default='z3', description='Z3 binary to use')
+consts.add('defaultunsat', default=True, description='Consider solver timeouts as unsat core')
 
 
 # Regular expressions used by the solver
@@ -44,8 +44,19 @@ RE_OBJECTIVES_EXPR_VALUE = re.compile('\(objectives.*\((?P<expr>.*) (?P<value>\d
 RE_MIN_MAX_OBJECTIVE_EXPR_VALUE = re.compile('(?P<expr>.*?)\s+\|->\s+(?P<value>.*)', re.DOTALL)
 
 
-class Solver(metaclass=ABCMeta):
-    @abstractmethod
+class SingletonMixin(object):
+    __singleton_instances = {}
+
+    @classmethod
+    def instance(cls):
+        tid = threading.get_ident()
+        pid = os.getpid()
+        if not (pid, tid) in cls.__singleton_instances:
+            cls.__singleton_instances[(pid, tid)] = cls()
+        return cls.__singleton_instances[(pid, tid)]
+
+
+class Solver(SingletonMixin):
     def __init__(self):
         pass
 
@@ -109,10 +120,6 @@ class Solver(metaclass=ABCMeta):
             return m, M
         else:
             return x, x
-
-
-# TODO/FIXME move this \/ This configuration should be registered as global config
-consider_unknown_as_unsat = True
 
 
 Version = collections.namedtuple('Version', 'major minor patch')
@@ -182,7 +189,7 @@ class Z3Solver(Solver):
         """Spawns z3 solver process"""
         assert '_proc' not in dir(self) or self._proc is None
         try:
-            self._proc = Popen(shlex.split(self._command), stdin=PIPE, stdout=PIPE, bufsize=0, universal_newlines=True)
+            self._proc = Popen(shlex.split(self._command), stdin=PIPE, stdout=PIPE, bufsize=0, universal_newlines=True, close_fds=True)
         except OSError as e:
             print(e, "Probably too many cached expressions? visitors._cache...")
             # Z3 was removed from the system in the middle of operation
@@ -261,7 +268,8 @@ class Z3Solver(Solver):
 
         :param cmd: a SMTLIBv2 command (ex. (check-sat))
         """
-        logger.debug('>%s', cmd)
+        #logger.debug('>%s', cmd)
+        #print (">",self._proc.stdin.name, threading.get_ident())
         try:
             self._proc.stdout.flush()
             self._proc.stdin.write(f'{cmd}\n')
@@ -281,7 +289,7 @@ class Z3Solver(Solver):
 
         buf = ''.join(bufl).strip()
 
-        logger.debug('<%s', buf)
+        #logger.debug('<%s', buf)
         if '(error' in bufl[0]:
             raise Exception(f"Error in smtlib: {bufl[0]}")
         return buf
@@ -304,7 +312,7 @@ class Z3Solver(Solver):
         logger.debug("Check took %s seconds (%s)", time.time() - start, status)
         if status not in ('sat', 'unsat', 'unknown'):
             raise SolverError(status)
-        if consider_unknown_as_unsat:
+        if consts.defaultunsat:
             if status == 'unknown':
                 logger.info('Found an unknown core, probably a solver timeout')
                 status = 'unsat'
@@ -541,6 +549,3 @@ class Z3Solver(Solver):
             expr, value = m.group('expr'), m.group('value')
             return int(value, base)
         raise NotImplementedError("get_value only implemented for Bool and BitVec")
-
-
-solver = Z3Solver()

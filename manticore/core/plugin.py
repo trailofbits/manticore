@@ -1,5 +1,8 @@
 import logging
 from contextlib import contextmanager
+import cProfile
+import pstats
+import threading
 
 from ..utils.helpers import issymbolic
 
@@ -9,6 +12,10 @@ logger = logging.getLogger(__name__)
 class Plugin:
     def __init__(self):
         self.manticore = None
+
+    @property
+    def name(self):
+        return str(self.__class__)
 
     @contextmanager
     def locked_context(self, key=None, value_type=list):
@@ -39,6 +46,11 @@ class Plugin:
 
     def on_unregister(self):
         """ Called be parent manticore on un-registration """
+        pass
+
+    def generate_testcase(self, state, testcase, message):
+        ''' Called so the plugin can attach some results to the testcase if the
+            state needs it'''
         pass
 
 
@@ -74,6 +86,9 @@ class ExtendedTracer(Plugin):
         self.last_dict = {}
         self.current_pc = None
         self.context_key = 'e_trace'
+
+    def get_trace(self, state):
+        return state.context.get(self.context_key)
 
     def register_state_to_dict(self, cpu):
         d = {}
@@ -185,7 +200,7 @@ class RecordSymbolicBranches(Plugin):
 
 class InstructionCounter(Plugin):
 
-    def will_terminate_state_callback(self, state, state_id, ex):
+    def will_terminate_state_callback(self, state, ex):
         if state is None:  # FIXME Can it be None?
             return
         state_instructions_count = state.context.get('instructions_count', 0)
@@ -200,7 +215,7 @@ class InstructionCounter(Plugin):
             count = state.context.get('instructions_count', 0)
             state.context['instructions_count'] = count + 1
 
-    def did_finish_run_callback(self):
+    def did_run_callback(self):
         _shared_context = self.manticore.context
         instructions_count = _shared_context.get('instructions_count', 0)
         logger.info('Instructions executed: %d', instructions_count)
@@ -211,7 +226,7 @@ class Visited(Plugin):
         super().__init__()
         self.coverage_file = coverage_file
 
-    def will_terminate_state_callback(self, state, state_id, ex):
+    def will_terminate_state_callback(self, state, ex):
         if state is None:
             return
         state_visited = state.context.get('visited_since_last_fork', set())
@@ -230,7 +245,7 @@ class Visited(Plugin):
         state.context.setdefault('visited_since_last_fork', set()).add(prev_pc)
         state.context.setdefault('visited', set()).add(prev_pc)
 
-    def did_finish_run_callback(self):
+    def did_run_callback(self):
         _shared_context = self.manticore.context
         executor_visited = _shared_context.get('visited', set())
         # Fixme this is duplicated?
@@ -239,6 +254,51 @@ class Visited(Plugin):
                 for m in executor_visited:
                     f.write(f"0x{m:016x}\n")
         logger.info('Coverage: %d different instructions executed', len(executor_visited))
+
+
+class Profiler(Plugin):
+    data = threading.local()
+
+    def will_start_worker_callback(self, id):
+        self.data.profile = cProfile.Profile()
+        self.data.profile.enable()
+
+    def did_terminate_worker_callback(self, id):
+        self.data.profile.disable()
+        self.data.profile.create_stats()
+        with self.manticore.locked_context('_profiling_stats', dict) as profiling_stats:
+            profiling_stats[id] = self.data.profile.stats.items()
+
+    def get_profiling_data(self):
+        class PstatsFormatted:
+            def __init__(self, d):
+                self.stats = dict(d)
+
+            def create_stats(self):
+                pass
+
+        with self.manticore.locked_context('_profiling_stats') as profiling_stats:
+            ps = None
+            for item in profiling_stats.values():
+                try:
+                    stat = PstatsFormatted(item)
+                    if ps is None:
+                        ps = pstats.Stats(stat)
+                    else:
+                        ps.add(stat)
+                except TypeError:
+                    logger.info("Incorrectly formatted profiling information in _stats, skipping")
+        return ps
+
+    def save_profiling_data(self, stream=None):
+        ''':param stream: an output stream to write the profiling data '''
+        ps = self.get_profiling_data()
+        # XXX(yan): pstats does not support dumping to a file stream, only to a file
+        # name. Below is essentially the implementation of pstats.dump_stats() without
+        # the extra open().
+        if stream is not None:
+            import marshal
+            marshal.dump(ps.stats, stream)
 
 
 # TODO document all callbacks
@@ -264,8 +324,8 @@ class ExamplePlugin(Plugin):
         """
         logger.info('will_start_run')
 
-    def did_finish_run_callback(self):
-        logger.info('did_finish_run')
+    def did_run_callback(self):
+        logger.info('did_run')
 
     def will_fork_state_callback(self, parent_state, expression, solutions, policy):
         logger.info('will_fork_state %r %r %r %r', parent_state, expression, solutions, policy)
@@ -279,8 +339,8 @@ class ExamplePlugin(Plugin):
     def did_enqueue_state_callback(self, state, state_id):
         logger.info('did_enqueue_state %r %r', state, state_id)
 
-    def will_terminate_state_callback(self, state, state_id, exception):
-        logger.info('will_terminate_state %r %r %r', state, state_id, exception)
+    def will_terminate_state_callback(self, state, exception):
+        logger.info('will_terminate_state %r %r', state, exception)
 
     def will_generate_testcase_callback(self, state, testcase, message):
         logger.info('will_generate_testcase %r %r %r', state, testcase, message)

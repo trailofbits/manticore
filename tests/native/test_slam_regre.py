@@ -3,6 +3,8 @@ import unittest
 from manticore.native.cpu.abstractcpu import ConcretizeRegister
 from manticore.native.cpu.x86 import AMD64Cpu
 from manticore.native.memory import *
+from manticore.core.smtlib.solver import Z3Solver
+solver = Z3Solver.instance()
 
 
 class CPUTest(unittest.TestCase):

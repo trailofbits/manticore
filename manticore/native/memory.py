@@ -1,6 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from weakref import WeakValueDictionary
-from ..core.smtlib import Operators, ConstraintSet, arithmetic_simplify, solver, TooManySolutions, BitVec, BitVecConstant, expression
+from ..core.smtlib import Operators, ConstraintSet, arithmetic_simplify, Z3Solver, TooManySolutions, BitVec, BitVecConstant, expression
 from ..native.mappings import mmap, munmap
 from ..utils.helpers import issymbolic, interval_intersection
 
@@ -1036,14 +1036,13 @@ class SMemory(Memory):
         """
         size = self._get_size(size)
         assert not issymbolic(size)
-
         if issymbolic(address):
-            assert solver.check(self.constraints)
             logger.debug(f'Reading {size} bytes from symbolic address {address}')
             try:
                 solutions = self._try_get_solutions(address, size, 'r', force=force)
                 assert len(solutions) > 0
             except TooManySolutions as e:
+                solver = Z3Solver.instance()
                 m, M = solver.minmax(self.constraints, address)
                 logger.debug(f'Got TooManySolutions on a symbolic read. Range [{m:x}, {M:x}]. Not crashing!')
 
@@ -1141,7 +1140,7 @@ class SMemory(Memory):
         :rtype: list
         """
         assert issymbolic(address)
-
+        solver = Z3Solver.instance()
         solutions = solver.get_all_values(self.constraints, address, maxcnt=max_solutions)
 
         crashing_condition = False
@@ -1232,6 +1231,7 @@ class LazySMemory(SMemory):
         if not issymbolic(address):
             return address >= mapping.start and address + size < mapping.end
         else:
+            solver = Z3Solver.instance()
             constraint = Operators.AND(address >= mapping.start, address + size < mapping.end)
             return solver.can_be_true(self.constraints, constraint)
 
@@ -1267,6 +1267,7 @@ class LazySMemory(SMemory):
             Operators.ULT(address, map.end))
 
     def _reachable_range(self, sym_address, size):
+        solver = Z3Solver.instance()
         addr_min, addr_max = solver.minmax(self.constraints, sym_address)
         return addr_min, addr_max + size - 1
 

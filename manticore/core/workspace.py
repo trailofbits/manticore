@@ -1,17 +1,34 @@
 import os
 import sys
 import glob
-import signal
 import logging
 import tempfile
 import io
 
-from contextlib import contextmanager
-from multiprocessing.managers import SyncManager
 
+from contextlib import contextmanager
+
+try:
+    from contextlib import nullcontext
+except ImportError:
+    class nullcontext():
+
+        def __init__(self, enter_result=None):
+            self.enter_result = enter_result
+
+        def __enter__(self):
+            return self.enter_result
+
+        def __exit__(self, *excinfo):
+            pass
+
+import time
+import os
+import errno
+import threading
 from ..utils import config
 from ..utils.helpers import PickleSerializer
-from .smtlib import solver
+from .smtlib.solver import Z3Solver
 from .state import StateBase
 
 logger = logging.getLogger(__name__)
@@ -19,16 +36,6 @@ logger = logging.getLogger(__name__)
 consts = config.get_group('workspace')
 consts.add('prefix', default='mcore_', description="The prefix to use for output and workspace directories")
 consts.add('dir', default='.', description="Location of where to create workspace directories")
-
-_manager = None
-
-
-def manager():
-    global _manager
-    if _manager is None:
-        _manager = SyncManager()
-        _manager.start(lambda: signal.signal(signal.SIGINT, signal.SIG_IGN))
-    return _manager
 
 
 class Testcase:
@@ -158,10 +165,12 @@ class Store:
         :param key: key that identifies state
         :rtype: manticore.core.StateBase
         """
+
         with self.load_stream(key, binary=True) as f:
             state = self._serializer.deserialize(f)
             if delete:
                 self.rm(key)
+
             return state
 
     def rm(self, key):
@@ -180,6 +189,9 @@ class Store:
         """
         raise NotImplementedError
 
+    def lock(self):
+        raise NotImplementedError
+
 
 class FilesystemStore(Store):
     """
@@ -191,6 +203,7 @@ class FilesystemStore(Store):
         """
         :param uri: The path to on-disk workspace, or None.
         """
+        self._tlock = threading.Lock()
         if not uri:
             uri = os.path.abspath(tempfile.mkdtemp(prefix=consts.prefix, dir=consts.dir))
 
@@ -202,26 +215,64 @@ class FilesystemStore(Store):
         super().__init__(uri)
 
     @contextmanager
-    def save_stream(self, key, binary=False):
+    def lock(self):
+        lockfile = os.path.join(self.uri, '.lock')
+        with self._tlock:
+            while True:
+                try:
+                    fd = os.open(lockfile, os.O_CREAT | os.O_EXCL | os.O_RDWR)
+                except OSError as e:
+                    if e.errno != errno.EEXIST:
+                        raise
+                    time.sleep(0.05)
+                else:
+                    yield
+                    os.close(fd)
+                    os.unlink(lockfile)
+                    break
+
+    @contextmanager
+    def stream(self, key, mode='r', lock=False):
+        """
+        Yield a file object representing `key`
+
+        :param str key: The file to save to
+        :param mode: mode is an optional string that specifies the mode in which the file is opened
+        :param lock: exclusive access if True
+        :return:
+        """
+        if lock:
+            with self.lock():
+                with self.stream(key, mode, lock=False) as f:
+                    yield f
+        else:
+            with open(os.path.join(self.uri, key), mode) as f:
+                yield f
+
+    @contextmanager
+    def save_stream(self, key, binary=False, lock=False):
         """
         Yield a file object representing `key`
 
         :param str key: The file to save to
         :param bool binary: Whether we should treat it as binary
+        :param lock: exclusive access if True
         :return:
         """
         mode = 'wb' if binary else 'w'
-        with open(os.path.join(self.uri, key), mode) as f:
+        with self.stream(key, mode, lock) as f:
             yield f
 
     @contextmanager
-    def load_stream(self, key, binary=False):
+    def load_stream(self, key, binary=False, lock=False):
         """
         :param str key: name of stream to load
         :param bool binary: Whether we should treat it as binary
+        :param lock: exclusive access if True
         :return:
         """
-        with open(os.path.join(self.uri, key), 'rb' if binary else 'r') as f:
+        mode = 'rb' if binary else 'r'
+        with self.stream(key, mode, lock) as f:
             yield f
 
     def rm(self, key):
@@ -257,6 +308,7 @@ class MemoryStore(Store):
     # we're executing in a single-worker or test environment.
 
     def __init__(self, uri=None):
+        self._lock = threading.RLock()
         self._data = {}
         super().__init__(None)
 
@@ -271,6 +323,22 @@ class MemoryStore(Store):
 
     def ls(self, glob_str):
         return list(self._data)
+
+    @contextmanager
+    def lock(self):
+        with self._lock:
+            yield
+
+    @contextmanager
+    def stream(self, key, mode='r', lock=False):
+        if lock:
+            raise Exception("mem: does not support concurrency")
+        if 'b' in mode:
+            s = io.BytesIO(self._data.get(key, b''))
+        else:
+            s = io.StringIO(self._data.get(key, ''))
+        yield s
+        self._data[key] = s.getvalue()
 
 
 class RedisStore(Store):
@@ -291,6 +359,11 @@ class RedisStore(Store):
         self._client = redis.StrictRedis(host=hostname, port=int(port), db=0)
 
         super().__init__(uri)
+
+    @contextmanager
+    def lock(self):
+        with self._client.lock(".lock"):
+            yield
 
     def save_value(self, key, value):
         """
@@ -318,34 +391,23 @@ class RedisStore(Store):
         return self._client.keys(glob_str)
 
 
-# This is copied from Executor to not create a dependency on the naming of the lock field
-def sync(f):
-    """ Synchronization decorator. """
-
-    def new_function(self, *args, **kw):
-        self._lock.acquire()
-        try:
-            return f(self, *args, **kw)
-        finally:
-            self._lock.release()
-    return new_function
-
-
 class Workspace:
     """
     A workspace maintains a list of states to run and assigns them IDs.
     """
 
-    def __init__(self, lock, store_or_desc=None):
+    def __init__(self, store_or_desc=None):
         if isinstance(store_or_desc, Store):
             self._store = store_or_desc
         else:
             self._store = Store.fromdescriptor(store_or_desc)
         self._serializer = PickleSerializer()
-        self._last_id = manager().Value('i', 0)
-        self._lock = lock
         self._prefix = 'state_'
         self._suffix = '.pkl'
+
+    @property
+    def uri(self):
+        return self._store.uri
 
     def try_loading_workspace(self):
         state_names = self._store.ls(f'{self._prefix}*')
@@ -358,20 +420,26 @@ class Workspace:
         if not state_ids:
             return []
 
-        self._last_id.value = max(state_ids) + 1
-
         return state_ids
 
-    @sync
     def _get_id(self):
         """
         Get a unique state id.
 
         :rtype: int
         """
-        id_ = self._last_id.value
-        self._last_id.value += 1
-        return id_
+        with self._store.lock():
+            try:
+                with self._store.load_stream('.state_id') as f:
+                    last_id = int(f.read())
+            except Exception as e:
+                last_id = 0
+            else:
+                last_id += 1
+            with self._store.save_stream('.state_id') as f:
+                f.write(f'{last_id}')
+                f.flush()
+        return last_id
 
     def load_state(self, state_id, delete=True):
         """
@@ -428,9 +496,6 @@ class ManticoreOutput:
         self._named_key_prefix = 'test'
         self._descriptor = desc
         self._store = Store.fromdescriptor(desc)
-        self._last_id = 0
-        self._id_gen = manager().Value('i', self._last_id)
-        self._lock = manager().Condition(manager().RLock())
 
     def testcase(self, prefix='test'):
         return Testcase(self, prefix)
@@ -454,11 +519,34 @@ class ManticoreOutput:
 
         return self._descriptor
 
-    @sync
     def _increment_id(self):
-        self._last_id = self._id_gen.value
-        self._id_gen.value += 1
-        return self._last_id
+        """
+        Get a unique testcase id.
+
+        :rtype: int
+        """
+        filename = '.testcase_id'
+        with self._store.lock():
+            try:
+                with self._store.stream(filename, "r") as f:
+                    last_id = int(f.read())
+            except Exception as e:
+                last_id = 0
+            else:
+                last_id += 1
+            with self._store.stream(filename, "w") as f:
+                f.write(f'{last_id}')
+                f.flush()
+        return last_id
+
+    @property
+    def _last_id(self):
+        try:
+            with self._store.stream(filename, "r") as f:
+                last_id = int(f.read())
+        except Exception as e:
+            last_id = 0
+        return last_id
 
     def _named_key(self, suffix):
         return f'{self._named_key_prefix}_{self._last_id:08x}.{suffix}'
@@ -467,18 +555,19 @@ class ManticoreOutput:
         return self._store.save_stream(key, *rest, **kwargs)
 
     @contextmanager
-    def _named_stream(self, name, binary=False):
+    def _named_stream(self, name, binary=False, lock=False):
         """
         Create an indexed output stream i.e. 'test_00000001.name'
 
         :param name: Identifier for the stream
+        :param lock: exclusive access if True
         :return: A context-managed stream-like object
         """
-        with self._store.save_stream(self._named_key(name), binary=binary) as s:
+        with self._store.save_stream(self._named_key(name), binary=binary, lock=lock) as s:
             yield s
 
     #Remove/move ...
-    def save_testcase(self, state, prefix, message=''):
+    def save_testcase(self, state, testcase, message=''):
         """
         Save the environment from `state` to storage. Return a state id
         describing it, which should be an int or a string.
@@ -487,28 +576,28 @@ class ManticoreOutput:
         :param str message: The message to add to output
         :return: A state id representing the saved state
         """
-        self._named_key_prefix = prefix
 
         # TODO / FIXME: We should move workspace to core/workspace and create a workspace for evm and native binaries
         # The workspaces should override `save_testcase` method
         #
         # Below is native-only
-        self.save_summary(state, message)
-        self.save_trace(state)
-        self.save_constraints(state)
-        self.save_input_symbols(state)
+        self.save_summary(testcase, state, message)
+        self.save_trace(testcase, state)
+        self.save_constraints(testcase, state)
+        self.save_input_symbols(testcase, state)
 
         for stream_name, data in state.platform.generate_workspace_files().items():
-            with self._named_stream(stream_name, binary=True) as stream:
+            with testcase.open_stream(stream_name, binary=True) as stream:
                 if isinstance(data, str):
                     data = data.encode()
                 stream.write(data)
 
-        self._store.save_state(state, self._named_key('pkl'))
-        return self._last_id
+        #self._store.save_state(state, self._named_key('pkl'))
+        return testcase
 
-    def save_summary(self, state, message):
-        with self._named_stream('messages') as summary:
+    @staticmethod
+    def save_summary(testcase, state, message):
+        with testcase.open_stream('messages') as summary:
             summary.write(f"Command line:\n  '{' '.join(sys.argv)}'\n")
             summary.write(f'Status:\n  {message}\n\n')
 
@@ -529,22 +618,25 @@ class ManticoreOutput:
                 else:
                     summary.write("  Instruction: {symbolic}\n")
 
-    def save_trace(self, state):
-        with self._named_stream('trace') as f:
+    @staticmethod
+    def save_trace(testcase, state):
+        with testcase.open_stream('trace') as f:
             if 'trace' not in state.context:
                 return
             for entry in state.context['trace']:
                 f.write(f'0x{entry:x}\n')
 
-    def save_constraints(self, state):
+    @staticmethod
+    def save_constraints(testcase, state):
         # XXX(yan): We want to conditionally enable this check
         # assert solver.check(state.constraints)
 
-        with self._named_stream('smt') as f:
+        with testcase.open_stream('smt') as f:
             f.write(str(state.constraints))
 
-    def save_input_symbols(self, state):
-        with self._named_stream('input') as f:
+    @staticmethod
+    def save_input_symbols(testcase, state):
+        with testcase.open_stream('input') as f:
             for symbol in state.input_symbols:
-                buf = solver.get_value(state.constraints, symbol)
+                buf = Z3Solver().get_value(state.constraints, symbol)
                 f.write(f'{symbol.name}: {buf!r}\n')

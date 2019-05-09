@@ -15,13 +15,16 @@ from ..memory import (
 from ..memory import LazySMemory
 from ...core.smtlib import Expression, BitVec, Operators, Constant
 from ...core.smtlib import visitors
-from ...core.smtlib.solver import solver
+from ...core.smtlib.solver import Z3Solver
 from ...utils.emulate import ConcreteUnicornEmulator
 from ...utils.event import Eventful
 from ...utils.fallback_emulator import UnicornEmulator
 from ...utils.helpers import issymbolic
 
+from capstone import CS_ARCH_ARM64, CS_ARCH_X86, CS_ARCH_ARM
+from capstone.arm64 import ARM64_REG_ENDING
 from capstone.x86 import X86_REG_ENDING
+from capstone.arm import ARM_REG_ENDING
 
 logger = logging.getLogger(__name__)
 register_logger = logging.getLogger(f'{__name__}.registers')
@@ -147,7 +150,10 @@ class Operand:
 
         :param int reg_id: Register ID
         """
-        if reg_id >= X86_REG_ENDING:
+        # XXX: Support other architectures.
+        if ((self.cpu.arch == CS_ARCH_ARM64 and reg_id >= ARM64_REG_ENDING) or
+            (self.cpu.arch == CS_ARCH_X86 and reg_id >= X86_REG_ENDING) or
+            (self.cpu.arch == CS_ARCH_ARM and reg_id >= ARM_REG_ENDING)):
             logger.warning("Trying to get register name for a non-register")
             return None
         cs_reg_name = self.cpu.instruction.reg_name(reg_id)
@@ -864,7 +870,7 @@ class Cpu(Eventful):
                         vals = visitors.simplify_array_select(c)
                         c = bytes([vals[0]])
                     except visitors.ArraySelectSimplifier.ExpressionNotSimple:
-                        c = struct.pack('B', solver.get_value(self.memory.constraints, c))
+                        c = struct.pack('B', Z3Solver().get_value(self.memory.constraints, c))
                 elif isinstance(c, Constant):
                     c = bytes([c.value])
                 else:
@@ -914,7 +920,6 @@ class Cpu(Eventful):
         """
         if issymbolic(self.PC):
             raise ConcretizeRegister(self, 'PC', policy='ALL')
-
         if not self.memory.access_ok(self.PC, 'x'):
             raise InvalidMemoryAccess(self.PC, 'x')
 
