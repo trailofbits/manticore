@@ -13,6 +13,7 @@ from rlp.sedes import (
 from manticore.core.smtlib import ConstraintSet, Z3Solver  # Ignore unused import in non-symbolic tests!
 from manticore.core.smtlib.visitors import to_constant
 from manticore.platforms import evm
+from manticore.utils import config
 
 
 class Log(rlp.Serializable):
@@ -33,6 +34,8 @@ class EVMTest_vmTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        consts = config.get_group('evm')
+        consts.oog = 'pedantic'
         evm.DEFAULT_FORK = 'frontier'
 
     @classmethod
@@ -41,17 +44,15 @@ class EVMTest_vmTests(unittest.TestCase):
 
     def test_suicide(self):
         """
-        Textcase taken from https://github.com/ethereum/tests
+        Testcase taken from https://github.com/ethereum/tests
         File: suicide.json
         sha256sum: 1aa0a61de3c9576faf6ac4f002626210a5315d3132d032162b2934d304a60c1f
         Code:     CALLER
                   SELFDESTRUCT
         """    
     
-        solver = Z3Solver()
-
         def solve(val):
-            results = solver.get_all_values(constraints, val)
+            results = Z3Solver.instance().get_all_values(constraints, val)
             # We constrain all values to single values!
             self.assertEqual(len(results), 1)
             return results[0]
@@ -121,7 +122,7 @@ class EVMTest_vmTests(unittest.TestCase):
         self.assertEqual(solve(world.block_gaslimit()), 1000000)
         self.assertEqual(solve(world.block_timestamp()), 1)
         self.assertEqual(solve(world.block_difficulty()), 256)
-        self.assertEqual(solve(world.block_coinbase()), 244687034288125203496486448490407391986876152250)
+        self.assertEqual(solve(world.block_coinbase()), 0x2adc25665018aa1fe0e6bc666dac8fc2697ff9ba)
 
         # Add post checks for account 0xcd1722f3947def4cf144679da39c4c32bdc35681
         # check nonce, balance, code

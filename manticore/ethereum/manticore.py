@@ -1022,7 +1022,6 @@ class ManticoreEVM(ManticoreBase):
         if contract_account is None:
             logger.info("Failed to create contract: exception in constructor")
             return
-
         prev_coverage = 0
         current_coverage = 0
         tx_no = 0

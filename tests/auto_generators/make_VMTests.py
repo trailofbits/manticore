@@ -66,7 +66,7 @@ def generate_pre_output(testcase, filename, symbolic):
     output = f'''
     def test_{testname}(self):
         """
-        Textcase taken from https://github.com/ethereum/tests
+        Testcase taken from https://github.com/ethereum/tests
         File: {os.path.split(filename)[1]}
         sha256sum: {sha256sum}
         Code:     {disassemble}
@@ -75,10 +75,8 @@ def generate_pre_output(testcase, filename, symbolic):
 
     if symbolic:
         output += '''
-        solver = Z3Solver()
-
         def solve(val):
-            results = solver.get_all_values(constraints, val)
+            results = Z3Solver.instance().get_all_values(constraints, val)
             # We constrain all values to single values!
             self.assertEqual(len(results), 1)
             return results[0]
@@ -170,7 +168,7 @@ def generate_pre_output(testcase, filename, symbolic):
     address = int(testcase['exec']['address'], 0)
     caller = int(testcase['exec']['caller'], 0)
     code = testcase['exec']['code'][2:]
-    calldata = testcase['exec']['data'][2:]
+    calldata = unhexlify(testcase['exec']['data'][2:])
     gas = int(testcase['exec']['gas'], 0)
     price = int(testcase['exec']['gasPrice'], 0)
     origin = int(testcase['exec']['origin'], 0)
@@ -199,11 +197,11 @@ def generate_pre_output(testcase, filename, symbolic):
         if symbolic:
             output += f'''
         data = constraints.new_array(index_max={len(calldata)})
-        constraints.add(data == '{calldata}')
+        constraints.add(data == {calldata})
 '''
         else:
             output += f'''
-        data = unhexlify('{calldata}')'''
+        data = {calldata}'''
     else:
         output += f"""
         data = ''"""
@@ -231,7 +229,7 @@ def generate_pre_output(testcase, filename, symbolic):
         self.assertEqual(solve(world.block_gaslimit()), {gaslimit})
         self.assertEqual(solve(world.block_timestamp()), {timestamp})
         self.assertEqual(solve(world.block_difficulty()), {difficulty})
-        self.assertEqual(solve(world.block_coinbase()), {coinbase})
+        self.assertEqual(solve(world.block_coinbase()), {hex(coinbase)})
 '''
 
     return output
@@ -306,6 +304,7 @@ from rlp.sedes import (
 from manticore.core.smtlib import ConstraintSet, Z3Solver  # Ignore unused import in non-symbolic tests!
 from manticore.core.smtlib.visitors import to_constant
 from manticore.platforms import evm
+from manticore.utils import config
 
 
 class Log(rlp.Serializable):
@@ -326,6 +325,8 @@ class EVMTest_{os.path.splitext(os.path.basename(filename_or_folder))[0]}(unitte
 
     @classmethod
     def setUpClass(cls):
+        consts = config.get_group('evm')
+        consts.oog = 'pedantic'
         evm.DEFAULT_FORK = 'frontier'
 
     @classmethod

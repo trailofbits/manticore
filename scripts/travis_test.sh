@@ -64,7 +64,7 @@ launch_examples() {
 run_tests_from_dir() {
     DIR=$1
     coverage erase
-    coverage run -m unittest discover "tests/$DIR" 2>&1 >/dev/null | tee travis_tests.log
+    coverage run -m unittest discover -c -v "tests/$DIR" 2>&1 >/dev/null | tee travis_tests.log
     DID_OK=$(tail -n1 travis_tests.log)
     if [[ "${DID_OK}" != OK* ]]; then
         echo "Some tests failed :("
@@ -95,10 +95,7 @@ run_examples() {
 case $1 in
     native)                 ;&  # Fallthrough
     ethereum)               ;&  # Fallthrough
-    VMTests_concrete)       ;&  # Fallthrough
-    VMTests_symbolic)       ;&  # Fallthrough
-    VMTests_symbolic2)      ;&  # Fallthrough
-    VMTests_symbolic3)      ;&  # Fallthrough
+    ethereum_vm)       ;&  # Fallthrough
     other)
         echo "Running only the tests from 'tests/$1' directory"
         run_tests_from_dir $1
@@ -110,7 +107,7 @@ case $1 in
         ;;
 
     all)
-        echo "Running all tests registered in travis_test.sh: examples, native, ethereum, other";
+        echo "Running all tests registered in travis_test.sh: examples, native, ethereum, ethereum_vm, other";
 
         # Functions should return 0 on success and 1 on failure
         RV=0
@@ -118,13 +115,7 @@ case $1 in
         RV=$(($RV + $?))
         run_tests_from_dir ethereum
         RV=$(($RV + $?))
-        run_tests_from_dir VMTests_concrete
-        RV=$(($RV + $?))
-        run_tests_from_dir VMTests_symbolic
-        RV=$(($RV + $?))
-        run_tests_from_dir VMTests_symbolic2
-        RV=$(($RV + $?))
-        run_tests_from_dir VMTests_symbolic3
+	run_tests_from_dir ethereum_vm
         RV=$(($RV + $?))
         run_tests_from_dir other
         RV=$(($RV + $?))
@@ -133,7 +124,7 @@ case $1 in
         ;;
 
     *)
-        echo "Usage: $0 [examples|native|ethereum|VMTests_concrete|VMTests_symbolic|VMTests_symbolic2|VMTests_symbolic3|other|all]"
+        echo "Usage: $0 [examples|native|ethereum|ethereum_vm|other|all]"
         exit 3;
         ;;
 esac
