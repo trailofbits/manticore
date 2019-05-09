@@ -2795,7 +2795,7 @@ class SLinux(Linux):
         for c in data:
             if issymbolic(c):
                 bytes_concretized += 1
-                c = bytes([solver.get_value(self.constraints, c)])
+                c = bytes([Z3Solver().get_value(self.constraints, c)])
             concrete_data += cast(bytes, c)
 
         if bytes_concretized > 0:
@@ -2807,7 +2807,7 @@ class SLinux(Linux):
 
     def sys_exit_group(self, error_code):
         if issymbolic(error_code):
-            error_code = solver.get_value(self.constraints, error_code)
+            error_code = Z3Solver().get_value(self.constraints, error_code)
             return self._exit(f"Program finished with exit status: {ctypes.c_int32(error_code).value} (*)")
         else:
             return super().sys_exit_group(error_code)
