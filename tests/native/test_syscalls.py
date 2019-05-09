@@ -2,6 +2,7 @@ import random
 import unittest
 
 import os
+import errno
 
 from manticore.core.smtlib import *
 from manticore.platforms import linux
@@ -116,4 +117,19 @@ class LinuxTest(unittest.TestCase):
         self.linux.sys_unlink(0x1180)
         self.assertFalse(os.path.exists(newname))
 
-    # TODO chmod/chown
+    def test_chmod(self):
+        fname = get_random_filename()
+        self.linux.current.memory.mmap(0x1000, 0x1000, 'rw ')
+        self.linux.current.write_string(0x1100, fname)
+
+        print("Creating", fname)
+        fd = self.linux.sys_open(0x1100, os.O_RDWR, 0o777)
+
+        buf = b'0123456789ABCDEF'
+        self.linux.current.write_bytes(0x1200, buf)
+        self.linux.sys_close(fd)
+
+        self.linux.sys_chmod(0x1100, 0o444)
+        self.assertEqual(-errno.EACCES, self.linux.sys_open(0x1100, os.O_WRONLY, 0o777))
+
+        self.assertEqual(-errno.EPERM, self.linux.sys_chown(0x1100, 0, 0))

@@ -116,14 +116,17 @@ class File:
         return self.file.closed
 
     def stat(self):
-        return os.fstat(self.fileno())
+        try:
+            return os.fstat(self.fileno())
+        except OSError as e:
+            return -e.errno
 
     def ioctl(self, request, argp):
         try:
             return fcntl.fcntl(self, request, argp)
-        except OSError:
+        except OSError as e:
             logger.error(f"Invalid Fcntl request: {request}")
-            return -1
+            return -e.errno
 
     def tell(self, *args):
         return self.file.tell(*args)
@@ -193,7 +196,10 @@ class Directory(File):
         raise FdError("Is a directory", errno.EISDIR)
 
     def close(self, *args):
-        return os.close(self.fd)
+        try:
+            return os.close(self.fd)
+        except OSError as e:
+            return -e.errno
 
     def fileno(self, *args):
         return self.fd
@@ -1215,7 +1221,10 @@ class Linux(Platform):
         :param int mask: New mask
         """
         logger.debug(f"umask({mask:o})")
-        return os.umask(mask)
+        try:
+            return os.umask(mask)
+        except OSError as e:
+            return -e.errno
 
     def sys_chdir(self, path):
         """
@@ -1228,7 +1237,7 @@ class Linux(Platform):
             os.chdir(path_str)
             return 0
         except OSError as e:
-            return e.errno
+            return -e.errno
 
     def sys_getcwd(self, buf, size):
         """
@@ -1375,7 +1384,7 @@ class Linux(Platform):
             return 0
         else:
             if not os.path.exists(filename):
-                return -2  # Decodes to ENOENT
+                return -errno.ENOENT
             return -1
 
     def sys_newuname(self, old_utsname):
@@ -2482,7 +2491,6 @@ class Linux(Platform):
         self.sys_close(fd)
         return ret
 
-    # @unimplemented
     def sys_mkdir(self, pathname, mode) -> int:
         """
         Create a directory
@@ -2490,11 +2498,13 @@ class Linux(Platform):
         error: Returns -1
         """
         name = self.current.read_string(pathname)
-        os.mkdir(name, mode=mode)
+        try:
+            os.mkdir(name, mode=mode)
+        except OSError as e:
+            return -e.errno
 
         return 0
 
-    # @unimplemented
     def sys_mkdirat(self, dfd, pathname, mode) -> int:
         """
         Create a directory
@@ -2502,11 +2512,13 @@ class Linux(Platform):
         error: Returns -1
         """
         name = self.current.read_string(pathname)
-        os.mkdirat(name, mode=mode, dir_fd=dfd)
+        try:
+            os.mkdirat(name, mode=mode, dir_fd=dfd)
+        except OSError as e:
+            return -e.errno
 
         return 0
 
-    # @unimplemented
     def sys_rmdir(self, pathname) -> int:
         """
         Delete a directory
@@ -2514,7 +2526,10 @@ class Linux(Platform):
         error: Returns -1
         """
         name = self.current.read_string(pathname)
-        os.rmdir(name)
+        try:
+            os.rmdir(name)
+        except OSError as e:
+            return -e.errno
 
         return -1
 
@@ -2552,6 +2567,8 @@ class Linux(Platform):
         except FdError as e:
             logger.info("File descriptor %s is not open", fd)
             return -e.err
+        except OSError as e:
+            return -e.errno
         file.file.truncate(length)
         return 0
 
@@ -2565,7 +2582,7 @@ class Linux(Platform):
         newname = self.current.read_string(newname)
         try:
             os.link(oldname, newname)
-        except Exception as e:
+        except OSError as e:
             return -e.errno
         return 0
 
@@ -2578,7 +2595,7 @@ class Linux(Platform):
         pathname = self.current.read_string(pathname)
         try:
             os.unlink(pathname)
-        except Exception as e:
+        except OSError as e:
             return -e.errno
         return 0
 
@@ -2627,7 +2644,11 @@ class Linux(Platform):
         error: Returns -1
         """
         filename = self.current.read_string(filename)
-        os.chmod(filename, mode)
+        try:
+            os.chmod(filename, mode)
+        except OSError as e:
+            return -e.errno
+
         return 0
 
     def sys_chown(self, filename, user, group) -> int:
@@ -2637,7 +2658,11 @@ class Linux(Platform):
         error: Returns -1
         """
         filename = self.current.read_string(filename)
-        os.chown(filename, user, group)
+        try:
+            os.chown(filename, user, group)
+        except OSError as e:
+            return -e.errno
+
         return 0
 
     def _arch_specific_init(self):
