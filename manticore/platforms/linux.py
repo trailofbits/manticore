@@ -2493,9 +2493,8 @@ class Linux(Platform):
 
     def sys_mkdir(self, pathname, mode) -> int:
         """
-        Create a directory
-        success: Returns 0
-        error: Returns -1
+        Creates a directory
+        :return 0 on success
         """
         name = self.current.read_string(pathname)
         try:
@@ -2505,25 +2504,10 @@ class Linux(Platform):
 
         return 0
 
-    def sys_mkdirat(self, dfd, pathname, mode) -> int:
-        """
-        Create a directory
-        success: Returns 0
-        error: Returns -1
-        """
-        name = self.current.read_string(pathname)
-        try:
-            os.mkdirat(name, mode=mode, dir_fd=dfd)
-        except OSError as e:
-            return -e.errno
-
-        return 0
-
     def sys_rmdir(self, pathname) -> int:
         """
-        Delete a directory
-        success: Returns 0
-        error: Returns -1
+        Deletes a directory
+        :return 0 on success
         """
         name = self.current.read_string(pathname)
         try:
@@ -2535,9 +2519,7 @@ class Linux(Platform):
 
     def sys_pipe(self, filedes) -> int:
         """
-        Create pipe
-        success: Returns 0
-        error: Returns -1
+        Wrapper for pipe2(filedes, 0)
         """
         return self.sys_pipe2(filedes, 0)
 
@@ -2545,8 +2527,7 @@ class Linux(Platform):
         """
         # TODO (ehennenfent) create a native pipe type instead of cheating with sockets
         Create pipe
-        success: Returns 0
-        error: Returns -1
+        :return 0 on success
         """
         if flags == 0:
             l, r = Socket.pair()
@@ -2558,9 +2539,8 @@ class Linux(Platform):
 
     def sys_ftruncate(self, fd, length) -> int:
         """
-        Truncate a file to a specified length
-        success: Returns 0
-        error: Returns -1
+        Truncate a file to <length>
+        :return 0 on success
         """
         try:
             file = self._get_fd(fd)
@@ -2574,9 +2554,8 @@ class Linux(Platform):
 
     def sys_link(self, oldname, newname) -> int:
         """
-        Make a new name for a file
-        success: Returns 0
-        error: Returns -1
+        Create a symlink from oldname to newname.
+        :return 0 on success
         """
         oldname = self.current.read_string(oldname)
         newname = self.current.read_string(newname)
@@ -2588,9 +2567,8 @@ class Linux(Platform):
 
     def sys_unlink(self, pathname) -> int:
         """
-        Delete a name and possibly the file it refers to
-        success: Returns 0
-        error: Returns -1
+        Delete a symlink.
+        :return 0 on success
         """
         pathname = self.current.read_string(pathname)
         try:
@@ -2601,9 +2579,8 @@ class Linux(Platform):
 
     def sys_getdents(self, fd, dirent, count) -> int:
         """
-        Get directory entries
-        success: Returns the number of bytes read - On end of directory, 0
-        error: Returns -1
+        Fill memory with directory entry structs
+        return: The number of bytes read or 0 at the end of the directory
         """
         buf = b''
         try:
@@ -2630,18 +2607,15 @@ class Linux(Platform):
 
     def sys_nanosleep(self, rqtp, rmtp) -> int:
         """
-        High-resolution sleep
-        success: Returns 0
-        error: Returns -1
+        Ignored
         """
         logger.info("Ignoring call to sys_nanosleep")
         return 0
 
     def sys_chmod(self, filename, mode) -> int:
         """
-        Change permissions of a file
-        success: Returns 0
-        error: Returns -1
+        Modify file permissions
+        :return 0 on success
         """
         filename = self.current.read_string(filename)
         try:
@@ -2653,9 +2627,8 @@ class Linux(Platform):
 
     def sys_chown(self, filename, user, group) -> int:
         """
-        Change ownership of a file
-        success: Returns 0
-        error: Returns -1
+        Modify file ownership
+        :return 0 on success
         """
         filename = self.current.read_string(filename)
         try:
