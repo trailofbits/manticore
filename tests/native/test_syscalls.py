@@ -4,11 +4,12 @@ import unittest
 import os
 
 from manticore.core.smtlib import *
-from manticore.native import Manticore
 from manticore.platforms import linux
+
 
 def get_random_filename():
     return f"/tmp/mcore_test_{int(random.getrandbits(32))}"
+
 
 class LinuxTest(unittest.TestCase):
     _multiprocess_can_split_ = True
@@ -88,4 +89,31 @@ class LinuxTest(unittest.TestCase):
 
         self.assertEqual(buf[:8] + b'\x00'*8, b''.join(self.linux.current.read_bytes(0x1300, len(buf))))
 
+    def test_link(self):
+        fname = get_random_filename()
+        newname = get_random_filename()
+        self.linux.current.memory.mmap(0x1000, 0x1000, 'rw ')
+        self.linux.current.write_string(0x1100, fname)
+        self.linux.current.write_string(0x1180, newname)
 
+        fd = self.linux.sys_open(0x1100, os.O_RDWR, 0o777)
+
+        buf = b'0123456789ABCDEF'
+        self.linux.current.write_bytes(0x1200, buf)
+
+        self.linux.sys_write(fd, 0x1200, len(buf))
+        self.linux.sys_close(fd)
+
+        self.linux.sys_link(0x1100, 0x1180)
+
+        self.assertTrue(os.path.exists(newname))
+
+        fd = self.linux.sys_open(0x1180, os.O_RDWR, 0o777)
+        self.linux.sys_read(fd, 0x1300, len(buf))
+        self.assertEqual(buf, b''.join(self.linux.current.read_bytes(0x1300, len(buf))))
+        self.linux.sys_close(fd)
+
+        self.linux.sys_unlink(0x1180)
+        self.assertFalse(os.path.exists(newname))
+
+    # TODO chmod/chown
