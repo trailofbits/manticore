@@ -62,7 +62,7 @@ class NativeIntegrationTest(unittest.TestCase):
             subprocess.check_call([PYTHON_BIN, '-m', 'manticore',
                                 '--workspace', workspace,
                                 '--core.timeout', '1',
-                                '--procs', '4',
+                                '--core.procs', '4',
                                 filename,
                                 '+++++++++'], stdout=output)
 
@@ -77,14 +77,12 @@ class NativeIntegrationTest(unittest.TestCase):
 
         output_lines = output.splitlines()
 
-        self.assertEqual(len(output_lines), 6)
+        self.assertEqual(len(output_lines), 3)
 
-        self.assertIn(b'Verbosity set to 1.', output_lines[0])
-        self.assertIn(b'Loading program', output_lines[1])
-        self.assertIn(b'Generated testcase No. 0 - Program finished with exit status: 0', output_lines[2])
-        self.assertIn(b'Generated testcase No. 1 - Program finished with exit status: 0', output_lines[3])
-        self.assertIn(b'Results in ', output_lines[4])
-        self.assertIn(b'Total time: ', output_lines[5])
+        #self.assertIn(b'Verbosity set to 1.', output_lines[1])
+        self.assertIn(b'Loading program', output_lines[0])
+        self.assertIn(b'Generated testcase No. 0 -', output_lines[1])
+        self.assertIn(b'Generated testcase No. 1 -', output_lines[2])
 
     def _test_arguments_assertions_aux(self, binname, testcases_number, visited, add_assertion=False):
         filename = os.path.abspath(os.path.join(DIRPATH, 'binaries', binname))
@@ -97,7 +95,7 @@ class NativeIntegrationTest(unittest.TestCase):
         cmd = [
             PYTHON_BIN, '-m', 'manticore',
             '--workspace', workspace,
-            '--proc', '4',
+            '--core.procs', '4',
             '--no-color',
         ]
 
@@ -114,27 +112,25 @@ class NativeIntegrationTest(unittest.TestCase):
             filename,
             '+++++++++',
         ]
-
         output = subprocess.check_output(cmd).splitlines()
+        #self.assertIn(b'm.c.manticore:INFO: Verbosity set to 1.', output[0])
 
-        self.assertIn(b'm.c.manticore:INFO: Verbosity set to 1.', output[0])
-
-        self.assertIn(b'm.n.manticore:INFO: Loading program', output[1])
-        self.assertIn(bytes(binname, 'utf-8'), output[1])  # the binname should be in the path
+        self.assertIn(b'm.n.manticore:INFO: Loading program', output[0])
+        self.assertIn(bytes(binname, 'utf-8'), output[0])  # the binname should be in the path
 
         for i in range(testcases_number):
-            line = output[2+i]
+            line = output[1+i]
 
-            # After `expected1` there's the testcase id; because we fork use `--proc 4`
+            # After `expected1` there's the testcase id; because we fork use `--core.procs 4`
             # it might not be in the increasing order
             expected1 = b'm.c.manticore:INFO: Generated testcase No. '
-            expected2 = b'- Program finished with exit status: '
+            # expected2 = b'- Program finished with exit status: '
 
             self.assertIn(expected1, line)
-            self.assertIn(expected2, line)
+            # self.assertIn(expected2, line)
 
-        self.assertIn(b'm.c.manticore:INFO: Results in /tmp', output[2+testcases_number])
-        self.assertIn(b'm.c.manticore:INFO: Total time: ', output[2+testcases_number+1])
+        # self.assertIn(b'm.c.manticore:INFO: Results in /tmp', output[2+testcases_number])
+        # self.assertIn(b'm.c.manticore:INFO: Total time: ', output[2+testcases_number+1])
 
         actual = self._load_visited_set(os.path.join(DIRPATH, workspace, 'visited.txt'))
 
@@ -205,7 +201,7 @@ class NativeIntegrationTest(unittest.TestCase):
         self._run_with_timeout([PYTHON_BIN, '-m', 'manticore',
                               '--workspace', workspace,
                               '--core.timeout', '20',
-                              '--proc', '4',
+                              '--core.procs', '4',
                               '--no-color',
                               '--policy', 'uncovered',
                                 filename], os.path.join(self.test_dir, 'output.log'))
@@ -220,14 +216,11 @@ class NativeIntegrationTest(unittest.TestCase):
 
         output = subprocess.check_output(cmd).splitlines()
 
-        self.assertEqual(len(output), 6)
-
-        self.assertIn(b'm.c.manticore:INFO: Verbosity set to 1.', output[0])
-        self.assertIn(b'm.n.manticore:INFO: Loading program ', output[1])
-        self.assertIn(b'm.c.manticore:INFO: Generated testcase No. 0 - Program finished with exit status: 0', output[2])
-        self.assertIn(b'm.c.manticore:INFO: Generated testcase No. 1 - Program finished with exit status: 0', output[3])
-        self.assertIn(b'm.c.manticore:INFO: Results in ', output[4])
-        self.assertIn(b'm.c.manticore:INFO: Total time: ', output[5])
+        self.assertEqual(len(output), 3)
+        #self.assertIn(b'm.c.manticore:INFO: Verbosity set to 1.', output[0])
+        self.assertIn(b'm.n.manticore:INFO: Loading program ', output[0])
+        self.assertIn(b'm.c.manticore:INFO: Generated testcase No. 0 - ', output[1])
+        self.assertIn(b'm.c.manticore:INFO: Generated testcase No. 1 - ', output[2])
 
         with open(os.path.join(workspace, "test_00000000.stdout")) as f:
             self.assertIn("Message", f.read())
@@ -264,16 +257,14 @@ class NativeIntegrationTest(unittest.TestCase):
 
         output = subprocess.check_output(cmd).splitlines()
 
-        self.assertEqual(len(output), 5)
+        self.assertEqual(len(output), 2)
 
-        self.assertIn(b'm.c.manticore:INFO: Verbosity set to 1.', output[0])
-        self.assertIn(b'm.n.manticore:INFO: Loading program ', output[1])
-        self.assertIn(b'm.c.manticore:INFO: Generated testcase No. 0 - Program finished with exit status: 0', output[2])
-        self.assertIn(b'm.c.manticore:INFO: Results in ', output[3])
-        self.assertIn(b'm.c.manticore:INFO: Total time: ', output[4])
+        #self.assertIn(b'm.c.manticore:INFO: Verbosity set to 1.', output[0])
+        self.assertIn(b'm.n.manticore:INFO: Loading program ', output[0])
+        self.assertIn(b'm.c.manticore:INFO: Generated testcase No. 0 - ', output[1])
 
-        with open(os.path.join(workspace, "test_00000000.messages")) as f:
-            self.assertIn("finished with exit status: 0", f.read())
+        # with open(os.path.join(workspace, "test_00000000.messages")) as f:
+        #     self.assertIn("finished with exit status: 0", f.read())
 
     def test_unaligned_mappings(self):
         # This test ensures that mapping file contents at non page-aligned offsets is possible.

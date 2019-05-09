@@ -2,8 +2,6 @@
 // by Michael Hicks, University of Maryland.
 // https://www.cs.umd.edu/~mwh/se-tutorial/symbolic-exec.pdf
 
-pragma solidity ^0.4.15;
-
 contract SymExExample {
 
 

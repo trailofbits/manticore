@@ -11,8 +11,10 @@ import tempfile
 from io import BytesIO
 
 from manticore.core.smtlib import Expression
+from manticore.core.smtlib.solver import Z3Solver
 from manticore.native.memory import *
 from manticore import issymbolic
+solver = Z3Solver.instance()
 
 
 
@@ -44,10 +46,9 @@ class MemoryTest(unittest.TestCase):
     def setUp(self):
         import sys
         sys.setrecursionlimit(10000)
-        solver._stop_proc()
         self.fds = self.get_open_fds()
+
     def tearDown(self):
-        solver._stop_proc()
         gc.collect()
         gc.garbage = []
         gc.collect()

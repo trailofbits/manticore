@@ -9,10 +9,10 @@ import shutil
 import tempfile
 
 from manticore.native.cpu.abstractcpu import ConcretizeRegister
-from manticore.core.smtlib import *
+from manticore.core.smtlib.solver import Z3Solver
+from manticore.core.smtlib import BitVecVariable, issymbolic
 from manticore.native import Manticore
 from manticore.platforms import linux, linux_syscalls
-
 
 class LinuxTest(unittest.TestCase):
     _multiprocess_can_split_ = True
@@ -107,6 +107,7 @@ class LinuxTest(unittest.TestCase):
         res = ''.join(map(chr, platform.output.read(size)))
         self.assertEqual(res, s)
 
+    @unittest.skip("Stat differs in different test environments")
     def test_armv7_syscall_fstat(self):
         nr_fstat64 = 197
 
@@ -116,7 +117,7 @@ class LinuxTest(unittest.TestCase):
         platform.current.SP = 0x2000 - 4
 
         # open a file
-        filename = platform.current.push_bytes('/bin/true\x00')
+        filename = platform.current.push_bytes('/\x00')
         fd = platform.sys_open(filename, os.O_RDONLY, 0o600)
 
         stat = platform.current.SP - 0x100
@@ -126,8 +127,8 @@ class LinuxTest(unittest.TestCase):
         self.assertEqual(linux_syscalls.armv7[nr_fstat64], 'sys_fstat64')
 
         platform.syscall()
-
-        print(hexlify(b''.join(platform.current.read_bytes(stat, 100))))
+        self.assertEqual(b'02030100000000000200000000000000ed41000018000000000000000000000000000000000000000000000000000000001000000000000000100000000000000800000000000000e5c1bc5c15e85e260789ab5c8cd5db350789ab5c8cd5db3500000000',
+hexlify(b''.join(platform.current.read_bytes(stat, 100))))
 
     def test_armv7_linux_symbolic_files_workspace_files(self):
         fname = 'symfile'
@@ -261,7 +262,7 @@ class LinuxTest(unittest.TestCase):
 
             e = cm.exception
 
-            _min, _max = solver.minmax(platform.constraints, e.cpu.read_register(e.reg_name))
+            _min, _max = Z3Solver.instance().minmax(platform.constraints, e.cpu.read_register(e.reg_name))
             self.assertLess(_min, len(platform.files))
             self.assertGreater(_max, len(platform.files) - 1)
         finally:
@@ -290,18 +291,18 @@ class LinuxTest(unittest.TestCase):
         dirname = os.path.dirname(__file__)
         self.m = Manticore.linux(os.path.join(dirname, 'binaries', 'arguments_linux_amd64'), argv=['+'],
                                  envp={'TEST': '+'})
-        state = self.m.initial_state
 
-        ptr = state.cpu.read_int(state.cpu.RSP + (8 * 2))  # get argv[1]
-        mem = state.cpu.read_bytes(ptr, 2)
-        self.assertTrue(issymbolic(mem[0]))
-        self.assertEqual(mem[1], b'\0')
+        for state in self.m.all_states:
+            ptr = state.cpu.read_int(state.cpu.RSP + (8 * 2))  # get argv[1]
+            mem = state.cpu.read_bytes(ptr, 2)
+            self.assertTrue(issymbolic(mem[0]))
+            self.assertEqual(mem[1], b'\0')
 
-        ptr = state.cpu.read_int(state.cpu.RSP + (8 * 4))  # get envp[0]
-        mem = state.cpu.read_bytes(ptr, 7)
-        self.assertEqual(b''.join(mem[:5]), b'TEST=')
-        self.assertEqual(mem[6], b'\0')
-        self.assertTrue(issymbolic(mem[5]))
+            ptr = state.cpu.read_int(state.cpu.RSP + (8 * 4))  # get envp[0]
+            mem = state.cpu.read_bytes(ptr, 7)
+            self.assertEqual(b''.join(mem[:5]), b'TEST=')
+            self.assertEqual(mem[6], b'\0')
+            self.assertTrue(issymbolic(mem[5]))
 
     def test_serialize_state_with_closed_files(self):
         # regression test: issue 954
@@ -317,13 +318,14 @@ class LinuxTest(unittest.TestCase):
         #   0x1000: add.w   r0, r1, r2
         # which is a Thumb instruction, so the entrypoint is set to 0x1001
         m = Manticore.linux(os.path.join(os.path.dirname(__file__), 'binaries', 'thumb_mode_entrypoint'))
-        m.success = False
+        m.context['success'] = False
 
         @m.init
-        def init(state):
-            state.cpu.regfile.write('R0', 0)
-            state.cpu.regfile.write('R1', 0x1234)
-            state.cpu.regfile.write('R2', 0x5678)
+        def init(m):
+            for state in m.all_states:
+                state.platform.current.regfile.write('R0', 0)
+                state.platform.current.regfile.write('R1', 0x1234)
+                state.platform.current.regfile.write('R2', 0x5678)
 
         @m.hook(0x1001)
         def pre(state):
@@ -335,8 +337,9 @@ class LinuxTest(unittest.TestCase):
         def post(state):
             # If the wrong execution mode was set by the loader, the wrong instruction
             # will have been executed, so the register value will be incorrect
-            m.success = state.cpu.regfile.read('R0') == 0x68ac
+            with m.locked_context() as ctx:
+                ctx['success'] = state.cpu.regfile.read('R0') == 0x68ac
             state.abandon()
 
         m.run()
-        self.assertTrue(m.success)
+        self.assertTrue(m.context['success'])

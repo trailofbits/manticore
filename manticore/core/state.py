@@ -75,8 +75,6 @@ class StateBase(Eventful):
     :ivar dict context: Local context for arbitrary data storage
     """
 
-    _published_events = {'generate_testcase'}
-
     def __init__(self, constraints, platform, **kwargs):
         super().__init__(**kwargs)
         self._platform = platform
@@ -109,6 +107,13 @@ class StateBase(Eventful):
         # Events are lost in serialization and fork !!
         self.forward_events_from(self._platform)
 
+    @property
+    def id(self):
+        return getattr(self, '_id', None)
+
+    def __repr__(self):
+        return f'<State object with id {self.id}>'
+
     # Fixme(felipe) change for with "state.cow_copy() as st_temp":.
     # This need to change. this is the center of ALL the problems. re. CoW
     def __enter__(self):
@@ -118,7 +123,7 @@ class StateBase(Eventful):
         self.platform.constraints = new_state.constraints
         new_state._input_symbols = list(self._input_symbols)
         new_state._context = copy.copy(self._context)
-
+        new_state._id = None
         self.copy_eventful_state(new_state)
 
         self._child = new_state
@@ -253,14 +258,14 @@ class StateBase(Eventful):
             vals = [self._solver.get_value(self._constraints, symbolic)]
         else:
             assert policy == 'ALL'
-            vals = solver.get_all_values(self._constraints, symbolic, maxcnt=maxcount, silent=True)
+            vals = self._solver.get_all_values(self._constraints, symbolic, maxcnt=maxcount, silent=True)
 
         return tuple(set(vals))
 
     @property
     def _solver(self):
-        from .smtlib import solver
-        return solver
+        from .smtlib import Z3Solver
+        return Z3Solver.instance()  # solver
 
     def migrate_expression(self, expression):
         if not issymbolic(expression):
@@ -279,9 +284,13 @@ class StateBase(Eventful):
         expr = self.migrate_expression(expr)
         return self._solver.can_be_true(self._constraints, expr)
 
+    def can_be_false(self, expr):
+        expr = self.migrate_expression(expr)
+        return self._solver.can_be_true(self._constraints, expr == False)
+
     def must_be_true(self, expr):
         expr = self.migrate_expression(expr)
-        return not self._solver.can_be_true(self._constraints, expr == False)
+        return self._solver.can_be_true(self._constraints, expr) and not self._solver.can_be_true(self._constraints, expr == False)
 
     def solve_one(self, expr, constrain=False):
         """

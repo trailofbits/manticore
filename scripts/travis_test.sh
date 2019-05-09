@@ -106,7 +106,7 @@ case $1 in
         ;;
 
     all)
-        echo "Running all tests registered in travis_test.sh: examples, natvie, ethereum, other";
+        echo "Running all tests registered in travis_test.sh: examples, native, ethereum, other";
 
         # Functions should return 0 on success and 1 on failure
         RV=0
