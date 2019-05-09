@@ -7,6 +7,8 @@ from manticore.core.smtlib import *
 from manticore.native import Manticore
 from manticore.platforms import linux
 
+def get_random_filename():
+    return f"/tmp/mcore_test_{int(random.getrandbits(32))}"
 
 class LinuxTest(unittest.TestCase):
     _multiprocess_can_split_ = True
@@ -42,7 +44,7 @@ class LinuxTest(unittest.TestCase):
         self.assertGreater(time_2_final, time_2_0, "Time did not increase!")
 
     def test_directories(self):
-        tmpdir = f"/tmp/mcore_test_{int(random.getrandbits(32))}"
+        tmpdir = get_random_filename()
 
         self.linux.current.memory.mmap(0x1000, 0x1000, 'rw ')
         self.linux.current.write_string(0x1100, tmpdir)
@@ -67,3 +69,23 @@ class LinuxTest(unittest.TestCase):
         self.linux.sys_read(fd2, 0x1300, len(buf))
 
         self.assertEqual(buf, b''.join(self.linux.current.read_bytes(0x1300, len(buf))), "Pipe Read/Write failed")
+
+    def test_ftruncate(self):
+        fname = get_random_filename()
+        self.linux.current.memory.mmap(0x1000, 0x1000, 'rw ')
+        self.linux.current.write_string(0x1100, fname)
+
+        fd = self.linux.sys_open(0x1100, os.O_RDWR, 0o777)
+
+        buf = b'0123456789ABCDEF'
+        self.linux.current.write_bytes(0x1200, buf)
+
+        self.linux.sys_write(fd, 0x1200, len(buf))
+        self.linux.sys_close(fd)
+        fd = self.linux.sys_open(0x1100, os.O_RDWR, 0o777)
+        self.linux.sys_ftruncate(fd, len(buf) // 2)
+        self.linux.sys_read(fd, 0x1300, len(buf))
+
+        self.assertEqual(buf[:8] + b'\x00'*8, b''.join(self.linux.current.read_bytes(0x1300, len(buf))))
+
+
