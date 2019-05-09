@@ -5,7 +5,8 @@ import os
 import errno
 
 from manticore.core.smtlib import *
-from manticore.platforms import linux
+from manticore.platforms import linux, linux_syscall_stubs
+from manticore.platforms.platform import SyscallNotImplemented
 
 
 def get_random_filename():
@@ -133,3 +134,22 @@ class LinuxTest(unittest.TestCase):
         self.assertEqual(-errno.EACCES, self.linux.sys_open(0x1100, os.O_WRONLY, 0o777))
 
         self.assertEqual(-errno.EPERM, self.linux.sys_chown(0x1100, 0, 0))
+
+    def test_unimplemented(self):
+        stubs = linux_syscall_stubs.SyscallStubs(default_to_fail=False)
+
+        if hasattr(stubs, 'sys_bpf'):
+            self.assertRaises(SyscallNotImplemented, stubs.sys_bpf, 0, 0, 0)
+
+            self.linux.stubs.default_to_fail = False
+            self.linux.current.RAX = 321  # SYS_BPF
+            self.assertRaises(SyscallNotImplemented, self.linux.syscall)
+
+            self.linux.stubs.default_to_fail = True
+            self.linux.current.RAX = 321
+            self.linux.syscall()
+            self.assertEqual(0xffffffffffffffff, self.linux.current.RAX)
+        else:
+            import warnings
+            warnings.warn("Couldn't find sys_bpf in the stubs file. " +
+                          "If you've implemented it, you need to fix test_syscalls:LinuxTest.test_unimplemented")
