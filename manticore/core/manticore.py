@@ -810,7 +810,7 @@ class ManticoreBase(Eventful):
             # User subscription to events is disabled from now on
             self.subscribe = None
 
-        self._publish('will_run')
+        self._publish('will_run', self.ready_states)
         self._running.value = True
         # start all the workers!
         for w in self._workers:
