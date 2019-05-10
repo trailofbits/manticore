@@ -321,8 +321,8 @@ hexlify(b''.join(platform.current.read_bytes(stat, 100))))
         m.context['success'] = False
 
         @m.init
-        def init(m):
-            for state in m.all_states:
+        def init(m, ready_states):
+            for state in ready_states:
                 state.platform.current.regfile.write('R0', 0)
                 state.platform.current.regfile.write('R1', 0x1234)
                 state.platform.current.regfile.write('R2', 0x5678)
