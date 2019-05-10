@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 # ignore: Ignore gas. Do not account for it. Do not OOG.
 consts = config.get_group('evm')
 
-consts.add('oog', default='concrete', description=(
+consts.add('oog', default='pedantic', description=(
     'Default behavior for symbolic gas.'
     'pedantic: Fully faithful. Test at every instruction. Forks.'
     'complete: Mostly faithful. Test at BB limit. Forks.'
@@ -812,15 +812,13 @@ class EVM(Eventful):
             reps, m = getattr(self, '_mgas', (0, None))
             reps += 1
             if m is None and reps > 10:
-                m = Z3Solver.instance().min(self.constraints,
-                                                     self._gas)
+                m = Z3Solver.instance().min(self.constraints, self._gas)
             self._mgas = reps, m
 
             if m is not None and fee < m:
                 self._gas -= fee
-                self._mgas = reps, m-fee
+                self._mgas = reps, m - fee
                 return
-
 
         if consts.oog in ('pedantic', 'complete'):
             # gas is faithfully accounted and ogg checked at instruction/BB level.
@@ -1438,7 +1436,6 @@ class EVM(Eventful):
 
     def CALLDATACOPY(self, mem_offset, data_offset, size):
         """Copy input data in current environment to memory"""
-        print (mem_offset, data_offset, size)
         if issymbolic(size):
             if Z3Solver().can_be_true(self._constraints, size <= len(self.data) + 32):
                 self.constraints.add(size <= len(self.data) + 32)
