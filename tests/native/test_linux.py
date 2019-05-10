@@ -107,6 +107,7 @@ class LinuxTest(unittest.TestCase):
         res = ''.join(map(chr, platform.output.read(size)))
         self.assertEqual(res, s)
 
+    @unittest.skip("Stat differs in different test environments")
     def test_armv7_syscall_fstat(self):
         nr_fstat64 = 197
 
@@ -290,13 +291,14 @@ hexlify(b''.join(platform.current.read_bytes(stat, 100))))
         dirname = os.path.dirname(__file__)
         self.m = Manticore.linux(os.path.join(dirname, 'binaries', 'arguments_linux_amd64'), argv=['+'],
                                  envp={'TEST': '+'})
+
         for state in self.m.all_states:
-            ptr = state.cpu.read_int(state.cpu.RSP + (8*2))  # get argv[1]
+            ptr = state.cpu.read_int(state.cpu.RSP + (8 * 2))  # get argv[1]
             mem = state.cpu.read_bytes(ptr, 2)
             self.assertTrue(issymbolic(mem[0]))
             self.assertEqual(mem[1], b'\0')
 
-            ptr = state.cpu.read_int(state.cpu.RSP + (8*4))  # get envp[0]
+            ptr = state.cpu.read_int(state.cpu.RSP + (8 * 4))  # get envp[0]
             mem = state.cpu.read_bytes(ptr, 7)
             self.assertEqual(b''.join(mem[:5]), b'TEST=')
             self.assertEqual(mem[6], b'\0')

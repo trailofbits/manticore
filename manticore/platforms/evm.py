@@ -19,6 +19,7 @@ import logging
 from collections import namedtuple
 import sha3
 import rlp
+import time
 
 logger = logging.getLogger(__name__)
 

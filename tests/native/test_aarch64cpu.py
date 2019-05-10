@@ -5,7 +5,7 @@ from functools import wraps
 from keystone import Ks, KS_ARCH_ARM64, KS_MODE_LITTLE_ENDIAN
 from nose.tools import nottest
 
-from manticore.core.smtlib import ConstraintSet, solver
+from manticore.core.smtlib import ConstraintSet, Z3Solver
 from manticore.native.memory import SMemory64, Memory64
 from manticore.native.cpu.aarch64 import Aarch64Cpu as Cpu
 from manticore.native.cpu.abstractcpu import (
@@ -14080,7 +14080,7 @@ class Aarch64SymInstructions(unittest.TestCase, Aarch64Instructions):
         self.rf = self.cpu.regfile
 
     def _get_all_values1(self, expr):
-        values = solver.get_all_values(self.cs, expr)
+        values = Z3Solver.instance().get_all_values(self.cs, expr)
         self.assertEqual(len(values), 1)
         return values[0]
 
