@@ -957,7 +957,10 @@ class EVM(Eventful):
             # this could raise an insufficient stack exception
             arguments = self._pop_arguments()
             fee = self._calculate_gas(*arguments)
+
             self._checkpoint_data = (pc, old_gas, instruction, arguments, fee, allocated)
+            self._consume(fee)
+
         return self._checkpoint_data
 
     def _rollback(self):
@@ -1057,7 +1060,6 @@ class EVM(Eventful):
             #b = time.time()
             last_pc, last_gas, instruction, arguments, fee, allocated = self._checkpoint()
             #c = time.time()
-            self._consume(fee)
             #d = time.time()
             result = self._handler(*arguments)
             #e = time.time()

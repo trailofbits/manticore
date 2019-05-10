@@ -14,6 +14,8 @@ from manticore.core.smtlib import ConstraintSet, Z3Solver  # Ignore unused impor
 from manticore.core.smtlib.visitors import to_constant
 from manticore.platforms import evm
 from manticore.utils import config
+from manticore.core.state import Concretize
+
 
 
 class Log(rlp.Serializable):
@@ -42,6 +44,34 @@ class EVMTest_vmSystemOperations(unittest.TestCase):
     def tearDownClass(cls):
         evm.DEFAULT_FORK = cls.SAVED_DEFAULT_FORK
 
+    def _test_run(self, world):
+        result = None
+        returndata = b''
+        try:
+            while True:
+                try:
+                    world.current_vm.execute()
+                except Concretize as e:
+                    value = self._solve(world.constraints, e.expression)
+                    class fake_state:pass
+                    fake_state = fake_state()
+                    fake_state.platform = world
+                    e.setstate(fake_state, value)
+        except evm.EndTx as e:
+            result = e.result
+            if result in ('RETURN', 'REVERT'):
+                returndata = self._solve(world.constraints, e.data)
+        except evm.StartTx as e:
+            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
+        return result, returndata
+
+    def _solve(self, constraints, val):
+        results = Z3Solver.instance().get_all_values(constraints, val, maxcnt=3)
+        # We constrain all values to single values!
+        self.assertEqual(len(results), 1)
+        return results[0]
+
+
     def test_return0(self):
         """
         Testcase taken from https://github.com/ethereum/tests
@@ -60,10 +90,7 @@ class EVMTest_vmSystemOperations(unittest.TestCase):
         """    
     
         def solve(val):
-            results = Z3Solver.instance().get_all_values(constraints, val)
-            # We constrain all values to single values!
-            self.assertEqual(len(results), 1)
-            return results[0]
+            return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
@@ -115,17 +142,7 @@ class EVMTest_vmSystemOperations(unittest.TestCase):
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
-        result = None
-        returndata = b''
-        try:
-            while True:
-                world.current_vm.execute()
-        except evm.EndTx as e:
-            result = e.result
-            if result in ('RETURN', 'REVERT'):
-                returndata = solve(e.data)
-        except evm.StartTx as e:
-            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
+        result, returndata = self._test_run(world)
 
         # World sanity checks - those should not change, right?
         self.assertEqual(solve(world.block_number()), 0)
@@ -172,10 +189,7 @@ class EVMTest_vmSystemOperations(unittest.TestCase):
         """    
     
         def solve(val):
-            results = Z3Solver.instance().get_all_values(constraints, val)
-            # We constrain all values to single values!
-            self.assertEqual(len(results), 1)
-            return results[0]
+            return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
@@ -227,17 +241,7 @@ class EVMTest_vmSystemOperations(unittest.TestCase):
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
-        result = None
-        returndata = b''
-        try:
-            while True:
-                world.current_vm.execute()
-        except evm.EndTx as e:
-            result = e.result
-            if result in ('RETURN', 'REVERT'):
-                returndata = solve(e.data)
-        except evm.StartTx as e:
-            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
+        result, returndata = self._test_run(world)
 
         # World sanity checks - those should not change, right?
         self.assertEqual(solve(world.block_number()), 0)
@@ -273,10 +277,7 @@ class EVMTest_vmSystemOperations(unittest.TestCase):
         """    
     
         def solve(val):
-            results = Z3Solver.instance().get_all_values(constraints, val)
-            # We constrain all values to single values!
-            self.assertEqual(len(results), 1)
-            return results[0]
+            return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
@@ -337,17 +338,7 @@ class EVMTest_vmSystemOperations(unittest.TestCase):
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
-        result = None
-        returndata = b''
-        try:
-            while True:
-                world.current_vm.execute()
-        except evm.EndTx as e:
-            result = e.result
-            if result in ('RETURN', 'REVERT'):
-                returndata = solve(e.data)
-        except evm.StartTx as e:
-            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
+        result, returndata = self._test_run(world)
 
         # World sanity checks - those should not change, right?
         self.assertEqual(solve(world.block_number()), 0)
@@ -389,10 +380,7 @@ class EVMTest_vmSystemOperations(unittest.TestCase):
         """    
     
         def solve(val):
-            results = Z3Solver.instance().get_all_values(constraints, val)
-            # We constrain all values to single values!
-            self.assertEqual(len(results), 1)
-            return results[0]
+            return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
@@ -444,17 +432,7 @@ class EVMTest_vmSystemOperations(unittest.TestCase):
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
-        result = None
-        returndata = b''
-        try:
-            while True:
-                world.current_vm.execute()
-        except evm.EndTx as e:
-            result = e.result
-            if result in ('RETURN', 'REVERT'):
-                returndata = solve(e.data)
-        except evm.StartTx as e:
-            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
+        result, returndata = self._test_run(world)
 
         # World sanity checks - those should not change, right?
         self.assertEqual(solve(world.block_number()), 0)
@@ -490,10 +468,7 @@ class EVMTest_vmSystemOperations(unittest.TestCase):
         """    
     
         def solve(val):
-            results = Z3Solver.instance().get_all_values(constraints, val)
-            # We constrain all values to single values!
-            self.assertEqual(len(results), 1)
-            return results[0]
+            return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
@@ -554,17 +529,7 @@ class EVMTest_vmSystemOperations(unittest.TestCase):
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
-        result = None
-        returndata = b''
-        try:
-            while True:
-                world.current_vm.execute()
-        except evm.EndTx as e:
-            result = e.result
-            if result in ('RETURN', 'REVERT'):
-                returndata = solve(e.data)
-        except evm.StartTx as e:
-            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
+        result, returndata = self._test_run(world)
 
         # World sanity checks - those should not change, right?
         self.assertEqual(solve(world.block_number()), 0)
@@ -603,10 +568,7 @@ class EVMTest_vmSystemOperations(unittest.TestCase):
         """    
     
         def solve(val):
-            results = Z3Solver.instance().get_all_values(constraints, val)
-            # We constrain all values to single values!
-            self.assertEqual(len(results), 1)
-            return results[0]
+            return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
@@ -667,17 +629,7 @@ class EVMTest_vmSystemOperations(unittest.TestCase):
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
-        result = None
-        returndata = b''
-        try:
-            while True:
-                world.current_vm.execute()
-        except evm.EndTx as e:
-            result = e.result
-            if result in ('RETURN', 'REVERT'):
-                returndata = solve(e.data)
-        except evm.StartTx as e:
-            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
+        result, returndata = self._test_run(world)
 
         # World sanity checks - those should not change, right?
         self.assertEqual(solve(world.block_number()), 0)
@@ -719,10 +671,7 @@ class EVMTest_vmSystemOperations(unittest.TestCase):
         """    
     
         def solve(val):
-            results = Z3Solver.instance().get_all_values(constraints, val)
-            # We constrain all values to single values!
-            self.assertEqual(len(results), 1)
-            return results[0]
+            return self._solve(constraints, val)
 
         constraints = ConstraintSet()
 
@@ -774,17 +723,7 @@ class EVMTest_vmSystemOperations(unittest.TestCase):
 
         # This variable might seem redundant in some tests - don't forget it is auto generated
         # and there are cases in which we need it ;)
-        result = None
-        returndata = b''
-        try:
-            while True:
-                world.current_vm.execute()
-        except evm.EndTx as e:
-            result = e.result
-            if result in ('RETURN', 'REVERT'):
-                returndata = solve(e.data)
-        except evm.StartTx as e:
-            self.fail('This tests should not initiate an internal tx (no CALLs allowed)')
+        result, returndata = self._test_run(world)
 
         # World sanity checks - those should not change, right?
         self.assertEqual(solve(world.block_number()), 0)
