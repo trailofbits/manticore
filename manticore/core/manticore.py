@@ -811,6 +811,8 @@ class ManticoreBase(Eventful):
             self.subscribe = None
 
         self._publish('will_run', self.ready_states)
+        with self.locked_context() as context:
+            context['time_started'] = time.time()
         self._running.value = True
         # start all the workers!
         for w in self._workers:
@@ -863,6 +865,8 @@ class ManticoreBase(Eventful):
             self.generate_testcase(state)
         self.remove_all()
 
+        self._save_run_data()
+
     ############################################################################
     ############################################################################
     ############################################################################
@@ -878,13 +882,14 @@ class ManticoreBase(Eventful):
             config.save(f)
             time_ended = time.time()
 
-        # time_elapsed = time_ended - self._last_run_stats['time_started']
+        with self.locked_context() as context:
+            time_elapsed = time_ended - context['time_started']
 
-        logger.info('Results in %s', self._output.store.uri)
-        # logger.info('Total time: %s', time_elapsed)
+            logger.info('Results in %s', self._output.store.uri)
+            logger.info('Total time: %s', time_elapsed)
 
-        # self._last_run_stats['time_ended'] = time_ended
-        # self._last_run_stats['time_elapsed'] = time_elapsed
+            context['time_ended'] = time_ended
+            context['time_elapsed'] = time_elapsed
 
 
 class ManticoreSingle(ManticoreBase):
