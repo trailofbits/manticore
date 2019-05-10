@@ -618,7 +618,7 @@ class ManticoreBase(Eventful):
         # Global enumeration of valid events
         assert isinstance(plugin, Plugin)
         assert plugin not in self.plugins, "Plugin instance already registered"
-        assert plugin.manticore is None, "Plugin instance already owned"
+        assert getattr(plugin, 'manticore', None) is None, "Plugin instance already owned"
 
         plugin.manticore = self
         self.plugins.add(plugin)
