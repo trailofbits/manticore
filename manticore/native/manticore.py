@@ -3,7 +3,9 @@ import types
 
 import elftools
 import os
-import shlex, time, sys
+import shlex
+import time
+import sys
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 
