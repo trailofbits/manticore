@@ -3,6 +3,7 @@ import types
 
 import elftools
 import os
+import shlex, time, sys
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 
@@ -275,6 +276,26 @@ class Manticore(ManticoreBase):
                 return symbols[0].entry['st_value']
 
             raise ValueError(f"The {self.binary_path} ELFfile does not contain symbol {symbol}")
+
+    def _save_run_data(self):
+        print("Yo wtf why isn't this getting called")
+        super()._save_run_data()
+
+        with self._output.save_stream('command.sh') as f:
+            f.write(' '.join(map(shlex.quote, sys.argv)))
+
+        with self._output.save_stream('manticore.yml') as f:
+            config.save(f)
+            time_ended = time.time()
+
+        with self.locked_context() as context:
+            time_elapsed = time_ended - context['time_started']
+
+            logger.info('Results in %s', self._output.store.uri)
+            logger.info('Total time: %s', time_elapsed)
+
+            context['time_ended'] = time_ended
+            context['time_elapsed'] = time_elapsed
 
 
 def _make_initial_state(binary_path, **kwargs):

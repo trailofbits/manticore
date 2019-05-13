@@ -875,21 +875,7 @@ class ManticoreBase(Eventful):
     ############################################################################
 
     def _save_run_data(self):
-        with self._output.save_stream('command.sh') as f:
-            f.write(' '.join(map(shlex.quote, sys.argv)))
-
-        with self._output.save_stream('manticore.yml') as f:
-            config.save(f)
-            time_ended = time.time()
-
-        with self.locked_context() as context:
-            time_elapsed = time_ended - context['time_started']
-
-            logger.info('Results in %s', self._output.store.uri)
-            logger.info('Total time: %s', time_elapsed)
-
-            context['time_ended'] = time_ended
-            context['time_elapsed'] = time_elapsed
+        pass
 
 
 class ManticoreSingle(ManticoreBase):
