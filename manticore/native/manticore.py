@@ -279,10 +279,11 @@ class Manticore(ManticoreBase):
 
             raise ValueError(f"The {self.binary_path} ELFfile does not contain symbol {symbol}")
 
-    def _save_run_data(self):
-        print("Yo wtf why isn't this getting called")
-        super()._save_run_data()
+    def finalize(self):
+        super().finalize()
+        self._save_run_data()
 
+    def _save_run_data(self):
         with self._output.save_stream('command.sh') as f:
             f.write(' '.join(map(shlex.quote, sys.argv)))
 

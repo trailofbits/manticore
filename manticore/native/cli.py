@@ -33,5 +33,4 @@ def native_main(args, _logger):
     with m.kill_timeout():
         m.run()
 
-    for state in m.all_states:
-        m.generate_testcase(state)
+    m.finalize()
