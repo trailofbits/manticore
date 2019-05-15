@@ -865,7 +865,6 @@ class ManticoreBase(Eventful):
             self.generate_testcase(state)
         self.remove_all()
 
-
     ############################################################################
     ############################################################################
     ############################################################################
@@ -873,6 +872,14 @@ class ManticoreBase(Eventful):
     ############################################################################
     ############################################################################
 
+    def save_run_data(self):
+        with self._output.save_stream('command.sh') as f:
+            f.write(' '.join(map(shlex.quote, sys.argv)))
+
+        with self._output.save_stream('manticore.yml') as f:
+            config.save(f)
+
+        logger.info('Results in %s', self._output.store.uri)
 
 class ManticoreSingle(ManticoreBase):
     _worker_type = WorkerSingle
