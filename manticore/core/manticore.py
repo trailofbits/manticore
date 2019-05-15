@@ -881,6 +881,7 @@ class ManticoreBase(Eventful):
 
         logger.info('Results in %s', self._output.store.uri)
 
+
 class ManticoreSingle(ManticoreBase):
     _worker_type = WorkerSingle
 
