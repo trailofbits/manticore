@@ -811,8 +811,6 @@ class ManticoreBase(Eventful):
             self.subscribe = None
 
         self._publish('will_run', self.ready_states)
-        with self.locked_context() as context:
-            context['time_started'] = time.time()
         self._running.value = True
         # start all the workers!
         for w in self._workers:

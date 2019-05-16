@@ -279,6 +279,12 @@ class Manticore(ManticoreBase):
 
             raise ValueError(f"The {self.binary_path} ELFfile does not contain symbol {symbol}")
 
+    def run(self, timeout=None):
+        with self.locked_context() as context:
+            context['time_started'] = time.time()
+
+        super().run(timeout=timeout)
+
     def finalize(self):
         super().finalize()
         self.save_run_data()
