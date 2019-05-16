@@ -38,7 +38,7 @@ fi
 
 # Skip Manticore installation setup and teardown
 if [ "$1" != "env" ]; then
-    if [ "$1" == "format" ]; then
+    if [ "$1" != "format" ]; then
         install_solc
         install_mcore $1
     fi

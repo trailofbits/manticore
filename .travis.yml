@@ -39,7 +39,7 @@ jobs:
     - stage: format
       env: TEST_TYPE=format
       script:
-        - black -t py36 --check
+        - black -t py36 --check .
     - stage: prepare
       env: TEST_TYPE=env
       script:
