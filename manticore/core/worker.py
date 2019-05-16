@@ -158,9 +158,10 @@ class Worker:
                         # Update the stored version of the current state
                         # Saved to a fresh id in case other worker have an old
                         # version this state cached over the old id
-                        m._publish('will_terminate_state', current_state, exc)
+                        m._publish('will_kill_state', current_state, exc)
                         m._save(current_state, state_id=current_state.id)
                         m._kill_state(current_state.id)
+                        m._publish('did_kill_state', current_state, exc)
                         current_state = None
                     break
 

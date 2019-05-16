@@ -107,7 +107,7 @@ class ManticoreBase(Eventful):
         return newFunction
 
     _published_events = {'run', 'start_worker', 'terminate_worker', 'enqueue_state', 'fork_state', 'load_state',
-                         'terminate_state', 'execute_instruction'}
+                         'terminate_state', 'kill_state', 'execute_instruction'}
 
     def __init__(self, initial_state, workspace_url=None, policy='random', **kwargs):
         """
