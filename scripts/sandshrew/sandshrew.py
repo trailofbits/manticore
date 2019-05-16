@@ -128,12 +128,12 @@ def main():
 
     # initialize state by checking and storing symbolic argv
     @m.init
-    def init(initial_state):
+    def init(m, ready_states):
 
         logging.debug(f"Checking for symbolic ARGV")
 
         # determine argv[1] from state.input_symbols by label name
-        argv1 = next(sym for sym in initial_state.input_symbols if sym.name == 'ARGV1')
+        argv1 = next(sym for sym in next(ready_states).input_symbols if sym.name == 'ARGV1')
         if argv1 is None:
             raise RuntimeException("ARGV was not provided and/or made symbolic")
 

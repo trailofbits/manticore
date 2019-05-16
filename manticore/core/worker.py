@@ -148,8 +148,8 @@ class Worker:
 
                 except (Exception, AssertionError) as exc:
                     import traceback
-                    traceback.print_exc()
-                    logger.error("[%r] Exception %r. Current State %r", self.id, exc, current_state)
+                    formatted = traceback.format_exc()
+                    logger.error("Exception in state %r: %r\n%s ", self.id, exc, formatted)
                     # Internal Exception
                     # Add the state to the terminated state list
                     if current_state is not None:
@@ -158,8 +158,10 @@ class Worker:
                         # Update the stored version of the current state
                         # Saved to a fresh id in case other worker have an old
                         # version this state cached over the old id
+                        m._publish('will_kill_state', current_state, exc)
                         m._save(current_state, state_id=current_state.id)
                         m._kill_state(current_state.id)
+                        m._publish('did_kill_state', current_state, exc)
                         current_state = None
                     break
 

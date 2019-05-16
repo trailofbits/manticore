@@ -1478,7 +1478,7 @@ class ManticoreEVM(ManticoreBase):
                     global_findings_stream.write('    '.join(source_code_snippet.splitlines(True)))
                     global_findings_stream.write('\n')
 
-        self._save_run_data()
+        self.save_run_data()
 
         with self._output.save_stream('global.summary') as global_summary:
             # (accounts created by contract code are not in this list )

@@ -22,8 +22,9 @@ m = Manticore(FILE, concrete_start='', stdin_size=0)
 
 
 @m.init
-def init(state):
-    state.platform.input.write(state.symbolicate_buffer(STDIN, label='STDIN'))
+def init(m, ready_states):
+    for state in ready_states:
+        state.platform.input.write(state.symbolicate_buffer(STDIN, label='STDIN'))
 
 
 # Hook the 'if' case.
