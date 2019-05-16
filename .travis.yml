@@ -7,6 +7,7 @@ python:
   - 3.6.6
 
 stages:
+  - format
   - prepare
   - test
   - submit
@@ -35,6 +36,10 @@ cache:
 
 jobs:
   include:
+    - stage: format
+      env: TEST_TYPE=format
+      script:
+        - black -t py36 --check
     - stage: prepare
       env: TEST_TYPE=env
       script:
