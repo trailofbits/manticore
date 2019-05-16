@@ -17,7 +17,7 @@ def rtd_dependent_deps():
 native_deps = [
     'capstone==4.0.1',
     'pyelftools',
-    'unicorn',
+    'unicorn @ git+https://github.com/unicorn-engine/unicorn.git@778171fc9546c1fc3d1341ff1151eab379848ea0#subdirectory=bindings/python&egg=unicorn-1.0.1.post0',
 ]
 
 extra_require = {
